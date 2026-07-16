@@ -1,0 +1,116 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --radius-lg: 0.75rem;
+  --radius-md: 0.5rem;
+  --radius-sm: 0.25rem;
+}
+
+:root {
+  /* Light Mode Palette */
+  --background: #F8FAFC;
+  --foreground: #0F172A;
+  
+  --card: #FFFFFF;
+  --card-foreground: #0F172A;
+  
+  --primary: #0B5ED7;
+  --primary-foreground: #FFFFFF;
+  
+  --secondary: #1E3A8A;
+  --secondary-foreground: #FFFFFF;
+  
+  --accent: #FF9933;
+  --accent-foreground: #FFFFFF;
+  
+  --success: #22C55E;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+  
+  --border: #E2E8F0;
+  --input: #E2E8F0;
+  --ring: rgba(11, 94, 215, 0.2);
+}
+
+.dark {
+  /* Dark Mode Palette */
+  --background: #0B1329;
+  --foreground: #F8FAFC;
+  
+  --card: #14203D;
+  --card-foreground: #F8FAFC;
+  
+  --primary: #1E70E7;
+  --primary-foreground: #FFFFFF;
+  
+  --secondary: #2C4D9A;
+  --secondary-foreground: #FFFFFF;
+  
+  --accent: #FFA64D;
+  --accent-foreground: #111827;
+  
+  --success: #22C55E;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+  
+  --border: #1E293B;
+  --input: #1E293B;
+  --ring: rgba(30, 112, 231, 0.4);
+}
+
+/* Custom Base Styles */
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Custom scrollbars for professional dashboard UI */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* Elegant glassmorphism class for premium styling */
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.dark .glass {
+  background: rgba(20, 32, 61, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
