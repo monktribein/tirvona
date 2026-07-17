@@ -41,11 +41,11 @@ export const PublicLayout: React.FC = () => {
           {/* Logo Section */}
           <Link to="/" className="flex items-center gap-2.5 group">
             <div className="w-10 h-10 rounded-lg bg-gradient-to-tr from-secondary to-primary flex items-center justify-center text-white font-bold shadow-md shadow-primary/20 transform group-hover:scale-105 transition-transform duration-200">
-              AB
+              T
             </div>
             <div className="flex flex-col">
               <span className="text-lg font-bold tracking-tight text-secondary dark:text-white flex items-center gap-1">
-                Ashray Bharat <ShieldCheck size={16} className="text-accent" />
+                Tirrthiva <ShieldCheck size={16} className="text-accent" />
               </span>
               <span className="text-[10px] text-gray-500 font-medium tracking-wider uppercase">
                 One Nation, One Spiritual Stay
@@ -262,7 +262,7 @@ export const PublicLayout: React.FC = () => {
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="space-y-4">
             <h3 className="text-lg font-bold flex items-center gap-2">
-              Ashray Bharat <ShieldCheck className="text-accent" size={18} />
+              Tirrthiva <ShieldCheck className="text-accent" size={18} />
             </h3>
             <p className="text-xs text-gray-400 leading-relaxed">
               Eliminating manual paper logs to provide safe, verified, and digital booking accommodations for holy stays and spiritual retreats across the Indian subcontinent.

@@ -91,10 +91,10 @@ export const DashboardLayout: React.FC = () => {
         {/* Brand */}
         <div className="h-20 flex items-center px-6 border-b border-white/10 gap-3">
           <div className="w-8 h-8 rounded bg-accent flex items-center justify-center font-bold text-white shadow-sm">
-            AB
+            T
           </div>
           <div className="flex flex-col">
-            <span className="font-bold text-sm tracking-wide">Ashray Bharat</span>
+            <span className="font-bold text-sm tracking-wide">Tirrthiva</span>
             <span className="text-[10px] text-gray-400 capitalize">{user.role.replace('_', ' ')} Dashboard</span>
           </div>
         </div>
@@ -154,8 +154,8 @@ export const DashboardLayout: React.FC = () => {
             </button>
 
             <div className="h-12 flex items-center mb-6 gap-3">
-              <div className="w-8 h-8 rounded bg-accent flex items-center justify-center font-bold">AB</div>
-              <span className="font-bold text-sm tracking-wide">Ashray Bharat</span>
+              <div className="w-8 h-8 rounded bg-accent flex items-center justify-center font-bold">T</div>
+              <span className="font-bold text-sm tracking-wide">Tirrthiva</span>
             </div>
 
             <nav className="flex-grow space-y-1">

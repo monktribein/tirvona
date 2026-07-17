@@ -89,10 +89,10 @@ export const LoginPage: React.FC = () => {
         {/* Header Branding */}
         <div className="text-center space-y-2">
           <div className="inline-flex w-12 h-12 rounded-xl bg-gradient-to-tr from-secondary to-primary items-center justify-center text-white font-bold text-xl shadow-lg">
-            AB
+            T
           </div>
           <h2 className="text-2xl font-extrabold text-secondary dark:text-white flex items-center justify-center gap-1.5">
-            Log in to Ashray Bharat <ShieldCheck size={20} className="text-accent" />
+            Log in to Tirrthiva <ShieldCheck size={20} className="text-accent" />
           </h2>
           <p className="text-xs text-gray-500">
             Sign in to access reservations, verification panels, and audit logs
