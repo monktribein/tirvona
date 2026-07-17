@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import logo from '../assets/logo.png';
 import { Outlet, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
@@ -40,9 +41,7 @@ export const PublicLayout: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex justify-between items-center">
           {/* Logo Section */}
           <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-tr from-secondary to-primary flex items-center justify-center text-white font-bold shadow-md shadow-primary/20 transform group-hover:scale-105 transition-transform duration-200">
-              T
-            </div>
+            <img src={logo} alt="Tirthiva Logo" className="w-10 h-10 object-contain rounded-lg transform group-hover:scale-105 transition-transform duration-200" />
             <div className="flex flex-col">
               <span className="text-lg font-bold tracking-tight text-secondary dark:text-white flex items-center gap-1">
                 Tirthiva <ShieldCheck size={16} className="text-accent" />

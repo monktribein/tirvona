@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import logo from '../assets/logo.png';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { ShieldCheck, Mail, Phone, Lock, Eye, EyeOff, Sparkles } from 'lucide-react';
@@ -88,9 +89,7 @@ export const LoginPage: React.FC = () => {
         
         {/* Header Branding */}
         <div className="text-center space-y-2">
-          <div className="inline-flex w-12 h-12 rounded-xl bg-gradient-to-tr from-secondary to-primary items-center justify-center text-white font-bold text-xl shadow-lg">
-            T
-          </div>
+          <img src={logo} alt="Tirthiva Logo" className="w-12 h-12 object-contain rounded-xl shadow-lg inline-block" />
           <h2 className="text-2xl font-extrabold text-secondary dark:text-white flex items-center justify-center gap-1.5">
             Log in to Tirthiva <ShieldCheck size={20} className="text-accent" />
           </h2>
