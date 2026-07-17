@@ -91,7 +91,7 @@ app.use('/api/reviews', reviewRoutes);
 // Root Endpoint
 app.get('/', (req, res) => {
   res.json({
-    message: 'Welcome to Tirrthiva API (Sacred Ashram Booking & Management Platform)',
+    message: 'Welcome to Tirthiva API (Sacred Ashram Booking & Management Platform)',
     version: '1.0.0',
     status: 'Running',
   });

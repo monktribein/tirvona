@@ -45,7 +45,7 @@ export const PublicLayout: React.FC = () => {
             </div>
             <div className="flex flex-col">
               <span className="text-lg font-bold tracking-tight text-secondary dark:text-white flex items-center gap-1">
-                Tirrthiva <ShieldCheck size={16} className="text-accent" />
+                Tirthiva <ShieldCheck size={16} className="text-accent" />
               </span>
               <span className="text-[10px] text-gray-500 font-medium tracking-wider uppercase">
                 One Nation, One Spiritual Stay
@@ -262,7 +262,7 @@ export const PublicLayout: React.FC = () => {
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="space-y-4">
             <h3 className="text-lg font-bold flex items-center gap-2">
-              Tirrthiva <ShieldCheck className="text-accent" size={18} />
+              Tirthiva <ShieldCheck className="text-accent" size={18} />
             </h3>
             <p className="text-xs text-gray-400 leading-relaxed">
               Eliminating manual paper logs to provide safe, verified, and digital booking accommodations for holy stays and spiritual retreats across the Indian subcontinent.

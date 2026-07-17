@@ -92,7 +92,7 @@ export const LoginPage: React.FC = () => {
             T
           </div>
           <h2 className="text-2xl font-extrabold text-secondary dark:text-white flex items-center justify-center gap-1.5">
-            Log in to Tirrthiva <ShieldCheck size={20} className="text-accent" />
+            Log in to Tirthiva <ShieldCheck size={20} className="text-accent" />
           </h2>
           <p className="text-xs text-gray-500">
             Sign in to access reservations, verification panels, and audit logs

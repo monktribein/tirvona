@@ -6,8 +6,8 @@ export const FaqPage: React.FC = () => {
     {
       category: 'General',
       icon: <HelpCircle className="text-primary" size={20} />,
-      q: 'What is the Tirrthiva Portal?',
-      a: 'Tirrthiva is an official, centralized digital platform initiated by the Government of India. It aims to register, inspect, verify, and digitize all approved Ashrams, Dharamshalas, spiritual retreats, and religious accommodations across the country, making booking safe, accessible, and transparent for pilgrims.',
+      q: 'What is the Tirthiva Portal?',
+      a: 'Tirthiva is an official, centralized digital platform initiated by the Government of India. It aims to register, inspect, verify, and digitize all approved Ashrams, Dharamshalas, spiritual retreats, and religious accommodations across the country, making booking safe, accessible, and transparent for pilgrims.',
     },
     {
       category: 'For Pilgrims',

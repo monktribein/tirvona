@@ -94,7 +94,7 @@ export const DashboardLayout: React.FC = () => {
             T
           </div>
           <div className="flex flex-col">
-            <span className="font-bold text-sm tracking-wide">Tirrthiva</span>
+            <span className="font-bold text-sm tracking-wide">Tirthiva</span>
             <span className="text-[10px] text-gray-400 capitalize">{user.role.replace('_', ' ')} Dashboard</span>
           </div>
         </div>
@@ -155,7 +155,7 @@ export const DashboardLayout: React.FC = () => {
 
             <div className="h-12 flex items-center mb-6 gap-3">
               <div className="w-8 h-8 rounded bg-accent flex items-center justify-center font-bold">T</div>
-              <span className="font-bold text-sm tracking-wide">Tirrthiva</span>
+              <span className="font-bold text-sm tracking-wide">Tirthiva</span>
             </div>
 
             <nav className="flex-grow space-y-1">
