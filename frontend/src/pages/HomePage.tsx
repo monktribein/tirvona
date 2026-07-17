@@ -158,13 +158,7 @@ export const HomePage: React.FC = () => {
         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-[#ffcc33]/5 rounded-full blur-[120px] pointer-events-none" />
 
         <div className="max-w-4xl mx-auto space-y-6 z-10">
-          <motion.span 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-[#ff9933]/15 text-[#ff9933] text-xs font-bold rounded-full border border-[#ff9933]/30 shadow-inner"
-          >
-            <ShieldCheck size={14} /> Ministry of Tourism Approved Portal
-          </motion.span>
+
           
           <motion.h1 
             initial={{ opacity: 0, scale: 0.95 }}

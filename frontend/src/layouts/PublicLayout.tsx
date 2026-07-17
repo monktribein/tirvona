@@ -35,20 +35,6 @@ export const PublicLayout: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground transition-colors duration-300">
-      {/* Top Banner: Government Official Badge */}
-      <div className="bg-secondary text-[10px] sm:text-xs text-white py-1.5 px-4 font-medium flex justify-between items-center border-b border-white/10 z-50">
-        <div className="flex items-center gap-2">
-          <span className="inline-block w-2.5 h-1.5 bg-accent rounded-sm"></span>
-          <span>Official Portal of Ministry of Tourism & Culture, Government of India</span>
-        </div>
-        <div className="flex gap-4">
-          <button onClick={toggleDarkMode} className="hover:text-accent flex items-center gap-1 transition-colors cursor-pointer">
-            {darkMode ? <Sun size={12} /> : <Moon size={12} />}
-            <span>{darkMode ? 'Light' : 'Dark'} Mode</span>
-          </button>
-        </div>
-      </div>
-
       {/* Main Header */}
       <header className="sticky top-0 z-40 bg-card/85 backdrop-blur-md border-b border-border shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex justify-between items-center">
@@ -75,6 +61,15 @@ export const PublicLayout: React.FC = () => {
             <Link to="/faq" className="text-sm font-semibold hover:text-primary transition-colors flex items-center gap-1.5 py-2">
               <HelpCircle size={16} /> FAQ
             </Link>
+
+            {/* Dark Mode Toggle */}
+            <button 
+              onClick={toggleDarkMode} 
+              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-500 hover:text-[#ff9933] transition-all cursor-pointer"
+              title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            >
+              {darkMode ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
 
             {/* Notifications Indicator */}
             {user && (
@@ -188,7 +183,7 @@ export const PublicLayout: React.FC = () => {
 
       {/* Mobile Menu Drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 top-[76px] sm:top-[92px] bg-card border-t border-border z-40 p-6 flex flex-col justify-between animate-in fade-in slide-in-from-top-4 duration-200">
+        <div className="md:hidden fixed inset-0 top-[64px] sm:top-[80px] bg-card border-t border-border z-40 p-6 flex flex-col justify-between animate-in fade-in slide-in-from-top-4 duration-200">
           <nav className="flex flex-col gap-4">
             <Link
               to="/"
@@ -216,6 +211,15 @@ export const PublicLayout: React.FC = () => {
           </nav>
 
           <div className="flex flex-col gap-3">
+            {/* Dark Mode Toggle */}
+            <button
+              onClick={toggleDarkMode}
+              className="w-full py-3 bg-gray-100 dark:bg-slate-800 rounded-lg font-bold text-center flex items-center justify-center gap-2 cursor-pointer"
+            >
+              {darkMode ? <Sun size={16} /> : <Moon size={16} />}
+              <span>{darkMode ? 'Light' : 'Dark'} Mode</span>
+            </button>
+
             {user ? (
               <button
                 onClick={() => {
