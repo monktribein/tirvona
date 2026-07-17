@@ -56,6 +56,7 @@ export const AshramDetailPage: React.FC = () => {
 
   // Reviews
   const [reviews, setReviews] = useState<any[]>([]);
+  const [showAllReviews, setShowAllReviews] = useState(false);
 
   // Related stays
   const [relatedStays, setRelatedStays] = useState<any[]>([]);
@@ -451,21 +452,35 @@ export const AshramDetailPage: React.FC = () => {
             <h3 className="text-base font-extrabold text-[#0c1a30] dark:text-white flex items-center gap-1.5 border-b border-border pb-3">
               <Star size={18} className="text-[#ff9933]" /> Guest Reviews ({reviews.length})
             </h3>
-            {reviews.length === 0 ? (
+             {reviews.length === 0 ? (
               <p className="text-xs text-gray-400 italic">No reviews posted yet for this ashram stay.</p>
             ) : (
               <div className="space-y-4">
-                {reviews.map((rev) => (
-                  <div key={rev._id} className="p-4 bg-gray-50/50 dark:bg-slate-900/10 border border-border rounded-2xl space-y-2">
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="font-extrabold text-secondary dark:text-white">{rev.customerId?.name}</span>
-                      <span className="flex items-center gap-0.5 px-2 py-0.5 bg-yellow-50 dark:bg-yellow-950/20 text-yellow-700 dark:text-yellow-400 border border-yellow-200/50 rounded-lg text-[10px] font-bold">
-                        <Star size={10} className="fill-accent text-accent" /> {rev.rating?.overall} / 5
-                      </span>
+                <div className="space-y-4">
+                  {reviews.slice(0, showAllReviews ? reviews.length : 3).map((rev) => (
+                    <div key={rev._id} className="p-4 bg-gray-50/50 dark:bg-slate-900/10 border border-border rounded-2xl space-y-2">
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="font-extrabold text-secondary dark:text-white">{rev.customerId?.name}</span>
+                        <span className="flex items-center gap-0.5 px-2 py-0.5 bg-yellow-50 dark:bg-yellow-950/20 text-yellow-700 dark:text-yellow-400 border border-yellow-200/50 rounded-lg text-[10px] font-bold">
+                          <Star size={10} className="fill-accent text-accent" /> {rev.rating?.overall} / 5
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500 font-medium leading-relaxed">"{rev.comment}"</p>
                     </div>
-                    <p className="text-xs text-gray-500 font-medium leading-relaxed">"{rev.comment}"</p>
+                  ))}
+                </div>
+
+                {reviews.length > 3 && (
+                  <div className="text-center pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowAllReviews(!showAllReviews)}
+                      className="px-4 py-1.5 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-gray-600 dark:text-gray-300 rounded-xl text-[10px] font-bold transition-all cursor-pointer"
+                    >
+                      {showAllReviews ? 'View Less' : `View More (${reviews.length - 3} reviews)`}
+                    </button>
                   </div>
-                ))}
+                )}
               </div>
             )}
           </div>
