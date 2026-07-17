@@ -790,12 +790,12 @@ const seedData = async (users) => {
 
     // Create Rooms for this Ashram
     const roomCategories = [
-      { name: 'Vedic Shared Dormitory Bed', type: 'dormitory', ac: 'Non-AC', cap: 1, inventory: 40, price: 150, img: roomImages.dormitory, desc: 'Single bed in a spacious, air-cooled 10-bed shared dormitory hall.' },
-      { name: 'Standard Single AC Room', type: 'private_room', ac: 'AC', cap: 1, inventory: 15, price: 500, img: roomImages.private_room, desc: 'Comfortable single occupancy room with attached bathroom and window view.' },
-      { name: 'Standard Double AC Room', type: 'private_room', ac: 'AC', cap: 2, inventory: 20, price: 800, img: roomImages.double_room, desc: 'Ideal for couples or two pilgrims. Air-conditioned with writing desk and wardrobe.' },
-      { name: 'Family Suite (4 Beds)', type: 'family_room', ac: 'AC', cap: 4, inventory: 10, price: 1200, img: roomImages.family_room, desc: 'Spacious room with four separate beds, attached bath, geyser, and closet.' },
-      { name: 'Ganga View Deluxe AC Room', type: 'private_room', ac: 'AC', cap: 3, inventory: 12, price: 1600, img: roomImages.deluxe_room, desc: 'Premium room offering balcony views of the river/gardens, LCD TV, and hot water.' },
-      { name: 'VIP Transcendental Suite', type: 'private_room', ac: 'AC', cap: 2, inventory: 5, price: 3000, img: roomImages.vip_suite, desc: 'Highly premium suite with separate living area, private puja altar, and VIP parking access.' }
+      { name: 'Vedic Shared Dormitory Bed', type: 'dormitory', ac: 'Non-AC', cap: 1, inventory: 40, price: 1150, img: roomImages.dormitory, desc: 'Single bed in a spacious, air-cooled 10-bed shared dormitory hall.' },
+      { name: 'Standard Single AC Room', type: 'private_room', ac: 'AC', cap: 1, inventory: 15, price: 1500, img: roomImages.private_room, desc: 'Comfortable single occupancy room with attached bathroom and window view.' },
+      { name: 'Standard Double AC Room', type: 'private_room', ac: 'AC', cap: 2, inventory: 20, price: 1800, img: roomImages.double_room, desc: 'Ideal for couples or two pilgrims. Air-conditioned with writing desk and wardrobe.' },
+      { name: 'Family Suite (4 Beds)', type: 'family_room', ac: 'AC', cap: 4, inventory: 10, price: 2200, img: roomImages.family_room, desc: 'Spacious room with four separate beds, attached bath, geyser, and closet.' },
+      { name: 'Ganga View Deluxe AC Room', type: 'private_room', ac: 'AC', cap: 3, inventory: 12, price: 2600, img: roomImages.deluxe_room, desc: 'Premium room offering balcony views of the river/gardens, LCD TV, and hot water.' },
+      { name: 'VIP Transcendental Suite', type: 'private_room', ac: 'AC', cap: 2, inventory: 5, price: 4000, img: roomImages.vip_suite, desc: 'Highly premium suite with separate living area, private puja altar, and VIP parking access.' }
     ];
 
     for (let rConfig of roomCategories) {
