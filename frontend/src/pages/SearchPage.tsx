@@ -35,6 +35,10 @@ export const SearchPage: React.FC = () => {
   const [foodFilter, setFoodFilter] = useState(false);
   const [riverViewFilter, setRiverViewFilter] = useState(false);
 
+  // Spatial Map State
+  const [showMapGrid, setShowMapGrid] = useState(false);
+  const [selectedMapAshram, setSelectedMapAshram] = useState<any>(null);
+
   // Autocomplete Suggestions
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -102,6 +106,50 @@ export const SearchPage: React.FC = () => {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setSearchParams({ destination, checkIn, checkOut, guests: guestsQuery });
+  };
+
+  // Landmark distance calculation for Spatial Map Grid
+  const getCentralLandmark = () => {
+    const dest = destinationQuery.toLowerCase();
+    if (dest.includes('vrindavan')) {
+      return { name: 'Sri Banke Bihari Mandir', lat: 27.5795, lon: 77.6980 };
+    }
+    if (dest.includes('rishikesh')) {
+      return { name: 'Ram Jhula (Sacred Bridge)', lat: 30.1190, lon: 78.3110 };
+    }
+    if (dest.includes('haridwar')) {
+      return { name: 'Har Ki Pauri (Holy Ghat)', lat: 29.9645, lon: 78.1691 };
+    }
+    // Default to average coordinates of results
+    if (results.length > 0) {
+      let totalLat = 0;
+      let totalLon = 0;
+      let count = 0;
+      results.forEach(a => {
+        const coords = a.address?.coordinates?.coordinates;
+        if (coords && coords.length === 2) {
+          totalLon += coords[0];
+          totalLat += coords[1];
+          count++;
+        }
+      });
+      if (count > 0) {
+        return { name: 'Geographic Center', lat: totalLat / count, lon: totalLon / count };
+      }
+    }
+    return { name: 'Holy Sangam Point', lat: 29.9645, lon: 78.1691 };
+  };
+
+  const getDistanceInKm = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return parseFloat((R * c).toFixed(2));
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -293,7 +341,24 @@ export const SearchPage: React.FC = () => {
             <MapPin className="text-[#ff9933]" size={28} />
             <h4 className="text-xs font-extrabold">Spatial Map Grid View</h4>
             <p className="text-[10px] text-gray-500 max-w-[180px] leading-relaxed">View coordinates of all retreats relative to holy temples</p>
-            <button className="px-4 py-2 bg-[#ff9933]/15 text-[#ff9933] border border-[#ff9933]/20 rounded-xl text-[10px] font-bold hover:bg-[#ff9933]/20 transition-all cursor-pointer">
+            <button 
+              type="button"
+              onClick={() => {
+                if (results.length > 0) {
+                  const central = getCentralLandmark();
+                  const mapItems = results.map(ashram => {
+                    const coords = ashram.address?.coordinates?.coordinates;
+                    const lon = coords?.[0] || central.lon;
+                    const lat = coords?.[1] || central.lat;
+                    const dist = getDistanceInKm(central.lat, central.lon, lat, lon);
+                    return { ...ashram, lat, lon, distance: dist };
+                  }).sort((a, b) => a.distance - b.distance);
+                  setSelectedMapAshram(mapItems[0]);
+                }
+                setShowMapGrid(true);
+              }}
+              className="px-4 py-2 bg-[#ff9933]/15 text-[#ff9933] border border-[#ff9933]/20 rounded-xl text-[10px] font-bold hover:bg-[#ff9933]/20 transition-all cursor-pointer"
+            >
               Activate Map Grid
             </button>
           </div>
@@ -393,6 +458,182 @@ export const SearchPage: React.FC = () => {
           )}
         </section>
       </div>
+
+      {/* Spatial Map Grid Modal */}
+      <AnimatePresence>
+        {showMapGrid && (() => {
+          const central = getCentralLandmark();
+          const mapItems = results.map(ashram => {
+            const coords = ashram.address?.coordinates?.coordinates;
+            const lon = coords?.[0] || central.lon;
+            const lat = coords?.[1] || central.lat;
+            const dist = getDistanceInKm(central.lat, central.lon, lat, lon);
+            return { ...ashram, lat, lon, distance: dist };
+          }).sort((a, b) => a.distance - b.distance);
+
+          let lats = mapItems.map(item => item.lat).concat([central.lat]);
+          let lons = mapItems.map(item => item.lon).concat([central.lon]);
+          
+          let minLat = Math.min(...lats);
+          let maxLat = Math.max(...lats);
+          let minLon = Math.min(...lons);
+          let maxLon = Math.max(...lons);
+
+          const latRange = maxLat - minLat || 0.01;
+          const lonRange = maxLon - minLon || 0.01;
+          minLat -= latRange * 0.15;
+          maxLat += latRange * 0.15;
+          minLon -= lonRange * 0.15;
+          maxLon += lonRange * 0.15;
+
+          const getPercentCoords = (lat: number, lon: number) => {
+            const x = ((lon - minLon) / (maxLon - minLon)) * 100;
+            const y = 100 - ((lat - minLat) / (maxLat - minLat)) * 100;
+            return { x: `${x}%`, y: `${y}%` };
+          };
+
+          return (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 md:p-10 z-50"
+            >
+              <motion.div 
+                initial={{ scale: 0.95, y: 30 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.95, y: 30 }}
+                className="bg-card border border-border w-full max-w-5xl rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row h-[90vh] md:h-[600px] relative text-left"
+              >
+                {/* Radar Grid Canvas - Left Side */}
+                <div className="flex-grow bg-slate-950 text-slate-200 relative p-6 flex flex-col items-center justify-center border-r border-border h-[40vh] md:h-full overflow-hidden select-none">
+                  {/* Tech Grid Background */}
+                  <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,153,51,0.06),transparent_70%)]" />
+                  <div className="absolute inset-0 border border-slate-900 grid grid-cols-6 grid-rows-6 opacity-20 pointer-events-none">
+                    {Array.from({ length: 36 }).map((_, i) => (
+                      <div key={i} className="border border-slate-800" />
+                    ))}
+                  </div>
+
+                  {/* Plot Area */}
+                  <div className="w-full h-full relative border border-slate-800/80 rounded-2xl p-4">
+                    {/* Central Landmark (Temple) */}
+                    {(() => {
+                      const pct = getPercentCoords(central.lat, central.lon);
+                      return (
+                        <div 
+                          className="absolute transform -translate-x-1/2 -translate-y-1/2 z-30 flex flex-col items-center"
+                          style={{ left: pct.x, top: pct.y }}
+                        >
+                          <span className="relative flex h-5 w-5 items-center justify-center">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ff9933] opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-3 w-3 bg-[#ff9933] border border-white"></span>
+                          </span>
+                          <div className="mt-1 bg-slate-900/90 border border-slate-700 text-[8px] font-black text-white px-2 py-0.5 rounded shadow whitespace-nowrap uppercase tracking-wide">
+                            🕉️ {central.name}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Seeded Retreat Nodes */}
+                    {mapItems.map((item) => {
+                      const pct = getPercentCoords(item.lat, item.lon);
+                      const isSelected = selectedMapAshram?._id === item._id;
+                      return (
+                        <button
+                          key={item._id}
+                          type="button"
+                          onClick={() => setSelectedMapAshram(item)}
+                          className="absolute transform -translate-x-1/2 -translate-y-1/2 z-20 group cursor-pointer"
+                          style={{ left: pct.x, top: pct.y }}
+                        >
+                          <span className={`flex h-4 w-4 items-center justify-center rounded-full transition-all duration-200 ${
+                            isSelected ? 'bg-emerald-400 scale-125 ring-4 ring-emerald-400/20' : 'bg-blue-500 hover:bg-emerald-400 hover:scale-110'
+                          }`}>
+                            <span className="h-1.5 w-1.5 rounded-full bg-white" />
+                          </span>
+                          
+                          {/* Hover Tooltip */}
+                          <div className="absolute left-1/2 bottom-full mb-1.5 transform -translate-x-1/2 bg-slate-900 text-white text-[9px] font-bold py-1 px-2 rounded border border-slate-700 shadow-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none uppercase tracking-wide">
+                            {item.name} ({item.distance} km)
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Legend overlay */}
+                  <div className="absolute bottom-4 left-4 bg-slate-900/80 border border-slate-800 text-[8px] font-semibold p-2 rounded flex flex-col gap-1 z-40 backdrop-blur-sm">
+                    <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#ff9933] inline-block" /> Central Temple</div>
+                    <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-blue-500 inline-block" /> Ashram Retreat</div>
+                    <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-emerald-400 inline-block" /> Selected Ashram</div>
+                  </div>
+                </div>
+
+                {/* Sidebar Listing - Right Side */}
+                <div className="w-full md:w-[360px] flex flex-col h-[50vh] md:h-full bg-card">
+                  <div className="p-4 border-b border-border flex justify-between items-center bg-gray-50 dark:bg-slate-800/20">
+                    <div>
+                      <h3 className="font-extrabold text-xs text-secondary dark:text-white uppercase tracking-wider">Spatial Distance List</h3>
+                      <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Sorted from closest to furthest</p>
+                    </div>
+                    <button 
+                      type="button"
+                      onClick={() => setShowMapGrid(false)}
+                      className="p-1.5 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg text-gray-500 cursor-pointer font-bold text-xs"
+                    >
+                      Close
+                    </button>
+                  </div>
+
+                  {/* Scrollable list */}
+                  <div className="flex-grow overflow-y-auto p-3 space-y-2.5">
+                    {mapItems.length === 0 ? (
+                      <div className="text-center py-10 text-gray-400 text-xs">No active retreats to display on the map.</div>
+                    ) : (
+                      mapItems.map((item, i) => {
+                        const isSelected = selectedMapAshram?._id === item._id;
+                        return (
+                          <div
+                            key={item._id}
+                            onClick={() => setSelectedMapAshram(item)}
+                            className={`p-3 border rounded-2xl cursor-pointer transition-all text-left ${
+                              isSelected 
+                                ? 'border-emerald-400 bg-emerald-500/5 shadow-sm' 
+                                : 'border-border hover:border-gray-300 dark:hover:border-slate-700 bg-card'
+                            }`}
+                          >
+                            <div className="flex justify-between items-start gap-1">
+                              <h4 className="font-extrabold text-[11px] leading-tight text-gray-800 dark:text-gray-200">{i + 1}. {item.name}</h4>
+                              <span className="text-[9px] font-bold text-[#ff9933] bg-[#ff9933]/10 px-1.5 py-0.5 rounded whitespace-nowrap shadow-sm shrink-0">
+                                {item.distance} km
+                              </span>
+                            </div>
+                            <p className="text-[9px] text-gray-400 font-semibold uppercase mt-1">Address: {item.address?.city}</p>
+                            
+                            {isSelected && (
+                              <div className="mt-2.5 pt-2.5 border-t border-dashed border-border flex justify-between items-center">
+                                <span className="text-[9px] font-bold text-gray-500">Starting: ₹{item.lowestNightPrice || 1150}</span>
+                                <Link 
+                                  to={`/ashram/${item._id}`}
+                                  className="px-3 py-1 bg-emerald-500 text-white rounded-lg text-[9px] font-bold hover:bg-emerald-600 shadow"
+                                >
+                                  View Details
+                                </Link>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          );
+        })()}
+      </AnimatePresence>
     </div>
   );
 };
