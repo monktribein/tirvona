@@ -26,14 +26,14 @@ export const OwnerDashboard: React.FC = () => {
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('http://localhost:5000/api/analytics/dashboard', {
+      const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/analytics/dashboard`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` },
       });
       if (res.data.success) {
         setAnalytics(res.data.data);
       }
       
-      const bookingsRes = await axios.get('http://localhost:5000/api/bookings/dashboard', {
+      const bookingsRes = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/bookings/dashboard`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` },
       });
       if (bookingsRes.data.success) {

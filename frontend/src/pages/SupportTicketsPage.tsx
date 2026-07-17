@@ -24,7 +24,7 @@ export const SupportTicketsPage: React.FC = () => {
   const fetchTickets = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('http://localhost:5000/api/support', {
+      const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/support`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` },
       });
       if (res.data.success) {
@@ -59,7 +59,7 @@ export const SupportTicketsPage: React.FC = () => {
     e.preventDefault();
     try {
       const res = await axios.post(
-        'http://localhost:5000/api/support',
+        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/support`,
         { title, description, category },
         { headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` } }
       );
@@ -80,7 +80,7 @@ export const SupportTicketsPage: React.FC = () => {
 
     try {
       const res = await axios.post(
-        `http://localhost:5000/api/support/${activeTicket._id}/message`,
+        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/support/${activeTicket._id}/message`,
         { text: newMessage },
         { headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` } }
       );

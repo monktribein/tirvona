@@ -27,7 +27,7 @@ export const ManageRoomsPage: React.FC = () => {
   const fetchInitialData = async () => {
     setLoading(true);
     try {
-      const ashramsRes = await axios.get('http://localhost:5000/api/ashrams/my-listings/all', {
+      const ashramsRes = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ashrams/my-listings/all`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` },
       });
       if (ashramsRes.data.success && ashramsRes.data.data.length > 0) {
@@ -35,7 +35,7 @@ export const ManageRoomsPage: React.FC = () => {
         setSelectedAshramId(ashramsRes.data.data[0]._id);
         
         // Fetch rooms for first ashram
-        const roomsRes = await axios.get(`http://localhost:5000/api/ashrams/${ashramsRes.data.data[0]._id}`);
+        const roomsRes = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ashrams/${ashramsRes.data.data[0]._id}`);
         if (roomsRes.data.success) {
           setRooms(roomsRes.data.data.rooms);
         }
@@ -76,7 +76,7 @@ export const ManageRoomsPage: React.FC = () => {
     };
 
     try {
-      const res = await axios.post('http://localhost:5000/api/rooms', payload, {
+      const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/rooms`, payload, {
         headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` },
       });
       if (res.data.success) {

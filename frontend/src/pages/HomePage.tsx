@@ -50,7 +50,7 @@ export const HomePage: React.FC = () => {
 
   const fetchStays = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/ashrams?verified=true');
+      const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ashrams?verified=true`);
       if (res.data.success) {
         setAshrams(res.data.data);
       }

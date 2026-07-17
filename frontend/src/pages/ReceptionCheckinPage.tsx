@@ -20,7 +20,7 @@ export const ReceptionCheckinPage: React.FC = () => {
   const fetchActiveBookings = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('http://localhost:5000/api/bookings/dashboard', {
+      const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/bookings/dashboard`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` },
       });
       if (res.data.success) {
@@ -60,7 +60,7 @@ export const ReceptionCheckinPage: React.FC = () => {
 
     try {
       const res = await axios.post(
-        `http://localhost:5000/api/bookings/${verifyingId}/checkin`,
+        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/bookings/${verifyingId}/checkin`,
         { checkInCode },
         { headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` } }
       );
@@ -78,7 +78,7 @@ export const ReceptionCheckinPage: React.FC = () => {
   const handleCheckOut = async (bookingId: string) => {
     try {
       const res = await axios.post(
-        `http://localhost:5000/api/bookings/${bookingId}/checkout`,
+        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/bookings/${bookingId}/checkout`,
         {},
         { headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` } }
       );

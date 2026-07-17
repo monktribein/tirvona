@@ -29,11 +29,11 @@ export const InventoryCalendarPage: React.FC = () => {
 
   const fetchRooms = async () => {
     try {
-      const ashramsRes = await axios.get('http://localhost:5000/api/ashrams/my-listings/all', {
+      const ashramsRes = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ashrams/my-listings/all`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` },
       });
       if (ashramsRes.data.success && ashramsRes.data.data.length > 0) {
-        const roomsRes = await axios.get(`http://localhost:5000/api/ashrams/${ashramsRes.data.data[0]._id}`);
+        const roomsRes = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ashrams/${ashramsRes.data.data[0]._id}`);
         if (roomsRes.data.success && roomsRes.data.data.rooms.length > 0) {
           setMyRooms(roomsRes.data.data.rooms);
           setSelectedRoomId(roomsRes.data.data.rooms[0]._id);
@@ -50,7 +50,7 @@ export const InventoryCalendarPage: React.FC = () => {
   const fetchCalendar = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`http://localhost:5000/api/rooms/${selectedRoomId}/calendar`, {
+      const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/rooms/${selectedRoomId}/calendar`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` },
       });
       if (res.data.success) {
@@ -82,7 +82,7 @@ export const InventoryCalendarPage: React.FC = () => {
     e.preventDefault();
     try {
       const res = await axios.post(
-        `http://localhost:5000/api/rooms/${selectedRoomId}/availability`,
+        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/rooms/${selectedRoomId}/availability`,
         {
           date: targetDate,
           customPrice: parseFloat(customPrice) || undefined,

@@ -37,7 +37,7 @@ export const ManageAshramsPage: React.FC = () => {
   const fetchMyAshrams = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('http://localhost:5000/api/ashrams/my-listings/all', {
+      const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ashrams/my-listings/all`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` },
       });
       if (res.data.success) {
@@ -70,7 +70,7 @@ export const ManageAshramsPage: React.FC = () => {
     };
 
     try {
-      const res = await axios.post('http://localhost:5000/api/ashrams', payload, {
+      const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ashrams`, payload, {
         headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` },
       });
       if (res.data.success) {
@@ -95,7 +95,7 @@ export const ManageAshramsPage: React.FC = () => {
     if (!uploadDeedId) return;
     try {
       const res = await axios.post(
-        `http://localhost:5000/api/ashrams/${uploadDeedId}/documents`,
+        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ashrams/${uploadDeedId}/documents`,
         {
           trustDeedUrl: 'https://res.cloudinary.com/deeds/deed_doc.pdf',
           fireSafetyCertificateUrl: 'https://res.cloudinary.com/certificates/fire_cert.pdf',

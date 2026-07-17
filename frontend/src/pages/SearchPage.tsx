@@ -45,7 +45,7 @@ export const SearchPage: React.FC = () => {
     // Load all ashrams once for autocomplete matching
     const loadAll = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/ashrams?verified=true');
+        const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ashrams?verified=true`);
         if (res.data.success) {
           setAllAshrams(res.data.data);
         }
@@ -72,7 +72,7 @@ export const SearchPage: React.FC = () => {
   const fetchAshrams = async () => {
     setLoading(true);
     try {
-      let queryStr = `http://localhost:5000/api/ashrams?verified=true`;
+      let queryStr = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ashrams?verified=true`;
       if (destinationQuery) {
         queryStr += `&destination=${encodeURIComponent(destinationQuery)}`;
       }

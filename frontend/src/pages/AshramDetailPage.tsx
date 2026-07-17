@@ -77,7 +77,7 @@ export const AshramDetailPage: React.FC = () => {
   const fetchDetails = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`http://localhost:5000/api/ashrams/${id}`);
+      const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ashrams/${id}`);
       if (res.data.success) {
         setAshram(res.data.data.ashram);
         setRooms(res.data.data.rooms);
@@ -100,7 +100,7 @@ export const AshramDetailPage: React.FC = () => {
 
   const fetchReviews = async (ashramId: string) => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/reviews/ashram/${ashramId}`);
+      const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/reviews/ashram/${ashramId}`);
       if (res.data.success) {
         setReviews(res.data.data);
       }
@@ -111,7 +111,7 @@ export const AshramDetailPage: React.FC = () => {
 
   const fetchRelated = async (city: string, currentId: string) => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/ashrams?verified=true&destination=${encodeURIComponent(city)}`);
+      const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ashrams?verified=true&destination=${encodeURIComponent(city)}`);
       if (res.data.success) {
         setRelatedStays(res.data.data.filter((a: any) => a._id !== currentId).slice(0, 3));
       }
@@ -128,7 +128,7 @@ export const AshramDetailPage: React.FC = () => {
       const end = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
       
       const res = await axios.get(
-        `http://localhost:5000/api/rooms/${selectedRoom._id}/calendar?startDate=${today}&endDate=${end}`,
+        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/rooms/${selectedRoom._id}/calendar?startDate=${today}&endDate=${end}`,
         { headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` } }
       );
       if (res.data.success) {
@@ -198,7 +198,7 @@ export const AshramDetailPage: React.FC = () => {
     };
 
     try {
-      const res = await axios.post('http://localhost:5000/api/bookings/create', payload, {
+      const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/bookings/create`, payload, {
         headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` },
       });
       if (res.data.success) {
@@ -213,7 +213,7 @@ export const AshramDetailPage: React.FC = () => {
     if (!bookingSuccess) return;
     try {
       await axios.post(
-        `http://localhost:5000/api/bookings/${bookingSuccess._id}/payment`,
+        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/bookings/${bookingSuccess._id}/payment`,
         { method: 'upi', transactionId: `TXN-DEMO-${Date.now()}` },
         { headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` } }
       );

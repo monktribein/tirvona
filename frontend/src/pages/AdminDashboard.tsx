@@ -24,7 +24,7 @@ export const AdminDashboard: React.FC = () => {
   const fetchSystemStats = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('http://localhost:5000/api/analytics/system', {
+      const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/analytics/system`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` },
       });
       if (res.data.success) {

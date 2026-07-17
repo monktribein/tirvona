@@ -39,7 +39,7 @@ export const CustomerDashboard: React.FC = () => {
   const fetchHistory = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('http://localhost:5000/api/bookings/history', {
+      const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/bookings/history`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` },
       });
       if (res.data.success) {
@@ -62,7 +62,7 @@ export const CustomerDashboard: React.FC = () => {
     try {
       const targetBooking = bookings.find((b) => b._id === reviewBookingId);
       const res = await axios.post(
-        'http://localhost:5000/api/reviews',
+        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/reviews`,
         {
           ashramId: targetBooking.ashramId._id || 'ashram-1',
           bookingId: reviewBookingId,
@@ -95,7 +95,7 @@ export const CustomerDashboard: React.FC = () => {
     setCancelling(true);
     try {
       const res = await axios.post(
-        `http://localhost:5000/api/bookings/${cancelBookingId}/cancel`,
+        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/bookings/${cancelBookingId}/cancel`,
         { reason: cancelReason },
         { headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` } }
       );

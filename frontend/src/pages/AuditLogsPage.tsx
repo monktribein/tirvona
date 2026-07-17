@@ -13,7 +13,7 @@ export const AuditLogsPage: React.FC = () => {
   const fetchLogs = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('http://localhost:5000/api/analytics/audit-logs', {
+      const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/analytics/audit-logs`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` },
       });
       if (res.data.success) {

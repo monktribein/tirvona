@@ -38,7 +38,7 @@ export const LoginPage: React.FC = () => {
     if (!phone) return setError('Enter phone number');
     setLoading(true);
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/otp/send', { phone });
+      const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/otp/send`, { phone });
       setLoading(false);
       if (res.data.success) {
         setOtpSent(true);
