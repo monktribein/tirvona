@@ -9,29 +9,96 @@ import Booking from '../models/Booking.js';
 import Review from '../models/Review.js';
 import Payment from '../models/Payment.js';
 import AuditLog from '../models/AuditLog.js';
+import SupportTicket from '../models/SupportTicket.js';
 
 dotenv.config();
 
 const connStr = process.env.MONGODB_URI || 'mongodb://localhost:27017/ashray_bharat';
 
-const clearDatabase = async () => {
-  console.log('Clearing existing collections...');
-  await User.deleteMany({});
-  await Ashram.deleteMany({});
-  await Room.deleteMany({});
-  await RoomAvailability.deleteMany({});
-  await Booking.deleteMany({});
-  await Review.deleteMany({});
-  await Payment.deleteMany({});
-  await AuditLog.deleteMany({});
-  console.log('Database cleared.');
+const clearDemoRecords = async (userIds, roomIds) => {
+  console.log('Cleaning existing demo transaction records...');
+  // Delete all bookings associated with seeded demo users or rooms
+  const bookingDelete = await Booking.deleteMany({
+    $or: [
+      { customerId: { $in: userIds } },
+      { roomId: { $in: roomIds } }
+    ]
+  });
+  console.log(`Deleted ${bookingDelete.deletedCount} existing demo bookings.`);
+
+  // Delete all payments associated with seeded demo users
+  const paymentDelete = await Payment.deleteMany({ userId: { $in: userIds } });
+  console.log(`Deleted ${paymentDelete.deletedCount} existing demo payments.`);
+
+  // Delete all reviews associated with seeded demo users
+  const reviewDelete = await Review.deleteMany({ customerId: { $in: userIds } });
+  console.log(`Deleted ${reviewDelete.deletedCount} existing demo reviews.`);
+
+  // Delete all audit logs associated with seeded demo users
+  const auditDelete = await AuditLog.deleteMany({ userId: { $in: userIds } });
+  console.log(`Deleted ${auditDelete.deletedCount} existing demo audit logs.`);
+
+  // Delete all support tickets associated with seeded demo users
+  const supportDelete = await SupportTicket.deleteMany({ userId: { $in: userIds } });
+  console.log(`Deleted ${supportDelete.deletedCount} existing demo support tickets.`);
+
+  // Delete all room availability records for seeded demo rooms
+  const availabilityDelete = await RoomAvailability.deleteMany({ roomId: { $in: roomIds } });
+  console.log(`Deleted ${availabilityDelete.deletedCount} existing availability records.`);
+
+  console.log('Demo transaction records cleaned successfully.');
+};
+
+const upsertUser = async (userData) => {
+  let user = await User.findOne({ email: userData.email });
+  if (!user) {
+    user = await User.create(userData);
+    console.log(`Created user: ${userData.email} (${userData.role})`);
+  } else {
+    // Update properties and trigger save (which hashes password if it is plaintext)
+    user.name = userData.name;
+    user.phone = userData.phone;
+    user.role = userData.role;
+    user.status = userData.status;
+    user.passwordHash = userData.passwordHash;
+    if (userData.district) user.district = userData.district;
+    if (userData.state) user.state = userData.state;
+    if (userData.govtId) user.govtId = userData.govtId;
+    await user.save();
+    console.log(`Updated user: ${userData.email} (${userData.role})`);
+  }
+  return user;
+};
+
+const upsertAshram = async (ashramData) => {
+  let ashram = await Ashram.findOne({ name: ashramData.name });
+  if (!ashram) {
+    ashram = await Ashram.create(ashramData);
+    console.log(`Created ashram: ${ashramData.name}`);
+  } else {
+    Object.assign(ashram, ashramData);
+    await ashram.save();
+    console.log(`Updated ashram: ${ashramData.name}`);
+  }
+  return ashram;
+};
+
+const upsertRoom = async (roomData) => {
+  let room = await Room.findOne({ ashramId: roomData.ashramId, name: roomData.name });
+  if (!room) {
+    room = await Room.create(roomData);
+  } else {
+    Object.assign(room, roomData);
+    await room.save();
+  }
+  return room;
 };
 
 const seedUsers = async () => {
-  console.log('Seeding core users...');
+  console.log('Seeding core and auxiliary users...');
 
   // Create Pilgrim / Customer
-  const pilgrim = await User.create({
+  const pilgrim = await upsertUser({
     name: 'Rajesh Sharma (Pilgrim)',
     email: 'pilgrim@ashraybharat.gov.in',
     phone: '6666666666',
@@ -41,7 +108,7 @@ const seedUsers = async () => {
   });
 
   // Create Owner
-  const owner = await User.create({
+  const owner = await upsertUser({
     name: 'Swami Chinmayananda (Ashram Trust)',
     email: 'owner@ashraybharat.gov.in',
     phone: '7777777777',
@@ -51,7 +118,7 @@ const seedUsers = async () => {
   });
 
   // Create District Officer
-  const officer = await User.create({
+  const officer = await upsertUser({
     name: 'Shri A. K. Dwivedi (District Magistrate)',
     email: 'officer@ashraybharat.gov.in',
     phone: '8888888888',
@@ -68,12 +135,63 @@ const seedUsers = async () => {
   });
 
   // Create Super Admin
-  const admin = await User.create({
+  const admin = await upsertUser({
     name: 'National Admin (Ministry of Tourism)',
     email: 'admin@ashraybharat.gov.in',
     phone: '9999999999',
     passwordHash: 'password123',
     role: 'super_admin',
+    status: 'active'
+  });
+
+  // Create Govt Admin
+  const govtAdmin = await upsertUser({
+    name: 'Shri R. K. Singh (Director General Tourism)',
+    email: 'govt.admin@ashraybharat.gov.in',
+    phone: '9123456780',
+    passwordHash: 'password123',
+    role: 'govt_admin',
+    state: 'Uttarakhand',
+    status: 'active'
+  });
+
+  // Create Manager
+  const manager = await upsertUser({
+    name: 'Mohan Lal (Ashram Manager)',
+    email: 'manager@ashraybharat.gov.in',
+    phone: '9123456781',
+    passwordHash: 'password123',
+    role: 'manager',
+    status: 'active'
+  });
+
+  // Create Receptionist
+  const receptionist = await upsertUser({
+    name: 'Karan Singh (Front Desk)',
+    email: 'reception@ashraybharat.gov.in',
+    phone: '9123456782',
+    passwordHash: 'password123',
+    role: 'reception',
+    status: 'active'
+  });
+
+  // Create Housekeeping
+  const housekeeping = await upsertUser({
+    name: 'Ramu Prasad (Housekeeping Head)',
+    email: 'housekeeping@ashraybharat.gov.in',
+    phone: '9123456783',
+    passwordHash: 'password123',
+    role: 'housekeeping',
+    status: 'active'
+  });
+
+  // Create Support Executive
+  const support = await upsertUser({
+    name: 'Amit Kumar (Support Lead)',
+    email: 'support@ashraybharat.gov.in',
+    phone: '9123456784',
+    passwordHash: 'password123',
+    role: 'support',
     status: 'active'
   });
 
@@ -87,7 +205,7 @@ const seedUsers = async () => {
   ];
 
   for (let i = 0; i < pilgrimNames.length; i++) {
-    const p = await User.create({
+    const p = await upsertUser({
       name: pilgrimNames[i],
       email: `pilgrim.${i + 1}@ashraybharat.gov.in`,
       phone: `91000000${10 + i}`,
@@ -98,8 +216,8 @@ const seedUsers = async () => {
     simulatedPilgrims.push(p);
   }
 
-  console.log('Core users seeded successfully.');
-  return { pilgrim, owner, officer, admin, simulatedPilgrims };
+  console.log('Core and auxiliary users seeded successfully.');
+  return { pilgrim, owner, officer, admin, govtAdmin, manager, receptionist, housekeeping, support, simulatedPilgrims };
 };
 
 const getUnsplashImages = () => {
@@ -142,11 +260,9 @@ const getRoomImages = () => {
   };
 };
 
-
 const seedData = async (users) => {
-  const { pilgrim, owner, officer, admin, simulatedPilgrims } = users;
+  const { pilgrim, owner, officer, admin, govtAdmin, manager, receptionist, housekeeping, support, simulatedPilgrims } = users;
   
-  // Real names and location configurations
   const ashramConfigs = [
     // === HARIDWAR (10 Ashrams) ===
     {
@@ -332,7 +448,7 @@ const seedData = async (users) => {
       website: 'www.divinelife.org'
     },
     {
-      name: 'Beetles Ashram (Chaurasi Kutia)',
+      name: 'Beatles Ashram (Chaurasi Kutia)',
       city: 'Rishikesh',
       district: 'Dehradun',
       state: 'Uttarakhand',
@@ -607,6 +723,7 @@ const seedData = async (users) => {
 
   console.log(`Seeding exactly ${ashramConfigs.length} approved Ashrams...`);
   const seededAshrams = [];
+  const seededRooms = [];
 
   const heroImages = getUnsplashImages();
   const galleryImages = getGalleryImages();
@@ -619,7 +736,7 @@ const seedData = async (users) => {
     const config = ashramConfigs[idx];
     
     // Create Ashram
-    const ashram = await Ashram.create({
+    const ashram = await upsertAshram({
       ownerId: owner._id,
       name: config.name,
       description: config.description,
@@ -682,7 +799,7 @@ const seedData = async (users) => {
     ];
 
     for (let rConfig of roomCategories) {
-      const room = await Room.create({
+      const room = await upsertRoom({
         ashramId: ashram._id,
         name: rConfig.name,
         type: rConfig.type,
@@ -698,139 +815,238 @@ const seedData = async (users) => {
         ],
         status: 'active'
       });
+      seededRooms.push(room);
+    }
+  }
 
-      // Generate Room Availability for the next 90 days
-      const today = new Date();
-      const availabilityDocs = [];
+  // Gather IDs for clearing existing demo transactions
+  const userIds = [
+    pilgrim._id,
+    owner._id,
+    officer._id,
+    admin._id,
+    govtAdmin._id,
+    manager._id,
+    receptionist._id,
+    housekeeping._id,
+    support._id,
+    ...simulatedPilgrims.map(p => p._id)
+  ];
+  const roomIds = seededRooms.map(r => r._id);
 
-      for (let dayOffset = 0; dayOffset < 90; dayOffset++) {
-        const currentDate = new Date(today);
-        currentDate.setDate(today.getDate() + dayOffset);
-        currentDate.setHours(0, 0, 0, 0);
+  // Clear existing transactions cleanly to avoid duplicate keys / conflicts
+  await clearDemoRecords(userIds, roomIds);
 
-        // Occupancy simulation: some dates have more bookings
-        let booked = 0;
-        const randomFactor = Math.random();
-        if (randomFactor > 0.85) {
-          booked = rConfig.inventory; // Sold out
-        } else if (randomFactor > 0.70) {
-          booked = Math.floor(rConfig.inventory * 0.85); // Almost full
-        } else if (randomFactor > 0.40) {
-          booked = Math.floor(rConfig.inventory * 0.50); // Limited
-        } else {
-          booked = Math.floor(rConfig.inventory * 0.15); // Available
-        }
+  // Re-seed availability calendar, historical bookings, payments, and reviews
+  console.log('Generating dynamic availability calendar, bookings, and reviews...');
+  
+  const today = new Date();
+  const availabilityDocs = [];
+  
+  for (let room of seededRooms) {
+    const isDorm = room.type === 'dormitory';
+    const inventory = room.totalInventory;
 
-        availabilityDocs.push({
-          roomId: room._id,
-          date: currentDate,
-          bookedCount: booked,
-          maintenanceCount: 0
+    // Generate Room Availability for the next 90 days
+    for (let dayOffset = 0; dayOffset < 90; dayOffset++) {
+      const currentDate = new Date(today);
+      currentDate.setDate(today.getDate() + dayOffset);
+      currentDate.setHours(0, 0, 0, 0);
+
+      // Occupancy simulation: some dates have more bookings
+      let booked = 0;
+      const randomFactor = Math.random();
+      if (randomFactor > 0.85) {
+        booked = inventory; // Sold out
+      } else if (randomFactor > 0.70) {
+        booked = Math.floor(inventory * 0.85); // Almost full
+      } else if (randomFactor > 0.40) {
+        booked = Math.floor(inventory * 0.50); // Limited
+      } else {
+        booked = Math.floor(inventory * 0.15); // Available
+      }
+
+      availabilityDocs.push({
+        roomId: room._id,
+        date: currentDate,
+        bookedCount: booked,
+        maintenanceCount: 0
+      });
+    }
+  }
+
+  // Insert all availability docs in bulk (extremely fast!)
+  await RoomAvailability.insertMany(availabilityDocs);
+  console.log(`Successfully generated ${availabilityDocs.length} room availability calendar entries.`);
+
+  // Generate historical bookings and reviews
+  for (let ashram of seededAshrams) {
+    const ashramRooms = seededRooms.filter(r => r.ashramId.toString() === ashram._id.toString());
+    const ratingCount = ashram.rating.count;
+
+    for (let bkIdx = 0; bkIdx < Math.min(ratingCount, simulatedPilgrims.length); bkIdx++) {
+      const userForBooking = simulatedPilgrims[bkIdx];
+      const room = ashramRooms[bkIdx % ashramRooms.length];
+      const daysPast = 5 + bkIdx * 3;
+      
+      const checkInPast = new Date(today);
+      checkInPast.setDate(today.getDate() - daysPast);
+      checkInPast.setHours(12, 0, 0, 0);
+      
+      const checkOutPast = new Date(checkInPast);
+      checkOutPast.setDate(checkInPast.getDate() + 2);
+      checkOutPast.setHours(11, 0, 0, 0);
+
+      const checkInCodePast = Math.floor(100000 + Math.random() * 900000).toString();
+      const year = checkInPast.getFullYear();
+      bookingIdCounter++;
+      const bookingId = `AB-${year}-${bookingIdCounter}`;
+
+      // pricing calc
+      const base = room.basePrice * 2;
+      const total = base + 150 * 2 * 1 + 500; // room + meals + donation
+
+      const bookingStatus = bkIdx % 8 === 0 ? 'cancelled' :
+                           bkIdx % 8 === 1 ? 'checked_in' :
+                           bkIdx % 8 === 2 ? 'confirmed' : 'checked_out';
+
+      const booking = await Booking.create({
+        bookingId,
+        customerId: userForBooking._id,
+        ashramId: ashram._id,
+        roomId: room._id,
+        checkInDate: checkInPast,
+        checkOutDate: checkOutPast,
+        guestsCount: 1,
+        roomsBookedCount: 1,
+        status: bookingStatus,
+        services: {
+          meals: { ordered: true, price: 300 },
+          parking: { ordered: false, price: 0 },
+          locker: { ordered: false, price: 0 },
+          donation: { amount: 500 }
+        },
+        pricing: {
+          basePrice: base,
+          servicesPrice: 300,
+          donationAmount: 500,
+          totalAmount: total,
+          amountPaid: bookingStatus === 'cancelled' ? 0 : total
+        },
+        paymentStatus: bookingStatus === 'cancelled' ? 'pending' : 'fully_paid',
+        checkInCode: checkInCodePast
+      });
+
+      // Seed Payment if paid
+      if (booking.paymentStatus === 'fully_paid') {
+        await Payment.create({
+          bookingId: booking._id,
+          userId: userForBooking._id,
+          amount: total,
+          method: 'upi',
+          transactionId: `TXN-SEED-${booking._id}`,
+          status: 'success'
         });
       }
 
-      await RoomAvailability.insertMany(availabilityDocs);
-
-      // Generate realistic booking history and reviews
-      const ratingCount = ashram.rating.count;
-      
-      for (let bkIdx = 0; bkIdx < Math.min(ratingCount, simulatedPilgrims.length); bkIdx++) {
-        const userForBooking = simulatedPilgrims[bkIdx];
-        const daysPast = 5 + bkIdx * 3;
+      // Seed review if checked out / completed
+      if (bookingStatus === 'checked_out') {
+        const reviewRating = parseFloat((4.1 + Math.random() * 0.9).toFixed(1));
         
-        const checkInPast = new Date(today);
-        checkInPast.setDate(today.getDate() - daysPast);
-        checkInPast.setHours(12, 0, 0, 0);
-        
-        const checkOutPast = new Date(checkInPast);
-        checkOutPast.setDate(checkInPast.getDate() + 2);
-        checkOutPast.setHours(11, 0, 0, 0);
+        const reviewComments = [
+          'Extremely peaceful stay. The environment is pure spiritual bliss and clean.',
+          'Delicious satvik vegetarian prasad and beautiful temple compound.',
+          'Clean beds, very quiet and right next to the holy river. Perfect place.',
+          'Helpful reception team. Excellent meditation hall facilities.',
+          'Loved the morning Havan and spiritual satsangs. Very economical.',
+          'Highly safe for solo women pilgrims. Clean toilets and beautiful gardens.'
+        ];
 
-        const checkInCodePast = Math.floor(100000 + Math.random() * 900000).toString();
-        const year = checkInPast.getFullYear();
-        bookingIdCounter++;
-        const bookingId = `AB-${year}-${bookingIdCounter}`;
-
-        // pricing calc
-        const base = rConfig.price * 2;
-        const total = base + 150 * 2 * 1 + 500; // room + meals + donation
-
-        const bookingStatus = bkIdx % 8 === 0 ? 'cancelled' :
-                             bkIdx % 8 === 1 ? 'checked_in' :
-                             bkIdx % 8 === 2 ? 'confirmed' : 'checked_out';
-
-        const booking = await Booking.create({
-          bookingId,
+        await Review.create({
           customerId: userForBooking._id,
           ashramId: ashram._id,
-          roomId: room._id,
-          checkInDate: checkInPast,
-          checkOutDate: checkOutPast,
-          guestsCount: 1,
-          roomsBookedCount: 1,
-          status: bookingStatus,
-          services: {
-            meals: { ordered: true, price: 300 },
-            parking: { ordered: false, price: 0 },
-            locker: { ordered: false, price: 0 },
-            donation: { amount: 500 }
+          bookingId: booking._id,
+          rating: {
+            overall: Math.round(reviewRating),
+            cleanliness: 5,
+            service: 4,
+            location: 5,
+            valueForMoney: 5
           },
-          pricing: {
-            basePrice: base,
-            servicesPrice: 300,
-            donationAmount: 500,
-            totalAmount: total,
-            amountPaid: bookingStatus === 'cancelled' ? 0 : total
-          },
-          paymentStatus: bookingStatus === 'cancelled' ? 'pending' : 'fully_paid',
-          checkInCode: checkInCodePast
+          comment: reviewComments[bkIdx % reviewComments.length],
+          status: 'approved'
         });
-
-        // Seed Payment if paid
-        if (booking.paymentStatus === 'fully_paid') {
-          await Payment.create({
-            bookingId: booking._id,
-            userId: userForBooking._id,
-            amount: total,
-            method: 'upi',
-            transactionId: `TXN-SEED-${booking._id}`,
-            status: 'success'
-          });
-        }
-
-        // Seed review if checked out / completed
-        if (bookingStatus === 'checked_out') {
-          const reviewRating = parseFloat((4.1 + Math.random() * 0.9).toFixed(1));
-          
-          const reviewComments = [
-            'Extremely peaceful stay. The environment is pure spiritual bliss and clean.',
-            'Delicious satvik vegetarian prasad and beautiful temple compound.',
-            'Clean beds, very quiet and right next to the holy river. Perfect place.',
-            'Helpful reception team. Excellent meditation hall facilities.',
-            'Loved the morning Havan and spiritual satsangs. Very economical.',
-            'Highly safe for solo women pilgrims. Clean toilets and beautiful gardens.'
-          ];
-
-          await Review.create({
-            customerId: userForBooking._id,
-            ashramId: ashram._id,
-            bookingId: booking._id,
-            rating: {
-              overall: Math.round(reviewRating),
-              cleanliness: 5,
-              service: 4,
-              location: 5,
-              valueForMoney: 5
-            },
-            comment: reviewComments[bkIdx % reviewComments.length],
-            status: 'approved'
-          });
-        }
       }
     }
   }
 
-  console.log('Seeded 30 ashrams, rooms, availability calendar, payments, audit logs, bookings, and reviews successfully.');
+  // Seed Support Tickets
+  console.log('Seeding demo support tickets...');
+  const supportTickets = [
+    {
+      userId: pilgrim._id,
+      title: 'Refund Request for Cancelled Booking',
+      description: 'I cancelled my booking AB-2026-10025 but the refund has not yet been credited to my bank account.',
+      category: 'refund_request',
+      status: 'open',
+      priority: 'high',
+      assignedTo: support._id,
+      messages: [
+        {
+          senderId: pilgrim._id,
+          text: 'Hello, I cancelled my booking but I have not received the refund yet. Can you please help?',
+          timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000)
+        }
+      ]
+    },
+    {
+      userId: pilgrim._id,
+      title: 'AC Not Working in Deluxe Room',
+      description: 'The AC in Room 204 Ganga View Deluxe AC Room was making loud noise and not cooling properly.',
+      category: 'ashram_complaint',
+      status: 'resolved',
+      priority: 'medium',
+      assignedTo: support._id,
+      messages: [
+        {
+          senderId: pilgrim._id,
+          text: 'The AC in room 204 is not cooling properly and making a lot of noise.',
+          timestamp: new Date(Date.now() - 48 * 60 * 60 * 1000)
+        },
+        {
+          senderId: support._id,
+          text: 'Namaste. We have sent our technician and resolved the issue. We apologize for the inconvenience.',
+          timestamp: new Date(Date.now() - 47 * 60 * 60 * 1000)
+        }
+      ]
+    }
+  ];
+
+  await SupportTicket.insertMany(supportTickets);
+  console.log(`Seeded ${supportTickets.length} support tickets.`);
+
+  // Seeding Statistics Report Summary
+  const usersCount = await User.countDocuments();
+  const ashramsCount = await Ashram.countDocuments();
+  const roomsCount = await Room.countDocuments();
+  const bookingsCount = await Booking.countDocuments();
+  const reviewsCount = await Review.countDocuments();
+  const availabilityCount = await RoomAvailability.countDocuments();
+  const paymentsCount = await Payment.countDocuments();
+  const ticketsCount = await SupportTicket.countDocuments();
+
+  console.log('\n======================================');
+  console.log('      DATABASE SEEDING SUMMARY');
+  console.log('======================================');
+  console.log(`* Total Users:          ${usersCount}`);
+  console.log(`* Total Ashrams:        ${ashramsCount}`);
+  console.log(`* Total Rooms:          ${roomsCount}`);
+  console.log(`* Room Availabilities:  ${availabilityCount}`);
+  console.log(`* Total Bookings:       ${bookingsCount}`);
+  console.log(`* Total Reviews:        ${reviewsCount}`);
+  console.log(`* Total Payments:       ${paymentsCount}`);
+  console.log(`* Support Tickets:      ${ticketsCount}`);
+  console.log('======================================\n');
 };
 
 const runSeeder = async () => {
@@ -838,7 +1054,6 @@ const runSeeder = async () => {
     await mongoose.connect(connStr);
     console.log('Connected to MongoDB at', connStr);
     
-    await clearDatabase();
     const users = await seedUsers();
     await seedData(users);
     
