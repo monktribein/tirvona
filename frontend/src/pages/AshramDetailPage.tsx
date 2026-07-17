@@ -665,9 +665,14 @@ export const AshramDetailPage: React.FC = () => {
             <Map className="text-[#ff9933]" size={24} />
             <h4 className="text-xs font-bold">Retreat Location coordinates</h4>
             <p className="text-[9px] text-gray-400">Lat: {ashram.address?.coordinates?.coordinates?.[1]} , Lon: {ashram.address?.coordinates?.coordinates?.[0]}</p>
-            <button className="px-3 py-1 bg-primary/10 text-primary border border-primary/20 rounded-lg text-[9px] font-bold">
+            <a 
+              href={`https://www.google.com/maps/search/?api=1&query=${ashram?.address?.coordinates?.coordinates?.[1]},${ashram?.address?.coordinates?.coordinates?.[0]}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-1 bg-[#ff9933]/15 text-[#ff9933] border border-[#ff9933]/20 rounded-lg text-[9px] font-bold hover:bg-[#ff9933]/25 transition-all text-center inline-block cursor-pointer"
+            >
               View Google Maps
-            </button>
+            </a>
           </div>
         </div>
 
