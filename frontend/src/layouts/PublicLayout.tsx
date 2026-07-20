@@ -41,10 +41,10 @@ export const PublicLayout: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex justify-between items-center">
           {/* Logo Section */}
           <Link to="/" className="flex items-center gap-2.5 group">
-            <img src={logo} alt="Tirthiva Logo" className="w-10 h-10 object-contain rounded-lg transform group-hover:scale-105 transition-transform duration-200" />
+            <img src={logo} alt="Tirvona Logo" className="w-10 h-10 object-contain rounded-lg transform group-hover:scale-105 transition-transform duration-200" />
             <div className="flex flex-col">
               <span className="text-lg font-bold tracking-tight text-secondary dark:text-white flex items-center gap-1">
-                Tirthiva <ShieldCheck size={16} className="text-accent" />
+                Tirvona <ShieldCheck size={16} className="text-accent" />
               </span>
               <span className="text-[10px] text-gray-500 font-medium tracking-wider uppercase">
                 One Nation, One Spiritual Stay
@@ -261,7 +261,7 @@ export const PublicLayout: React.FC = () => {
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="space-y-4">
             <h3 className="text-lg font-bold flex items-center gap-2">
-              Tirthiva <ShieldCheck className="text-accent" size={18} />
+              Tirvona <ShieldCheck className="text-accent" size={18} />
             </h3>
             <p className="text-xs text-gray-400 leading-relaxed">
               Eliminating manual paper logs to provide safe, verified, and digital booking accommodations for holy stays and spiritual retreats across the Indian subcontinent.

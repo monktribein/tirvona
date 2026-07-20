@@ -30,7 +30,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       const sampleLogs: Notification[] = [
         {
           id: 'init-1',
-          title: 'Welcome to Tirthiva',
+          title: 'Welcome to Tirvona',
           message: `Namaste ${user.name}, your account is active as an official ${user.role.toUpperCase() === 'CUSTOMER' ? 'Pilgrim' : user.role.toUpperCase()}.`,
           type: 'success',
           timestamp: new Date(),

@@ -91,9 +91,9 @@ export const DashboardLayout: React.FC = () => {
       <aside className="hidden lg:flex flex-col w-64 bg-secondary text-white border-r border-white/5 z-20">
         {/* Brand */}
         <div className="h-20 flex items-center px-6 border-b border-white/10 gap-3">
-          <img src={logo} alt="Tirthiva Logo" className="w-8 h-8 object-contain rounded-lg" />
+          <img src={logo} alt="Tirvona Logo" className="w-8 h-8 object-contain rounded-lg" />
           <div className="flex flex-col">
-            <span className="font-bold text-sm tracking-wide">Tirthiva</span>
+            <span className="font-bold text-sm tracking-wide">Tirvona</span>
             <span className="text-[10px] text-gray-400 capitalize">{user.role.replace('_', ' ')} Dashboard</span>
           </div>
         </div>
@@ -153,8 +153,8 @@ export const DashboardLayout: React.FC = () => {
             </button>
 
             <div className="h-12 flex items-center mb-6 gap-3">
-              <img src={logo} alt="Tirthiva Logo" className="w-8 h-8 object-contain rounded-lg" />
-              <span className="font-bold text-sm tracking-wide">Tirthiva</span>
+              <img src={logo} alt="Tirvona Logo" className="w-8 h-8 object-contain rounded-lg" />
+              <span className="font-bold text-sm tracking-wide">Tirvona</span>
             </div>
 
             <nav className="flex-grow space-y-1">

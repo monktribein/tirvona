@@ -89,9 +89,9 @@ export const LoginPage: React.FC = () => {
         
         {/* Header Branding */}
         <div className="text-center space-y-2">
-          <img src={logo} alt="Tirthiva Logo" className="w-12 h-12 object-contain rounded-xl shadow-lg inline-block" />
+          <img src={logo} alt="Tirvona Logo" className="w-12 h-12 object-contain rounded-xl shadow-lg inline-block" />
           <h2 className="text-2xl font-extrabold text-secondary dark:text-white flex items-center justify-center gap-1.5">
-            Log in to Tirthiva <ShieldCheck size={20} className="text-accent" />
+            Log in to Tirvona <ShieldCheck size={20} className="text-accent" />
           </h2>
           <p className="text-xs text-gray-500">
             Sign in to access reservations, verification panels, and audit logs
