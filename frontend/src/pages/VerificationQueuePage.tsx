@@ -112,7 +112,7 @@ export const VerificationQueuePage: React.FC = () => {
                 {/* Documents uploaded */}
                 <div className="space-y-1 md:col-span-2">
                   <span className="text-[9px] text-gray-455 block uppercase font-bold">KYC Attachments</span>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <a href={a.documents?.trustDeedUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 px-3 py-1 bg-gray-50 dark:bg-slate-900 border border-gray-150 rounded-full text-[10px] font-bold hover:bg-gray-100 transition-colors">
                       <FileText size={12} className="text-red-500" /> Trust Deed
                     </a>

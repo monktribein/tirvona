@@ -66,7 +66,8 @@ export const AuditLogsPage: React.FC = () => {
         <div className="h-40 bg-gray-50 border border-gray-100 rounded-[24px] animate-pulse" />
       ) : (
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="border-b border-gray-50 dark:border-slate-855 bg-gray-50 dark:bg-slate-900 text-gray-450 font-bold uppercase text-[10px] tracking-wider">
@@ -99,7 +100,28 @@ export const AuditLogsPage: React.FC = () => {
               </tbody>
             </table>
           </div>
+
+          {/* Mobile Cards View */}
+          <div className="block md:hidden divide-y divide-gray-100 dark:divide-slate-800">
+            {logs.map((log) => (
+              <div key={log._id} className="p-5 space-y-3">
+                <div className="flex justify-between items-center text-[10px]">
+                  <span className="text-gray-400 flex items-center gap-1"><Clock size={10} className="text-[#0A4DA6]" /> {new Date(log.timestamp).toLocaleString()}</span>
+                  <span className="px-2.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-[#0B192C] dark:text-accent rounded-full text-[8.5px] font-bold uppercase">{log.module}</span>
+                </div>
+                <div className="font-extrabold text-xs text-[#0B192C] dark:text-white">{log.action}</div>
+                <div className="flex justify-between items-end pt-1">
+                  <div className="flex flex-col">
+                    <span className="text-xs font-semibold text-secondary dark:text-white">{log.userId?.name || 'Guest / System'}</span>
+                    <span className="text-[9px] text-gray-400">{log.userId?.email}</span>
+                  </div>
+                  <span className="text-[10px] text-gray-400 font-mono">{log.ipAddress}</span>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
+
       )}
     </div>
   );

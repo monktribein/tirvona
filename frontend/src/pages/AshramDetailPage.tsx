@@ -273,9 +273,9 @@ export const AshramDetailPage: React.FC = () => {
       </div>
 
       {/* Mosaic Collage Photo Gallery */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 h-[380px]">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 h-auto lg:h-[380px]">
         {/* Main large image */}
-        <div className="lg:col-span-2 rounded-[24px] overflow-hidden relative shadow-sm">
+        <div className="lg:col-span-2 h-64 lg:h-full rounded-[24px] overflow-hidden relative shadow-sm">
           <img 
             src={galleryImages[activeImageIndex] || galleryImages[0]} 
             alt="Hero Ashram View" 
@@ -285,12 +285,12 @@ export const AshramDetailPage: React.FC = () => {
         </div>
         
         {/* Smaller grid images */}
-        <div className="lg:col-span-2 grid grid-cols-3 gap-3 overflow-y-auto pr-1">
+        <div className="lg:col-span-2 grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-3 gap-3 overflow-y-auto lg:pr-1 max-h-48 lg:max-h-none">
           {galleryImages.map((img: string, idx: number) => (
             <div 
               key={idx} 
               onClick={() => setActiveImageIndex(idx)}
-              className={`h-24 rounded-[16px] overflow-hidden cursor-pointer border-2 transition-all ${idx === activeImageIndex ? 'border-[#0A4DA6] shadow-sm' : 'border-transparent opacity-85 hover:opacity-100'}`}
+              className={`h-20 lg:h-24 rounded-[16px] overflow-hidden cursor-pointer border-2 transition-all ${idx === activeImageIndex ? 'border-[#0A4DA6] shadow-sm' : 'border-transparent opacity-85 hover:opacity-100'}`}
             >
               <img 
                 src={img} 
@@ -302,6 +302,7 @@ export const AshramDetailPage: React.FC = () => {
           ))}
         </div>
       </div>
+
 
       {/* Main Layout Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -382,7 +383,7 @@ export const AshramDetailPage: React.FC = () => {
               <div className="h-20 bg-gray-50 dark:bg-slate-900 rounded-2xl animate-pulse" />
             ) : (
               <div className="space-y-4">
-                <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
+                <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-10 gap-2">
                   {availabilityCalendar.map((day, i) => {
                     const status = day.available <= 0 ? 'sold_out' :
                                    day.available <= 2 ? 'almost_full' :

@@ -170,7 +170,8 @@ export const OwnerDashboard: React.FC = () => {
           <CheckCircle size={16} className="text-success" /> Recent Bookings Ledger
         </h3>
 
-        <div className="overflow-x-auto">
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="border-b border-gray-100 dark:border-slate-800 text-gray-400 uppercase font-bold text-[10px] tracking-wider">
@@ -209,7 +210,7 @@ export const OwnerDashboard: React.FC = () => {
                       bk.status === 'checked_in' ? 'bg-success/10 text-success border-success/20' : 
                       bk.status === 'checked_out' ? 'bg-blue-500/10 text-blue-500 border-blue-500/20' : 
                       bk.status === 'cancelled' ? 'bg-danger/10 text-danger border-danger/20' : 
-                      'bg-gray-100 text-gray-500 border-gray-200'
+                      'bg-gray-100 text-gray-505 border-gray-200'
                     }`}>
                       {bk.status}
                     </span>
@@ -219,6 +220,51 @@ export const OwnerDashboard: React.FC = () => {
             </tbody>
           </table>
         </div>
+
+        {/* Mobile Cards View */}
+        <div className="block md:hidden divide-y divide-gray-100 dark:divide-slate-800">
+          {recentBookings.length === 0 ? (
+            <div className="text-center py-6 text-xs text-gray-400">No recent bookings.</div>
+          ) : (
+            recentBookings.map((bk) => (
+              <div key={bk._id} className="py-4.5 space-y-3">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="font-extrabold text-[#0B192C] dark:text-white">{bk.bookingId}</span>
+                  <span className={`px-2 py-0.5 rounded text-[9px] font-extrabold capitalize border ${
+                    bk.status === 'confirmed' ? 'bg-primary/10 text-primary border-primary/20' : 
+                    bk.status === 'checked_in' ? 'bg-success/10 text-success border-success/20' : 
+                    bk.status === 'checked_out' ? 'bg-blue-500/10 text-blue-500 border-blue-500/20' : 
+                    bk.status === 'cancelled' ? 'bg-danger/10 text-danger border-danger/20' : 
+                    'bg-gray-100 text-gray-550 border-gray-200'
+                  }`}>
+                    {bk.status}
+                  </span>
+                </div>
+                <div className="text-xs space-y-1">
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Guest:</span>
+                    <span className="font-semibold text-secondary dark:text-white">{bk.customerId?.name} ({bk.customerId?.phone})</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Room:</span>
+                    <span className="text-gray-500 truncate max-w-[200px]">{bk.roomId?.name}</span>
+                  </div>
+                  <div className="flex justify-between pt-1 border-t border-gray-50 dark:border-slate-850 items-center">
+                    <span className="font-bold text-[#0B192C] dark:text-white">₹{bk.pricing?.totalAmount}</span>
+                    <span className={`px-2 py-0.5 rounded text-[8.5px] font-bold capitalize ${
+                      bk.paymentStatus === 'fully_paid' ? 'bg-success/10 text-success' : 
+                      bk.paymentStatus === 'refunded' ? 'bg-danger/10 text-danger' : 
+                      'bg-yellow-50 text-yellow-750'
+                    }`}>
+                      {bk.paymentStatus?.replace('_', ' ')}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
       </div>
     </div>
   );

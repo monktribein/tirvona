@@ -24,7 +24,8 @@ export const UserManagementPage: React.FC = () => {
       </div>
 
       <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="border-b border-gray-50 dark:border-slate-850 bg-gray-50 dark:bg-slate-900 text-gray-450 font-bold uppercase text-[10px] tracking-wider">
@@ -67,7 +68,38 @@ export const UserManagementPage: React.FC = () => {
             </tbody>
           </table>
         </div>
+
+        {/* Mobile Cards View */}
+        <div className="block md:hidden divide-y divide-gray-100 dark:divide-slate-800">
+          {users.map((u) => (
+            <div key={u.id} className="p-5 space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="font-extrabold text-sm text-[#0B192C] dark:text-white">{u.name}</span>
+                <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold ${
+                  u.status === 'active' ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'
+                }`}>
+                  {u.status}
+                </span>
+              </div>
+              <div className="text-xs text-gray-500">{u.email}</div>
+              <div className="flex justify-between items-center pt-2">
+                <span className="px-2.5 py-0.5 bg-[#0A4DA6]/10 text-[#0A4DA6] rounded-full text-[9px] font-bold uppercase">{u.role.replace('_', ' ')}</span>
+                <button
+                  onClick={() => toggleStatus(u.id)}
+                  className="p-1 rounded hover:bg-gray-50 dark:hover:bg-slate-805 transition-colors inline-flex cursor-pointer"
+                >
+                  {u.status === 'active' ? (
+                    <ToggleRight className="text-success" size={24} />
+                  ) : (
+                    <ToggleLeft className="text-danger" size={24} />
+                  )}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
+
     </div>
   );
 };

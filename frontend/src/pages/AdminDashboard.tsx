@@ -120,7 +120,8 @@ export const AdminDashboard: React.FC = () => {
             <h3 className="text-sm font-bold text-[#0B192C] dark:text-white flex items-center gap-1.5 border-b border-gray-50 dark:border-slate-850 pb-3">
               <Building2 size={16} className="text-[#0A4DA6]" /> District-Level Onboarding Statistics
             </h3>
-            <div className="overflow-x-auto">
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="border-b border-gray-100 dark:border-slate-800 text-gray-400 uppercase font-bold text-[10px] tracking-wider">
@@ -140,6 +141,20 @@ export const AdminDashboard: React.FC = () => {
                 </tbody>
               </table>
             </div>
+
+            {/* Mobile Cards View */}
+            <div className="block md:hidden divide-y divide-gray-100 dark:divide-slate-800">
+              {(stats?.districtStats || []).map((dist: any, index: number) => (
+                <div key={index} className="py-3 flex justify-between items-center text-xs">
+                  <span className="font-semibold text-[#0B192C] dark:text-white">{dist.district}</span>
+                  <div className="flex gap-4">
+                    <span className="text-success font-bold">Approved: {dist.approved}</span>
+                    <span className="text-[#0A4DA6] font-bold">Pending: {dist.pending}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
           </div>
 
           {/* Popular Cities Hub list */}

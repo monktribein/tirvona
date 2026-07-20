@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
+import heroBg from '../assets/rishikesh-tera-manzil-temple.jpg';
 import {
   Search,
   MapPin,
@@ -163,51 +164,55 @@ export const HomePage: React.FC = () => {
     <div className="pb-24">
 
       {/* ══════════════════════ HERO SECTION ══════════════════════ */}
-      <section className="relative min-h-[88vh] overflow-hidden">
+      <section className="relative h-[460px] md:h-[580px] lg:h-[680px] overflow-hidden flex items-center">
+        {/* Background Image & Soft Gradient */}
         <div className="absolute inset-0 z-0">
           <img
-            src="/assets/uploads/parmarth-niketan-gallery-4.jpg"
-            alt="Rishikesh"
+            src={heroBg}
+            alt="Rishikesh Tera Manzil Temple"
             className="w-full h-full object-cover object-center"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/80 to-transparent dark:from-[#070F1B]/95 dark:via-[#070F1B]/80" />
-          <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-white dark:from-[#070F1B] to-transparent" />
+          {/* Soft left-to-right white gradient as requested */}
+          <div className="absolute inset-0 bg-gradient-to-r from-white/70 via-white/15 to-transparent dark:from-[#070F1B]/80 dark:via-[#070F1B]/15" />
+          <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-white dark:from-[#070F1B] to-transparent" />
         </div>
 
-        <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-10 flex flex-col justify-center min-h-[88vh] py-20">
-          <div className="max-w-xl">
+        {/* Content alignment & vertical centering */}
+        <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-10 w-full flex items-center">
+          <div className="max-w-xl py-6 md:py-10 space-y-4 md:space-y-6">
             <motion.h1
               initial={{ opacity: 0, y: -15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-[#0B192C] dark:text-white leading-[1.05] mb-4"
+              className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-[#0B192C] dark:text-white leading-[1.1] mb-2 uppercase"
             >
-              Your Journey.<br />
-              <span className="text-[#D4AF37] font-black">Our Purpose.</span>
+              Connecting Sacred Destinations.<br />
+              <span className="text-[#D4AF37] font-black">Empowering Communities.</span>
             </motion.h1>
 
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.15, duration: 0.5 }}
-              className="text-sm md:text-base text-[#0B192C]/75 dark:text-gray-300 font-medium leading-relaxed max-w-sm mb-8"
+              className="text-xs md:text-sm text-[#0B192C]/80 dark:text-gray-300 font-medium leading-relaxed max-w-sm"
             >
               Plan your pilgrimage, book stays, explore holy places, shop spiritual products and contribute to a greater cause.
             </motion.p>
 
+            {/* Trust Badges */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.25, duration: 0.5 }}
-              className="flex flex-wrap gap-x-6 gap-y-3"
+              className="flex flex-wrap gap-x-5 gap-y-2.5 pt-2"
             >
               {[
-                { icon: <ShieldCheck size={13} className="text-[#0A4DA6]" />, label: 'Trusted & Secure' },
-                { icon: <MapPin size={13} className="text-[#0A4DA6]" />, label: 'Verified Destinations' },
-                { icon: <Sparkles size={13} className="text-[#0A4DA6]" />, label: 'AI Powered Guidance' },
-                { icon: <LayoutGrid size={13} className="text-[#0A4DA6]" />, label: 'One Platform For All' },
+                { icon: <ShieldCheck size={14} className="text-[#0A4DA6]" />, label: 'Trusted & Secure' },
+                { icon: <MapPin size={14} className="text-[#0A4DA6]" />, label: 'Verified Destinations' },
+                { icon: <Sparkles size={14} className="text-[#0A4DA6]" />, label: 'AI Powered Guidance' },
+                { icon: <LayoutGrid size={14} className="text-[#0A4DA6]" />, label: 'One Platform For All' },
               ].map((b, i) => (
-                <div key={i} className="flex items-center gap-1.5 text-[11px] font-bold text-[#0B192C]/70 dark:text-gray-300">
+                <div key={i} className="flex items-center gap-1.5 text-[10px] md:text-[11px] font-bold text-[#0B192C]/75 dark:text-gray-300">
                   {b.icon}
                   <span>{b.label}</span>
                 </div>
@@ -218,7 +223,9 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* ══════════════════════ FLOATING SEARCH CARD ══════════════════════ */}
-      <section className="max-w-5xl mx-auto px-6 -mt-8 z-20 relative mb-16">
+      <section className="max-w-5xl mx-auto px-6 -mt-12 md:-mt-16 lg:-mt-20 z-20 relative mb-16">
+
+
         <div className="bg-white dark:bg-[#0B192C] rounded-[28px] shadow-2xl shadow-black/10 border border-gray-100 dark:border-slate-800 p-6">
           {/* Search Tabs */}
           <div className="flex gap-2 mb-5 border-b border-gray-100 dark:border-slate-800 pb-4">
