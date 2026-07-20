@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { ShieldCheck, Mail, Phone, Lock, User as UserIcon, Building2 } from 'lucide-react';
+import logo from '../assets/logo.png';
 
 export const RegisterPage: React.FC = () => {
   const { registerUser } = useAuth();
@@ -51,18 +52,16 @@ export const RegisterPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen py-16 px-4 sm:px-6 lg:px-8 flex items-center justify-center bg-background">
-      <div className="w-full max-w-md bg-card border border-border rounded-2xl shadow-xl p-8 space-y-6">
+    <div className="min-h-screen py-16 px-4 sm:px-6 lg:px-8 flex items-center justify-center bg-gray-50/50 dark:bg-[#070F1B]">
+      <div className="w-full max-w-md bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[32px] shadow-sm p-8 space-y-6">
         
         {/* Header Branding */}
-        <div className="text-center space-y-2">
-          <div className="inline-flex w-12 h-12 rounded-xl bg-gradient-to-tr from-secondary to-primary items-center justify-center text-white font-bold text-xl shadow-lg">
-            AB
-          </div>
-          <h2 className="text-2xl font-extrabold text-secondary dark:text-white flex items-center justify-center gap-1.5">
-            Create Portal Account <ShieldCheck size={20} className="text-accent" />
+        <div className="text-center space-y-3">
+          <img src={logo} alt="Tirvona Logo" className="w-12 h-12 object-contain inline-block" />
+          <h2 className="text-2xl font-black text-[#0B192C] dark:text-white flex items-center justify-center gap-1.5">
+            Create Portal Account <ShieldCheck size={20} className="text-[#0A4DA6]" />
           </h2>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-gray-400">
             Join the national digital spiritual stays platform
           </p>
         </div>
@@ -72,10 +71,10 @@ export const RegisterPage: React.FC = () => {
           <button
             type="button"
             onClick={() => setRole('customer')}
-            className={`p-3 rounded-xl border flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
+            className={`p-4 rounded-[20px] border flex flex-col items-center justify-center gap-2 transition-all cursor-pointer ${
               role === 'customer'
-                ? 'border-primary bg-primary/5 text-primary'
-                : 'border-border text-gray-400 hover:border-gray-300'
+                ? 'border-[#0A4DA6] bg-[#0A4DA6]/5 text-[#0A4DA6] shadow-sm'
+                : 'border-gray-150 text-gray-400 hover:border-gray-300'
             }`}
           >
             <UserIcon size={18} />
@@ -84,10 +83,10 @@ export const RegisterPage: React.FC = () => {
           <button
             type="button"
             onClick={() => setRole('owner')}
-            className={`p-3 rounded-xl border flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
+            className={`p-4 rounded-[20px] border flex flex-col items-center justify-center gap-2 transition-all cursor-pointer ${
               role === 'owner'
-                ? 'border-primary bg-primary/5 text-primary'
-                : 'border-border text-gray-400 hover:border-gray-300'
+                ? 'border-[#0A4DA6] bg-[#0A4DA6]/5 text-[#0A4DA6] shadow-sm'
+                : 'border-gray-150 text-gray-400 hover:border-gray-300'
             }`}
           >
             <Building2 size={18} />
@@ -97,7 +96,7 @@ export const RegisterPage: React.FC = () => {
 
         {/* Error Alert Box */}
         {error && (
-          <div className="p-3 bg-danger/10 text-danger border border-danger/25 text-xs rounded-lg font-semibold animate-shake">
+          <div className="p-3 bg-danger/10 text-danger border border-danger/20 text-xs rounded-xl font-semibold">
             {error}
           </div>
         )}
@@ -105,19 +104,19 @@ export const RegisterPage: React.FC = () => {
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1">
-            <label className="text-xs font-bold text-gray-500">Full Name</label>
+            <label className="text-xs font-bold text-gray-400">Full Name</label>
             <input
               type="text"
               required
               placeholder="Enter name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-4 py-3 bg-card border border-border rounded-lg text-sm focus:outline-none"
+              className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
             />
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-bold text-gray-500">Email Address</label>
+            <label className="text-xs font-bold text-gray-400">Email Address</label>
             <div className="relative">
               <Mail className="absolute left-3.5 top-3.5 text-gray-400" size={16} />
               <input
@@ -126,13 +125,13 @@ export const RegisterPage: React.FC = () => {
                 placeholder="name@govt.in"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-card border border-border rounded-lg text-sm focus:outline-none"
+                className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
               />
             </div>
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-bold text-gray-500">Mobile Phone Number</label>
+            <label className="text-xs font-bold text-gray-400">Mobile Phone Number</label>
             <div className="relative">
               <Phone className="absolute left-3.5 top-3.5 text-gray-400" size={16} />
               <input
@@ -141,13 +140,13 @@ export const RegisterPage: React.FC = () => {
                 placeholder="+91 XXXXX XXXXX"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-card border border-border rounded-lg text-sm focus:outline-none"
+                className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
               />
             </div>
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-bold text-gray-500">Security Password</label>
+            <label className="text-xs font-bold text-gray-400">Security Password</label>
             <div className="relative">
               <Lock className="absolute left-3.5 top-3.5 text-gray-400" size={16} />
               <input
@@ -156,15 +155,15 @@ export const RegisterPage: React.FC = () => {
                 placeholder="Minimum 6 characters"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-card border border-border rounded-lg text-sm focus:outline-none"
+                className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
               />
             </div>
           </div>
 
           {/* Dynamic Owner Verification Section */}
           {role === 'owner' && (
-            <div className="p-4 bg-yellow-50 dark:bg-yellow-950/15 border border-yellow-200/50 rounded-xl space-y-3 animate-in slide-in-from-bottom-2 duration-200">
-              <span className="text-[10px] uppercase font-bold text-yellow-700 dark:text-yellow-400 tracking-wider">
+            <div className="p-4 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-[20px] space-y-3">
+              <span className="text-[10px] uppercase font-bold text-[#0A4DA6] tracking-wider">
                 Government KYC Verification Required
               </span>
               <div className="space-y-3">
@@ -172,7 +171,7 @@ export const RegisterPage: React.FC = () => {
                   <select
                     value={govtIdType}
                     onChange={(e) => setGovtIdType(e.target.value)}
-                    className="p-2.5 bg-card border border-border rounded-lg text-xs focus:outline-none"
+                    className="p-2.5 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-850 rounded-xl text-xs focus:outline-none"
                   >
                     <option value="Aadhaar">Aadhaar Card</option>
                     <option value="PAN">PAN Card</option>
@@ -185,10 +184,10 @@ export const RegisterPage: React.FC = () => {
                     placeholder="ID Number"
                     value={govtIdNumber}
                     onChange={(e) => setGovtIdNumber(e.target.value)}
-                    className="p-2.5 bg-card border border-border rounded-lg text-xs focus:outline-none"
+                    className="p-2.5 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-850 rounded-xl text-xs focus:outline-none"
                   />
                 </div>
-                <div className="text-[10px] text-gray-500">
+                <div className="text-[10px] text-gray-400 leading-normal">
                   By submitting, you agree to undergo physical and document checks by State/District officers.
                 </div>
               </div>
@@ -198,15 +197,15 @@ export const RegisterPage: React.FC = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-primary text-white rounded-lg font-bold text-sm shadow-md hover:opacity-95 transition-all cursor-pointer"
+            className="w-full py-3 bg-[#0A4DA6] text-white rounded-full font-extrabold text-xs shadow-md hover:opacity-95 transition-all cursor-pointer"
           >
             {loading ? 'Registering Account...' : 'Create Account'}
           </button>
         </form>
 
-        <div className="text-center text-xs text-gray-500">
+        <div className="text-center text-xs text-gray-400">
           Already have an account?{' '}
-          <Link to="/login" className="text-primary font-bold hover:underline">
+          <Link to="/login" className="text-[#0A4DA6] font-bold hover:underline">
             Log in here
           </Link>
         </div>

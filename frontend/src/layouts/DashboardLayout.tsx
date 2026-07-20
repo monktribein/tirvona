@@ -41,75 +41,77 @@ export const DashboardLayout: React.FC = () => {
 
     if (role === 'owner') {
       return [
-        { label: 'Overview', path: '/owner/dashboard', icon: <LayoutDashboard size={18} /> },
-        { label: 'My Ashrams', path: '/owner/ashrams', icon: <Home size={18} /> },
-        { label: 'Manage Rooms', path: '/owner/rooms', icon: <Bed size={18} /> },
-        { label: 'Rate Calendar', path: '/owner/calendar', icon: <Calendar size={18} /> },
-        { label: 'Support Tickets', path: '/support', icon: <LifeBuoy size={18} /> },
+        { label: 'Overview', path: '/owner/dashboard', icon: <LayoutDashboard size={16} /> },
+        { label: 'My Ashrams', path: '/owner/ashrams', icon: <Home size={16} /> },
+        { label: 'Manage Rooms', path: '/owner/rooms', icon: <Bed size={16} /> },
+        { label: 'Rate Calendar', path: '/owner/calendar', icon: <Calendar size={16} /> },
+        { label: 'Support Tickets', path: '/support', icon: <LifeBuoy size={16} /> },
       ];
     }
     
     if (role === 'manager' || role === 'reception') {
       return [
-        { label: 'Reception Desk', path: '/staff/reception', icon: <LayoutDashboard size={18} /> },
-        { label: 'Housekeeping Grid', path: '/staff/housekeeping', icon: <ClipboardList size={18} /> },
-        { label: 'Room Calendar', path: '/owner/calendar', icon: <Calendar size={18} /> },
-        { label: 'Support', path: '/support', icon: <LifeBuoy size={18} /> },
+        { label: 'Reception Desk', path: '/staff/reception', icon: <LayoutDashboard size={16} /> },
+        { label: 'Housekeeping Grid', path: '/staff/housekeeping', icon: <ClipboardList size={16} /> },
+        { label: 'Room Calendar', path: '/owner/calendar', icon: <Calendar size={16} /> },
+        { label: 'Support', path: '/support', icon: <LifeBuoy size={16} /> },
       ];
     }
 
     if (role === 'housekeeping') {
       return [
-        { label: 'Housekeeping Status', path: '/staff/housekeeping', icon: <ClipboardList size={18} /> },
+        { label: 'Housekeeping Status', path: '/staff/housekeeping', icon: <ClipboardList size={16} /> },
       ];
     }
 
     if (role === 'district_officer' || role === 'govt_admin' || role === 'super_admin') {
       const baseLinks = [
-        { label: 'Admin Console', path: '/admin/dashboard', icon: <LayoutDashboard size={18} /> },
-        { label: 'Verification Queue', path: '/admin/verifications', icon: <FileCheck size={18} /> },
-        { label: 'Registered Users', path: '/admin/users', icon: <Users size={18} /> },
+        { label: 'Admin Console', path: '/admin/dashboard', icon: <LayoutDashboard size={16} /> },
+        { label: 'Verification Queue', path: '/admin/verifications', icon: <FileCheck size={16} /> },
+        { label: 'Registered Users', path: '/admin/users', icon: <Users size={16} /> },
       ];
       if (role === 'super_admin') {
-        baseLinks.push({ label: 'Audit Logs', path: '/admin/audit-logs', icon: <ShieldAlert size={18} /> });
+        baseLinks.push({ label: 'Audit Logs', path: '/admin/audit-logs', icon: <ShieldAlert size={16} /> });
       }
       return baseLinks;
     }
 
     // Fallback Customer links
     return [
-      { label: 'My Bookings', path: '/dashboard', icon: <History size={18} /> },
-      { label: 'Support Tickets', path: '/support', icon: <LifeBuoy size={18} /> },
+      { label: 'My Bookings', path: '/dashboard', icon: <History size={16} /> },
+      { label: 'Support Tickets', path: '/support', icon: <LifeBuoy size={16} /> },
     ];
   };
 
   const links = getSidebarLinks();
 
   return (
-    <div className="min-h-screen flex bg-background text-foreground">
+    <div className="min-h-screen flex bg-white dark:bg-[#070F1B] text-foreground">
       {/* Sidebar - Desktop */}
-      <aside className="hidden lg:flex flex-col w-64 bg-secondary text-white border-r border-white/5 z-20">
+      <aside className="hidden lg:flex flex-col w-64 bg-[#0B192C] text-white border-r border-slate-800 z-20">
         {/* Brand */}
-        <div className="h-20 flex items-center px-6 border-b border-white/10 gap-3">
-          <img src={logo} alt="Tirvona Logo" className="w-8 h-8 object-contain rounded-lg" />
+        <div className="h-20 flex items-center px-6 border-b border-slate-800 gap-3">
+          <img src={logo} alt="Tirvona Logo" className="w-8 h-8 object-contain" />
           <div className="flex flex-col">
-            <span className="font-bold text-sm tracking-wide">Tirvona</span>
-            <span className="text-[10px] text-gray-400 capitalize">{user.role.replace('_', ' ')} Dashboard</span>
+            <span className="font-black text-sm tracking-tight flex items-center">
+              tirvona<span className="text-[#D4AF37] text-[8px] align-super">™</span>
+            </span>
+            <span className="text-[8px] text-gray-500 font-extrabold capitalize tracking-wide">{user.role.replace('_', ' ')} Panel</span>
           </div>
         </div>
 
         {/* Links Navigation */}
-        <nav className="flex-grow p-4 space-y-1">
+        <nav className="flex-grow p-4 space-y-1.5">
           {links.map((link) => {
             const isActive = location.pathname === link.path;
             return (
               <Link
                 key={link.path}
                 to={link.path}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-all ${
+                className={`flex items-center gap-3 px-4 py-3 rounded-full text-xs font-semibold tracking-wide transition-all ${
                   isActive 
-                    ? 'bg-primary text-white shadow-md' 
-                    : 'text-gray-300 hover:bg-white/5 hover:text-white'
+                    ? 'bg-primary text-white shadow-md shadow-primary/20' 
+                    : 'text-gray-400 hover:bg-slate-850 hover:text-white'
                 }`}
               >
                 {link.icon}
@@ -120,22 +122,22 @@ export const DashboardLayout: React.FC = () => {
         </nav>
 
         {/* User profile bottom bar */}
-        <div className="p-4 border-t border-white/10 space-y-3">
+        <div className="p-4 border-t border-slate-800 space-y-3">
           <div className="flex items-center gap-3 px-2">
-            <div className="w-8 h-8 rounded-full bg-accent/20 border border-accent/40 flex items-center justify-center font-bold text-accent">
-              {user.name.charAt(0)}
+            <div className="w-8 h-8 rounded-full bg-[#D4AF37]/10 border border-[#D4AF37]/35 flex items-center justify-center font-black text-[#D4AF37] text-xs">
+              {user.name.charAt(0).toUpperCase()}
             </div>
             <div className="flex flex-col">
               <span className="text-xs font-bold truncate max-w-[140px]">{user.name}</span>
-              <span className="text-[10px] text-gray-400 capitalize">{user.role.replace('_', ' ')}</span>
+              <span className="text-[10px] text-gray-500 capitalize">{user.role.replace('_', ' ')}</span>
             </div>
           </div>
           <button
             onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 py-2.5 bg-danger/10 text-danger border border-danger/25 hover:bg-danger/20 transition-all rounded-lg text-xs font-bold cursor-pointer"
+            className="w-full flex items-center justify-center gap-2 py-2.5 bg-danger/10 text-danger border border-danger/20 hover:bg-danger/15 transition-all rounded-full text-xs font-bold cursor-pointer"
           >
-            <LogOut size={14} />
-            <span>Logout Account</span>
+            <LogOut size={12} />
+            <span>Logout</span>
           </button>
         </div>
       </aside>
@@ -143,18 +145,18 @@ export const DashboardLayout: React.FC = () => {
       {/* Sidebar - Mobile Menu Drawer */}
       {sidebarOpen && (
         <div className="lg:hidden fixed inset-0 z-50 flex">
-          <div className="fixed inset-0 bg-black/55 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
-          <aside className="relative flex flex-col w-64 bg-secondary text-white h-full p-6 animate-in slide-in-from-left duration-200">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
+          <aside className="relative flex flex-col w-64 bg-[#0B192C] text-white h-full p-6 animate-in slide-in-from-left duration-200">
             <button 
               onClick={() => setSidebarOpen(false)}
-              className="absolute top-4 right-4 p-2 text-white hover:bg-white/5 rounded-lg"
+              className="absolute top-4 right-4 p-2 text-white hover:bg-white/5 rounded-full"
             >
               <X size={20} />
             </button>
 
             <div className="h-12 flex items-center mb-6 gap-3">
-              <img src={logo} alt="Tirvona Logo" className="w-8 h-8 object-contain rounded-lg" />
-              <span className="font-bold text-sm tracking-wide">Tirvona</span>
+              <img src={logo} alt="Tirvona Logo" className="w-8 h-8 object-contain" />
+              <span className="font-black text-sm tracking-tight">tirvona<span className="text-[#D4AF37] text-[8px] align-super">™</span></span>
             </div>
 
             <nav className="flex-grow space-y-1">
@@ -165,8 +167,8 @@ export const DashboardLayout: React.FC = () => {
                     key={link.path}
                     to={link.path}
                     onClick={() => setSidebarOpen(false)}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-all ${
-                      isActive ? 'bg-primary text-white shadow-md' : 'text-gray-300 hover:bg-white/5'
+                    className={`flex items-center gap-3 px-4 py-3 rounded-full text-xs font-semibold transition-all ${
+                      isActive ? 'bg-primary text-white shadow-md' : 'text-gray-400 hover:bg-white/5 hover:text-white'
                     }`}
                   >
                     {link.icon}
@@ -176,12 +178,12 @@ export const DashboardLayout: React.FC = () => {
               })}
             </nav>
 
-            <div className="pt-4 border-t border-white/10">
+            <div className="pt-4 border-t border-slate-800">
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center justify-center gap-2 py-3 bg-danger/15 text-danger rounded-lg text-xs font-bold"
+                className="w-full flex items-center justify-center gap-2 py-3 bg-danger/10 text-danger border border-danger/20 rounded-full text-xs font-bold"
               >
-                <LogOut size={14} />
+                <LogOut size={12} />
                 <span>Logout</span>
               </button>
             </div>
@@ -192,7 +194,7 @@ export const DashboardLayout: React.FC = () => {
       {/* Right Column Layout */}
       <div className="flex-grow flex flex-col min-w-0">
         {/* Top Header */}
-        <header className="h-20 bg-card border-b border-border flex justify-between items-center px-6 lg:px-8">
+        <header className="h-20 bg-white dark:bg-[#070F1B] border-b border-gray-100 dark:border-slate-800 flex justify-between items-center px-6 lg:px-8 shrink-0">
           <div className="flex items-center gap-4">
             <button 
               onClick={() => setSidebarOpen(true)}
@@ -200,7 +202,7 @@ export const DashboardLayout: React.FC = () => {
             >
               <Menu size={20} />
             </button>
-            <h1 className="text-lg font-bold text-secondary dark:text-white capitalize">
+            <h1 className="text-sm font-extrabold text-[#0B192C] dark:text-white tracking-wide uppercase">
               {location.pathname.split('/').pop()?.replace('-', ' ') || 'Dashboard'}
             </h1>
           </div>
@@ -208,12 +210,12 @@ export const DashboardLayout: React.FC = () => {
           <div className="flex items-center gap-4">
             <Link 
               to="/"
-              className="text-xs font-bold px-3 py-1.5 rounded-lg border border-border hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-1.5 text-gray-600 dark:text-gray-300"
+              className="text-xs font-semibold px-4 py-2 rounded-full border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors flex items-center gap-1.5 text-[#0B192C] dark:text-gray-300"
             >
-              <Home size={14} /> View Portal
+              <Home size={12} /> View Portal
             </Link>
 
-            <div className="w-8 h-8 rounded-full bg-primary/10 text-primary border border-primary/20 flex items-center justify-center font-bold text-sm">
+            <div className="w-8 h-8 rounded-full bg-primary/10 text-primary border border-primary/20 flex items-center justify-center font-bold text-xs capitalize">
               {user.name.charAt(0)}
             </div>
           </div>

@@ -47,7 +47,6 @@ export const CustomerDashboard: React.FC = () => {
       }
     } catch (err) {
       console.error('History load error:', err);
-      // Failover fallback mock stay
       setBookings([]);
     } finally {
       setLoading(false);
@@ -114,37 +113,34 @@ export const CustomerDashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header card */}
-      <div className="bg-card border border-border p-6 rounded-3xl shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[24px] shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="space-y-1">
-          <h2 className="text-xl font-extrabold text-[#0c1a30] dark:text-white">Welcome back, {user?.name}!</h2>
-          <p className="text-xs text-gray-500 font-medium">View upcoming stays, present digital check-in passes, and review completed stays.</p>
+          <h2 className="text-xl font-extrabold text-[#0B192C] dark:text-white">Welcome back, {user?.name}!</h2>
+          <p className="text-xs text-gray-400 font-semibold">View upcoming stays, present digital check-in passes, and review completed stays.</p>
         </div>
-        <Link to="/" className="px-4 py-2 bg-[#ff9933] text-white text-xs font-bold rounded-xl shadow-md flex items-center gap-1 cursor-pointer">
+        <Link to="/" className="px-5 py-2.5 bg-[#0A4DA6] text-white text-xs font-bold rounded-full hover:bg-opacity-95 transition-all shadow-md shadow-[#0A4DA6]/10 flex items-center gap-1.5 cursor-pointer">
           <Compass size={14} /> Book Another Stay
         </Link>
       </div>
 
       {loading ? (
-        /* Loading skeletons */
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {[1, 2].map(n => (
-            <div key={n} className="h-44 bg-card border border-border rounded-3xl animate-pulse" />
+            <div key={n} className="h-44 bg-gray-50 border border-gray-100 rounded-[24px] animate-pulse" />
           ))}
         </div>
       ) : bookings.length === 0 ? (
-        /* Empty State */
-        <div className="text-center py-20 bg-card border border-border rounded-3xl space-y-4">
+        <div className="text-center py-20 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] space-y-4">
           <Compass className="mx-auto text-gray-300 animate-spin" size={48} />
-          <h4 className="font-extrabold text-base">No bookings yet</h4>
-          <p className="text-xs text-gray-500 max-w-sm mx-auto leading-relaxed">
+          <h4 className="font-extrabold text-base text-[#0B192C] dark:text-white">No bookings yet</h4>
+          <p className="text-xs text-gray-400 max-w-sm mx-auto leading-relaxed">
             You do not have any active or past spiritual stays registered on the national database. Visit the search console to book a stay.
           </p>
-          <Link to="/" className="inline-block px-5 py-2.5 bg-[#ff9933] text-white text-xs font-bold rounded-xl shadow-md hover:bg-[#e68a00] transition-colors">
+          <Link to="/" className="inline-block px-5 py-2.5 bg-[#0A4DA6] text-white text-xs font-bold rounded-full shadow-md hover:bg-opacity-95 transition-all">
             Find Stays
           </Link>
         </div>
       ) : (
-        /* Bookings grid list */
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {bookings.map((b) => {
             const isConfirmed = b.status === 'confirmed';
@@ -154,17 +150,17 @@ export const CustomerDashboard: React.FC = () => {
             const isRefunded = b.paymentStatus === 'refunded';
 
             return (
-              <div key={b._id} className="bg-card border border-border rounded-3xl p-5 shadow-sm space-y-4 flex flex-col justify-between transform hover:scale-[1.01] transition-transform duration-150">
+              <div key={b._id} className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 shadow-sm space-y-4 flex flex-col justify-between transform hover:scale-[1.01] transition-all">
                 
                 {/* Header */}
-                <div className="flex justify-between items-start border-b border-border pb-3">
+                <div className="flex justify-between items-start border-b border-gray-50 dark:border-slate-850 pb-3">
                   <div className="space-y-1">
-                    <h3 className="font-extrabold text-sm text-[#0c1a30] dark:text-white leading-snug">{b.ashramId?.name}</h3>
-                    <p className="text-[10px] text-gray-400 font-bold flex items-center gap-0.5 uppercase"><MapPin size={10} className="text-[#ff9933]" /> {b.ashramId?.address?.city}</p>
+                    <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white leading-snug">{b.ashramId?.name}</h3>
+                    <p className="text-[10px] text-gray-400 font-bold flex items-center gap-0.5 uppercase"><MapPin size={10} className="text-[#0A4DA6]" /> {b.ashramId?.address?.city}</p>
                   </div>
                   <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-extrabold capitalize border ${
                     b.status === 'confirmed' ? 'bg-success/15 text-success border-success/30' :
-                    b.status === 'checked_in' ? 'bg-primary/15 text-primary border-primary/30' :
+                    b.status === 'checked_in' ? 'bg-[#0A4DA6]/15 text-[#0A4DA6] border-[#0A4DA6]/30' :
                     b.status === 'checked_out' ? 'bg-blue-500/10 text-blue-500 border-blue-500/20' :
                     b.status === 'cancelled' ? 'bg-danger/10 text-danger border-danger/20' :
                     'bg-gray-100 text-gray-500 border-gray-200'
@@ -177,24 +173,24 @@ export const CustomerDashboard: React.FC = () => {
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div className="space-y-1">
                     <span className="text-[9px] text-gray-400 font-bold block uppercase">Check In</span>
-                    <span className="font-semibold flex items-center gap-1.5"><Calendar size={13} className="text-[#ff9933]" /> {new Date(b.checkInDate).toLocaleDateString()}</span>
+                    <span className="font-semibold flex items-center gap-1.5"><Calendar size={13} className="text-[#0A4DA6]" /> {new Date(b.checkInDate).toLocaleDateString()}</span>
                   </div>
                   <div className="space-y-1">
                     <span className="text-[9px] text-gray-400 font-bold block uppercase">Check Out</span>
-                    <span className="font-semibold flex items-center gap-1.5"><Calendar size={13} className="text-[#ff9933]" /> {new Date(b.checkOutDate).toLocaleDateString()}</span>
+                    <span className="font-semibold flex items-center gap-1.5"><Calendar size={13} className="text-[#0A4DA6]" /> {new Date(b.checkOutDate).toLocaleDateString()}</span>
                   </div>
                 </div>
 
                 {/* Counter Pass Details */}
                 {isConfirmed && (
-                  <div className="p-3 bg-yellow-50 dark:bg-yellow-950/15 border border-yellow-200/50 rounded-2xl flex items-center justify-between">
+                  <div className="p-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 rounded-2xl flex items-center justify-between">
                     <div>
-                      <span className="text-[9px] text-yellow-700 dark:text-yellow-400 font-extrabold block uppercase tracking-wider">Digital Check-in Pass</span>
-                      <span className="text-[10px] text-gray-500 leading-normal">Present to receptionist on arrival</span>
+                      <span className="text-[9px] text-[#0A4DA6] font-extrabold block uppercase tracking-wider">Digital Check-in Pass</span>
+                      <span className="text-[10px] text-gray-400 leading-normal">Present to receptionist on arrival</span>
                     </div>
-                    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-card border border-border rounded-xl shadow-sm">
-                      <Key size={14} className="text-accent" />
-                      <span className="text-xs font-extrabold tracking-widest text-secondary dark:text-white">{b.checkInCode}</span>
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-[#0B192C] border border-gray-150 rounded-xl shadow-sm">
+                      <Key size={14} className="text-[#D4AF37]" />
+                      <span className="text-xs font-extrabold tracking-widest text-[#0B192C] dark:text-white">{b.checkInCode}</span>
                     </div>
                   </div>
                 )}
@@ -207,16 +203,16 @@ export const CustomerDashboard: React.FC = () => {
                 )}
 
                 {/* Footer price & actions */}
-                <div className="pt-3 border-t border-border flex justify-between items-center bg-gray-50/50 dark:bg-slate-900/10 px-3 py-2.5 rounded-2xl">
+                <div className="pt-3 border-t border-gray-150 dark:border-slate-800 flex justify-between items-center bg-gray-50/50 dark:bg-slate-900/10 px-3 py-2.5 rounded-2xl">
                   <div className="flex flex-col">
                     <span className="text-[9px] text-gray-400 uppercase font-bold tracking-wider">Total Paid</span>
-                    <span className="text-xs font-extrabold text-[#0c1a30] dark:text-accent">₹{b.pricing?.totalAmount}</span>
+                    <span className="text-xs font-extrabold text-[#0B192C] dark:text-white">₹{b.pricing?.totalAmount}</span>
                   </div>
                   
                   {isCheckedOut && (
                     <button
                       onClick={() => setReviewBookingId(b._id)}
-                      className="px-3.5 py-1.5 bg-primary/10 text-primary border border-primary/20 rounded-xl text-[10px] font-bold cursor-pointer"
+                      className="px-3.5 py-1.5 bg-primary/10 text-primary border border-primary/20 rounded-full text-[10px] font-bold cursor-pointer"
                     >
                       Write Review
                     </button>
@@ -225,7 +221,7 @@ export const CustomerDashboard: React.FC = () => {
                   {(isConfirmed || isPending) && (
                     <button
                       onClick={() => setCancelBookingId(b._id)}
-                      className="px-3.5 py-1.5 bg-danger/10 text-danger border border-danger/20 rounded-xl text-[10px] font-bold cursor-pointer flex items-center gap-1 hover:bg-danger/15 transition-all"
+                      className="px-3.5 py-1.5 bg-danger/10 text-danger border border-danger/20 rounded-full text-[10px] font-bold cursor-pointer flex items-center gap-1 hover:bg-danger/15 transition-all"
                     >
                       <Trash2 size={12} /> Cancel Stay
                     </button>
@@ -237,14 +233,14 @@ export const CustomerDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Review Dialog modal overlay */}
+      {/* Review Dialog modal */}
       {reviewBookingId && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <form onSubmit={handleReviewSubmit} className="bg-card border border-border max-w-md w-full rounded-3xl p-6 space-y-4 shadow-2xl">
-            <h3 className="font-extrabold text-sm text-[#0c1a30] dark:text-white border-b border-border pb-2">Review your Ashram stay</h3>
+          <form onSubmit={handleReviewSubmit} className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-md w-full rounded-[28px] p-6 space-y-4 shadow-2xl">
+            <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white border-b border-gray-100 dark:border-slate-800 pb-2">Review your Ashram stay</h3>
             
             {reviewError && (
-              <div className="p-3 bg-danger/10 text-danger border border-danger/25 text-xs rounded-xl font-bold">
+              <div className="p-3 bg-danger/10 text-danger border border-danger/20 text-xs rounded-xl font-bold">
                 {reviewError}
               </div>
             )}
@@ -254,7 +250,7 @@ export const CustomerDashboard: React.FC = () => {
               <select
                 value={reviewRating}
                 onChange={(e) => setReviewRating(parseInt(e.target.value))}
-                className="w-full p-2.5 bg-background border border-border rounded-xl text-xs font-semibold focus:outline-none"
+                className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none cursor-pointer"
               >
                 <option value={5}>5 Stars (Excellent Stay)</option>
                 <option value={4}>4 Stars (Very Good)</option>
@@ -272,7 +268,7 @@ export const CustomerDashboard: React.FC = () => {
                 placeholder="Share your spiritual stay feedback..."
                 value={reviewComment}
                 onChange={(e) => setReviewComment(e.target.value)}
-                className="w-full p-3 bg-background border border-border rounded-xl text-xs focus:outline-none"
+                className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none"
               />
             </div>
 
@@ -280,13 +276,13 @@ export const CustomerDashboard: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setReviewBookingId(null)}
-                className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 rounded-xl text-xs font-bold cursor-pointer"
+                className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 text-gray-700 dark:text-gray-300 rounded-full text-xs font-bold cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="flex-1 py-2.5 bg-[#ff9933] hover:bg-[#e68a00] text-white rounded-xl text-xs font-bold cursor-pointer shadow"
+                className="flex-1 py-2.5 bg-[#0A4DA6] text-white rounded-full text-xs font-bold cursor-pointer shadow"
               >
                 Submit Review
               </button>
@@ -295,16 +291,16 @@ export const CustomerDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Cancellation Dialog modal overlay */}
+      {/* Cancellation Dialog modal */}
       {cancelBookingId && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <form onSubmit={handleCancelBookingSubmit} className="bg-card border border-border max-w-md w-full rounded-3xl p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center gap-2 border-b border-border pb-2 text-danger">
+          <form onSubmit={handleCancelBookingSubmit} className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-md w-full rounded-[28px] p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-2 text-danger">
               <AlertTriangle size={20} />
-              <h3 className="font-extrabold text-sm text-[#0c1a30] dark:text-white">Confirm Booking Cancellation</h3>
+              <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white">Confirm Booking Cancellation</h3>
             </div>
             
-            <p className="text-xs text-gray-500 leading-relaxed font-medium">
+            <p className="text-xs text-gray-400 leading-relaxed font-semibold">
               Are you sure you want to cancel your spiritual stay? A 100% refund of the paid stay total cost will be credited back to your original source account within 3-5 working days.
             </p>
 
@@ -316,7 +312,7 @@ export const CustomerDashboard: React.FC = () => {
                 value={cancelReason}
                 onChange={(e) => setCancelReason(e.target.value)}
                 placeholder="Reason for cancellation..."
-                className="w-full p-3 bg-background border border-border rounded-xl text-xs focus:outline-none"
+                className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none"
               />
             </div>
 
@@ -324,14 +320,14 @@ export const CustomerDashboard: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setCancelBookingId(null)}
-                className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 rounded-xl text-xs font-bold cursor-pointer"
+                className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 text-gray-700 dark:text-gray-300 rounded-full text-xs font-bold cursor-pointer"
                 disabled={cancelling}
               >
                 Go Back
               </button>
               <button
                 type="submit"
-                className="flex-1 py-2.5 bg-danger text-white hover:bg-danger-hover rounded-xl text-xs font-bold cursor-pointer shadow"
+                className="flex-1 py-2.5 bg-danger text-white hover:bg-danger-hover rounded-full text-xs font-bold cursor-pointer shadow"
                 disabled={cancelling}
               >
                 {cancelling ? 'Cancelling...' : 'Confirm Cancel'}

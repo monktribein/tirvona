@@ -13,7 +13,9 @@ import {
   Calendar,
   Users,
   UtensilsCrossed,
-  Droplet
+  Droplet,
+  ChevronLeft,
+  X
 } from 'lucide-react';
 
 export const SearchPage: React.FC = () => {
@@ -96,7 +98,6 @@ export const SearchPage: React.FC = () => {
       }
     } catch (err) {
       console.error('Search API error:', err);
-      // Fallback mocks
       setResults([]);
     } finally {
       setLoading(false);
@@ -120,7 +121,6 @@ export const SearchPage: React.FC = () => {
     if (dest.includes('haridwar')) {
       return { name: 'Har Ki Pauri (Holy Ghat)', lat: 29.9645, lon: 78.1691 };
     }
-    // Default to average coordinates of results
     if (results.length > 0) {
       let totalLat = 0;
       let totalLon = 0;
@@ -195,12 +195,13 @@ export const SearchPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
-      {/* Premium Top Search Panel */}
-      <div className="bg-card border border-border p-4 rounded-3xl shadow-md">
+    <div className="max-w-7xl mx-auto px-6 py-10 space-y-10">
+      {/* Search Filter Panel */}
+      <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-5 rounded-[28px] shadow-sm">
         <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+          {/* Destination */}
           <div className="flex flex-col text-left space-y-1.5 relative" ref={autocompleteRef}>
-            <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Destination City / Ashram</label>
+            <label className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400">Destination City / Ashram</label>
             <div className="relative">
               <input
                 type="text"
@@ -208,28 +209,27 @@ export const SearchPage: React.FC = () => {
                 onChange={handleInputChange}
                 onFocus={() => setShowSuggestions(true)}
                 placeholder="e.g. Haridwar"
-                className="w-full bg-background border border-border rounded-xl pl-9 pr-3 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#ff9933]/40"
+                className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl pl-9 pr-3 py-3 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
               />
-              <MapPin className="absolute left-3 top-3 text-gray-400" size={14} />
+              <MapPin className="absolute left-3 top-3.5 text-gray-400" size={14} />
             </div>
 
-            {/* Suggestions dropdown */}
             <AnimatePresence>
               {showSuggestions && suggestions.length > 0 && (
                 <motion.div 
-                  initial={{ opacity: 0, y: 10 }}
+                  initial={{ opacity: 0, y: 5 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  className="absolute left-0 right-0 top-full mt-2 bg-card border border-border rounded-xl shadow-2xl overflow-hidden z-50 text-xs"
+                  exit={{ opacity: 0, y: 5 }}
+                  className="absolute left-0 right-0 top-full mt-2 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden z-50 text-xs"
                 >
                   {suggestions.map((sug, i) => (
                     <button
                       key={i}
                       type="button"
                       onClick={() => selectSuggestion(sug)}
-                      className="w-full text-left px-4 py-2.5 hover:bg-gray-100 dark:hover:bg-slate-700 font-semibold flex items-center gap-2 border-b border-border last:border-b-0 cursor-pointer"
+                      className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-slate-800 font-semibold flex items-center gap-2 border-b border-gray-50 dark:border-slate-850 last:border-b-0 cursor-pointer"
                     >
-                      <Compass size={12} className="text-[#ff9933]" />
+                      <Compass size={12} className="text-[#0A4DA6]" />
                       <span>{sug}</span>
                     </button>
                   ))}
@@ -238,54 +238,56 @@ export const SearchPage: React.FC = () => {
             </AnimatePresence>
           </div>
 
-          {/* Check In Date */}
+          {/* Check In */}
           <div className="flex flex-col text-left space-y-1.5">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Check In Date</label>
+            <label className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400">Check In Date</label>
             <div className="relative">
               <input
                 type="date"
                 value={checkIn}
                 onChange={(e) => setCheckIn(e.target.value)}
-                className="w-full bg-background border border-border rounded-xl pl-9 pr-3 py-2.5 text-xs font-semibold focus:outline-none"
+                className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl pl-9 pr-3 py-3 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
               />
-              <Calendar className="absolute left-3 top-3 text-gray-400" size={14} />
+              <Calendar className="absolute left-3 top-3.5 text-gray-400" size={14} />
             </div>
           </div>
 
-          {/* Check Out Date */}
+          {/* Check Out */}
           <div className="flex flex-col text-left space-y-1.5">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Check Out Date</label>
+            <label className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400">Check Out Date</label>
             <div className="relative">
               <input
                 type="date"
                 value={checkOut}
                 onChange={(e) => setCheckOut(e.target.value)}
-                className="w-full bg-background border border-border rounded-xl pl-9 pr-3 py-2.5 text-xs font-semibold focus:outline-none"
+                className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl pl-9 pr-3 py-3 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
               />
-              <Calendar className="absolute left-3 top-3 text-gray-400" size={14} />
+              <Calendar className="absolute left-3 top-3.5 text-gray-400" size={14} />
             </div>
           </div>
 
+          {/* Guest Count */}
           <div className="flex flex-col text-left space-y-1.5">
-            <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Guest Count</label>
+            <label className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400">Guest Count</label>
             <div className="relative">
               <select
                 value={guestsQuery}
                 onChange={(e) => setSearchParams({ destination: destinationQuery, checkIn: checkInQuery, checkOut: checkOutQuery, guests: e.target.value })}
-                className="w-full bg-background border border-border rounded-xl pl-9 pr-3 py-2.5 text-xs font-semibold focus:outline-none cursor-pointer"
+                className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl pl-9 pr-3 py-3 text-xs font-semibold focus:outline-none cursor-pointer appearance-none"
               >
                 <option value="1">1 Guest</option>
                 <option value="2">2 Guests</option>
                 <option value="3">3 Guests</option>
                 <option value="4">4+ Guests</option>
               </select>
-              <Users className="absolute left-3 top-3 text-gray-400" size={14} />
+              <Users className="absolute left-3 top-3.5 text-gray-400" size={14} />
             </div>
           </div>
 
+          {/* Search Action */}
           <button
             type="submit"
-            className="w-full py-3 bg-[#ff9933] hover:bg-[#e68a00] text-white font-bold rounded-xl text-xs shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full py-3 bg-[#0A4DA6] hover:bg-opacity-95 text-white font-extrabold rounded-xl text-xs flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-[#0A4DA6]/10"
           >
             <Search size={14} /> Modify Search
           </button>
@@ -293,54 +295,57 @@ export const SearchPage: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        {/* Sidebar Filters */}
+        {/* Sidebar Filter and Map Toggle */}
         <aside className="space-y-6">
-          <div className="bg-card border border-border p-5 rounded-3xl shadow-sm space-y-5">
-            <h3 className="font-extrabold text-sm text-secondary dark:text-white flex items-center gap-2 border-b border-border pb-3">
-              <Filter size={16} className="text-[#ff9933]" /> Filters Accommodation
+          <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[28px] shadow-sm space-y-6">
+            <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white flex items-center gap-2 border-b border-gray-50 dark:border-slate-850 pb-3">
+              <Filter size={16} className="text-[#0A4DA6]" /> Filters
             </h3>
 
-            <div className="space-y-3">
-              <h4 className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Common Facilities</h4>
-              <div className="space-y-3">
-                <label className="flex items-center gap-2.5 text-xs font-semibold cursor-pointer">
+            <div className="space-y-4">
+              <h4 className="text-[10px] uppercase font-extrabold text-gray-400 tracking-wider">Common Facilities</h4>
+              <div className="space-y-3.5">
+                <label className="flex items-center gap-3 text-xs font-semibold cursor-pointer select-none">
                   <input
                     type="checkbox"
                     checked={acFilter}
                     onChange={() => setAcFilter(!acFilter)}
-                    className="rounded border-border text-[#ff9933] focus:ring-[#ff9933]/20 cursor-pointer w-4 h-4"
+                    className="rounded border-gray-200 dark:border-slate-700 text-[#0A4DA6] focus:ring-[#0A4DA6]/20 cursor-pointer w-4 h-4"
                   />
-                  <span className="flex items-center gap-1"><Wifi size={14} className="text-gray-400" /> AC Accommodation</span>
+                  <span className="flex items-center gap-1.5"><Wifi size={14} className="text-gray-400" /> AC Rooms</span>
                 </label>
                 
-                <label className="flex items-center gap-2.5 text-xs font-semibold cursor-pointer">
+                <label className="flex items-center gap-3 text-xs font-semibold cursor-pointer select-none">
                   <input
                     type="checkbox"
                     checked={foodFilter}
                     onChange={() => setFoodFilter(!foodFilter)}
-                    className="rounded border-border text-[#ff9933] focus:ring-[#ff9933]/20 cursor-pointer w-4 h-4"
+                    className="rounded border-gray-200 dark:border-slate-700 text-[#0A4DA6] focus:ring-[#0A4DA6]/20 cursor-pointer w-4 h-4"
                   />
-                  <span className="flex items-center gap-1"><UtensilsCrossed size={14} className="text-gray-400" /> Satvik Vegetarian Food</span>
+                  <span className="flex items-center gap-1.5"><UtensilsCrossed size={14} className="text-gray-400" /> Satvik Vegetarian Food</span>
                 </label>
 
-                <label className="flex items-center gap-2.5 text-xs font-semibold cursor-pointer">
+                <label className="flex items-center gap-3 text-xs font-semibold cursor-pointer select-none">
                   <input
                     type="checkbox"
                     checked={riverViewFilter}
                     onChange={() => setRiverViewFilter(!riverViewFilter)}
-                    className="rounded border-border text-[#ff9933] focus:ring-[#ff9933]/20 cursor-pointer w-4 h-4"
+                    className="rounded border-gray-200 dark:border-slate-700 text-[#0A4DA6] focus:ring-[#0A4DA6]/20 cursor-pointer w-4 h-4"
                   />
-                  <span className="flex items-center gap-1"><Droplet size={14} className="text-gray-400" /> Holy River View</span>
+                  <span className="flex items-center gap-1.5"><Droplet size={14} className="text-gray-400" /> Holy River View</span>
                 </label>
               </div>
             </div>
           </div>
 
-          <div className="bg-card border border-border p-5 rounded-3xl shadow-sm flex flex-col items-center justify-center text-center space-y-3 relative overflow-hidden">
-            <div className="absolute inset-0 bg-[#ff9933]/5 opacity-40 pointer-events-none" />
-            <MapPin className="text-[#ff9933]" size={28} />
-            <h4 className="text-xs font-extrabold">Spatial Map Grid View</h4>
-            <p className="text-[10px] text-gray-500 max-w-[180px] leading-relaxed">View coordinates of all retreats relative to holy temples</p>
+          {/* Spatial Map Activation Box */}
+          <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[28px] shadow-sm flex flex-col items-center justify-center text-center space-y-4 relative overflow-hidden">
+            <div className="absolute inset-0 bg-[#0A4DA6]/5 opacity-40 pointer-events-none" />
+            <MapPin className="text-[#0A4DA6]" size={28} />
+            <h4 className="text-xs font-extrabold text-[#0B192C] dark:text-white">Spatial Map Grid View</h4>
+            <p className="text-[10px] text-gray-400 max-w-[190px] leading-relaxed">
+              View coordinates of all retreats relative to holy temples.
+            </p>
             <button 
               type="button"
               onClick={() => {
@@ -357,97 +362,96 @@ export const SearchPage: React.FC = () => {
                 }
                 setShowMapGrid(true);
               }}
-              className="px-4 py-2 bg-[#ff9933]/15 text-[#ff9933] border border-[#ff9933]/20 rounded-xl text-[10px] font-bold hover:bg-[#ff9933]/20 transition-all cursor-pointer"
+              className="px-5 py-2.5 bg-[#0A4DA6]/10 text-[#0A4DA6] border border-[#0A4DA6]/20 rounded-full text-[10px] font-bold hover:bg-[#0A4DA6]/15 transition-all cursor-pointer"
             >
               Activate Map Grid
             </button>
           </div>
         </aside>
 
-        {/* Results Listings */}
+        {/* Results Feed */}
         <section className="lg:col-span-3 space-y-6">
-          <div className="flex justify-between items-center bg-card border border-border px-5 py-3 rounded-2xl">
+          <div className="flex justify-between items-center bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 px-5 py-3.5 rounded-[20px] shadow-sm">
             <div className="text-xs font-bold text-gray-500">
-              Found <span className="text-[#ff9933] font-extrabold">{results.length} stays</span> matching{' '}
-              {destinationQuery ? `"${destinationQuery}"` : 'all sacred locations'}
+              Found <span className="text-[#0A4DA6] font-extrabold">{results.length} stays</span> matching{' '}
+              {destinationQuery ? `"${destinationQuery}"` : 'all locations'}
             </div>
           </div>
 
           {loading ? (
-            /* Loading Skeletons */
             <div className="space-y-4">
               {[1, 2, 3].map((s) => (
-                <div key={s} className="bg-card border border-border rounded-3xl p-5 flex flex-col md:flex-row gap-5 animate-pulse h-44" />
+                <div key={s} className="bg-gray-50 rounded-3xl p-5 flex flex-col md:flex-row gap-5 animate-pulse h-44 border border-gray-100" />
               ))}
             </div>
           ) : results.length === 0 ? (
-            /* Empty State */
-            <div className="text-center py-20 bg-card border border-border rounded-3xl space-y-4">
+            <div className="text-center py-20 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] space-y-4">
               <Compass className="mx-auto text-gray-300" size={48} />
-              <h4 className="font-extrabold text-base">No retreats found</h4>
-              <p className="text-xs text-gray-500 max-w-sm mx-auto leading-relaxed">
+              <h4 className="font-extrabold text-base text-[#0B192C] dark:text-white">No retreats found</h4>
+              <p className="text-xs text-gray-400 max-w-sm mx-auto leading-relaxed">
                 We couldn't find any approved Ashram matching your query. Try adjusting filters or typing city names like 'Rishikesh', 'Haridwar', or 'Vrindavan'.
               </p>
             </div>
           ) : (
-            /* Search Feed list */
-            <div className="space-y-4">
+            <div className="space-y-5">
               {results.map((ashram) => (
                 <div
                   key={ashram._id}
-                  className="bg-card border border-border rounded-3xl p-5 shadow-sm hover:shadow-lg transition-all duration-200 flex flex-col md:flex-row gap-5 transform hover:-translate-y-0.5"
+                  className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-5 shadow-sm premium-card-hover flex flex-col md:flex-row gap-6"
                 >
-                  {/* Image Block */}
-                  <div className="w-full md:w-56 h-36 rounded-2xl bg-gray-100 dark:bg-slate-800 flex items-center justify-center text-gray-400 relative overflow-hidden shrink-0">
+                  {/* Ashram Thumbnail Image */}
+                  <div className="w-full md:w-60 h-40 rounded-[20px] bg-gray-50 dark:bg-slate-900 relative overflow-hidden shrink-0">
                     <img 
                       src={ashram.images?.[0] || 'https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?auto=format&fit=crop&w=400&q=80'} 
                       alt={ashram.name} 
                       className="w-full h-full object-cover" 
                       onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = 'https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?auto=format&fit=crop&w=400&q=80'; }}
                     />
-                    <span className="absolute top-3 left-3 bg-[#ff9933] text-white text-[8px] font-extrabold px-2 py-0.5 rounded shadow flex items-center gap-0.5 uppercase tracking-wider">
+                    <span className="absolute top-3.5 left-3.5 bg-[#0A4DA6] text-white text-[8px] font-extrabold px-3 py-1 rounded-full shadow-sm flex items-center gap-0.5 uppercase tracking-wider">
                       <ShieldCheck size={10} /> Verified
                     </span>
                   </div>
 
-                  {/* Details info */}
+                  {/* Info details */}
                   <div className="flex-grow flex flex-col justify-between space-y-4">
                     <div className="space-y-2">
                       <div className="flex justify-between items-start gap-2">
-                        <h3 className="font-extrabold text-sm text-[#0c1a30] dark:text-white leading-tight">
+                        <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white leading-tight">
                           {ashram.name}
                         </h3>
-                        <div className="flex items-center gap-1 text-xs font-bold text-[#0c1a30] dark:text-accent">
-                          <Star className="text-accent fill-accent" size={13} />
+                        <div className="flex items-center gap-1 text-xs font-bold text-[#0B192C] dark:text-accent">
+                          <Star className="text-[#D4AF37] fill-[#D4AF37]" size={13} />
                           <span>{ashram.rating?.average || 4.5}</span>
                           <span className="text-[10px] text-gray-400 font-medium">({ashram.rating?.count || 10})</span>
                         </div>
                       </div>
-                      <p className="text-[10px] text-gray-400 font-bold flex items-center gap-0.5 uppercase"><MapPin size={10} className="text-[#ff9933]" /> {ashram.address?.city}, {ashram.address?.state}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">
+                      <p className="text-[10px] text-gray-400 font-bold flex items-center gap-1 uppercase">
+                        <MapPin size={10} className="text-[#0A4DA6]" /> {ashram.address?.city}, {ashram.address?.state}
+                      </p>
+                      <p className="text-xs text-gray-500 leading-relaxed line-clamp-2">
                         {ashram.description || 'Spiritual lodging offering simple bedding, prayers, and vegetarian boarding.'}
                       </p>
                     </div>
 
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="flex flex-wrap gap-1">
                       {ashram.amenities?.slice(0, 4).map((am: string, i: number) => (
-                        <span key={i} className="text-[9px] font-bold bg-gray-50 dark:bg-slate-800 text-gray-400 dark:text-gray-400 px-2 py-0.5 rounded">
+                        <span key={i} className="text-[9px] font-bold bg-gray-50 dark:bg-slate-900 text-gray-500 px-2 py-0.5 rounded-md">
                           {am}
                         </span>
                       ))}
                     </div>
                   </div>
 
-                  {/* Price block */}
-                  <div className="w-full md:w-40 md:border-l border-border pl-0 md:pl-5 flex md:flex-col justify-between md:justify-center items-center md:items-end gap-3 shrink-0">
+                  {/* Pricing info & Action button */}
+                  <div className="w-full md:w-40 md:border-l border-gray-100 dark:border-slate-800 pl-0 md:pl-6 flex md:flex-col justify-between md:justify-center items-center md:items-end gap-4 shrink-0">
                     <div className="flex flex-col md:text-right">
                       <span className="text-[9px] text-gray-400 uppercase font-bold tracking-wider">Starting Rate</span>
-                      <span className="text-base font-extrabold text-[#0c1a30] dark:text-accent">₹{ashram.lowestNightPrice || 150}</span>
+                      <span className="text-base font-extrabold text-[#0B192C] dark:text-white">₹{ashram.lowestNightPrice || 150}</span>
                       <span className="text-[9px] text-gray-400 font-bold">per night / bed</span>
                     </div>
                     <Link
                       to={`/ashram/${ashram._id}`}
-                      className="w-full md:w-auto px-4 py-2 bg-[#ff9933] hover:bg-[#e68a00] text-white text-center text-xs font-bold rounded-xl hover:shadow transition-all"
+                      className="w-full md:w-auto px-5 py-2.5 bg-[#0A4DA6] hover:bg-opacity-95 text-white text-center text-xs font-bold rounded-full transition-all"
                     >
                       View Details
                     </Link>
@@ -503,21 +507,19 @@ export const SearchPage: React.FC = () => {
                 initial={{ scale: 0.95, y: 30 }}
                 animate={{ scale: 1, y: 0 }}
                 exit={{ scale: 0.95, y: 30 }}
-                className="bg-card border border-border w-full max-w-5xl rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row h-[90vh] md:h-[600px] relative text-left"
+                className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 w-full max-w-5xl rounded-[32px] shadow-2xl overflow-hidden flex flex-col md:flex-row h-[90vh] md:h-[600px] relative text-left"
               >
-                {/* Radar Grid Canvas - Left Side */}
-                <div className="flex-grow bg-slate-950 text-slate-200 relative p-6 flex flex-col items-center justify-center border-r border-border h-[40vh] md:h-full overflow-hidden select-none">
-                  {/* Tech Grid Background */}
-                  <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,153,51,0.06),transparent_70%)]" />
+                {/* Map Grid Plot - Left */}
+                <div className="flex-grow bg-slate-950 text-slate-200 relative p-6 flex flex-col items-center justify-center border-r border-slate-900 h-[40vh] md:h-full overflow-hidden select-none">
+                  <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(10,77,166,0.06),transparent_70%)]" />
                   <div className="absolute inset-0 border border-slate-900 grid grid-cols-6 grid-rows-6 opacity-20 pointer-events-none">
                     {Array.from({ length: 36 }).map((_, i) => (
                       <div key={i} className="border border-slate-800" />
                     ))}
                   </div>
 
-                  {/* Plot Area */}
                   <div className="w-full h-full relative border border-slate-800/80 rounded-2xl p-4">
-                    {/* Central Landmark (Temple) */}
+                    {/* Central Temple/Landmark */}
                     {(() => {
                       const pct = getPercentCoords(central.lat, central.lon);
                       return (
@@ -526,8 +528,8 @@ export const SearchPage: React.FC = () => {
                           style={{ left: pct.x, top: pct.y }}
                         >
                           <span className="relative flex h-5 w-5 items-center justify-center">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ff9933] opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-3 w-3 bg-[#ff9933] border border-white"></span>
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#0A4DA6] opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-3 w-3 bg-[#0A4DA6] border border-white"></span>
                           </span>
                           <div className="mt-1 bg-slate-900/90 border border-slate-700 text-[8px] font-black text-white px-2 py-0.5 rounded shadow whitespace-nowrap uppercase tracking-wide">
                             🕉️ {central.name}
@@ -536,7 +538,7 @@ export const SearchPage: React.FC = () => {
                       );
                     })()}
 
-                    {/* Seeded Retreat Nodes */}
+                    {/* Stays Nodes */}
                     {mapItems.map((item) => {
                       const pct = getPercentCoords(item.lat, item.lon);
                       const isSelected = selectedMapAshram?._id === item._id;
@@ -549,12 +551,11 @@ export const SearchPage: React.FC = () => {
                           style={{ left: pct.x, top: pct.y }}
                         >
                           <span className={`flex h-4 w-4 items-center justify-center rounded-full transition-all duration-200 ${
-                            isSelected ? 'bg-emerald-400 scale-125 ring-4 ring-emerald-400/20' : 'bg-blue-500 hover:bg-emerald-400 hover:scale-110'
+                            isSelected ? 'bg-emerald-400 scale-125 ring-4 ring-emerald-400/20' : 'bg-[#0A4DA6] hover:bg-emerald-400 hover:scale-110'
                           }`}>
                             <span className="h-1.5 w-1.5 rounded-full bg-white" />
                           </span>
                           
-                          {/* Hover Tooltip */}
                           <div className="absolute left-1/2 bottom-full mb-1.5 transform -translate-x-1/2 bg-slate-900 text-white text-[9px] font-bold py-1 px-2 rounded border border-slate-700 shadow-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none uppercase tracking-wide">
                             {item.name} ({item.distance} km)
                           </div>
@@ -563,34 +564,33 @@ export const SearchPage: React.FC = () => {
                     })}
                   </div>
 
-                  {/* Legend overlay */}
                   <div className="absolute bottom-4 left-4 bg-slate-900/80 border border-slate-800 text-[8px] font-semibold p-2 rounded flex flex-col gap-1 z-40 backdrop-blur-sm">
-                    <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#ff9933] inline-block" /> Central Temple</div>
-                    <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-blue-500 inline-block" /> Ashram Retreat</div>
+                    <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#0A4DA6] inline-block" /> Central Landmark</div>
+                    <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-blue-500 inline-block" /> Ashram Stay</div>
                     <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-emerald-400 inline-block" /> Selected Ashram</div>
                   </div>
                 </div>
 
-                {/* Sidebar Listing - Right Side */}
-                <div className="w-full md:w-[360px] flex flex-col h-[50vh] md:h-full bg-card">
-                  <div className="p-4 border-b border-border flex justify-between items-center bg-gray-50 dark:bg-slate-800/20">
+                {/* Stays Listing details - Right */}
+                <div className="w-full md:w-[360px] flex flex-col h-[50vh] md:h-full bg-white dark:bg-[#0B192C]">
+                  <div className="p-4 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center bg-gray-50 dark:bg-slate-900">
                     <div>
-                      <h3 className="font-extrabold text-xs text-secondary dark:text-white uppercase tracking-wider">Spatial Distance List</h3>
-                      <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Sorted from closest to furthest</p>
+                      <h3 className="font-extrabold text-xs text-[#0B192C] dark:text-white uppercase tracking-wider">Distance Matrix</h3>
+                      <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Closest to Central Landmark</p>
                     </div>
                     <button 
                       type="button"
                       onClick={() => setShowMapGrid(false)}
-                      className="p-1.5 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg text-gray-500 cursor-pointer font-bold text-xs"
+                      className="p-1.5 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg text-gray-500 cursor-pointer"
                     >
-                      Close
+                      <X size={16} />
                     </button>
                   </div>
 
-                  {/* Scrollable list */}
-                  <div className="flex-grow overflow-y-auto p-3 space-y-2.5">
+                  {/* List */}
+                  <div className="flex-grow overflow-y-auto p-4 space-y-3">
                     {mapItems.length === 0 ? (
-                      <div className="text-center py-10 text-gray-400 text-xs">No active retreats to display on the map.</div>
+                      <div className="text-center py-10 text-gray-400 text-xs">No active retreats to display.</div>
                     ) : (
                       mapItems.map((item, i) => {
                         const isSelected = selectedMapAshram?._id === item._id;
@@ -598,26 +598,26 @@ export const SearchPage: React.FC = () => {
                           <div
                             key={item._id}
                             onClick={() => setSelectedMapAshram(item)}
-                            className={`p-3 border rounded-2xl cursor-pointer transition-all text-left ${
+                            className={`p-4.5 border rounded-[20px] cursor-pointer transition-all text-left ${
                               isSelected 
-                                ? 'border-emerald-400 bg-emerald-500/5 shadow-sm' 
-                                : 'border-border hover:border-gray-300 dark:hover:border-slate-700 bg-card'
+                                ? 'border-[#0A4DA6] bg-[#0A4DA6]/5 shadow-sm' 
+                                : 'border-gray-100 dark:border-slate-800 hover:border-gray-250 bg-card'
                             }`}
                           >
                             <div className="flex justify-between items-start gap-1">
                               <h4 className="font-extrabold text-[11px] leading-tight text-gray-800 dark:text-gray-200">{i + 1}. {item.name}</h4>
-                              <span className="text-[9px] font-bold text-[#ff9933] bg-[#ff9933]/10 px-1.5 py-0.5 rounded whitespace-nowrap shadow-sm shrink-0">
+                              <span className="text-[9px] font-bold text-[#0A4DA6] bg-[#0A4DA6]/10 px-1.5 py-0.5 rounded whitespace-nowrap shadow-sm shrink-0">
                                 {item.distance} km
                               </span>
                             </div>
-                            <p className="text-[9px] text-gray-400 font-semibold uppercase mt-1">Address: {item.address?.city}</p>
+                            <p className="text-[9px] text-gray-400 font-semibold uppercase mt-1">Locality: {item.address?.city}</p>
                             
                             {isSelected && (
-                              <div className="mt-2.5 pt-2.5 border-t border-dashed border-border flex justify-between items-center">
-                                <span className="text-[9px] font-bold text-gray-500">Starting: ₹{item.lowestNightPrice || 1150}</span>
+                              <div className="mt-3 pt-3 border-t border-dashed border-gray-150 flex justify-between items-center">
+                                <span className="text-[9px] font-bold text-gray-500">From: ₹{item.lowestNightPrice || 150}/night</span>
                                 <Link 
                                   to={`/ashram/${item._id}`}
-                                  className="px-3 py-1 bg-emerald-500 text-white rounded-lg text-[9px] font-bold hover:bg-emerald-600 shadow"
+                                  className="px-3.5 py-1.5 bg-[#0A4DA6] text-white rounded-full text-[9px] font-bold shadow"
                                 >
                                   View Details
                                 </Link>

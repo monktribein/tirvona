@@ -19,61 +19,62 @@
   --color-ring: var(--ring);
 
   --font-sans: "Inter", system-ui, -apple-system, sans-serif;
-  --radius-lg: 0.75rem;
-  --radius-md: 0.5rem;
-  --radius-sm: 0.25rem;
+  --radius-xl: 1.5rem; /* 24px */
+  --radius-lg: 1.25rem; /* 20px */
+  --radius-md: 0.75rem; /* 12px */
+  --radius-sm: 0.5rem; /* 8px */
 }
 
 :root {
-  /* Light Mode Palette */
-  --background: #F8FAFC;
-  --foreground: #0F172A;
+  /* Premium Design System Mode (Light White/Navy/Gold Accent) */
+  --background: #FFFFFF;
+  --foreground: #0B192C;
   
   --card: #FFFFFF;
-  --card-foreground: #0F172A;
+  --card-foreground: #0B192C;
   
-  --primary: #0B5ED7;
+  --primary: #0A4DA6; /* Premium Blue */
   --primary-foreground: #FFFFFF;
   
-  --secondary: #1E3A8A;
+  --secondary: #0B192C; /* Deep Navy */
   --secondary-foreground: #FFFFFF;
   
-  --accent: #FF9933;
-  --accent-foreground: #FFFFFF;
+  --accent: #D4AF37; /* Elegant Gold */
+  --accent-foreground: #0B192C;
   
-  --success: #22C55E;
+  --success: #10B981;
   --warning: #F59E0B;
   --danger: #EF4444;
   
-  --border: #E2E8F0;
-  --input: #E2E8F0;
-  --ring: rgba(11, 94, 215, 0.2);
+  --border: #F1F5F9;
+  --input: #F8FAFC;
+  --ring: rgba(10, 77, 166, 0.15);
 }
 
 .dark {
-  /* Dark Mode Palette */
-  --background: #0B1329;
+  /* Maintain dark theme options if needed, but styled around Deep Navy & Gold */
+  --background: #070F1B;
   --foreground: #F8FAFC;
   
-  --card: #14203D;
+  --card: #0B192C;
   --card-foreground: #F8FAFC;
   
-  --primary: #1E70E7;
+  --primary: #1D6AE5;
   --primary-foreground: #FFFFFF;
   
-  --secondary: #2C4D9A;
+  --secondary: #0B192C;
   --secondary-foreground: #FFFFFF;
   
-  --accent: #FFA64D;
-  --accent-foreground: #111827;
+  --accent: #F3C63F;
+  --accent-foreground: #070F1B;
   
-  --success: #22C55E;
+  --success: #10B981;
   --warning: #F59E0B;
   --danger: #EF4444;
   
   --border: #1E293B;
   --input: #1E293B;
-  --ring: rgba(30, 112, 231, 0.4);
+  --ring: rgba(29, 106, 229, 0.3);
 }
 
 /* Custom Base Styles */
@@ -84,7 +85,7 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Custom scrollbars for professional dashboard UI */
+/* Custom scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -102,15 +103,29 @@ body {
 
 /* Elegant glassmorphism class for premium styling */
 .glass {
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.75);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .dark .glass {
-  background: rgba(20, 32, 61, 0.65);
+  background: rgba(11, 25, 44, 0.65);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
+
+/* Standard Premium Shadow */
+.premium-shadow {
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.02), 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.premium-card-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.premium-card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 30px rgba(11, 25, 44, 0.06);
+}
+

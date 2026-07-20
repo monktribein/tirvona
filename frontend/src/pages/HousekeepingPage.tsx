@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { ClipboardList, CheckCircle, Wrench, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { ClipboardList, CheckCircle, Wrench } from 'lucide-react';
 
 export const HousekeepingPage: React.FC = () => {
-  // Simple state simulation for rooms cleaning statuses
   const [housekeepingLogs, setHousekeepingLogs] = useState([
     { id: '101', roomName: 'Ganga View Deluxe AC Room - 101', status: 'dirty', assignedTo: 'Ramesh Singh' },
     { id: '102', roomName: 'Ganga View Deluxe AC Room - 102', status: 'cleaning', assignedTo: 'Suresh Kumar' },
@@ -17,10 +16,10 @@ export const HousekeepingPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="bg-card border border-border p-6 rounded-2xl shadow-sm">
-        <h2 className="text-lg font-bold text-secondary dark:text-white">Housekeeping & Maintenance Console</h2>
-        <p className="text-xs text-gray-500">Monitor room cleaning statuses, log maintenance blocks, and view staff duties.</p>
+    <div className="space-y-6 text-left">
+      <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[24px] shadow-sm">
+        <h2 className="text-base font-extrabold text-[#0B192C] dark:text-white">Housekeeping & Maintenance Console</h2>
+        <p className="text-xs text-gray-400 font-semibold mt-1">Monitor room cleaning statuses, log maintenance blocks, and view staff duties.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -33,9 +32,9 @@ export const HousekeepingPage: React.FC = () => {
           return (
             <div
               key={log.id}
-              className={`bg-card border border-border rounded-2xl p-5 shadow-sm space-y-4 relative overflow-hidden`}
+              className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[20px] p-5 shadow-sm space-y-4 relative overflow-hidden"
             >
-              {/* Dynamic Left Colored bar */}
+              {/* Colored status bar */}
               <div className={`absolute left-0 inset-y-0 w-1 ${
                 isClean ? 'bg-success' :
                 isCleaning ? 'bg-primary' :
@@ -44,16 +43,16 @@ export const HousekeepingPage: React.FC = () => {
               }`} />
 
               <div className="space-y-1">
-                <h4 className="font-bold text-xs text-secondary dark:text-white truncate pr-2">{log.roomName}</h4>
+                <h4 className="font-extrabold text-xs text-[#0B192C] dark:text-white truncate pr-2">{log.roomName}</h4>
                 <p className="text-[9px] text-gray-400 font-bold uppercase">Staff: {log.assignedTo}</p>
               </div>
 
               <div className="flex justify-between items-center pt-2">
-                <span className={`px-2 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider ${
+                <span className={`px-2.5 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-wider ${
                   isClean ? 'bg-success/10 text-success' :
                   isCleaning ? 'bg-primary/10 text-primary animate-pulse' :
                   isDirty ? 'bg-danger/10 text-danger' :
-                  'bg-yellow-50 text-yellow-700'
+                  'bg-yellow-50 text-yellow-750'
                 }`}>
                   {log.status}
                 </span>
@@ -71,7 +70,7 @@ export const HousekeepingPage: React.FC = () => {
                   {!isCleaning && !isClean && (
                     <button
                       onClick={() => updateStatus(log.id, 'cleaning')}
-                      className="p-1 hover:bg-primary/10 text-gray-400 hover:text-primary rounded transition-colors cursor-pointer"
+                      className="p-1 hover:bg-[#0A4DA6]/10 text-gray-400 hover:text-[#0A4DA6] rounded transition-colors cursor-pointer"
                       title="Start Cleaning"
                     >
                       <ClipboardList size={14} />

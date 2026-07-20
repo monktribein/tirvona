@@ -4,7 +4,6 @@ import {
   TrendingUp, 
   Bed, 
   Calendar, 
-  ArrowUpRight, 
   Users, 
   CheckCircle,
   Clock,
@@ -66,10 +65,10 @@ export const OwnerDashboard: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         
         {/* Gross Revenue */}
-        <div className="bg-card border border-border p-5 rounded-2xl shadow-sm flex items-center justify-between">
+        <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-5 rounded-[24px] shadow-sm flex items-center justify-between">
           <div className="space-y-1">
             <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Gross Revenue</span>
-            <h3 className="text-2xl font-extrabold text-secondary dark:text-accent">₹{analytics?.revenue || '0'}</h3>
+            <h3 className="text-2xl font-extrabold text-[#0B192C] dark:text-white">₹{analytics?.revenue || '0'}</h3>
             <span className="text-[9px] text-success font-semibold flex items-center gap-0.5"><TrendingUp size={10} /> +12% this month</span>
           </div>
           <div className="w-10 h-10 rounded-xl bg-success/10 text-success flex items-center justify-center">
@@ -78,22 +77,22 @@ export const OwnerDashboard: React.FC = () => {
         </div>
 
         {/* Today's Revenue */}
-        <div className="bg-card border border-border p-5 rounded-2xl shadow-sm flex items-center justify-between">
+        <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-5 rounded-[24px] shadow-sm flex items-center justify-between">
           <div className="space-y-1">
             <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Today's Revenue</span>
-            <h3 className="text-2xl font-extrabold text-[#ff9933]">₹{analytics?.todayRevenue || '0'}</h3>
+            <h3 className="text-2xl font-extrabold text-[#0A4DA6]">₹{analytics?.todayRevenue || '0'}</h3>
             <span className="text-[9px] text-gray-500 font-semibold">Immediate collection</span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-[#ff9933]/10 text-[#ff9933] flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-[#0A4DA6]/10 text-[#0A4DA6] flex items-center justify-center">
             <TrendingUp size={20} />
           </div>
         </div>
 
         {/* Bed Occupancy */}
-        <div className="bg-card border border-border p-5 rounded-2xl shadow-sm flex items-center justify-between">
+        <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-5 rounded-[24px] shadow-sm flex items-center justify-between">
           <div className="space-y-1">
             <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Bed Occupancy</span>
-            <h3 className="text-2xl font-extrabold text-secondary dark:text-accent">{analytics?.occupancyRate || '0'}%</h3>
+            <h3 className="text-2xl font-extrabold text-[#0B192C] dark:text-white">{analytics?.occupancyRate || '0'}%</h3>
             <span className="text-[9px] text-gray-500 font-medium">Of active physical rooms</span>
           </div>
           <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
@@ -102,7 +101,7 @@ export const OwnerDashboard: React.FC = () => {
         </div>
 
         {/* Available Rooms */}
-        <div className="bg-card border border-border p-5 rounded-2xl shadow-sm flex items-center justify-between">
+        <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-5 rounded-[24px] shadow-sm flex items-center justify-between">
           <div className="space-y-1">
             <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Available Rooms</span>
             <h3 className="text-2xl font-extrabold text-success">{analytics?.availableRooms || '0'}</h3>
@@ -114,19 +113,19 @@ export const OwnerDashboard: React.FC = () => {
         </div>
 
         {/* Total Bookings */}
-        <div className="bg-card border border-border p-5 rounded-2xl shadow-sm flex items-center justify-between">
+        <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-5 rounded-[24px] shadow-sm flex items-center justify-between">
           <div className="space-y-1">
             <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Total Bookings</span>
-            <h3 className="text-2xl font-extrabold text-secondary dark:text-accent">{analytics?.totalBookings || '0'}</h3>
+            <h3 className="text-2xl font-extrabold text-[#0B192C] dark:text-white">{analytics?.totalBookings || '0'}</h3>
             <span className="text-[9px] text-gray-500 font-medium">Reservations logged</span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-accent/10 text-accent flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center">
             <Calendar size={20} />
           </div>
         </div>
 
         {/* Cancelled Bookings */}
-        <div className="bg-card border border-border p-5 rounded-2xl shadow-sm flex items-center justify-between">
+        <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-5 rounded-[24px] shadow-sm flex items-center justify-between">
           <div className="space-y-1">
             <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Cancelled Bookings</span>
             <h3 className="text-2xl font-extrabold text-danger">{analytics?.cancelledBookings || '0'}</h3>
@@ -138,24 +137,24 @@ export const OwnerDashboard: React.FC = () => {
         </div>
 
         {/* Average Rating */}
-        <div className="bg-card border border-border p-5 rounded-2xl shadow-sm flex items-center justify-between">
+        <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-5 rounded-[24px] shadow-sm flex items-center justify-between">
           <div className="space-y-1">
             <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Average Rating</span>
-            <h3 className="text-2xl font-extrabold text-[#ff9933] flex items-center gap-1">
-              <Star className="fill-accent text-accent" size={20} /> {analytics?.averageRating || '4.5'}
+            <h3 className="text-2xl font-extrabold text-[#0B192C] dark:text-white flex items-center gap-1">
+              <Star className="fill-[#D4AF37] text-[#D4AF37]" size={20} /> {analytics?.averageRating || '4.5'}
             </h3>
             <span className="text-[9px] text-gray-500 font-medium">From guest reviews</span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-yellow-500/10 text-yellow-600 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-yellow-500/10 text-[#D4AF37] flex items-center justify-center">
             <Star size={20} />
           </div>
         </div>
 
         {/* Counter Unpaid */}
-        <div className="bg-card border border-border p-5 rounded-2xl shadow-sm flex items-center justify-between">
+        <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-5 rounded-[24px] shadow-sm flex items-center justify-between">
           <div className="space-y-1">
             <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Counter Unpaid</span>
-            <h3 className="text-2xl font-extrabold text-secondary dark:text-accent">₹{analytics?.pendingPayments || '0'}</h3>
+            <h3 className="text-2xl font-extrabold text-[#0B192C] dark:text-white">₹{analytics?.pendingPayments || '0'}</h3>
             <span className="text-[9px] text-danger font-medium">Awaiting cash/online pay</span>
           </div>
           <div className="w-10 h-10 rounded-xl bg-yellow-50 text-yellow-700 flex items-center justify-center">
@@ -166,15 +165,15 @@ export const OwnerDashboard: React.FC = () => {
       </div>
 
       {/* Bookings ledger table */}
-      <div className="bg-card border border-border rounded-2xl p-6 shadow-sm space-y-4">
-        <h3 className="text-sm font-bold text-secondary dark:text-white flex items-center gap-1.5 border-b border-border pb-3">
+      <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-6 shadow-sm space-y-4">
+        <h3 className="text-sm font-bold text-[#0B192C] dark:text-white flex items-center gap-1.5 border-b border-gray-55 dark:border-slate-800 pb-3">
           <CheckCircle size={16} className="text-success" /> Recent Bookings Ledger
         </h3>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="border-b border-border text-gray-400 uppercase font-bold text-[10px] tracking-wider">
+              <tr className="border-b border-gray-100 dark:border-slate-800 text-gray-400 uppercase font-bold text-[10px] tracking-wider">
                 <th className="py-3 px-4">Booking Ref</th>
                 <th className="py-3 px-4">Guest Name</th>
                 <th className="py-3 px-4">Room Type</th>
@@ -185,8 +184,8 @@ export const OwnerDashboard: React.FC = () => {
             </thead>
             <tbody>
               {recentBookings.map((bk) => (
-                <tr key={bk._id} className="border-b border-border hover:bg-gray-50/50 dark:hover:bg-slate-800/10">
-                  <td className="py-3.5 px-4 font-bold text-secondary dark:text-white">{bk.bookingId}</td>
+                <tr key={bk._id} className="border-b border-gray-100 dark:border-slate-800 hover:bg-gray-50/50 dark:hover:bg-slate-900/40">
+                  <td className="py-3.5 px-4 font-bold text-[#0B192C] dark:text-white">{bk.bookingId}</td>
                   <td className="py-3.5 px-4">
                     <div className="flex flex-col">
                       <span className="font-semibold">{bk.customerId?.name}</span>
@@ -194,12 +193,12 @@ export const OwnerDashboard: React.FC = () => {
                     </div>
                   </td>
                   <td className="py-3.5 px-4 text-gray-500">{bk.roomId?.name}</td>
-                  <td className="py-3.5 px-4 font-extrabold text-secondary dark:text-accent">₹{bk.pricing?.totalAmount}</td>
+                  <td className="py-3.5 px-4 font-extrabold text-[#0B192C] dark:text-white">₹{bk.pricing?.totalAmount}</td>
                   <td className="py-3.5 px-4">
-                    <span className={`px-2 py-0.5 rounded text-[9px] font-bold capitalize ${
+                    <span className={`px-2.5 py-1 rounded-full text-[9px] font-bold capitalize ${
                       bk.paymentStatus === 'fully_paid' ? 'bg-success/10 text-success' : 
                       bk.paymentStatus === 'refunded' ? 'bg-danger/10 text-danger' : 
-                      'bg-yellow-50 text-yellow-700'
+                      'bg-yellow-50 text-yellow-750'
                     }`}>
                       {bk.paymentStatus?.replace('_', ' ')}
                     </span>

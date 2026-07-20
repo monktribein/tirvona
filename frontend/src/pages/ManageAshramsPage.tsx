@@ -115,36 +115,36 @@ export const ManageAshramsPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center bg-card border border-border p-6 rounded-2xl shadow-sm">
+      <div className="flex justify-between items-center bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[24px] shadow-sm">
         <div>
-          <h2 className="text-lg font-bold text-secondary dark:text-white">Registered Ashram Accommodations</h2>
-          <p className="text-xs text-gray-500">Manage listings, check approval status, and configure KYC certificates.</p>
+          <h2 className="text-base font-extrabold text-[#0B192C] dark:text-white">Registered Ashram Accommodations</h2>
+          <p className="text-xs text-gray-400 font-semibold mt-1">Manage listings, check approval status, and configure KYC certificates.</p>
         </div>
         <button
           onClick={() => setShowCreate(true)}
-          className="px-4 py-2.5 bg-primary text-white text-xs font-bold rounded-lg shadow flex items-center gap-1.5 cursor-pointer"
+          className="px-5 py-2.5 bg-[#0A4DA6] text-white text-xs font-bold rounded-full hover:bg-opacity-95 shadow flex items-center gap-1.5 cursor-pointer"
         >
-          <Plus size={16} /> List Ashram
+          <Plus size={14} /> List Ashram
         </button>
       </div>
 
       {loading ? (
-        <div className="h-40 bg-card border border-border rounded-2xl animate-pulse" />
+        <div className="h-40 bg-gray-50 border border-gray-100 rounded-[24px] animate-pulse" />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {ashrams.map((a) => (
-            <div key={a._id} className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-4 flex flex-col justify-between">
+            <div key={a._id} className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 shadow-sm space-y-4 flex flex-col justify-between">
               
               {/* Header */}
-              <div className="flex justify-between items-start border-b border-border pb-3">
+              <div className="flex justify-between items-start border-b border-gray-50 dark:border-slate-850 pb-3">
                 <div className="space-y-1">
-                  <h3 className="font-bold text-sm text-secondary dark:text-white">{a.name}</h3>
-                  <p className="text-[10px] text-gray-500 flex items-center gap-0.5"><MapPin size={10} /> {a.address?.city}, {a.address?.state}</p>
+                  <h3 className="font-bold text-sm text-[#0B192C] dark:text-white">{a.name}</h3>
+                  <p className="text-[10px] text-gray-400 font-semibold flex items-center gap-0.5"><MapPin size={10} className="text-[#0A4DA6]" /> {a.address?.city}, {a.address?.state}</p>
                 </div>
-                <span className={`px-2.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide flex items-center gap-1 ${
+                <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide flex items-center gap-1 ${
                   a.status === 'approved' ? 'bg-success/15 text-success border border-success/30' :
-                  a.status === 'pending_inspection' ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' :
-                  'bg-gray-100 text-gray-500'
+                  a.status === 'pending_inspection' ? 'bg-yellow-50 text-yellow-750 border border-yellow-200' :
+                  'bg-gray-100 text-gray-550'
                 }`}>
                   {a.status === 'approved' ? <ShieldCheck size={10} /> : <Clock size={10} />}
                   {a.status?.replace('_', ' ')}
@@ -155,7 +155,7 @@ export const ManageAshramsPage: React.FC = () => {
               <div className="flex justify-between items-center pt-2">
                 <div className="flex flex-wrap gap-1">
                   {a.amenities?.slice(0, 3).map((am: string, i: number) => (
-                    <span key={i} className="text-[9px] font-medium bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded">
+                    <span key={i} className="text-[9px] font-bold bg-gray-50 dark:bg-slate-900 text-gray-500 px-2 py-0.5 rounded-md">
                       {am}
                     </span>
                   ))}
@@ -164,7 +164,7 @@ export const ManageAshramsPage: React.FC = () => {
                 {a.status === 'pending_docs' && (
                   <button
                     onClick={() => setUploadDeedId(a._id)}
-                    className="px-3 py-1.5 bg-accent text-white text-[10px] font-bold rounded-lg shadow-sm flex items-center gap-1 cursor-pointer"
+                    className="px-4 py-2 bg-[#0A4DA6]/10 text-[#0A4DA6] border border-[#0A4DA6]/20 text-[10px] font-bold rounded-full shadow-sm flex items-center gap-1 cursor-pointer"
                   >
                     <Upload size={12} /> Upload KYC
                   </button>
@@ -178,76 +178,76 @@ export const ManageAshramsPage: React.FC = () => {
       {/* List Ashram Modal */}
       {showCreate && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <form onSubmit={handleCreate} className="bg-card border border-border max-w-xl w-full rounded-2xl p-6 space-y-4 max-h-[85vh] overflow-y-auto">
-            <div className="flex justify-between items-center border-b border-border pb-3">
-              <h3 className="font-bold text-sm text-secondary dark:text-white flex items-center gap-1.5">
-                <Building2 size={16} /> Register Ashram Stay
+          <form onSubmit={handleCreate} className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-xl w-full rounded-[28px] p-6 space-y-4 max-h-[85vh] overflow-y-auto text-left">
+            <div className="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-3">
+              <h3 className="font-bold text-sm text-[#0B192C] dark:text-white flex items-center gap-1.5">
+                <Building2 size={16} className="text-[#0A4DA6]" /> Register Ashram Stay
               </h3>
-              <button type="button" onClick={() => setShowCreate(false)} className="text-gray-400 hover:text-gray-600">
+              <button type="button" onClick={() => setShowCreate(false)} className="text-gray-400 hover:text-gray-650">
                 <X size={18} />
               </button>
             </div>
 
             <div className="space-y-3">
               <div className="space-y-1">
-                <label className="text-xs text-gray-500">Ashram / Retreat Name</label>
+                <label className="text-xs font-bold text-gray-400">Ashram / Retreat Name</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. Swami Dayanand Ashram"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full px-3 py-2 bg-background border border-border rounded-lg text-xs"
+                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs text-gray-500">Description</label>
+                <label className="text-xs font-bold text-gray-400">Description</label>
                 <textarea
                   required
                   rows={2}
                   placeholder="Historical significance, daily spiritual activities..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-full p-3 bg-background border border-border rounded-lg text-xs"
+                  className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-xs text-gray-500">Street</label>
-                  <input type="text" required placeholder="Purani Basti" value={street} onChange={(e) => setStreet(e.target.value)} className="w-full px-3 py-2 bg-background border border-border rounded-lg text-xs" />
+                  <label className="text-xs font-bold text-gray-400">Street</label>
+                  <input type="text" required placeholder="Purani Basti" value={street} onChange={(e) => setStreet(e.target.value)} className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none" />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs text-gray-500">City</label>
-                  <input type="text" required placeholder="Rishikesh" value={city} onChange={(e) => setCity(e.target.value)} className="w-full px-3 py-2 bg-background border border-border rounded-lg text-xs" />
+                  <label className="text-xs font-bold text-gray-400">City</label>
+                  <input type="text" required placeholder="Rishikesh" value={city} onChange={(e) => setCity(e.target.value)} className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none" />
                 </div>
               </div>
 
               <div className="grid grid-cols-3 gap-3">
                 <div className="space-y-1">
-                  <label className="text-xs text-gray-500">District</label>
-                  <input type="text" required placeholder="Dehradun" value={district} onChange={(e) => setDistrict(e.target.value)} className="w-full px-3 py-2 bg-background border border-border rounded-lg text-xs" />
+                  <label className="text-xs font-bold text-gray-400">District</label>
+                  <input type="text" required placeholder="Dehradun" value={district} onChange={(e) => setDistrict(e.target.value)} className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none" />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs text-gray-500">State</label>
-                  <input type="text" required placeholder="Uttarakhand" value={state} onChange={(e) => setState(e.target.value)} className="w-full px-3 py-2 bg-background border border-border rounded-lg text-xs" />
+                  <label className="text-xs font-bold text-gray-400">State</label>
+                  <input type="text" required placeholder="Uttarakhand" value={state} onChange={(e) => setState(e.target.value)} className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none" />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs text-gray-500">Pincode</label>
-                  <input type="text" required placeholder="249201" value={pincode} onChange={(e) => setPincode(e.target.value)} className="w-full px-3 py-2 bg-background border border-border rounded-lg text-xs" />
+                  <label className="text-xs font-bold text-gray-400">Pincode</label>
+                  <input type="text" required placeholder="249201" value={pincode} onChange={(e) => setPincode(e.target.value)} className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none" />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs text-gray-500">Amenities (Comma separated)</label>
-                <input type="text" placeholder="WiFi, Hot Water, Lift, Meditation Hall" value={amenities} onChange={(e) => setAmenities(e.target.value)} className="w-full px-3 py-2 bg-background border border-border rounded-lg text-xs" />
+                <label className="text-xs font-bold text-gray-400">Amenities (Comma separated)</label>
+                <input type="text" placeholder="WiFi, Hot Water, Lift, Meditation Hall" value={amenities} onChange={(e) => setAmenities(e.target.value)} className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none" />
               </div>
             </div>
 
             <button
               type="submit"
-              className="w-full py-2.5 bg-primary text-white rounded-lg font-bold text-xs"
+              className="w-full py-3 bg-[#0A4DA6] text-white rounded-full font-extrabold text-xs shadow-md transition-all"
             >
               List Accommodation
             </button>
@@ -258,21 +258,21 @@ export const ManageAshramsPage: React.FC = () => {
       {/* KYC Upload Modal */}
       {uploadDeedId && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-card border border-border max-w-md w-full rounded-2xl p-6 space-y-4">
-            <h3 className="font-bold text-sm text-secondary dark:text-white">Upload Ashram Deeds & Certificates</h3>
-            <p className="text-[10px] text-gray-500">Please upload PDF copies of: Trust Deed papers, Fire Safety Audit, Land Registry Certificate.</p>
+          <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-md w-full rounded-[28px] p-6 space-y-4 text-left">
+            <h3 className="font-bold text-sm text-[#0B192C] dark:text-white">Upload Ashram Deeds & Certificates</h3>
+            <p className="text-[10px] text-gray-400">Please upload PDF copies of: Trust Deed papers, Fire Safety Audit, Land Registry Certificate.</p>
             
-            <div className="p-4 bg-primary/5 rounded-xl border border-primary/10 text-center space-y-2 cursor-pointer">
-              <Upload className="mx-auto text-primary" size={24} />
-              <span className="text-xs font-semibold block">Select PDF Document Archives</span>
+            <div className="p-6 bg-gray-50 dark:bg-slate-900 rounded-[20px] border border-dashed border-gray-250 text-center space-y-2 cursor-pointer">
+              <Upload className="mx-auto text-[#0A4DA6]" size={24} />
+              <span className="text-xs font-bold block text-[#0B192C] dark:text-white">Select PDF Document Archives</span>
               <span className="text-[9px] text-gray-400">Drag files here or browse directory</span>
             </div>
 
             <div className="flex gap-3">
-              <button onClick={() => setUploadDeedId(null)} className="flex-1 py-2 bg-gray-100 text-gray-700 rounded-lg text-xs font-bold cursor-pointer">
+              <button onClick={() => setUploadDeedId(null)} className="flex-1 py-2.5 bg-gray-100 text-gray-700 rounded-full text-xs font-bold cursor-pointer">
                 Cancel
               </button>
-              <button onClick={handleUploadDocs} className="flex-1 py-2 bg-primary text-white rounded-lg text-xs font-bold cursor-pointer">
+              <button onClick={handleUploadDocs} className="flex-1 py-2.5 bg-[#0A4DA6] text-white rounded-full text-xs font-bold cursor-pointer shadow">
                 Submit Documents
               </button>
             </div>

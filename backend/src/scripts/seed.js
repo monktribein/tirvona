@@ -108,9 +108,9 @@ const seedUsers = async () => {
   // Create Pilgrim / Customer
   const pilgrim = await upsertUser({
     name: 'Rajesh Sharma (Pilgrim)',
-    email: 'pilgrim@ashraybharat.gov.in',
+    email: 'pilgrim@tirvona.com',
     phone: '6666666666',
-    passwordHash: 'password123',
+    passwordHash: 'admin123',
     role: 'customer',
     status: 'active'
   });
@@ -118,9 +118,9 @@ const seedUsers = async () => {
   // Create Owner
   const owner = await upsertUser({
     name: 'Swami Chinmayananda (Ashram Trust)',
-    email: 'owner@ashraybharat.gov.in',
+    email: 'owner@tirvona.com',
     phone: '7777777777',
-    passwordHash: 'password123',
+    passwordHash: 'admin123',
     role: 'owner',
     status: 'active'
   });
@@ -128,9 +128,9 @@ const seedUsers = async () => {
   // Create District Officer
   const officer = await upsertUser({
     name: 'Shri A. K. Dwivedi (District Magistrate)',
-    email: 'officer@ashraybharat.gov.in',
+    email: 'officer@tirvona.com',
     phone: '8888888888',
-    passwordHash: 'password123',
+    passwordHash: 'admin123',
     role: 'district_officer',
     district: 'Haridwar',
     state: 'Uttarakhand',
@@ -145,9 +145,9 @@ const seedUsers = async () => {
   // Create Super Admin
   const admin = await upsertUser({
     name: 'National Admin (Ministry of Tourism)',
-    email: 'admin@ashraybharat.gov.in',
+    email: 'admin@tirvona.com',
     phone: '9999999999',
-    passwordHash: 'password123',
+    passwordHash: 'admin123',
     role: 'super_admin',
     status: 'active'
   });
@@ -155,9 +155,9 @@ const seedUsers = async () => {
   // Create Govt Admin
   const govtAdmin = await upsertUser({
     name: 'Shri R. K. Singh (Director General Tourism)',
-    email: 'govt.admin@ashraybharat.gov.in',
+    email: 'govt.admin@tirvona.com',
     phone: '9123456780',
-    passwordHash: 'password123',
+    passwordHash: 'admin123',
     role: 'govt_admin',
     state: 'Uttarakhand',
     status: 'active'
@@ -166,9 +166,9 @@ const seedUsers = async () => {
   // Create Manager
   const manager = await upsertUser({
     name: 'Mohan Lal (Ashram Manager)',
-    email: 'manager@ashraybharat.gov.in',
+    email: 'manager@tirvona.com',
     phone: '9123456781',
-    passwordHash: 'password123',
+    passwordHash: 'admin123',
     role: 'manager',
     status: 'active'
   });
@@ -176,9 +176,9 @@ const seedUsers = async () => {
   // Create Receptionist
   const receptionist = await upsertUser({
     name: 'Karan Singh (Front Desk)',
-    email: 'reception@ashraybharat.gov.in',
+    email: 'reception@tirvona.com',
     phone: '9123456782',
-    passwordHash: 'password123',
+    passwordHash: 'admin123',
     role: 'reception',
     status: 'active'
   });
@@ -186,9 +186,9 @@ const seedUsers = async () => {
   // Create Housekeeping
   const housekeeping = await upsertUser({
     name: 'Ramu Prasad (Housekeeping Head)',
-    email: 'housekeeping@ashraybharat.gov.in',
+    email: 'housekeeping@tirvona.com',
     phone: '9123456783',
-    passwordHash: 'password123',
+    passwordHash: 'admin123',
     role: 'housekeeping',
     status: 'active'
   });
@@ -196,9 +196,9 @@ const seedUsers = async () => {
   // Create Support Executive
   const support = await upsertUser({
     name: 'Amit Kumar (Support Lead)',
-    email: 'support@ashraybharat.gov.in',
+    email: 'support@tirvona.com',
     phone: '9123456784',
-    passwordHash: 'password123',
+    passwordHash: 'admin123',
     role: 'support',
     status: 'active'
   });
@@ -215,9 +215,9 @@ const seedUsers = async () => {
   for (let i = 0; i < pilgrimNames.length; i++) {
     const p = await upsertUser({
       name: pilgrimNames[i],
-      email: `pilgrim.${i + 1}@ashraybharat.gov.in`,
+      email: `pilgrim.${i + 1}@tirvona.com`,
       phone: `91000000${10 + i}`,
-      passwordHash: 'password123',
+      passwordHash: 'admin123',
       role: 'customer',
       status: 'active'
     });
