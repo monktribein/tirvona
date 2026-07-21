@@ -1,31 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import { 
-  Building2, 
   MapPin, 
   ShieldCheck, 
   Upload, 
   Plus, 
-  X, 
   Clock 
 } from 'lucide-react';
 import { useNotifications } from '../contexts/NotificationContext';
 
 export const ManageAshramsPage: React.FC = () => {
   const { addNotification } = useNotifications();
+  const navigate = useNavigate();
   const [ashrams, setAshrams] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // Create Modal State
-  const [showCreate, setShowCreate] = useState(false);
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [street, setStreet] = useState('');
-  const [city, setCity] = useState('');
-  const [district, setDistrict] = useState('');
-  const [state, setState] = useState('');
-  const [pincode, setPincode] = useState('');
-  const [amenities, setAmenities] = useState('WiFi, Pure Vegetarian Food, Meditation Hall');
 
   // Upload Docs State
   const [uploadDeedId, setUploadDeedId] = useState<string | null>(null);
@@ -60,37 +49,6 @@ export const ManageAshramsPage: React.FC = () => {
     }
   };
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const payload = {
-      name,
-      description,
-      address: { street, city, district, state, pincode },
-      amenities: amenities.split(',').map((a) => a.trim()),
-    };
-
-    try {
-      const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ashrams`, payload, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` },
-      });
-      if (res.data.success) {
-        setShowCreate(false);
-        // Reset forms
-        setName('');
-        setDescription('');
-        setStreet('');
-        setCity('');
-        setDistrict('');
-        setState('');
-        setPincode('');
-        addNotification('Ashram Created', 'Ashram listing created successfully. Please upload KYC certificates.', 'info');
-        fetchMyAshrams();
-      }
-    } catch (err) {
-      console.error('Create error:', err);
-    }
-  };
-
   const handleUploadDocs = async () => {
     if (!uploadDeedId) return;
     try {
@@ -121,7 +79,7 @@ export const ManageAshramsPage: React.FC = () => {
           <p className="text-xs text-gray-400 font-semibold mt-1">Manage listings, check approval status, and configure KYC certificates.</p>
         </div>
         <button
-          onClick={() => setShowCreate(true)}
+          onClick={() => navigate('/owner/ashrams/add')}
           className="px-5 py-2.5 bg-[#0A4DA6] text-white text-xs font-bold rounded-full hover:bg-opacity-95 shadow flex items-center gap-1.5 cursor-pointer"
         >
           <Plus size={14} /> List Ashram
@@ -172,86 +130,6 @@ export const ManageAshramsPage: React.FC = () => {
               </div>
             </div>
           ))}
-        </div>
-      )}
-
-      {/* List Ashram Modal */}
-      {showCreate && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <form onSubmit={handleCreate} className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-xl w-full rounded-[28px] p-6 space-y-4 max-h-[85vh] overflow-y-auto text-left">
-            <div className="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-3">
-              <h3 className="font-bold text-sm text-[#0B192C] dark:text-white flex items-center gap-1.5">
-                <Building2 size={16} className="text-[#0A4DA6]" /> Register Ashram Stay
-              </h3>
-              <button type="button" onClick={() => setShowCreate(false)} className="text-gray-400 hover:text-gray-650">
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-400">Ashram / Retreat Name</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Swami Dayanand Ashram"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-400">Description</label>
-                <textarea
-                  required
-                  rows={2}
-                  placeholder="Historical significance, daily spiritual activities..."
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-400">Street</label>
-                  <input type="text" required placeholder="Purani Basti" value={street} onChange={(e) => setStreet(e.target.value)} className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none" />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-400">City</label>
-                  <input type="text" required placeholder="Rishikesh" value={city} onChange={(e) => setCity(e.target.value)} className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-400">District</label>
-                  <input type="text" required placeholder="Dehradun" value={district} onChange={(e) => setDistrict(e.target.value)} className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none" />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-400">State</label>
-                  <input type="text" required placeholder="Uttarakhand" value={state} onChange={(e) => setState(e.target.value)} className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none" />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-400">Pincode</label>
-                  <input type="text" required placeholder="249201" value={pincode} onChange={(e) => setPincode(e.target.value)} className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none" />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-400">Amenities (Comma separated)</label>
-                <input type="text" placeholder="WiFi, Hot Water, Lift, Meditation Hall" value={amenities} onChange={(e) => setAmenities(e.target.value)} className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none" />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              className="w-full py-3 bg-[#0A4DA6] text-white rounded-full font-extrabold text-xs shadow-md transition-all"
-            >
-              List Accommodation
-            </button>
-          </form>
         </div>
       )}
 
