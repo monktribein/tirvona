@@ -432,24 +432,30 @@ export const PublicLayout: React.FC = () => {
           {/* Accordion columns */}
           <FooterAccordion title="Company">
             <ul className="text-xs space-y-3 text-gray-400">
-              {['About Us', 'Careers', 'Partner With Us', 'Press & Media'].map(l => (
-                <li key={l}><a href="#" className="hover:text-[#D4AF37] transition-colors">{l}</a></li>
+              {[
+                { label: 'About Us', to: '/about' },
+                { label: 'Careers', to: '/careers' },
+                { label: 'Partner With Us', to: '/partner' },
+                { label: 'Press & Media', to: '/press' }
+              ].map(l => (
+                <li key={l.label}><Link to={l.to} className="hover:text-[#D4AF37] transition-colors">{l.label}</Link></li>
               ))}
             </ul>
           </FooterAccordion>
 
           <FooterAccordion title="Support">
             <ul className="text-xs space-y-3 text-gray-400">
-              {['Help Center', 'Contact Us'].map(l => <li key={l}><a href="#" className="hover:text-[#D4AF37]">{l}</a></li>)}
+              <li><Link to="/help" className="hover:text-[#D4AF37]">Help Center</Link></li>
+              <li><Link to="/contact" className="hover:text-[#D4AF37]">Contact Us</Link></li>
               <li><Link to="/faq" className="hover:text-[#D4AF37]">FAQs</Link></li>
-              <li><a href="#" className="hover:text-[#D4AF37]">Cancellation Policy</a></li>
+              <li><Link to="/cancellation-policy" className="hover:text-[#D4AF37]">Cancellation Policy</Link></li>
             </ul>
           </FooterAccordion>
 
           <FooterAccordion title="Popular Retreats" titleColor="text-[#D4AF37]">
             <ul className="text-xs space-y-3 text-gray-400">
               {['Rishikesh Spiritual Valley', 'Varanasi Dharamshalas', 'Haridwar Ghat Stays', 'Vrindavan Pilgrim Hostels'].map(l => (
-                <li key={l}><a href="#" className="hover:text-[#D4AF37]">{l}</a></li>
+                <li key={l}><Link to={`/search?destination=${encodeURIComponent(l.split(' ')[0])}`} className="hover:text-[#D4AF37]">{l}</Link></li>
               ))}
             </ul>
           </FooterAccordion>
@@ -457,16 +463,25 @@ export const PublicLayout: React.FC = () => {
           <FooterAccordion title="Information" titleColor="text-[#D4AF37]">
             <ul className="text-xs space-y-3 text-gray-400">
               <li><Link to="/faq" className="hover:text-[#D4AF37]">FAQs</Link></li>
-              {['Government Guidelines', 'Owner Registration Guide', 'Terms of Stay & Policies'].map(l => (
-                <li key={l}><a href="#" className="hover:text-[#D4AF37]">{l}</a></li>
+              {[
+                { label: 'Government Guidelines', to: '/govt-guidelines' },
+                { label: 'Owner Registration Guide', to: '/owner-guide' },
+                { label: 'Terms of Stay & Policies', to: '/stay-policies' }
+              ].map(l => (
+                <li key={l.label}><Link to={l.to} className="hover:text-[#D4AF37]">{l.label}</Link></li>
               ))}
             </ul>
           </FooterAccordion>
 
           <FooterAccordion title="Legal">
             <ul className="text-xs space-y-3 text-gray-400">
-              {['Terms of Use', 'Privacy Policy', 'Refund Policy', 'Cookie Policy'].map(l => (
-                <li key={l}><a href="#" className="hover:text-[#D4AF37]">{l}</a></li>
+              {[
+                { label: 'Terms of Use', to: '/terms' },
+                { label: 'Privacy Policy', to: '/privacy' },
+                { label: 'Refund Policy', to: '/refund-policy' },
+                { label: 'Cookie Policy', to: '/cookie-policy' }
+              ].map(l => (
+                <li key={l.label}><Link to={l.to} className="hover:text-[#D4AF37]">{l.label}</Link></li>
               ))}
             </ul>
           </FooterAccordion>
@@ -544,16 +559,24 @@ export const PublicLayout: React.FC = () => {
             <div>
               <h4 className="text-xs font-extrabold uppercase tracking-wider text-white mb-5">Company</h4>
               <ul className="text-xs space-y-3">
-                {['About Us', 'Careers', 'Partner With Us', 'Press & Media'].map(l => <li key={l}><a href="#" className="hover:text-[#D4AF37] transition-colors">{l}</a></li>)}
+                {[
+                  { label: 'About Us', to: '/about' },
+                  { label: 'Careers', to: '/careers' },
+                  { label: 'Partner With Us', to: '/partner' },
+                  { label: 'Press & Media', to: '/press' }
+                ].map(l => (
+                  <li key={l.label}><Link to={l.to} className="hover:text-[#D4AF37] transition-colors">{l.label}</Link></li>
+                ))}
               </ul>
             </div>
 
             <div>
               <h4 className="text-xs font-extrabold uppercase tracking-wider text-white mb-5">Support</h4>
               <ul className="text-xs space-y-3">
-                {['Help Center', 'Contact Us'].map(l => <li key={l}><a href="#" className="hover:text-[#D4AF37]">{l}</a></li>)}
+                <li><Link to="/help" className="hover:text-[#D4AF37]">Help Center</Link></li>
+                <li><Link to="/contact" className="hover:text-[#D4AF37]">Contact Us</Link></li>
                 <li><Link to="/faq" className="hover:text-[#D4AF37]">FAQs</Link></li>
-                <li><a href="#" className="hover:text-[#D4AF37]">Cancellation Policy</a></li>
+                <li><Link to="/cancellation-policy" className="hover:text-[#D4AF37]">Cancellation Policy</Link></li>
               </ul>
             </div>
 
@@ -561,7 +584,7 @@ export const PublicLayout: React.FC = () => {
               <h4 className="text-xs font-extrabold uppercase tracking-wider text-[#D4AF37] mb-5">Popular Retreats</h4>
               <ul className="text-xs space-y-3">
                 {['Rishikesh Spiritual Valley', 'Varanasi Dharamshalas', 'Haridwar Ghat Stays', 'Vrindavan Pilgrim Hostels'].map(l => (
-                  <li key={l}><a href="#" className="hover:text-[#D4AF37]">{l}</a></li>
+                  <li key={l}><Link to={`/search?destination=${encodeURIComponent(l.split(' ')[0])}`} className="hover:text-[#D4AF37]">{l}</Link></li>
                 ))}
               </ul>
             </div>
@@ -570,8 +593,12 @@ export const PublicLayout: React.FC = () => {
               <h4 className="text-xs font-extrabold uppercase tracking-wider text-[#D4AF37] mb-5">Information</h4>
               <ul className="text-xs space-y-3">
                 <li><Link to="/faq" className="hover:text-[#D4AF37]">FAQs</Link></li>
-                {['Government Guidelines', 'Owner Registration Guide', 'Terms of Stay & Policies'].map(l => (
-                  <li key={l}><a href="#" className="hover:text-[#D4AF37]">{l}</a></li>
+                {[
+                  { label: 'Government Guidelines', to: '/govt-guidelines' },
+                  { label: 'Owner Registration Guide', to: '/owner-guide' },
+                  { label: 'Terms of Stay & Policies', to: '/stay-policies' }
+                ].map(l => (
+                  <li key={l.label}><Link to={l.to} className="hover:text-[#D4AF37]">{l.label}</Link></li>
                 ))}
               </ul>
             </div>
@@ -579,8 +606,13 @@ export const PublicLayout: React.FC = () => {
             <div>
               <h4 className="text-xs font-extrabold uppercase tracking-wider text-white mb-5">Legal</h4>
               <ul className="text-xs space-y-3">
-                {['Terms of Use', 'Privacy Policy', 'Refund Policy', 'Cookie Policy'].map(l => (
-                  <li key={l}><a href="#" className="hover:text-[#D4AF37]">{l}</a></li>
+                {[
+                  { label: 'Terms of Use', to: '/terms' },
+                  { label: 'Privacy Policy', to: '/privacy' },
+                  { label: 'Refund Policy', to: '/refund-policy' },
+                  { label: 'Cookie Policy', to: '/cookie-policy' }
+                ].map(l => (
+                  <li key={l.label}><Link to={l.to} className="hover:text-[#D4AF37]">{l.label}</Link></li>
                 ))}
               </ul>
             </div>

@@ -14,6 +14,25 @@ import AshramDetailPage from './pages/AshramDetailPage';
 import FaqPage from './pages/FaqPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+// Company
+import AboutPage from './pages/AboutPage';
+import CareersPage from './pages/CareersPage';
+import PartnerPage from './pages/PartnerPage';
+import PressPage from './pages/PressPage';
+// Support
+import HelpCenterPage from './pages/HelpCenterPage';
+import ContactPage from './pages/ContactPage';
+// Static Policy + Info Pages
+import {
+  CancellationPolicyPage,
+  GovtGuidelinesPage,
+  OwnerGuidePage,
+  StayPoliciesPage,
+  TermsPage,
+  PrivacyPage,
+  RefundPolicyPage,
+  CookiePolicyPage,
+} from './pages/StaticPages';
 import CustomerDashboard from './pages/CustomerDashboard';
 import SupportTicketsPage from './pages/SupportTicketsPage';
 import OwnerDashboard from './pages/OwnerDashboard';
@@ -59,6 +78,24 @@ const AppContent: React.FC = () => {
           <Route path="/faq" element={<FaqPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          {/* Company */}
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/careers" element={<CareersPage />} />
+          <Route path="/partner" element={<PartnerPage />} />
+          <Route path="/press" element={<PressPage />} />
+          {/* Support */}
+          <Route path="/help" element={<HelpCenterPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/cancellation-policy" element={<CancellationPolicyPage />} />
+          {/* Information */}
+          <Route path="/govt-guidelines" element={<GovtGuidelinesPage />} />
+          <Route path="/owner-guide" element={<OwnerGuidePage />} />
+          <Route path="/stay-policies" element={<StayPoliciesPage />} />
+          {/* Legal */}
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/refund-policy" element={<RefundPolicyPage />} />
+          <Route path="/cookie-policy" element={<CookiePolicyPage />} />
         </Route>
 
         {/* Authenticated Customer Routes */}
