@@ -15,6 +15,7 @@ interface NotificationContextType {
   unreadCount: number;
   addNotification: (title: string, message: string, type?: Notification['type']) => void;
   markAllAsRead: () => void;
+  removeNotification: (id: string) => void;
   clearNotifications: () => void;
 }
 
@@ -56,7 +57,11 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   };
 
   const markAllAsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    setNotifications([]);
+  };
+
+  const removeNotification = (id: string) => {
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
   };
 
   const clearNotifications = () => {
@@ -67,7 +72,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   return (
     <NotificationContext.Provider
-      value={{ notifications, unreadCount, addNotification, markAllAsRead, clearNotifications }}
+      value={{ notifications, unreadCount, addNotification, markAllAsRead, removeNotification, clearNotifications }}
     >
       {children}
     </NotificationContext.Provider>

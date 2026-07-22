@@ -47,7 +47,7 @@ const FooterAccordion: React.FC<{ title: string; titleColor?: string; children: 
 // ─── Main Layout ──────────────────────────────────────────────────────────────
 export const PublicLayout: React.FC = () => {
   const { user, logout } = useAuth();
-  const { unreadCount, notifications, markAllAsRead } = useNotifications();
+  const { unreadCount, notifications, markAllAsRead, removeNotification } = useNotifications();
   const navigate = useNavigate();
   const location = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -179,9 +179,18 @@ export const PublicLayout: React.FC = () => {
                             <p className="text-[10px] text-gray-500 text-center py-4">No new notifications</p>
                           ) : (
                             notifications.map(n => (
-                              <div key={n.id} className="p-2 rounded-lg bg-background border border-border text-[10px]">
-                                <div className="font-semibold text-secondary dark:text-accent">{n.title}</div>
-                                <div className="text-gray-500 mt-0.5">{n.message}</div>
+                              <div key={n.id} className="p-2.5 rounded-lg bg-background border border-border text-[10px] flex justify-between items-start gap-2">
+                                <div>
+                                  <div className="font-semibold text-secondary dark:text-accent">{n.title}</div>
+                                  <div className="text-gray-500 mt-0.5">{n.message}</div>
+                                </div>
+                                <button
+                                  onClick={() => removeNotification(n.id)}
+                                  className="text-gray-400 hover:text-danger p-0.5 cursor-pointer shrink-0"
+                                  title="Dismiss"
+                                >
+                                  <X size={12} />
+                                </button>
                               </div>
                             ))
                           )}
@@ -241,9 +250,18 @@ export const PublicLayout: React.FC = () => {
                         <p className="text-[10px] text-gray-400 text-center py-3">No new notifications</p>
                       ) : (
                         notifications.slice(0, 5).map(n => (
-                          <div key={n.id} className="p-2.5 rounded-xl bg-gray-50 dark:bg-slate-900 text-[10px]">
-                            <div className="font-bold text-[#0B192C] dark:text-white">{n.title}</div>
-                            <div className="text-gray-400 mt-0.5">{n.message}</div>
+                          <div key={n.id} className="p-2.5 rounded-xl bg-gray-50 dark:bg-slate-900 text-[10px] flex justify-between items-start gap-2">
+                            <div>
+                              <div className="font-bold text-[#0B192C] dark:text-white">{n.title}</div>
+                              <div className="text-gray-400 mt-0.5">{n.message}</div>
+                            </div>
+                            <button
+                              onClick={() => removeNotification(n.id)}
+                              className="text-gray-400 hover:text-danger p-0.5 cursor-pointer shrink-0"
+                              title="Dismiss"
+                            >
+                              <X size={12} />
+                            </button>
                           </div>
                         ))
                       )}
