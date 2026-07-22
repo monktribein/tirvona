@@ -127,6 +127,14 @@ export const ManageAshramsPage: React.FC = () => {
                     <Upload size={12} /> Upload KYC
                   </button>
                 )}
+                {a.status === 'approved' && (
+                  <button
+                    onClick={() => navigate(`/owner/ashrams/add?edit=${a._id}`)}
+                    className="px-4 py-2 bg-success/15 text-success border border-success/30 text-[10px] font-bold rounded-full shadow-sm flex items-center gap-1 cursor-pointer hover:bg-success/20"
+                  >
+                    Configure Details
+                  </button>
+                )}
               </div>
             </div>
           ))}

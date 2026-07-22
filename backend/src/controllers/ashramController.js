@@ -10,10 +10,14 @@ export const createAshram = async (req, res) => {
   try {
     const { name, description, address, history, rules, amenities } = req.body;
 
+    if (address && (!address.district || !address.district.trim())) {
+      address.district = address.city;
+    }
+
     const ashram = await Ashram.create({
       ownerId: req.user.id,
       name,
-      description,
+      description: description || 'Spiritual Ashram lodging & accommodation.',
       address,
       history: history || '',
       rules: rules || [],
@@ -112,6 +116,10 @@ export const updateAshram = async (req, res) => {
     // Keep documents and verification statuses untouched during edits
     const fieldsToExclude = ['ownerId', 'status', 'documents', 'inspectionDetails', 'rejectionReason'];
     fieldsToExclude.forEach((field) => delete req.body[field]);
+
+    if (req.body.address && (!req.body.address.district || !req.body.address.district.trim())) {
+      req.body.address.district = req.body.address.city;
+    }
 
     ashram = await Ashram.findByIdAndUpdate(req.params.id, req.body, {
       new: true,

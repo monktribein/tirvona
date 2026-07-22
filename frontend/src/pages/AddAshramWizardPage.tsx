@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import {
   ChevronRight, ChevronLeft, Check, AlertCircle, Plus, X, Building2, MapPin,
@@ -146,27 +146,31 @@ interface FormData {
 
 const DRAFT_KEY = 'tirvona_add_ashram_draft';
 
-const STEPS = [
-  { id: 1, label: 'Basic Info', icon: Building2 },
-  { id: 2, label: 'Trust & Reg.', icon: ShieldCheck },
-  { id: 3, label: 'Address & GPS', icon: MapPin },
-  { id: 4, label: 'Contact', icon: Phone },
-  { id: 5, label: 'Images', icon: Image },
-  { id: 6, label: 'About', icon: BookOpen },
-  { id: 7, label: 'History', icon: Sparkles },
-  { id: 8, label: 'Activities', icon: Zap },
-  { id: 9, label: 'Amenities', icon: Layers },
-  { id: 10, label: 'Room Categories', icon: Bed },
-  { id: 11, label: 'Pricing', icon: DollarSign },
-  { id: 12, label: 'Rules & Policies', icon: Info },
-  { id: 13, label: 'Food & Prasad', icon: Utensils },
-  { id: 14, label: 'Attractions', icon: Compass },
-  { id: 15, label: 'Medical', icon: HeartPulse },
-  { id: 16, label: 'Transport', icon: Bus },
-  { id: 17, label: 'Documents', icon: FileCheck },
-  { id: 18, label: 'Google Maps', icon: Map },
-  { id: 19, label: 'Preview', icon: Eye },
-  { id: 20, label: 'Submit', icon: Send },
+const BASIC_STEPS = [
+  { id: 1, label: 'Basic Info', icon: Building2, value: 0 },
+  { id: 2, label: 'Trust & Reg.', icon: ShieldCheck, value: 1 },
+  { id: 3, label: 'Address & GPS', icon: MapPin, value: 2 },
+  { id: 4, label: 'Contact', icon: Phone, value: 3 },
+  { id: 5, label: 'Documents', icon: FileCheck, value: 16 },
+  { id: 6, label: 'Preview', icon: Eye, value: 18 },
+  { id: 7, label: 'Submit', icon: Send, value: 19 },
+];
+
+const CONFIG_STEPS = [
+  { id: 1, label: 'Images', icon: Image, value: 4 },
+  { id: 2, label: 'About', icon: BookOpen, value: 5 },
+  { id: 3, label: 'History', icon: Sparkles, value: 6 },
+  { id: 4, label: 'Activities', icon: Zap, value: 7 },
+  { id: 5, label: 'Amenities', icon: Layers, value: 8 },
+  { id: 6, label: 'Room Categories', icon: Bed, value: 9 },
+  { id: 7, label: 'Pricing', icon: DollarSign, value: 10 },
+  { id: 8, label: 'Rules & Policies', icon: Info, value: 11 },
+  { id: 9, label: 'Food & Prasad', icon: Utensils, value: 12 },
+  { id: 10, label: 'Attractions', icon: Compass, value: 13 },
+  { id: 11, label: 'Medical', icon: HeartPulse, value: 14 },
+  { id: 12, label: 'Transport', icon: Bus, value: 15 },
+  { id: 13, label: 'Preview', icon: Eye, value: 18 },
+  { id: 14, label: 'Save Changes', icon: Save, value: 20 },
 ];
 
 const AMENITY_PRESETS = [
@@ -282,11 +286,22 @@ const SectionHeader: React.FC<{ icon: React.ReactNode; title: string; subtitle: 
 
 const AddAshramWizardPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const editId = searchParams.get('edit');
+  const STEPS = editId ? CONFIG_STEPS : BASIC_STEPS;
+
   const [step, setStep] = useState(0); // 0-indexed
+  const [maxStep, setMaxStep] = useState(0);
+
+  useEffect(() => {
+    setMaxStep(prev => Math.max(prev, step));
+  }, [step]);
+
   const [formData, setFormData] = useState<FormData>(() => {
     try {
+      const isEditing = window.location.search.includes('edit');
       const saved = localStorage.getItem(DRAFT_KEY);
-      if (saved) return { ...defaultFormData, ...JSON.parse(saved) };
+      if (saved && !isEditing) return { ...defaultFormData, ...JSON.parse(saved) };
     } catch { /* ignore */ }
     return defaultFormData;
   });
@@ -298,12 +313,97 @@ const AddAshramWizardPage: React.FC = () => {
   const [newRule, setNewRule] = useState('');
   const [newGalleryUrl, setNewGalleryUrl] = useState('');
 
+  // Fetch ashram for editing
+  useEffect(() => {
+    if (editId) {
+      const fetchAshram = async () => {
+        try {
+          const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ashrams/${editId}`);
+          if (res.data.success) {
+            const ashram = res.data.data.ashram;
+            setFormData(prev => ({
+              ...prev,
+              name: ashram.name || '',
+              tagline: ashram.tagline || '',
+              ashramType: ashram.ashramType || '',
+              description: ashram.description || '',
+              history: ashram.history || '',
+              foundedBy: ashram.foundedBy || '',
+              establishedYear: ashram.establishedYear || '',
+              street: ashram.address?.street || '',
+              city: ashram.address?.city || '',
+              district: ashram.address?.district || '',
+              state: ashram.address?.state || '',
+              pincode: ashram.address?.pincode || '',
+              lat: ashram.address?.coordinates?.coordinates?.[1]?.toString() || '',
+              lng: ashram.address?.coordinates?.coordinates?.[0]?.toString() || '',
+              googleMapsUrl: ashram.googleMapsUrl || '',
+              phone: ashram.contact?.phone || '',
+              altPhone: ashram.contact?.altPhone || '',
+              email: ashram.contact?.email || '',
+              website: ashram.contact?.website || '',
+              facebook: ashram.contact?.social?.facebook || '',
+              instagram: ashram.contact?.social?.instagram || '',
+              youtube: ashram.contact?.social?.youtube || '',
+              trustName: ashram.trust?.trustName || '',
+              trustRegNo: ashram.trust?.trustRegNo || '',
+              panNo: ashram.trust?.panNo || '',
+              trustType: ashram.trust?.trustType || '',
+              registeredBy: ashram.trust?.registeredBy || '',
+              coverImageUrl: ashram.images?.[0] || '',
+              galleryUrls: ashram.images?.slice(1) || [],
+              amenities: ashram.amenities || [],
+              activities: ashram.activities || [],
+              dailySchedule: ashram.dailySchedule || '',
+              specialEvents: ashram.specialEvents || '',
+              rules: ashram.rules || [],
+              checkInTime: ashram.policies?.checkInTime || '',
+              checkOutTime: ashram.policies?.checkOutTime || '',
+              minStay: ashram.policies?.minStay?.toString() || '1',
+              maxStay: ashram.policies?.maxStay?.toString() || '30',
+              cancellationPolicy: ashram.policies?.cancellationPolicy || '',
+              foodType: ashram.food?.foodType || '',
+              breakfastTime: ashram.food?.mealTimings?.breakfast || '',
+              lunchTime: ashram.food?.mealTimings?.lunch || '',
+              dinnerTime: ashram.food?.mealTimings?.dinner || '',
+              prasadDetails: ashram.food?.prasadDetails || '',
+              specialDiet: ashram.food?.specialDiet || '',
+              nearbyAttractions: ashram.nearbyAttractions || [],
+              nearestHospital: ashram.medical?.nearestHospital || '',
+              hospitalDistance: ashram.medical?.hospitalDistance || '',
+              emergencyPhone: ashram.medical?.emergencyPhone || '',
+              firstAidAvailable: ashram.medical?.firstAidAvailable || false,
+              ambulanceAccess: ashram.medical?.ambulanceAccess || false,
+              nearestRailway: ashram.transport?.nearestRailway || '',
+              railwayDistance: ashram.transport?.railwayDistance || '',
+              nearestAirport: ashram.transport?.nearestAirport || '',
+              airportDistance: ashram.transport?.airportDistance || '',
+              busStand: ashram.transport?.busStand || '',
+              busDistance: ashram.transport?.busDistance || '',
+              autoRickshaw: ashram.transport?.autoRickshaw || false,
+              taxiAvailable: ashram.transport?.taxiAvailable || false,
+              parkingAvailable: ashram.transport?.parkingAvailable || false,
+              trustDeedUrl: ashram.documents?.trustDeedUrl || '',
+              fireSafetyCertUrl: ashram.documents?.fireSafetyCertificateUrl || '',
+              landOwnershipUrl: ashram.documents?.landOwnershipUrl || '',
+              uploadNotes: ashram.documents?.uploadNotes || '',
+            }));
+          }
+        } catch (err) {
+          console.error('Error fetching ashram details:', err);
+        }
+      };
+      fetchAshram();
+    }
+  }, [editId]);
+
   // Autosave draft
   useEffect(() => {
+    if (editId) return;
     try {
       localStorage.setItem(DRAFT_KEY, JSON.stringify(formData));
     } catch { /* ignore */ }
-  }, [formData]);
+  }, [formData, editId]);
 
   const set = useCallback((field: keyof FormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -314,23 +414,25 @@ const AddAshramWizardPage: React.FC = () => {
 
   const validateStep = (): boolean => {
     const e: Record<string, string> = {};
-    if (step === 0) {
+    const stepValue = STEPS[step].value;
+    if (stepValue === 0) {
       if (!formData.name.trim()) e.name = 'Ashram name is required';
       if (!formData.ashramType) e.ashramType = 'Please select ashram type';
     }
-    if (step === 1) {
+    if (stepValue === 1) {
       if (!formData.trustName.trim()) e.trustName = 'Trust name is required';
     }
-    if (step === 2) {
+    if (stepValue === 2) {
       if (!formData.street.trim()) e.street = 'Street address is required';
       if (!formData.city.trim()) e.city = 'City is required';
+      if (!formData.district.trim()) e.district = 'District is required';
       if (!formData.state.trim()) e.state = 'State is required';
       if (!formData.pincode.trim()) e.pincode = 'Pincode is required';
     }
-    if (step === 3) {
+    if (stepValue === 3) {
       if (!formData.phone.trim()) e.phone = 'Phone number is required';
     }
-    if (step === 5) {
+    if (stepValue === 5) {
       if (!formData.description.trim()) e.description = 'Description is required';
     }
     setErrors(e);
@@ -339,7 +441,7 @@ const AddAshramWizardPage: React.FC = () => {
 
   const handleNext = () => {
     if (validateStep()) {
-      setStep(s => Math.min(s + 1, 19));
+      setStep(s => Math.min(s + 1, STEPS.length - 1));
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
@@ -354,6 +456,44 @@ const AddAshramWizardPage: React.FC = () => {
   const handleSubmit = async () => {
     setSubmitting(true);
     setSubmitError('');
+
+    const e: Record<string, string> = {};
+    if (!formData.name.trim()) e.name = 'Ashram name is required';
+    if (!formData.ashramType) e.ashramType = 'Please select ashram type';
+    if (!formData.trustName.trim()) e.trustName = 'Trust name is required';
+    if (!formData.street.trim()) e.street = 'Street address is required';
+    if (!formData.city.trim()) e.city = 'City is required';
+    if (!formData.district.trim()) e.district = 'District is required';
+    if (!formData.state.trim()) e.state = 'State is required';
+    if (!formData.pincode.trim()) e.pincode = 'Pincode is required';
+    if (!formData.phone.trim()) e.phone = 'Phone number is required';
+    if (editId && !formData.description.trim()) e.description = 'Description is required';
+
+    if (Object.keys(e).length > 0) {
+      setErrors(e);
+      const findStepIndex = (val: number) => STEPS.findIndex(s => s.value === val);
+      if (e.name || e.ashramType) {
+        const idx = findStepIndex(0);
+        if (idx !== -1) setStep(idx);
+      } else if (e.trustName) {
+        const idx = findStepIndex(1);
+        if (idx !== -1) setStep(idx);
+      } else if (e.street || e.city || e.district || e.state || e.pincode) {
+        const idx = findStepIndex(2);
+        if (idx !== -1) setStep(idx);
+      } else if (e.phone) {
+        const idx = findStepIndex(3);
+        if (idx !== -1) setStep(idx);
+      } else if (e.description) {
+        const idx = findStepIndex(5);
+        if (idx !== -1) setStep(idx);
+      }
+      
+      setSubmitError('Please fill in all required fields before submitting.');
+      setSubmitting(false);
+      return;
+    }
+
     const payload = {
       name: formData.name,
       tagline: formData.tagline,
@@ -445,16 +585,18 @@ const AddAshramWizardPage: React.FC = () => {
     };
 
     try {
-      const res = await axios.post(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ashrams`,
-        payload,
-        { headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` } }
-      );
+      const url = editId
+        ? `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ashrams/${editId}`
+        : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ashrams`;
+      const res = editId
+        ? await axios.put(url, payload, { headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` } })
+        : await axios.post(url, payload, { headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` } });
+
       if (res.data.success) {
         setSubmitSuccess(true);
         localStorage.removeItem(DRAFT_KEY);
       } else {
-        setSubmitError('Submission failed. Please try again.');
+        setSubmitError(editId ? 'Failed to save changes. Please try again.' : 'Submission failed. Please try again.');
       }
     } catch (err: any) {
       setSubmitError(err.response?.data?.message || 'Network error. Draft is saved locally.');
@@ -562,7 +704,8 @@ const AddAshramWizardPage: React.FC = () => {
   // ─── Step Renderers ───────────────────────────────────────────────────────────
 
   const renderStep = () => {
-    switch (step) {
+    const stepValue = STEPS[step].value;
+    switch (stepValue) {
       // ── Step 1: Basic Information ──────────────────────────────────────────
       case 0:
         return (
@@ -640,8 +783,9 @@ const AddAshramWizardPage: React.FC = () => {
                 <Input placeholder="Rishikesh" value={formData.city} onChange={e => set('city', e.target.value)} />
                 <ErrMsg field="city" />
               </Field>
-              <Field label="District">
+              <Field label="District" required>
                 <Input placeholder="Pauri Garhwal" value={formData.district} onChange={e => set('district', e.target.value)} />
+                <ErrMsg field="district" />
               </Field>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -1481,21 +1625,15 @@ const AddAshramWizardPage: React.FC = () => {
         }
 
         const completedSteps = [
-          { label: 'Basic Information', done: !!formData.name },
-          { label: 'Trust & Registration', done: !!formData.trustName },
-          { label: 'Address & GPS', done: !!formData.street && !!formData.city },
-          { label: 'Contact Information', done: !!formData.phone },
-          { label: 'Images', done: !!formData.coverImageUrl },
-          { label: 'About the Ashram', done: formData.description.length > 50 },
-          { label: 'Historical Significance', done: !!formData.history },
-          { label: 'Spiritual Activities', done: formData.activities.length > 0 },
-          { label: 'Amenities', done: formData.amenities.length > 0 },
-          { label: 'Room Categories', done: formData.rooms.length > 0 },
-          { label: 'Rules & Policies', done: formData.rules.length > 0 },
-          { label: 'Verification Documents', done: !!formData.trustDeedUrl },
+          { label: 'Basic Information', done: !!formData.name, required: true },
+          { label: 'Trust & Registration', done: !!formData.trustName, required: true },
+          { label: 'Address & GPS', done: !!formData.street && !!formData.city && !!formData.district && !!formData.state && !!formData.pincode, required: true },
+          { label: 'Contact Information', done: !!formData.phone, required: true },
+          { label: 'Verification Documents (Optional)', done: !!formData.trustDeedUrl, required: false },
         ];
-        const requiredDone = completedSteps.filter(s => s.done).length;
-        const readyToSubmit = requiredDone >= 6; // minimum threshold
+        const requiredDone = completedSteps.filter(s => s.required && s.done).length;
+        const totalRequired = completedSteps.filter(s => s.required).length;
+        const readyToSubmit = requiredDone === totalRequired;
 
         return (
           <div className="space-y-6">
@@ -1514,8 +1652,8 @@ const AddAshramWizardPage: React.FC = () => {
             <div className={`p-4 rounded-2xl border text-sm font-semibold flex items-center gap-3 ${readyToSubmit ? 'bg-success/5 border-success/20 text-success' : 'bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800/30 text-amber-700'}`}>
               {readyToSubmit ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
               {readyToSubmit
-                ? `${requiredDone}/12 key sections completed. Ready for submission.`
-                : `Only ${requiredDone}/12 sections completed. Complete at least 6 key sections before submitting.`}
+                ? `${requiredDone}/${totalRequired} required sections completed. Ready for submission.`
+                : `Only ${requiredDone}/${totalRequired} required sections completed. Please fill all required fields before submitting.`}
             </div>
 
             {submitError && (
@@ -1527,7 +1665,7 @@ const AddAshramWizardPage: React.FC = () => {
 
             <div className="flex flex-col sm:flex-row gap-3 pt-2">
               <button
-                onClick={() => setStep(18)}
+                onClick={() => setStep(STEPS.findIndex(s => s.value === 18))}
                 className="flex-1 py-3.5 border border-gray-200 dark:border-slate-700 rounded-full font-bold text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors flex items-center justify-center gap-2"
               >
                 <Eye size={16} /> View Final Preview
@@ -1546,6 +1684,72 @@ const AddAshramWizardPage: React.FC = () => {
                   </>
                 ) : (
                   <><Send size={16} /> Submit for Approval</>
+                )}
+              </button>
+            </div>
+          </div>
+        );
+
+      // ── Step 21: Save Changes (Edit Mode only) ──────────────────────────────────
+      case 20:
+        if (submitSuccess) {
+          return (
+            <div className="flex flex-col items-center justify-center py-20 space-y-6 text-center">
+              <div className="w-20 h-20 rounded-full bg-success/10 border border-success/20 flex items-center justify-center">
+                <CheckCircle size={40} className="text-success" />
+              </div>
+              <div className="space-y-2">
+                <h2 className="text-2xl font-extrabold text-[#0B192C] dark:text-white">Changes Saved Successfully!</h2>
+                <p className="text-sm text-gray-500 max-w-md">
+                  The Ashram configuration details for <strong>{formData.name}</strong> have been updated.
+                </p>
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => navigate('/owner/ashrams')}
+                  className="px-6 py-3 bg-[#0A4DA6] text-white rounded-full font-bold text-sm hover:bg-[#0A4DA6]/90 transition-colors"
+                >
+                  Back to My Ashrams
+                </button>
+              </div>
+            </div>
+          );
+        }
+
+        return (
+          <div className="space-y-6">
+            <SectionHeader icon={<Save size={22} />} title="Save Details" subtitle="Verify and save the configuration of your Ashram." />
+            
+            <p className="text-xs text-gray-500 font-medium leading-relaxed">
+              Ensure you have reviewed all the changes. Once saved, these details will be immediately visible to pilgrims browsing the Tirvona application.
+            </p>
+
+            {submitError && (
+              <div className="p-4 bg-danger/10 border border-danger/20 rounded-2xl text-danger text-sm font-semibold flex items-start gap-2">
+                <AlertCircle size={16} className="flex-shrink-0 mt-0.5" />
+                {submitError}
+              </div>
+            )}
+
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
+              <button
+                onClick={() => setStep(STEPS.findIndex(s => s.value === 18))}
+                className="flex-1 py-3.5 border border-gray-200 dark:border-slate-700 rounded-full font-bold text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors flex items-center justify-center gap-2"
+              >
+                <Eye size={16} /> View Final Preview
+              </button>
+              <button
+                onClick={handleSubmit}
+                disabled={submitting}
+                className="flex-1 py-3.5 rounded-full font-extrabold text-sm flex items-center justify-center gap-2 transition-all bg-success text-white hover:bg-success/90 shadow-lg shadow-success/20"
+              >
+                {submitting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <><Save size={16} /> Save Changes</>
                 )}
               </button>
             </div>
@@ -1612,8 +1816,9 @@ const AddAshramWizardPage: React.FC = () => {
               return (
                 <button
                   key={s.id}
-                  onClick={() => setStep(i)}
-                  className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left text-[11px] font-semibold transition-all ${isActive
+                  onClick={() => i <= maxStep && setStep(i)}
+                  disabled={i > maxStep}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left text-[11px] font-semibold transition-all disabled:opacity-50 ${isActive
                     ? 'bg-[#0A4DA6] text-white shadow-sm'
                     : isDone
                       ? 'text-success hover:bg-success/5'
@@ -1652,7 +1857,7 @@ const AddAshramWizardPage: React.FC = () => {
               {step + 1} / {STEPS.length}
             </span>
 
-            {step < 19 ? (
+            {step < STEPS.length - 1 ? (
               <button
                 onClick={handleNext}
                 className="flex items-center gap-2 px-6 py-3 bg-[#0A4DA6] text-white rounded-full font-bold text-sm hover:bg-[#0A4DA6]/90 shadow-md shadow-[#0A4DA6]/20 transition-all"
@@ -1665,7 +1870,7 @@ const AddAshramWizardPage: React.FC = () => {
                 disabled={submitting}
                 className="flex items-center gap-2 px-8 py-3 bg-[#0A4DA6] text-white rounded-full font-extrabold text-sm hover:bg-[#0A4DA6]/90 shadow-lg shadow-[#0A4DA6]/20 transition-all disabled:opacity-50"
               >
-                {submitting ? 'Submitting…' : <><Send size={16} /> Submit for Approval</>}
+                {submitting ? (editId ? 'Saving…' : 'Submitting…') : editId ? <><Save size={16} /> Save Changes</> : <><Send size={16} /> Submit for Approval</>}
               </button>
             )}
           </div>
@@ -1681,8 +1886,9 @@ const AddAshramWizardPage: React.FC = () => {
             return (
               <button
                 key={s.id}
-                onClick={() => setStep(i)}
-                className={`flex-shrink-0 px-3 py-1.5 rounded-full text-[10px] font-bold transition-all ${isActive
+                onClick={() => i <= maxStep && setStep(i)}
+                disabled={i > maxStep}
+                className={`flex-shrink-0 px-3 py-1.5 rounded-full text-[10px] font-bold transition-all disabled:opacity-55 ${isActive
                   ? 'bg-[#0A4DA6] text-white'
                   : isDone
                     ? 'bg-success/10 text-success'
