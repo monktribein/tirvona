@@ -62,6 +62,7 @@ export const createBooking = async (req, res) => {
     // 2. Add optional services pricing
     let servicesPrice = 0;
     const bookingServices = {
+      prasad: { ordered: false, price: 0 },
       meals: { ordered: false, price: 0 },
       parking: { ordered: false, price: 0 },
       locker: { ordered: false, price: 0 },
@@ -69,6 +70,12 @@ export const createBooking = async (req, res) => {
     };
 
     if (services) {
+      if (services.prasad && services.prasad.ordered) {
+        // Sacred Prasad priced at ₹100 per guest
+        const price = 100 * guestsCount;
+        bookingServices.prasad = { ordered: true, price };
+        servicesPrice += price;
+      }
       if (services.meals && services.meals.ordered) {
         // Meals priced at ₹150 per person per day
         const price = 150 * guestsCount * daysCount;

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import logo from '../assets/logo.png';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { ShieldCheck, Mail, Phone, Lock, Eye, EyeOff } from 'lucide-react';
 import axios from 'axios';
@@ -8,6 +8,8 @@ import axios from 'axios';
 export const LoginPage: React.FC = () => {
   const { login, loginOTP } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirect = searchParams.get('redirect');
 
   const [useOtp, setUseOtp] = useState(false);
   const [email, setEmail] = useState('');
@@ -20,6 +22,20 @@ export const LoginPage: React.FC = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const getRedirectTarget = () => {
+    if (redirect) return redirect;
+    const pendingRaw = localStorage.getItem('pending_booking');
+    if (pendingRaw) {
+      try {
+        const pb = JSON.parse(pendingRaw);
+        if (pb.ashramId) {
+          return `/ashram/${pb.ashramId}?checkIn=${pb.checkInDate || ''}&checkOut=${pb.checkOutDate || ''}&guests=${pb.guestsCount || 1}`;
+        }
+      } catch (e) {}
+    }
+    return '/';
+  };
+
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -27,7 +43,7 @@ export const LoginPage: React.FC = () => {
     const res = await login(email, password);
     setLoading(false);
     if (res.success) {
-      navigate('/');
+      navigate(getRedirectTarget());
     } else {
       setError(res.message || 'Login failed');
     }
@@ -58,7 +74,7 @@ export const LoginPage: React.FC = () => {
     const res = await loginOTP(phone, otpCode);
     setLoading(false);
     if (res.success) {
-      navigate('/');
+      navigate(getRedirectTarget());
     } else {
       setError(res.message || 'Invalid OTP');
     }
@@ -212,7 +228,7 @@ export const LoginPage: React.FC = () => {
         {/* Footer info links */}
         <div className="text-center text-xs text-gray-400">
           New stay seeker or property owner?{' '}
-          <Link to="/register" className="text-[#0A4DA6] font-bold hover:underline">
+          <Link to={`/register${redirect ? `?redirect=${encodeURIComponent(redirect)}` : ''}`} className="text-[#0A4DA6] font-bold hover:underline">
             Register now
           </Link>
         </div>

@@ -239,6 +239,149 @@ const getRoomImages = () => {
   };
 };
 
+const getAshramRooms = (idx, roomImages) => {
+  const roomSets = [
+    // 0: Shantikunj Gayatri Pariwar Ashram (Haridwar) -> Starting ₹200
+    [
+      { name: 'Gayatri Sadhana Dormitory Bed', type: 'dormitory', ac: 'Non-AC', cap: 1, inventory: 50, price: 200, img: roomImages.dormitory, desc: 'Single bed in quiet, air-cooled shared Gayatri sadhana hall with locker.' },
+      { name: 'Standard Single Non-AC Room', type: 'private_room', ac: 'Non-AC', cap: 1, inventory: 20, price: 450, img: roomImages.private_room, desc: 'Simple single room with attached bath and garden view.' },
+      { name: 'Standard Double Non-AC Room', type: 'private_room', ac: 'Non-AC', cap: 2, inventory: 25, price: 750, img: roomImages.double_room, desc: 'Clean double occupancy room for pilgrims.' },
+      { name: 'Standard Double AC Room', type: 'private_room', ac: 'AC', cap: 2, inventory: 15, price: 1100, img: roomImages.double_room, desc: 'Air-conditioned double bed room with study desk.' },
+      { name: 'Family Suite (4 Beds)', type: 'family_room', ac: 'AC', cap: 4, inventory: 10, price: 1600, img: roomImages.family_room, desc: 'Spacious family hall with four beds and attached bath.' },
+      { name: 'Deluxe Himalayan View Suite', type: 'private_room', ac: 'AC', cap: 3, inventory: 8, price: 2000, img: roomImages.deluxe_room, desc: 'Balcony view of Devatma Himalaya temple.' }
+    ],
+
+    // 1: Prem Nagar Ashram (Haridwar) -> Starting ₹250
+    [
+      { name: 'Universal Peace Shared Dorm Bed', type: 'dormitory', ac: 'Non-AC', cap: 1, inventory: 40, price: 250, img: roomImages.dormitory, desc: 'Air-cooled shared dormitory in Prem Nagar campus.' },
+      { name: 'Single Garden-Facing Non-AC Room', type: 'private_room', ac: 'Non-AC', cap: 1, inventory: 18, price: 500, img: roomImages.private_room, desc: 'Quiet single room facing flower gardens.' },
+      { name: 'Double Non-AC Room', type: 'private_room', ac: 'Non-AC', cap: 2, inventory: 20, price: 850, img: roomImages.double_room, desc: 'Comfortable double bed room.' },
+      { name: 'Double AC Room', type: 'private_room', ac: 'AC', cap: 2, inventory: 12, price: 1300, img: roomImages.double_room, desc: 'Cool AC double room with hot water shower.' },
+      { name: 'Family Suite (4 Beds)', type: 'family_room', ac: 'AC', cap: 4, inventory: 8, price: 1900, img: roomImages.family_room, desc: 'Large suite for pilgrim families.' },
+      { name: 'Spiritual Garden View Deluxe Suite', type: 'private_room', ac: 'AC', cap: 3, inventory: 6, price: 2300, img: roomImages.deluxe_room, desc: 'Premium room overlooking fountains and gardens.' }
+    ],
+
+    // 2: Bharat Sevashram Sangha (Haridwar) -> Starting ₹120
+    [
+      { name: 'Pilgrim Subsidy Shared Dorm Bed', type: 'dormitory', ac: 'Non-AC', cap: 1, inventory: 60, price: 120, img: roomImages.dormitory, desc: 'Economical dormitory bed for devout pilgrims.' },
+      { name: 'Economy Single Non-AC Room', type: 'private_room', ac: 'Non-AC', cap: 1, inventory: 25, price: 300, img: roomImages.private_room, desc: 'Basic clean single room.' },
+      { name: 'Economy Double Non-AC Room', type: 'private_room', ac: 'Non-AC', cap: 2, inventory: 30, price: 550, img: roomImages.double_room, desc: 'Standard double bed room with attached bath.' },
+      { name: 'Standard AC Twin Bed Room', type: 'private_room', ac: 'AC', cap: 2, inventory: 10, price: 950, img: roomImages.double_room, desc: 'Air-conditioned room with twin beds.' },
+      { name: 'Family Hall (5 Beds)', type: 'family_room', ac: 'Non-AC', cap: 5, inventory: 8, price: 1100, img: roomImages.family_room, desc: 'Economical large hall for pilgrim groups.' }
+    ],
+
+    // 3: Maa Anandamayi Ashram (Haridwar) -> Starting ₹180
+    [
+      { name: 'Quiet Meditation Shared Dorm Bed', type: 'dormitory', ac: 'Non-AC', cap: 1, inventory: 35, price: 180, img: roomImages.dormitory, desc: 'Silent dormitory bed near Samadhi hall.' },
+      { name: 'Single Quiet Non-AC Room', type: 'private_room', ac: 'Non-AC', cap: 1, inventory: 15, price: 400, img: roomImages.private_room, desc: 'Peaceful single room for introspection.' },
+      { name: 'Standard Double Non-AC Room', type: 'private_room', ac: 'Non-AC', cap: 2, inventory: 18, price: 700, img: roomImages.double_room, desc: 'Quiet twin bed room.' },
+      { name: 'Standard Double AC Room', type: 'private_room', ac: 'AC', cap: 2, inventory: 10, price: 1150, img: roomImages.double_room, desc: 'Air-conditioned room with work desk.' },
+      { name: 'Samadhi View Family Room', type: 'family_room', ac: 'AC', cap: 4, inventory: 6, price: 1750, img: roomImages.family_room, desc: 'Spacious room overlooking inner courtyard.' }
+    ],
+
+    // 4: Sapt Rishi Ashram (Haridwar) -> Starting ₹150
+    [
+      { name: 'Saptarishi Seven-Stream Dorm Bed', type: 'dormitory', ac: 'Non-AC', cap: 1, inventory: 45, price: 150, img: roomImages.dormitory, desc: 'Shared bed near Ganga Sapt Dhara stream.' },
+      { name: 'Simple Single Non-AC Room', type: 'private_room', ac: 'Non-AC', cap: 1, inventory: 20, price: 350, img: roomImages.private_room, desc: 'Simple ventilated single room.' },
+      { name: 'Standard Twin Room', type: 'private_room', ac: 'Non-AC', cap: 2, inventory: 22, price: 600, img: roomImages.double_room, desc: 'Double bed room with river breeze.' },
+      { name: 'Standard AC Double Room', type: 'private_room', ac: 'AC', cap: 2, inventory: 12, price: 1050, img: roomImages.double_room, desc: 'AC double room with attached hot water bath.' },
+      { name: 'Family Retreat Room (4 Beds)', type: 'family_room', ac: 'AC', cap: 4, inventory: 8, price: 1550, img: roomImages.family_room, desc: 'Large retreat room for families.' }
+    ],
+
+    // 5: Parmarth Niketan Ashram (Rishikesh) -> Starting ₹300
+    [
+      { name: 'Ganga Ghat Shared Dormitory Bed', type: 'dormitory', ac: 'Non-AC', cap: 1, inventory: 50, price: 300, img: roomImages.dormitory, desc: 'Bed in iconic Parmarth Niketan dormitory.' },
+      { name: 'Standard Single Ganges Non-AC Room', type: 'private_room', ac: 'Non-AC', cap: 1, inventory: 25, price: 650, img: roomImages.private_room, desc: 'Single room near yoga halls.' },
+      { name: 'Deluxe Double Room', type: 'private_room', ac: 'Non-AC', cap: 2, inventory: 30, price: 1250, img: roomImages.double_room, desc: 'Twin beds room with attached bath and fan.' },
+      { name: 'Deluxe Double AC Room with Balcony', type: 'private_room', ac: 'AC', cap: 2, inventory: 20, price: 1800, img: roomImages.double_room, desc: 'AC room with private balcony view.' },
+      { name: 'Family Suite (4 Beds)', type: 'family_room', ac: 'AC', cap: 4, inventory: 12, price: 2500, img: roomImages.family_room, desc: 'Spacious air-conditioned suite.' },
+      { name: 'Executive Ganga View Suite', type: 'private_room', ac: 'AC', cap: 2, inventory: 5, price: 3400, img: roomImages.vip_suite, desc: 'Direct view of sunset Ganga Aarti.' }
+    ],
+
+    // 6: Sivananda Ashram (Rishikesh) -> Starting ₹220
+    [
+      { name: 'Divine Life Yoga Dormitory Bed', type: 'dormitory', ac: 'Non-AC', cap: 1, inventory: 30, price: 220, img: roomImages.dormitory, desc: 'Shared bed in Divine Life Society campus.' },
+      { name: 'Sadhana Single Non-AC Room', type: 'private_room', ac: 'Non-AC', cap: 1, inventory: 15, price: 480, img: roomImages.private_room, desc: 'Simple quiet single room for yoga practitioners.' },
+      { name: 'Sadhana Double Non-AC Room', type: 'private_room', ac: 'Non-AC', cap: 2, inventory: 18, price: 850, img: roomImages.double_room, desc: 'Standard double bed room.' },
+      { name: 'Executive Double AC Room', type: 'private_room', ac: 'AC', cap: 2, inventory: 10, price: 1450, img: roomImages.double_room, desc: 'Air-conditioned double room.' },
+      { name: 'Premium Spiritual Suite', type: 'private_room', ac: 'AC', cap: 3, inventory: 4, price: 2200, img: roomImages.vip_suite, desc: 'Spacious suite with study desk and terrace view.' }
+    ],
+
+    // 7: Swami Dayananda Ashram (Rishikesh) -> Starting ₹280
+    [
+      { name: 'Vedanta Study Dormitory Bed', type: 'dormitory', ac: 'Non-AC', cap: 1, inventory: 25, price: 280, img: roomImages.dormitory, desc: 'Quiet bed for Vedanta students.' },
+      { name: 'Courtyard Single Room', type: 'private_room', ac: 'Non-AC', cap: 1, inventory: 12, price: 550, img: roomImages.private_room, desc: 'Single room facing temple courtyard.' },
+      { name: 'Riverfront Double Non-AC Room', type: 'private_room', ac: 'Non-AC', cap: 2, inventory: 15, price: 950, img: roomImages.double_room, desc: 'Twin beds room right by Ganga canal.' },
+      { name: 'Riverfront Double AC Room', type: 'private_room', ac: 'AC', cap: 2, inventory: 10, price: 1450, img: roomImages.double_room, desc: 'Air-conditioned room with river view.' },
+      { name: 'Study Suite with Library Access', type: 'private_room', ac: 'AC', cap: 2, inventory: 5, price: 2100, img: roomImages.deluxe_room, desc: 'Spacious room with study setup.' }
+    ],
+
+    // 8: Omkarananda Ashram Himalayas (Rishikesh) -> Starting ₹350
+    [
+      { name: 'Himalayan Quiet Dormitory Bed', type: 'dormitory', ac: 'Non-AC', cap: 1, inventory: 20, price: 350, img: roomImages.dormitory, desc: 'Clean dormitory bed in Muni Ki Reti.' },
+      { name: 'Classic Single Non-AC Room', type: 'private_room', ac: 'Non-AC', cap: 1, inventory: 10, price: 700, img: roomImages.private_room, desc: 'Comfortable single room.' },
+      { name: 'Classic Double AC Room', type: 'private_room', ac: 'AC', cap: 2, inventory: 15, price: 1350, img: roomImages.double_room, desc: 'Modern AC double room.' },
+      { name: 'Deluxe Studio Apartment', type: 'private_room', ac: 'AC', cap: 3, inventory: 8, price: 2600, img: roomImages.deluxe_room, desc: 'Studio apartment with kitchenette.' },
+      { name: 'Royal Himalayan Family Suite', type: 'private_room', ac: 'AC', cap: 4, inventory: 4, price: 3800, img: roomImages.vip_suite, desc: 'Luxury suite with mountain panoramas.' }
+    ],
+
+    // 9: Gita Bhawan Retreat (Rishikesh) -> Starting ₹100
+    [
+      { name: 'Subsidized Pilgrim Dormitory Bed', type: 'dormitory', ac: 'Non-AC', cap: 1, inventory: 100, price: 100, img: roomImages.dormitory, desc: 'Highly subsidized clean bed for devotees.' },
+      { name: 'Economy Single Non-AC Room', type: 'private_room', ac: 'Non-AC', cap: 1, inventory: 30, price: 250, img: roomImages.private_room, desc: 'Simple economical single room.' },
+      { name: 'Standard Double Non-AC Room', type: 'private_room', ac: 'Non-AC', cap: 2, inventory: 40, price: 480, img: roomImages.double_room, desc: 'Clean double room with attached bath.' },
+      { name: 'Standard Triple Room', type: 'private_room', ac: 'Non-AC', cap: 3, inventory: 20, price: 680, img: roomImages.double_room, desc: 'Triple bed room for families.' },
+      { name: 'Family Cottage (5 Beds)', type: 'family_room', ac: 'AC', cap: 5, inventory: 10, price: 1250, img: roomImages.family_room, desc: 'Spacious cottage near Ganga ferry.' }
+    ],
+
+    // 10: ISKCON Vrindavan Guesthouse (Vrindavan) -> Starting ₹450
+    [
+      { name: 'Devotee Shared Dormitory Bed', type: 'dormitory', ac: 'AC', cap: 1, inventory: 30, price: 450, img: roomImages.dormitory, desc: 'Air-conditioned dormitory bed inside ISKCON complex.' },
+      { name: 'Standard Single AC Room', type: 'private_room', ac: 'AC', cap: 1, inventory: 15, price: 950, img: roomImages.private_room, desc: 'Quiet AC single room.' },
+      { name: 'Standard Double AC Room', type: 'private_room', ac: 'AC', cap: 2, inventory: 25, price: 1650, img: roomImages.double_room, desc: 'Air-conditioned room with twin beds.' },
+      { name: 'Temple View Family Suite', type: 'family_room', ac: 'AC', cap: 4, inventory: 10, price: 2800, img: roomImages.family_room, desc: 'Overlooks Krishna Balaram Mandir.' },
+      { name: 'Executive Prabhupada VIP Suite', type: 'private_room', ac: 'AC', cap: 2, inventory: 4, price: 4800, img: roomImages.vip_suite, desc: 'Premium luxury suite for visiting dignitaries.' }
+    ],
+
+    // 11: MVT Guesthouse Vrindavan (Vrindavan) -> Starting ₹850
+    [
+      { name: 'Garden View Single Room', type: 'private_room', ac: 'AC', cap: 1, inventory: 10, price: 850, img: roomImages.private_room, desc: 'Peaceful single room in garden compound.' },
+      { name: 'Standard Double AC Room', type: 'private_room', ac: 'AC', cap: 2, inventory: 15, price: 1750, img: roomImages.double_room, desc: 'Deluxe double room with WiFi and AC.' },
+      { name: 'Deluxe 2-BHK Family Apartment', type: 'family_room', ac: 'AC', cap: 4, inventory: 8, price: 3500, img: roomImages.family_room, desc: 'Fully furnished 2-BHK apartment with kitchen.' },
+      { name: 'Penthouse Suite with Terrace', type: 'private_room', ac: 'AC', cap: 3, inventory: 3, price: 5500, img: roomImages.vip_suite, desc: 'Top floor penthouse with private roof terrace.' }
+    ],
+
+    // 12: Prem Mandir Dharamshala JKP (Vrindavan) -> Starting ₹320
+    [
+      { name: 'JKP Pilgrim Shared Dormitory Bed', type: 'dormitory', ac: 'Non-AC', cap: 1, inventory: 40, price: 320, img: roomImages.dormitory, desc: 'Bed in JKP Dharamshala hall.' },
+      { name: 'Standard Double Non-AC Room', type: 'private_room', ac: 'Non-AC', cap: 2, inventory: 20, price: 750, img: roomImages.double_room, desc: 'Double bed room near Prem Mandir.' },
+      { name: 'Standard Double AC Room', type: 'private_room', ac: 'AC', cap: 2, inventory: 25, price: 1250, img: roomImages.double_room, desc: 'AC double room with lift access.' },
+      { name: 'Premium Family Suite (4 Beds)', type: 'family_room', ac: 'AC', cap: 4, inventory: 12, price: 2200, img: roomImages.family_room, desc: 'Family suite with 4 beds.' },
+      { name: 'Grand Family Hall (6 Beds)', type: 'family_room', ac: 'AC', cap: 6, inventory: 5, price: 3200, img: roomImages.family_room, desc: 'Large hall for family groups.' }
+    ],
+
+    // 13: Fogla Ashram Vrindavan (Vrindavan) -> Starting ₹160
+    [
+      { name: 'Raman Reti Economy Dorm Bed', type: 'dormitory', ac: 'Non-AC', cap: 1, inventory: 50, price: 160, img: roomImages.dormitory, desc: 'Economical shared bed in Fogla Ashram.' },
+      { name: 'Standard Single Non-AC Room', type: 'private_room', ac: 'Non-AC', cap: 1, inventory: 20, price: 380, img: roomImages.private_room, desc: 'Simple clean single room.' },
+      { name: 'Standard Double Non-AC Room', type: 'private_room', ac: 'Non-AC', cap: 2, inventory: 25, price: 620, img: roomImages.double_room, desc: 'Double room with attached bath.' },
+      { name: 'Standard Double AC Room', type: 'private_room', ac: 'AC', cap: 2, inventory: 15, price: 980, img: roomImages.double_room, desc: 'Air-conditioned double bed room.' },
+      { name: 'Family AC Room (4 Beds)', type: 'family_room', ac: 'AC', cap: 4, inventory: 8, price: 1650, img: roomImages.family_room, desc: 'AC room for 4 guests.' }
+    ],
+
+    // 14: Bhagwat Dham Ashram (Vrindavan) -> Starting ₹240
+    [
+      { name: 'Satsang Shared Dormitory Bed', type: 'dormitory', ac: 'Non-AC', cap: 1, inventory: 35, price: 240, img: roomImages.dormitory, desc: 'Shared bed in Bhagwat discourse hall.' },
+      { name: 'Traditional Single Non-AC Room', type: 'private_room', ac: 'Non-AC', cap: 1, inventory: 15, price: 460, img: roomImages.private_room, desc: 'Quiet single room.' },
+      { name: 'Traditional Double Non-AC Room', type: 'private_room', ac: 'Non-AC', cap: 2, inventory: 18, price: 780, img: roomImages.double_room, desc: 'Traditional double bed room.' },
+      { name: 'Traditional Double AC Room', type: 'private_room', ac: 'AC', cap: 2, inventory: 12, price: 1200, img: roomImages.double_room, desc: 'AC double room.' },
+      { name: 'Deluxe Family Room (4 Beds)', type: 'family_room', ac: 'AC', cap: 4, inventory: 6, price: 1850, img: roomImages.family_room, desc: 'Spacious room for families.' }
+    ]
+  ];
+
+  return roomSets[idx % roomSets.length];
+};
+
 const seedData = async (users) => {
   const { pilgrim, owner, officer, admin, govtAdmin, manager, receptionist, housekeeping, support, simulatedPilgrims } = users;
   
@@ -551,15 +694,8 @@ const seedData = async (users) => {
       userAgent: 'Mozilla/5.0'
     });
 
-    // Create Rooms for this Ashram
-    const roomCategories = [
-      { name: 'Vedic Shared Dormitory Bed', type: 'dormitory', ac: 'Non-AC', cap: 1, inventory: 50, price: 250, img: roomImages.dormitory, desc: 'Single bed in a spacious, clean, air-cooled shared dormitory hall with locker.' },
-      { name: 'Standard Single Non-AC Room', type: 'private_room', ac: 'Non-AC', cap: 1, inventory: 20, price: 500, img: roomImages.private_room, desc: 'Simple single occupancy room with attached clean bathroom and basic fan ventilation.' },
-      { name: 'Standard Double Non-AC Room', type: 'private_room', ac: 'Non-AC', cap: 2, inventory: 25, price: 800, img: roomImages.double_room, desc: 'Clean twin beds room for two pilgrims, with table, chair, and attached bath.' },
-      { name: 'Standard Double AC Room', type: 'private_room', ac: 'AC', cap: 2, inventory: 15, price: 1200, img: roomImages.double_room, desc: 'Air-conditioned double bed room, writing desk, wardrobe, and hot water geyser.' },
-      { name: 'Family Suite (4 Beds)', type: 'family_room', ac: 'AC', cap: 4, inventory: 10, price: 1800, img: roomImages.family_room, desc: 'Spacious family hall with four separate beds, attached bath, closet, and air conditioning.' },
-      { name: 'Spiritual Garden View Deluxe Room', type: 'private_room', ac: 'AC', cap: 3, inventory: 8, price: 2200, img: roomImages.deluxe_room, desc: 'Comfortable premium room with balcony views of the ashram gardens/river, and LCD television.' }
-    ];
+    // Create Rooms for this Ashram with unique pricing tiers per ashram
+    const roomCategories = getAshramRooms(idx, roomImages);
 
     for (let rConfig of roomCategories) {
       const room = await upsertRoom({

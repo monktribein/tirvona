@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { ShieldCheck, Mail, Phone, Lock, User as UserIcon, Building2 } from 'lucide-react';
 import logo from '../assets/logo.png';
@@ -7,6 +7,8 @@ import logo from '../assets/logo.png';
 export const RegisterPage: React.FC = () => {
   const { registerUser } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirect = searchParams.get('redirect');
 
   const [role, setRole] = useState<'customer' | 'owner'>('customer');
   const [name, setName] = useState('');
@@ -44,7 +46,19 @@ export const RegisterPage: React.FC = () => {
       if (role === 'owner') {
         navigate('/owner/dashboard');
       } else {
-        navigate('/');
+        const pendingRaw = localStorage.getItem('pending_booking');
+        let target = '/';
+        if (redirect) {
+          target = redirect;
+        } else if (pendingRaw) {
+          try {
+            const pb = JSON.parse(pendingRaw);
+            if (pb.ashramId) {
+              target = `/ashram/${pb.ashramId}?checkIn=${pb.checkInDate || ''}&checkOut=${pb.checkOutDate || ''}&guests=${pb.guestsCount || 1}`;
+            }
+          } catch (e) {}
+        }
+        navigate(target);
       }
     } else {
       setError(res.message || 'Registration failed');
@@ -205,7 +219,7 @@ export const RegisterPage: React.FC = () => {
 
         <div className="text-center text-xs text-gray-400">
           Already have an account?{' '}
-          <Link to="/login" className="text-[#0A4DA6] font-bold hover:underline">
+          <Link to={`/login${redirect ? `?redirect=${encodeURIComponent(redirect)}` : ''}`} className="text-[#0A4DA6] font-bold hover:underline">
             Log in here
           </Link>
         </div>

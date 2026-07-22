@@ -606,7 +606,7 @@ export const HomePage: React.FC = () => {
           {sacredDestinations.map((item, idx) => (
             <div
               key={idx}
-              onClick={() => navigate(`/search?destination=${item.name}`)}
+              onClick={() => navigate(`/search?destination=${encodeURIComponent(item.name)}${checkIn ? `&checkIn=${checkIn}` : ''}${checkOut ? `&checkOut=${checkOut}` : ''}${guests ? `&guests=${guests}` : ''}`)}
               className="flex-shrink-0 snap-start bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer group"
               style={{ width: 'clamp(220px, 78vw, 240px)' }}
             >
@@ -708,11 +708,11 @@ export const HomePage: React.FC = () => {
                 </div>
                 <div className="px-4 py-4 border-t border-gray-100 dark:border-slate-800 flex justify-between items-center">
                   <div>
-                    <span className="block text-[9px] text-gray-400 font-bold uppercase tracking-wider">Starting Rate</span>
-                    <span className="text-sm font-extrabold text-[#0B192C] dark:text-white">₹{ashram.lowestNightPrice || 150} <span className="text-[10px] text-gray-400 font-normal">/ night</span></span>
+                    <span className="block text-[9px] text-gray-400 font-bold uppercase tracking-wider">Starts From</span>
+                    <span className="text-sm font-extrabold text-[#0B192C] dark:text-white">₹{ashram.lowestNightPrice ?? 150} <span className="text-[10px] text-gray-400 font-normal">/ night</span></span>
                   </div>
                   <Link
-                    to={`/ashram/${ashram._id}`}
+                    to={`/ashram/${ashram._id}${checkIn || checkOut ? `?checkIn=${checkIn}&checkOut=${checkOut}&guests=${guests}` : ''}`}
                     className="px-4 py-2.5 min-h-[40px] bg-[#0A4DA6] hover:bg-opacity-90 text-white text-xs font-bold rounded-full transition-all flex items-center"
                   >
                     Book Stay

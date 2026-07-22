@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
@@ -29,25 +29,49 @@ import {
 
 export const AshramDetailPage: React.FC = () => {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  const initialCheckIn = searchParams.get('checkIn') || '';
+  const initialCheckOut = searchParams.get('checkOut') || '';
+  const initialGuests = parseInt(searchParams.get('guests') || '1') || 1;
 
   const [ashram, setAshram] = useState<any>(null);
   const [rooms, setRooms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Booking Flow parameters
-  const [checkIn, setCheckIn] = useState('');
-  const [checkOut, setCheckOut] = useState('');
+  const [checkIn, setCheckIn] = useState(initialCheckIn);
+  const [checkOut, setCheckOut] = useState(initialCheckOut);
   const [selectedRoom, setSelectedRoom] = useState<any>(null);
-  const [guestsCount, setGuestsCount] = useState(1);
+  const [guestsCount, setGuestsCount] = useState(initialGuests);
   const [roomsCount, setRoomsCount] = useState(1);
 
+  useEffect(() => {
+    const qCheckIn = searchParams.get('checkIn');
+    const qCheckOut = searchParams.get('checkOut');
+    const qGuests = searchParams.get('guests');
+    if (qCheckIn) setCheckIn(qCheckIn);
+    if (qCheckOut) setCheckOut(qCheckOut);
+    if (qGuests) setGuestsCount(parseInt(qGuests) || 1);
+  }, [searchParams]);
+
   // Optional Services
+  const [prasad, setPrasad] = useState(false);
   const [meals, setMeals] = useState(false);
   const [parking, setParking] = useState(false);
   const [locker, setLocker] = useState(false);
   const [donation, setDonation] = useState('');
+
+  // Extended Booking Fields
+  const [adults, setAdults] = useState(1);
+  const [children, setChildren] = useState(0);
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedDiscount, setAppliedDiscount] = useState(0);
+  const [couponMsg, setCouponMsg] = useState('');
+  const [specialRequests, setSpecialRequests] = useState('');
+  const [restoredNotice, setRestoredNotice] = useState(false);
 
   // Live Availability Calendar
   const [availabilityCalendar, setAvailabilityCalendar] = useState<any[]>([]);
@@ -73,6 +97,105 @@ export const AshramDetailPage: React.FC = () => {
       fetchAvailability();
     }
   }, [selectedRoom]);
+
+  useEffect(() => {
+    const pendingRaw = localStorage.getItem('pending_booking');
+    if (pendingRaw && id) {
+      try {
+        const pb = JSON.parse(pendingRaw);
+        if (pb.ashramId === id) {
+          if (pb.checkInDate) setCheckIn(pb.checkInDate);
+          if (pb.checkOutDate) setCheckOut(pb.checkOutDate);
+          if (pb.guestsCount) setGuestsCount(pb.guestsCount);
+          if (pb.adults !== undefined) setAdults(pb.adults);
+          if (pb.children !== undefined) setChildren(pb.children);
+          if (pb.roomsBookedCount) setRoomsCount(pb.roomsBookedCount);
+          if (pb.services?.prasad?.ordered) setPrasad(true);
+          if (pb.services?.meals?.ordered) setMeals(true);
+          if (pb.services?.parking?.ordered) setParking(true);
+          if (pb.services?.locker?.ordered) setLocker(true);
+          if (pb.services?.donation?.amount) setDonation(pb.services.donation.amount.toString());
+          if (pb.couponCode) setCouponCode(pb.couponCode);
+          if (pb.appliedDiscount) setAppliedDiscount(pb.appliedDiscount);
+          if (pb.specialRequests) setSpecialRequests(pb.specialRequests);
+
+          if (rooms.length > 0 && pb.roomId) {
+            const match = rooms.find(r => r._id === pb.roomId);
+            if (match) setSelectedRoom(match);
+          }
+
+          setRestoredNotice(true);
+
+          if (pb.scrollPosition !== undefined) {
+            setTimeout(() => {
+              window.scrollTo({ top: pb.scrollPosition, behavior: 'smooth' });
+            }, 350);
+          }
+        }
+      } catch (e) {
+        console.error('Error restoring pending booking:', e);
+      }
+    }
+  }, [id, rooms]);
+
+  const handleClearDraft = () => {
+    localStorage.removeItem('pending_booking');
+    setRestoredNotice(false);
+    setPrasad(false);
+    setMeals(false);
+    setParking(false);
+    setLocker(false);
+    setDonation('');
+    setCouponCode('');
+    setAppliedDiscount(0);
+    setSpecialRequests('');
+  };
+
+  const handleAdultsChange = (val: number) => {
+    const a = Math.max(1, val);
+    setAdults(a);
+    setGuestsCount(a + children);
+  };
+
+  const handleChildrenChange = (val: number) => {
+    const c = Math.max(0, val);
+    setChildren(c);
+    setGuestsCount(adults + c);
+  };
+
+  const handleApplyCoupon = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const code = couponCode.trim().toUpperCase();
+    if (code === 'DIVINE10') {
+      setAppliedDiscount(10);
+      setCouponMsg('10% promo discount applied!');
+    } else if (code === 'PILGRIM50') {
+      setAppliedDiscount(50);
+      setCouponMsg('₹50 flat promo discount applied!');
+    } else if (code) {
+      setCouponMsg('Invalid promo code. Try DIVINE10 or PILGRIM50.');
+    }
+  };
+
+  const calculateDays = () => {
+    if (!checkIn || !checkOut) return 1;
+    const start = new Date(checkIn).getTime();
+    const end = new Date(checkOut).getTime();
+    const diff = Math.ceil((end - start) / (1000 * 3600 * 24));
+    return diff > 0 ? diff : 1;
+  };
+
+  const daysCount = calculateDays();
+  const basePriceCalc = (selectedRoom?.basePrice || 0) * roomsCount * daysCount;
+  const prasadCalc = prasad ? 100 * (adults + children) : 0;
+  const mealsCalc = meals ? 150 * (adults + children) * daysCount : 0;
+  const parkingCalc = parking ? 100 * daysCount : 0;
+  const lockerCalc = locker ? 50 * daysCount : 0;
+  const servicesCalc = prasadCalc + mealsCalc + parkingCalc + lockerCalc;
+  const donationCalc = parseFloat(donation) || 0;
+  const subtotalCalc = basePriceCalc + servicesCalc + donationCalc;
+  const discountCalc = appliedDiscount > 0 ? (appliedDiscount <= 100 ? (subtotalCalc * appliedDiscount) / 100 : appliedDiscount) : 0;
+  const totalCalc = Math.max(0, subtotalCalc - discountCalc);
 
   const fetchDetails = async () => {
     setLoading(true);
@@ -169,7 +292,32 @@ export const AshramDetailPage: React.FC = () => {
     setBookingSuccess(null);
 
     if (!user) {
-      navigate('/login');
+      const pendingData = {
+        ashramId: ashram._id,
+        roomId: selectedRoom?._id,
+        checkInDate: checkIn,
+        checkOutDate: checkOut,
+        guestsCount: adults + children,
+        adults,
+        children,
+        roomsBookedCount: roomsCount,
+        services: {
+          prasad: { ordered: prasad },
+          meals: { ordered: meals },
+          parking: { ordered: parking },
+          locker: { ordered: locker },
+          donation: { amount: parseFloat(donation) || 0 },
+        },
+        couponCode,
+        appliedDiscount,
+        specialRequests,
+        calculatedPrice: totalCalc,
+        scrollPosition: window.scrollY,
+        savedAt: Date.now(),
+      };
+      localStorage.setItem('pending_booking', JSON.stringify(pendingData));
+      const currentUrl = window.location.pathname + window.location.search;
+      navigate(`/login?redirect=${encodeURIComponent(currentUrl)}`);
       return;
     }
 
@@ -191,6 +339,7 @@ export const AshramDetailPage: React.FC = () => {
       guestsCount,
       roomsBookedCount: roomsCount,
       services: {
+        prasad: { ordered: prasad },
         meals: { ordered: meals },
         parking: { ordered: parking },
         locker: { ordered: locker },
@@ -203,6 +352,7 @@ export const AshramDetailPage: React.FC = () => {
         headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` },
       });
       if (res.data.success) {
+        localStorage.removeItem('pending_booking');
         setBookingSuccess(res.data.data);
       }
     } catch (err: any) {
@@ -496,6 +646,22 @@ export const AshramDetailPage: React.FC = () => {
               <CalendarIcon size={16} className="text-[#0A4DA6]" /> Stay Booking Engine
             </h3>
 
+            {restoredNotice && (
+              <div className="p-3 bg-[#0A4DA6]/10 border border-[#0A4DA6]/20 rounded-xl flex items-center justify-between text-xs font-semibold text-[#0A4DA6] space-x-2">
+                <div className="flex items-center gap-1.5">
+                  <Sparkles size={14} className="text-[#0A4DA6] shrink-0" />
+                  <span>Your previous booking selections have been restored.</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleClearDraft}
+                  className="text-[10px] font-bold text-gray-500 hover:text-danger underline cursor-pointer shrink-0"
+                >
+                  Clear
+                </button>
+              </div>
+            )}
+
             {bookingError && (
               <div className="p-3 bg-danger/10 text-danger border border-danger/20 text-xs rounded-xl font-bold">
                 {bookingError}
@@ -535,14 +701,37 @@ export const AshramDetailPage: React.FC = () => {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-gray-400 uppercase">Guests Count</label>
+                    <label className="text-[10px] font-bold text-gray-400 uppercase">Adults (12+ yrs)</label>
                     <input
                       type="number"
                       min={1}
                       max={10}
-                      value={guestsCount}
-                      onChange={(e) => setGuestsCount(parseInt(e.target.value) || 1)}
+                      value={adults}
+                      onChange={(e) => handleAdultsChange(parseInt(e.target.value) || 1)}
                       className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs text-center font-bold"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase">Children (0-11 yrs)</label>
+                    <input
+                      type="number"
+                      min={0}
+                      max={10}
+                      value={children}
+                      onChange={(e) => handleChildrenChange(parseInt(e.target.value) || 0)}
+                      className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs text-center font-bold"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase">Total Guests</label>
+                    <input
+                      type="number"
+                      readOnly
+                      value={guestsCount}
+                      className="w-full p-2.5 bg-gray-100 dark:bg-slate-800 border border-gray-100 dark:border-slate-800 rounded-xl text-xs text-center font-bold text-gray-500 cursor-not-allowed"
                     />
                   </div>
                   <div className="space-y-1">
@@ -558,22 +747,39 @@ export const AshramDetailPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Add ons */}
+                {/* Add ons - 4 distinct options */}
                 <div className="pt-3 border-t border-gray-100 dark:border-slate-800 space-y-2.5">
                   <span className="text-[10px] uppercase font-bold text-gray-400">Add-on Services</span>
                   <div className="space-y-2">
+                    {/* 1. Prasad */}
+                    <label className="flex items-center justify-between text-xs font-semibold cursor-pointer select-none">
+                      <div className="flex items-center gap-2">
+                        <Sparkles size={14} className="text-[#0A4DA6]" />
+                        <span>Sacred Prasad Box</span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={prasad}
+                        onChange={() => setPrasad(!prasad)}
+                        className="rounded border-gray-200 text-[#0A4DA6] w-4 h-4 cursor-pointer"
+                      />
+                    </label>
+
+                    {/* 2. Meals */}
                     <label className="flex items-center justify-between text-xs font-semibold cursor-pointer select-none">
                       <div className="flex items-center gap-2">
                         <Coffee size={14} className="text-[#0A4DA6]" />
-                        <span>Prasad Meals</span>
+                        <span>Satvik Meals</span>
                       </div>
                       <input
                         type="checkbox"
                         checked={meals}
                         onChange={() => setMeals(!meals)}
-                        className="rounded border-gray-200 text-[#0A4DA6] w-4 h-4"
+                        className="rounded border-gray-200 text-[#0A4DA6] w-4 h-4 cursor-pointer"
                       />
                     </label>
+
+                    {/* 3. Parking */}
                     <label className="flex items-center justify-between text-xs font-semibold cursor-pointer select-none">
                       <div className="flex items-center gap-2">
                         <ParkingCircle size={14} className="text-[#0A4DA6]" />
@@ -583,9 +789,11 @@ export const AshramDetailPage: React.FC = () => {
                         type="checkbox"
                         checked={parking}
                         onChange={() => setParking(!parking)}
-                        className="rounded border-gray-200 text-[#0A4DA6] w-4 h-4"
+                        className="rounded border-gray-200 text-[#0A4DA6] w-4 h-4 cursor-pointer"
                       />
                     </label>
+
+                    {/* 4. Locker Access */}
                     <label className="flex items-center justify-between text-xs font-semibold cursor-pointer select-none">
                       <div className="flex items-center gap-2">
                         <Lock size={14} className="text-[#0A4DA6]" />
@@ -595,7 +803,7 @@ export const AshramDetailPage: React.FC = () => {
                         type="checkbox"
                         checked={locker}
                         onChange={() => setLocker(!locker)}
-                        className="rounded border-gray-200 text-[#0A4DA6] w-4 h-4"
+                        className="rounded border-gray-200 text-[#0A4DA6] w-4 h-4 cursor-pointer"
                       />
                     </label>
                   </div>
@@ -613,6 +821,72 @@ export const AshramDetailPage: React.FC = () => {
                     onChange={(e) => setDonation(e.target.value)}
                     className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs font-semibold"
                   />
+                </div>
+
+                {/* Promo Coupon Code */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase">Promo / Coupon Code</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="e.g. DIVINE10"
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value)}
+                      className="flex-1 p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs font-semibold uppercase"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleApplyCoupon}
+                      className="px-3.5 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 text-xs font-bold rounded-xl cursor-pointer transition-all"
+                    >
+                      Apply
+                    </button>
+                  </div>
+                  {couponMsg && (
+                    <p className={`text-[10px] font-bold ${appliedDiscount > 0 ? 'text-success' : 'text-danger'}`}>{couponMsg}</p>
+                  )}
+                </div>
+
+                {/* Special Requests / Notes */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase">Special Requests / Notes</label>
+                  <textarea
+                    rows={2}
+                    placeholder="e.g. Ground floor room preferred..."
+                    value={specialRequests}
+                    onChange={(e) => setSpecialRequests(e.target.value)}
+                    className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs font-medium focus:outline-none resize-none"
+                  />
+                </div>
+
+                {/* Estimated Total Breakdown */}
+                <div className="p-4 bg-gray-50 dark:bg-slate-900/60 border border-gray-100 dark:border-slate-800 rounded-[20px] space-y-2 text-xs font-semibold">
+                  <div className="flex justify-between text-gray-500">
+                    <span>Base Stay ({daysCount} night{daysCount > 1 ? 's' : ''}):</span>
+                    <span>₹{basePriceCalc}</span>
+                  </div>
+                  {servicesCalc > 0 && (
+                    <div className="flex justify-between text-gray-500">
+                      <span>Add-on Services:</span>
+                      <span>₹{servicesCalc}</span>
+                    </div>
+                  )}
+                  {donationCalc > 0 && (
+                    <div className="flex justify-between text-gray-500">
+                      <span>Donation:</span>
+                      <span>₹{donationCalc}</span>
+                    </div>
+                  )}
+                  {discountCalc > 0 && (
+                    <div className="flex justify-between text-success font-bold">
+                      <span>Discount ({couponCode}):</span>
+                      <span>-₹{discountCalc}</span>
+                    </div>
+                  )}
+                  <div className="pt-2 border-t border-gray-200 dark:border-slate-800 flex justify-between text-sm font-extrabold text-[#0B192C] dark:text-white">
+                    <span>Estimated Total:</span>
+                    <span className="text-[#0A4DA6]">₹{totalCalc}</span>
+                  </div>
                 </div>
 
                 <button
@@ -721,7 +995,7 @@ export const AshramDetailPage: React.FC = () => {
                   <span className="text-[9px] text-[#0A4DA6] font-bold block uppercase">{rel.address?.city}</span>
                 </div>
                 <div className="px-4 py-3 border-t border-gray-100 dark:border-slate-800 flex justify-between items-center bg-gray-50/50 dark:bg-slate-900/10">
-                  <span className="text-[10px] font-extrabold text-[#0B192C] dark:text-white">₹{rel.lowestNightPrice || 150} / night</span>
+                  <span className="text-[10px] font-extrabold text-[#0B192C] dark:text-white">₹{rel.lowestNightPrice ?? 150} / night</span>
                   <span className="text-[9px] font-bold text-[#0A4DA6] flex items-center gap-0.5">View <ChevronRight size={10} /></span>
                 </div>
               </Link>

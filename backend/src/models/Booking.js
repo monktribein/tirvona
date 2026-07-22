@@ -55,6 +55,10 @@ const bookingSchema = new mongoose.Schema(
       default: 'pending',
     },
     services: {
+      prasad: {
+        ordered: { type: Boolean, default: false },
+        price: { type: Number, default: 0 },
+      },
       meals: {
         ordered: { type: Boolean, default: false },
         price: { type: Number, default: 0 },

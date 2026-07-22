@@ -72,8 +72,14 @@ export const SearchPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    setDestination(destinationQuery);
+    setCheckIn(checkInQuery);
+    setCheckOut(checkOutQuery);
+  }, [destinationQuery, checkInQuery, checkOutQuery]);
+
+  useEffect(() => {
     fetchAshrams();
-  }, [destinationQuery, acFilter, foodFilter, riverViewFilter]);
+  }, [destinationQuery, checkInQuery, checkOutQuery, guestsQuery, acFilter, foodFilter, riverViewFilter]);
 
   const fetchAshrams = async () => {
     setLoading(true);
@@ -81,6 +87,15 @@ export const SearchPage: React.FC = () => {
       let queryStr = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ashrams?verified=true`;
       if (destinationQuery) {
         queryStr += `&destination=${encodeURIComponent(destinationQuery)}`;
+      }
+      if (checkInQuery) {
+        queryStr += `&checkIn=${encodeURIComponent(checkInQuery)}`;
+      }
+      if (checkOutQuery) {
+        queryStr += `&checkOut=${encodeURIComponent(checkOutQuery)}`;
+      }
+      if (guestsQuery) {
+        queryStr += `&guests=${encodeURIComponent(guestsQuery)}`;
       }
       
       const amenities = [];
@@ -191,7 +206,16 @@ export const SearchPage: React.FC = () => {
   const selectSuggestion = (sug: string) => {
     setDestination(sug);
     setShowSuggestions(false);
-    setSearchParams({ destination: sug, guests: guestsQuery });
+    setSearchParams({ destination: sug, checkIn: checkInQuery, checkOut: checkOutQuery, guests: guestsQuery });
+  };
+
+  const buildDetailLink = (ashramId: string) => {
+    const params = new URLSearchParams();
+    if (checkInQuery) params.set('checkIn', checkInQuery);
+    if (checkOutQuery) params.set('checkOut', checkOutQuery);
+    if (guestsQuery) params.set('guests', guestsQuery);
+    const qStr = params.toString();
+    return `/ashram/${ashramId}${qStr ? `?${qStr}` : ''}`;
   };
 
   return (
@@ -445,12 +469,12 @@ export const SearchPage: React.FC = () => {
                   {/* Pricing info & Action button */}
                   <div className="w-full md:w-40 md:border-l border-gray-100 dark:border-slate-800 pl-0 md:pl-6 flex md:flex-col justify-between md:justify-center items-center md:items-end gap-4 shrink-0">
                     <div className="flex flex-col md:text-right">
-                      <span className="text-[9px] text-gray-400 uppercase font-bold tracking-wider">Starting Rate</span>
-                      <span className="text-base font-extrabold text-[#0B192C] dark:text-white">₹{ashram.lowestNightPrice || 150}</span>
+                      <span className="text-[9px] text-gray-400 uppercase font-bold tracking-wider">Starts From</span>
+                      <span className="text-base font-extrabold text-[#0B192C] dark:text-white">₹{ashram.lowestNightPrice ?? 150}</span>
                       <span className="text-[9px] text-gray-400 font-bold">per night / bed</span>
                     </div>
                     <Link
-                      to={`/ashram/${ashram._id}`}
+                      to={buildDetailLink(ashram._id)}
                       className="w-full md:w-auto px-5 py-2.5 bg-[#0A4DA6] hover:bg-opacity-95 text-white text-center text-xs font-bold rounded-full transition-all"
                     >
                       View Details
@@ -614,9 +638,9 @@ export const SearchPage: React.FC = () => {
                             
                             {isSelected && (
                               <div className="mt-3 pt-3 border-t border-dashed border-gray-150 flex justify-between items-center">
-                                <span className="text-[9px] font-bold text-gray-500">From: ₹{item.lowestNightPrice || 150}/night</span>
+                                <span className="text-[9px] font-bold text-gray-500">From: ₹{item.lowestNightPrice ?? 150}/night</span>
                                 <Link 
-                                  to={`/ashram/${item._id}`}
+                                  to={buildDetailLink(item._id)}
                                   className="px-3.5 py-1.5 bg-[#0A4DA6] text-white rounded-full text-[9px] font-bold shadow"
                                 >
                                   View Details
