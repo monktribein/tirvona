@@ -494,11 +494,11 @@ const seedData = async (users) => {
       pincode: '249304',
       coordinates: [78.3125, 30.1191],
       images: [
-        'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
-        'https://images.unsplash.com/photo-1545389336-cf090694435e?auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1582719478250-c89cae4db85b?auto=format&fit=crop&w=800&q=80'
+        '/images/parmarth_niketan/shiva_statue.jpg',
+        '/images/parmarth_niketan/aarti_ghat.jpg',
+        '/images/parmarth_niketan/yoga_hall.jpg',
+        '/images/parmarth_niketan/campus_gardens.jpg',
+        '/images/parmarth_niketan/balcony_suite.jpg'
       ],
       description: 'Parmarth Niketan is the largest ashram in Rishikesh. Located on the banks of the holy river Ganges, it provides a clean, pure, and sacred atmosphere with 1000+ rooms for yoga and meditation.\n\n■ TRAVEL & CONTACT DETAILS:\n• Landmark: Near Ram Jhula\n• Temple: Parmarth Mandir & Ganga Ghat\n• Railway Station: Rishikesh Railway Station (4.5 km)\n• Bus Stand: Rishikesh Bus Stand (5.0 km)\n• Contact: +91 135 2434430\n• Website: www.parmarth.org',
       history: 'Founded in 1942 by Pujya Swami Shukdevanandji Maharaj, it is famous globally for its Ganga Aarti at sunset, international Yoga Festival, and humanitarian projects.',
