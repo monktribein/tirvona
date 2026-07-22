@@ -514,10 +514,11 @@ const seedData = async (users) => {
       pincode: '249192',
       coordinates: [78.3092, 30.1245],
       images: [
-        'https://images.unsplash.com/photo-1599661046289-e31897846e41?auto=format&fit=crop&w=1200&q=80',
-        'https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&w=800&q=80'
+        '/images/sivananda_ashram/divine_life_gate.jpg',
+        '/images/sivananda_ashram/vishwanath_temple.jpg',
+        '/images/sivananda_ashram/yoga_hall.jpg',
+        '/images/sivananda_ashram/sadhana_room.jpg',
+        '/images/sivananda_ashram/vedic_library.jpg'
       ],
       description: 'The Divine Life Society (Sivananda Ashram) is a highly respected spiritual institution dedicated to the dissemination of spiritual knowledge and yoga practice.\n\n■ TRAVEL & CONTACT DETAILS:\n• Landmark: Near Shivananda Jhula\n• Temple: Vishwanath Mandir\n• Railway Station: Rishikesh Railway Station (3.5 km)\n• Bus Stand: Rishikesh Bus Stand (3.8 km)\n• Contact: +91 135 2430040\n• Website: www.divinelife.org',
       history: 'Founded in 1936 by the great saint Swami Sivananda Saraswati, this ashram has produced many legendary yoga gurus and continues to distribute free books and medicines.',
