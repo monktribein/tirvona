@@ -394,6 +394,13 @@ const seedData = async (users) => {
       state: 'Uttarakhand',
       pincode: '249411',
       coordinates: [78.1981, 29.9880],
+      images: [
+        'https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?auto=format&fit=crop&w=1200&q=80',
+        'https://images.unsplash.com/photo-1545389336-cf090694435e?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=800&q=80'
+      ],
       description: 'Shantikunj is a world-renowned academy for social and spiritual awakening, serving as the headquarters of All World Gayatri Pariwar (AWGP). Nestled amidst peaceful greenery, it offers a sanctuary for Gayatri sadhana, self-discipline, and moral regeneration.\n\n■ TRAVEL & CONTACT DETAILS:\n• Landmark: Near Dev Sanskriti University\n• Temple: Devatma Himalaya Temple\n• Railway Station: Haridwar Junction (6.2 km)\n• Bus Stand: Haridwar Bus Stand (6.5 km)\n• Contact: +91 1334 260602\n• Website: www.awgp.org',
       history: 'Established in 1971 by the patron founder Pandit Shriram Sharma Acharya, Shantikunj has grown from a spiritual academy into a global movement propagating scientific spirituality and Yagya practices.',
       rules: ['Silent Gayatri Mantra chanting at 4:30 AM is recommended.', 'Strictly satvik vegetarian organic meals served.', 'No entry permitted inside campus after 9:30 PM.', 'Modest clothing covering shoulders and knees is mandatory.'],
@@ -407,6 +414,13 @@ const seedData = async (users) => {
       state: 'Uttarakhand',
       pincode: '249407',
       coordinates: [78.1252, 29.9248],
+      images: [
+        'https://images.unsplash.com/photo-1584551246679-0daf3d275d0f?auto=format&fit=crop&w=1200&q=80',
+        'https://images.unsplash.com/photo-1599661046289-e31897846e41?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=800&q=80'
+      ],
       description: 'Prem Nagar Ashram is a massive spiritual complex designed as a haven of peace and universal brotherhood. It features beautiful garden landscapes, large meditation halls, and daily spiritual discourses.\n\n■ TRAVEL & CONTACT DETAILS:\n• Landmark: Jwalapur Road\n• Temple: Prem Nagar Ashram Mandir\n• Railway Station: Jwalapur Railway Station (3 km)\n• Bus Stand: Haridwar Bus Stand (4.5 km)\n• Contact: +91 1334 240578\n• Website: www.premnagarashram.com',
       history: 'Established in 1943 by Yogiraj Satgurudev Shri Hans Ji Maharaj, it was built by volunteers seeking a common platform for spiritual transmission and universal brotherhood.',
       rules: ['Observe absolute silence in the meditation halls.', 'Outside food is not allowed inside the rooms.', 'Do not waste water or electricity.'],
@@ -420,6 +434,12 @@ const seedData = async (users) => {
       state: 'Uttarakhand',
       pincode: '249401',
       coordinates: [78.1705, 29.9723],
+      images: [
+        'https://images.unsplash.com/photo-1598977123418-45f04b61582e?auto=format&fit=crop&w=1200&q=80',
+        'https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=800&q=80'
+      ],
       description: 'A charitable, non-profit ashram offering safe, hygienic, and highly economical lodging for pilgrims. The sangha is active in community service, disaster relief, and free healthcare.\n\n■ TRAVEL & CONTACT DETAILS:\n• Landmark: Bhupatwala\n• Temple: Pranavananda Temple\n• Railway Station: Haridwar Junction (3.8 km)\n• Bus Stand: Haridwar Bus Stand (4.0 km)\n• Contact: +91 1334 265672\n• Website: www.bharatsevashramsangha.org',
       history: 'Bharat Sevashram Sangha was founded in 1917 by Acharya Shrimat Swami Pranavanandaji Maharaj, dedicated to serving the poor and protecting spiritual pilgrims.',
       rules: ['Strict discipline must be maintained on campus.', 'Mandatory attendance for evening Aarti.', 'No room service; self-service is encouraged.'],
@@ -433,6 +453,12 @@ const seedData = async (users) => {
       state: 'Uttarakhand',
       pincode: '249408',
       coordinates: [78.1285, 29.9282],
+      images: [
+        'https://images.unsplash.com/photo-1606293926075-69a007f4e863?auto=format&fit=crop&w=1200&q=80',
+        'https://images.unsplash.com/photo-1518241353330-0f7941c2d9b5?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1598928506311-c55ded91a20c?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=800&q=80'
+      ],
       description: 'Maa Anandamayi Ashram in Kankhal is a peaceful spiritual retreat housing the holy Samadhi shrine of Sri Maa Anandamayi. It is a quiet oasis for introspection and meditation.\n\n■ TRAVEL & CONTACT DETAILS:\n• Landmark: Kankhal Market\n• Temple: Maa Anandamayi Samadhi Mandir\n• Railway Station: Haridwar Junction (4.5 km)\n• Bus Stand: Haridwar Bus Stand (4.7 km)\n• Contact: +91 1334 246509\n• Website: www.anandamayi.org',
       history: 'Founded to preserve the teachings of spiritual master Sri Anandamayi Ma, the ashram continues to draw seekers from all parts of the globe.',
       rules: ['Respect the silence of the Samadhi hall.', 'Dress modestly in traditional Indian attire.', 'No smoking, tobacco, or alcohol allowed.'],
@@ -446,6 +472,12 @@ const seedData = async (users) => {
       state: 'Uttarakhand',
       pincode: '249411',
       coordinates: [78.1985, 29.9928],
+      images: [
+        'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
+        'https://images.unsplash.com/photo-1582719478250-c89cae4db85b?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?auto=format&fit=crop&w=800&q=80'
+      ],
       description: 'Sapt Rishi Ashram is an ancient, holy retreat where the Ganga river divides into seven distinct streams (Sapt Dhara). It is a highly peaceful location ideal for intense meditation.\n\n■ TRAVEL & CONTACT DETAILS:\n• Landmark: Sapt Sarovar Marg\n• Temple: Saptarishi Temple\n• Railway Station: Motichur Railway Station (1.5 km)\n• Bus Stand: Haridwar Bus Stand (7.5 km)\n• Contact: Public inquiry desk at gate\n• Website: N/A',
       history: 'According to Hindu mythology, seven great sages (Saptarishis) meditated here. Ganga, not wanting to disturb their deep meditation, split herself into seven channels around them.',
       rules: ['Quietness must be maintained at all times.', 'Guests must keep their rooms clean.', 'Dhoti/Sari or simple kurta-pyjama is preferred.'],
@@ -461,6 +493,13 @@ const seedData = async (users) => {
       state: 'Uttarakhand',
       pincode: '249304',
       coordinates: [78.3125, 30.1191],
+      images: [
+        'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
+        'https://images.unsplash.com/photo-1545389336-cf090694435e?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1582719478250-c89cae4db85b?auto=format&fit=crop&w=800&q=80'
+      ],
       description: 'Parmarth Niketan is the largest ashram in Rishikesh. Located on the banks of the holy river Ganges, it provides a clean, pure, and sacred atmosphere with 1000+ rooms for yoga and meditation.\n\n■ TRAVEL & CONTACT DETAILS:\n• Landmark: Near Ram Jhula\n• Temple: Parmarth Mandir & Ganga Ghat\n• Railway Station: Rishikesh Railway Station (4.5 km)\n• Bus Stand: Rishikesh Bus Stand (5.0 km)\n• Contact: +91 135 2434430\n• Website: www.parmarth.org',
       history: 'Founded in 1942 by Pujya Swami Shukdevanandji Maharaj, it is famous globally for its Ganga Aarti at sunset, international Yoga Festival, and humanitarian projects.',
       rules: ['Strict vegetarian diet only.', 'Attend the sunset Ganga Aarti.', 'No smoking, alcohol, or illicit substances.', 'Observe silence during early morning hours.'],
@@ -474,6 +513,12 @@ const seedData = async (users) => {
       state: 'Uttarakhand',
       pincode: '249192',
       coordinates: [78.3092, 30.1245],
+      images: [
+        'https://images.unsplash.com/photo-1599661046289-e31897846e41?auto=format&fit=crop&w=1200&q=80',
+        'https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&w=800&q=80'
+      ],
       description: 'The Divine Life Society (Sivananda Ashram) is a highly respected spiritual institution dedicated to the dissemination of spiritual knowledge and yoga practice.\n\n■ TRAVEL & CONTACT DETAILS:\n• Landmark: Near Shivananda Jhula\n• Temple: Vishwanath Mandir\n• Railway Station: Rishikesh Railway Station (3.5 km)\n• Bus Stand: Rishikesh Bus Stand (3.8 km)\n• Contact: +91 135 2430040\n• Website: www.divinelife.org',
       history: 'Founded in 1936 by the great saint Swami Sivananda Saraswati, this ashram has produced many legendary yoga gurus and continues to distribute free books and medicines.',
       rules: ['Prior written request is required for stays.', 'Daily attendance at morning & evening meditation is expected.', 'Modest white or light clothing preferred.'],
@@ -487,6 +532,12 @@ const seedData = async (users) => {
       state: 'Uttarakhand',
       pincode: '249201',
       coordinates: [78.3031, 30.1102],
+      images: [
+        'https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?auto=format&fit=crop&w=1200&q=80',
+        'https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1598928506311-c55ded91a20c?auto=format&fit=crop&w=800&q=80'
+      ],
       description: 'An oasis of tranquility located right on the Ganga canal. It is a premier center for the study of Vedanta, Sanskrit, Upanishads, and Gita.\n\n■ TRAVEL & CONTACT DETAILS:\n• Landmark: Purani Jhadi\n• Temple: Lord Gangadhareswarar Temple\n• Railway Station: Rishikesh Railway Station (2.8 km)\n• Bus Stand: Rishikesh Bus Stand (3.0 km)\n• Contact: +91 135 2430769\n• Website: www.dayanandashram.org',
       history: 'Established in the 1960s by Swami Dayananda Saraswati, a renowned teacher of Vedanta, it features a beautiful temple dedicated to Lord Gangadhareswarar.',
       rules: ['Guests must attend the daily Vedic lectures.', 'Main gates lock at 9:30 PM.', 'Silence must be maintained in the temple courtyard.'],
@@ -500,6 +551,12 @@ const seedData = async (users) => {
       state: 'Uttarakhand',
       pincode: '249192',
       coordinates: [78.3045, 30.1262],
+      images: [
+        'https://images.unsplash.com/photo-1598977123418-45f04b61582e?auto=format&fit=crop&w=1200&q=80',
+        'https://images.unsplash.com/photo-1582719478250-c89cae4db85b?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=800&q=80'
+      ],
       description: 'Located in Muni Ki Reti, Omkarananda Ashram is dedicated to spiritual development, yoga, and Hindustani classical arts. It is famous for its strict Vedic discipline.\n\n■ TRAVEL & CONTACT DETAILS:\n• Landmark: Muni Ki Reti\n• Temple: Omkarananda-Kamakshi-Devi Mandir\n• Railway Station: Rishikesh Railway Station (4.0 km)\n• Bus Stand: Rishikesh Bus Stand (4.2 km)\n• Contact: +91 135 2430713\n• Website: www.oah.in',
       history: 'Founded by Sage Omkarananda Saraswati, this ashram is dedicated to spiritual and educational activities, yoga courses, and daily temple pujas in a scenic setting.',
       rules: ['Attend the daily morning rituals.', 'Dress cleanly and modestly.', 'No non-vegetarian items allowed on campus.'],
@@ -513,6 +570,12 @@ const seedData = async (users) => {
       state: 'Uttarakhand',
       pincode: '249304',
       coordinates: [78.3142, 30.1182],
+      images: [
+        'https://images.unsplash.com/photo-1584551246679-0daf3d275d0f?auto=format&fit=crop&w=1200&q=80',
+        'https://images.unsplash.com/photo-1606293926075-69a007f4e863?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?auto=format&fit=crop&w=800&q=80'
+      ],
       description: 'Geeta Bhawan is a massive complex located on the banks of Ganga, offering free or highly subsidized accommodation for thousands of pilgrims simultaneously.\n\n■ TRAVEL & CONTACT DETAILS:\n• Landmark: Swarg Ashram\n• Temple: Geeta Bhawan Mandir\n• Railway Station: Rishikesh Railway Station (4.8 km)\n• Bus Stand: Rishikesh Bus Stand (5.3 km)\n• Contact: +91 135 2430122\n• Website: www.gitapress.org',
       history: 'Managed by the Gita Press of Gorakhpur, it contains paintings representing events from Ramayana and Mahabharata, and provides free ferry transport across Ganga.',
       rules: ['Strict adherence to religious guidelines.', 'Do not use plastic bags inside the ashram.', 'Keep guest registers updated.'],
@@ -528,6 +591,12 @@ const seedData = async (users) => {
       state: 'Uttar Pradesh',
       pincode: '281121',
       coordinates: [77.6852, 27.5721],
+      images: [
+        'https://images.unsplash.com/photo-1599661046289-e31897846e41?auto=format&fit=crop&w=1200&q=80',
+        'https://images.unsplash.com/photo-1545389336-cf090694435e?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1582719478250-c89cae4db85b?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80'
+      ],
       description: 'Located in the Krishna Balaram Mandir complex, this guesthouse provides standard, deluxe and suite rooms for devotees worldwide. Safe, comfortable, and highly spiritual.\n\n■ TRAVEL & CONTACT DETAILS:\n• Landmark: Raman Reti\n• Temple: Krishna Balaram Mandir\n• Railway Station: Vrindavan Railway Station (2.5 km)\n• Bus Stand: Vrindavan Bus Stand (3.0 km)\n• Contact: +91 565 2540021\n• Website: www.iskconvrindavan.com',
       history: 'Inaugurated in 1975 by ISKCON founder A.C. Bhaktivedanta Swami Prabhupada, it remains a premier destination for international pilgrims visiting Vraja.',
       rules: ['Follow the four regulative principles (No meat/fish/eggs, no intoxication, no gambling, no illicit sex).', 'No entry inside temple complex with shoes.', 'Lockers should be used for valuables.'],
@@ -541,6 +610,11 @@ const seedData = async (users) => {
       state: 'Uttar Pradesh',
       pincode: '281121',
       coordinates: [77.6845, 27.5735],
+      images: [
+        'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80',
+        'https://images.unsplash.com/photo-1598928506311-c55ded91a20c?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1518241353330-0f7941c2d9b5?auto=format&fit=crop&w=800&q=80'
+      ],
       description: 'Nestled in a peaceful garden compound right behind ISKCON, MVT provides quiet, premium rooms, apartments, and an excellent pure-vegetarian restaurant.\n\n■ TRAVEL & CONTACT DETAILS:\n• Landmark: Behind ISKCON Temple\n• Temple: Krishna Balaram Temple\n• Railway Station: Vrindavan Railway Station (2.6 km)\n• Bus Stand: Vrindavan Bus Stand (3.2 km)\n• Contact: +91 999 7738666\n• Website: www.mvtvrindavan.com',
       history: 'Built to provide high-quality accommodation for international and Indian devotees visiting Vrindavan for spiritual studies.',
       rules: ['No outside vehicles inside the compound.', 'Strictly vegetarian and no smoking/alcohol.', 'Quiet hours from 10 PM to 6 AM.'],
@@ -554,6 +628,11 @@ const seedData = async (users) => {
       state: 'Uttar Pradesh',
       pincode: '281121',
       coordinates: [77.6791, 27.5685],
+      images: [
+        'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
+        'https://images.unsplash.com/photo-1598977123418-45f04b61582e?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=800&q=80'
+      ],
       description: 'Conveniently located near the magnificent Prem Mandir, this dharamshala offers spacious rooms for families and pilgrim groups visiting Vrindavan.\n\n■ TRAVEL & CONTACT DETAILS:\n• Landmark: Raman Reti Road\n• Temple: Prem Mandir\n• Railway Station: Vrindavan Railway Station (3.2 km)\n• Bus Stand: Vrindavan Bus Stand (3.5 km)\n• Contact: +91 565 2540050\n• Website: www.jkp.org',
       history: 'Developed by Jagadguru Kripalu Parishat to host devotees coming to witness the light and sound show and temple complex of Prem Mandir.',
       rules: ['Strict vegetarian guidelines apply.', 'Keep room check-in code ready at counter.', 'Lights out at 10:30 PM.'],
@@ -567,6 +646,11 @@ const seedData = async (users) => {
       state: 'Uttar Pradesh',
       pincode: '281121',
       coordinates: [77.6881, 27.5732],
+      images: [
+        'https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?auto=format&fit=crop&w=1200&q=80',
+        'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?auto=format&fit=crop&w=800&q=80'
+      ],
       description: 'Fogla Ashram is a popular, high-capacity lodge in Raman Reti, offering clean, economical dormitories and family rooms. It has a peaceful courtyard.\n\n■ TRAVEL & CONTACT DETAILS:\n• Landmark: Near ISKCON Temple\n• Temple: Krishna Balaram Mandir\n• Railway Station: Vrindavan Railway Station (2.2 km)\n• Bus Stand: Vrindavan Bus Stand (2.8 km)\n• Contact: +91 565 2540112\n• Website: N/A',
       history: 'Founded by a charitable merchant trust from Rajasthan to provide affordable, standard accommodation for North Indian pilgrims.',
       rules: ['Dormitory check-out is 10:00 AM.', 'No smoking or tobacco allowed on the premises.', 'Outside visitors not allowed in rooms after 8 PM.'],
@@ -580,6 +664,11 @@ const seedData = async (users) => {
       state: 'Uttar Pradesh',
       pincode: '281121',
       coordinates: [77.6765, 27.5792],
+      images: [
+        'https://images.unsplash.com/photo-1606293926075-69a007f4e863?auto=format&fit=crop&w=1200&q=80',
+        'https://images.unsplash.com/photo-1545389336-cf090694435e?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=800&q=80'
+      ],
       description: 'A peaceful retreat focused on Bhagwat discourses, offering a quiet environment, simple lodging, and traditional temple worship.\n\n■ TRAVEL & CONTACT DETAILS:\n• Landmark: Sunrakh Road\n• Temple: Priya Kant Ju Temple\n• Railway Station: Vrindavan Railway Station (3.8 km)\n• Bus Stand: Vrindavan Bus Stand (4.2 km)\n• Contact: Public inquiry desk at gate\n• Website: N/A',
       history: 'An ashram centered around the dissemination of the Srimad Bhagavatam teachings and Vraja culture.',
       rules: ['Attend evening satsang sessions.', 'Observe cleanliness in common areas.', 'Simple modest dress code.'],
@@ -665,7 +754,7 @@ const seedData = async (users) => {
         fireSafetyCertificateUrl: 'https://res.cloudinary.com/ashray-bharat/raw/upload/certificates/fire_safety_mock.pdf',
         landOwnershipUrl: 'https://res.cloudinary.com/ashray-bharat/raw/upload/deeds/land_ownership_mock.pdf'
       },
-      images: [
+      images: config.images || [
         coverImages[idx % coverImages.length],
         ...allGalleryImages.slice((idx * 3) % 14, ((idx * 3) % 14) + 6)
       ],
