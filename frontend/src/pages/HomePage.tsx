@@ -112,9 +112,12 @@ export const HomePage: React.FC = () => {
 
   // Destinations for carousel
   const sacredDestinations = [
+    { name: 'Rishikesh', state: 'Uttarakhand', rating: '4.9', img: 'https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=500&q=80', fallback: 'https://images.unsplash.com/photo-1598977123418-45f04b61582e?auto=format&fit=crop&w=500&q=80' },
+    { name: 'Vrindavan', state: 'Uttar Pradesh', rating: '4.8', img: 'https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?auto=format&fit=crop&w=500&q=80', fallback: 'https://images.unsplash.com/photo-1608958416801-9c60e3a6a908?auto=format&fit=crop&w=500&q=80' },
+    { name: 'Haridwar', state: 'Uttarakhand', rating: '4.8', img: 'https://images.unsplash.com/photo-1612438214708-f428a707dd4e?auto=format&fit=crop&w=500&q=80', fallback: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=500&q=80' },
     { name: 'Kedarnath', state: 'Uttarakhand', rating: '4.8', img: 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=500&q=80', fallback: 'https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=500&q=80' },
     { name: 'Varanasi', state: 'Uttar Pradesh', rating: '4.7', img: 'https://images.unsplash.com/photo-1561361058-c24e36e56336?auto=format&fit=crop&w=500&q=80', fallback: 'https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?auto=format&fit=crop&w=500&q=80' },
-    { name: 'Tirupati', state: 'Andhra Pradesh', rating: '4.8', img: 'https://images.unsplash.com/photo-1582555172866-f73bb12a2ab3?auto=format&fit=crop&w=500&q=80', fallback: 'https://images.unsplash.com/photo-1506461883276-594a12b11db3?auto=format&fit=crop&w=500&q=80' },
+    { name: 'Tirupati', state: 'Andhra Pradesh', rating: '4.8', img: 'https://images.unsplash.com/photo-1582555172866-f73bb12a2ab3?auto=format&fit=crop&w=500&q=80', fallback: 'https://images.unsplash.com/photo-1506461883276-594a12b11db3?auto=format&fit=crop&w=500&q=85' },
     { name: 'Rameswaram', state: 'Tamil Nadu', rating: '4.7', img: 'https://images.unsplash.com/photo-1596402184320-417e7178b2cd?auto=format&fit=crop&w=500&q=80', fallback: 'https://images.unsplash.com/photo-1612438214708-f428a707dd4e?auto=format&fit=crop&w=500&q=80' },
     { name: 'Shirdi', state: 'Maharashtra', rating: '4.6', img: 'https://images.unsplash.com/photo-1566438480900-0609be27a4be?auto=format&fit=crop&w=500&q=80', fallback: 'https://images.unsplash.com/photo-1617854818583-09e7f077a156?auto=format&fit=crop&w=500&q=80' },
     { name: 'Ayodhya', state: 'Uttar Pradesh', rating: '4.7', img: 'https://images.unsplash.com/photo-1609137144813-7d84b06385a7?auto=format&fit=crop&w=500&q=80', fallback: 'https://images.unsplash.com/photo-1599420186946-7b6fb4e297f0?auto=format&fit=crop&w=500&q=80' },
@@ -344,7 +347,7 @@ export const HomePage: React.FC = () => {
           {/* Popular searches */}
           <div className="flex flex-wrap items-center gap-2 mt-4 text-[10px] text-gray-400">
             <span className="font-bold uppercase tracking-wider">Popular:</span>
-            {['Kedarnath', 'Varanasi', 'Tirupati', 'Shirdi', 'Ayodhya', 'Ujjain'].map(city => (
+            {['Rishikesh', 'Haridwar', 'Vrindavan'].map(city => (
               <button key={city} type="button" onClick={() => selectSuggestion(city)}
                 className="px-3 py-1.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-700 text-gray-500 dark:text-gray-400 rounded-full font-semibold transition-all">
                 {city}
@@ -439,7 +442,7 @@ export const HomePage: React.FC = () => {
 
           <div className="flex flex-wrap items-center gap-2 mt-4 text-[10px] text-gray-400">
             <span className="font-bold uppercase tracking-wider mr-1">Popular Searches:</span>
-            {['Kedarnath', 'Varanasi', 'Tirupati', 'Rameswaram', 'Shirdi', 'Amarnath', 'Ayodhya', 'Ujjain'].map(city => (
+            {['Rishikesh', 'Haridwar', 'Vrindavan'].map(city => (
               <button key={city} type="button" onClick={() => selectSuggestion(city)}
                 className="px-3 py-1 bg-gray-50 dark:bg-slate-900 hover:bg-gray-100 dark:hover:bg-slate-800 border border-gray-100 dark:border-slate-700 text-gray-500 dark:text-gray-400 rounded-full font-semibold transition-all cursor-pointer">
                 {city}

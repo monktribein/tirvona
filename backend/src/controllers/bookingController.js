@@ -3,6 +3,7 @@ import RoomAvailability from '../models/RoomAvailability.js';
 import Room from '../models/Room.js';
 import Payment from '../models/Payment.js';
 import AuditLog from '../models/AuditLog.js';
+import Ashram from '../models/Ashram.js';
 
 // @desc    Instantiate a new booking, lock availability, calculate billing
 // @route   POST /api/bookings/create
@@ -229,7 +230,13 @@ export const getDashboardBookings = async (req, res) => {
     const { ashramId, status, date } = req.query;
 
     const query = {};
-    if (ashramId) query.ashramId = ashramId;
+    if (ashramId) {
+      query.ashramId = ashramId;
+    } else if (req.user.role !== 'super_admin') {
+      const myAshrams = await Ashram.find({ ownerId: req.user.id });
+      const ids = myAshrams.map((a) => a._id);
+      query.ashramId = { $in: ids };
+    }
     if (status) query.status = status;
     
     if (date) {

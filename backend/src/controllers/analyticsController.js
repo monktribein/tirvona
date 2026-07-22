@@ -52,7 +52,7 @@ export const getDashboardAnalytics = async (req, res) => {
       }
     });
 
-    const myStays = await Ashram.find(ashramId ? { _id: ashramId } : query.ashramId || {});
+    const myStays = await Ashram.find(ashramId ? { _id: ashramId } : (query.ashramId ? { _id: query.ashramId } : {}));
     const totalRatingSum = myStays.reduce((acc, curr) => acc + (curr.rating?.average || 0), 0);
     const averageRating = myStays.length > 0 ? parseFloat((totalRatingSum / myStays.length).toFixed(1)) : 4.5;
 
