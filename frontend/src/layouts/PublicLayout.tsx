@@ -539,7 +539,7 @@ export const PublicLayout: React.FC = () => {
 
         {/* ── Desktop footer (original grid layout) ── */}
         <div className="hidden lg:block px-6 sm:px-12 max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-9 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-8">
 
             {/* Brand */}
             <div className="lg:col-span-2 space-y-4">
@@ -573,7 +573,7 @@ export const PublicLayout: React.FC = () => {
               </div>
             </div>
 
-            <div>
+            <div className="lg:col-span-1">
               <h4 className="text-xs font-extrabold uppercase tracking-wider text-white mb-5">Company</h4>
               <ul className="text-xs space-y-3">
                 {[
@@ -587,7 +587,7 @@ export const PublicLayout: React.FC = () => {
               </ul>
             </div>
 
-            <div>
+            <div className="lg:col-span-1">
               <h4 className="text-xs font-extrabold uppercase tracking-wider text-white mb-5">Support</h4>
               <ul className="text-xs space-y-3">
                 <li><Link to="/help" className="hover:text-[#D4AF37]">Help Center</Link></li>
@@ -597,7 +597,7 @@ export const PublicLayout: React.FC = () => {
               </ul>
             </div>
 
-            <div>
+            <div className="lg:col-span-2">
               <h4 className="text-xs font-extrabold uppercase tracking-wider text-white mb-5 whitespace-nowrap">Popular Retreats</h4>
               <ul className="text-xs space-y-3">
                 {['Rishikesh Spiritual Valley', 'Varanasi Dharamshalas', 'Haridwar Ghat Stays', 'Vrindavan Pilgrim Hostels'].map(l => (
@@ -606,7 +606,7 @@ export const PublicLayout: React.FC = () => {
               </ul>
             </div>
 
-            <div>
+            <div className="lg:col-span-2">
               <h4 className="text-xs font-extrabold uppercase tracking-wider text-white mb-5 whitespace-nowrap">Information</h4>
               <ul className="text-xs space-y-3">
                 <li><Link to="/faq" className="hover:text-[#D4AF37]">FAQs</Link></li>
@@ -620,7 +620,7 @@ export const PublicLayout: React.FC = () => {
               </ul>
             </div>
 
-            <div>
+            <div className="lg:col-span-1">
               <h4 className="text-xs font-extrabold uppercase tracking-wider text-white mb-5">Legal</h4>
               <ul className="text-xs space-y-3">
                 {[
@@ -634,7 +634,7 @@ export const PublicLayout: React.FC = () => {
               </ul>
             </div>
 
-            <div className="lg:col-span-2 space-y-6">
+            <div className="lg:col-span-3 space-y-6">
               <div>
                 <h4 className="text-xs font-extrabold uppercase tracking-wider text-white mb-4">Download App</h4>
                 <div className="flex flex-col gap-2.5">
