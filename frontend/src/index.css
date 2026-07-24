@@ -28,55 +28,55 @@
 }
 
 :root {
-  /* Premium Design System Mode (Light White/Navy/Gold Accent) */
+  /* Premium Design System Mode (Tirvona Logo Colors: Green #5DAE53, Saffron Gold #E58C28, Deep Navy #0B192C) */
   --background: #FFFFFF;
   --foreground: #0B192C;
   
   --card: #FFFFFF;
   --card-foreground: #0B192C;
   
-  --primary: #0A4DA6; /* Premium Blue */
+  --primary: #5DAE53; /* Tirvona Logo Green */
   --primary-foreground: #FFFFFF;
   
-  --secondary: #0B192C; /* Deep Navy */
+  --secondary: #0B192C; /* Tirvona Deep Navy */
   --secondary-foreground: #FFFFFF;
   
-  --accent: #D4AF37; /* Elegant Gold */
-  --accent-foreground: #0B192C;
+  --accent: #E58C28; /* Tirvona Saffron Gold */
+  --accent-foreground: #FFFFFF;
   
-  --success: #10B981;
-  --warning: #F59E0B;
+  --success: #5DAE53;
+  --warning: #E58C28;
   --danger: #EF4444;
   
   --border: #F1F5F9;
   --input: #F8FAFC;
-  --ring: rgba(10, 77, 166, 0.15);
+  --ring: rgba(93, 174, 83, 0.2);
 }
 
 .dark {
-  /* Maintain dark theme options if needed, but styled around Deep Navy & Gold */
+  /* Maintain dark theme options styled around Tirvona Logo Palette */
   --background: #070F1B;
   --foreground: #F8FAFC;
   
   --card: #0B192C;
   --card-foreground: #F8FAFC;
   
-  --primary: #1D6AE5;
+  --primary: #5DAE53;
   --primary-foreground: #FFFFFF;
   
   --secondary: #0B192C;
   --secondary-foreground: #FFFFFF;
   
-  --accent: #F3C63F;
+  --accent: #E58C28;
   --accent-foreground: #070F1B;
   
-  --success: #10B981;
-  --warning: #F59E0B;
+  --success: #5DAE53;
+  --warning: #E58C28;
   --danger: #EF4444;
   
   --border: #1E293B;
   --input: #1E293B;
-  --ring: rgba(29, 106, 229, 0.3);
+  --ring: rgba(93, 174, 83, 0.3);
 }
 
 /* Custom Base Styles */

@@ -12,8 +12,12 @@ import {
   Moon,
   Globe,
   ChevronDown,
+  ChevronUp,
   ChevronRight,
   LayoutDashboard,
+  Grid,
+  ArrowRight,
+  Headphones,
 } from 'lucide-react';
 
 // ─── Accordion item for mobile footer ────────────────────────────────────────
@@ -97,192 +101,115 @@ export const PublicLayout: React.FC = () => {
   };
 
   const navLinks = [
-    { label: 'Destinations', to: '/search' },
-    { label: 'Stay', to: '/search' },
-    { label: 'Darshan & Seva', to: '/faq' },
-    { label: 'Tirvona Local', to: '/faq' },
-    { label: 'Marketplace', to: '/faq' },
-    { label: 'Events', to: '/faq' },
-    { label: 'Blog', to: '/faq' },
+    { label: 'Destinations', to: '/search', hasDropdown: true },
+    { label: 'Stay', to: '/search', hasDropdown: true },
+    { label: 'Darshan & Seva', to: '/faq', hasDropdown: true },
+    { label: 'Tirvona Local', to: '/faq', hasDropdown: true },
+    { label: 'Marketplace', to: '/faq', hasDropdown: true },
+    { label: 'Events', to: '/faq', hasDropdown: false },
+    { label: 'Blog', to: '/faq', hasDropdown: false },
   ];
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground transition-colors duration-300">
 
-      {/* ── Sticky Header ── */}
-      <header className="sticky top-0 z-40 bg-white/95 dark:bg-[#070F1B]/95 backdrop-blur-md border-b border-gray-100 dark:border-slate-800 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* ── Sticky Header (Floating Rounded Navbar) ── */}
+      <header className="sticky top-0 z-40 pt-3 pb-3 -mb-20 lg:-mb-24 pointer-events-none">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pointer-events-auto">
 
-          {/* Desktop utility bar */}
-          <div className="hidden lg:flex justify-end items-center gap-6 h-9 text-xs border-b border-gray-50 dark:border-slate-800/50">
-            <Link to="/faq" className="text-gray-500 hover:text-primary transition-colors font-medium">Help</Link>
-            <button className="text-gray-500 hover:text-[#D4AF37] transition-colors font-medium flex items-center gap-1 cursor-pointer">
-              <span>₹ INR</span><ChevronDown size={10} />
-            </button>
-            <button className="text-gray-500 hover:text-primary transition-colors cursor-pointer" title="Languages">
-              <Globe size={13} />
-            </button>
-            <button onClick={toggleDarkMode} className="p-1 rounded-full text-gray-400 hover:text-[#D4AF37] transition-colors cursor-pointer">
-              {darkMode ? <Sun size={13} /> : <Moon size={13} />}
-            </button>
-          </div>
+          {/* Simple Clean Single Floating Navbar Container */}
+          <div className="bg-white/95 dark:bg-[#0B192C]/95 backdrop-blur-md border border-gray-200/90 dark:border-slate-800 rounded-full px-5 lg:px-6 py-2.5 flex items-center justify-between w-full shadow-sm hover:shadow-md transition-shadow">
 
-          {/* Main nav row */}
-          <div className="h-16 lg:h-20 flex justify-between items-center gap-3">
-
-            {/* Logo */}
+            {/* Left Brand Logo Image */}
             <Link to="/" className="flex items-center gap-2 group shrink-0">
-              <img src={logo} alt="Tirvona" className="w-8 h-8 lg:w-11 lg:h-11 object-contain" />
-              <div className="flex flex-col leading-tight">
-                <span className="text-base lg:text-xl font-black tracking-tight text-[#0B192C] dark:text-white flex items-center leading-none">
-                  tirvona<span className="text-[#D4AF37] text-[8px] align-super ml-0.5">™</span>
-                </span>
-                <span className="hidden sm:block text-[6px] lg:text-[7.5px] text-gray-400 dark:text-gray-500 font-extrabold tracking-wider uppercase mt-0.5">
-                  CONNECTING SACRED DESTINATIONS
-                </span>
-              </div>
+              <img
+                src="/logo/logo.png"
+                alt="Tirvona Sacred Destinations"
+                className="h-8 sm:h-9 lg:h-10 w-auto object-contain group-hover:scale-105 transition-transform"
+              />
             </Link>
 
             {/* Desktop nav links */}
-            <nav className="hidden lg:flex items-center gap-6 xl:gap-8 font-medium text-xs xl:text-sm text-[#0B192C] dark:text-gray-200">
-              {navLinks.map(link => (
-                <Link key={link.label} to={link.to} className="hover:text-primary transition-colors py-2 font-semibold">
-                  {link.label}
-                </Link>
-              ))}
-            </nav>
-
-            {/* Desktop auth */}
-            <div className="hidden lg:flex items-center gap-3">
-              {user ? (
-                <div className="flex items-center gap-3 border-l border-gray-100 dark:border-slate-800 pl-4">
-                  <div className="relative" ref={notifRef}>
-                    <button
-                      onClick={() => setShowNotifications(!showNotifications)}
-                      className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors relative cursor-pointer"
-                    >
-                      <Bell size={15} className="text-[#0B192C] dark:text-gray-300" />
-                      {unreadCount > 0 && (
-                        <span className="absolute top-1 right-1 w-3.5 h-3.5 bg-danger text-white rounded-full text-[8px] font-bold flex items-center justify-center">
-                          {unreadCount}
-                        </span>
-                      )}
-                    </button>
-                    {showNotifications && (
-                      <div className="absolute right-0 mt-3 w-80 bg-card border border-border rounded-xl shadow-xl p-4 animate-in fade-in slide-in-from-top-2 duration-150 z-50">
-                        <div className="flex justify-between items-center mb-3">
-                          <h4 className="font-bold text-xs">Notifications</h4>
-                          <button onClick={markAllAsRead} className="text-[10px] text-primary font-semibold hover:underline cursor-pointer">Mark all read</button>
-                        </div>
-                        <div className="space-y-2 max-h-60 overflow-y-auto">
-                          {notifications.length === 0 ? (
-                            <p className="text-[10px] text-gray-500 text-center py-4">No new notifications</p>
-                          ) : (
-                            notifications.map(n => (
-                              <div key={n.id} className="p-2.5 rounded-lg bg-background border border-border text-[10px] flex justify-between items-start gap-2">
-                                <div>
-                                  <div className="font-semibold text-secondary dark:text-accent">{n.title}</div>
-                                  <div className="text-gray-500 mt-0.5">{n.message}</div>
-                                </div>
-                                <button
-                                  onClick={() => removeNotification(n.id)}
-                                  className="text-gray-400 hover:text-danger p-0.5 cursor-pointer shrink-0"
-                                  title="Dismiss"
-                                >
-                                  <X size={12} />
-                                </button>
-                              </div>
-                            ))
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
+            <nav className="hidden lg:flex items-center gap-4 xl:gap-6 text-xs xl:text-sm font-medium text-[#1E293B] dark:text-gray-200">
+                {navLinks.map(link => (
                   <Link
-                    to={getDashboardPath()}
-                    className="text-xs font-bold px-4 py-2 rounded-full bg-primary/10 text-primary border border-primary/20 hover:bg-primary/15 transition-all"
+                    key={link.label}
+                    to={link.to}
+                    className="hover:text-[#5DAE53] dark:hover:text-[#E58C28] transition-colors py-1 flex items-center gap-1 font-semibold text-slate-700 dark:text-slate-200"
                   >
-                    Dashboard
+                    <span>{link.label}</span>
+                    {link.hasDropdown && <ChevronDown size={13} className="text-slate-400 dark:text-slate-500 stroke-[2.5]" />}
                   </Link>
-                  <div className="flex flex-col text-right">
-                    <span className="text-xs font-bold text-gray-700 dark:text-gray-300 leading-none">{user.name}</span>
-                    <span className="text-[9px] text-gray-400 capitalize mt-0.5">{user.role.replace('_', ' ')}</span>
-                  </div>
-                  <button
-                    onClick={handleLogout}
-                    className="p-2 rounded-full bg-danger/10 text-danger border border-danger/20 hover:bg-danger/15 transition-all cursor-pointer"
-                    title="Logout"
-                  >
-                    <LogOut size={13} />
-                  </button>
-                </div>
-              ) : (
-                <div className="flex items-center gap-3">
-                  <Link to="/login" className="text-xs font-bold px-5 py-2 text-[#0B192C] dark:text-white border border-gray-200 dark:border-slate-700 rounded-full hover:bg-gray-50 dark:hover:bg-slate-800 transition-all">Login</Link>
-                  <Link to="/register" className="text-xs font-bold px-5 py-2 bg-primary text-white rounded-full hover:bg-opacity-90 shadow-md shadow-primary/10 transition-all">Sign Up</Link>
-                </div>
-              )}
-            </div>
+                ))}
+              </nav>
 
-            {/* Mobile right side: Bell + Hamburger */}
-            <div className="flex lg:hidden items-center gap-1">
-              {/* Notification bell (mobile) */}
-              <div className="relative" ref={notifRef}>
-                <button
-                  onClick={() => setShowNotifications(!showNotifications)}
-                  className="relative p-2.5 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
-                  aria-label="Notifications"
-                >
-                  <Bell size={20} className="text-[#0B192C] dark:text-gray-200" />
-                  {unreadCount > 0 && (
-                    <span className="absolute top-2 right-2 w-2 h-2 bg-danger rounded-full" />
-                  )}
-                </button>
-                {/* Mobile notification dropdown */}
-                {showNotifications && (
-                  <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl shadow-xl p-4 z-50">
-                    <div className="flex justify-between items-center mb-3">
-                      <h4 className="font-bold text-xs text-[#0B192C] dark:text-white">Notifications</h4>
-                      <button onClick={markAllAsRead} className="text-[10px] text-primary font-semibold cursor-pointer">Mark all read</button>
-                    </div>
-                    <div className="space-y-2 max-h-48 overflow-y-auto">
-                      {notifications.length === 0 ? (
-                        <p className="text-[10px] text-gray-400 text-center py-3">No new notifications</p>
-                      ) : (
-                        notifications.slice(0, 5).map(n => (
-                          <div key={n.id} className="p-2.5 rounded-xl bg-gray-50 dark:bg-slate-900 text-[10px] flex justify-between items-start gap-2">
-                            <div>
-                              <div className="font-bold text-[#0B192C] dark:text-white">{n.title}</div>
-                              <div className="text-gray-400 mt-0.5">{n.message}</div>
-                            </div>
-                            <button
-                              onClick={() => removeNotification(n.id)}
-                              className="text-gray-400 hover:text-danger p-0.5 cursor-pointer shrink-0"
-                              title="Dismiss"
-                            >
-                              <X size={12} />
-                            </button>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                )}
+              {/* Mobile spacer / menu title */}
+              <div className="lg:hidden flex-1 pl-3 text-xs font-semibold text-gray-500">
+                Menu
               </div>
 
-              {/* Hamburger */}
-              <button
-                onClick={() => setDrawerOpen(true)}
-                className="p-2.5 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
-                aria-label="Open menu"
-              >
-                <Menu size={22} className="text-[#0B192C] dark:text-gray-200" />
-              </button>
+              {/* Right Side Action & Utility Area */}
+              <div className="flex items-center gap-2 lg:gap-3">
+
+                {/* Currency selector inside navbar */}
+                <button className="hidden sm:flex text-slate-600 dark:text-gray-300 hover:text-[#D4AF37] transition-colors text-xs font-semibold items-center gap-0.5 cursor-pointer px-1.5 py-1">
+                  <span>₹ INR</span><ChevronDown size={11} />
+                </button>
+
+                {/* Language globe inside navbar */}
+                <button className="hidden sm:flex text-slate-600 dark:text-gray-300 hover:text-primary transition-colors cursor-pointer p-1" title="Languages">
+                  <Globe size={15} />
+                </button>
+
+                {/* User Auth / Action Buttons */}
+                {user ? (
+                  <div className="flex items-center gap-2">
+                    <Link
+                      to={getDashboardPath()}
+                      className="text-xs font-bold px-3.5 py-1.5 rounded-full bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all"
+                    >
+                      Dashboard
+                    </Link>
+                    <button
+                      onClick={handleLogout}
+                      className="p-1.5 rounded-full bg-danger/10 text-danger border border-danger/20 hover:bg-danger/20 transition-all cursor-pointer"
+                      title="Logout"
+                    >
+                      <LogOut size={13} />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Link
+                      to="/login"
+                      className="text-xs font-bold text-slate-700 dark:text-white hover:text-primary transition-colors px-3 py-1.5 rounded-full border border-gray-200 dark:border-slate-700"
+                    >
+                      Login
+                    </Link>
+                    <Link
+                      to="/register"
+                      className="text-xs font-bold text-white bg-primary hover:bg-primary/90 transition-colors px-3.5 py-1.5 rounded-full shadow-xs"
+                    >
+                      Sign Up
+                    </Link>
+                  </div>
+                )}
+
+                {/* Mobile Drawer Hamburger */}
+                <button
+                  onClick={() => setDrawerOpen(true)}
+                  className="lg:hidden p-1.5 text-slate-700 dark:text-gray-200 cursor-pointer"
+                  aria-label="Open menu"
+                >
+                  <Menu size={20} />
+                </button>
+
+              </div>
+
             </div>
 
           </div>
-        </div>
-      </header>
+        </header>
 
       {/* ── Mobile Sliding Drawer ── */}
       {/* Backdrop */}
@@ -412,263 +339,149 @@ export const PublicLayout: React.FC = () => {
         <Outlet />
       </main>
 
-      {/* ── Footer ── */}
-      <footer className="bg-[#0B192C] text-gray-400 pt-10 pb-6">
-
-        {/* ── Mobile footer (accordion) ── */}
-        <div className="lg:hidden px-4 max-w-7xl mx-auto">
-
-          {/* Brand — always visible, no toggle */}
-          <div className="py-6 border-b border-white/10 space-y-4">
-            <Link to="/" className="flex items-center gap-2.5">
-              <img src={logo} alt="Tirvona" className="w-9 h-9 object-contain" />
-              <div className="flex flex-col leading-none">
-                <span className="text-base font-black text-white">tirvona<span className="text-[#D4AF37] text-[8px] align-super">™</span></span>
-                <span className="text-[8px] font-bold tracking-widest text-[#D4AF37] uppercase">One Nation, One Spiritual Stay</span>
-              </div>
-            </Link>
-            <p className="text-xs text-gray-400 leading-relaxed">
-              Eliminating manual paper logs to provide safe, verified, and digital booking accommodations for holy stays across India.
-            </p>
-            <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-2">
-              <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="#D4AF37"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" /></svg>
-              <span className="text-[9px] font-bold text-gray-300 leading-tight">Ministry of Tourism & IT Division<br />Government of India</span>
-            </div>
-            {/* Social icons */}
-            <div className="flex items-center gap-5 text-gray-500">
-              {[
-                { title: 'Facebook', path: 'M9 8H7v3h2v9h3v-9h3.6l.4-3H12V6c0-.9.1-1.2 1-1.2h2V2h-3c-3.1 0-4 1.4-4 4.1V8z' },
-                { title: 'Twitter', path: 'M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z' },
-              ].map(s => (
-                <a key={s.title} href="#" className="hover:text-[#D4AF37] transition-colors" title={s.title}>
-                  <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d={s.path} /></svg>
-                </a>
-              ))}
-            </div>
-          </div>
-
-          {/* Accordion columns */}
-          <FooterAccordion title="Company">
-            <ul className="text-xs space-y-3 text-gray-400">
-              {[
-                { label: 'About Us', to: '/about' },
-                { label: 'Careers', to: '/careers' },
-                { label: 'Partner With Us', to: '/partner' },
-                { label: 'Press & Media', to: '/press' }
-              ].map(l => (
-                <li key={l.label}><Link to={l.to} className="hover:text-[#D4AF37] transition-colors">{l.label}</Link></li>
-              ))}
-            </ul>
-          </FooterAccordion>
-
-          <FooterAccordion title="Support">
-            <ul className="text-xs space-y-3 text-gray-400">
-              <li><Link to="/help" className="hover:text-[#D4AF37]">Help Center</Link></li>
-              <li><Link to="/contact" className="hover:text-[#D4AF37]">Contact Us</Link></li>
-              <li><Link to="/faq" className="hover:text-[#D4AF37]">FAQs</Link></li>
-              <li><Link to="/cancellation-policy" className="hover:text-[#D4AF37]">Cancellation Policy</Link></li>
-            </ul>
-          </FooterAccordion>
-
-          <FooterAccordion title="Popular Retreats" titleColor="text-[#D4AF37]">
-            <ul className="text-xs space-y-3 text-gray-400">
-              {['Rishikesh Spiritual Valley', 'Varanasi Dharamshalas', 'Haridwar Ghat Stays', 'Vrindavan Pilgrim Hostels'].map(l => (
-                <li key={l}><Link to={`/search?destination=${encodeURIComponent(l.split(' ')[0])}`} className="hover:text-[#D4AF37]">{l}</Link></li>
-              ))}
-            </ul>
-          </FooterAccordion>
-
-          <FooterAccordion title="Information" titleColor="text-[#D4AF37]">
-            <ul className="text-xs space-y-3 text-gray-400">
-              <li><Link to="/faq" className="hover:text-[#D4AF37]">FAQs</Link></li>
-              {[
-                { label: 'Government Guidelines', to: '/govt-guidelines' },
-                { label: 'Owner Registration Guide', to: '/owner-guide' },
-                { label: 'Terms of Stay & Policies', to: '/stay-policies' }
-              ].map(l => (
-                <li key={l.label}><Link to={l.to} className="hover:text-[#D4AF37]">{l.label}</Link></li>
-              ))}
-            </ul>
-          </FooterAccordion>
-
-          <FooterAccordion title="Legal">
-            <ul className="text-xs space-y-3 text-gray-400">
-              {[
-                { label: 'Terms of Use', to: '/terms' },
-                { label: 'Privacy Policy', to: '/privacy' },
-                { label: 'Refund Policy', to: '/refund-policy' },
-                { label: 'Cookie Policy', to: '/cookie-policy' }
-              ].map(l => (
-                <li key={l.label}><Link to={l.to} className="hover:text-[#D4AF37]">{l.label}</Link></li>
-              ))}
-            </ul>
-          </FooterAccordion>
-
-          <FooterAccordion title="Download App">
-            <div className="grid grid-cols-2 gap-3 pt-1">
-              {[
-                { store: 'Google Play', sub: 'Get it on', icon: 'M14.222 9.374c1.037-.61 1.037-2.137 0-2.748L11.528 5.04 8.32 8l3.207 2.96zm-3.595 2.116L7.583 8.68 1.03 14.73c.201 1.029 1.36 1.61 2.303 1.055zM1 13.396V2.603L6.846 8zM1.03 1.27l6.553 6.05 3.044-2.81L3.333.215C2.39-.341 1.231.24 1.03 1.27', viewBox: '0 0 16 16' },
-                { store: 'App Store', sub: 'Download on the', icon: 'M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z', viewBox: '0 0 24 24' },
-              ].map(a => (
-                <a key={a.store} href="#" className="flex items-center gap-2 bg-white/10 border border-white/10 rounded-xl px-3 py-2.5 hover:bg-white/15 transition-colors">
-                  <svg viewBox={a.viewBox} className="w-5 h-5 fill-white shrink-0"><path d={a.icon} /></svg>
-                  <div className="flex flex-col">
-                    <span className="text-[8px] text-gray-400 leading-none">{a.sub}</span>
-                    <span className="text-[11px] font-bold text-white leading-tight">{a.store}</span>
-                  </div>
-                </a>
-              ))}
-            </div>
-          </FooterAccordion>
-
-          <FooterAccordion title="Contact Us" titleColor="text-[#D4AF37]">
-            <ul className="text-xs space-y-3 text-gray-400">
-              <li className="flex items-start gap-2"><span className="text-[#D4AF37]">📞</span><span><span className="font-bold text-white">+91 78360 55511</span><br /><span className="text-[10px]">NKTech Technology Support</span></span></li>
-              <li className="flex items-start gap-2"><span className="text-[#D4AF37]">✉</span><a href="mailto:info@nktech.in" className="hover:text-[#D4AF37]">info@nktech.in</a></li>
-              <li className="flex items-start gap-2"><span className="text-[#D4AF37] shrink-0">📍</span><span>3rd Floor, ITHUM TOWER, 307B, Sector 62, Noida, UP 201301</span></li>
-              <li className="flex items-start gap-2"><span className="text-[#D4AF37]">🏥</span><span>Emergency Ashram Medical Desk <span className="font-bold text-white">24/7</span></span></li>
-            </ul>
-          </FooterAccordion>
-
-          {/* Bottom */}
-          <div className="pt-6 text-center text-[10px] text-gray-500 space-y-1">
-            <p>© {new Date().getFullYear()} NKTech Technology. All Rights Reserved. Designed in compliance with Digital India guidelines.</p>
-            <p className="flex items-center justify-center gap-1 pt-1">Made with tirvona in India</p>
-          </div>
-        </div>
-
-        {/* ── Desktop footer (original grid layout) ── */}
-        <div className="hidden lg:block px-6 sm:px-12 max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-8">
-
-            {/* Brand */}
-            <div className="lg:col-span-2 space-y-4">
+      {/* ── Footer matching exact reference image design ── */}
+      <footer className="bg-white dark:bg-[#0B192C] text-gray-600 dark:text-gray-400 pt-14 sm:pt-16 pb-0 relative overflow-hidden border-t border-gray-100 dark:border-slate-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          
+          {/* Top 5-Column Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-6 pb-10 sm:pb-14">
+            
+            {/* Col 1: Brand & Help Callout — lg:col-span-3 */}
+            <div className="lg:col-span-3 space-y-4">
               <Link to="/" className="flex items-center gap-2.5">
                 <img src={logo} alt="Tirvona" className="w-10 h-10 object-contain" />
                 <div className="flex flex-col leading-none">
-                  <span className="text-lg font-black text-white">tirvona<span className="text-[#D4AF37] text-[9px] align-super">™</span></span>
-                  <span className="text-[8px] font-bold tracking-widest text-[#D4AF37] uppercase">One Nation, One Spiritual Stay</span>
+                  <span className="text-xl font-black text-[#0B192C] dark:text-white">tirvona<span className="text-[#D4AF37] text-[10px] align-super">™</span></span>
+                  <span className="text-[8px] font-bold tracking-widest text-[#E58C28] uppercase">One Nation, One Spiritual Stay</span>
                 </div>
               </Link>
-              <p className="text-xs text-gray-400 leading-relaxed max-w-xs">
-                Eliminating manual paper logs to provide safe, verified, and digital booking accommodations for holy stays and spiritual retreats across the Indian subcontinent.
+              <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed max-w-xs">
+                We take care of every detail so you can travel with confidence, comfort & spiritual peace.
               </p>
-              <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-2">
-                <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="#D4AF37"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" /></svg>
-                <span className="text-[9px] font-bold text-gray-300 leading-tight">Ministry of Tourism & IT Division<br />Government of India</span>
-              </div>
-              <div className="flex items-center gap-4 text-gray-500 pt-1">
-                <a href="#" className="hover:text-[#D4AF37] transition-colors" title="Facebook">
-                  <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M9 8H7v3h2v9h3v-9h3.6l.4-3H12V6c0-.9.1-1.2 1-1.2h2V2h-3c-3.1 0-4 1.4-4 4.1V8z" /></svg>
-                </a>
-                <a href="#" className="hover:text-[#D4AF37] transition-colors" title="Instagram">
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
-                </a>
-                <a href="#" className="hover:text-[#D4AF37] transition-colors" title="Youtube">
-                  <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M23.498 6.163a3.003 3.003 0 0 0-2.11-2.11C19.517 3.545 12 3.545 12 3.545s-7.517 0-9.388.507a3.003 3.003 0 0 0-2.11 2.11C0 8.033 0 12 0 12s0 3.967.502 5.837a3.003 3.003 0 0 0 2.11 2.11c1.871.507 9.388.507 9.388.507s7.517 0 9.388-.507a3.003 3.003 0 0 0 2.11-2.11C24 15.967 24 12 24 12s0-3.967-.502-5.837zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" /></svg>
-                </a>
-                <a href="#" className="hover:text-[#D4AF37] transition-colors" title="Twitter">
-                  <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z" /></svg>
-                </a>
-              </div>
-            </div>
-
-            <div className="lg:col-span-1">
-              <h4 className="text-xs font-extrabold uppercase tracking-wider text-white mb-5">Company</h4>
-              <ul className="text-xs space-y-3">
-                {[
-                  { label: 'About Us', to: '/about' },
-                  { label: 'Careers', to: '/careers' },
-                  { label: 'Partner With Us', to: '/partner' },
-                  { label: 'Press & Media', to: '/press' }
-                ].map(l => (
-                  <li key={l.label}><Link to={l.to} className="hover:text-[#D4AF37] transition-colors">{l.label}</Link></li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="lg:col-span-1">
-              <h4 className="text-xs font-extrabold uppercase tracking-wider text-white mb-5">Support</h4>
-              <ul className="text-xs space-y-3">
-                <li><Link to="/help" className="hover:text-[#D4AF37]">Help Center</Link></li>
-                <li><Link to="/contact" className="hover:text-[#D4AF37]">Contact Us</Link></li>
-                <li><Link to="/faq" className="hover:text-[#D4AF37]">FAQs</Link></li>
-                <li><Link to="/cancellation-policy" className="hover:text-[#D4AF37]">Cancellation Policy</Link></li>
-              </ul>
-            </div>
-
-            <div className="lg:col-span-2">
-              <h4 className="text-xs font-extrabold uppercase tracking-wider text-white mb-5 whitespace-nowrap">Popular Retreats</h4>
-              <ul className="text-xs space-y-3">
-                {['Rishikesh Spiritual Valley', 'Varanasi Dharamshalas', 'Haridwar Ghat Stays', 'Vrindavan Pilgrim Hostels'].map(l => (
-                  <li key={l}><Link to={`/search?destination=${encodeURIComponent(l.split(' ')[0])}`} className="hover:text-[#D4AF37]">{l}</Link></li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="lg:col-span-2">
-              <h4 className="text-xs font-extrabold uppercase tracking-wider text-white mb-5 whitespace-nowrap">Information</h4>
-              <ul className="text-xs space-y-3">
-                <li><Link to="/faq" className="hover:text-[#D4AF37]">FAQs</Link></li>
-                {[
-                  { label: 'Government Guidelines', to: '/govt-guidelines' },
-                  { label: 'Owner Registration Guide', to: '/owner-guide' },
-                  { label: 'Terms of Stay & Policies', to: '/stay-policies' }
-                ].map(l => (
-                  <li key={l.label}><Link to={l.to} className="hover:text-[#D4AF37]">{l.label}</Link></li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="lg:col-span-1">
-              <h4 className="text-xs font-extrabold uppercase tracking-wider text-white mb-5">Legal</h4>
-              <ul className="text-xs space-y-3">
-                {[
-                  { label: 'Terms of Use', to: '/terms' },
-                  { label: 'Privacy Policy', to: '/privacy' },
-                  { label: 'Refund Policy', to: '/refund-policy' },
-                  { label: 'Cookie Policy', to: '/cookie-policy' }
-                ].map(l => (
-                  <li key={l.label}><Link to={l.to} className="hover:text-[#D4AF37]">{l.label}</Link></li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="lg:col-span-3 space-y-6">
-              <div>
-                <h4 className="text-xs font-extrabold uppercase tracking-wider text-white mb-4">Download App</h4>
-                <div className="flex flex-col gap-2.5">
-                  <a href="#" className="flex items-center gap-2 bg-white/10 border border-white/10 rounded-xl px-3 py-2.5 hover:bg-white/15 transition-colors">
-                    <svg viewBox="0 0 16 16" className="w-5 h-5 fill-white shrink-0"><path d="M14.222 9.374c1.037-.61 1.037-2.137 0-2.748L11.528 5.04 8.32 8l3.207 2.96zm-3.595 2.116L7.583 8.68 1.03 14.73c.201 1.029 1.36 1.61 2.303 1.055zM1 13.396V2.603L6.846 8zM1.03 1.27l6.553 6.05 3.044-2.81L3.333.215C2.39-.341 1.231.24 1.03 1.27" /></svg>
-                    <div className="flex flex-col"><span className="text-[8px] text-gray-400 leading-none">Get it on</span><span className="text-[11px] font-bold text-white leading-tight">Google Play</span></div>
-                  </a>
-                  <a href="#" className="flex items-center gap-2 bg-white/10 border border-white/10 rounded-xl px-3 py-2.5 hover:bg-white/15 transition-colors">
-                    <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white shrink-0"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" /></svg>
-                    <div className="flex flex-col"><span className="text-[8px] text-gray-400 leading-none">Download on the</span><span className="text-[11px] font-bold text-white leading-tight">App Store</span></div>
+              
+              {/* Need Help Callout */}
+              <div className="pt-2 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-amber-50 dark:bg-white/5 border border-amber-200/60 dark:border-white/10 flex items-center justify-center text-[#E58C28] shrink-0">
+                  <Headphones size={20} />
+                </div>
+                <div>
+                  <span className="block text-[10px] text-gray-400 dark:text-gray-400 font-bold uppercase tracking-wider">Need help? Call us</span>
+                  <a href="tel:+917836055511" className="text-sm sm:text-base font-black text-[#0B192C] dark:text-white hover:text-[#5DAE53] transition-colors">
+                    +91 78360 55511
                   </a>
                 </div>
               </div>
+            </div>
 
-              <div>
-                <h4 className="text-xs font-extrabold uppercase tracking-wider text-[#D4AF37] mb-4">Contact Us</h4>
-                <ul className="text-xs space-y-2.5 text-gray-400">
-                  <li className="flex items-start gap-1.5"><span className="text-[#D4AF37] mt-px">📞</span><span><span className="font-bold text-white">+91 78360 55511</span><br /><span className="text-[10px]">NKTech Technology Support</span></span></li>
-                  <li className="flex items-start gap-1.5"><span className="text-[#D4AF37] mt-px">✉</span><a href="mailto:info@nktech.in" className="hover:text-[#D4AF37] break-all">info@nktech.in</a></li>
-                  <li className="flex items-start gap-1.5"><span className="text-[#D4AF37] mt-px shrink-0">📍</span><span className="leading-relaxed">3rd Floor, ITHUM TOWER, 307B,<br />Sector 62, Noida, UP 201301</span></li>
-                  <li className="flex items-start gap-1.5"><span className="text-[#D4AF37] mt-px">🏥</span><span>Emergency Ashram Medical Desk <span className="font-bold text-white">24/7</span></span></li>
-                </ul>
+            {/* Col 2: Quick Links — lg:col-span-2 */}
+            <div className="lg:col-span-2 space-y-3">
+              <h4 className="text-sm font-extrabold text-[#0B192C] dark:text-white">Quick Links</h4>
+              <ul className="text-xs space-y-2.5 text-gray-600 dark:text-gray-400 font-medium">
+                <li><Link to="/search" className="hover:text-[#0B192C] dark:hover:text-white transition-colors">Ashram Bookings</Link></li>
+                <li><Link to="/search" className="hover:text-[#0B192C] dark:hover:text-white transition-colors">Destinations</Link></li>
+                <li><Link to="/search" className="hover:text-[#0B192C] dark:hover:text-white transition-colors">Pilgrimage Circuits</Link></li>
+                <li><Link to="/search" className="hover:text-[#0B192C] dark:hover:text-white transition-colors">Stay Types</Link></li>
+                <li><Link to="/faq" className="hover:text-[#0B192C] dark:hover:text-white transition-colors">How It Works</Link></li>
+              </ul>
+            </div>
+
+            {/* Col 3: Popular Services — lg:col-span-2 */}
+            <div className="lg:col-span-2 space-y-3">
+              <h4 className="text-sm font-extrabold text-[#0B192C] dark:text-white">Popular Services</h4>
+              <ul className="text-xs space-y-2.5 text-gray-600 dark:text-gray-400 font-medium">
+                <li><Link to="/search" className="hover:text-[#0B192C] dark:hover:text-white transition-colors">Ashram Reservations</Link></li>
+                <li><Link to="/search" className="hover:text-[#0B192C] dark:hover:text-white transition-colors">Temple Darshan & Seva</Link></li>
+                <li><Link to="/search" className="hover:text-[#0B192C] dark:hover:text-white transition-colors">Mahaprasad Delivery</Link></li>
+                <li><Link to="/faq" className="hover:text-[#0B192C] dark:hover:text-white transition-colors">Travel Insurance</Link></li>
+                <li><Link to="/faq" className="hover:text-[#0B192C] dark:hover:text-white transition-colors">Tour Guide Services</Link></li>
+                <li><Link to="/contact" className="hover:text-[#0B192C] dark:hover:text-white transition-colors">Yatra Assistance</Link></li>
+              </ul>
+            </div>
+
+            {/* Col 4: Newsletter — lg:col-span-3 */}
+            <div className="lg:col-span-3 space-y-3">
+              <h4 className="text-sm font-extrabold text-[#0B192C] dark:text-white">Newsletter</h4>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Get every sacred travel news update</p>
+              <form onSubmit={e => e.preventDefault()} className="space-y-2.5 pt-1">
+                <input
+                  type="email"
+                  placeholder="Email address"
+                  className="w-full bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-full px-4 py-2.5 text-xs text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-[#5DAE53]"
+                />
+                <button
+                  type="submit"
+                  className="w-full bg-[#5DAE53] hover:bg-[#4d9744] text-white text-xs font-extrabold py-2.5 px-5 rounded-full flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer"
+                >
+                  <span>Subscribe</span>
+                  <div className="w-5 h-5 rounded-full bg-white text-[#5DAE53] flex items-center justify-center">
+                    <ArrowRight size={12} className="stroke-[3]" />
+                  </div>
+                </button>
+              </form>
+            </div>
+
+            {/* Col 5: Follow Us — lg:col-span-2 */}
+            <div className="lg:col-span-2 space-y-3">
+              <h4 className="text-sm font-extrabold text-[#0B192C] dark:text-white">Follow Us</h4>
+              <div className="flex items-center gap-2.5 pt-1">
+                {['Facebook', 'Twitter', 'LinkedIn', 'Instagram'].map(platform => (
+                  <a
+                    key={platform}
+                    href="#"
+                    className="w-8 h-8 rounded-full bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 hover:bg-[#5DAE53] hover:border-[#5DAE53] text-gray-500 dark:text-gray-400 hover:text-white flex items-center justify-center transition-all cursor-pointer text-xs font-bold"
+                    title={platform}
+                  >
+                    {platform[0]}
+                  </a>
+                ))}
               </div>
             </div>
 
           </div>
 
-          <div className="max-w-7xl mx-auto mt-14 pt-8 border-t border-white/10 flex flex-col sm:flex-row justify-between items-center gap-4 text-[10px] text-gray-500">
-            <div className="text-center sm:text-left leading-relaxed">
-              © {new Date().getFullYear()} NKTech Technology. All Rights Reserved. Designed in compliance with Digital India guidelines.
+          {/* GIANT TYPOGRAPHY WATERMARK WITH IMAGE MASK (Matching Reference Screenshot) */}
+          <div className="py-8 sm:py-12 text-center border-t border-gray-100 dark:border-slate-800/80 select-none overflow-hidden">
+            <h1
+              className="text-5xl sm:text-8xl lg:text-[140px] font-black uppercase tracking-tight leading-none text-transparent bg-clip-text bg-cover bg-center"
+              style={{
+                backgroundImage: "url('https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=1600&q=80')",
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                fontFamily: "Satoshi, 'General Sans', Inter, sans-serif",
+                letterSpacing: '-0.04em',
+              }}
+            >
+              Sacred Yatra
+            </h1>
+          </div>
+
+        </div>
+
+        {/* BOTTOM SUB-FOOTER BAR WITH WAVY SOFT CREAM BACKGROUND (Matching Reference Screenshot) */}
+        <div className="bg-[#FFF9EE] dark:bg-[#071322] text-gray-600 dark:text-gray-400 pt-6 pb-6 border-t border-amber-100/60 dark:border-slate-800 relative">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs font-semibold">
+            
+            {/* Left Copyright */}
+            <div className="text-gray-600 dark:text-gray-400">
+              © {new Date().getFullYear()} <span className="text-[#0B192C] dark:text-white font-extrabold">Tirvona</span>. All Rights Reserved.
             </div>
-            <div className="flex items-center gap-2 font-medium text-gray-500">
-              <span>Made with tirvona in India</span>
+
+            {/* Right Links */}
+            <div className="flex items-center gap-6 text-xs font-medium text-gray-600 dark:text-gray-400">
+              <Link to="/privacy" className="hover:text-[#0B192C] dark:hover:text-white transition-colors">Privacy policy</Link>
+              <Link to="/terms" className="hover:text-[#0B192C] dark:hover:text-white transition-colors">Terms & Conditions</Link>
+              <Link to="/faq" className="hover:text-[#0B192C] dark:hover:text-white transition-colors">FAQs</Link>
             </div>
+
+            {/* Scroll To Top Button */}
+            <button
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              className="w-9 h-9 rounded-full bg-[#5DAE53] hover:bg-[#4d9744] text-white flex items-center justify-center shadow-md transition-transform hover:scale-105 cursor-pointer shrink-0"
+              title="Back to Top"
+            >
+              <ChevronUp size={18} className="stroke-[3]" />
+            </button>
+
           </div>
         </div>
 
