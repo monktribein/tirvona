@@ -59,6 +59,27 @@ export const PublicLayout: React.FC = () => {
   const [darkMode, setDarkMode] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
 
+  const [showHeader, setShowHeader] = useState(true);
+
+  // Hide header on scroll down, show on scroll up
+  useEffect(() => {
+    let lastScrollY = window.scrollY;
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      if (currentScrollY <= 40) {
+        setShowHeader(true);
+      } else if (currentScrollY > lastScrollY && currentScrollY > 80) {
+        setShowHeader(false);
+      } else if (currentScrollY < lastScrollY) {
+        setShowHeader(true);
+      }
+      lastScrollY = currentScrollY;
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   // Close drawer on route change
   useEffect(() => {
     setDrawerOpen(false);
@@ -113,8 +134,10 @@ export const PublicLayout: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground transition-colors duration-300">
 
-      {/* ── Sticky Header (Floating Rounded Navbar) ── */}
-      <header className="sticky top-0 z-40 pt-3 pb-3 -mb-20 lg:-mb-24 pointer-events-none">
+      {/* ── Sticky Header (Floating Rounded Navbar - Hide on Scroll Down, Show on Scroll Up) ── */}
+      <header className={`sticky top-0 z-50 pt-3 pb-3 -mb-20 lg:-mb-24 pointer-events-none transition-all duration-300 ease-in-out transform ${
+        showHeader || drawerOpen ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'
+      }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pointer-events-auto">
 
           {/* Simple Clean Single Floating Navbar Container */}
@@ -135,7 +158,7 @@ export const PublicLayout: React.FC = () => {
                   <Link
                     key={link.label}
                     to={link.to}
-                    className="hover:text-[#5DAE53] dark:hover:text-[#E58C28] transition-colors py-1 flex items-center gap-1 font-semibold text-slate-700 dark:text-slate-200"
+                    className="hover:text-[#0A4DA6] dark:hover:text-[#E58C28] transition-colors py-1 flex items-center gap-1 font-semibold text-slate-700 dark:text-slate-200"
                   >
                     <span>{link.label}</span>
                     {link.hasDropdown && <ChevronDown size={13} className="text-slate-400 dark:text-slate-500 stroke-[2.5]" />}
@@ -157,7 +180,7 @@ export const PublicLayout: React.FC = () => {
                 </button>
 
                 {/* Language globe inside navbar */}
-                <button className="hidden sm:flex text-slate-600 dark:text-gray-300 hover:text-primary transition-colors cursor-pointer p-1" title="Languages">
+                <button className="hidden sm:flex text-slate-600 dark:text-gray-300 hover:text-[#0A4DA6] transition-colors cursor-pointer p-1" title="Languages">
                   <Globe size={15} />
                 </button>
 
@@ -166,7 +189,7 @@ export const PublicLayout: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <Link
                       to={getDashboardPath()}
-                      className="text-xs font-bold px-3.5 py-1.5 rounded-full bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all"
+                      className="text-xs font-bold px-3.5 py-1.5 rounded-full bg-[#0A4DA6]/10 text-[#0A4DA6] border border-[#0A4DA6]/20 hover:bg-[#0A4DA6]/20 transition-all"
                     >
                       Dashboard
                     </Link>
@@ -182,13 +205,13 @@ export const PublicLayout: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <Link
                       to="/login"
-                      className="text-xs font-bold text-slate-700 dark:text-white hover:text-primary transition-colors px-3 py-1.5 rounded-full border border-gray-200 dark:border-slate-700"
+                      className="text-xs font-bold text-slate-700 dark:text-white hover:text-[#0A4DA6] transition-colors px-3 py-1.5 rounded-full border border-gray-200 dark:border-slate-700"
                     >
                       Login
                     </Link>
                     <Link
                       to="/register"
-                      className="text-xs font-bold text-white bg-primary hover:bg-primary/90 transition-colors px-3.5 py-1.5 rounded-full shadow-xs"
+                      className="text-xs font-bold text-white bg-[#0A4DA6] hover:bg-[#083b80] transition-colors px-4 py-2 rounded-full shadow-sm"
                     >
                       Sign Up
                     </Link>
@@ -366,7 +389,7 @@ export const PublicLayout: React.FC = () => {
                 </div>
                 <div>
                   <span className="block text-[10px] text-gray-400 dark:text-gray-400 font-bold uppercase tracking-wider">Need help? Call us</span>
-                  <a href="tel:+917836055511" className="text-sm sm:text-base font-black text-[#0B192C] dark:text-white hover:text-[#5DAE53] transition-colors">
+                  <a href="tel:+917836055511" className="text-sm sm:text-base font-black text-[#0B192C] dark:text-white hover:text-[#0A4DA6] transition-colors">
                     +91 78360 55511
                   </a>
                 </div>
@@ -406,14 +429,14 @@ export const PublicLayout: React.FC = () => {
                 <input
                   type="email"
                   placeholder="Email address"
-                  className="w-full bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-full px-4 py-2.5 text-xs text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-[#5DAE53]"
+                  className="w-full bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-full px-4 py-2.5 text-xs text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-[#0A4DA6]"
                 />
                 <button
                   type="submit"
-                  className="w-full bg-[#5DAE53] hover:bg-[#4d9744] text-white text-xs font-extrabold py-2.5 px-5 rounded-full flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer"
+                  className="w-full bg-[#0A4DA6] hover:bg-[#083b80] text-white text-xs font-extrabold py-2.5 px-5 rounded-full flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer"
                 >
                   <span>Subscribe</span>
-                  <div className="w-5 h-5 rounded-full bg-white text-[#5DAE53] flex items-center justify-center">
+                  <div className="w-5 h-5 rounded-full bg-white text-[#0A4DA6] flex items-center justify-center">
                     <ArrowRight size={12} className="stroke-[3]" />
                   </div>
                 </button>
@@ -423,17 +446,47 @@ export const PublicLayout: React.FC = () => {
             {/* Col 5: Follow Us — lg:col-span-2 */}
             <div className="lg:col-span-2 space-y-3">
               <h4 className="text-sm font-extrabold text-[#0B192C] dark:text-white">Follow Us</h4>
-              <div className="flex items-center gap-2.5 pt-1">
-                {['Facebook', 'Twitter', 'LinkedIn', 'Instagram'].map(platform => (
-                  <a
-                    key={platform}
-                    href="#"
-                    className="w-8 h-8 rounded-full bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 hover:bg-[#5DAE53] hover:border-[#5DAE53] text-gray-500 dark:text-gray-400 hover:text-white flex items-center justify-center transition-all cursor-pointer text-xs font-bold"
-                    title={platform}
-                  >
-                    {platform[0]}
-                  </a>
-                ))}
+              <div className="flex items-center gap-3 pt-1">
+                {/* Facebook */}
+                <a
+                  href="https://facebook.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-9 h-9 rounded-full bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 hover:bg-[#0A4DA6] hover:border-[#0A4DA6] text-gray-600 dark:text-gray-400 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-xs group"
+                  title="Facebook"
+                >
+                  <svg className="w-4 h-4 fill-current transition-transform group-hover:scale-110" viewBox="0 0 24 24">
+                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                  </svg>
+                </a>
+
+                {/* Instagram */}
+                <a
+                  href="https://instagram.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-9 h-9 rounded-full bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 hover:bg-[#0A4DA6] hover:border-[#0A4DA6] text-gray-600 dark:text-gray-400 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-xs group"
+                  title="Instagram"
+                >
+                  <svg className="w-4 h-4 stroke-current fill-none transition-transform group-hover:scale-110" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                  </svg>
+                </a>
+
+                {/* YouTube */}
+                <a
+                  href="https://youtube.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-9 h-9 rounded-full bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 hover:bg-[#0A4DA6] hover:border-[#0A4DA6] text-gray-600 dark:text-gray-400 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-xs group"
+                  title="YouTube"
+                >
+                  <svg className="w-4 h-4 fill-current transition-transform group-hover:scale-110" viewBox="0 0 24 24">
+                    <path d="M23.498 6.163a3.003 3.003 0 0 0-2.11-2.11C19.517 3.545 12 3.545 12 3.545s-7.517 0-9.388.507a3.003 3.003 0 0 0-2.11 2.11C0 8.033 0 12 0 12s0 3.967.502 5.837a3.003 3.003 0 0 0 2.11 2.11c1.871.507 9.388.507 9.388.507s7.517 0 9.388-.507a3.003 3.003 0 0 0 2.11-2.11C24 15.967 24 12 24 12s0-3.967-.502-5.837zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+                  </svg>
+                </a>
               </div>
             </div>
 
@@ -476,7 +529,7 @@ export const PublicLayout: React.FC = () => {
             {/* Scroll To Top Button */}
             <button
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-              className="w-9 h-9 rounded-full bg-[#5DAE53] hover:bg-[#4d9744] text-white flex items-center justify-center shadow-md transition-transform hover:scale-105 cursor-pointer shrink-0"
+              className="w-9 h-9 rounded-full bg-[#0A4DA6] hover:bg-[#083b80] text-white flex items-center justify-center shadow-md transition-transform hover:scale-105 cursor-pointer shrink-0"
               title="Back to Top"
             >
               <ChevronUp size={18} className="stroke-[3]" />

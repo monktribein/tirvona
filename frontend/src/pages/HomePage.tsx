@@ -246,8 +246,8 @@ export const HomePage: React.FC = () => {
   return (
     <div className="pb-16 lg:pb-24 overflow-x-hidden">
 
-      {/* ══════════════════════ HERO SECTION (Redesigned per Reference Screenshot) ══════════════════════ */}
-      <section className="relative pt-28 sm:pt-36 lg:pt-40 pb-36 sm:pb-44 lg:pb-52 min-h-[580px] sm:min-h-[640px] lg:min-h-[720px] flex items-center overflow-hidden">
+      {/* ══════════════════════ HERO SECTION (Full Width with Rounded Bottom Corners) ══════════════════════ */}
+      <section className="relative pt-28 sm:pt-36 lg:pt-40 pb-40 sm:pb-52 lg:pb-60 min-h-[580px] sm:min-h-[640px] lg:min-h-[720px] flex items-center overflow-hidden rounded-b-[36px] sm:rounded-b-[48px] shadow-xl">
 
         {/* Background Image Container */}
         <div className="absolute inset-0 z-0">
@@ -346,12 +346,12 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* ══════════════════════ FLOATING BOOKING & SEARCH CARD (Matching Reference Screenshot) ══════════════════════ */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 -mt-14 sm:-mt-16 lg:-mt-20 z-30 relative mb-14">
+      {/* ══════════════════════ FLOATING BOOKING & SEARCH CARD (Overlapping Hero 50%) ══════════════════════ */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 -mt-24 sm:-mt-32 lg:-mt-36 z-30 relative mb-12 sm:mb-16 lg:mb-20">
 
         {/* Category Tabs Floating Bar (Centered Pill Container) */}
         <div className="flex justify-center mb-4 sm:mb-5">
-          <div className="inline-flex items-center gap-1.5 p-1.5 rounded-full bg-white dark:bg-[#0B192C] border-2 border-[#0A4DA6]/80 shadow-none">
+          <div className="inline-flex items-center gap-1.5 p-1.5 rounded-full bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 shadow-lg shadow-[#0B192C]/10">
             {[
               { id: 'destinations', icon: <Compass size={14} />, label: 'Destinations' },
               { id: 'stay', icon: <Bed size={14} />, label: 'Stay' },
@@ -373,7 +373,7 @@ export const HomePage: React.FC = () => {
         </div>
 
         {/* Main Search Card */}
-        <div className="bg-white dark:bg-[#0B192C] rounded-[28px] sm:rounded-[36px] shadow-none border-2 border-[#0A4DA6] p-4 sm:p-5 lg:p-6">
+        <div className="bg-white dark:bg-[#0B192C] rounded-[28px] sm:rounded-[36px] shadow-2xl shadow-[#0B192C]/15 border border-gray-100 dark:border-slate-800/80 p-4 sm:p-5 lg:p-6">
           <form onSubmit={handleSearch} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4 lg:gap-0 items-center">
 
             {/* Field 1: DESTINATIONS */}
@@ -481,6 +481,21 @@ export const HomePage: React.FC = () => {
           </form>
         </div>
 
+        {/* 12-icon service strip placed directly below booking system */}
+        <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800/80 rounded-[24px] mt-4 sm:mt-5 px-3 py-3 shadow-lg shadow-[#0B192C]/5">
+          <div className="grid grid-cols-6 lg:grid-cols-12 divide-x divide-gray-100 dark:divide-slate-800 divide-y lg:divide-y-0">
+            {serviceIcons.map((item, i) => (
+              <div
+                key={i}
+                className={`flex flex-col items-center gap-1.5 py-3 px-1 text-center cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-900 rounded-xl transition-colors ${i >= 6 ? 'border-t border-gray-100 dark:border-slate-800 lg:border-t-0' : ''}`}
+              >
+                {item.icon}
+                <span className="text-[8px] sm:text-[9px] font-bold text-gray-500 dark:text-gray-400 whitespace-pre-line text-center leading-tight">{item.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
       </section>
 
       {/* ══════════════════════ EVERYTHING YOU NEED ══════════════════════ */}
@@ -492,7 +507,7 @@ export const HomePage: React.FC = () => {
           </p>
           <h2 className="font-black text-[#0B192C] dark:text-white leading-tight" style={{ fontSize: 'clamp(1.4rem, 4vw, 2.25rem)' }}>
             Everything You Need For A Blessed Journey<br />
-            Explore <span className="bg-[#5DAE53] text-white px-3 py-0.5 rounded-xl text-base sm:text-xl font-black inline-block align-middle mx-1 shadow-sm">100+</span> Sacred Services
+            Explore <span className="bg-[#0A4DA6] text-white px-3 py-0.5 rounded-xl text-base sm:text-xl font-black inline-block align-middle mx-1 shadow-sm">100+</span> Sacred Services
           </h2>
         </div>
 
@@ -527,7 +542,7 @@ export const HomePage: React.FC = () => {
             </div>
           </div>
 
-          {/* Card 2 — Local (teal) */}
+          {/* Card 2 — Local (logo blue) */}
           <div
             className="relative rounded-3xl overflow-hidden shadow-lg group cursor-pointer"
             style={{ height: 'clamp(200px, 50vw, 260px)' }}
@@ -540,15 +555,15 @@ export const HomePage: React.FC = () => {
               loading="lazy"
               onError={e => { e.currentTarget.onerror = null; e.currentTarget.src = 'https://images.unsplash.com/photo-1606293926075-69a007f4e863?auto=format&fit=crop&w=700&q=80'; }}
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-[#0E7B6C]/95 via-[#0E7B6C]/75 to-[#0E7B6C]/10" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#0A4DA6]/95 via-[#0A4DA6]/75 to-[#0A4DA6]/10" />
             <div className="relative z-10 p-5 h-full flex flex-col justify-between">
               <div className="space-y-2 max-w-[70%]">
-                <p className="text-[10px] font-extrabold uppercase tracking-widest text-emerald-200">Tirvona</p>
+                <p className="text-[10px] font-extrabold uppercase tracking-widest text-blue-200">Tirvona</p>
                 <h3 className="font-extrabold text-lg text-white flex items-center gap-1.5 leading-tight">Local <ArrowRight size={15} /></h3>
-                <p className="text-xs text-emerald-100/90 leading-relaxed">Find local services, guided tours, transport, food and more near you.</p>
+                <p className="text-xs text-blue-100/90 leading-relaxed">Find local services, guided tours, transport, food and more near you.</p>
               </div>
               <button
-                className="self-start px-5 py-2.5 min-h-[40px] bg-white text-[#0E7B6C] font-extrabold text-xs rounded-full hover:bg-emerald-50 transition-all cursor-pointer shadow"
+                className="self-start px-5 py-2.5 min-h-[40px] bg-white text-[#0A4DA6] font-extrabold text-xs rounded-full hover:bg-blue-50 transition-all cursor-pointer shadow"
                 onClick={e => { e.stopPropagation(); navigate('/faq'); }}
               >
                 Explore Local
@@ -585,21 +600,6 @@ export const HomePage: React.FC = () => {
             </div>
           </div>
         </div>
-
-        {/* 12-icon service strip — 6 cols (2 rows) on mobile, 12 cols on desktop */}
-        <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[20px] mt-4 px-2 py-3 shadow-sm">
-          <div className="grid grid-cols-6 lg:grid-cols-12 divide-x divide-gray-100 dark:divide-slate-800 divide-y lg:divide-y-0">
-            {serviceIcons.map((item, i) => (
-              <div
-                key={i}
-                className={`flex flex-col items-center gap-1.5 py-3 px-1 text-center cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-900 rounded-lg transition-colors ${i >= 6 ? 'border-t border-gray-100 dark:border-slate-800 lg:border-t-0' : ''}`}
-              >
-                {item.icon}
-                <span className="text-[8px] font-bold text-gray-500 dark:text-gray-400 whitespace-pre-line text-center leading-tight">{item.label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
       </section>
 
       {/* ══════════════════════ POPULAR SACRED DESTINATIONS (Matching Reference Image 2) ══════════════════════ */}
@@ -622,7 +622,7 @@ export const HomePage: React.FC = () => {
             </p>
             <h2 className="font-black text-white leading-tight drop-shadow-lg" style={{ fontSize: 'clamp(1.4rem, 4vw, 2.35rem)' }}>
               Discover The Amazing Sacred Places<br />
-              Around India, <span className="bg-[#5DAE53] text-white px-3 py-0.5 rounded-xl text-base sm:text-xl font-black inline-block align-middle mx-1 shadow-md">50+</span> Cities
+              Around India, <span className="bg-[#0A4DA6] text-white px-3 py-0.5 rounded-xl text-base sm:text-xl font-black inline-block align-middle mx-1 shadow-md">50+</span> Cities
             </h2>
           </div>
         </div>
@@ -670,6 +670,79 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
+      {/* ══════════════════════ UPCOMING ARDH KUMBH FESTIVAL BANNER (100% Full Width Edge-to-Edge Hero Banner) ══════════════════════ */}
+      <section className="relative w-full py-28 sm:py-36 lg:py-44 min-h-[540px] sm:min-h-[620px] lg:min-h-[700px] flex items-center justify-center overflow-hidden rounded-none shadow-2xl mb-14 lg:mb-24 group border-y border-white/10">
+        <img
+          src="/banner/upcominglogo.png"
+          alt="Upcoming Ardh Kumbh Festival"
+          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+          loading="lazy"
+          onError={e => { e.currentTarget.onerror = null; e.currentTarget.src = 'https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=1600&q=80'; }}
+        />
+        {/* Subtle gradient overlay for high contrast text readability */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0B192C]/90 via-[#0B192C]/65 to-black/40 dark:from-[#070F1B]/95 dark:via-[#070F1B]/70 dark:to-transparent" />
+
+        {/* Centered Hero Frame Banner Content Details */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full text-center flex flex-col items-center">
+          <div className="max-w-3xl space-y-5 text-center flex flex-col items-center">
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+            >
+              <span
+                className="text-lg sm:text-2xl block font-bold leading-tight"
+                style={{
+                  fontFamily: "Kalam, cursive, sans-serif",
+                  color: '#E58C28',
+                }}
+              >
+                Upcoming Sacred Event
+              </span>
+            </motion.div>
+
+            <motion.h2
+              initial={{ opacity: 0, y: 15 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="text-3xl sm:text-5xl lg:text-6xl font-black text-white drop-shadow-lg leading-tight"
+            >
+              Upcoming Ardh Kumbh Festival
+            </motion.h2>
+
+            <motion.p
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2, duration: 0.5 }}
+              className="text-[#E2E8F0] text-sm sm:text-base leading-relaxed max-w-2xl font-medium drop-shadow-md"
+            >
+              Experience the divine spiritual gathering on the sacred banks of Ganga in Haridwar. Secure your holy ashram stay today for peace and divine blessings.
+            </motion.p>
+
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.3, duration: 0.5 }}
+              className="pt-3"
+            >
+              <button
+                onClick={() => navigate('/search?destination=Haridwar')}
+                className="bg-[#0A4DA6] hover:bg-[#083D85] text-white font-extrabold text-xs sm:text-sm pl-7 pr-2 py-3 rounded-full flex items-center gap-3 shadow-2xl hover:shadow-primary/40 transition-all cursor-pointer group/btn border border-white/20"
+              >
+                <span>Book Now</span>
+                <div className="w-8 h-8 rounded-full bg-white text-[#0A4DA6] flex items-center justify-center transition-transform group-hover/btn:translate-x-1 shadow-md">
+                  <ArrowRight size={15} className="stroke-[2.5]" />
+                </div>
+              </button>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
       {/* ══════════════════════ POPULAR PRASHAD FROM ASHRAMS ══════════════════════ */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 space-y-8 mb-12 lg:mb-20">
 
@@ -690,7 +763,7 @@ export const HomePage: React.FC = () => {
             </p>
             <h2 className="font-black text-white leading-tight drop-shadow-lg" style={{ fontSize: 'clamp(1.4rem, 4vw, 2.35rem)' }}>
               Sacred Mahaprasad From Holy Ashrams<br />
-              Explore <span className="bg-[#5DAE53] text-white px-3 py-0.5 rounded-xl text-base sm:text-xl font-black inline-block align-middle mx-1 shadow-md">50+</span> Blessed Prasad Items
+              Explore <span className="bg-[#0A4DA6] text-white px-3 py-0.5 rounded-xl text-base sm:text-xl font-black inline-block align-middle mx-1 shadow-md">50+</span> Blessed Prasad Items
             </h2>
           </div>
         </div>
@@ -756,7 +829,7 @@ export const HomePage: React.FC = () => {
             <h2 className="font-black text-white leading-tight drop-shadow-lg" style={{ fontSize: 'clamp(1.2rem, 3.5vw, 2.25rem)' }}>
               <span className="block">Discover Blessed Stays & Sacred Ashrams</span>
               <span className="block mt-1">
-                Across India, <span className="bg-[#5DAE53] text-white px-3 py-0.5 rounded-xl text-base sm:text-xl font-black inline-block align-middle mx-1 shadow-md">100+</span> Verified Stays
+                Across India, <span className="bg-[#0A4DA6] text-white px-3 py-0.5 rounded-xl text-base sm:text-xl font-black inline-block align-middle mx-1 shadow-md">100+</span> Verified Stays
               </span>
             </h2>
             <p className="text-[11px] text-gray-200 font-extrabold uppercase tracking-wider pt-1 drop-shadow-md">
@@ -776,10 +849,10 @@ export const HomePage: React.FC = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`pb-2.5 flex items-center px-1 shrink-0 relative cursor-pointer transition-all ${activeTab === tab.id ? 'text-[#5DAE53]' : 'text-gray-400 hover:text-gray-600'}`}
+              className={`pb-2.5 flex items-center px-1 shrink-0 relative cursor-pointer transition-all ${activeTab === tab.id ? 'text-[#0A4DA6]' : 'text-gray-400 hover:text-gray-600'}`}
             >
               {tab.label}
-              {activeTab === tab.id && <motion.div layoutId="activeTabUnderline" className="absolute bottom-0 inset-x-0 h-0.5 bg-[#5DAE53]" />}
+              {activeTab === tab.id && <motion.div layoutId="activeTabUnderline" className="absolute bottom-0 inset-x-0 h-0.5 bg-[#0A4DA6]" />}
             </button>
           ))}
         </div>
@@ -813,8 +886,8 @@ export const HomePage: React.FC = () => {
                       loading="lazy"
                       onError={e => { e.currentTarget.onerror = null; e.currentTarget.src = 'https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?auto=format&fit=crop&w=500&q=80'; }}
                     />
-                    {/* Green Price Badge */}
-                    <span className="absolute top-3 left-3 bg-[#5DAE53] text-white text-[10px] sm:text-[11px] font-extrabold px-3 py-1 rounded-full shadow-sm">
+                    {/* Royal Navy Blue Price Badge */}
+                    <span className="absolute top-3 left-3 bg-[#0A4DA6] text-white text-[10px] sm:text-[11px] font-extrabold px-3 py-1 rounded-full shadow-sm">
                       ₹{ashram.lowestNightPrice ?? 150} / night
                     </span>
                   </div>
@@ -841,8 +914,8 @@ export const HomePage: React.FC = () => {
 
       {/* ══════════════════════ LATEST BLOG & NEWS SECTION (Matching Reference Image 1) ══════════════════════ */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 mb-12 lg:mb-20">
-        <div className="bg-[#F2F8F4] dark:bg-[#071711]/60 rounded-[32px] py-10 sm:py-14 px-4 sm:px-8 border border-emerald-100/60 dark:border-emerald-900/30 shadow-sm relative overflow-hidden">
-          
+        <div className="bg-[#F4F8FC] dark:bg-[#071322]/60 rounded-[32px] py-10 sm:py-14 px-4 sm:px-8 border border-blue-100/60 dark:border-blue-900/30 shadow-sm relative overflow-hidden">
+
           {/* Section Header */}
           <div className="text-center space-y-2 max-w-2xl mx-auto relative z-10">
             <p className="font-['Kalam'] text-base sm:text-lg font-bold text-[#E58C28]">
@@ -855,7 +928,7 @@ export const HomePage: React.FC = () => {
 
           {/* 3 Blog Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto mt-8 sm:mt-10 relative z-10">
-            
+
             {/* Blog Card 1 */}
             <div className="bg-white dark:bg-[#0B192C] rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 flex flex-col justify-between border border-gray-100 dark:border-slate-800 group hover:-translate-y-1">
               <div>
@@ -869,8 +942,8 @@ export const HomePage: React.FC = () => {
                 </div>
                 <div className="p-5 space-y-3">
                   <div className="flex items-center gap-4 text-[11px] font-bold text-gray-400">
-                    <span className="flex items-center gap-1.5"><Calendar size={13} className="text-[#5DAE53]" /> 20 March 2025</span>
-                    <span className="flex items-center gap-1.5"><BookOpen size={13} className="text-[#5DAE53]" /> Comments (5)</span>
+                    <span className="flex items-center gap-1.5"><Calendar size={13} className="text-[#0A4DA6]" /> 20 March 2025</span>
+                    <span className="flex items-center gap-1.5"><BookOpen size={13} className="text-[#0A4DA6]" /> Comments (5)</span>
                   </div>
                   <h3 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-snug line-clamp-2 group-hover:text-[#0A4DA6] transition-colors">
                     Essential Guide To Planning Your First Ashram Stay
@@ -889,7 +962,7 @@ export const HomePage: React.FC = () => {
                 </div>
                 <button
                   onClick={() => navigate('/faq')}
-                  className="px-3.5 py-1.5 bg-[#EBF5EE] dark:bg-emerald-950/40 text-gray-700 dark:text-emerald-300 hover:bg-[#5DAE53] hover:text-white text-xs font-bold rounded-full flex items-center gap-1.5 transition-colors cursor-pointer"
+                  className="px-3.5 py-1.5 bg-[#F0F5FC] dark:bg-blue-950/40 text-gray-700 dark:text-blue-300 hover:bg-[#0A4DA6] hover:text-white text-xs font-bold rounded-full flex items-center gap-1.5 transition-colors cursor-pointer"
                 >
                   <span>Read More</span>
                   <ArrowRight size={12} />
@@ -910,8 +983,8 @@ export const HomePage: React.FC = () => {
                 </div>
                 <div className="p-5 space-y-3">
                   <div className="flex items-center gap-4 text-[11px] font-bold text-gray-400">
-                    <span className="flex items-center gap-1.5"><Calendar size={13} className="text-[#5DAE53]" /> 20 March 2025</span>
-                    <span className="flex items-center gap-1.5"><BookOpen size={13} className="text-[#5DAE53]" /> Comments (5)</span>
+                    <span className="flex items-center gap-1.5"><Calendar size={13} className="text-[#0A4DA6]" /> 20 March 2025</span>
+                    <span className="flex items-center gap-1.5"><BookOpen size={13} className="text-[#0A4DA6]" /> Comments (5)</span>
                   </div>
                   <h3 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-snug line-clamp-2 group-hover:text-[#0A4DA6] transition-colors">
                     Sacred Mahaprasad: Traditions & History Across Holy Shrines
@@ -923,14 +996,14 @@ export const HomePage: React.FC = () => {
               </div>
               <div className="px-5 pb-5 pt-2 flex items-center justify-between border-t border-gray-50 dark:border-slate-800/60 mt-2">
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-full bg-[#0E7B6C] text-white font-extrabold text-xs flex items-center justify-center">
+                  <div className="w-7 h-7 rounded-full bg-[#0A4DA6] text-white font-extrabold text-xs flex items-center justify-center">
                     R
                   </div>
                   <span className="text-xs font-bold text-gray-600 dark:text-gray-300">Richard K.</span>
                 </div>
                 <button
                   onClick={() => navigate('/faq')}
-                  className="px-3.5 py-1.5 bg-[#EBF5EE] dark:bg-emerald-950/40 text-gray-700 dark:text-emerald-300 hover:bg-[#5DAE53] hover:text-white text-xs font-bold rounded-full flex items-center gap-1.5 transition-colors cursor-pointer"
+                  className="px-3.5 py-1.5 bg-[#F0F5FC] dark:bg-blue-950/40 text-gray-700 dark:text-blue-300 hover:bg-[#0A4DA6] hover:text-white text-xs font-bold rounded-full flex items-center gap-1.5 transition-colors cursor-pointer"
                 >
                   <span>Read More</span>
                   <ArrowRight size={12} />
@@ -951,8 +1024,8 @@ export const HomePage: React.FC = () => {
                 </div>
                 <div className="p-5 space-y-3">
                   <div className="flex items-center gap-4 text-[11px] font-bold text-gray-400">
-                    <span className="flex items-center gap-1.5"><Calendar size={13} className="text-[#5DAE53]" /> 20 March 2025</span>
-                    <span className="flex items-center gap-1.5"><BookOpen size={13} className="text-[#5DAE53]" /> Comments (5)</span>
+                    <span className="flex items-center gap-1.5"><Calendar size={13} className="text-[#0A4DA6]" /> 20 March 2025</span>
+                    <span className="flex items-center gap-1.5"><BookOpen size={13} className="text-[#0A4DA6]" /> Comments (5)</span>
                   </div>
                   <h3 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-snug line-clamp-2 group-hover:text-[#0A4DA6] transition-colors">
                     Top 10 Sacred Destinations To Visit In Uttarakhand
@@ -964,14 +1037,14 @@ export const HomePage: React.FC = () => {
               </div>
               <div className="px-5 pb-5 pt-2 flex items-center justify-between border-t border-gray-50 dark:border-slate-800/60 mt-2">
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-full bg-[#6B21A8] text-white font-extrabold text-xs flex items-center justify-center">
+                  <div className="w-7 h-7 rounded-full bg-[#0A4DA6] text-white font-extrabold text-xs flex items-center justify-center">
                     M
                   </div>
                   <span className="text-xs font-bold text-gray-600 dark:text-gray-300">M. Robinson</span>
                 </div>
                 <button
                   onClick={() => navigate('/faq')}
-                  className="px-3.5 py-1.5 bg-[#EBF5EE] dark:bg-emerald-950/40 text-gray-700 dark:text-emerald-300 hover:bg-[#5DAE53] hover:text-white text-xs font-bold rounded-full flex items-center gap-1.5 transition-colors cursor-pointer"
+                  className="px-3.5 py-1.5 bg-[#F0F5FC] dark:bg-blue-950/40 text-gray-700 dark:text-blue-300 hover:bg-[#0A4DA6] hover:text-white text-xs font-bold rounded-full flex items-center gap-1.5 transition-colors cursor-pointer"
                 >
                   <span>Read More</span>
                   <ArrowRight size={12} />
@@ -986,7 +1059,7 @@ export const HomePage: React.FC = () => {
 
       {/* ══════════════════════ CUSTOMER FEEDBACK & EXPERIENCES SLIDER ══════════════════════ */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 mb-12 lg:mb-20 space-y-8">
-        
+
         {/* Section Header */}
         <div className="text-center space-y-2">
           <p className="font-['Kalam'] text-base sm:text-lg font-bold text-[#E58C28]">
@@ -994,7 +1067,7 @@ export const HomePage: React.FC = () => {
           </p>
           <h2 className="font-black text-[#0B192C] dark:text-white leading-tight" style={{ fontSize: 'clamp(1.4rem, 4vw, 2.25rem)' }}>
             Loved By Thousands Of Pilgrims<br />
-            Explore <span className="bg-[#5DAE53] text-white px-3 py-0.5 rounded-xl text-base sm:text-xl font-black inline-block align-middle mx-1 shadow-sm">4.9/5 ★</span> Real Experiences
+            Explore <span className="bg-[#E58C28] text-white px-3 py-0.5 rounded-xl text-base sm:text-xl font-black inline-block align-middle mx-1 shadow-sm">4.9/5 ★</span> Real Experiences
           </h2>
         </div>
 
@@ -1012,7 +1085,7 @@ export const HomePage: React.FC = () => {
             >
               {/* Rounded Image Card Container (Matching Reference Screenshot Aspect & Border Radius) */}
               <div className="w-full bg-white dark:bg-[#0B192C] rounded-[28px] overflow-hidden border border-gray-100 dark:border-slate-800 shadow-md hover:shadow-2xl transition-all duration-500 flex flex-col hover:-translate-y-1.5 h-[340px] sm:h-[380px] relative">
-                
+
                 {/* Full Height Background Image */}
                 <img
                   src={fb.img}
@@ -1020,7 +1093,7 @@ export const HomePage: React.FC = () => {
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                   loading="lazy"
                 />
-                
+
                 {/* Dark Gradient Overlay for Text Readability */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
 
@@ -1045,7 +1118,7 @@ export const HomePage: React.FC = () => {
                       <h4 className="font-extrabold text-sm text-white leading-none">{fb.name}</h4>
                       <p className="text-[10px] text-gray-300 font-semibold mt-1">{fb.location}</p>
                     </div>
-                    <div className="w-7 h-7 rounded-full bg-[#5DAE53] text-white flex items-center justify-center shadow-xs">
+                    <div className="w-7 h-7 rounded-full bg-[#0A4DA6] text-white flex items-center justify-center shadow-xs">
                       <CheckCircle size={14} className="stroke-[2.5]" />
                     </div>
                   </div>

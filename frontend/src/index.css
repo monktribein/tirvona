@@ -20,7 +20,7 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
-  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-sans: "Plus Jakarta Sans", "Inter", system-ui, -apple-system, sans-serif;
   --radius-xl: 1.5rem; /* 24px */
   --radius-lg: 1.25rem; /* 20px */
   --radius-md: 0.75rem; /* 12px */
@@ -28,14 +28,14 @@
 }
 
 :root {
-  /* Premium Design System Mode (Tirvona Logo Colors: Green #5DAE53, Saffron Gold #E58C28, Deep Navy #0B192C) */
+  /* Premium Design System Mode (Tirvona Logo Colors: Royal Navy Blue #0A4DA6, Saffron Gold #E58C28, Deep Navy #0B192C) */
   --background: #FFFFFF;
   --foreground: #0B192C;
   
   --card: #FFFFFF;
   --card-foreground: #0B192C;
   
-  --primary: #5DAE53; /* Tirvona Logo Green */
+  --primary: #0A4DA6; /* Tirvona Logo Royal Navy Blue */
   --primary-foreground: #FFFFFF;
   
   --secondary: #0B192C; /* Tirvona Deep Navy */
@@ -44,13 +44,13 @@
   --accent: #E58C28; /* Tirvona Saffron Gold */
   --accent-foreground: #FFFFFF;
   
-  --success: #5DAE53;
+  --success: #10B981;
   --warning: #E58C28;
   --danger: #EF4444;
   
   --border: #F1F5F9;
   --input: #F8FAFC;
-  --ring: rgba(93, 174, 83, 0.2);
+  --ring: rgba(10, 77, 166, 0.2);
 }
 
 .dark {
@@ -61,7 +61,7 @@
   --card: #0B192C;
   --card-foreground: #F8FAFC;
   
-  --primary: #5DAE53;
+  --primary: #0A4DA6;
   --primary-foreground: #FFFFFF;
   
   --secondary: #0B192C;
@@ -70,21 +70,36 @@
   --accent: #E58C28;
   --accent-foreground: #070F1B;
   
-  --success: #5DAE53;
+  --success: #10B981;
   --warning: #E58C28;
   --danger: #EF4444;
   
   --border: #1E293B;
   --input: #1E293B;
-  --ring: rgba(93, 174, 83, 0.3);
+  --ring: rgba(10, 77, 166, 0.3);
 }
 
-/* Custom Base Styles */
+/* Custom Base Styles & Smooth Scrolling */
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 5rem;
+}
+
 body {
   background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
   transition: background-color 0.3s ease, color 0.3s ease;
+  -webkit-overflow-scrolling: touch;
+}
+
+*, *::before, *::after {
+  scroll-behavior: smooth;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Plus Jakarta Sans", "Inter", sans-serif;
+  letter-spacing: -0.025em;
 }
 
 /* Custom scrollbars */
