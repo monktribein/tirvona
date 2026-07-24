@@ -507,11 +507,11 @@ export const PublicLayout: React.FC = () => {
           <FooterAccordion title="Download App">
             <div className="grid grid-cols-2 gap-3 pt-1">
               {[
-                { store: 'Google Play', sub: 'Get it on', icon: 'M3.18 23.76c.38.22.82.24 1.22.06L16.6 12 12.34 7.74 3.18 23.76zm16.46-13.1L17.1 9.3 12.34 12l4.76 2.7 2.54-1.38a1.4 1.4 0 000-2.66zM2.32 1.16a1.4 1.4 0 00-.32.9v19.88c0 .33.1.65.32.9l.1.09L12.34 12.1v-.2L2.42 1.07l-.1.09zm9.83 10.72l-9.6 9.6 11.38-6.55-1.78-3.05z' },
-                { store: 'App Store', sub: 'Download on the', icon: 'M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z' },
+                { store: 'Google Play', sub: 'Get it on', icon: 'M14.222 9.374c1.037-.61 1.037-2.137 0-2.748L11.528 5.04 8.32 8l3.207 2.96zm-3.595 2.116L7.583 8.68 1.03 14.73c.201 1.029 1.36 1.61 2.303 1.055zM1 13.396V2.603L6.846 8zM1.03 1.27l6.553 6.05 3.044-2.81L3.333.215C2.39-.341 1.231.24 1.03 1.27', viewBox: '0 0 16 16' },
+                { store: 'App Store', sub: 'Download on the', icon: 'M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z', viewBox: '0 0 24 24' },
               ].map(a => (
                 <a key={a.store} href="#" className="flex items-center gap-2 bg-white/10 border border-white/10 rounded-xl px-3 py-2.5 hover:bg-white/15 transition-colors">
-                  <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white shrink-0"><path d={a.icon} /></svg>
+                  <svg viewBox={a.viewBox} className="w-5 h-5 fill-white shrink-0"><path d={a.icon} /></svg>
                   <div className="flex flex-col">
                     <span className="text-[8px] text-gray-400 leading-none">{a.sub}</span>
                     <span className="text-[11px] font-bold text-white leading-tight">{a.store}</span>
@@ -532,9 +532,8 @@ export const PublicLayout: React.FC = () => {
 
           {/* Bottom */}
           <div className="pt-6 text-center text-[10px] text-gray-500 space-y-1">
-            <p>© {new Date().getFullYear()} NKTech Technology. All Rights Reserved.</p>
-            <p>Designed in compliance with Digital India guidelines.</p>
-            <p className="flex items-center justify-center gap-1 pt-1">Made with ❤️ in India</p>
+            <p>© {new Date().getFullYear()} NKTech Technology. All Rights Reserved. Designed in compliance with Digital India guidelines.</p>
+            <p className="flex items-center justify-center gap-1 pt-1">Made with tirvona in India</p>
           </div>
         </div>
 
@@ -599,7 +598,7 @@ export const PublicLayout: React.FC = () => {
             </div>
 
             <div>
-              <h4 className="text-xs font-extrabold uppercase tracking-wider text-[#D4AF37] mb-5">Popular Retreats</h4>
+              <h4 className="text-xs font-extrabold uppercase tracking-wider text-white mb-5 whitespace-nowrap">Popular Retreats</h4>
               <ul className="text-xs space-y-3">
                 {['Rishikesh Spiritual Valley', 'Varanasi Dharamshalas', 'Haridwar Ghat Stays', 'Vrindavan Pilgrim Hostels'].map(l => (
                   <li key={l}><Link to={`/search?destination=${encodeURIComponent(l.split(' ')[0])}`} className="hover:text-[#D4AF37]">{l}</Link></li>
@@ -608,7 +607,7 @@ export const PublicLayout: React.FC = () => {
             </div>
 
             <div>
-              <h4 className="text-xs font-extrabold uppercase tracking-wider text-[#D4AF37] mb-5">Information</h4>
+              <h4 className="text-xs font-extrabold uppercase tracking-wider text-white mb-5 whitespace-nowrap">Information</h4>
               <ul className="text-xs space-y-3">
                 <li><Link to="/faq" className="hover:text-[#D4AF37]">FAQs</Link></li>
                 {[
@@ -640,7 +639,7 @@ export const PublicLayout: React.FC = () => {
                 <h4 className="text-xs font-extrabold uppercase tracking-wider text-white mb-4">Download App</h4>
                 <div className="flex flex-col gap-2.5">
                   <a href="#" className="flex items-center gap-2 bg-white/10 border border-white/10 rounded-xl px-3 py-2.5 hover:bg-white/15 transition-colors">
-                    <svg viewBox="0 0 24 24" className="w-5 h-5 fill-white shrink-0"><path d="M3.18 23.76c.38.22.82.24 1.22.06L16.6 12 12.34 7.74 3.18 23.76zm16.46-13.1L17.1 9.3 12.34 12l4.76 2.7 2.54-1.38a1.4 1.4 0 000-2.66zM2.32 1.16a1.4 1.4 0 00-.32.9v19.88c0 .33.1.65.32.9l.1.09L12.34 12.1v-.2L2.42 1.07l-.1.09zm9.83 10.72l-9.6 9.6 11.38-6.55-1.78-3.05z" /></svg>
+                    <svg viewBox="0 0 16 16" className="w-5 h-5 fill-white shrink-0"><path d="M14.222 9.374c1.037-.61 1.037-2.137 0-2.748L11.528 5.04 8.32 8l3.207 2.96zm-3.595 2.116L7.583 8.68 1.03 14.73c.201 1.029 1.36 1.61 2.303 1.055zM1 13.396V2.603L6.846 8zM1.03 1.27l6.553 6.05 3.044-2.81L3.333.215C2.39-.341 1.231.24 1.03 1.27" /></svg>
                     <div className="flex flex-col"><span className="text-[8px] text-gray-400 leading-none">Get it on</span><span className="text-[11px] font-bold text-white leading-tight">Google Play</span></div>
                   </a>
                   <a href="#" className="flex items-center gap-2 bg-white/10 border border-white/10 rounded-xl px-3 py-2.5 hover:bg-white/15 transition-colors">
@@ -665,11 +664,10 @@ export const PublicLayout: React.FC = () => {
 
           <div className="max-w-7xl mx-auto mt-14 pt-8 border-t border-white/10 flex flex-col sm:flex-row justify-between items-center gap-4 text-[10px] text-gray-500">
             <div className="text-center sm:text-left leading-relaxed">
-              © {new Date().getFullYear()} NKTech Technology. All Rights Reserved.<br />
-              Designed in compliance with Digital India guidelines.
+              © {new Date().getFullYear()} NKTech Technology. All Rights Reserved. Designed in compliance with Digital India guidelines.
             </div>
             <div className="flex items-center gap-2 font-medium text-gray-500">
-              <span>Made with ❤️ in India</span>
+              <span>Made with tirvona in India</span>
             </div>
           </div>
         </div>
