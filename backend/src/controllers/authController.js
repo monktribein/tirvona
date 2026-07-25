@@ -273,6 +273,14 @@ export const getMe = async (req, res) => {
 // @access  Private (Owner / Super Admin)
 export const getOwnerStaff = async (req, res) => {
   try {
+    // Only Master Owner (owner@tirvona.com) or Super Admin can view global ashram credentials
+    if (req.user.email !== 'owner@tirvona.com' && req.user.role !== 'super_admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied: Only Master Platform Owner can access global credentials.',
+      });
+    }
+
     const staff = await User.find({
       role: { $in: ['owner', 'manager', 'reception', 'housekeeping'] }
     }).select('-passwordHash');
