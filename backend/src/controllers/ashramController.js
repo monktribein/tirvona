@@ -104,18 +104,22 @@ export const updateAshram = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Ashram not found' });
     }
 
+    const isMasterOwner = req.user.email === 'owner@tirvona.com' || req.user.role === 'super_admin';
+
     // Authorization checks
     if (
       ashram.ownerId.toString() !== req.user.id &&
-      req.user.role !== 'super_admin' &&
+      !isMasterOwner &&
       req.user.role !== 'manager'
     ) {
       return res.status(403).json({ success: false, message: 'Not authorized to modify this ashram' });
     }
 
-    // Keep documents and verification statuses untouched during edits
-    const fieldsToExclude = ['ownerId', 'status', 'documents', 'inspectionDetails', 'rejectionReason'];
-    fieldsToExclude.forEach((field) => delete req.body[field]);
+    // Only exclude administrative fields if NOT Master Owner / Super Admin
+    if (!isMasterOwner) {
+      const fieldsToExclude = ['ownerId', 'status', 'documents', 'inspectionDetails', 'rejectionReason'];
+      fieldsToExclude.forEach((field) => delete req.body[field]);
+    }
 
     if (req.body.address && (!req.body.address.district || !req.body.address.district.trim())) {
       req.body.address.district = req.body.address.city;

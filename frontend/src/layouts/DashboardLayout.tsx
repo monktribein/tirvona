@@ -17,7 +17,8 @@ import {
   Menu, 
   X,
   ClipboardList,
-  Tag
+  Tag,
+  Building
 } from 'lucide-react';
 
 export const DashboardLayout: React.FC = () => {
@@ -45,10 +46,18 @@ export const DashboardLayout: React.FC = () => {
       const links = [
         { label: 'Overview', path: '/owner/dashboard', icon: <LayoutDashboard size={16} /> },
         { label: 'My Ashrams', path: '/owner/ashrams', icon: <Home size={16} /> },
+      ];
+
+      if (isMasterOwner) {
+        links.push({ label: 'All Ashrams', path: '/owner/all-ashrams', icon: <Building size={16} /> });
+      }
+
+      links.push(
         { label: 'Manage Rooms', path: '/owner/rooms', icon: <Bed size={16} /> },
         { label: 'Rate Calendar', path: '/owner/calendar', icon: <Calendar size={16} /> },
-        { label: 'Offers & Deals', path: '/owner/offers', icon: <Tag size={16} /> },
-      ];
+        { label: 'Offers & Deals', path: '/owner/offers', icon: <Tag size={16} /> }
+      );
+      
       if (isMasterOwner) {
         links.push({ label: 'Users & Staff', path: '/owner/users', icon: <Users size={16} /> });
       }

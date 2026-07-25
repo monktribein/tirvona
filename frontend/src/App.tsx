@@ -37,6 +37,7 @@ import CustomerDashboard from './pages/CustomerDashboard';
 import SupportTicketsPage from './pages/SupportTicketsPage';
 import OwnerDashboard from './pages/OwnerDashboard';
 import ManageAshramsPage from './pages/ManageAshramsPage';
+import AllAshramsPage from './pages/AllAshramsPage';
 import AddAshramWizardPage from './pages/AddAshramWizardPage';
 import ManageRoomsPage from './pages/ManageRoomsPage';
 import InventoryCalendarPage from './pages/InventoryCalendarPage';
@@ -135,6 +136,7 @@ const AppContent: React.FC = () => {
         >
           <Route path="/owner/dashboard" element={<OwnerDashboard />} />
           <Route path="/owner/ashrams" element={<ManageAshramsPage />} />
+          <Route path="/owner/all-ashrams" element={<AllAshramsPage />} />
           <Route path="/owner/ashrams/add" element={<AddAshramWizardPage />} />
           <Route path="/owner/rooms" element={<ManageRoomsPage />} />
           <Route path="/owner/calendar" element={<InventoryCalendarPage />} />
