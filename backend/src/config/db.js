@@ -1,7 +1,13 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
+import dns from 'dns';
 
 dotenv.config();
+
+// Some machines have a misconfigured local DNS resolver (e.g. 127.0.0.1) that
+// refuses SRV lookups, which breaks mongodb+srv:// connection strings with
+// "querySrv ECONNREFUSED". Fall back to public resolvers that support SRV.
+dns.setServers(['8.8.8.8', '1.1.1.1']);
 
 const connectDB = async () => {
   try {
