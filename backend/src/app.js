@@ -1,10 +1,12 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
-import dotenv from 'dotenv';
 
-// DB Config
+// Config
+import config from './config/env.js';
 import connectDB from './config/db.js';
 
 // Routes imports
@@ -17,8 +19,9 @@ import supportRoutes from './routes/supportRoutes.js';
 import analyticsRoutes from './routes/analyticsRoutes.js';
 import reviewRoutes from './routes/reviewRoutes.js';
 import offerRoutes from './routes/offerRoutes.js';
-
-dotenv.config();
+import userRoutes from './routes/userRoutes.js';
+import uploadRoutes from './routes/uploadRoutes.js';
+import housekeepingRoutes from './routes/housekeepingRoutes.js';
 
 // Connect to MongoDB
 connectDB();
@@ -26,10 +29,10 @@ connectDB();
 const app = express();
 const httpServer = createServer(app);
 
-// CORS configuration
+// CORS configuration — CLIENT_URL may be a comma-separated list of origins
 const allowedOrigins = [
-  process.env.CLIENT_URL,
-  'http://localhost:5173'
+  ...(config.clientUrl ? config.clientUrl.split(',').map((o) => o.trim()) : []),
+  'http://localhost:5173',
 ].filter(Boolean);
 
 const corsOptions = {
@@ -74,13 +77,28 @@ app.use((req, res, next) => {
   next();
 });
 
+// Security headers
+app.use(helmet({ crossOriginResourcePolicy: false }));
+
 // Middleware
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Behind Render/Vercel proxies, trust the first proxy so req.ip / rate-limit work.
+app.set('trust proxy', 1);
+
+// Throttle authentication endpoints to slow brute-force / credential stuffing.
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 30, // per IP per window
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many attempts. Please try again later.' },
+});
+
 // Routing Middleware
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/ashrams', ashramRoutes);
 app.use('/api/rooms', roomRoutes);
 app.use('/api/bookings', bookingRoutes);
@@ -89,6 +107,9 @@ app.use('/api/support', supportRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/offers', offerRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/uploads', uploadRoutes);
+app.use('/api/housekeeping', housekeepingRoutes);
 
 // Root Endpoint
 app.get('/', (req, res) => {
@@ -108,9 +129,9 @@ app.use((err, req, res, next) => {
   });
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = config.port;
 httpServer.listen(PORT, () => {
-  console.log(`Server listening in dev mode on port ${PORT}`);
+  console.log(`Server listening (${config.nodeEnv}) on port ${PORT}`);
 });
 
 export default app;

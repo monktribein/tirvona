@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
+import { bookingService, reviewService } from '../services';
+import { getErrorMessage } from '../lib/api';
 import { 
   MapPin, 
   Calendar, 
@@ -39,9 +40,7 @@ export const CustomerDashboard: React.FC = () => {
   const fetchHistory = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/bookings/history`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` },
-      });
+      const res = await bookingService.history();
       if (res.data.success) {
         setBookings(res.data.data);
       }
@@ -60,22 +59,18 @@ export const CustomerDashboard: React.FC = () => {
 
     try {
       const targetBooking = bookings.find((b) => b._id === reviewBookingId);
-      const res = await axios.post(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/reviews`,
-        {
-          ashramId: targetBooking.ashramId._id || 'ashram-1',
-          bookingId: reviewBookingId,
-          rating: {
-            overall: reviewRating,
-            cleanliness: 5,
-            service: 4,
-            location: 5,
-            valueForMoney: 4,
-          },
-          comment: reviewComment,
+      const res = await reviewService.create({
+        ashramId: targetBooking.ashramId._id || targetBooking.ashramId,
+        bookingId: reviewBookingId,
+        rating: {
+          overall: reviewRating,
+          cleanliness: 5,
+          service: 4,
+          location: 5,
+          valueForMoney: 4,
         },
-        { headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` } }
-      );
+        comment: reviewComment,
+      });
       if (res.data.success) {
         setReviewBookingId(null);
         setReviewComment('');
@@ -83,7 +78,7 @@ export const CustomerDashboard: React.FC = () => {
         fetchHistory();
       }
     } catch (err: any) {
-      setReviewError(err.response?.data?.message || 'Error saving review');
+      setReviewError(getErrorMessage(err, 'Error saving review'));
     }
   };
 
@@ -93,18 +88,14 @@ export const CustomerDashboard: React.FC = () => {
     
     setCancelling(true);
     try {
-      const res = await axios.post(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/bookings/${cancelBookingId}/cancel`,
-        { reason: cancelReason },
-        { headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` } }
-      );
+      const res = await bookingService.cancel(cancelBookingId, cancelReason);
       if (res.data.success) {
         setCancelBookingId(null);
         addNotification('Stay Cancelled', 'Your reservation was successfully cancelled. Refund initiated.', 'success');
         fetchHistory();
       }
-    } catch (err: any) {
-      addNotification('Cancellation Error', err.response?.data?.message || 'Failed to cancel booking', 'error');
+    } catch (err) {
+      addNotification('Cancellation Error', getErrorMessage(err, 'Failed to cancel booking'), 'error');
     } finally {
       setCancelling(false);
     }

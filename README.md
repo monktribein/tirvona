@@ -24,10 +24,11 @@ The project is structured as a monorepo containing two main modules:
 
 ### Backend
 *   **Core**: Node.js, Express, ES Modules
-*   **Real-time Update**: Socket.io
+*   **Real-time Update**: Socket.io (live booking lifecycle events to customer & owner)
 *   **Database**: MongoDB Atlas via Mongoose
 *   **Authentication**: JWT (JSON Web Tokens), bcryptjs
-*   **Utilities**: Multer, Cloudinary
+*   **Payments**: Razorpay (order create + server-side signature verification; demo fallback when keys absent)
+*   **File Uploads**: Multer + Cloudinary (`POST /api/uploads`; returns secure URLs)
 
 ---
 
@@ -71,12 +72,16 @@ cd tirvona
     ```bash
     npm install
     ```
-3.  Configure environment variables by creating a `.env` file:
+3.  Configure environment variables. Copy `backend/.env.example` to `backend/.env` and fill in real values:
     ```env
     PORT=5000
+    NODE_ENV=development
     MONGODB_URI="your_mongodb_atlas_connection_string"
-    JWT_SECRET="your_jwt_secret_key"
+    JWT_SECRET="a_long_random_secret"   # generate: node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
+    JWT_EXPIRES_IN="30d"
+    CLIENT_URL="http://localhost:5173"  # comma-separated list of allowed frontend origins
     ```
+    > **Security:** The server refuses to boot in production if `MONGODB_URI` or `JWT_SECRET` are missing, and never falls back to a hardcoded secret. Use a dedicated least-privilege DB user and rotate any credential that has ever been shared or committed.
 4.  Seed the database with default demo data:
     ```bash
     node src/scripts/seed.js

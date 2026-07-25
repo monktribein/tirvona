@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { LifeBuoy, Send, MessageSquare, Clock, CheckCircle, X } from 'lucide-react';
+import { supportService } from '../services';
+import { getErrorMessage } from '../lib/api';
 
 export const SupportTicketsPage: React.FC = () => {
   const { user } = useAuth();
@@ -24,9 +25,7 @@ export const SupportTicketsPage: React.FC = () => {
   const fetchTickets = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/support`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` },
-      });
+      const res = await supportService.list();
       if (res.data.success) {
         setTickets(res.data.data);
         if (res.data.data.length > 0) {
@@ -35,21 +34,8 @@ export const SupportTicketsPage: React.FC = () => {
       }
     } catch (err) {
       console.error('Fetch tickets error:', err);
-      // Fallback mocks
-      const mocks = [
-        {
-          _id: 'ticket-mock-1',
-          title: 'Refund Request for Booking Cancellation',
-          description: 'My booking AB-2026-9812 was cancelled but refund has not posted.',
-          category: 'refund_request',
-          status: 'open',
-          messages: [
-            { senderId: 'user-1', text: 'Please check the status of my refund.', timestamp: new Date() },
-          ],
-        },
-      ];
-      setTickets(mocks);
-      setActiveTicket(mocks[0]);
+      setTickets([]);
+      setActiveTicket(null);
     } finally {
       setLoading(false);
     }
@@ -58,11 +44,7 @@ export const SupportTicketsPage: React.FC = () => {
   const handleCreateTicket = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await axios.post(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/support`,
-        { title, description, category },
-        { headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` } }
-      );
+      const res = await supportService.create({ title, description, category });
       if (res.data.success) {
         setShowCreate(false);
         setTitle('');
@@ -70,7 +52,7 @@ export const SupportTicketsPage: React.FC = () => {
         fetchTickets();
       }
     } catch (err) {
-      console.error('Create ticket error:', err);
+      console.error('Create ticket error:', getErrorMessage(err));
     }
   };
 
@@ -79,11 +61,7 @@ export const SupportTicketsPage: React.FC = () => {
     if (!newMessage.trim() || !activeTicket) return;
 
     try {
-      const res = await axios.post(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/support/${activeTicket._id}/message`,
-        { text: newMessage },
-        { headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` } }
-      );
+      const res = await supportService.addMessage(activeTicket._id, newMessage);
       if (res.data.success) {
         setNewMessage('');
         const updated = res.data.data;
@@ -91,7 +69,7 @@ export const SupportTicketsPage: React.FC = () => {
         setTickets(prev => prev.map(t => t._id === updated._id ? updated : t));
       }
     } catch (err) {
-      console.error('Send message error:', err);
+      console.error('Send message error:', getErrorMessage(err));
     }
   };
 

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { RefreshCw, Clock } from 'lucide-react';
+import { analyticsService } from '../services';
 
 export const AuditLogsPage: React.FC = () => {
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     fetchLogs();
@@ -12,36 +13,16 @@ export const AuditLogsPage: React.FC = () => {
 
   const fetchLogs = async () => {
     setLoading(true);
+    setError('');
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/analytics/audit-logs`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` },
-      });
+      const res = await analyticsService.auditLogs();
       if (res.data.success) {
         setLogs(res.data.data);
       }
     } catch (err) {
       console.error('Audit logs error:', err);
-      // Mocks fallback
-      setLogs([
-        {
-          _id: '1',
-          action: 'USER_LOGIN_PASSWORD',
-          module: 'AUTH',
-          ipAddress: '127.0.0.1',
-          userAgent: 'Mozilla/5.0 Windows',
-          timestamp: new Date().toISOString(),
-          userId: { name: 'Super Admin', email: 'admin@tirvona.com' },
-        },
-        {
-          _id: '2',
-          action: 'ASHRAM_VERIFY_APPROVED',
-          module: 'GOVT_APPROVAL',
-          ipAddress: '127.0.0.1',
-          userAgent: 'Mozilla/5.0 Windows',
-          timestamp: new Date(Date.now() - 500000).toISOString(),
-          userId: { name: 'District Officer', email: 'officer@tirvona.com' },
-        },
-      ]);
+      setError('Unable to load audit logs. Please try again.');
+      setLogs([]);
     } finally {
       setLoading(false);
     }
@@ -61,6 +42,12 @@ export const AuditLogsPage: React.FC = () => {
           <RefreshCw size={16} />
         </button>
       </div>
+
+      {error && (
+        <div className="p-4 bg-danger/10 text-danger border border-danger/20 text-xs font-bold rounded-2xl">
+          {error}
+        </div>
+      )}
 
       {loading ? (
         <div className="h-40 bg-gray-50 border border-gray-100 rounded-[24px] animate-pulse" />

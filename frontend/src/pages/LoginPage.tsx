@@ -3,7 +3,8 @@ import logo from '../assets/logo.png';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { ShieldCheck, Mail, Phone, Lock, Eye, EyeOff } from 'lucide-react';
-import axios from 'axios';
+import { authService } from '../services';
+import { getErrorMessage } from '../lib/api';
 
 export const LoginPage: React.FC = () => {
   const { login, loginOTP } = useAuth();
@@ -55,15 +56,20 @@ export const LoginPage: React.FC = () => {
     if (!phone) return setError('Enter phone number');
     setLoading(true);
     try {
-      const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/otp/send`, { phone });
+      const res = await authService.sendOtp(phone);
       setLoading(false);
       if (res.data.success) {
         setOtpSent(true);
-        setServerOtpMsg(`[DEMO ONLY] Simulated SMS sent! Use OTP code: ${res.data.otp}`);
+        // The backend only returns `otp` outside production (dev/testing helper).
+        if (res.data.otp) {
+          setServerOtpMsg(`[DEV ONLY] Simulated SMS sent! Use OTP code: ${res.data.otp}`);
+        } else {
+          setServerOtpMsg('OTP sent to your registered phone number.');
+        }
       }
-    } catch (err: any) {
+    } catch (err) {
       setLoading(false);
-      setError(err.response?.data?.message || 'Error requesting OTP');
+      setError(getErrorMessage(err, 'Error requesting OTP'));
     }
   };
 

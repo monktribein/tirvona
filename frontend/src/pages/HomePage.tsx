@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
+import axios from 'axios';
+import { ashramService } from '../services';
 import heroBg from '../assets/rishikesh-tera-manzil-temple.jpg';
 import heroPng from '../assets/hero.png';
 import {
@@ -120,7 +121,7 @@ export const HomePage: React.FC = () => {
 
   const fetchStays = async () => {
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ashrams?verified=true`);
+      const res = await ashramService.search({ verified: 'true' });
       if (res.data.success) setAshrams(res.data.data);
     } catch (err) {
       console.error('Error fetching stays:', err);

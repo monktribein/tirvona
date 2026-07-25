@@ -783,6 +783,17 @@ const seedData = async (users) => {
     }
   }
 
+  // Assign on-site staff (manager/reception/housekeeping) to the primary ashram
+  // so their dashboards are correctly scoped to a real property.
+  if (seededAshrams.length > 0) {
+    const primaryAshramId = seededAshrams[0]._id;
+    for (const staff of [manager, receptionist, housekeeping]) {
+      staff.employerAshramId = primaryAshramId;
+      await staff.save();
+    }
+    console.log(`Assigned manager/reception/housekeeping to ashram: ${seededAshrams[0].name}`);
+  }
+
   // Gather IDs for clearing existing demo transactions
   const userIds = [
     pilgrim._id,

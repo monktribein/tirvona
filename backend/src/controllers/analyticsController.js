@@ -3,6 +3,7 @@ import Ashram from '../models/Ashram.js';
 import User from '../models/User.js';
 import AuditLog from '../models/AuditLog.js';
 import Room from '../models/Room.js';
+import { scopedAshramIds } from '../utils/ashramAccess.js';
 
 // @desc    Get dashboard analytics summaries
 // @route   GET /api/analytics/dashboard
@@ -10,14 +11,21 @@ import Room from '../models/Room.js';
 export const getDashboardAnalytics = async (req, res) => {
   try {
     const { ashramId } = req.query;
-    
+
     const query = {};
-    if (ashramId) {
+    const allowedIds = await scopedAshramIds(req.user, Ashram);
+    if (allowedIds !== null) {
+      const allowedStrs = allowedIds.map((id) => id.toString());
+      if (ashramId) {
+        if (!allowedStrs.includes(ashramId.toString())) {
+          return res.status(403).json({ success: false, message: 'Not authorized for this ashram' });
+        }
+        query.ashramId = ashramId;
+      } else {
+        query.ashramId = { $in: allowedIds };
+      }
+    } else if (ashramId) {
       query.ashramId = ashramId;
-    } else if (req.user.role !== 'super_admin') {
-      const myAshrams = await Ashram.find({ ownerId: req.user.id });
-      const ids = myAshrams.map((a) => a._id);
-      query.ashramId = { $in: ids };
     }
 
     const totalBookingsCount = await Booking.countDocuments(query);
@@ -54,7 +62,7 @@ export const getDashboardAnalytics = async (req, res) => {
 
     const myStays = await Ashram.find(ashramId ? { _id: ashramId } : (query.ashramId ? { _id: query.ashramId } : {}));
     const totalRatingSum = myStays.reduce((acc, curr) => acc + (curr.rating?.average || 0), 0);
-    const averageRating = myStays.length > 0 ? parseFloat((totalRatingSum / myStays.length).toFixed(1)) : 4.5;
+    const averageRating = myStays.length > 0 ? parseFloat((totalRatingSum / myStays.length).toFixed(1)) : 0;
 
     // available rooms
     const activeRooms = await Room.find(ashramId ? { ashramId } : { ashramId: { $in: myStays.map(s => s._id) } });
@@ -67,20 +75,20 @@ export const getDashboardAnalytics = async (req, res) => {
     });
     const availableRoomsCount = Math.max(0, totalInventoryCount - totalBookedToday);
 
-    const simulatedOccupancy = totalBookingsCount > 0 ? Math.min(Math.round((confirmedCount + checkedInCount) * 100 / totalBookingsCount), 100) : 0;
+    const occupancyRate = totalBookingsCount > 0 ? Math.min(Math.round((confirmedCount + checkedInCount) * 100 / totalBookingsCount), 100) : 0;
 
     res.json({
       success: true,
       data: {
         totalBookings: totalBookingsCount,
-        occupancyRate: simulatedOccupancy || 68,
+        occupancyRate,
         revenue: totalRevenue,
         pendingPayments,
         checkInsToday: checkedInCount,
         checkoutSoon: await Booking.countDocuments({ ...query, status: 'checked_in' }),
-        todayRevenue: todayRevenue || Math.round(totalRevenue * 0.15),
-        monthlyRevenue: monthlyRevenue || Math.round(totalRevenue * 0.85),
-        availableRooms: availableRoomsCount || 15,
+        todayRevenue,
+        monthlyRevenue,
+        availableRooms: availableRoomsCount,
         cancelledBookings: cancelledBookingsCount,
         averageRating
       },
@@ -130,7 +138,22 @@ export const getSystemAnalytics = async (req, res) => {
 
     const approvedCount = approvedAshrams;
     const totalDecided = approvedCount + rejectedAshrams;
-    const approvalRate = totalDecided > 0 ? Math.round((approvedCount / totalDecided) * 100) : 92;
+    const approvalRate = totalDecided > 0 ? Math.round((approvedCount / totalDecided) * 100) : 0;
+
+    // Real monthly inspection counts from the audit trail (last 6 months).
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5, 1);
+    sixMonthsAgo.setHours(0, 0, 0, 0);
+    const inspectionAgg = await AuditLog.aggregate([
+      { $match: { module: 'GOVT_APPROVAL', action: { $regex: /^ASHRAM_VERIFY/ }, timestamp: { $gte: sixMonthsAgo } } },
+      { $group: { _id: { y: { $year: '$timestamp' }, m: { $month: '$timestamp' } }, count: { $sum: 1 } } },
+      { $sort: { '_id.y': 1, '_id.m': 1 } },
+    ]);
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const monthlyInspections = inspectionAgg.map((d) => ({
+      month: `${monthNames[d._id.m - 1]} ${d._id.y}`,
+      count: d.count,
+    }));
 
     res.json({
       success: true,
@@ -150,11 +173,7 @@ export const getSystemAnalytics = async (req, res) => {
           cancellationRate,
           totalBookings: bookings.length,
           approvalRate,
-          monthlyInspections: [
-            { month: 'May 2026', count: 15 },
-            { month: 'June 2026', count: 22 },
-            { month: 'July 2026', count: 28 }
-          ]
+          monthlyInspections
         },
         popularDestinations: locations.map((loc) => ({ city: loc._id, count: loc.count })),
         districtStats: districtStats.map(d => ({ district: d._id || 'Unknown', approved: d.approved, pending: d.pending }))

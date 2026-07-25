@@ -1,0 +1,101 @@
+import api from '../lib/api';
+
+// ── Auth ─────────────────────────────────────────────────────────────────────
+export const authService = {
+  login: (email: string, password: string) => api.post('/auth/login', { email, password }),
+  register: (data: unknown) => api.post('/auth/register', data),
+  sendOtp: (phone: string) => api.post('/auth/otp/send', { phone }),
+  verifyOtp: (phone: string, otp: string) => api.post('/auth/otp/verify', { phone, otp }),
+  me: () => api.get('/auth/me'),
+};
+
+// ── Ashrams ──────────────────────────────────────────────────────────────────
+export const ashramService = {
+  search: (params: Record<string, string> = {}) =>
+    api.get('/ashrams', { params }),
+  getById: (id: string) => api.get(`/ashrams/${id}`),
+  myListings: () => api.get('/ashrams/my-listings/all'),
+  create: (data: unknown) => api.post('/ashrams', data),
+  update: (id: string, data: unknown) => api.put(`/ashrams/${id}`, data),
+  uploadDocuments: (id: string, data: unknown) => api.post(`/ashrams/${id}/documents`, data),
+};
+
+// ── Rooms ────────────────────────────────────────────────────────────────────
+export const roomService = {
+  create: (data: unknown) => api.post('/rooms', data),
+  update: (id: string, data: unknown) => api.put(`/rooms/${id}`, data),
+  setAvailability: (id: string, data: unknown) => api.post(`/rooms/${id}/availability`, data),
+  calendar: (id: string, startDate: string, endDate: string) =>
+    api.get(`/rooms/${id}/calendar`, { params: { startDate, endDate } }),
+};
+
+// ── Bookings ─────────────────────────────────────────────────────────────────
+export const bookingService = {
+  create: (data: unknown) => api.post('/bookings/create', data),
+  createPaymentOrder: (id: string) => api.post(`/bookings/${id}/payment/order`, {}),
+  pay: (id: string, data: unknown) => api.post(`/bookings/${id}/payment`, data),
+  history: () => api.get('/bookings/history'),
+  dashboard: (params: Record<string, string> = {}) => api.get('/bookings/dashboard', { params }),
+  checkin: (id: string, checkInCode: string) => api.post(`/bookings/${id}/checkin`, { checkInCode }),
+  checkout: (id: string) => api.post(`/bookings/${id}/checkout`, {}),
+  cancel: (id: string, reason: string) => api.post(`/bookings/${id}/cancel`, { reason }),
+};
+
+// ── Reviews ──────────────────────────────────────────────────────────────────
+export const reviewService = {
+  create: (data: unknown) => api.post('/reviews', data),
+  forAshram: (ashramId: string) => api.get(`/reviews/ashram/${ashramId}`),
+};
+
+// ── Support ──────────────────────────────────────────────────────────────────
+export const supportService = {
+  create: (data: unknown) => api.post('/support', data),
+  list: () => api.get('/support'),
+  addMessage: (id: string, text: string) => api.post(`/support/${id}/message`, { text }),
+  resolve: (id: string) => api.post(`/support/${id}/resolve`, {}),
+};
+
+// ── Analytics / Verification / Users ─────────────────────────────────────────
+export const analyticsService = {
+  dashboard: (params: Record<string, string> = {}) => api.get('/analytics/dashboard', { params }),
+  system: () => api.get('/analytics/system'),
+  auditLogs: (params: Record<string, string> = {}) => api.get('/analytics/audit-logs', { params }),
+};
+
+export const verificationService = {
+  pending: () => api.get('/verify/pending'),
+  schedule: (id: string, date: string) => api.post(`/verify/${id}/schedule`, { date }),
+  updateStatus: (id: string, data: unknown) => api.post(`/verify/${id}/status`, data),
+};
+
+export const userService = {
+  list: (params: Record<string, string> = {}) => api.get('/users', { params }),
+  updateStatus: (id: string, status: string) => api.patch(`/users/${id}/status`, { status }),
+  // Staff management (owners)
+  listStaff: () => api.get('/users/staff'),
+  createStaff: (data: unknown) => api.post('/users/staff', data),
+  removeStaff: (id: string) => api.delete(`/users/staff/${id}`),
+};
+
+// ── Housekeeping ─────────────────────────────────────────────────────────────
+export const housekeepingService = {
+  board: (ashramId?: string) => api.get('/housekeeping', { params: ashramId ? { ashramId } : {} }),
+  updateStatus: (id: string, status: string, notes?: string) =>
+    api.patch(`/housekeeping/${id}`, { status, notes }),
+};
+
+// ── Uploads (Cloudinary) ─────────────────────────────────────────────────────
+export const uploadService = {
+  // Uploads a single File and resolves to the secure Cloudinary URL.
+  file: async (file: File, folder = 'uploads'): Promise<string> => {
+    const form = new FormData();
+    form.append('file', file);
+    form.append('folder', folder);
+    // Let axios set the multipart Content-Type with the correct boundary.
+    const res = await api.post('/uploads', form);
+    if (!res.data?.success) {
+      throw new Error(res.data?.message || 'Upload failed');
+    }
+    return res.data.data.url as string;
+  },
+};

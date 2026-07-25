@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ashramService } from '../services';
 import { 
   Filter, 
   MapPin, 
@@ -57,7 +57,7 @@ export const SearchPage: React.FC = () => {
     // Load all ashrams once for autocomplete matching
     const loadAll = async () => {
       try {
-        const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ashrams?verified=true`);
+        const res = await ashramService.search({ verified: 'true' });
         if (res.data.success) {
           setAllAshrams(res.data.data);
         }
@@ -94,33 +94,20 @@ export const SearchPage: React.FC = () => {
   const fetchAshrams = async () => {
     setLoading(true);
     try {
-      let queryStr = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ashrams?verified=true`;
-      if (activeKeyword) {
-        queryStr += `&destination=${encodeURIComponent(activeKeyword)}`;
-      }
-      if (typeQuery) {
-        queryStr += `&type=${encodeURIComponent(typeQuery)}`;
-      }
-      if (checkInQuery) {
-        queryStr += `&checkIn=${encodeURIComponent(checkInQuery)}`;
-      }
-      if (checkOutQuery) {
-        queryStr += `&checkOut=${encodeURIComponent(checkOutQuery)}`;
-      }
-      if (guestsQuery) {
-        queryStr += `&guests=${encodeURIComponent(guestsQuery)}`;
-      }
-      
+      const params: Record<string, string> = { verified: 'true' };
+      if (activeKeyword) params.destination = activeKeyword;
+      if (typeQuery) params.type = typeQuery;
+      if (checkInQuery) params.checkIn = checkInQuery;
+      if (checkOutQuery) params.checkOut = checkOutQuery;
+      if (guestsQuery) params.guests = guestsQuery;
+
       const amenities = [];
       if (acFilter) amenities.push('AC');
       if (foodFilter) amenities.push('Pure Vegetarian Food');
       if (riverViewFilter) amenities.push('River View');
-      
-      if (amenities.length > 0) {
-        queryStr += `&amenities=${encodeURIComponent(amenities.join(','))}`;
-      }
+      if (amenities.length > 0) params.amenities = amenities.join(',');
 
-      const res = await axios.get(queryStr);
+      const res = await ashramService.search(params);
       if (res.data.success) {
         setResults(res.data.data);
       }
@@ -238,7 +225,7 @@ export const SearchPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-10 space-y-10">
+    <div className="max-w-7xl mx-auto px-6 pt-28 lg:pt-32 pb-10 space-y-10">
       {/* Search Filter Panel */}
       <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-5 rounded-[28px] shadow-sm">
         <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">

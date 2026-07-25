@@ -365,7 +365,7 @@ export const PublicLayout: React.FC = () => {
       </main>
 
       {/* ── Footer matching exact reference image design ── */}
-      <footer className="bg-white dark:bg-[#0B192C] text-gray-600 dark:text-gray-400 pt-14 sm:pt-16 pb-0 relative overflow-hidden border-t border-gray-100 dark:border-slate-800">
+      <footer className="bg-[#0B192C] text-gray-400 pt-14 sm:pt-16 pb-0 relative overflow-hidden border-t border-slate-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
           {/* Top 5-Column Grid */}
@@ -376,22 +376,22 @@ export const PublicLayout: React.FC = () => {
               <Link to="/" className="flex items-center gap-2.5">
                 <img src={logo} alt="Tirvona" className="w-10 h-10 object-contain" />
                 <div className="flex flex-col leading-none">
-                  <span className="text-xl font-black text-[#0B192C] dark:text-white">tirvona<span className="text-[#D4AF37] text-[10px] align-super">™</span></span>
+                  <span className="text-xl font-black text-white">tirvona<span className="text-[#D4AF37] text-[10px] align-super">™</span></span>
                   <span className="text-[8px] font-bold tracking-widest text-[#E58C28] uppercase">One Nation, One Spiritual Stay</span>
                 </div>
               </Link>
-              <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed max-w-xs">
+              <p className="text-xs text-gray-400 leading-relaxed max-w-xs">
                 We take care of every detail so you can travel with confidence, comfort & spiritual peace.
               </p>
               
               {/* Need Help Callout */}
               <div className="pt-2 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-amber-50 dark:bg-white/5 border border-amber-200/60 dark:border-white/10 flex items-center justify-center text-[#E58C28] shrink-0">
+                <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-[#E58C28] shrink-0">
                   <Headphones size={20} />
                 </div>
                 <div>
                   <span className="block text-[10px] text-gray-400 dark:text-gray-400 font-bold uppercase tracking-wider">Need help? Call us</span>
-                  <a href="tel:+917836055511" className="text-sm sm:text-base font-black text-[#0B192C] dark:text-white hover:text-[#0A4DA6] transition-colors">
+                  <a href="tel:+917836055511" className="text-sm sm:text-base font-black text-white hover:text-[#E58C28] transition-colors">
                     +91 78360 55511
                   </a>
                 </div>
@@ -400,38 +400,38 @@ export const PublicLayout: React.FC = () => {
 
             {/* Col 2: Quick Links — lg:col-span-2 */}
             <div className="lg:col-span-2 space-y-3">
-              <h4 className="text-sm font-extrabold text-[#0B192C] dark:text-white">Quick Links</h4>
-              <ul className="text-xs space-y-2.5 text-gray-600 dark:text-gray-400 font-medium">
-                <li><Link to="/search" className="hover:text-[#0B192C] dark:hover:text-white transition-colors">Ashram Bookings</Link></li>
-                <li><Link to="/search" className="hover:text-[#0B192C] dark:hover:text-white transition-colors">Destinations</Link></li>
-                <li><Link to="/search" className="hover:text-[#0B192C] dark:hover:text-white transition-colors">Pilgrimage Circuits</Link></li>
-                <li><Link to="/search" className="hover:text-[#0B192C] dark:hover:text-white transition-colors">Stay Types</Link></li>
-                <li><Link to="/faq" className="hover:text-[#0B192C] dark:hover:text-white transition-colors">How It Works</Link></li>
+              <h4 className="text-sm font-extrabold text-white">Quick Links</h4>
+              <ul className="text-xs space-y-2.5 text-gray-400 font-medium">
+                <li><Link to="/search" className="hover:text-white transition-colors">Ashram Bookings</Link></li>
+                <li><Link to="/search" className="hover:text-white transition-colors">Destinations</Link></li>
+                <li><Link to="/search" className="hover:text-white transition-colors">Pilgrimage Circuits</Link></li>
+                <li><Link to="/search" className="hover:text-white transition-colors">Stay Types</Link></li>
+                <li><Link to="/faq" className="hover:text-white transition-colors">How It Works</Link></li>
               </ul>
             </div>
 
             {/* Col 3: Popular Services — lg:col-span-2 */}
             <div className="lg:col-span-2 space-y-3">
-              <h4 className="text-sm font-extrabold text-[#0B192C] dark:text-white">Popular Services</h4>
-              <ul className="text-xs space-y-2.5 text-gray-600 dark:text-gray-400 font-medium">
-                <li><Link to="/search" className="hover:text-[#0B192C] dark:hover:text-white transition-colors">Ashram Reservations</Link></li>
-                <li><Link to="/search" className="hover:text-[#0B192C] dark:hover:text-white transition-colors">Temple Darshan & Seva</Link></li>
-                <li><Link to="/search" className="hover:text-[#0B192C] dark:hover:text-white transition-colors">Mahaprasad Delivery</Link></li>
-                <li><Link to="/faq" className="hover:text-[#0B192C] dark:hover:text-white transition-colors">Travel Insurance</Link></li>
-                <li><Link to="/faq" className="hover:text-[#0B192C] dark:hover:text-white transition-colors">Tour Guide Services</Link></li>
-                <li><Link to="/contact" className="hover:text-[#0B192C] dark:hover:text-white transition-colors">Yatra Assistance</Link></li>
+              <h4 className="text-sm font-extrabold text-white">Popular Services</h4>
+              <ul className="text-xs space-y-2.5 text-gray-400 font-medium">
+                <li><Link to="/search" className="hover:text-white transition-colors">Ashram Reservations</Link></li>
+                <li><Link to="/search" className="hover:text-white transition-colors">Temple Darshan & Seva</Link></li>
+                <li><Link to="/search" className="hover:text-white transition-colors">Mahaprasad Delivery</Link></li>
+                <li><Link to="/faq" className="hover:text-white transition-colors">Travel Insurance</Link></li>
+                <li><Link to="/faq" className="hover:text-white transition-colors">Tour Guide Services</Link></li>
+                <li><Link to="/contact" className="hover:text-white transition-colors">Yatra Assistance</Link></li>
               </ul>
             </div>
 
             {/* Col 4: Newsletter — lg:col-span-3 */}
             <div className="lg:col-span-3 space-y-3">
-              <h4 className="text-sm font-extrabold text-[#0B192C] dark:text-white">Newsletter</h4>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Get every sacred travel news update</p>
+              <h4 className="text-sm font-extrabold text-white">Newsletter</h4>
+              <p className="text-xs text-gray-400">Get every sacred travel news update</p>
               <form onSubmit={e => e.preventDefault()} className="space-y-2.5 pt-1">
                 <input
                   type="email"
                   placeholder="Email address"
-                  className="w-full bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-full px-4 py-2.5 text-xs text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-[#0A4DA6]"
+                  className="w-full bg-white/5 border border-white/10 rounded-full px-4 py-2.5 text-xs text-white placeholder:text-gray-400 focus:outline-none focus:border-[#E58C28]"
                 />
                 <button
                   type="submit"
@@ -447,14 +447,14 @@ export const PublicLayout: React.FC = () => {
 
             {/* Col 5: Follow Us — lg:col-span-2 */}
             <div className="lg:col-span-2 space-y-3">
-              <h4 className="text-sm font-extrabold text-[#0B192C] dark:text-white">Follow Us</h4>
+              <h4 className="text-sm font-extrabold text-white">Follow Us</h4>
               <div className="flex items-center gap-3 pt-1">
                 {/* Facebook */}
                 <a
                   href="https://facebook.com"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-9 h-9 rounded-full bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 hover:bg-[#0A4DA6] hover:border-[#0A4DA6] text-gray-600 dark:text-gray-400 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-xs group"
+                  className="w-9 h-9 rounded-full bg-white/5 border border-white/10 hover:bg-[#0A4DA6] hover:border-[#0A4DA6] text-gray-400 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-xs group"
                   title="Facebook"
                 >
                   <svg className="w-4 h-4 fill-current transition-transform group-hover:scale-110" viewBox="0 0 24 24">
@@ -467,7 +467,7 @@ export const PublicLayout: React.FC = () => {
                   href="https://instagram.com"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-9 h-9 rounded-full bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 hover:bg-[#0A4DA6] hover:border-[#0A4DA6] text-gray-600 dark:text-gray-400 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-xs group"
+                  className="w-9 h-9 rounded-full bg-white/5 border border-white/10 hover:bg-[#0A4DA6] hover:border-[#0A4DA6] text-gray-400 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-xs group"
                   title="Instagram"
                 >
                   <svg className="w-4 h-4 stroke-current fill-none transition-transform group-hover:scale-110" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -482,7 +482,7 @@ export const PublicLayout: React.FC = () => {
                   href="https://youtube.com"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-9 h-9 rounded-full bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 hover:bg-[#0A4DA6] hover:border-[#0A4DA6] text-gray-600 dark:text-gray-400 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-xs group"
+                  className="w-9 h-9 rounded-full bg-white/5 border border-white/10 hover:bg-[#0A4DA6] hover:border-[#0A4DA6] text-gray-400 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-xs group"
                   title="YouTube"
                 >
                   <svg className="w-4 h-4 fill-current transition-transform group-hover:scale-110" viewBox="0 0 24 24">
@@ -495,7 +495,7 @@ export const PublicLayout: React.FC = () => {
           </div>
 
           {/* GIANT TYPOGRAPHY WATERMARK WITH IMAGE MASK (Matching Reference Screenshot) */}
-          <div className="py-8 sm:py-12 text-center border-t border-gray-100 dark:border-slate-800/80 select-none overflow-hidden">
+          <div className="py-8 sm:py-12 text-center border-t border-slate-800/80 select-none overflow-hidden">
             <h1
               className="text-5xl sm:text-8xl lg:text-[140px] font-black uppercase tracking-tight leading-none text-transparent bg-clip-text bg-cover bg-center"
               style={{
@@ -513,19 +513,19 @@ export const PublicLayout: React.FC = () => {
         </div>
 
         {/* BOTTOM SUB-FOOTER BAR WITH WAVY SOFT CREAM BACKGROUND (Matching Reference Screenshot) */}
-        <div className="bg-[#FFF9EE] dark:bg-[#071322] text-gray-600 dark:text-gray-400 pt-6 pb-6 border-t border-amber-100/60 dark:border-slate-800 relative">
+        <div className="bg-[#071322] text-gray-400 pt-6 pb-6 border-t border-slate-800 relative">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs font-semibold">
             
             {/* Left Copyright */}
-            <div className="text-gray-600 dark:text-gray-400">
-              © {new Date().getFullYear()} <span className="text-[#0B192C] dark:text-white font-extrabold">Tirvona</span>. All Rights Reserved.
+            <div className="text-gray-400">
+              © {new Date().getFullYear()} <span className="text-white font-extrabold">Tirvona</span>. All Rights Reserved.
             </div>
 
             {/* Right Links */}
-            <div className="flex items-center gap-6 text-xs font-medium text-gray-600 dark:text-gray-400">
-              <Link to="/privacy" className="hover:text-[#0B192C] dark:hover:text-white transition-colors">Privacy policy</Link>
-              <Link to="/terms" className="hover:text-[#0B192C] dark:hover:text-white transition-colors">Terms & Conditions</Link>
-              <Link to="/faq" className="hover:text-[#0B192C] dark:hover:text-white transition-colors">FAQs</Link>
+            <div className="flex items-center gap-6 text-xs font-medium text-gray-400">
+              <Link to="/privacy" className="hover:text-white transition-colors">Privacy policy</Link>
+              <Link to="/terms" className="hover:text-white transition-colors">Terms & Conditions</Link>
+              <Link to="/faq" className="hover:text-white transition-colors">FAQs</Link>
             </div>
 
             {/* Scroll To Top Button */}

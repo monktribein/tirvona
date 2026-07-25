@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { FileCheck, ShieldAlert, FileText, X } from 'lucide-react';
 import { useNotifications } from '../contexts/NotificationContext';
+import { verificationService } from '../services';
+import { getErrorMessage } from '../lib/api';
 
 export const VerificationQueuePage: React.FC = () => {
   const { addNotification } = useNotifications();
@@ -20,29 +21,14 @@ export const VerificationQueuePage: React.FC = () => {
   const fetchPending = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/verify/pending`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` },
-      });
+      const res = await verificationService.pending();
       if (res.data.success) {
         setPendingList(res.data.data);
       }
     } catch (err) {
       console.error('Fetch pending error:', err);
-      // Fallback mocks
-      setPendingList([
-        {
-          _id: 'ashram-1',
-          name: 'Parmarth Niketan Ashram',
-          address: { city: 'Rishikesh', district: 'Pauri', state: 'Uttarakhand' },
-          status: 'pending_inspection',
-          documents: {
-            trustDeedUrl: '#',
-            fireSafetyCertificateUrl: '#',
-            landOwnershipUrl: '#',
-          },
-          ownerId: { name: 'Swami Chidanand', phone: '9000100020' },
-        },
-      ]);
+      addNotification('Load Failed', getErrorMessage(err, 'Unable to load the verification queue.'), 'error');
+      setPendingList([]);
     } finally {
       setLoading(false);
     }
@@ -53,11 +39,7 @@ export const VerificationQueuePage: React.FC = () => {
     if (!actionAshramId) return;
 
     try {
-      const res = await axios.post(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/verify/${actionAshramId}/status`,
-        { status: targetStatus, comments },
-        { headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` } }
-      );
+      const res = await verificationService.updateStatus(actionAshramId, { status: targetStatus, comments });
       if (res.data.success) {
         setActionAshramId(null);
         setComments('');
@@ -66,6 +48,7 @@ export const VerificationQueuePage: React.FC = () => {
       }
     } catch (err) {
       console.error('Decision error:', err);
+      addNotification('Action Failed', getErrorMessage(err, 'Could not submit decision.'), 'error');
     }
   };
 

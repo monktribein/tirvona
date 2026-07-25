@@ -2,6 +2,7 @@ import Room from '../models/Room.js';
 import RoomAvailability from '../models/RoomAvailability.js';
 import Ashram from '../models/Ashram.js';
 import AuditLog from '../models/AuditLog.js';
+import { canManageAshram } from '../utils/ashramAccess.js';
 
 // @desc    Add a room category to an ashram
 // @route   POST /api/rooms
@@ -16,7 +17,7 @@ export const createRoom = async (req, res) => {
     }
 
     // Auth validation
-    if (ashram.ownerId.toString() !== req.user.id && req.user.role !== 'super_admin' && req.user.role !== 'manager') {
+    if (!canManageAshram(req.user, ashram)) {
       return res.status(403).json({ success: false, message: 'Not authorized to add rooms to this ashram' });
     }
 
@@ -62,11 +63,7 @@ export const updateRoom = async (req, res) => {
     }
 
     const ashram = await Ashram.findById(room.ashramId);
-    if (
-      ashram.ownerId.toString() !== req.user.id &&
-      req.user.role !== 'super_admin' &&
-      req.user.role !== 'manager'
-    ) {
+    if (!canManageAshram(req.user, ashram)) {
       return res.status(403).json({ success: false, message: 'Not authorized' });
     }
 
@@ -107,11 +104,7 @@ export const updateDailyAvailability = async (req, res) => {
     }
 
     const ashram = await Ashram.findById(room.ashramId);
-    if (
-      ashram.ownerId.toString() !== req.user.id &&
-      req.user.role !== 'super_admin' &&
-      req.user.role !== 'manager'
-    ) {
+    if (!canManageAshram(req.user, ashram)) {
       return res.status(403).json({ success: false, message: 'Not authorized' });
     }
 

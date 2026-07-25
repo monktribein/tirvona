@@ -2,13 +2,29 @@ import Ashram from '../models/Ashram.js';
 import RoomAvailability from '../models/RoomAvailability.js';
 import Room from '../models/Room.js';
 import AuditLog from '../models/AuditLog.js';
+import { canManageAshram } from '../utils/ashramAccess.js';
 
 // @desc    Create a new ashram listing
 // @route   POST /api/ashrams
 // @access  Private (Owner / Super Admin)
+// Normalise AC type values coming from the multi-step wizard to the Room enum.
+const normalizeAcType = (value) => {
+  if (!value) return 'Non-AC';
+  const v = value.toString().toLowerCase();
+  return v === 'ac' || v === 'a/c' ? 'AC' : 'Non-AC';
+};
+
+const VALID_ROOM_TYPES = ['dormitory', 'private_room', 'family_room', 'hall'];
+
 export const createAshram = async (req, res) => {
   try {
-    const { name, description, address, history, rules, amenities } = req.body;
+    const {
+      name, description, address, history, rules, amenities,
+      tagline, ashramType, establishedYear, foundedBy,
+      contact, trust, activities, dailySchedule, specialEvents,
+      pricing, policies, food, transport, medical, nearbyAttractions,
+      images, documents, rooms,
+    } = req.body;
 
     if (address && (!address.district || !address.district.trim())) {
       address.district = address.city;
@@ -22,14 +38,52 @@ export const createAshram = async (req, res) => {
       history: history || '',
       rules: rules || [],
       amenities: amenities || [],
+      tagline, ashramType, establishedYear, foundedBy,
+      contact, trust,
+      activities: activities || [],
+      dailySchedule, specialEvents,
+      pricing, policies, food, transport, medical,
+      nearbyAttractions: nearbyAttractions || [],
+      images: (images || []).filter(Boolean),
+      // documents remain owner-uploaded via the verification flow, but accept
+      // any pre-filled URLs from the wizard so nothing is silently lost.
+      documents: documents ? {
+        trustDeedUrl: documents.trustDeedUrl || '',
+        fireSafetyCertificateUrl: documents.fireSafetyCertificateUrl || '',
+        landOwnershipUrl: documents.landOwnershipUrl || '',
+      } : undefined,
       status: 'pending_docs', // Starts here until docs uploaded
     });
+
+    // Create the room categories entered in the wizard (Step 10) so the listing
+    // is actually bookable instead of the data being discarded.
+    let createdRooms = 0;
+    if (Array.isArray(rooms) && rooms.length > 0) {
+      const roomDocs = rooms
+        .filter((r) => r && r.name && r.name.trim())
+        .map((r) => ({
+          ashramId: ashram._id,
+          name: r.name.trim(),
+          type: VALID_ROOM_TYPES.includes(r.type) ? r.type : 'private_room',
+          acType: normalizeAcType(r.acType),
+          capacity: parseInt(r.capacity, 10) || 1,
+          totalInventory: parseInt(r.totalInventory, 10) || 1,
+          basePrice: parseFloat(r.basePrice) || 0,
+          amenities: typeof r.amenities === 'string'
+            ? r.amenities.split(',').map((a) => a.trim()).filter(Boolean)
+            : (Array.isArray(r.amenities) ? r.amenities : []),
+        }));
+      if (roomDocs.length > 0) {
+        await Room.insertMany(roomDocs);
+        createdRooms = roomDocs.length;
+      }
+    }
 
     await AuditLog.create({
       userId: req.user.id,
       action: 'ASHRAM_CREATE',
       module: 'ASHRAM_MGMT',
-      details: { ashramId: ashram._id, name: ashram.name },
+      details: { ashramId: ashram._id, name: ashram.name, roomsCreated: createdRooms },
       ipAddress: req.ip,
       userAgent: req.headers['user-agent'],
     });
@@ -37,6 +91,7 @@ export const createAshram = async (req, res) => {
     res.status(201).json({
       success: true,
       data: ashram,
+      roomsCreated: createdRooms,
     });
   } catch (error) {
     console.error('Create ashram error:', error);
@@ -54,10 +109,11 @@ export const uploadDocuments = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Ashram not found' });
     }
 
-    // Verify ownership
+    // Verify ownership (document upload is owner/super_admin only)
     if (ashram.ownerId.toString() !== req.user.id && req.user.role !== 'super_admin') {
       return res.status(403).json({ success: false, message: 'Not authorized to manage this ashram' });
     }
+    // (kept strict: managers cannot alter trust/verification documents)
 
     // In production, files are uploaded via Multer to Cloudinary.
     // For local prototype/mock execution, we read file details or simulate upload links.
