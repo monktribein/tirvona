@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import config from '../config/env.js';
 
 // Protect routes
 export const protect = async (req, res, next) => {
@@ -7,7 +8,7 @@ export const protect = async (req, res, next) => {
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     try {
       token = req.headers.authorization.split(' ')[1];
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_key');
+      const decoded = jwt.verify(token, config.jwtSecret);
       
       const user = await User.findById(decoded.id);
       if (!user) {

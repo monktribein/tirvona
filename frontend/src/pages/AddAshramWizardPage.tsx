@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import axios from 'axios';
+import { ashramService } from '../services';
+import { FileUploader } from '../components/FileUploader';
 import {
   ChevronRight, ChevronLeft, Check, AlertCircle, Plus, X, Building2, MapPin,
   Phone, Mail, Globe, Image, BookOpen, Sparkles, Layers, Bed, DollarSign,
@@ -318,7 +319,7 @@ const AddAshramWizardPage: React.FC = () => {
     if (editId) {
       const fetchAshram = async () => {
         try {
-          const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ashrams/${editId}`);
+          const res = await ashramService.getById(editId);
           if (res.data.success) {
             const ashram = res.data.data.ashram;
             setFormData(prev => ({
@@ -585,12 +586,9 @@ const AddAshramWizardPage: React.FC = () => {
     };
 
     try {
-      const url = editId
-        ? `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ashrams/${editId}`
-        : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ashrams`;
       const res = editId
-        ? await axios.put(url, payload, { headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` } })
-        : await axios.post(url, payload, { headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` } });
+        ? await ashramService.update(editId, payload)
+        : await ashramService.create(payload);
 
       if (res.data.success) {
         setSubmitSuccess(true);
@@ -859,8 +857,11 @@ const AddAshramWizardPage: React.FC = () => {
         return (
           <div className="space-y-5">
             <SectionHeader icon={<Image size={22} />} title="Cover Image & Gallery" subtitle="High-quality images that showcase the ashram on the public listing page." />
-            <Field label="Cover / Hero Image URL" required hint="This is the main image shown at the top of the listing">
-              <Input placeholder="https://res.cloudinary.com/.../cover.jpg" value={formData.coverImageUrl} onChange={e => set('coverImageUrl', e.target.value)} />
+            <Field label="Cover / Hero Image" required hint="Upload an image, or paste a URL. This is the main image shown at the top of the listing.">
+              <div className="mb-2">
+                <FileUploader folder="ashrams" label="Upload Cover Image" currentUrl={formData.coverImageUrl} onUploaded={(url) => set('coverImageUrl', url)} />
+              </div>
+              <Input placeholder="…or paste an image URL" value={formData.coverImageUrl} onChange={e => set('coverImageUrl', e.target.value)} />
               {formData.coverImageUrl && (
                 <div className="mt-3 rounded-2xl overflow-hidden h-48 border border-gray-100 dark:border-slate-800">
                   <img src={formData.coverImageUrl} alt="Cover" className="w-full h-full object-cover" onError={e => { e.currentTarget.style.display = 'none'; }} />
@@ -900,19 +901,22 @@ const AddAshramWizardPage: React.FC = () => {
               </div>
 
               {formData.galleryUrls.length < 10 && (
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Paste image URL and click Add"
-                    value={newGalleryUrl}
-                    onChange={e => setNewGalleryUrl(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); set('galleryUrls', [...formData.galleryUrls, newGalleryUrl]); setNewGalleryUrl(''); } }}
-                  />
-                  <button
-                    onClick={() => { if (newGalleryUrl.trim()) { set('galleryUrls', [...formData.galleryUrls, newGalleryUrl.trim()]); setNewGalleryUrl(''); } }}
-                    className="px-5 py-3 bg-[#0A4DA6] text-white rounded-xl font-bold text-xs flex items-center gap-1.5 hover:bg-[#0A4DA6]/90 transition-colors flex-shrink-0"
-                  >
-                    <Plus size={14} /> Add
-                  </button>
+                <div className="space-y-2">
+                  <FileUploader folder="ashrams" label="Upload a Gallery Image" onUploaded={(url) => set('galleryUrls', [...formData.galleryUrls, url])} />
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="…or paste an image URL and click Add"
+                      value={newGalleryUrl}
+                      onChange={e => setNewGalleryUrl(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); set('galleryUrls', [...formData.galleryUrls, newGalleryUrl]); setNewGalleryUrl(''); } }}
+                    />
+                    <button
+                      onClick={() => { if (newGalleryUrl.trim()) { set('galleryUrls', [...formData.galleryUrls, newGalleryUrl.trim()]); setNewGalleryUrl(''); } }}
+                      className="px-5 py-3 bg-[#0A4DA6] text-white rounded-xl font-bold text-xs flex items-center gap-1.5 hover:bg-[#0A4DA6]/90 transition-colors flex-shrink-0"
+                    >
+                      <Plus size={14} /> Add
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

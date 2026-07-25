@@ -19,6 +19,16 @@ export const createReview = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Not authorized to review this stay' });
     }
 
+    // Only completed stays can be reviewed.
+    if (!['checked_out', 'completed'].includes(booking.status)) {
+      return res.status(400).json({ success: false, message: 'You can only review a stay after checkout' });
+    }
+
+    // A review must be for the ashram that was actually booked.
+    if (booking.ashramId.toString() !== ashramId) {
+      return res.status(400).json({ success: false, message: 'Review does not match the booked ashram' });
+    }
+
     // Check if review already exists for booking
     const reviewExists = await Review.findOne({ bookingId });
     if (reviewExists) {

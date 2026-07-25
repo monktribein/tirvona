@@ -1,6 +1,7 @@
 import express from 'express';
 import {
   createBooking,
+  createPaymentOrder,
   processBookingPayment,
   getBookingHistory,
   getDashboardBookings,
@@ -13,6 +14,7 @@ import { protect, restrictTo } from '../middlewares/authMiddleware.js';
 const router = express.Router();
 
 router.post('/create', protect, restrictTo('customer'), createBooking);
+router.post('/:id/payment/order', protect, restrictTo('customer'), createPaymentOrder);
 router.post('/:id/payment', protect, restrictTo('customer'), processBookingPayment);
 router.get('/history', protect, restrictTo('customer'), getBookingHistory);
 router.get('/dashboard', protect, restrictTo('owner', 'manager', 'reception', 'super_admin'), getDashboardBookings);

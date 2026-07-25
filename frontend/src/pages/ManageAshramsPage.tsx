@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
-import { 
-  MapPin, 
-  ShieldCheck, 
-  Upload, 
-  Plus, 
+import {
+  MapPin,
+  ShieldCheck,
+  Upload,
+  Plus,
   Clock,
   Sparkles,
   Building,
@@ -24,6 +24,9 @@ import {
   X
 } from 'lucide-react';
 import { useNotifications } from '../contexts/NotificationContext';
+import { ashramService } from '../services';
+import { getErrorMessage } from '../lib/api';
+import { FileUploader } from '../components/FileUploader';
 
 export const ManageAshramsPage: React.FC = () => {
   const { addNotification } = useNotifications();
@@ -42,6 +45,13 @@ export const ManageAshramsPage: React.FC = () => {
   });
   const [editLoading, setEditLoading] = useState(false);
 
+  // Upload Docs State
+  const [uploadDeedId, setUploadDeedId] = useState<string | null>(null);
+  const [trustDeedUrl, setTrustDeedUrl] = useState('');
+  const [fireSafetyUrl, setFireSafetyUrl] = useState('');
+  const [landOwnershipUrl, setLandOwnershipUrl] = useState('');
+  const [submittingDocs, setSubmittingDocs] = useState(false);
+
   useEffect(() => {
     fetchMyAshrams();
   }, []);
@@ -49,16 +59,14 @@ export const ManageAshramsPage: React.FC = () => {
   const fetchMyAshrams = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('ab_token') || localStorage.getItem('token');
-      const res = await axios.get(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ashrams/my-listings/all`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await ashramService.myListings();
       if (res.data.success) {
         setAshrams(res.data.data);
       }
     } catch (err) {
       console.error('Fetch my listings error:', err);
+      addNotification('Load Failed', getErrorMessage(err, 'Unable to load your ashrams.'), 'error');
+      setAshrams([]);
     } finally {
       setLoading(false);
     }
@@ -105,6 +113,39 @@ export const ManageAshramsPage: React.FC = () => {
       addNotification('Error', 'Failed to update ashram details.', 'error');
     } finally {
       setEditLoading(false);
+    }
+  };
+
+  const resetDocState = () => {
+    setUploadDeedId(null);
+    setTrustDeedUrl('');
+    setFireSafetyUrl('');
+    setLandOwnershipUrl('');
+  };
+
+  const handleUploadDocs = async () => {
+    if (!uploadDeedId) return;
+    if (!trustDeedUrl || !fireSafetyUrl || !landOwnershipUrl) {
+      addNotification('Missing Documents', 'Please upload all three required documents.', 'warning');
+      return;
+    }
+    setSubmittingDocs(true);
+    try {
+      const res = await ashramService.uploadDocuments(uploadDeedId, {
+        trustDeedUrl,
+        fireSafetyCertificateUrl: fireSafetyUrl,
+        landOwnershipUrl,
+      });
+      if (res.data.success) {
+        resetDocState();
+        addNotification('KYC Documents Submitted', 'Your Ashram documents are queued for physical inspection.', 'success');
+        fetchMyAshrams();
+      }
+    } catch (err) {
+      console.error('Docs upload error:', err);
+      addNotification('Upload Failed', getErrorMessage(err, 'Could not submit documents.'), 'error');
+    } finally {
+      setSubmittingDocs(false);
     }
   };
 
@@ -404,6 +445,40 @@ export const ManageAshramsPage: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* KYC Upload Modal */}
+      {uploadDeedId && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-md w-full rounded-[28px] p-6 space-y-4 text-left">
+            <h3 className="font-bold text-sm text-[#0B192C] dark:text-white flex items-center gap-1.5"><Upload size={16} className="text-[#0A4DA6]" /> Upload Ashram Deeds & Certificates</h3>
+            <p className="text-[10px] text-gray-400">Upload PDF copies of each required document. Files are stored securely on Cloudinary.</p>
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Trust Deed (PDF)</label>
+                <FileUploader folder="documents" accept="application/pdf" label="Upload Trust Deed" currentUrl={trustDeedUrl} onUploaded={setTrustDeedUrl} />
+              </div>
+              <div>
+                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Fire Safety Certificate (PDF)</label>
+                <FileUploader folder="documents" accept="application/pdf" label="Upload Fire Safety Cert" currentUrl={fireSafetyUrl} onUploaded={setFireSafetyUrl} />
+              </div>
+              <div>
+                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Land Ownership (PDF)</label>
+                <FileUploader folder="documents" accept="application/pdf" label="Upload Land Registry" currentUrl={landOwnershipUrl} onUploaded={setLandOwnershipUrl} />
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button onClick={resetDocState} disabled={submittingDocs} className="flex-1 py-2.5 bg-gray-100 text-gray-700 rounded-full text-xs font-bold cursor-pointer disabled:opacity-60">
+                Cancel
+              </button>
+              <button onClick={handleUploadDocs} disabled={submittingDocs} className="flex-1 py-2.5 bg-[#0A4DA6] text-white rounded-full text-xs font-bold cursor-pointer shadow disabled:opacity-60">
+                {submittingDocs ? 'Submitting…' : 'Submit Documents'}
+              </button>
+            </div>
           </div>
         </div>
       )}

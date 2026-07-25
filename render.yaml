@@ -1,0 +1,57 @@
+# Render Blueprint — deploy the Tirvona backend API + frontend SPA.
+# In Render: New → Blueprint → point at this repo. Render reads this file and
+# creates both services. Secrets marked `sync: false` are prompted for in the
+# dashboard (never stored in git).
+#
+# Docs: https://render.com/docs/blueprint-spec
+
+services:
+  # ── Backend API + Socket.io (persistent server, so real-time works) ─────────
+  - type: web
+    name: tirvona-api
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Render injects PORT automatically; the app reads process.env.PORT.
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_EXPIRES_IN
+        value: 30d
+      # Set to the frontend's public URL once it is deployed (comma-separated).
+      - key: CLIENT_URL
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+
+  # ── Frontend SPA (static site) ──────────────────────────────────────────────
+  - type: web
+    name: tirvona-web
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    # SPA fallback so client-side routes resolve to index.html.
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      # Point the SPA at the deployed API (e.g. https://tirvona-api.onrender.com).
+      - key: VITE_API_URL
+        sync: false

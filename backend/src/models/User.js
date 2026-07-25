@@ -58,6 +58,15 @@ const userSchema = new mongoose.Schema(
         return this.role === 'district_officer' || this.role === 'govt_admin';
       },
     },
+    // The ashram a staff member (manager/reception/housekeeping) is employed at.
+    // Scopes their dashboard data and permissions to that single property.
+    // Optional at the schema level: staff may be created first and assigned to
+    // an ashram afterwards. Until assigned, the authorization helpers treat them
+    // as having no ashram access (see utils/ashramAccess.js).
+    employerAshramId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Ashram',
+    },
     govtId: {
       idType: {
         type: String,

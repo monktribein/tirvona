@@ -1,11 +1,12 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import AuditLog from '../models/AuditLog.js';
+import config from '../config/env.js';
 
 // Helper to sign JWT token
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET || 'fallback_secret_key', {
-    expiresIn: '30d',
+  return jwt.sign({ id }, config.jwtSecret, {
+    expiresIn: config.jwtExpiresIn,
   });
 };
 
@@ -171,8 +172,9 @@ export const sendOTP = async (req, res) => {
     res.json({
       success: true,
       message: 'OTP sent successfully (Simulated)',
-      phone, // For frontend debug helper
-      otp,   // Sending OTP back in response ONLY FOR DEMO/DEVELOPMENT. In prod, this is omitted!
+      phone,
+      // OTP is only echoed outside production for local testing; never leak it in prod.
+      ...(config.isProduction ? {} : { otp }),
     });
   } catch (error) {
     console.error('Send OTP error:', error);

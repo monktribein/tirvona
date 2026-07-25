@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { Bed, Plus, ClipboardCheck, X } from 'lucide-react';
 import { useNotifications } from '../contexts/NotificationContext';
+import { ashramService, roomService } from '../services';
+import { getErrorMessage } from '../lib/api';
 
 export const ManageRoomsPage: React.FC = () => {
   const { addNotification } = useNotifications();
@@ -27,35 +28,24 @@ export const ManageRoomsPage: React.FC = () => {
   const fetchInitialData = async () => {
     setLoading(true);
     try {
-      const ashramsRes = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ashrams/my-listings/all`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` },
-      });
+      const ashramsRes = await ashramService.myListings();
       if (ashramsRes.data.success && ashramsRes.data.data.length > 0) {
         setMyAshrams(ashramsRes.data.data);
         setSelectedAshramId(ashramsRes.data.data[0]._id);
-        
-        const roomsRes = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ashrams/${ashramsRes.data.data[0]._id}`);
+
+        const roomsRes = await ashramService.getById(ashramsRes.data.data[0]._id);
         if (roomsRes.data.success) {
           setRooms(roomsRes.data.data.rooms);
         }
+      } else {
+        setMyAshrams([]);
+        setRooms([]);
       }
     } catch (err) {
       console.error('Fetch data error:', err);
-      // Mocks fallback
-      setMyAshrams([{ _id: 'ashram-1', name: 'Parmarth Niketan Ashram' }]);
-      setSelectedAshramId('ashram-1');
-      setRooms([
-        {
-          _id: 'room-1',
-          name: 'Ganga View Deluxe AC Room',
-          type: 'private_room',
-          acType: 'AC',
-          capacity: 3,
-          basePrice: 1200,
-          totalInventory: 15,
-          amenities: ['Attached Bath', 'Geyser'],
-        },
-      ]);
+      addNotification('Load Failed', getErrorMessage(err, 'Unable to load your rooms.'), 'error');
+      setMyAshrams([]);
+      setRooms([]);
     } finally {
       setLoading(false);
     }
@@ -75,9 +65,7 @@ export const ManageRoomsPage: React.FC = () => {
     };
 
     try {
-      const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/rooms`, payload, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` },
-      });
+      const res = await roomService.create(payload);
       if (res.data.success) {
         setShowCreate(false);
         setName('');
@@ -87,6 +75,7 @@ export const ManageRoomsPage: React.FC = () => {
       }
     } catch (err) {
       console.error('Room create error:', err);
+      addNotification('Save Failed', getErrorMessage(err, 'Could not add room category.'), 'error');
     }
   };
 

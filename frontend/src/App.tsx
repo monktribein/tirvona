@@ -1,53 +1,52 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 
-// Layouts
+// Layouts (eager — always needed)
 import PublicLayout from './layouts/PublicLayout';
 import DashboardLayout from './layouts/DashboardLayout';
 
-// Pages
-import HomePage from './pages/HomePage';
-import SearchPage from './pages/SearchPage';
-import AshramDetailPage from './pages/AshramDetailPage';
-import FaqPage from './pages/FaqPage';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
+// Pages (lazy — code-split so each route loads its own chunk)
+const HomePage = lazy(() => import('./pages/HomePage'));
+const SearchPage = lazy(() => import('./pages/SearchPage'));
+const AshramDetailPage = lazy(() => import('./pages/AshramDetailPage'));
+const FaqPage = lazy(() => import('./pages/FaqPage'));
+const LoginPage = lazy(() => import('./pages/LoginPage'));
+const RegisterPage = lazy(() => import('./pages/RegisterPage'));
 // Company
-import AboutPage from './pages/AboutPage';
-import CareersPage from './pages/CareersPage';
-import PartnerPage from './pages/PartnerPage';
-import PressPage from './pages/PressPage';
+const AboutPage = lazy(() => import('./pages/AboutPage'));
+const CareersPage = lazy(() => import('./pages/CareersPage'));
+const PartnerPage = lazy(() => import('./pages/PartnerPage'));
+const PressPage = lazy(() => import('./pages/PressPage'));
 // Support
-import HelpCenterPage from './pages/HelpCenterPage';
-import ContactPage from './pages/ContactPage';
-// Static Policy + Info Pages
-import {
-  CancellationPolicyPage,
-  GovtGuidelinesPage,
-  OwnerGuidePage,
-  StayPoliciesPage,
-  TermsPage,
-  PrivacyPage,
-  RefundPolicyPage,
-  CookiePolicyPage,
-} from './pages/StaticPages';
-import CustomerDashboard from './pages/CustomerDashboard';
-import SupportTicketsPage from './pages/SupportTicketsPage';
-import OwnerDashboard from './pages/OwnerDashboard';
-import ManageAshramsPage from './pages/ManageAshramsPage';
-import AddAshramWizardPage from './pages/AddAshramWizardPage';
-import ManageRoomsPage from './pages/ManageRoomsPage';
-import InventoryCalendarPage from './pages/InventoryCalendarPage';
-import OwnerUsersPage from './pages/OwnerUsersPage';
-import OwnerOffersPage from './pages/OwnerOffersPage';
-import ReceptionCheckinPage from './pages/ReceptionCheckinPage';
-import HousekeepingPage from './pages/HousekeepingPage';
-import AdminDashboard from './pages/AdminDashboard';
-import VerificationQueuePage from './pages/VerificationQueuePage';
-import UserManagementPage from './pages/UserManagementPage';
-import AuditLogsPage from './pages/AuditLogsPage';
+const HelpCenterPage = lazy(() => import('./pages/HelpCenterPage'));
+const ContactPage = lazy(() => import('./pages/ContactPage'));
+// Static Policy + Info Pages (named exports → map to lazy default modules)
+const CancellationPolicyPage = lazy(() => import('./pages/StaticPages').then((m) => ({ default: m.CancellationPolicyPage })));
+const GovtGuidelinesPage = lazy(() => import('./pages/StaticPages').then((m) => ({ default: m.GovtGuidelinesPage })));
+const OwnerGuidePage = lazy(() => import('./pages/StaticPages').then((m) => ({ default: m.OwnerGuidePage })));
+const StayPoliciesPage = lazy(() => import('./pages/StaticPages').then((m) => ({ default: m.StayPoliciesPage })));
+const TermsPage = lazy(() => import('./pages/StaticPages').then((m) => ({ default: m.TermsPage })));
+const PrivacyPage = lazy(() => import('./pages/StaticPages').then((m) => ({ default: m.PrivacyPage })));
+const RefundPolicyPage = lazy(() => import('./pages/StaticPages').then((m) => ({ default: m.RefundPolicyPage })));
+const CookiePolicyPage = lazy(() => import('./pages/StaticPages').then((m) => ({ default: m.CookiePolicyPage })));
+const CustomerDashboard = lazy(() => import('./pages/CustomerDashboard'));
+const SupportTicketsPage = lazy(() => import('./pages/SupportTicketsPage'));
+const OwnerDashboard = lazy(() => import('./pages/OwnerDashboard'));
+const ManageAshramsPage = lazy(() => import('./pages/ManageAshramsPage'));
+const AddAshramWizardPage = lazy(() => import('./pages/AddAshramWizardPage'));
+const ManageRoomsPage = lazy(() => import('./pages/ManageRoomsPage'));
+const InventoryCalendarPage = lazy(() => import('./pages/InventoryCalendarPage'));
+const OwnerUsersPage = lazy(() => import('./pages/OwnerUsersPage'));
+const OwnerOffersPage = lazy(() => import('./pages/OwnerOffersPage'));
+const ReceptionCheckinPage = lazy(() => import('./pages/ReceptionCheckinPage'));
+const HousekeepingPage = lazy(() => import('./pages/HousekeepingPage'));
+const StaffManagementPage = lazy(() => import('./pages/StaffManagementPage'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const VerificationQueuePage = lazy(() => import('./pages/VerificationQueuePage'));
+const UserManagementPage = lazy(() => import('./pages/UserManagementPage'));
+const AuditLogsPage = lazy(() => import('./pages/AuditLogsPage'));
 
 // Protected Route Wrapper Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode; allowedRoles?: string[] }> = ({ children, allowedRoles }) => {
@@ -85,6 +84,7 @@ const AppContent: React.FC = () => {
   return (
     <BrowserRouter>
       <ScrollToTop />
+      <Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center font-bold text-sm text-gray-400">Loading…</div>}>
       <Routes>
         {/* Public Routes */}
         <Route element={<PublicLayout />}>
@@ -140,6 +140,7 @@ const AppContent: React.FC = () => {
           <Route path="/owner/calendar" element={<InventoryCalendarPage />} />
           <Route path="/owner/offers" element={<OwnerOffersPage />} />
           <Route path="/owner/users" element={<OwnerUsersPage />} />
+          <Route path="/owner/staff" element={<StaffManagementPage />} />
           <Route path="/staff/reception" element={<ReceptionCheckinPage />} />
           <Route path="/staff/housekeeping" element={<HousekeepingPage />} />
         </Route>
@@ -172,6 +173,7 @@ const AppContent: React.FC = () => {
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 };

@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import axios from 'axios';
+import { authService } from '../services';
+import { getErrorMessage, TOKEN_KEY } from '../lib/api';
 
 interface User {
   id: string;
@@ -24,30 +25,25 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const API_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth`;
-
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Set default authorization header
+  // Restore session from stored token on mount.
   useEffect(() => {
-    const savedToken = localStorage.getItem('ab_token');
+    const savedToken = localStorage.getItem(TOKEN_KEY);
     if (savedToken) {
       setToken(savedToken);
-      axios.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
-      fetchUserProfile(savedToken);
+      fetchUserProfile();
     } else {
       setLoading(false);
     }
   }, []);
 
-  const fetchUserProfile = async (authToken: string) => {
+  const fetchUserProfile = async () => {
     try {
-      const res = await axios.get(`${API_URL}/me`, {
-        headers: { Authorization: `Bearer ${authToken}` },
-      });
+      const res = await authService.me();
       if (res.data.success) {
         setUser(res.data.data);
       } else {
@@ -61,62 +57,56 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const persistSession = (data: any) => {
+    const { token: userToken, ...userData } = data;
+    localStorage.setItem(TOKEN_KEY, userToken);
+    setToken(userToken);
+    setUser(userData);
+  };
+
   const login = async (email: string, password: string) => {
     try {
-      const res = await axios.post(`${API_URL}/login`, { email, password });
+      const res = await authService.login(email, password);
       if (res.data.success) {
-        const { token: userToken, ...userData } = res.data.data;
-        localStorage.setItem('ab_token', res.data.data.token);
-        setToken(res.data.data.token);
-        setUser(userData);
-        axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.data.token}`;
+        persistSession(res.data.data);
         return { success: true };
       }
       return { success: false, message: res.data.message || 'Login failed' };
-    } catch (err: any) {
-      return { success: false, message: err.response?.data?.message || 'Invalid credentials' };
+    } catch (err) {
+      return { success: false, message: getErrorMessage(err, 'Invalid credentials') };
     }
   };
 
   const loginOTP = async (phone: string, otp: string) => {
     try {
-      const res = await axios.post(`${API_URL}/otp/verify`, { phone, otp });
+      const res = await authService.verifyOtp(phone, otp);
       if (res.data.success) {
-        const { token: userToken, ...userData } = res.data.data;
-        localStorage.setItem('ab_token', res.data.data.token);
-        setToken(res.data.data.token);
-        setUser(userData);
-        axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.data.token}`;
+        persistSession(res.data.data);
         return { success: true };
       }
       return { success: false, message: res.data.message || 'Invalid OTP code' };
-    } catch (err: any) {
-      return { success: false, message: err.response?.data?.message || 'Invalid OTP' };
+    } catch (err) {
+      return { success: false, message: getErrorMessage(err, 'Invalid OTP') };
     }
   };
 
   const registerUser = async (userData: any) => {
     try {
-      const res = await axios.post(`${API_URL}/register`, userData);
+      const res = await authService.register(userData);
       if (res.data.success) {
-        const { token: userToken, ...registeredData } = res.data.data;
-        localStorage.setItem('ab_token', res.data.data.token);
-        setToken(res.data.data.token);
-        setUser(registeredData);
-        axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.data.token}`;
+        persistSession(res.data.data);
         return { success: true };
       }
       return { success: false, message: res.data.message || 'Registration failed' };
-    } catch (err: any) {
-      return { success: false, message: err.response?.data?.message || 'Error occurred' };
+    } catch (err) {
+      return { success: false, message: getErrorMessage(err, 'Error occurred') };
     }
   };
 
   const logout = () => {
-    localStorage.removeItem('ab_token');
+    localStorage.removeItem(TOKEN_KEY);
     setToken(null);
     setUser(null);
-    delete axios.defaults.headers.common['Authorization'];
   };
 
   return (

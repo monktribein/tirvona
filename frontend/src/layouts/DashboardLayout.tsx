@@ -48,6 +48,8 @@ export const DashboardLayout: React.FC = () => {
         { label: 'Manage Rooms', path: '/owner/rooms', icon: <Bed size={16} /> },
         { label: 'Rate Calendar', path: '/owner/calendar', icon: <Calendar size={16} /> },
         { label: 'Offers & Deals', path: '/owner/offers', icon: <Tag size={16} /> },
+        { label: 'Staff', path: '/owner/staff', icon: <Users size={16} /> },
+        { label: 'Housekeeping', path: '/staff/housekeeping', icon: <ClipboardList size={16} /> },
       ];
       if (isMasterOwner) {
         links.push({ label: 'Users & Staff', path: '/owner/users', icon: <Users size={16} /> });

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { Calendar as CalendarIcon, Sparkles, Edit2, X } from 'lucide-react';
 import { useNotifications } from '../contexts/NotificationContext';
+import { ashramService, roomService } from '../services';
+import { getErrorMessage } from '../lib/api';
 
 export const InventoryCalendarPage: React.FC = () => {
   const { addNotification } = useNotifications();
@@ -29,50 +30,38 @@ export const InventoryCalendarPage: React.FC = () => {
 
   const fetchRooms = async () => {
     try {
-      const ashramsRes = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ashrams/my-listings/all`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` },
-      });
+      const ashramsRes = await ashramService.myListings();
       if (ashramsRes.data.success && ashramsRes.data.data.length > 0) {
-        const roomsRes = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ashrams/${ashramsRes.data.data[0]._id}`);
+        const roomsRes = await ashramService.getById(ashramsRes.data.data[0]._id);
         if (roomsRes.data.success && roomsRes.data.data.rooms.length > 0) {
           setMyRooms(roomsRes.data.data.rooms);
           setSelectedRoomId(roomsRes.data.data.rooms[0]._id);
+        } else {
+          setMyRooms([]);
         }
+      } else {
+        setMyRooms([]);
       }
     } catch (err) {
       console.error('Fetch rooms error:', err);
-      // Mocks fallback
-      setMyRooms([{ _id: 'room-1', name: 'Ganga View Deluxe AC Room' }]);
-      setSelectedRoomId('room-1');
+      addNotification('Load Failed', getErrorMessage(err, 'Unable to load your rooms.'), 'error');
+      setMyRooms([]);
     }
   };
 
   const fetchCalendar = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/rooms/${selectedRoomId}/calendar`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` },
-      });
+      const today = new Date().toISOString().split('T')[0];
+      const end = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const res = await roomService.calendar(selectedRoomId, today, end);
       if (res.data.success) {
         setCalendar(res.data.data);
       }
     } catch (err) {
       console.error('Calendar load error:', err);
-      // Mocks fallback
-      const mocks = [];
-      const start = new Date();
-      for (let i = 0; i < 7; i++) {
-        const d = new Date(start);
-        d.setDate(d.getDate() + i);
-        mocks.push({
-          date: d.toISOString().split('T')[0],
-          price: 1200,
-          booked: i % 3 === 0 ? 3 : 1,
-          available: 12,
-          maintenance: 0,
-        });
-      }
-      setCalendar(mocks);
+      addNotification('Load Failed', getErrorMessage(err, 'Unable to load the calendar.'), 'error');
+      setCalendar([]);
     } finally {
       setLoading(false);
     }
@@ -81,15 +70,11 @@ export const InventoryCalendarPage: React.FC = () => {
   const handleOverrideSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await axios.post(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/rooms/${selectedRoomId}/availability`,
-        {
-          date: targetDate,
-          customPrice: parseFloat(customPrice) || undefined,
-          maintenanceCount: parseInt(maintenanceCount) || 0,
-        },
-        { headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` } }
-      );
+      const res = await roomService.setAvailability(selectedRoomId, {
+        date: targetDate,
+        customPrice: parseFloat(customPrice) || undefined,
+        maintenanceCount: parseInt(maintenanceCount) || 0,
+      });
       if (res.data.success) {
         setShowOverride(false);
         setCustomPrice('');
@@ -99,6 +84,7 @@ export const InventoryCalendarPage: React.FC = () => {
       }
     } catch (err) {
       console.error('Override save error:', err);
+      addNotification('Save Failed', getErrorMessage(err, 'Could not apply override.'), 'error');
     }
   };
 

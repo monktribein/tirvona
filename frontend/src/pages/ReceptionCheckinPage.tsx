@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { Key, RefreshCw, X } from 'lucide-react';
 import { useNotifications } from '../contexts/NotificationContext';
+import { bookingService } from '../services';
+import { getErrorMessage } from '../lib/api';
 
 export const ReceptionCheckinPage: React.FC = () => {
   const { addNotification } = useNotifications();
@@ -20,34 +21,14 @@ export const ReceptionCheckinPage: React.FC = () => {
   const fetchActiveBookings = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/bookings/dashboard`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` },
-      });
+      const res = await bookingService.dashboard();
       if (res.data.success) {
         setActiveBookings(res.data.data);
       }
     } catch (err) {
       console.error('Fetch active bookings error:', err);
-      // Mocks fallback
-      setActiveBookings([
-        {
-          _id: 'bk-1',
-          bookingId: 'AB-2026-1920',
-          customerId: { name: 'Rajesh Kumar', phone: '9876543210' },
-          roomId: { name: 'Ganga View Deluxe AC Room' },
-          checkInCode: '482012',
-          status: 'confirmed',
-          pricing: { totalAmount: 3600 },
-        },
-        {
-          _id: 'bk-3',
-          bookingId: 'AB-2026-4820',
-          customerId: { name: 'Sunita Patel', phone: '9102938475' },
-          roomId: { name: 'Vedic Shared Dormitory Bed' },
-          status: 'checked_in',
-          pricing: { totalAmount: 500 },
-        },
-      ]);
+      addNotification('Load Failed', getErrorMessage(err, 'Unable to load bookings.'), 'error');
+      setActiveBookings([]);
     } finally {
       setLoading(false);
     }
@@ -59,35 +40,28 @@ export const ReceptionCheckinPage: React.FC = () => {
     if (!verifyingId || !checkInCode) return;
 
     try {
-      const res = await axios.post(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/bookings/${verifyingId}/checkin`,
-        { checkInCode },
-        { headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` } }
-      );
+      const res = await bookingService.checkin(verifyingId, checkInCode);
       if (res.data.success) {
         setVerifyingId(null);
         setCheckInCode('');
         addNotification('Check-In Successful', 'Guest check-in has been authorized and status updated.', 'success');
         fetchActiveBookings();
       }
-    } catch (err: any) {
-      setErrorMsg(err.response?.data?.message || 'Incorrect verification code. Please check code.');
+    } catch (err) {
+      setErrorMsg(getErrorMessage(err, 'Incorrect verification code. Please check code.'));
     }
   };
 
   const handleCheckOut = async (bookingId: string) => {
     try {
-      const res = await axios.post(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/bookings/${bookingId}/checkout`,
-        {},
-        { headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` } }
-      );
+      const res = await bookingService.checkout(bookingId);
       if (res.data.success) {
         addNotification('Check-Out Authorized', 'Rooms released and sent to cleaning status.', 'info');
         fetchActiveBookings();
       }
     } catch (err) {
       console.error('Checkout error:', err);
+      addNotification('Checkout Failed', getErrorMessage(err, 'Could not complete checkout.'), 'error');
     }
   };
 

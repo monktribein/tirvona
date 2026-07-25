@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
-import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
+import { ashramService, reviewService, roomService, bookingService } from '../services';
+import { getErrorMessage } from '../lib/api';
+import { openRazorpayCheckout } from '../lib/razorpay';
 import { 
   ShieldCheck, 
   MapPin, 
@@ -206,7 +208,7 @@ export const AshramDetailPage: React.FC = () => {
   const fetchDetails = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ashrams/${id}`);
+      const res = await ashramService.getById(id!);
       if (res.data.success) {
         setAshram(res.data.data.ashram);
         setRooms(res.data.data.rooms);
@@ -228,7 +230,7 @@ export const AshramDetailPage: React.FC = () => {
 
   const fetchReviews = async (ashramId: string) => {
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/reviews/ashram/${ashramId}`);
+      const res = await reviewService.forAshram(ashramId);
       if (res.data.success) {
         setReviews(res.data.data);
       }
@@ -239,7 +241,7 @@ export const AshramDetailPage: React.FC = () => {
 
   const fetchRelated = async (city: string, currentId: string) => {
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ashrams?verified=true&destination=${encodeURIComponent(city)}`);
+      const res = await ashramService.search({ verified: 'true', destination: city });
       if (res.data.success) {
         setRelatedStays(res.data.data.filter((a: any) => a._id !== currentId).slice(0, 3));
       }
@@ -258,10 +260,7 @@ export const AshramDetailPage: React.FC = () => {
       const today = new Date().toISOString().split('T')[0];
       const end = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
       
-      const res = await axios.get(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/rooms/${selectedRoom._id}/calendar?startDate=${today}&endDate=${end}`,
-        { headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` } }
-      );
+      const res = await roomService.calendar(selectedRoom._id, today, end);
       if (res.data.success) {
         setAvailabilityCalendar(res.data.data);
       }
@@ -354,30 +353,47 @@ export const AshramDetailPage: React.FC = () => {
     };
 
     try {
-      const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/bookings/create`, payload, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` },
-      });
+      const res = await bookingService.create(payload);
       if (res.data.success) {
         localStorage.removeItem('pending_booking');
         setBookingSuccess(res.data.data);
       }
-    } catch (err: any) {
-      setBookingError(err.response?.data?.message || 'Error occurred completing booking lock');
+    } catch (err) {
+      setBookingError(getErrorMessage(err, 'Error occurred completing booking lock'));
     }
   };
 
-  const handleConfirmMockPayment = async () => {
+  const [paying, setPaying] = useState(false);
+
+  const handleConfirmPayment = async () => {
     if (!bookingSuccess) return;
+    setBookingError('');
+    setPaying(true);
     try {
-      await axios.post(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/bookings/${bookingSuccess._id}/payment`,
-        { method: 'upi', transactionId: `TXN-DEMO-${Date.now()}` },
-        { headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` } }
-      );
+      // 1. Ask the backend to create a payment order (or signal demo mode).
+      const orderRes = await bookingService.createPaymentOrder(bookingSuccess._id);
+
+      if (orderRes.data.demo) {
+        // No gateway configured → demo confirmation path.
+        await bookingService.pay(bookingSuccess._id, { method: 'upi', transactionId: `TXN-DEMO-${Date.now()}` });
+        navigate('/dashboard');
+        return;
+      }
+
+      // 2. Open Razorpay checkout with the real order.
+      const result = await openRazorpayCheckout(orderRes.data.data, {
+        name: user?.name,
+        email: user?.email,
+        contact: user?.phone,
+      });
+
+      // 3. Verify the signature server-side and confirm the booking.
+      await bookingService.pay(bookingSuccess._id, result);
       navigate('/dashboard');
     } catch (err) {
-      console.error('Payment error:', err);
-      navigate('/dashboard');
+      setBookingError(getErrorMessage(err, 'Payment could not be completed. Please try again.'));
+    } finally {
+      setPaying(false);
     }
   };
 
@@ -399,7 +415,7 @@ export const AshramDetailPage: React.FC = () => {
   const galleryImages = ashram?.images || [];
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-10 space-y-10">
+    <div className="max-w-7xl mx-auto px-6 pt-28 lg:pt-32 pb-10 space-y-10">
       {/* Title Header */}
       <div className="flex flex-col md:flex-row justify-between items-start gap-4 border-b border-gray-100 dark:border-slate-800 pb-8">
         <div className="space-y-3">
@@ -931,10 +947,11 @@ export const AshramDetailPage: React.FC = () => {
                 </div>
 
                 <button
-                  onClick={handleConfirmMockPayment}
-                  className="w-full py-3 bg-[#0A4DA6] hover:bg-opacity-95 text-white font-bold rounded-full text-xs shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all"
+                  onClick={handleConfirmPayment}
+                  disabled={paying}
+                  className="w-full py-3 bg-[#0A4DA6] hover:bg-opacity-95 text-white font-bold rounded-full text-xs shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  Pay ₹{bookingSuccess.pricing?.totalAmount} via UPI
+                  {paying ? 'Processing…' : `Pay ₹${bookingSuccess.pricing?.totalAmount}`}
                 </button>
               </div>
             )}

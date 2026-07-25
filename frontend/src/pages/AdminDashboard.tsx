@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { 
+import { analyticsService } from '../services';
+import {
   Building2, 
   MapPin, 
   ShieldCheck, 
@@ -14,6 +14,7 @@ import {
 export const AdminDashboard: React.FC = () => {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     fetchSystemStats();
@@ -21,35 +22,16 @@ export const AdminDashboard: React.FC = () => {
 
   const fetchSystemStats = async () => {
     setLoading(true);
+    setError('');
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/analytics/system`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` },
-      });
+      const res = await analyticsService.system();
       if (res.data.success) {
         setStats(res.data.data);
       }
     } catch (err) {
       console.error('System stats load error:', err);
-      // Fallback mocks
-      setStats({
-        ashrams: { total: 48, approved: 30, pending: 11, rejected: 7 },
-        users: { pilgrims: 582, owners: 44 },
-        financials: { revenue: 148200, cancellationRate: 4, totalBookings: 320, approvalRate: 81, monthlyInspections: [
-          { month: 'May 2026', count: 15 },
-          { month: 'June 2026', count: 22 },
-          { month: 'July 2026', count: 28 }
-        ] },
-        popularDestinations: [
-          { city: 'Rishikesh', count: 10 },
-          { city: 'Haridwar', count: 10 },
-          { city: 'Vrindavan', count: 10 },
-        ],
-        districtStats: [
-          { district: 'Haridwar', approved: 10, pending: 2 },
-          { district: 'Dehradun', approved: 10, pending: 4 },
-          { district: 'Mathura', approved: 10, pending: 5 }
-        ]
-      });
+      setError('Unable to load system statistics. Please try again.');
+      setStats(null);
     } finally {
       setLoading(false);
     }
@@ -57,9 +39,14 @@ export const AdminDashboard: React.FC = () => {
 
   return (
     <div className="space-y-8 text-left">
+      {error && (
+        <div className="p-4 bg-danger/10 text-danger border border-danger/20 text-xs font-bold rounded-2xl">
+          {error}
+        </div>
+      )}
       {/* Metric Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        
+
         {/* Approved Verified Ashrams */}
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-5 rounded-[24px] shadow-sm flex items-center justify-between">
           <div className="space-y-1">

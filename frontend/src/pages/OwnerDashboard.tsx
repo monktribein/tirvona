@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { 
+import { analyticsService, bookingService } from '../services';
+import {
   TrendingUp, 
   Bed, 
   Calendar, 
@@ -17,6 +17,7 @@ export const OwnerDashboard: React.FC = () => {
   const [analytics, setAnalytics] = useState<any>(null);
   const [recentBookings, setRecentBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     fetchDashboardData();
@@ -24,36 +25,22 @@ export const OwnerDashboard: React.FC = () => {
 
   const fetchDashboardData = async () => {
     setLoading(true);
+    setError('');
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/analytics/dashboard`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` },
-      });
+      const res = await analyticsService.dashboard();
       if (res.data.success) {
         setAnalytics(res.data.data);
       }
-      
-      const bookingsRes = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/bookings/dashboard`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('ab_token')}` },
-      });
+
+      const bookingsRes = await bookingService.dashboard();
       if (bookingsRes.data.success) {
         setRecentBookings(bookingsRes.data.data.slice(0, 8));
       }
     } catch (err) {
       console.error('Owner dashboard load error:', err);
-      // Fallback mocks
-      setAnalytics({
-        totalBookings: 42,
-        occupancyRate: 68,
-        revenue: 18450,
-        pendingPayments: 2400,
-        checkInsToday: 3,
-        checkoutSoon: 2,
-        todayRevenue: 2400,
-        monthlyRevenue: 15400,
-        availableRooms: 18,
-        cancelledBookings: 2,
-        averageRating: 4.7
-      });
+      setError('Unable to load dashboard data. Please try again.');
+      setAnalytics(null);
+      setRecentBookings([]);
     } finally {
       setLoading(false);
     }
@@ -61,9 +48,14 @@ export const OwnerDashboard: React.FC = () => {
 
   return (
     <div className="space-y-8">
+      {error && (
+        <div className="p-4 bg-danger/10 text-danger border border-danger/20 text-xs font-bold rounded-2xl">
+          {error}
+        </div>
+      )}
       {/* Metric Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        
+
         {/* Gross Revenue */}
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-5 rounded-[24px] shadow-sm flex items-center justify-between">
           <div className="space-y-1">
