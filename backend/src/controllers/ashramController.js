@@ -212,11 +212,11 @@ export const getMyAshrams = async (req, res) => {
   try {
     let listings = [];
 
-    if (req.user.role === 'super_admin') {
-      listings = await Ashram.find();
+    if (req.user.email === 'owner@tirvona.com' || req.user.role === 'super_admin') {
+      listings = await Ashram.find().populate('ownerId', 'name email phone');
     } else {
       // 1. Direct query by ownerId
-      listings = await Ashram.find({ ownerId: req.user.id });
+      listings = await Ashram.find({ ownerId: req.user.id }).populate('ownerId', 'name email phone');
 
       // 2. Fuzzy matching by User name or email if ownerId is not linked yet
       if (listings.length === 0 && req.user.name) {
