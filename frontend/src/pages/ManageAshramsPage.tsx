@@ -487,22 +487,31 @@ export const ManageAshramsPage: React.FC = () => {
                   <p className="text-xs text-gray-400 italic">No photos added yet. Paste a photo URL below to add to gallery.</p>
                 )}
 
-                {/* Add Photo Input */}
-                <div className="flex items-center gap-2 pt-1">
-                  <input
-                    type="url"
-                    placeholder="Paste image URL (e.g. https://... or /banner/...)"
-                    value={newImageUrl}
-                    onChange={(e) => setNewImageUrl(e.target.value)}
-                    className="flex-1 bg-white dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                {/* Direct Upload from Device & URL Input */}
+                <div className="space-y-2 pt-1">
+                  <FileUploader
+                    folder="ashrams"
+                    accept="image/*"
+                    label="📁 Choose Image File from Device / System"
+                    onUploaded={(url) => handleAddImage(url)}
                   />
-                  <button
-                    type="button"
-                    onClick={() => handleAddImage()}
-                    className="px-3.5 py-2 bg-[#0A4DA6] hover:bg-[#083b80] text-white text-xs font-bold rounded-xl flex items-center gap-1 cursor-pointer shrink-0"
-                  >
-                    <Plus size={14} /> Add Photo
-                  </button>
+
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="url"
+                      placeholder="Or paste image URL (e.g. https://... or /banner/...)"
+                      value={newImageUrl}
+                      onChange={(e) => setNewImageUrl(e.target.value)}
+                      className="flex-1 bg-white dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleAddImage()}
+                      className="px-3.5 py-2 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 text-gray-700 dark:text-gray-300 text-xs font-bold rounded-xl flex items-center gap-1 cursor-pointer shrink-0"
+                    >
+                      <Plus size={14} /> Add URL
+                    </button>
+                  </div>
                 </div>
               </div>
 
