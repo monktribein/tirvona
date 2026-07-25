@@ -41,6 +41,7 @@ import AddAshramWizardPage from './pages/AddAshramWizardPage';
 import ManageRoomsPage from './pages/ManageRoomsPage';
 import InventoryCalendarPage from './pages/InventoryCalendarPage';
 import OwnerUsersPage from './pages/OwnerUsersPage';
+import OwnerOffersPage from './pages/OwnerOffersPage';
 import ReceptionCheckinPage from './pages/ReceptionCheckinPage';
 import HousekeepingPage from './pages/HousekeepingPage';
 import AdminDashboard from './pages/AdminDashboard';
@@ -137,6 +138,7 @@ const AppContent: React.FC = () => {
           <Route path="/owner/ashrams/add" element={<AddAshramWizardPage />} />
           <Route path="/owner/rooms" element={<ManageRoomsPage />} />
           <Route path="/owner/calendar" element={<InventoryCalendarPage />} />
+          <Route path="/owner/offers" element={<OwnerOffersPage />} />
           <Route path="/owner/users" element={<OwnerUsersPage />} />
           <Route path="/staff/reception" element={<ReceptionCheckinPage />} />
           <Route path="/staff/housekeeping" element={<HousekeepingPage />} />

@@ -38,6 +38,7 @@ export const HomePage: React.FC = () => {
   const [guests, setGuests] = useState('1');
 
   const [ashrams, setAshrams] = useState<any[]>([]);
+  const [offers, setOffers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'top_rated' | 'most_booked' | 'recent' | 'govt_recom'>('top_rated');
   const [searchTab, setSearchTab] = useState<'destinations' | 'stay' | 'darshan' | 'experiences'>('destinations');
@@ -54,6 +55,7 @@ export const HomePage: React.FC = () => {
 
   useEffect(() => {
     fetchStays();
+    fetchOffers();
     const handleClickOutside = (event: MouseEvent) => {
       if (autocompleteRef.current && !autocompleteRef.current.contains(event.target as Node)) {
         setShowSuggestions(false);
@@ -62,6 +64,17 @@ export const HomePage: React.FC = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const fetchOffers = async () => {
+    try {
+      const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/offers/public/active`);
+      if (res.data.success) {
+        setOffers(res.data.data);
+      }
+    } catch (err) {
+      console.error('Fetch active offers error:', err);
+    }
+  };
 
   // Continuous silky smooth 60 FPS auto-scroll for all carousels (Destinations, Prasad, Accommodations, Feedback)
   useEffect(() => {
@@ -552,6 +565,76 @@ export const HomePage: React.FC = () => {
         </div>
 
       </section>
+
+      {/* ══════════════════════ FEATURED OFFERS & FESTIVAL SPECIALS BANNER ══════════════════════ */}
+      {offers.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 my-8 lg:my-12">
+          <div className="bg-gradient-to-r from-[#0B192C] via-[#0A4DA6] to-[#0B192C] rounded-[32px] p-6 sm:p-10 text-white shadow-2xl relative overflow-hidden">
+            
+            {/* Ambient Background Glow */}
+            <div className="absolute -top-24 -right-24 w-72 h-72 bg-[#E58C28]/25 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-blue-500/25 rounded-full blur-3xl pointer-events-none" />
+
+            <div className="relative z-10 space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-black border border-amber-500/30 backdrop-blur-md">
+                    <Sparkles size={14} className="animate-pulse text-amber-400" /> Live Kumbh & Festival Specials
+                  </div>
+                  <h2 className="text-2xl sm:text-3xl font-black">Featured Pilgrimage Deals & Special Offers</h2>
+                </div>
+                <Link
+                  to="/search"
+                  className="text-xs font-black text-amber-300 hover:text-white flex items-center gap-1.5 transition-all self-start sm:self-auto"
+                >
+                  <span>Explore All Ashrams</span>
+                  <ChevronRight size={14} />
+                </Link>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {offers.slice(0, 3).map((offer) => (
+                  <div
+                    key={offer._id}
+                    className="bg-white/10 backdrop-blur-md border border-white/15 rounded-[24px] p-5 flex flex-col justify-between space-y-4 hover:bg-white/15 transition-all group"
+                  >
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="px-2.5 py-0.5 rounded-full bg-[#E58C28] text-white text-[10px] font-black uppercase tracking-wider">
+                          {offer.offerType}
+                        </span>
+                        <span className="text-xs font-black text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                          {offer.discountPercentage}% {offer.isRateUpgrade ? 'Rate Upgrade' : 'OFF'}
+                        </span>
+                      </div>
+
+                      <h3 className="font-extrabold text-base text-white group-hover:text-amber-300 transition-colors">
+                        {offer.title}
+                      </h3>
+                      <p className="text-xs text-gray-200 leading-relaxed line-clamp-2">
+                        {offer.bannerText}
+                      </p>
+                    </div>
+
+                    <div className="pt-3 border-t border-white/10 flex items-center justify-between">
+                      <div className="text-[10px] font-mono font-bold text-amber-200">
+                        PROMO: <span className="bg-white/20 px-1.5 py-0.5 rounded font-black">{offer.promoCode}</span>
+                      </div>
+                      <button
+                        onClick={() => navigate(`/search?destination=${encodeURIComponent(offer.ashramId?.address?.city || '')}`)}
+                        className="px-3.5 py-1.5 rounded-full bg-white text-[#0B192C] hover:bg-amber-400 font-extrabold text-xs transition-all flex items-center gap-1 cursor-pointer shadow-md"
+                      >
+                        <span>Book Now</span>
+                        <ArrowRight size={12} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ══════════════════════ EVERYTHING YOU NEED ══════════════════════ */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 mb-10 lg:mb-20 mt-6 lg:mt-0">

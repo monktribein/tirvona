@@ -16,7 +16,8 @@ import {
   LifeBuoy, 
   Menu, 
   X,
-  ClipboardList
+  ClipboardList,
+  Tag
 } from 'lucide-react';
 
 export const DashboardLayout: React.FC = () => {
@@ -46,6 +47,7 @@ export const DashboardLayout: React.FC = () => {
         { label: 'My Ashrams', path: '/owner/ashrams', icon: <Home size={16} /> },
         { label: 'Manage Rooms', path: '/owner/rooms', icon: <Bed size={16} /> },
         { label: 'Rate Calendar', path: '/owner/calendar', icon: <Calendar size={16} /> },
+        { label: 'Offers & Deals', path: '/owner/offers', icon: <Tag size={16} /> },
       ];
       if (isMasterOwner) {
         links.push({ label: 'Users & Staff', path: '/owner/users', icon: <Users size={16} /> });

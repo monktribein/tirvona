@@ -16,6 +16,7 @@ import verificationRoutes from './routes/verificationRoutes.js';
 import supportRoutes from './routes/supportRoutes.js';
 import analyticsRoutes from './routes/analyticsRoutes.js';
 import reviewRoutes from './routes/reviewRoutes.js';
+import offerRoutes from './routes/offerRoutes.js';
 
 dotenv.config();
 
@@ -87,6 +88,7 @@ app.use('/api/verify', verificationRoutes);
 app.use('/api/support', supportRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/reviews', reviewRoutes);
+app.use('/api/offers', offerRoutes);
 
 // Root Endpoint
 app.get('/', (req, res) => {
