@@ -43,6 +43,7 @@ import ManageRoomsPage from './pages/ManageRoomsPage';
 import InventoryCalendarPage from './pages/InventoryCalendarPage';
 import OwnerUsersPage from './pages/OwnerUsersPage';
 import OwnerOffersPage from './pages/OwnerOffersPage';
+import StaffManagementPage from './pages/StaffManagementPage';
 import ReceptionCheckinPage from './pages/ReceptionCheckinPage';
 import HousekeepingPage from './pages/HousekeepingPage';
 import AdminDashboard from './pages/AdminDashboard';
