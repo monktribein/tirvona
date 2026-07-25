@@ -267,3 +267,161 @@ export const getMe = async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
+
+// @desc    Get staff members for current owner
+// @route   GET /api/auth/owner-staff
+// @access  Private (Owner / Super Admin)
+export const getOwnerStaff = async (req, res) => {
+  try {
+    const staff = await User.find({
+      role: { $in: ['owner', 'manager', 'reception', 'housekeeping'] }
+    }).select('-passwordHash');
+
+    res.json({
+      success: true,
+      data: staff,
+    });
+  } catch (error) {
+    console.error('Get owner staff error:', error);
+    res.status(500).json({ success: false, message: 'Server error fetching staff members' });
+  }
+};
+
+// @desc    Create new staff member or ashram admin
+// @route   POST /api/auth/owner-staff
+// @access  Private (Owner / Super Admin)
+export const createOwnerStaff = async (req, res) => {
+  try {
+    const { name, email, phone, password, role } = req.body;
+
+    if (!name || !email || !phone || !password || !role) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide all required fields: name, email, phone, password, role.',
+      });
+    }
+
+    const emailExists = await User.findOne({ email: email.toLowerCase() });
+    if (emailExists) {
+      return res.status(400).json({
+        success: false,
+        message: 'A user with this email already exists.',
+      });
+    }
+
+    const phoneExists = await User.findOne({ phone });
+    if (phoneExists) {
+      return res.status(400).json({
+        success: false,
+        message: 'A user with this phone number already exists.',
+      });
+    }
+
+    const validRoles = ['owner', 'manager', 'reception', 'housekeeping'];
+    if (!validRoles.includes(role)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid staff role provided.',
+      });
+    }
+
+    const user = await User.create({
+      name,
+      email: email.toLowerCase(),
+      phone,
+      passwordHash: password,
+      role,
+      status: 'active',
+    });
+
+    await AuditLog.create({
+      userId: req.user.id,
+      action: 'STAFF_CREATE',
+      module: 'AUTH',
+      details: { createdUserId: user._id, email: user.email, role: user.role },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Staff member created successfully',
+      data: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        status: user.status,
+      },
+    });
+  } catch (error) {
+    console.error('Create staff error:', error);
+    res.status(500).json({ success: false, message: 'Server error creating staff account' });
+  }
+};
+
+// @desc    Reset password for a staff member
+// @route   PUT /api/auth/owner-staff/:id/password
+// @access  Private (Owner / Super Admin)
+export const resetStaffPassword = async (req, res) => {
+  try {
+    const { password } = req.body;
+    if (!password || password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters long.',
+      });
+    }
+
+    const staffUser = await User.findById(req.params.id);
+    if (!staffUser) {
+      return res.status(404).json({ success: false, message: 'Staff user not found' });
+    }
+
+    staffUser.passwordHash = password;
+    await staffUser.save();
+
+    await AuditLog.create({
+      userId: req.user.id,
+      action: 'STAFF_PASSWORD_RESET',
+      module: 'AUTH',
+      details: { targetUserId: staffUser._id, email: staffUser.email },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+
+    res.json({
+      success: true,
+      message: `Password updated successfully for ${staffUser.email}`,
+    });
+  } catch (error) {
+    console.error('Reset staff password error:', error);
+    res.status(500).json({ success: false, message: 'Server error resetting password' });
+  }
+};
+
+// @desc    Toggle staff account status (active/suspended)
+// @route   PUT /api/auth/owner-staff/:id/status
+// @access  Private (Owner / Super Admin)
+export const toggleStaffStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+    const staffUser = await User.findById(req.params.id);
+    if (!staffUser) {
+      return res.status(404).json({ success: false, message: 'Staff user not found' });
+    }
+
+    staffUser.status = status || (staffUser.status === 'active' ? 'suspended' : 'active');
+    await staffUser.save();
+
+    res.json({
+      success: true,
+      message: `Status updated to ${staffUser.status} for ${staffUser.email}`,
+      data: staffUser,
+    });
+  } catch (error) {
+    console.error('Toggle staff status error:', error);
+    res.status(500).json({ success: false, message: 'Server error updating staff status' });
+  }
+};

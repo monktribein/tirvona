@@ -49,6 +49,12 @@ export const AshramDetailPage: React.FC = () => {
   const [roomsCount, setRoomsCount] = useState(1);
 
   useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [id]);
+
+  useEffect(() => {
     const qCheckIn = searchParams.get('checkIn');
     const qCheckOut = searchParams.get('checkOut');
     const qGuests = searchParams.get('guests');

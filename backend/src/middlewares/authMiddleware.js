@@ -21,7 +21,7 @@ export const protect = async (req, res, next) => {
       req.user = user;
       next();
     } catch (error) {
-      console.error('JWT verification error:', error);
+      console.warn('JWT verification warning:', error.message);
       return res.status(401).json({ success: false, message: 'Not authorized, token failed' });
     }
   }
@@ -47,3 +47,5 @@ export const restrictTo = (...allowedRoles) => {
     next();
   };
 };
+
+export const authorize = restrictTo;

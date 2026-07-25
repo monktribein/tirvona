@@ -20,13 +20,19 @@ import {
 
 export const SearchPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const destinationQuery = searchParams.get('destination') || '';
+  const rawDestination = searchParams.get('destination') || '';
+  const rawCategory = searchParams.get('category') || searchParams.get('service') || '';
+  const rawQuery = searchParams.get('query') || searchParams.get('search') || '';
+  const activeKeyword = rawDestination || rawCategory || rawQuery || '';
+
+  const typeQuery = searchParams.get('type') || '';
   const checkInQuery = searchParams.get('checkIn') || '';
   const checkOutQuery = searchParams.get('checkOut') || '';
   const guestsQuery = searchParams.get('guests') || '1';
   
   const navigate = useNavigate();
-  const [destination, setDestination] = useState(destinationQuery);
+  const [destination, setDestination] = useState(activeKeyword);
+  const [stayType, setStayType] = useState(typeQuery);
   const [checkIn, setCheckIn] = useState(checkInQuery);
   const [checkOut, setCheckOut] = useState(checkOutQuery);
   const [results, setResults] = useState<any[]>([]);
@@ -72,21 +78,28 @@ export const SearchPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    setDestination(destinationQuery);
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    setDestination(activeKeyword);
+    setStayType(typeQuery);
     setCheckIn(checkInQuery);
     setCheckOut(checkOutQuery);
-  }, [destinationQuery, checkInQuery, checkOutQuery]);
+  }, [activeKeyword, typeQuery, checkInQuery, checkOutQuery]);
 
   useEffect(() => {
     fetchAshrams();
-  }, [destinationQuery, checkInQuery, checkOutQuery, guestsQuery, acFilter, foodFilter, riverViewFilter]);
+  }, [activeKeyword, typeQuery, checkInQuery, checkOutQuery, guestsQuery, acFilter, foodFilter, riverViewFilter]);
 
   const fetchAshrams = async () => {
     setLoading(true);
     try {
       let queryStr = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ashrams?verified=true`;
-      if (destinationQuery) {
-        queryStr += `&destination=${encodeURIComponent(destinationQuery)}`;
+      if (activeKeyword) {
+        queryStr += `&destination=${encodeURIComponent(activeKeyword)}`;
+      }
+      if (typeQuery) {
+        queryStr += `&type=${encodeURIComponent(typeQuery)}`;
       }
       if (checkInQuery) {
         queryStr += `&checkIn=${encodeURIComponent(checkInQuery)}`;
@@ -121,12 +134,18 @@ export const SearchPage: React.FC = () => {
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setSearchParams({ destination, checkIn, checkOut, guests: guestsQuery });
+    const params: Record<string, string> = {};
+    if (destination) params.destination = destination;
+    if (stayType) params.type = stayType;
+    if (checkIn) params.checkIn = checkIn;
+    if (checkOut) params.checkOut = checkOut;
+    if (guestsQuery) params.guests = guestsQuery;
+    setSearchParams(params);
   };
 
   // Landmark distance calculation for Spatial Map Grid
   const getCentralLandmark = () => {
-    const dest = destinationQuery.toLowerCase();
+    const dest = activeKeyword.toLowerCase();
     if (dest.includes('vrindavan')) {
       return { name: 'Sri Banke Bihari Mandir', lat: 27.5795, lon: 77.6980 };
     }
@@ -270,7 +289,7 @@ export const SearchPage: React.FC = () => {
                 type="date"
                 value={checkIn}
                 onChange={(e) => setCheckIn(e.target.value)}
-                className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl pl-9 pr-3 py-3 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl pl-9 pr-3 py-3 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6] cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
               />
               <Calendar className="absolute left-3 top-3.5 text-gray-400" size={14} />
             </div>
@@ -284,7 +303,7 @@ export const SearchPage: React.FC = () => {
                 type="date"
                 value={checkOut}
                 onChange={(e) => setCheckOut(e.target.value)}
-                className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl pl-9 pr-3 py-3 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl pl-9 pr-3 py-3 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6] cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
               />
               <Calendar className="absolute left-3 top-3.5 text-gray-400" size={14} />
             </div>
@@ -296,7 +315,7 @@ export const SearchPage: React.FC = () => {
             <div className="relative">
               <select
                 value={guestsQuery}
-                onChange={(e) => setSearchParams({ destination: destinationQuery, checkIn: checkInQuery, checkOut: checkOutQuery, guests: e.target.value })}
+                onChange={(e) => setSearchParams({ destination, checkIn: checkInQuery, checkOut: checkOutQuery, guests: e.target.value })}
                 className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl pl-9 pr-3 py-3 text-xs font-semibold focus:outline-none cursor-pointer appearance-none"
               >
                 <option value="1">1 Guest</option>
@@ -398,7 +417,7 @@ export const SearchPage: React.FC = () => {
           <div className="flex justify-between items-center bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 px-5 py-3.5 rounded-[20px] shadow-sm">
             <div className="text-xs font-bold text-gray-500">
               Found <span className="text-[#0A4DA6] font-extrabold">{results.length} stays</span> matching{' '}
-              {destinationQuery ? `"${destinationQuery}"` : 'all locations'}
+              {activeKeyword ? `"${activeKeyword}"` : 'all locations'}
             </div>
           </div>
 

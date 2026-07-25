@@ -45,6 +45,7 @@ export const DashboardLayout: React.FC = () => {
         { label: 'My Ashrams', path: '/owner/ashrams', icon: <Home size={16} /> },
         { label: 'Manage Rooms', path: '/owner/rooms', icon: <Bed size={16} /> },
         { label: 'Rate Calendar', path: '/owner/calendar', icon: <Calendar size={16} /> },
+        { label: 'Users & Staff', path: '/owner/users', icon: <Users size={16} /> },
         { label: 'Support Tickets', path: '/support', icon: <LifeBuoy size={16} /> },
       ];
     }

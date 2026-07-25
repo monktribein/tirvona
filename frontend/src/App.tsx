@@ -40,6 +40,7 @@ import ManageAshramsPage from './pages/ManageAshramsPage';
 import AddAshramWizardPage from './pages/AddAshramWizardPage';
 import ManageRoomsPage from './pages/ManageRoomsPage';
 import InventoryCalendarPage from './pages/InventoryCalendarPage';
+import OwnerUsersPage from './pages/OwnerUsersPage';
 import ReceptionCheckinPage from './pages/ReceptionCheckinPage';
 import HousekeepingPage from './pages/HousekeepingPage';
 import AdminDashboard from './pages/AdminDashboard';
@@ -66,13 +67,15 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; allowedRoles?: strin
   return <>{children}</>;
 };
 
-// Scroll to top on navigation
+// Scroll to top on navigation or search query change
 const ScrollToTop: React.FC = () => {
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
 
   useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [pathname]);
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [pathname, search]);
 
   return null;
 };
@@ -134,6 +137,7 @@ const AppContent: React.FC = () => {
           <Route path="/owner/ashrams/add" element={<AddAshramWizardPage />} />
           <Route path="/owner/rooms" element={<ManageRoomsPage />} />
           <Route path="/owner/calendar" element={<InventoryCalendarPage />} />
+          <Route path="/owner/users" element={<OwnerUsersPage />} />
           <Route path="/staff/reception" element={<ReceptionCheckinPage />} />
           <Route path="/staff/housekeeping" element={<HousekeepingPage />} />
         </Route>

@@ -32,6 +32,7 @@ import {
 export const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const [destination, setDestination] = useState('');
+  const [stayType, setStayType] = useState('');
   const [checkIn, setCheckIn] = useState('');
   const [checkOut, setCheckOut] = useState('');
   const [guests, setGuests] = useState('1');
@@ -40,6 +41,7 @@ export const HomePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'top_rated' | 'most_booked' | 'recent' | 'govt_recom'>('top_rated');
   const [searchTab, setSearchTab] = useState<'destinations' | 'stay' | 'darshan' | 'experiences'>('destinations');
+  const [activeService, setActiveService] = useState<number>(0);
 
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -117,7 +119,14 @@ export const HomePage: React.FC = () => {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    navigate(`/search?destination=${encodeURIComponent(destination)}&checkIn=${checkIn}&checkOut=${checkOut}&guests=${guests}`);
+    const params = new URLSearchParams();
+    if (destination) params.set('destination', destination);
+    if (stayType) params.set('type', stayType);
+    if (checkIn) params.set('checkIn', checkIn);
+    if (checkOut) params.set('checkOut', checkOut);
+    if (guests) params.set('guests', guests);
+    if (searchTab && searchTab !== 'destinations') params.set('tab', searchTab);
+    navigate(`/search?${params.toString()}`);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -227,20 +236,20 @@ export const HomePage: React.FC = () => {
     },
   ];
 
-  // 12-icon service strip
+  // 12-icon service strip aligned with Tirvona Theme & Routing
   const serviceIcons = [
-    { label: 'Pilgrimage\nCircuits', icon: <MapPin size={16} className="text-[#0A4DA6]" /> },
-    { label: 'Temple\nDetails', icon: <Compass size={16} className="text-[#0A4DA6]" /> },
-    { label: 'Travel\nGuides', icon: <BookOpen size={16} className="text-[#0A4DA6]" /> },
-    { label: 'Events &\nFestivals', icon: <Sparkles size={16} className="text-[#0A4DA6]" /> },
-    { label: 'Local\nGuides', icon: <Users size={16} className="text-[#0E7B6C]" /> },
-    { label: 'Transport &\nCabs', icon: <MapIcon size={16} className="text-[#0E7B6C]" /> },
-    { label: 'Restaurants\n& Prasad', icon: <Activity size={16} className="text-[#0E7B6C]" /> },
-    { label: 'Shops &\nServices', icon: <LayoutGrid size={16} className="text-[#0E7B6C]" /> },
-    { label: 'Puja\nItems', icon: <Heart size={16} className="text-[#6B21A8]" /> },
-    { label: 'Religious\nProducts', icon: <Award size={16} className="text-[#6B21A8]" /> },
-    { label: 'Books &\nMedia', icon: <BookOpen size={16} className="text-[#6B21A8]" /> },
-    { label: 'Handicrafts\n& Gifts', icon: <Sparkles size={16} className="text-[#6B21A8]" /> },
+    { id: 'circuits', label: 'Pilgrimage\nCircuits', icon: MapPin, category: 'circuits', target: '/search' },
+    { id: 'temples', label: 'Temple\nDetails', icon: Compass, category: 'temples', target: '/search' },
+    { id: 'guides', label: 'Travel\nGuides', icon: BookOpen, category: 'guides', target: '/faq' },
+    { id: 'events', label: 'Events &\nFestivals', icon: Sparkles, category: 'events', target: '/search' },
+    { id: 'local_guides', label: 'Local\nGuides', icon: Users, category: 'local_guides', target: '/search' },
+    { id: 'cabs', label: 'Transport &\nCabs', icon: MapIcon, category: 'cabs', target: '/search' },
+    { id: 'prasad', label: 'Restaurants\n& Prasad', icon: Activity, category: 'prasad', target: '#prashad-section' },
+    { id: 'shops', label: 'Shops &\nServices', icon: LayoutGrid, category: 'shops', target: '/search' },
+    { id: 'puja', label: 'Puja\nItems', icon: Heart, category: 'puja', target: '/search' },
+    { id: 'products', label: 'Religious\nProducts', icon: Award, category: 'products', target: '/search' },
+    { id: 'books', label: 'Books &\nMedia', icon: BookOpen, category: 'books', target: '/search' },
+    { id: 'handicrafts', label: 'Handicrafts\n& Gifts', icon: Sparkles, category: 'handicrafts', target: '/search' },
   ];
 
   return (
@@ -412,16 +421,18 @@ export const HomePage: React.FC = () => {
             </div>
 
             {/* Field 2: ALL ACTIVITY */}
-            <div className="lg:col-span-3 relative lg:px-4 lg:border-r border-gray-200 dark:border-slate-800">
+            <div className="lg:col-span-2 relative lg:px-4 lg:border-r border-gray-200 dark:border-slate-800">
               <label className="block text-[10px] font-extrabold uppercase tracking-wider text-gray-400 mb-1.5 pl-1">All Activity</label>
               <div className="relative flex items-center">
-                <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-[#0A4DA6] dark:text-amber-400 flex items-center justify-center shrink-0 mr-2.5">
-                  <Bed size={16} />
+                <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-[#0A4DA6] dark:text-amber-400 flex items-center justify-center shrink-0 mr-2">
+                  <Bed size={15} />
                 </div>
                 <select
+                  value={stayType}
+                  onChange={e => setStayType(e.target.value)}
                   className="w-full bg-transparent border-none p-0 text-xs sm:text-sm font-bold focus:outline-none cursor-pointer appearance-none text-[#0B192C] dark:text-white pr-4"
                 >
-                  <option value="">Trip Type / Stay</option>
+                  <option value="">Trip Type</option>
                   <option value="ashram">Ashram Stay</option>
                   <option value="dharamshala">Dharamshala</option>
                   <option value="temple">Temple Guest House</option>
@@ -430,18 +441,34 @@ export const HomePage: React.FC = () => {
               </div>
             </div>
 
-            {/* Field 3: DURATION / DATES */}
-            <div className="lg:col-span-3 relative lg:px-4 lg:border-r border-gray-200 dark:border-slate-800">
-              <label className="block text-[10px] font-extrabold uppercase tracking-wider text-gray-400 mb-1.5 pl-1">Duration / Dates</label>
+            {/* Field 3: CHECK IN */}
+            <div className="lg:col-span-2 relative lg:px-4 lg:border-r border-gray-200 dark:border-slate-800">
+              <label className="block text-[10px] font-extrabold uppercase tracking-wider text-gray-400 mb-1.5 pl-1">Check In</label>
               <div className="relative flex items-center">
-                <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-[#0A4DA6] dark:text-amber-400 flex items-center justify-center shrink-0 mr-2.5">
-                  <Calendar size={16} />
+                <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-[#0A4DA6] dark:text-amber-400 flex items-center justify-center shrink-0 mr-2">
+                  <Calendar size={15} />
                 </div>
                 <input
                   type="date"
                   value={checkIn}
                   onChange={e => setCheckIn(e.target.value)}
-                  className="w-full bg-transparent border-none p-0 text-xs sm:text-sm font-bold focus:outline-none text-[#0B192C] dark:text-white"
+                  className="w-full bg-transparent border-none p-0 text-xs sm:text-sm font-bold focus:outline-none text-[#0B192C] dark:text-white cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                />
+              </div>
+            </div>
+
+            {/* Field 4: CHECK OUT */}
+            <div className="lg:col-span-2 relative lg:px-4 lg:border-r border-gray-200 dark:border-slate-800">
+              <label className="block text-[10px] font-extrabold uppercase tracking-wider text-gray-400 mb-1.5 pl-1">Check Out</label>
+              <div className="relative flex items-center">
+                <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-[#0A4DA6] dark:text-amber-400 flex items-center justify-center shrink-0 mr-2">
+                  <Calendar size={15} />
+                </div>
+                <input
+                  type="date"
+                  value={checkOut}
+                  onChange={e => setCheckOut(e.target.value)}
+                  className="w-full bg-transparent border-none p-0 text-xs sm:text-sm font-bold focus:outline-none text-[#0B192C] dark:text-white cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                 />
               </div>
             </div>
@@ -482,17 +509,45 @@ export const HomePage: React.FC = () => {
         </div>
 
         {/* 12-icon service strip placed directly below booking system */}
-        <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800/80 rounded-[24px] mt-4 sm:mt-5 px-3 py-3 shadow-lg shadow-[#0B192C]/5">
-          <div className="grid grid-cols-6 lg:grid-cols-12 divide-x divide-gray-100 dark:divide-slate-800 divide-y lg:divide-y-0">
-            {serviceIcons.map((item, i) => (
-              <div
-                key={i}
-                className={`flex flex-col items-center gap-1.5 py-3 px-1 text-center cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-900 rounded-xl transition-colors ${i >= 6 ? 'border-t border-gray-100 dark:border-slate-800 lg:border-t-0' : ''}`}
-              >
-                {item.icon}
-                <span className="text-[8px] sm:text-[9px] font-bold text-gray-500 dark:text-gray-400 whitespace-pre-line text-center leading-tight">{item.label}</span>
-              </div>
-            ))}
+        <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800/80 rounded-[24px] mt-4 sm:mt-5 p-2 sm:p-2.5 shadow-lg shadow-[#0B192C]/5">
+          <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-12 gap-1 sm:gap-1.5">
+            {serviceIcons.map((item, i) => {
+              const IconComponent = item.icon;
+              const isActive = activeService === i;
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => {
+                    setActiveService(i);
+                    if (item.target.startsWith('#')) {
+                      const el = document.querySelector(item.target);
+                      if (el) el.scrollIntoView({ behavior: 'smooth' });
+                    } else {
+                      navigate(`${item.target}?category=${item.category}`);
+                    }
+                  }}
+                  className={`flex flex-col items-center gap-1.5 py-2.5 sm:py-3 px-1 text-center rounded-2xl transition-all cursor-pointer group ${
+                    isActive
+                      ? 'bg-[#0A4DA6] text-white shadow-md shadow-[#0A4DA6]/25 scale-[1.02]'
+                      : 'hover:bg-blue-50/80 dark:hover:bg-slate-800 text-slate-700 dark:text-gray-200'
+                  }`}
+                >
+                  <div className={`p-1.5 rounded-xl transition-colors ${
+                    isActive
+                      ? 'bg-white/20 text-white'
+                      : 'bg-blue-50 dark:bg-blue-900/30 text-[#0A4DA6] group-hover:bg-[#0A4DA6] group-hover:text-white'
+                  }`}>
+                    <IconComponent size={16} className="stroke-[2.5]" />
+                  </div>
+                  <span className={`text-[8px] sm:text-[9px] font-bold whitespace-pre-line text-center leading-tight ${
+                    isActive ? 'text-white font-extrabold' : 'text-slate-700 dark:text-gray-300'
+                  }`}>
+                    {item.label}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -744,7 +799,7 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* ══════════════════════ POPULAR PRASHAD FROM ASHRAMS ══════════════════════ */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 space-y-8 mb-12 lg:mb-20">
+      <section id="prashad-section" className="max-w-7xl mx-auto px-4 sm:px-6 space-y-8 mb-12 lg:mb-20">
 
         {/* Banner with Image Background and Overlay Title */}
         <div className="relative rounded-3xl overflow-hidden shadow-xl p-6 sm:p-10 lg:p-12 text-center flex flex-col items-center justify-center min-h-[200px] sm:min-h-[260px] border border-white/10">

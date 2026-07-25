@@ -131,11 +131,13 @@ export const PublicLayout: React.FC = () => {
     { label: 'Blog', to: '/faq', hasDropdown: false },
   ];
 
+  const isHomePage = location.pathname === '/';
+
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground transition-colors duration-300">
 
       {/* ── Sticky Header (Floating Rounded Navbar - Hide on Scroll Down, Show on Scroll Up) ── */}
-      <header className={`sticky top-0 z-50 pt-3 pb-3 -mb-20 lg:-mb-24 pointer-events-none transition-all duration-300 ease-in-out transform ${
+      <header className={`sticky top-0 z-50 pt-3 pb-3 ${isHomePage ? '-mb-20 lg:-mb-24' : 'mb-2 sm:mb-4'} pointer-events-none transition-all duration-300 ease-in-out transform ${
         showHeader || drawerOpen ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'
       }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pointer-events-auto">

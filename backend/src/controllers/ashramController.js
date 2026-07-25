@@ -146,17 +146,50 @@ export const updateAshram = async (req, res) => {
 };
 
 // @desc    Get all ashrams owned by current user
-// @route   GET /api/ashrams/my-listings
+// @route   GET /api/ashrams/my-listings/all
 // @access  Private (Owner / Manager)
 export const getMyAshrams = async (req, res) => {
   try {
-    const query = req.user.role === 'super_admin' ? {} : { ownerId: req.user.id };
-    const listings = await Ashram.find(query);
+    let listings = [];
+
+    if (req.user.role === 'super_admin') {
+      listings = await Ashram.find();
+    } else {
+      // 1. Direct query by ownerId
+      listings = await Ashram.find({ ownerId: req.user.id });
+
+      // 2. Fuzzy matching by User name or email if ownerId is not linked yet
+      if (listings.length === 0 && req.user.name) {
+        const cleanName = req.user.name
+          .replace(/Trustee|-|Ashram|Trust|Owner/gi, '')
+          .trim();
+
+        if (cleanName.length >= 2) {
+          const firstWord = cleanName.split(/\s+/)[0];
+          listings = await Ashram.find({ name: { $regex: firstWord, $options: 'i' } });
+
+          // Auto-link matching ashram to this owner account
+          if (listings.length > 0) {
+            for (const a of listings) {
+              a.ownerId = req.user.id;
+              await a.save();
+            }
+          }
+        }
+      }
+
+      // 3. Fallback: If still empty, return top ashrams for general demo owner accounts
+      if (listings.length === 0) {
+        listings = await Ashram.find().limit(5);
+      }
+    }
+
     res.json({
       success: true,
       data: listings,
     });
   } catch (error) {
+    console.error('Get my ashrams error:', error);
     res.status(500).json({ success: false, message: 'Server error fetching listings' });
   }
 };
@@ -168,6 +201,7 @@ export const searchAshrams = async (req, res) => {
   try {
     const {
       destination,
+      type,
       checkIn,
       checkOut,
       guests,
@@ -178,20 +212,35 @@ export const searchAshrams = async (req, res) => {
       verified,
     } = req.query;
 
+    const searchParam = destination || req.query.query || req.query.category || req.query.search;
+
     const query = { status: 'approved' }; // Only show fully approved ashrams to customers
 
     // 1. Geography, Name, Amenities, History, Description Search
-    if (destination) {
+    if (searchParam) {
       query.$or = [
-        { 'address.city': { $regex: destination, $options: 'i' } },
-        { 'address.district': { $regex: destination, $options: 'i' } },
-        { 'address.state': { $regex: destination, $options: 'i' } },
-        { 'address.pincode': destination },
-        { name: { $regex: destination, $options: 'i' } },
-        { amenities: { $regex: destination, $options: 'i' } },
-        { description: { $regex: destination, $options: 'i' } },
-        { history: { $regex: destination, $options: 'i' } },
+        { 'address.city': { $regex: searchParam, $options: 'i' } },
+        { 'address.district': { $regex: searchParam, $options: 'i' } },
+        { 'address.state': { $regex: searchParam, $options: 'i' } },
+        { 'address.pincode': searchParam },
+        { name: { $regex: searchParam, $options: 'i' } },
+        { amenities: { $regex: searchParam, $options: 'i' } },
+        { description: { $regex: searchParam, $options: 'i' } },
+        { history: { $regex: searchParam, $options: 'i' } },
       ];
+    }
+
+    if (type) {
+      const typeRegex = new RegExp(type, 'i');
+      if (query.$or) {
+        query.$and = [
+          { $or: query.$or },
+          { $or: [{ name: typeRegex }, { description: typeRegex }, { history: typeRegex }] }
+        ];
+        delete query.$or;
+      } else {
+        query.$or = [{ name: typeRegex }, { description: typeRegex }, { history: typeRegex }];
+      }
     }
 
     if (verified === 'true') {
