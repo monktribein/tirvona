@@ -19,7 +19,10 @@ import {
   Sun, 
   X,
   FileCheck,
-  Check
+  Check,
+  Plus,
+  Trash2,
+  Image as ImageIcon
 } from 'lucide-react';
 import { useNotifications } from '../contexts/NotificationContext';
 
@@ -50,7 +53,9 @@ export const AllAshramsPage: React.FC = () => {
     ownerId: '',
     amenities: '',
     rules: '',
+    images: [],
   });
+  const [newImageUrl, setNewImageUrl] = useState('');
   const [submitLoading, setSubmitLoading] = useState(false);
 
   useEffect(() => {
@@ -102,7 +107,26 @@ export const AllAshramsPage: React.FC = () => {
       ownerId: ashram.ownerId?._id || ashram.ownerId || '',
       amenities: Array.isArray(ashram.amenities) ? ashram.amenities.join(', ') : ashram.amenities || '',
       rules: Array.isArray(ashram.rules) ? ashram.rules.join(', ') : ashram.rules || '',
+      images: Array.isArray(ashram.images) ? [...ashram.images] : [],
     });
+    setNewImageUrl('');
+  };
+
+  const handleAddImage = (urlToAdd?: string) => {
+    const url = urlToAdd || newImageUrl.trim();
+    if (!url) return;
+    setEditFormData((prev: any) => ({
+      ...prev,
+      images: [...(prev.images || []), url],
+    }));
+    if (!urlToAdd) setNewImageUrl('');
+  };
+
+  const handleRemoveImage = (indexToRemove: number) => {
+    setEditFormData((prev: any) => ({
+      ...prev,
+      images: (prev.images || []).filter((_: any, idx: number) => idx !== indexToRemove),
+    }));
   };
 
   const handleSaveEdit = async (e: React.FormEvent) => {
@@ -127,6 +151,7 @@ export const AllAshramsPage: React.FC = () => {
         ownerId: editFormData.ownerId,
         amenities: editFormData.amenities.split(',').map((s: string) => s.trim()).filter(Boolean),
         rules: editFormData.rules.split(',').map((s: string) => s.trim()).filter(Boolean),
+        images: editFormData.images || [],
       };
 
       const res = await axios.put(
@@ -492,6 +517,60 @@ export const AllAshramsPage: React.FC = () => {
                     <option value="pending_docs">Pending Documents</option>
                     <option value="suspended">Suspended</option>
                   </select>
+                </div>
+              </div>
+
+              {/* ════════════ Image Gallery Manager ════════════ */}
+              <div className="bg-gray-50/80 dark:bg-slate-900/80 border border-gray-100 dark:border-slate-800 rounded-2xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] font-black uppercase text-gray-400 flex items-center gap-1.5">
+                    <ImageIcon size={14} className="text-[#0A4DA6]" /> Ashram Photo Gallery ({editFormData.images?.length || 0} Photos)
+                  </label>
+                  <span className="text-[10px] text-gray-400 font-bold">Click 🗑️ to remove any image</span>
+                </div>
+
+                {/* Thumbnails Grid */}
+                {editFormData.images && editFormData.images.length > 0 ? (
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
+                    {editFormData.images.map((imgUrl: string, idx: number) => (
+                      <div key={idx} className="relative group aspect-video rounded-xl overflow-hidden border border-gray-200 dark:border-slate-800 bg-black">
+                        <img
+                          src={imgUrl}
+                          alt={`Ashram photo ${idx + 1}`}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                          onError={(e: any) => { e.target.src = '/banner/ashram_rishikesh.png'; }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage(idx)}
+                          className="absolute top-1 right-1 p-1 bg-rose-600/90 text-white rounded-full opacity-90 hover:opacity-100 hover:bg-rose-700 transition-all shadow cursor-pointer"
+                          title="Remove this photo"
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-400 italic">No photos added yet. Paste a photo URL below to add to gallery.</p>
+                )}
+
+                {/* Add Photo Input */}
+                <div className="flex items-center gap-2 pt-1">
+                  <input
+                    type="url"
+                    placeholder="Paste image URL (e.g. https://... or /banner/...)"
+                    value={newImageUrl}
+                    onChange={(e) => setNewImageUrl(e.target.value)}
+                    className="flex-1 bg-white dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleAddImage()}
+                    className="px-3.5 py-2 bg-[#0A4DA6] hover:bg-[#083b80] text-white text-xs font-bold rounded-xl flex items-center gap-1 cursor-pointer shrink-0"
+                  >
+                    <Plus size={14} /> Add Photo
+                  </button>
                 </div>
               </div>
 
