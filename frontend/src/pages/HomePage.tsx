@@ -357,8 +357,8 @@ export const HomePage: React.FC = () => {
           <div className="absolute inset-0 bg-gradient-to-r from-[#0B192C]/85 via-[#0B192C]/40 to-black/15 dark:from-[#070F1B]/95 dark:via-[#070F1B]/60 dark:to-transparent" />
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="max-w-4xl lg:max-w-5xl space-y-6 text-left">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full flex justify-center">
+          <div className="max-w-4xl lg:max-w-5xl mx-auto space-y-6 text-center flex flex-col items-center">
 
             {/* Simple text label hero eyebrow aligned with main heading */}
             <motion.div
@@ -399,7 +399,7 @@ export const HomePage: React.FC = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2, duration: 0.5 }}
-              className="text-[#E2E8F0] dark:text-[#6B6B6B] text-sm sm:text-base leading-relaxed max-w-xl text-left drop-shadow-xs"
+              className="text-[#E2E8F0] dark:text-[#6B6B6B] text-sm sm:text-base leading-relaxed max-w-2xl mx-auto text-center drop-shadow-xs"
               style={{
                 fontFamily: "Satoshi, 'General Sans', Manrope, Inter, sans-serif",
                 fontWeight: 500,
@@ -413,7 +413,7 @@ export const HomePage: React.FC = () => {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.5 }}
-              className="flex flex-wrap items-center justify-start gap-4 pt-2"
+              className="flex flex-wrap items-center justify-center gap-4 pt-2"
             >
               {/* Primary Pill Button */}
               <button

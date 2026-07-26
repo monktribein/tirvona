@@ -499,7 +499,7 @@ export const PublicLayout: React.FC = () => {
             <h1
               className="text-5xl sm:text-8xl lg:text-[140px] font-black uppercase tracking-tight leading-none text-transparent bg-clip-text bg-cover bg-center"
               style={{
-                backgroundImage: "url('https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=1600&q=80')",
+                backgroundImage: "url('/auth-page/background.png')",
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 fontFamily: "Satoshi, 'General Sans', Inter, sans-serif",
