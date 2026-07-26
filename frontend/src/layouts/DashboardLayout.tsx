@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import logo from '../assets/logo.png';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { 
@@ -107,7 +106,7 @@ export const DashboardLayout: React.FC = () => {
       <aside className="hidden lg:flex flex-col w-64 bg-[#0B192C] text-white border-r border-slate-800 z-20">
         {/* Brand */}
         <div className="h-20 flex items-center px-6 border-b border-slate-800 gap-3">
-          <img src={logo} alt="Tirvona Logo" className="w-8 h-8 object-contain" />
+          <img src="/logo/logo.png" alt="Tirvona Logo" className="w-8 h-8 object-contain" />
           <div className="flex flex-col">
             <span className="font-black text-sm tracking-tight flex items-center">
               tirvona<span className="text-[#D4AF37] text-[8px] align-super">™</span>
@@ -171,7 +170,7 @@ export const DashboardLayout: React.FC = () => {
             </button>
 
             <div className="h-12 flex items-center mb-6 gap-3">
-              <img src={logo} alt="Tirvona Logo" className="w-8 h-8 object-contain" />
+              <img src="/logo/logo.png" alt="Tirvona Logo" className="w-8 h-8 object-contain" />
               <span className="font-black text-sm tracking-tight">tirvona<span className="text-[#D4AF37] text-[8px] align-super">™</span></span>
             </div>
 
@@ -238,7 +237,7 @@ export const DashboardLayout: React.FC = () => {
         </header>
 
         {/* Content Body */}
-        <main className="flex-grow p-6 lg:p-8 overflow-y-auto max-w-7xl w-full mx-auto">
+        <main className="flex-grow p-6 lg:p-8 pb-12 lg:pb-16 overflow-y-auto max-w-7xl w-full mx-auto">
           <Outlet />
         </main>
       </div>

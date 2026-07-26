@@ -137,7 +137,7 @@ export const PublicLayout: React.FC = () => {
     <div className="min-h-screen flex flex-col bg-background text-foreground transition-colors duration-300">
 
       {/* ── Sticky Header (Floating Rounded Navbar - Hide on Scroll Down, Show on Scroll Up) ── */}
-      <header className={`sticky top-0 z-50 pt-3 pb-3 ${isHomePage ? '-mb-20 lg:-mb-24' : 'mb-2 sm:mb-4'} pointer-events-none transition-all duration-300 ease-in-out transform ${
+      <header className={`sticky top-0 z-50 pt-3 pb-3 ${isHomePage ? '-mb-20 lg:-mb-24' : 'mb-0'} pointer-events-none transition-all duration-300 ease-in-out transform ${
         showHeader || drawerOpen ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'
       }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pointer-events-auto">
@@ -251,7 +251,7 @@ export const PublicLayout: React.FC = () => {
         {/* Drawer header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-slate-800">
           <Link to="/" onClick={() => setDrawerOpen(false)} className="flex items-center gap-2">
-            <img src={logo} alt="Tirvona" className="w-8 h-8 object-contain" />
+            <img src="/logo/logo.png" alt="Tirvona" className="w-8 h-8 object-contain" />
             <span className="font-black text-base text-[#0B192C] dark:text-white">
               tirvona<span className="text-[#D4AF37] text-[8px] align-super">™</span>
             </span>

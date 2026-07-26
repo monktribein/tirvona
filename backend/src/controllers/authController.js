@@ -13,6 +13,9 @@ const generateToken = (id) => {
 // Memory store for mock OTPs (in production, use Redis or MongoDB collection with TTL index)
 const otpStore = new Map();
 
+// Memory store for password-reset codes (in production, use Redis/DB with TTL).
+const resetStore = new Map();
+
 // @desc    Register a new user
 // @route   POST /api/auth/register
 // @access  Public
@@ -267,6 +270,123 @@ export const getMe = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+// @desc    Update current user's own profile (name / phone)
+// @route   PUT /api/auth/me
+// @access  Private
+export const updateMe = async (req, res) => {
+  try {
+    const { name, phone } = req.body;
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    if (phone && phone !== user.phone) {
+      const phoneTaken = await User.findOne({ phone, _id: { $ne: user._id } });
+      if (phoneTaken) {
+        return res.status(400).json({ success: false, message: 'Phone number already in use' });
+      }
+      user.phone = phone;
+    }
+    if (name) user.name = name;
+
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Profile updated',
+      data: {
+        id: user._id, name: user.name, email: user.email,
+        phone: user.phone, role: user.role, status: user.status,
+      },
+    });
+  } catch (error) {
+    console.error('Update profile error:', error);
+    res.status(500).json({ success: false, message: 'Server error updating profile' });
+  }
+};
+
+// @desc    Request a password-reset code (customer self-service)
+// @route   POST /api/auth/forgot-password
+// @access  Public
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Email is required' });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    // Always respond success to avoid leaking which emails exist.
+    if (!user) {
+      return res.json({ success: true, message: 'If that account exists, a reset code has been sent.' });
+    }
+
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    resetStore.set(user.email, { code, expiresAt: Date.now() + 15 * 60 * 1000 });
+
+    // Demo: log + return code. In production send via email/SMS and omit from the response.
+    console.log(`\n[PASSWORD RESET] Code for ${user.email}: ${code}\n`);
+
+    res.json({
+      success: true,
+      message: 'Reset code generated (demo).',
+      code, // DEMO ONLY — remove in production
+    });
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({ success: false, message: 'Server error requesting password reset' });
+  }
+};
+
+// @desc    Reset the password using the emailed code
+// @route   POST /api/auth/reset-password
+// @access  Public
+export const resetPassword = async (req, res) => {
+  try {
+    const { email, code, newPassword } = req.body;
+    if (!email || !code || !newPassword) {
+      return res.status(400).json({ success: false, message: 'email, code and newPassword are required' });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' });
+    }
+
+    const key = email.toLowerCase().trim();
+    const entry = resetStore.get(key);
+    if (!entry || Date.now() > entry.expiresAt) {
+      resetStore.delete(key);
+      return res.status(400).json({ success: false, message: 'Reset code expired or not requested' });
+    }
+    if (entry.code !== code) {
+      return res.status(400).json({ success: false, message: 'Invalid reset code' });
+    }
+
+    const user = await User.findOne({ email: key });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    user.passwordHash = newPassword; // pre-save hook hashes it
+    await user.save();
+    resetStore.delete(key);
+
+    await AuditLog.create({
+      userId: user._id,
+      action: 'PASSWORD_RESET',
+      module: 'AUTH',
+      details: { email: user.email },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+
+    res.json({ success: true, message: 'Password reset successfully. You can now log in.' });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ success: false, message: 'Server error resetting password' });
   }
 };
 

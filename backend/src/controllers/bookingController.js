@@ -396,6 +396,42 @@ export const getBookingHistory = async (req, res) => {
   }
 };
 
+// @desc    Get a single booking by id (owner customer, or scoped staff/admin)
+// @route   GET /api/bookings/:id
+// @access  Private
+export const getBookingById = async (req, res) => {
+  try {
+    const booking = await Booking.findById(req.params.id)
+      .populate('ashramId', 'name address rules')
+      .populate('roomId', 'name acType type')
+      .populate('customerId', 'name email phone');
+
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Booking not found' });
+    }
+
+    const customerId = booking.customerId?._id?.toString() || booking.customerId?.toString();
+    const isOwnerCustomer = customerId === req.user.id;
+
+    let allowed = isOwnerCustomer;
+    if (!allowed) {
+      // Staff/admin may view bookings for ashrams they are scoped to.
+      const ids = await scopedAshramIds(req.user, Ashram);
+      const ashramId = booking.ashramId?._id?.toString() || booking.ashramId?.toString();
+      allowed = ids === null || ids.some((id) => id.toString() === ashramId);
+    }
+
+    if (!allowed) {
+      return res.status(403).json({ success: false, message: 'Not authorized to view this booking' });
+    }
+
+    res.json({ success: true, data: booking });
+  } catch (error) {
+    console.error('Get booking by id error:', error);
+    res.status(500).json({ success: false, message: 'Error fetching booking' });
+  }
+};
+
 // @desc    Get bookings for dashboard lists (Owner, Staff, Manager views)
 // @route   GET /api/bookings/dashboard
 // @access  Private (Owner, Manager, Reception, Housekeeping)

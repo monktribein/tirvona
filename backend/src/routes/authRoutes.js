@@ -1,10 +1,13 @@
 import express from 'express';
-import { 
-  register, 
-  login, 
-  sendOTP, 
-  verifyOTP, 
+import {
+  register,
+  login,
+  sendOTP,
+  verifyOTP,
   getMe,
+  updateMe,
+  forgotPassword,
+  resetPassword,
   getOwnerStaff,
   createOwnerStaff,
   resetStaffPassword,
@@ -18,7 +21,10 @@ router.post('/register', register);
 router.post('/login', login);
 router.post('/otp/send', sendOTP);
 router.post('/otp/verify', verifyOTP);
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password', resetPassword);
 router.get('/me', protect, getMe);
+router.put('/me', protect, updateMe);
 
 // Owner Staff Management
 router.get('/owner-staff', protect, authorize('owner', 'super_admin'), getOwnerStaff);

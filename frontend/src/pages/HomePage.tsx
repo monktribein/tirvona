@@ -2,7 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
-import { ashramService } from '../services';
+import { ashramService, reviewService } from '../services';
+import { Reveal } from '../components/Reveal';
+import { DatePicker } from '../components/DatePicker';
 import heroBg from '../assets/rishikesh-tera-manzil-temple.jpg';
 import heroPng from '../assets/hero.png';
 import {
@@ -40,6 +42,7 @@ export const HomePage: React.FC = () => {
 
   const [ashrams, setAshrams] = useState<any[]>([]);
   const [offers, setOffers] = useState<any[]>([]);
+  const [feedbacks, setFeedbacks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'top_rated' | 'most_booked' | 'recent' | 'govt_recom'>('top_rated');
   const [searchTab, setSearchTab] = useState<'destinations' | 'stay' | 'darshan' | 'experiences'>('destinations');
@@ -48,6 +51,24 @@ export const HomePage: React.FC = () => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const autocompleteRef = useRef<HTMLDivElement>(null);
+  const [guestsOpen, setGuestsOpen] = useState(false);
+  const guestsRef = useRef<HTMLDivElement>(null);
+  const [activityOpen, setActivityOpen] = useState(false);
+  const activityRef = useRef<HTMLDivElement>(null);
+
+  const guestOptions = [
+    { value: '1', label: '1 Person' },
+    { value: '2', label: '1 - 2 People' },
+    { value: '3', label: '3 - 4 People' },
+    { value: '5', label: '5+ People' },
+  ];
+
+  const activityOptions = [
+    { value: '', label: 'Trip Type' },
+    { value: 'ashram', label: 'Ashram Stay' },
+    { value: 'dharamshala', label: 'Dharamshala' },
+    { value: 'temple', label: 'Temple Guest House' },
+  ];
 
   const carouselRef = useRef<HTMLDivElement>(null);
   const prashadRef = useRef<HTMLDivElement>(null);
@@ -57,9 +78,16 @@ export const HomePage: React.FC = () => {
   useEffect(() => {
     fetchStays();
     fetchOffers();
+    fetchFeedbacks();
     const handleClickOutside = (event: MouseEvent) => {
       if (autocompleteRef.current && !autocompleteRef.current.contains(event.target as Node)) {
         setShowSuggestions(false);
+      }
+      if (guestsRef.current && !guestsRef.current.contains(event.target as Node)) {
+        setGuestsOpen(false);
+      }
+      if (activityRef.current && !activityRef.current.contains(event.target as Node)) {
+        setActivityOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -77,45 +105,123 @@ export const HomePage: React.FC = () => {
     }
   };
 
+  const fetchFeedbacks = async () => {
+    try {
+      const res = await reviewService.recent();
+      if (res.data.success) setFeedbacks(res.data.data);
+    } catch (err) {
+      console.error('Fetch recent reviews error:', err);
+    }
+  };
+
   // Continuous silky smooth 60 FPS auto-scroll for all carousels (Destinations, Prasad, Accommodations, Feedback)
   useEffect(() => {
-    let animationFrameId: number;
-    const containers = [carouselRef.current, prashadRef.current, featuredRef.current, feedbackRef.current].filter(Boolean) as HTMLDivElement[];
-    if (containers.length === 0) return;
+    // Infinite auto-scrolling marquee for every horizontal card row.
+    // - seamless loop (items are duplicated; we wrap by one copy's width)
+    // - pauses on hover
+    // - manual mouse drag / native touch swipe while paused
+    // - resumes smoothly from wherever the user left it
+    const rows = [carouselRef.current, prashadRef.current, featuredRef.current, feedbackRef.current]
+      .filter(Boolean) as HTMLDivElement[];
+    if (rows.length === 0) return;
 
-    const hoveredMap = new Map<HTMLDivElement, boolean>();
+    const SPEED = 0.6; // px per frame (~36px/sec at 60fps)
 
-    containers.forEach(c => {
-      hoveredMap.set(c, false);
-      const onEnter = () => hoveredMap.set(c, true);
-      const onLeave = () => hoveredMap.set(c, false);
+    type RowState = {
+      pos: number; hovered: boolean; dragging: boolean; touching: boolean;
+      didDrag: boolean; startX: number; startScroll: number;
+    };
+    const st = new Map<HTMLDivElement, RowState>();
+    const disposers: Array<() => void> = [];
+
+    rows.forEach((c) => {
+      const s: RowState = {
+        pos: c.scrollLeft, hovered: false, dragging: false, touching: false,
+        didDrag: false, startX: 0, startScroll: 0,
+      };
+      st.set(c, s);
+
+      const onEnter = () => { s.hovered = true; };
+      const onLeave = () => { s.hovered = false; };
+
+      // Mouse drag-to-scroll (touch uses native scrolling)
+      const onPointerDown = (e: PointerEvent) => {
+        if (e.pointerType !== 'mouse') return;
+        s.dragging = true;
+        s.didDrag = false;
+        s.startX = e.pageX;
+        s.startScroll = c.scrollLeft;
+        c.style.userSelect = 'none';
+        const onMove = (ev: PointerEvent) => {
+          const dx = ev.pageX - s.startX;
+          if (Math.abs(dx) > 5) s.didDrag = true;
+          c.scrollLeft = s.startScroll - dx;
+          s.pos = c.scrollLeft;
+          ev.preventDefault();
+        };
+        const onUp = () => {
+          s.dragging = false;
+          s.pos = c.scrollLeft;
+          c.style.userSelect = '';
+          document.removeEventListener('pointermove', onMove);
+          document.removeEventListener('pointerup', onUp);
+        };
+        document.addEventListener('pointermove', onMove);
+        document.addEventListener('pointerup', onUp);
+      };
+
+      // Swallow the click that follows a real drag so a card doesn't navigate.
+      const onClickCapture = (e: MouseEvent) => {
+        if (s.didDrag) { e.preventDefault(); e.stopPropagation(); s.didDrag = false; }
+      };
+
+      const onTouchStart = () => { s.touching = true; };
+      const onTouchEnd = () => { s.touching = false; s.pos = c.scrollLeft; };
+
       c.addEventListener('mouseenter', onEnter);
       c.addEventListener('mouseleave', onLeave);
-      (c as any)._onEnter = onEnter;
-      (c as any)._onLeave = onLeave;
+      c.addEventListener('pointerdown', onPointerDown as EventListener);
+      c.addEventListener('click', onClickCapture as EventListener, true);
+      c.addEventListener('touchstart', onTouchStart, { passive: true });
+      c.addEventListener('touchend', onTouchEnd, { passive: true });
+      c.addEventListener('touchcancel', onTouchEnd, { passive: true });
+
+      disposers.push(() => {
+        c.removeEventListener('mouseenter', onEnter);
+        c.removeEventListener('mouseleave', onLeave);
+        c.removeEventListener('pointerdown', onPointerDown as EventListener);
+        c.removeEventListener('click', onClickCapture as EventListener, true);
+        c.removeEventListener('touchstart', onTouchStart);
+        c.removeEventListener('touchend', onTouchEnd);
+        c.removeEventListener('touchcancel', onTouchEnd);
+      });
     });
 
+    let animationFrameId: number;
     const step = () => {
-      containers.forEach(c => {
-        if (!hoveredMap.get(c) && c) {
-          if (c.scrollLeft + c.clientWidth >= c.scrollWidth - 2) {
-            c.scrollLeft = 0;
-          } else {
-            c.scrollLeft += 0.8;
-          }
+      rows.forEach((c) => {
+        const s = st.get(c);
+        if (!s) return;
+        const half = c.scrollWidth / 2; // width of one copy of the duplicated items
+        if (half <= 0) return;
+        if (s.hovered || s.dragging || s.touching) {
+          // Paused — mirror any manual scroll so we resume from here (no jump).
+          s.pos = c.scrollLeft;
+          return;
         }
+        let pos = s.pos + SPEED;
+        while (pos >= half) pos -= half; // wrap onto the identical 2nd copy → seamless
+        while (pos < 0) pos += half;
+        s.pos = pos;
+        c.scrollLeft = pos;
       });
       animationFrameId = requestAnimationFrame(step);
     };
-
     animationFrameId = requestAnimationFrame(step);
 
     return () => {
       cancelAnimationFrame(animationFrameId);
-      containers.forEach(c => {
-        if ((c as any)._onEnter) c.removeEventListener('mouseenter', (c as any)._onEnter);
-        if ((c as any)._onLeave) c.removeEventListener('mouseleave', (c as any)._onLeave);
-      });
+      disposers.forEach((d) => d());
     };
   }, [loading]);
 
@@ -204,51 +310,18 @@ export const HomePage: React.FC = () => {
     { name: 'Shirdi Sai Halwa', img: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=500&q=80', fallback: 'https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?auto=format&fit=crop&w=500&q=80' },
   ];
 
-  // Customer Feedback & Experiences data
-  const customerFeedbacks = [
-    {
-      name: 'Parmarth Niketan Ashram',
-      location: 'Rishikesh, Uttarakhand',
-      rating: 5,
-      comment: 'Booking our ashram stay in Rishikesh through Tirvona was so seamless. Pure vegetarian food & peaceful morning aarti!',
-      img: '/banner/ashram_rishikesh.png',
-    },
-    {
-      name: 'Vrindavan Divine Retreat',
-      location: 'Vrindavan, Uttar Pradesh',
-      rating: 5,
-      comment: 'Vrindavan ashram booking was effortless. Peaceful courtyard, beautiful garden view and daily meditation sessions!',
-      img: '/banner/ashram_vrindavan.png',
-    },
-    {
-      name: 'Kashi Ghat Ashram',
-      location: 'Varanasi, Uttar Pradesh',
-      rating: 5,
-      comment: 'Staying at Kashi Ashram overlooking the holy Ganges ghats was divine. Exceptional service and verified quality.',
-      img: '/banner/ashram_varanasi.png',
-    },
-    {
-      name: 'Himalayan Spiritual Hermitage',
-      location: 'Kedarnath Valley, Uttarakhand',
-      rating: 5,
-      comment: 'Our Himalayan circuit stay was super peaceful. Surrounded by sacred mountains, safe transport & verified hosts.',
-      img: '/banner/ashram_himalayas.png',
-    },
-    {
-      name: 'Shanti Kunj Retreat',
-      location: 'Haridwar, Uttarakhand',
-      rating: 5,
-      comment: 'Spiritual retreat organized flawlessly. Clean rooms, daily prayers, authentic food, and wonderful atmosphere.',
-      img: 'https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=600&q=80',
-    },
-    {
-      name: 'Sri Aurobindo Ashram',
-      location: 'Puducherry',
-      rating: 5,
-      comment: 'Peaceful stay with tranquil meditation gardens. Everything verified with daily prayer and sattvic food.',
-      img: 'https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?auto=format&fit=crop&w=600&q=80',
-    },
-  ];
+  // Customer feedback derived from real approved reviews.
+  const customerFeedbacks = feedbacks.map((r) => ({
+    name: r.ashramId?.name || 'Verified Stay',
+    location: r.ashramId?.address
+      ? [r.ashramId.address.city, r.ashramId.address.state].filter(Boolean).join(', ')
+      : '',
+    reviewer: r.customerId?.name || 'Verified Guest',
+    rating: Math.max(1, Math.round(r.rating?.overall || 5)),
+    ratingValue: (r.rating?.overall || 5).toFixed(1),
+    comment: r.comment,
+    img: r.ashramId?.images?.[0] || '/banner/ashram_rishikesh.png',
+  }));
 
   // 12-icon service strip aligned with Tirvona Theme & Routing
   const serviceIcons = [
@@ -380,18 +453,31 @@ export const HomePage: React.FC = () => {
               { id: 'stay', icon: <Bed size={14} />, label: 'Stay' },
               { id: 'darshan', icon: <Heart size={14} />, label: 'Darshan & Seva' },
               { id: 'experiences', icon: <Sparkles size={14} />, label: 'Experiences' },
-            ].map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setSearchTab(tab.id as any)}
-                className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-full text-xs font-bold transition-all cursor-pointer shrink-0 ${searchTab === tab.id
-                  ? 'bg-[#0A4DA6] text-white shadow-none'
-                  : 'text-gray-600 dark:text-gray-300 hover:text-[#0A4DA6] dark:hover:text-white bg-transparent'
-                  }`}
-              >
-                {tab.icon} {tab.label}
-              </button>
-            ))}
+            ].map(tab => {
+              const active = searchTab === tab.id;
+              return (
+                <motion.button
+                  key={tab.id}
+                  onClick={() => setSearchTab(tab.id as any)}
+                  whileTap={{ scale: 0.94 }}
+                  className={`relative flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-full text-xs font-bold cursor-pointer shrink-0 transition-colors duration-200 ${active
+                    ? 'text-white'
+                    : 'text-gray-600 dark:text-gray-300 hover:text-[#0A4DA6] dark:hover:text-white'
+                    }`}
+                >
+                  {active && (
+                    <motion.span
+                      layoutId="searchTabPill"
+                      className="absolute inset-0 rounded-full bg-[#0A4DA6] shadow-md shadow-[#0A4DA6]/30"
+                      transition={{ type: 'spring', stiffness: 420, damping: 34 }}
+                    />
+                  )}
+                  <motion.span layout className="relative z-10 flex items-center gap-2">
+                    {tab.icon} {tab.label}
+                  </motion.span>
+                </motion.button>
+              );
+            })}
           </div>
         </div>
 
@@ -437,21 +523,48 @@ export const HomePage: React.FC = () => {
             {/* Field 2: ALL ACTIVITY */}
             <div className="lg:col-span-2 relative lg:px-4 lg:border-r border-gray-200 dark:border-slate-800">
               <label className="block text-[10px] font-extrabold uppercase tracking-wider text-gray-400 mb-1.5 pl-1">All Activity</label>
-              <div className="relative flex items-center">
+              <div className="relative flex items-center" ref={activityRef}>
                 <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-[#0A4DA6] dark:text-amber-400 flex items-center justify-center shrink-0 mr-2">
                   <Bed size={15} />
                 </div>
-                <select
-                  value={stayType}
-                  onChange={e => setStayType(e.target.value)}
-                  className="w-full bg-transparent border-none p-0 text-xs sm:text-sm font-bold focus:outline-none cursor-pointer appearance-none text-[#0B192C] dark:text-white pr-4"
+                <button
+                  type="button"
+                  onClick={() => setActivityOpen(o => !o)}
+                  className="w-full text-left bg-transparent p-0 pr-5 text-xs sm:text-sm font-bold focus:outline-none cursor-pointer text-[#0B192C] dark:text-white truncate"
                 >
-                  <option value="">Trip Type</option>
-                  <option value="ashram">Ashram Stay</option>
-                  <option value="dharamshala">Dharamshala</option>
-                  <option value="temple">Temple Guest House</option>
-                </select>
-                <ChevronDown size={14} className="absolute right-0 text-gray-400 pointer-events-none" />
+                  {activityOptions.find(o => o.value === stayType)?.label || 'Trip Type'}
+                </button>
+                <ChevronDown size={14} className={`absolute right-0 text-gray-400 pointer-events-none transition-transform duration-200 ${activityOpen ? 'rotate-180' : ''}`} />
+
+                <AnimatePresence>
+                  {activityOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 6, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 6, scale: 0.98 }}
+                      transition={{ duration: 0.15, ease: 'easeOut' }}
+                      className="absolute left-0 top-full mt-3 w-full min-w-[176px] bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl shadow-xl shadow-[#0B192C]/10 overflow-hidden z-50 p-1.5"
+                    >
+                      {activityOptions.map(opt => {
+                        const active = stayType === opt.value;
+                        return (
+                          <button
+                            key={opt.value || 'any'}
+                            type="button"
+                            onClick={() => { setStayType(opt.value); setActivityOpen(false); }}
+                            className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center justify-between gap-2 transition-colors ${active
+                              ? 'bg-[#0A4DA6] text-white'
+                              : 'text-[#0B192C] dark:text-gray-200 hover:bg-[#0A4DA6]/10 hover:text-[#0A4DA6] dark:hover:text-white'
+                              }`}
+                          >
+                            <span>{opt.label}</span>
+                            {active && <CheckCircle size={13} className="shrink-0" />}
+                          </button>
+                        );
+                      })}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
 
@@ -462,12 +575,7 @@ export const HomePage: React.FC = () => {
                 <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-[#0A4DA6] dark:text-amber-400 flex items-center justify-center shrink-0 mr-2">
                   <Calendar size={15} />
                 </div>
-                <input
-                  type="date"
-                  value={checkIn}
-                  onChange={e => setCheckIn(e.target.value)}
-                  className="w-full bg-transparent border-none p-0 text-xs sm:text-sm font-bold focus:outline-none text-[#0B192C] dark:text-white cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
-                />
+                <DatePicker value={checkIn} onChange={setCheckIn} />
               </div>
             </div>
 
@@ -478,12 +586,7 @@ export const HomePage: React.FC = () => {
                 <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-[#0A4DA6] dark:text-amber-400 flex items-center justify-center shrink-0 mr-2">
                   <Calendar size={15} />
                 </div>
-                <input
-                  type="date"
-                  value={checkOut}
-                  onChange={e => setCheckOut(e.target.value)}
-                  className="w-full bg-transparent border-none p-0 text-xs sm:text-sm font-bold focus:outline-none text-[#0B192C] dark:text-white cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
-                />
+                <DatePicker value={checkOut} onChange={setCheckOut} min={checkIn} />
               </div>
             </div>
 
@@ -491,21 +594,48 @@ export const HomePage: React.FC = () => {
             <div className="lg:col-span-3 relative lg:pl-4 flex items-center justify-between gap-3">
               <div className="flex-1 min-w-0">
                 <label className="block text-[10px] font-extrabold uppercase tracking-wider text-gray-400 mb-1.5 pl-1">Guests</label>
-                <div className="relative flex items-center">
+                <div className="relative flex items-center" ref={guestsRef}>
                   <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-[#0A4DA6] dark:text-amber-400 flex items-center justify-center shrink-0 mr-2.5">
                     <Users size={16} />
                   </div>
-                  <select
-                    value={guests}
-                    onChange={e => setGuests(e.target.value)}
-                    className="w-full bg-transparent border-none p-0 text-xs sm:text-sm font-bold focus:outline-none cursor-pointer appearance-none text-[#0B192C] dark:text-white pr-4"
+                  <button
+                    type="button"
+                    onClick={() => setGuestsOpen(o => !o)}
+                    className="w-full text-left bg-transparent p-0 pr-5 text-xs sm:text-sm font-bold focus:outline-none cursor-pointer text-[#0B192C] dark:text-white truncate"
                   >
-                    <option value="1">1 Person</option>
-                    <option value="2">01 - 02 People</option>
-                    <option value="3">03 - 04 People</option>
-                    <option value="5">05+ People</option>
-                  </select>
-                  <ChevronDown size={14} className="absolute right-0 text-gray-400 pointer-events-none" />
+                    {guestOptions.find(o => o.value === guests)?.label || '1 Person'}
+                  </button>
+                  <ChevronDown size={14} className={`absolute right-0 text-gray-400 pointer-events-none transition-transform duration-200 ${guestsOpen ? 'rotate-180' : ''}`} />
+
+                  <AnimatePresence>
+                    {guestsOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 6, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 6, scale: 0.98 }}
+                        transition={{ duration: 0.15, ease: 'easeOut' }}
+                        className="absolute right-0 top-full mt-3 w-full min-w-[160px] bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl shadow-xl shadow-[#0B192C]/10 overflow-hidden z-50 p-1.5"
+                      >
+                        {guestOptions.map(opt => {
+                          const active = guests === opt.value;
+                          return (
+                            <button
+                              key={opt.value}
+                              type="button"
+                              onClick={() => { setGuests(opt.value); setGuestsOpen(false); }}
+                              className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center justify-between gap-2 transition-colors ${active
+                                ? 'bg-[#0A4DA6] text-white'
+                                : 'text-[#0B192C] dark:text-gray-200 hover:bg-[#0A4DA6]/10 hover:text-[#0A4DA6] dark:hover:text-white'
+                                }`}
+                            >
+                              <span>{opt.label}</span>
+                              {active && <CheckCircle size={13} className="shrink-0" />}
+                            </button>
+                          );
+                        })}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               </div>
 
@@ -569,70 +699,64 @@ export const HomePage: React.FC = () => {
 
       {/* ══════════════════════ FEATURED OFFERS & FESTIVAL SPECIALS BANNER ══════════════════════ */}
       {offers.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 my-8 lg:my-12">
-          <div className="bg-gradient-to-r from-[#0B192C] via-[#0A4DA6] to-[#0B192C] rounded-[32px] p-6 sm:p-10 text-white shadow-2xl relative overflow-hidden">
-            
-            {/* Ambient Background Glow */}
-            <div className="absolute -top-24 -right-24 w-72 h-72 bg-[#E58C28]/25 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-blue-500/25 rounded-full blur-3xl pointer-events-none" />
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 mb-12 lg:mb-20 mt-6">
+          {/* Section Header matching Popular Destinations */}
+          <div className="text-center space-y-2 mb-8 lg:mb-10">
+            <p className="font-['Kalam'] text-base sm:text-lg font-bold text-[#E58C28]">
+              Live Kumbh & Festival Specials
+            </p>
+            <h2 className="font-black text-[#0B192C] dark:text-white leading-tight" style={{ fontSize: 'clamp(1.4rem, 4vw, 2.25rem)' }}>
+              Featured Pilgrimage Deals &amp;
+              <span className="bg-[#0A4DA6] text-white px-3 py-0.5 rounded-xl text-base sm:text-xl font-black inline-block align-middle mx-1 shadow-sm">Special</span>
+              Offers
+            </h2>
+            <Link
+              to="/search"
+              className="inline-flex items-center gap-1.5 text-xs font-black text-[#0A4DA6] dark:text-amber-300 hover:text-[#E58C28] transition-all pt-1"
+            >
+              <span>Explore All Ashrams</span>
+              <ChevronRight size={14} />
+            </Link>
+          </div>
 
-            <div className="relative z-10 space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="space-y-1">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-black border border-amber-500/30 backdrop-blur-md">
-                    <Sparkles size={14} className="animate-pulse text-amber-400" /> Live Kumbh & Festival Specials
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-5">
+            {offers.slice(0, 3).map((offer) => (
+              <div
+                key={offer._id}
+                className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-5 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between space-y-4 group"
+              >
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="px-2.5 py-0.5 rounded-full bg-[#E58C28] text-white text-[10px] font-black uppercase tracking-wider">
+                      {offer.offerType}
+                    </span>
+                    <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-500/30">
+                      {offer.discountPercentage}% {offer.isRateUpgrade ? 'Rate Upgrade' : 'OFF'}
+                    </span>
                   </div>
-                  <h2 className="text-2xl sm:text-3xl font-black">Featured Pilgrimage Deals & Special Offers</h2>
+
+                  <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white group-hover:text-[#0A4DA6] dark:group-hover:text-amber-300 transition-colors">
+                    {offer.title}
+                  </h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed line-clamp-2">
+                    {offer.bannerText}
+                  </p>
                 </div>
-                <Link
-                  to="/search"
-                  className="text-xs font-black text-amber-300 hover:text-white flex items-center gap-1.5 transition-all self-start sm:self-auto"
-                >
-                  <span>Explore All Ashrams</span>
-                  <ChevronRight size={14} />
-                </Link>
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {offers.slice(0, 3).map((offer) => (
-                  <div
-                    key={offer._id}
-                    className="bg-white/10 backdrop-blur-md border border-white/15 rounded-[24px] p-5 flex flex-col justify-between space-y-4 hover:bg-white/15 transition-all group"
-                  >
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="px-2.5 py-0.5 rounded-full bg-[#E58C28] text-white text-[10px] font-black uppercase tracking-wider">
-                          {offer.offerType}
-                        </span>
-                        <span className="text-xs font-black text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-500/30">
-                          {offer.discountPercentage}% {offer.isRateUpgrade ? 'Rate Upgrade' : 'OFF'}
-                        </span>
-                      </div>
-
-                      <h3 className="font-extrabold text-base text-white group-hover:text-amber-300 transition-colors">
-                        {offer.title}
-                      </h3>
-                      <p className="text-xs text-gray-200 leading-relaxed line-clamp-2">
-                        {offer.bannerText}
-                      </p>
-                    </div>
-
-                    <div className="pt-3 border-t border-white/10 flex items-center justify-between">
-                      <div className="text-[10px] font-mono font-bold text-amber-200">
-                        PROMO: <span className="bg-white/20 px-1.5 py-0.5 rounded font-black">{offer.promoCode}</span>
-                      </div>
-                      <button
-                        onClick={() => navigate(`/search?destination=${encodeURIComponent(offer.ashramId?.address?.city || '')}`)}
-                        className="px-3.5 py-1.5 rounded-full bg-white text-[#0B192C] hover:bg-amber-400 font-extrabold text-xs transition-all flex items-center gap-1 cursor-pointer shadow-md"
-                      >
-                        <span>Book Now</span>
-                        <ArrowRight size={12} />
-                      </button>
-                    </div>
+                <div className="pt-3 border-t border-gray-100 dark:border-white/10 flex items-center justify-between">
+                  <div className="text-[10px] font-mono font-bold text-gray-400">
+                    PROMO: <span className="bg-gray-100 dark:bg-white/10 text-[#0B192C] dark:text-amber-200 px-1.5 py-0.5 rounded font-black">{offer.promoCode}</span>
                   </div>
-                ))}
+                  <button
+                    onClick={() => navigate(`/search?destination=${encodeURIComponent(offer.ashramId?.address?.city || '')}`)}
+                    className="px-3.5 py-1.5 rounded-full bg-[#0A4DA6] text-white hover:bg-[#083b80] font-extrabold text-xs transition-all flex items-center gap-1 cursor-pointer shadow-md"
+                  >
+                    <span>Book Now</span>
+                    <ArrowRight size={12} />
+                  </button>
+                </div>
               </div>
-            </div>
+            ))}
           </div>
         </section>
       )}
@@ -640,7 +764,7 @@ export const HomePage: React.FC = () => {
       {/* ══════════════════════ EVERYTHING YOU NEED ══════════════════════ */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 mb-10 lg:mb-20 mt-6 lg:mt-0">
         {/* Section Header matching Popular Destinations */}
-        <div className="text-center space-y-2 mb-8 lg:mb-10">
+        <Reveal className="text-center space-y-2 mb-8 lg:mb-10">
           <p className="font-['Kalam'] text-base sm:text-lg font-bold text-[#E58C28]">
             What We Offer
           </p>
@@ -648,7 +772,7 @@ export const HomePage: React.FC = () => {
             Everything You Need For A Blessed Journey<br />
             Explore <span className="bg-[#0A4DA6] text-white px-3 py-0.5 rounded-xl text-base sm:text-xl font-black inline-block align-middle mx-1 shadow-sm">100+</span> Sacred Services
           </h2>
-        </div>
+        </Reveal>
 
         {/* Service Cards: 1 col mobile, 2 col tablet, 3 col desktop */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
@@ -763,20 +887,27 @@ export const HomePage: React.FC = () => {
               Discover The Amazing Sacred Places<br />
               Around India, <span className="bg-[#0A4DA6] text-white px-3 py-0.5 rounded-xl text-base sm:text-xl font-black inline-block align-middle mx-1 shadow-md">50+</span> Cities
             </h2>
+            <button
+              type="button"
+              onClick={() => navigate('/search')}
+              className="mt-3 inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-white text-[#0A4DA6] hover:bg-gray-100 text-xs font-extrabold shadow-lg transition-all cursor-pointer"
+            >
+              Explore All Destinations <ArrowRight size={14} />
+            </button>
           </div>
         </div>
 
         {/* Modern Rounded Rectangle Cards Grid/Carousel */}
         <div
           ref={carouselRef}
-          className="flex gap-4 sm:gap-6 overflow-x-auto pb-6 pt-2 scrollbar-none snap-x snap-mandatory -mx-4 sm:mx-0 px-4 sm:px-0 justify-start"
+          className="flex gap-4 sm:gap-6 overflow-x-auto pb-6 pt-2 scrollbar-none -mx-4 sm:mx-0 px-4 sm:px-0 justify-start"
           style={{ scrollbarWidth: 'none' }}
         >
-          {sacredDestinations.map((item, idx) => (
+          {[...sacredDestinations, ...sacredDestinations].map((item, idx) => (
             <div
               key={idx}
               onClick={() => navigate(`/search?destination=${encodeURIComponent(item.name)}${checkIn ? `&checkIn=${checkIn}` : ''}${checkOut ? `&checkOut=${checkOut}` : ''}${guests ? `&guests=${guests}` : ''}`)}
-              className="flex-shrink-0 snap-start relative group cursor-pointer"
+              className="flex-shrink-0 relative group cursor-pointer"
               style={{ width: 'clamp(200px, 48vw, 220px)' }}
             >
               {/* Modern Rounded Rectangle Card */}
@@ -807,6 +938,7 @@ export const HomePage: React.FC = () => {
             </div>
           ))}
         </div>
+
       </section>
 
       {/* ══════════════════════ UPCOMING ARDH KUMBH FESTIVAL BANNER (100% Full Width Edge-to-Edge Hero Banner) ══════════════════════ */}
@@ -904,20 +1036,27 @@ export const HomePage: React.FC = () => {
               Sacred Mahaprasad From Holy Ashrams<br />
               Explore <span className="bg-[#0A4DA6] text-white px-3 py-0.5 rounded-xl text-base sm:text-xl font-black inline-block align-middle mx-1 shadow-md">50+</span> Blessed Prasad Items
             </h2>
+            <button
+              type="button"
+              onClick={() => navigate('/search?query=Prasad')}
+              className="mt-3 inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-white text-[#0A4DA6] hover:bg-gray-100 text-xs font-extrabold shadow-lg transition-all cursor-pointer"
+            >
+              Explore All Prasad <ArrowRight size={14} />
+            </button>
           </div>
         </div>
 
         {/* Modern Rounded Rectangle Cards Carousel showing ONLY title */}
         <div
           ref={prashadRef}
-          className="flex gap-4 sm:gap-6 overflow-x-auto pb-6 pt-2 scrollbar-none snap-x snap-mandatory -mx-4 sm:mx-0 px-4 sm:px-0 justify-start"
+          className="flex gap-4 sm:gap-6 overflow-x-auto pb-6 pt-2 scrollbar-none -mx-4 sm:mx-0 px-4 sm:px-0 justify-start"
           style={{ scrollbarWidth: 'none' }}
         >
-          {popularPrashad.map((item, idx) => (
+          {[...popularPrashad, ...popularPrashad].map((item, idx) => (
             <div
               key={idx}
               onClick={() => navigate(`/search?query=${encodeURIComponent(item.name)}`)}
-              className="flex-shrink-0 snap-start relative group cursor-pointer"
+              className="flex-shrink-0 relative group cursor-pointer"
               style={{ width: 'clamp(200px, 48vw, 220px)' }}
             >
               {/* Modern Rounded Rectangle Card */}
@@ -945,6 +1084,7 @@ export const HomePage: React.FC = () => {
             </div>
           ))}
         </div>
+
       </section>
 
       {/* ══════════════════════ FEATURED RETREATS (Matching Codebase Design) ══════════════════════ */}
@@ -974,6 +1114,13 @@ export const HomePage: React.FC = () => {
             <p className="text-[11px] text-gray-200 font-extrabold uppercase tracking-wider pt-1 drop-shadow-md">
               Govt Verified accommodations with daily prayer and vegetarian food
             </p>
+            <button
+              type="button"
+              onClick={() => navigate('/search')}
+              className="mt-3 inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-white text-[#0A4DA6] hover:bg-gray-100 text-xs font-extrabold shadow-lg transition-all cursor-pointer"
+            >
+              Explore All Ashrams <ArrowRight size={14} />
+            </button>
           </div>
         </div>
 
@@ -1004,13 +1151,13 @@ export const HomePage: React.FC = () => {
             ))}
           </div>
         ) : (
-          <div ref={featuredRef} className="flex gap-4 sm:gap-6 overflow-x-auto pb-6 pt-2 scrollbar-none snap-x snap-mandatory -mx-4 sm:mx-0 px-4 sm:px-0 justify-start" style={{ scrollbarWidth: 'none' }}>
-            {getTabbedAshrams().map(ashram => (
+          <div ref={featuredRef} className="flex gap-4 sm:gap-6 overflow-x-auto pb-6 pt-2 scrollbar-none -mx-4 sm:mx-0 px-4 sm:px-0 justify-start" style={{ scrollbarWidth: 'none' }}>
+            {[...getTabbedAshrams(), ...getTabbedAshrams()].map((ashram, idx) => (
               <motion.div
-                key={ashram._id}
+                key={`${ashram._id}-${idx}`}
                 layout
                 onClick={() => navigate(`/ashram/${ashram._id}${checkIn || checkOut ? `?checkIn=${checkIn}&checkOut=${checkOut}&guests=${guests}` : ''}`)}
-                className="flex-shrink-0 snap-start relative group cursor-pointer"
+                className="flex-shrink-0 relative group cursor-pointer"
                 style={{ width: 'clamp(200px, 48vw, 220px)' }}
               >
                 {/* Modern Rounded Rectangle Card */}
@@ -1029,6 +1176,12 @@ export const HomePage: React.FC = () => {
                     <span className="absolute top-3 left-3 bg-[#0A4DA6] text-white text-[10px] sm:text-[11px] font-extrabold px-3 py-1 rounded-full shadow-sm">
                       ₹{ashram.lowestNightPrice ?? 150} / night
                     </span>
+                    {/* Rating Badge — only when the ashram has real reviews */}
+                    {ashram.rating?.count > 0 && (
+                      <span className="absolute top-3 right-3 bg-white/95 dark:bg-[#0B192C]/90 text-[#0B192C] dark:text-white text-[10px] font-extrabold px-2 py-1 rounded-full shadow-sm flex items-center gap-1 backdrop-blur-sm">
+                        <Star size={11} className="text-[#D4AF37] fill-[#D4AF37]" /> {ashram.rating.average}
+                      </span>
+                    )}
                   </div>
 
                   {/* Centered Bottom Title Area */}
@@ -1039,6 +1192,15 @@ export const HomePage: React.FC = () => {
                     <p className="text-[11px] text-gray-400 font-bold mt-1 text-center">
                       {ashram.address?.city}, {ashram.address?.state}
                     </p>
+                    {ashram.rating?.count > 0 ? (
+                      <div className="flex items-center justify-center gap-1 mt-1.5">
+                        <Star size={11} className="text-[#D4AF37] fill-[#D4AF37]" />
+                        <span className="text-[11px] font-extrabold text-[#0B192C] dark:text-white">{ashram.rating.average}</span>
+                        <span className="text-[10px] text-gray-400 font-semibold">({ashram.rating.count} reviews)</span>
+                      </div>
+                    ) : (
+                      <span className="text-[10px] text-gray-400 font-semibold mt-1.5">No reviews yet</span>
+                    )}
                   </div>
 
                 </div>
@@ -1056,14 +1218,14 @@ export const HomePage: React.FC = () => {
         <div className="bg-[#F4F8FC] dark:bg-[#071322]/60 rounded-[32px] py-10 sm:py-14 px-4 sm:px-8 border border-blue-100/60 dark:border-blue-900/30 shadow-sm relative overflow-hidden">
 
           {/* Section Header */}
-          <div className="text-center space-y-2 max-w-2xl mx-auto relative z-10">
+          <Reveal className="text-center space-y-2 max-w-2xl mx-auto relative z-10">
             <p className="font-['Kalam'] text-base sm:text-lg font-bold text-[#E58C28]">
               Latest Blog & News
             </p>
             <h2 className="font-black text-[#0B192C] dark:text-white leading-tight" style={{ fontSize: 'clamp(1.4rem, 4vw, 2.25rem)' }}>
               Latest News & Spiritual Articles from<br />Our Blog Posts
             </h2>
-          </div>
+          </Reveal>
 
           {/* 3 Blog Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto mt-8 sm:mt-10 relative z-10">
@@ -1197,10 +1359,11 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* ══════════════════════ CUSTOMER FEEDBACK & EXPERIENCES SLIDER ══════════════════════ */}
+      {customerFeedbacks.length > 0 && (
       <section className="max-w-7xl mx-auto px-4 sm:px-6 mb-12 lg:mb-20 space-y-8">
 
         {/* Section Header */}
-        <div className="text-center space-y-2">
+        <Reveal className="text-center space-y-2">
           <p className="font-['Kalam'] text-base sm:text-lg font-bold text-[#E58C28]">
             Customer Feedback & Stories
           </p>
@@ -1208,18 +1371,18 @@ export const HomePage: React.FC = () => {
             Loved By Thousands Of Pilgrims<br />
             Explore <span className="bg-[#E58C28] text-white px-3 py-0.5 rounded-xl text-base sm:text-xl font-black inline-block align-middle mx-1 shadow-sm">4.9/5 ★</span> Real Experiences
           </h2>
-        </div>
+        </Reveal>
 
         {/* Smooth 60FPS Sliding Gallery Carousel (Matching Reference Screenshot) */}
         <div
           ref={feedbackRef}
-          className="flex gap-4 sm:gap-6 overflow-x-auto pb-6 pt-2 scrollbar-none snap-x snap-mandatory -mx-4 sm:mx-0 px-4 sm:px-0 justify-start"
+          className="flex gap-4 sm:gap-6 overflow-x-auto pb-6 pt-2 scrollbar-none -mx-4 sm:mx-0 px-4 sm:px-0 justify-start"
           style={{ scrollbarWidth: 'none' }}
         >
-          {customerFeedbacks.map((fb, idx) => (
+          {[...customerFeedbacks, ...customerFeedbacks].map((fb, idx) => (
             <div
               key={idx}
-              className="flex-shrink-0 snap-start relative group cursor-pointer"
+              className="flex-shrink-0 relative group cursor-pointer"
               style={{ width: 'clamp(240px, 50vw, 280px)' }}
             >
               {/* Rounded Image Card Container (Matching Reference Screenshot Aspect & Border Radius) */}
@@ -1236,29 +1399,30 @@ export const HomePage: React.FC = () => {
                 {/* Dark Gradient Overlay for Text Readability */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
 
-                {/* Overlay Card Content (Customer Quote, Star Rating, Name) */}
-                <div className="absolute inset-x-0 bottom-0 p-5 space-y-2 text-white z-10">
-                  {/* Star Rating Badge */}
+                {/* Overlay Card Content — fixed layout: rating top, review middle, user bottom */}
+                <div className="absolute inset-0 p-5 flex flex-col justify-between text-white z-10">
+                  {/* Top: Star Rating Badge */}
                   <div className="flex items-center gap-1 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full w-fit text-[#FFD700] text-xs font-bold border border-white/20 shadow-xs">
                     {[...Array(fb.rating)].map((_, i) => (
                       <Star key={i} size={11} className="fill-[#FFD700] text-[#FFD700]" />
                     ))}
-                    <span className="text-white text-[10px] ml-1 font-extrabold">5.0</span>
+                    <span className="text-white text-[10px] ml-1 font-extrabold">{fb.ratingValue}</span>
                   </div>
 
-                  {/* Customer Feedback Comment */}
-                  <p className="text-xs text-gray-100 font-medium leading-relaxed line-clamp-3 drop-shadow-xs italic">
-                    "{fb.comment}"
-                  </p>
+                  {/* Bottom: review text (fixed height) + user info */}
+                  <div className="space-y-3">
+                    <p className="text-xs text-gray-100 font-medium leading-relaxed italic line-clamp-4 min-h-[4.5rem] drop-shadow-xs">
+                      "{fb.comment}"
+                    </p>
 
-                  {/* Customer Info */}
-                  <div className="pt-2 border-t border-white/20 flex items-center justify-between">
-                    <div>
-                      <h4 className="font-extrabold text-sm text-white leading-none">{fb.name}</h4>
-                      <p className="text-[10px] text-gray-300 font-semibold mt-1">{fb.location}</p>
-                    </div>
-                    <div className="w-7 h-7 rounded-full bg-[#0A4DA6] text-white flex items-center justify-center shadow-xs">
-                      <CheckCircle size={14} className="stroke-[2.5]" />
+                    <div className="pt-3 border-t border-white/20 flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <h4 className="font-extrabold text-sm text-white leading-none truncate">{fb.reviewer}</h4>
+                        <p className="text-[10px] text-gray-300 font-semibold mt-1 truncate">{fb.name}{fb.location ? ` · ${fb.location}` : ''}</p>
+                      </div>
+                      <div className="w-7 h-7 rounded-full bg-[#0A4DA6] text-white flex items-center justify-center shadow-xs shrink-0">
+                        <CheckCircle size={14} className="stroke-[2.5]" />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1269,6 +1433,7 @@ export const HomePage: React.FC = () => {
         </div>
 
       </section>
+      )}
 
 
 

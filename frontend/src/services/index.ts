@@ -45,6 +45,7 @@ export const bookingService = {
 export const reviewService = {
   create: (data: unknown) => api.post('/reviews', data),
   forAshram: (ashramId: string) => api.get(`/reviews/ashram/${ashramId}`),
+  recent: () => api.get('/reviews/recent'),
 };
 
 // ── Support ──────────────────────────────────────────────────────────────────

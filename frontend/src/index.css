@@ -102,6 +102,47 @@ h1, h2, h3, h4, h5, h6 {
   letter-spacing: -0.025em;
 }
 
+/* Smooth, GPU-friendly default transitions for interactive elements.
+   Explicit Tailwind transition-* classes still win where they're set. */
+a,
+button,
+[role="button"] {
+  transition: color 0.2s ease, background-color 0.2s ease,
+    border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+/* Brand-colour native form controls (select dropdown highlight, checkboxes, etc.) */
+select,
+input[type="checkbox"],
+input[type="radio"],
+input[type="date"] {
+  accent-color: #0A4DA6;
+}
+option:checked,
+option:hover {
+  background-color: #0A4DA6;
+  color: #ffffff;
+}
+
+/* Hint the compositor for elements that animate transform/opacity a lot */
+.gpu {
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Respect users who prefer reduced motion (accessibility) */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 /* Custom scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
@@ -144,5 +185,45 @@ h1, h2, h3, h4, h5, h6 {
 .premium-card-hover:hover {
   transform: translateY(-4px);
   box-shadow: 0 12px 30px rgba(11, 25, 44, 0.06);
+}
+
+/* Hide scrollbars on horizontal carousels */
+.scrollbar-none::-webkit-scrollbar { display: none; }
+.scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Loading skeleton shimmer */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background-color: #eef2f7;
+}
+.dark .skeleton {
+  background-color: #1e293b;
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0,
+    rgba(255, 255, 255, 0.55) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+.dark .skeleton::after {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+}
+@keyframes skeleton-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
 }
 

@@ -6,6 +6,7 @@ import { NotificationProvider } from './contexts/NotificationContext';
 // Layouts (eager — always needed)
 import PublicLayout from './layouts/PublicLayout';
 import DashboardLayout from './layouts/DashboardLayout';
+import PageLoader from './components/PageLoader';
 
 // Pages (lazy — code-split so each route loads its own chunk)
 const HomePage = lazy(() => import('./pages/HomePage'));
@@ -56,7 +57,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; allowedRoles?: strin
   const { user, loading } = useAuth();
 
   if (loading) {
-    return <div className="min-h-screen bg-background flex items-center justify-center font-bold">Loading session...</div>;
+    return <PageLoader />;
   }
 
   if (!user) {
@@ -87,7 +88,7 @@ const AppContent: React.FC = () => {
   return (
     <BrowserRouter>
       <ScrollToTop />
-      <Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center font-bold text-sm text-gray-400">Loading…</div>}>
+      <Suspense fallback={<PageLoader />}>
       <Routes>
         {/* Public Routes */}
         <Route element={<PublicLayout />}>
