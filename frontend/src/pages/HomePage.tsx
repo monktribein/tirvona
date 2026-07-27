@@ -742,15 +742,6 @@ export const HomePage: React.FC = () => {
             <h2 className="font-black text-white leading-tight drop-shadow-lg" style={{ fontSize: 'clamp(1.4rem, 4vw, 2.35rem)' }}>
               Featured Pilgrimage Deals &amp; <span className="bg-[#0A4DA6] text-white px-3 py-0.5 rounded-xl text-base sm:text-xl font-black inline-block align-middle mx-1 shadow-md">Special</span> Offers
             </h2>
-<<<<<<< Updated upstream
-            <Link
-              to="/offers"
-              className="inline-flex items-center gap-1.5 text-xs font-black text-[#0A4DA6] dark:text-amber-300 hover:text-[#E58C28] transition-all pt-1"
-            >
-              <span>Explore All Offers</span>
-              <ChevronRight size={14} />
-            </Link>
-=======
             <button
               type="button"
               onClick={() => navigate('/offers')}
@@ -758,7 +749,6 @@ export const HomePage: React.FC = () => {
             >
               Explore All Offers <ArrowRight size={14} />
             </button>
->>>>>>> Stashed changes
           </div>
         </div>
 
@@ -804,14 +794,8 @@ export const HomePage: React.FC = () => {
 
             return (
               <div
-<<<<<<< Updated upstream
-                key={offer._id}
-                className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-5 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between space-y-4 group cursor-pointer"
-                onClick={() => navigate(`/offers?offer=${offer._id}`)}
-=======
                 key={offer._id || idx}
                 className="w-full bg-white dark:bg-[#0B192C] rounded-3xl overflow-hidden border border-gray-100 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col hover:-translate-y-1 group"
->>>>>>> Stashed changes
               >
                 {/* Top Image Container matching other section cards */}
                 <div className="relative overflow-hidden bg-gray-100 dark:bg-slate-900" style={{ height: 'clamp(160px, 35vw, 180px)' }}>
@@ -854,16 +838,6 @@ export const HomePage: React.FC = () => {
                       <ArrowRight size={12} />
                     </button>
                   </div>
-<<<<<<< Updated upstream
-                  <button
-                    onClick={(e) => { e.stopPropagation(); navigate(`/offers?offer=${offer._id}`); }}
-                    className="px-3.5 py-1.5 rounded-full bg-[#0A4DA6] text-white hover:bg-[#083b80] font-extrabold text-xs transition-all flex items-center gap-1 cursor-pointer shadow-md"
-                  >
-                    <span>Book Now</span>
-                    <ArrowRight size={12} />
-                  </button>
-=======
->>>>>>> Stashed changes
                 </div>
               </div>
             );
