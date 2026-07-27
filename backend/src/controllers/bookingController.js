@@ -102,6 +102,17 @@ export const createBooking = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Room category not found' });
     }
 
+    // B1: reject non-positive quantities and mismatched room/ashram — prevents
+    // negative-price bookings and bookings that reference the wrong ashram.
+    const guests = parseInt(guestsCount, 10);
+    const roomsWanted = parseInt(roomsBookedCount, 10);
+    if (!Number.isInteger(guests) || guests < 1 || !Number.isInteger(roomsWanted) || roomsWanted < 1) {
+      return res.status(400).json({ success: false, message: 'guestsCount and roomsBookedCount must be positive integers' });
+    }
+    if (!ashramId || room.ashramId.toString() !== ashramId.toString()) {
+      return res.status(400).json({ success: false, message: 'Room does not belong to the specified ashram' });
+    }
+
     const startDate = new Date(checkInDate);
     const endDate = new Date(checkOutDate);
     
@@ -175,7 +186,8 @@ export const createBooking = async (req, res) => {
         servicesPrice += price;
       }
       if (services.donation && services.donation.amount) {
-        bookingServices.donation.amount = parseFloat(services.donation.amount);
+        // B1: never allow a negative donation (would reduce the total).
+        bookingServices.donation.amount = Math.max(0, parseFloat(services.donation.amount) || 0);
       }
     }
 
@@ -553,6 +565,12 @@ export const verifyCheckin = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Booking not found' });
     }
 
+    // C5: staff may only check in bookings for ashrams they are scoped to.
+    const scopedIds = await scopedAshramIds(req.user, Ashram);
+    if (scopedIds !== null && !scopedIds.some((id) => id.toString() === booking.ashramId.toString())) {
+      return res.status(403).json({ success: false, message: 'Not authorized for this ashram' });
+    }
+
     if (booking.checkInCode !== checkInCode) {
       return res.status(400).json({ success: false, message: 'Incorrect dynamic check-in code' });
     }
@@ -599,6 +617,12 @@ export const verifyCheckout = async (req, res) => {
 
     if (!booking) {
       return res.status(404).json({ success: false, message: 'Booking not found' });
+    }
+
+    // C5: staff may only check out bookings for ashrams they are scoped to.
+    const scopedIds = await scopedAshramIds(req.user, Ashram);
+    if (scopedIds !== null && !scopedIds.some((id) => id.toString() === booking.ashramId.toString())) {
+      return res.status(403).json({ success: false, message: 'Not authorized for this ashram' });
     }
 
     if (booking.status !== 'checked_in') {
@@ -654,8 +678,15 @@ export const cancelBooking = async (req, res) => {
     }
 
     const isCustomer = booking.customerId.toString() === req.user.id;
-    if (!isCustomer && req.user.role !== 'owner' && req.user.role !== 'manager' && req.user.role !== 'super_admin') {
-      return res.status(403).json({ success: false, message: 'Not authorized to cancel this booking' });
+    if (!isCustomer) {
+      if (req.user.role !== 'owner' && req.user.role !== 'manager' && req.user.role !== 'super_admin') {
+        return res.status(403).json({ success: false, message: 'Not authorized to cancel this booking' });
+      }
+      // C5: owners/managers may only cancel bookings for ashrams they are scoped to.
+      const scopedIds = await scopedAshramIds(req.user, Ashram);
+      if (scopedIds !== null && !scopedIds.some((id) => id.toString() === booking.ashramId.toString())) {
+        return res.status(403).json({ success: false, message: 'Not authorized for this ashram' });
+      }
     }
 
     if (booking.status === 'cancelled') {

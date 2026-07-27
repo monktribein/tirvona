@@ -1,6 +1,7 @@
 import BlogPost from '../models/BlogPost.js';
 import BlogAuthor from '../models/BlogAuthor.js';
 import BlogComment from '../models/BlogComment.js';
+import { escapeRegex } from '../utils/sanitize.js';
 
 // Helper to extract YouTube Video ID
 const extractYoutubeId = (url) => {
@@ -23,16 +24,18 @@ export const getBlogPosts = async (req, res) => {
       filter.contentType = contentType;
     }
     if (search) {
+      const safe = escapeRegex(search); // literal match, no regex injection / ReDoS
       filter.$or = [
-        { title: { $regex: search, $options: 'i' } },
-        { excerpt: { $regex: search, $options: 'i' } },
-        { tags: { $in: [new RegExp(search, 'i')] } },
+        { title: { $regex: safe, $options: 'i' } },
+        { excerpt: { $regex: safe, $options: 'i' } },
+        { tags: { $in: [new RegExp(safe, 'i')] } },
       ];
     }
 
     const posts = await BlogPost.find(filter)
       .populate('authorId', 'name photo designation organization verified bio')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
     return res.status(200).json({ success: true, count: posts.length, data: posts });
   } catch (error) {
@@ -85,6 +88,10 @@ export const getBlogPostBySlug = async (req, res) => {
 export const addBlogComment = async (req, res) => {
   try {
     const { userName, userEmail, comment, rating } = req.body;
+    // Validate & bound the public (unauthenticated) input to curb spam / oversized payloads.
+    if (typeof comment !== 'string' || !comment.trim() || comment.length > 2000) {
+      return res.status(400).json({ success: false, message: 'Comment is required and must be under 2000 characters' });
+    }
     const post = await BlogPost.findOne({ slug: req.params.slug });
     if (!post) {
       return res.status(404).json({ success: false, message: 'Post not found' });
@@ -92,10 +99,10 @@ export const addBlogComment = async (req, res) => {
 
     const newComment = await BlogComment.create({
       postId: post._id,
-      userName: userName || 'Devotee Pilgrim',
-      userEmail: userEmail || 'pilgrim@tirvona.com',
-      comment,
-      rating: rating || 5,
+      userName: (typeof userName === 'string' ? userName.trim().slice(0, 80) : '') || 'Devotee Pilgrim',
+      userEmail: (typeof userEmail === 'string' ? userEmail.trim().slice(0, 120) : '') || 'pilgrim@tirvona.com',
+      comment: comment.trim().slice(0, 2000),
+      rating: Math.min(5, Math.max(1, parseInt(rating, 10) || 5)),
     });
 
     return res.status(201).json({ success: true, message: 'Comment submitted successfully!', data: newComment });

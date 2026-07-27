@@ -15,6 +15,13 @@ export const protect = async (req, res, next) => {
         return res.status(401).json({ success: false, message: 'User not found' });
       }
 
+      // Token revocation: a bumped tokenVersion (e.g. after a password reset)
+      // invalidates previously-issued tokens. Legacy tokens without `tv` are
+      // grandfathered against the current version (both default to 0).
+      if ((decoded.tv || 0) !== (user.tokenVersion || 0)) {
+        return res.status(401).json({ success: false, message: 'Session expired. Please log in again.' });
+      }
+
       if (user.status === 'suspended') {
         return res.status(403).json({ success: false, message: 'Your account is suspended. Contact support.' });
       }
@@ -43,6 +50,16 @@ export const restrictTo = (...allowedRoles) => {
       return res.status(403).json({
         success: false,
         message: `Forbidden: Role '${req.user.role}' is not authorized to access this resource`,
+      });
+    }
+
+    // C1: role-gated access requires an ACTIVE account. Self-registered owners
+    // remain 'pending' until a Super Admin approves them and must not reach any
+    // owner/staff/admin API before then. (Suspended is already blocked earlier.)
+    if (req.user.status && req.user.status !== 'active') {
+      return res.status(403).json({
+        success: false,
+        message: 'Your account is pending approval and cannot access this resource yet.',
       });
     }
     next();

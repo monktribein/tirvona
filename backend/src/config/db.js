@@ -9,11 +9,17 @@ try {
   // System DNS fallback
 }
 
+// Only query fields defined in the schema (avoids accidental full-object filters).
+mongoose.set('strictQuery', true);
+
 const connectDB = async (retries = 5, delay = 3000) => {
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       const conn = await mongoose.connect(config.mongoUri, {
         serverSelectionTimeoutMS: 5000,
+        maxPoolSize: 20,      // reuse pooled connections under load instead of opening per request
+        minPoolSize: 2,
+        socketTimeoutMS: 45000,
       });
       console.log(`MongoDB Connected: ${conn.connection.host}`);
       return conn;

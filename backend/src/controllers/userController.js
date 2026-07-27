@@ -1,6 +1,7 @@
 import User from '../models/User.js';
 import Ashram from '../models/Ashram.js';
 import AuditLog from '../models/AuditLog.js';
+import { escapeRegex } from '../utils/sanitize.js';
 
 const STAFF_ROLES = ['manager', 'reception', 'housekeeping'];
 
@@ -14,10 +15,11 @@ export const listUsers = async (req, res) => {
     if (role) filter.role = role;
     if (status) filter.status = status;
     if (search) {
+      const safe = escapeRegex(search); // M2: literal match, no regex injection / ReDoS
       filter.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } },
-        { phone: { $regex: search, $options: 'i' } },
+        { name: { $regex: safe, $options: 'i' } },
+        { email: { $regex: safe, $options: 'i' } },
+        { phone: { $regex: safe, $options: 'i' } },
       ];
     }
 

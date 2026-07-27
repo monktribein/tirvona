@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { io, type Socket } from 'socket.io-client';
 import { useAuth } from './AuthContext';
-import { API_BASE_URL } from '../lib/api';
+import { API_BASE_URL, TOKEN_KEY } from '../lib/api';
 
 export interface Notification {
   id: string;
@@ -62,7 +62,10 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   useEffect(() => {
     if (!user) return;
 
-    const socket = io(API_BASE_URL, { transports: ['websocket', 'polling'] });
+    // M3: authenticate the socket so the server scopes the private room to this
+    // verified user (the server ignores any client-sent id).
+    const token = localStorage.getItem(TOKEN_KEY);
+    const socket = io(API_BASE_URL, { transports: ['websocket', 'polling'], auth: { token } });
     socketRef.current = socket;
 
     socket.on('connect', () => {

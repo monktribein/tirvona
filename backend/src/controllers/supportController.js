@@ -40,12 +40,16 @@ export const createTicket = async (req, res) => {
 // @access  Private (Customer, Support Executive, Admin)
 export const getTickets = async (req, res) => {
   try {
+    // C6: default-deny. Only Super Admin sees every ticket; support sees its
+    // queue; everyone else (customer/owner/manager/…) sees only their own.
     let query = {};
-    if (req.user.role === 'customer') {
-      query.userId = req.user.id;
+    if (req.user.role === 'super_admin') {
+      query = {};
     } else if (req.user.role === 'support') {
       // Show unassigned or tickets assigned to them
       query.$or = [{ assignedTo: req.user.id }, { assignedTo: { $exists: false } }];
+    } else {
+      query.userId = req.user.id;
     }
 
     const tickets = await SupportTicket.find(query)
@@ -77,8 +81,10 @@ export const addMessageToTicket = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Ticket not found' });
     }
 
-    // Check permissions
-    if (req.user.role === 'customer' && ticket.userId.toString() !== req.user.id) {
+    // C6: only the ticket owner or support staff/admin may comment on a ticket.
+    const isTicketOwner = ticket.userId.toString() === req.user.id;
+    const isSupportStaff = req.user.role === 'support' || req.user.role === 'super_admin';
+    if (!isTicketOwner && !isSupportStaff) {
       return res.status(403).json({ success: false, message: 'Not authorized to comment on this ticket' });
     }
 
@@ -116,7 +122,10 @@ export const resolveTicket = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Ticket not found' });
     }
 
-    if (req.user.role === 'customer' && ticket.userId.toString() !== req.user.id) {
+    // C6: only the ticket owner or support staff/admin may resolve a ticket.
+    const isTicketOwner = ticket.userId.toString() === req.user.id;
+    const isSupportStaff = req.user.role === 'support' || req.user.role === 'super_admin';
+    if (!isTicketOwner && !isSupportStaff) {
       return res.status(403).json({ success: false, message: 'Not authorized' });
     }
 

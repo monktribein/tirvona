@@ -42,7 +42,14 @@ export const uploadSingle = async (req, res) => {
       fs.mkdirSync(uploadsDir, { recursive: true });
     }
 
-    const ext = path.extname(req.file.originalname) || '.jpg';
+    // H3: derive the extension from the validated MIME type, NOT the client-supplied
+    // filename. This prevents an attacker from saving executable/renderable content
+    // (e.g. .html/.svg) that express.static would then serve as text/html → stored XSS.
+    const MIME_EXT = {
+      'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp',
+      'image/gif': '.gif', 'application/pdf': '.pdf',
+    };
+    const ext = MIME_EXT[req.file.mimetype] || '.bin';
     const filename = `upload-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
     const filePath = path.join(uploadsDir, filename);
 

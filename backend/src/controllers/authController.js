@@ -3,9 +3,10 @@ import User from '../models/User.js';
 import AuditLog from '../models/AuditLog.js';
 import config from '../config/env.js';
 
-// Helper to sign JWT token
-const generateToken = (id) => {
-  return jwt.sign({ id }, config.jwtSecret, {
+// Helper to sign JWT token. `tv` (token version) is embedded so a password
+// reset can invalidate previously-issued tokens (see authMiddleware.protect).
+const generateToken = (id, tokenVersion = 0) => {
+  return jwt.sign({ id, tv: tokenVersion }, config.jwtSecret, {
     expiresIn: config.jwtExpiresIn,
   });
 };
@@ -33,6 +34,18 @@ export const register = async (req, res) => {
       });
     }
 
+    // C1: public registration may only create the self-service roles the product
+    // exposes (Guest Visitor / Ashram Owner). Every privileged role — admin, govt,
+    // and on-site staff — must be provisioned through authenticated internal flows.
+    const PUBLIC_SELF_SERVICE_ROLES = ['customer', 'owner'];
+    const requestedRole = role || 'customer';
+    if (!PUBLIC_SELF_SERVICE_ROLES.includes(requestedRole)) {
+      return res.status(403).json({
+        success: false,
+        message: 'This account type cannot be self-registered. Please contact an administrator.',
+      });
+    }
+
     // Validation for specialized roles
     if (role === 'district_officer' && (!district || !state)) {
       return res.status(400).json({
@@ -53,8 +66,8 @@ export const register = async (req, res) => {
       email,
       phone,
       passwordHash: password,
-      role: role || 'customer',
-      status: role && role !== 'customer' ? 'pending' : 'active', // Admin/officers/owners need verification, customers auto-activated
+      role: requestedRole,
+      status: requestedRole === 'owner' ? 'pending' : 'active', // Owners need Super Admin approval; customers auto-activated
     };
 
     if (district) userData.district = district;
@@ -88,7 +101,7 @@ export const register = async (req, res) => {
         phone: user.phone,
         role: user.role,
         status: user.status,
-        token: generateToken(user._id),
+        token: generateToken(user._id, user.tokenVersion),
       },
     });
   } catch (error) {
@@ -103,6 +116,11 @@ export const register = async (req, res) => {
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
+
+    // Credentials must be strings (defends against non-string / injection payloads).
+    if (typeof email !== 'string' || typeof password !== 'string') {
+      return res.status(401).json({ success: false, message: 'Invalid credentials' });
+    }
 
     const user = await User.findOne({ email });
     if (!user) {
@@ -191,7 +209,7 @@ export const login = async (req, res) => {
         phone: user.phone,
         role: user.role,
         status: user.status,
-        token: generateToken(user._id),
+        token: generateToken(user._id, user.tokenVersion),
       },
     });
   } catch (error) {
@@ -303,7 +321,7 @@ export const verifyOTP = async (req, res) => {
         phone: user.phone,
         role: user.role,
         status: user.status,
-        token: generateToken(user._id),
+        token: generateToken(user._id, user.tokenVersion),
       },
     });
   } catch (error) {
@@ -385,10 +403,11 @@ export const forgotPassword = async (req, res) => {
     // Demo: log + return code. In production send via email/SMS and omit from the response.
     console.log(`\n[PASSWORD RESET] Code for ${user.email}: ${code}\n`);
 
+    // C2: never return the reset code in the API response. It is delivered
+    // out-of-band (email/SMS); the console log below stands in for that in dev.
     res.json({
       success: true,
-      message: 'Reset code generated (demo).',
-      code, // DEMO ONLY — remove in production
+      message: 'If that account exists, a reset code has been sent.',
     });
   } catch (error) {
     console.error('Forgot password error:', error);
@@ -425,6 +444,7 @@ export const resetPassword = async (req, res) => {
     }
 
     user.passwordHash = newPassword; // pre-save hook hashes it
+    user.tokenVersion = (user.tokenVersion || 0) + 1; // revoke any existing sessions
     await user.save();
     resetStore.delete(key);
 
@@ -476,6 +496,16 @@ export const getOwnerStaff = async (req, res) => {
 // @access  Private (Owner / Super Admin)
 export const createOwnerStaff = async (req, res) => {
   try {
+    // C4: only the Master Platform Owner or a Super Admin may provision accounts
+    // through this global endpoint (same gate as getOwnerStaff). Regular owners
+    // manage their ashram staff via the ownership-scoped /users/staff endpoints.
+    if (req.user.email !== 'owner@tirvona.com' && req.user.role !== 'super_admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied: Only the Master Platform Owner can provision staff here.',
+      });
+    }
+
     const { name, email, phone, password, role } = req.body;
 
     if (!name || !email || !phone || !password || !role) {
@@ -558,12 +588,31 @@ export const resetStaffPassword = async (req, res) => {
       });
     }
 
+    // C3: only the Master Platform Owner / Super Admin may use this endpoint...
+    if (req.user.email !== 'owner@tirvona.com' && req.user.role !== 'super_admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied: Only the Master Platform Owner can reset staff passwords here.',
+      });
+    }
+
     const staffUser = await User.findById(req.params.id);
     if (!staffUser) {
       return res.status(404).json({ success: false, message: 'Staff user not found' });
     }
 
+    // ...and only against manageable staff/owner accounts — never other
+    // administrators, government officials, or customer accounts.
+    const MANAGEABLE_STAFF_ROLES = ['owner', 'manager', 'reception', 'housekeeping'];
+    if (!MANAGEABLE_STAFF_ROLES.includes(staffUser.role)) {
+      return res.status(403).json({
+        success: false,
+        message: 'You can only reset passwords for staff and owner accounts.',
+      });
+    }
+
     staffUser.passwordHash = password;
+    staffUser.tokenVersion = (staffUser.tokenVersion || 0) + 1; // revoke the staff member's existing sessions
     await staffUser.save();
 
     await AuditLog.create({
@@ -590,10 +639,27 @@ export const resetStaffPassword = async (req, res) => {
 // @access  Private (Owner / Super Admin)
 export const toggleStaffStatus = async (req, res) => {
   try {
+    // C3: same authorization as staff password reset — master owner / super admin
+    // only, and only against manageable staff/owner accounts.
+    if (req.user.email !== 'owner@tirvona.com' && req.user.role !== 'super_admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied: Only the Master Platform Owner can change staff status here.',
+      });
+    }
+
     const { status } = req.body;
     const staffUser = await User.findById(req.params.id);
     if (!staffUser) {
       return res.status(404).json({ success: false, message: 'Staff user not found' });
+    }
+
+    const MANAGEABLE_STAFF_ROLES = ['owner', 'manager', 'reception', 'housekeeping'];
+    if (!MANAGEABLE_STAFF_ROLES.includes(staffUser.role)) {
+      return res.status(403).json({
+        success: false,
+        message: 'You can only change status for staff and owner accounts.',
+      });
     }
 
     staffUser.status = status || (staffUser.status === 'active' ? 'suspended' : 'active');

@@ -3,6 +3,7 @@ import RoomAvailability from '../models/RoomAvailability.js';
 import Room from '../models/Room.js';
 import AuditLog from '../models/AuditLog.js';
 import { canManageAshram } from '../utils/ashramAccess.js';
+import { escapeRegex } from '../utils/sanitize.js';
 
 // @desc    Create a new ashram listing
 // @route   POST /api/ashrams
@@ -162,12 +163,9 @@ export const updateAshram = async (req, res) => {
 
     const isMasterOwner = req.user.email === 'owner@tirvona.com' || req.user.role === 'super_admin';
 
-    // Authorization checks
-    if (
-      ashram.ownerId.toString() !== req.user.id &&
-      !isMasterOwner &&
-      req.user.role !== 'manager'
-    ) {
+    // Authorization checks — H2: scope managers to the ashram they are employed
+    // at (canManageAshram), instead of letting ANY manager edit ANY ashram.
+    if (!isMasterOwner && !canManageAshram(req.user, ashram)) {
       return res.status(403).json({ success: false, message: 'Not authorized to modify this ashram' });
     }
 
@@ -214,34 +212,13 @@ export const getMyAshrams = async (req, res) => {
 
     if (req.user.email === 'owner@tirvona.com' || req.user.role === 'super_admin') {
       listings = await Ashram.find().populate('ownerId', 'name email phone');
+    } else if (req.user.role === 'manager' && req.user.employerAshramId) {
+      // Managers see only the ashram they are employed at.
+      listings = await Ashram.find({ _id: req.user.employerAshramId }).populate('ownerId', 'name email phone');
     } else {
-      // 1. Direct query by ownerId
+      // Owners see ONLY the ashrams they own. H1: no name-regex auto-linking and
+      // no "top ashrams" fallback — both allowed cross-tenant hijack / leakage.
       listings = await Ashram.find({ ownerId: req.user.id }).populate('ownerId', 'name email phone');
-
-      // 2. Fuzzy matching by User name or email if ownerId is not linked yet
-      if (listings.length === 0 && req.user.name) {
-        const cleanName = req.user.name
-          .replace(/Trustee|-|Ashram|Trust|Owner/gi, '')
-          .trim();
-
-        if (cleanName.length >= 2) {
-          const firstWord = cleanName.split(/\s+/)[0];
-          listings = await Ashram.find({ name: { $regex: firstWord, $options: 'i' } });
-
-          // Auto-link matching ashram to this owner account
-          if (listings.length > 0) {
-            for (const a of listings) {
-              a.ownerId = req.user.id;
-              await a.save();
-            }
-          }
-        }
-      }
-
-      // 3. Fallback: If still empty, return top ashrams for general demo owner accounts
-      if (listings.length === 0) {
-        listings = await Ashram.find().limit(5);
-      }
     }
 
     res.json({
@@ -278,20 +255,22 @@ export const searchAshrams = async (req, res) => {
 
     // 1. Geography, Name, Amenities, History, Description Search
     if (searchParam) {
+      // M2: escape user input used in $regex so it is matched literally (no ReDoS / injection).
+      const safe = escapeRegex(searchParam);
       query.$or = [
-        { 'address.city': { $regex: searchParam, $options: 'i' } },
-        { 'address.district': { $regex: searchParam, $options: 'i' } },
-        { 'address.state': { $regex: searchParam, $options: 'i' } },
+        { 'address.city': { $regex: safe, $options: 'i' } },
+        { 'address.district': { $regex: safe, $options: 'i' } },
+        { 'address.state': { $regex: safe, $options: 'i' } },
         { 'address.pincode': searchParam },
-        { name: { $regex: searchParam, $options: 'i' } },
-        { amenities: { $regex: searchParam, $options: 'i' } },
-        { description: { $regex: searchParam, $options: 'i' } },
-        { history: { $regex: searchParam, $options: 'i' } },
+        { name: { $regex: safe, $options: 'i' } },
+        { amenities: { $regex: safe, $options: 'i' } },
+        { description: { $regex: safe, $options: 'i' } },
+        { history: { $regex: safe, $options: 'i' } },
       ];
     }
 
     if (type) {
-      const typeRegex = new RegExp(type, 'i');
+      const typeRegex = new RegExp(escapeRegex(type), 'i');
       if (query.$or) {
         query.$and = [
           { $or: query.$or },

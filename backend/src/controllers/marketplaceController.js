@@ -1,6 +1,7 @@
 import MarketplaceCategory from '../models/MarketplaceCategory.js';
 import MarketplaceProduct from '../models/MarketplaceProduct.js';
 import Offer from '../models/Offer.js';
+import { escapeRegex } from '../utils/sanitize.js';
 
 // @desc    Get all active marketplace categories (with item counts and search)
 // @route   GET /api/marketplace/categories
@@ -14,10 +15,11 @@ export const getCategories = async (req, res) => {
       query.featured = true;
     }
     if (search) {
+      const safe = escapeRegex(search);
       query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { templeName: { $regex: search, $options: 'i' } },
-        { originCity: { $regex: search, $options: 'i' } },
+        { name: { $regex: safe, $options: 'i' } },
+        { templeName: { $regex: safe, $options: 'i' } },
+        { originCity: { $regex: safe, $options: 'i' } },
       ];
     }
 
@@ -164,7 +166,7 @@ export const getProducts = async (req, res) => {
     const query = { status: 'active' };
 
     if (categoryId) query.categoryId = categoryId;
-    if (temple) query.templeName = { $regex: temple, $options: 'i' };
+    if (temple) query.templeName = { $regex: escapeRegex(temple), $options: 'i' };
     if (organic === 'true') query.organic = true;
     if (vegetarian === 'true') query.vegetarian = true;
     if (festivalSpecial === 'true') query.festivalSpecial = true;
@@ -174,10 +176,11 @@ export const getProducts = async (req, res) => {
       if (maxPrice) query.price.$lte = Number(maxPrice);
     }
     if (search) {
+      const safe = escapeRegex(search);
       query.$or = [
-        { productName: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } },
-        { templeName: { $regex: search, $options: 'i' } },
+        { productName: { $regex: safe, $options: 'i' } },
+        { description: { $regex: safe, $options: 'i' } },
+        { templeName: { $regex: safe, $options: 'i' } },
       ];
     }
 
@@ -187,7 +190,8 @@ export const getProducts = async (req, res) => {
       .populate('categoryId', 'name slug templeName originCity')
       .sort({ featured: -1, rating: -1 })
       .skip(skip)
-      .limit(Number(limit));
+      .limit(Number(limit))
+      .lean();
 
     res.json({
       success: true,

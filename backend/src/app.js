@@ -9,6 +9,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import swaggerUi from 'swagger-ui-express';
 import YAML from 'yaml';
+import jwt from 'jsonwebtoken';
+import compression from 'compression';
 
 // Config
 import config from './config/env.js';
@@ -69,13 +71,31 @@ const io = new Server(httpServer, {
   },
 });
 
+// M3: authenticate each socket from its JWT so a client cannot join another
+// user's private room. The verified id — never a client-sent value — names the room.
+io.use((socket, next) => {
+  try {
+    const token = socket.handshake.auth?.token || socket.handshake.query?.token;
+    if (token) {
+      const decoded = jwt.verify(token, config.jwtSecret);
+      socket.data.userId = decoded.id;
+    }
+  } catch (err) {
+    // Invalid/absent token → connect without an identity; no private room join.
+  }
+  next();
+});
+
 io.on('connection', (socket) => {
   console.log(`Socket client connected: ${socket.id}`);
-  
-  // Custom room subscription for live booking updates
-  socket.on('join_dashboard', (userId) => {
-    socket.join(userId);
-    console.log(`User ${userId} joined their private notification room`);
+
+  // Custom room subscription for live booking updates.
+  // M3: ignore any client-supplied id; only join the authenticated user's room.
+  socket.on('join_dashboard', () => {
+    if (socket.data.userId) {
+      socket.join(socket.data.userId.toString());
+      console.log(`User ${socket.data.userId} joined their private notification room`);
+    }
   });
 
   socket.on('disconnect', () => {
@@ -92,10 +112,33 @@ app.use((req, res, next) => {
 // Security headers
 app.use(helmet({ crossOriginResourcePolicy: false }));
 
+// Gzip-compress responses — bandwidth + latency win for JSON payloads.
+app.use(compression());
+
 // Middleware
 app.use(cors(corsOptions));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '1mb' }));       // bound body size to resist large-payload DoS
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+
+// Strip MongoDB operator-injection keys ($-prefixed, e.g. {"$gt":""}) from all
+// request input. Dependency-free equivalent of express-mongo-sanitize
+// (Express 4 req.query is writable). Neutralises NoSQL operator injection.
+const stripMongoOperators = (obj) => {
+  if (!obj || typeof obj !== 'object') return;
+  for (const key of Object.keys(obj)) {
+    if (key.startsWith('$')) {
+      delete obj[key];
+    } else {
+      stripMongoOperators(obj[key]);
+    }
+  }
+};
+app.use((req, res, next) => {
+  stripMongoOperators(req.body);
+  stripMongoOperators(req.query);
+  stripMongoOperators(req.params);
+  next();
+});
 
 // Behind Render/Vercel proxies, trust the first proxy so req.ip / rate-limit work.
 app.set('trust proxy', 1);
@@ -109,8 +152,19 @@ const authLimiter = rateLimit({
   message: { success: false, message: 'Too many attempts. Please try again later.' },
 });
 
+// General abuse limiter for the whole API — generous ceiling that blocks floods
+// (scraping, brute-force) without affecting normal use. Auth stays stricter above.
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 1000, // per IP per window
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many requests. Please slow down.' },
+});
+
 // Routing Middleware
 app.use('/uploads', express.static(path.join(process.cwd(), 'public', 'uploads')));
+app.use('/api', apiLimiter);
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/ashrams', ashramRoutes);
 app.use('/api/rooms', roomRoutes);
@@ -131,17 +185,20 @@ app.use('/api/local', localHubRoutes);
 app.use('/api/marketplace/hub', marketplaceHubRoutes);
 app.use('/api/admin', adminRoutes);
 
-// API documentation (Swagger UI) served from openapi.yaml.
-try {
-  const __dirname = path.dirname(fileURLToPath(import.meta.url));
-  const openapiDoc = YAML.parse(fs.readFileSync(path.join(__dirname, '../openapi.yaml'), 'utf8'));
-  app.get('/api/docs.json', (req, res) => res.json(openapiDoc));
-  app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openapiDoc, {
-    customSiteTitle: 'Tirvona API Docs',
-  }));
-  console.log('API docs available at /api/docs');
-} catch (err) {
-  console.warn('Could not load openapi.yaml for Swagger UI:', err.message);
+// API documentation (Swagger UI). Exposed only outside production so the full
+// API schema is not handed to attackers in prod.
+if (!config.isProduction) {
+  try {
+    const __dirname = path.dirname(fileURLToPath(import.meta.url));
+    const openapiDoc = YAML.parse(fs.readFileSync(path.join(__dirname, '../openapi.yaml'), 'utf8'));
+    app.get('/api/docs.json', (req, res) => res.json(openapiDoc));
+    app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openapiDoc, {
+      customSiteTitle: 'Tirvona API Docs',
+    }));
+    console.log('API docs available at /api/docs');
+  } catch (err) {
+    console.warn('Could not load openapi.yaml for Swagger UI:', err.message);
+  }
 }
 
 // Root Endpoint
@@ -156,10 +213,13 @@ app.get('/', (req, res) => {
 // Global Error Handler
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).json({
-    success: false,
-    message: err.message || 'Internal Server Error',
-  });
+  // Honour known client-error statuses (e.g. 413 payload-too-large, CORS 403).
+  const status = err.status || err.statusCode || 500;
+  // Surface client-error (4xx) messages; hide internal 5xx details in production.
+  const message = (!config.isProduction || status < 500)
+    ? (err.message || 'Error')
+    : 'Internal Server Error';
+  res.status(status).json({ success: false, message });
 });
 
 const PORT = config.port;

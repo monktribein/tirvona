@@ -2,6 +2,7 @@ import PilgrimageCircuit from '../models/PilgrimageCircuit.js';
 import Temple from '../models/Temple.js';
 import EventFestival from '../models/EventFestival.js';
 import SacredDirectoryItem from '../models/SacredDirectoryItem.js';
+import { escapeRegex } from '../utils/sanitize.js';
 
 // ─── Pilgrimage Circuits Controllers ──────────────────────────────────────────
 export const getPilgrimageCircuits = async (req, res) => {
@@ -12,9 +13,9 @@ export const getPilgrimageCircuits = async (req, res) => {
       filter.circuitType = circuitType;
     }
     if (search) {
-      filter.title = { $regex: search, $options: 'i' };
+      filter.title = { $regex: escapeRegex(search), $options: 'i' };
     }
-    const circuits = await PilgrimageCircuit.find(filter).sort({ displayOrder: 1, createdAt: -1 });
+    const circuits = await PilgrimageCircuit.find(filter).sort({ displayOrder: 1, createdAt: -1 }).lean();
     return res.status(200).json({ success: true, count: circuits.length, data: circuits });
   } catch (error) {
     console.error('Error fetching pilgrimage circuits:', error);
@@ -40,16 +41,17 @@ export const getTemples = async (req, res) => {
   try {
     const { city, state, search } = req.query;
     const filter = { status: 'active' };
-    if (city) filter.city = { $regex: city, $options: 'i' };
-    if (state) filter.state = { $regex: state, $options: 'i' };
+    if (city) filter.city = { $regex: escapeRegex(city), $options: 'i' };
+    if (state) filter.state = { $regex: escapeRegex(state), $options: 'i' };
     if (search) {
+      const safe = escapeRegex(search);
       filter.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { deity: { $regex: search, $options: 'i' } },
-        { city: { $regex: search, $options: 'i' } },
+        { name: { $regex: safe, $options: 'i' } },
+        { deity: { $regex: safe, $options: 'i' } },
+        { city: { $regex: safe, $options: 'i' } },
       ];
     }
-    const temples = await Temple.find(filter).sort({ rating: -1, createdAt: -1 });
+    const temples = await Temple.find(filter).sort({ rating: -1, createdAt: -1 }).lean();
     return res.status(200).json({ success: true, count: temples.length, data: temples });
   } catch (error) {
     console.error('Error fetching temples:', error);
@@ -76,8 +78,8 @@ export const getEventFestivals = async (req, res) => {
     const { eventType, search } = req.query;
     const filter = {};
     if (eventType && eventType !== 'All') filter.eventType = eventType;
-    if (search) filter.title = { $regex: search, $options: 'i' };
-    const events = await EventFestival.find(filter).sort({ startDate: 1 });
+    if (search) filter.title = { $regex: escapeRegex(search), $options: 'i' };
+    const events = await EventFestival.find(filter).sort({ startDate: 1 }).lean();
     return res.status(200).json({ success: true, count: events.length, data: events });
   } catch (error) {
     console.error('Error fetching events & festivals:', error);
@@ -105,9 +107,9 @@ export const getDirectoryItems = async (req, res) => {
     const filter = { status: 'active' };
     if (moduleType) filter.moduleType = moduleType;
     if (category && category !== 'All') filter.category = category;
-    if (search) filter.title = { $regex: search, $options: 'i' };
+    if (search) filter.title = { $regex: escapeRegex(search), $options: 'i' };
 
-    const items = await SacredDirectoryItem.find(filter).sort({ rating: -1, createdAt: -1 });
+    const items = await SacredDirectoryItem.find(filter).sort({ rating: -1, createdAt: -1 }).lean();
     return res.status(200).json({ success: true, count: items.length, data: items });
   } catch (error) {
     console.error('Error fetching directory items:', error);

@@ -723,18 +723,26 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* ══════════════════════ FEATURED OFFERS & FESTIVAL SPECIALS BANNER ══════════════════════ */}
-      {offers.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 mb-12 lg:mb-20 mt-6">
-          {/* Section Header matching Popular Destinations */}
-          <div className="text-center space-y-2 mb-8 lg:mb-10">
-            <p className="font-['Kalam'] text-base sm:text-lg font-bold text-[#E58C28]">
-              Live Kumbh & Festival Specials
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 space-y-8 mb-12 lg:mb-20 mt-6">
+        {/* Banner with Image Background and Overlay Title */}
+        <div className="relative rounded-3xl overflow-hidden shadow-xl p-6 sm:p-10 lg:p-12 text-center flex flex-col items-center justify-center min-h-[200px] sm:min-h-[260px] border border-white/10">
+          <img
+            src="/banner/offer.png"
+            alt="Featured Deals & Special Offers Banner"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          {/* Subtle gradient overlay to ensure text contrast */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/45 to-black/30" />
+
+          {/* Title and Eyebrow Content Overlay */}
+          <div className="relative z-10 space-y-2 max-w-3xl">
+            <p className="font-['Kalam'] text-base sm:text-xl font-bold text-[#E58C28] drop-shadow-md">
+              Live Kumbh &amp; Festival Specials
             </p>
-            <h2 className="font-black text-[#0B192C] dark:text-white leading-tight" style={{ fontSize: 'clamp(1.4rem, 4vw, 2.25rem)' }}>
-              Featured Pilgrimage Deals &amp;
-              <span className="bg-[#0A4DA6] text-white px-3 py-0.5 rounded-xl text-base sm:text-xl font-black inline-block align-middle mx-1 shadow-sm">Special</span>
-              Offers
+            <h2 className="font-black text-white leading-tight drop-shadow-lg" style={{ fontSize: 'clamp(1.4rem, 4vw, 2.35rem)' }}>
+              Featured Pilgrimage Deals &amp; <span className="bg-[#0A4DA6] text-white px-3 py-0.5 rounded-xl text-base sm:text-xl font-black inline-block align-middle mx-1 shadow-md">Special</span> Offers
             </h2>
+<<<<<<< Updated upstream
             <Link
               to="/offers"
               className="inline-flex items-center gap-1.5 text-xs font-black text-[#0A4DA6] dark:text-amber-300 hover:text-[#E58C28] transition-all pt-1"
@@ -742,37 +750,111 @@ export const HomePage: React.FC = () => {
               <span>Explore All Offers</span>
               <ChevronRight size={14} />
             </Link>
+=======
+            <button
+              type="button"
+              onClick={() => navigate('/offers')}
+              className="mt-3 inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-white text-[#0A4DA6] hover:bg-gray-100 text-xs font-extrabold shadow-lg transition-all cursor-pointer"
+            >
+              Explore All Offers <ArrowRight size={14} />
+            </button>
+>>>>>>> Stashed changes
           </div>
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-5">
-            {offers.slice(0, 3).map((offer) => (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6">
+          {(offers.length > 0 ? offers : [
+            {
+              _id: 'default-1',
+              offerType: 'MAHAKUMBH OFFER',
+              discountPercentage: 20,
+              title: 'Mahakumbh Sacred Stay Special',
+              bannerText: 'Special 20% discount on pre-booked ashram rooms during Mahakumbh 2026.',
+              promoCode: 'KUMBH2026',
+              image: '/banner/upcominglogo.png',
+              ashramId: { address: { city: 'Prayagraj' } }
+            },
+            {
+              _id: 'default-2',
+              offerType: 'FESTIVAL OFFER',
+              discountPercentage: 15,
+              title: 'Festival Season Discount',
+              bannerText: 'Get 15% instant savings on top verified ashrams across Kashi & Haridwar.',
+              promoCode: 'FESTIVAL2026',
+              image: '/banner/ashram_varanasi.png',
+              ashramId: { address: { city: 'Varanasi' } }
+            },
+            {
+              _id: 'default-3',
+              offerType: 'WEEKEND OFFER',
+              discountPercentage: 10,
+              title: 'Weekend Pilgrimage Getaway',
+              bannerText: 'Enjoy ₹500 off on weekend spiritual retreats and daily prasad inclusion.',
+              promoCode: 'WEEKEND500',
+              image: '/banner/ashram_rishikesh.png',
+              ashramId: { address: { city: 'Rishikesh' } }
+            }
+          ]).slice(0, 3).map((offer, idx) => {
+            const offerImages = [
+              '/banner/upcominglogo.png',
+              '/banner/ashram_varanasi.png',
+              '/banner/ashram_rishikesh.png'
+            ];
+            const cardImg = offer.image || offer.bannerImage || offerImages[idx % offerImages.length];
+
+            return (
               <div
+<<<<<<< Updated upstream
                 key={offer._id}
                 className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-5 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between space-y-4 group cursor-pointer"
                 onClick={() => navigate(`/offers?offer=${offer._id}`)}
+=======
+                key={offer._id || idx}
+                className="w-full bg-white dark:bg-[#0B192C] rounded-3xl overflow-hidden border border-gray-100 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col hover:-translate-y-1 group"
+>>>>>>> Stashed changes
               >
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="px-2.5 py-0.5 rounded-full bg-[#E58C28] text-white text-[10px] font-black uppercase tracking-wider">
-                      {offer.offerType}
-                    </span>
-                    <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-500/30">
-                      {offer.discountPercentage}% {offer.isRateUpgrade ? 'Rate Upgrade' : 'OFF'}
-                    </span>
-                  </div>
-
-                  <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white group-hover:text-[#0A4DA6] dark:group-hover:text-amber-300 transition-colors">
-                    {offer.title}
-                  </h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed line-clamp-2">
-                    {offer.bannerText}
-                  </p>
+                {/* Top Image Container matching other section cards */}
+                <div className="relative overflow-hidden bg-gray-100 dark:bg-slate-900" style={{ height: 'clamp(160px, 35vw, 180px)' }}>
+                  <img
+                    src={cardImg}
+                    alt={offer.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    loading="lazy"
+                    onError={e => { e.currentTarget.onerror = null; e.currentTarget.src = offerImages[idx % offerImages.length]; }}
+                  />
+                  {/* Floating Badges on Image */}
+                  <span className="absolute top-3 left-3 bg-[#E58C28] text-white text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full shadow-md">
+                    {offer.offerType}
+                  </span>
+                  <span className="absolute top-3 right-3 bg-emerald-600/90 text-white backdrop-blur-md text-[10px] font-black px-2.5 py-1 rounded-full shadow-md">
+                    {offer.discountPercentage}% {offer.isRateUpgrade ? 'Rate Upgrade' : 'OFF'}
+                  </span>
                 </div>
 
-                <div className="pt-3 border-t border-gray-100 dark:border-white/10 flex items-center justify-between">
-                  <div className="text-[10px] font-mono font-bold text-gray-400">
-                    PROMO: <span className="bg-gray-100 dark:bg-white/10 text-[#0B192C] dark:text-amber-200 px-1.5 py-0.5 rounded font-black">{offer.promoCode}</span>
+                {/* Bottom Details Area matching other section cards */}
+                <div className="p-5 flex flex-col justify-between flex-grow space-y-4">
+                  <div className="space-y-1.5">
+                    <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white group-hover:text-[#0A4DA6] dark:group-hover:text-amber-300 transition-colors line-clamp-1">
+                      {offer.title}
+                    </h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed line-clamp-2">
+                      {offer.bannerText}
+                    </p>
                   </div>
+
+                  <div className="pt-3 border-t border-gray-100 dark:border-slate-800/80 flex items-center justify-between">
+                    <div className="text-[10px] font-mono font-bold text-gray-400">
+                      PROMO: <span className="bg-gray-100 dark:bg-white/10 text-[#0B192C] dark:text-amber-200 px-2 py-0.5 rounded font-black">{offer.promoCode}</span>
+                    </div>
+                    <button
+                      onClick={() => navigate(`/search?destination=${encodeURIComponent(offer.ashramId?.address?.city || '')}`)}
+                      className="px-4 py-1.5 rounded-full bg-[#0A4DA6] text-white hover:bg-[#083b80] font-extrabold text-xs transition-all flex items-center gap-1.5 cursor-pointer shadow-md"
+                    >
+                      <span>Book Now</span>
+                      <ArrowRight size={12} />
+                    </button>
+                  </div>
+<<<<<<< Updated upstream
                   <button
                     onClick={(e) => { e.stopPropagation(); navigate(`/offers?offer=${offer._id}`); }}
                     className="px-3.5 py-1.5 rounded-full bg-[#0A4DA6] text-white hover:bg-[#083b80] font-extrabold text-xs transition-all flex items-center gap-1 cursor-pointer shadow-md"
@@ -780,25 +862,45 @@ export const HomePage: React.FC = () => {
                     <span>Book Now</span>
                     <ArrowRight size={12} />
                   </button>
+=======
+>>>>>>> Stashed changes
                 </div>
               </div>
-            ))}
-          </div>
-        </section>
-      )}
+            );
+          })}
+        </div>
+      </section>
 
       {/* ══════════════════════ EVERYTHING YOU NEED ══════════════════════ */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 mb-10 lg:mb-20 mt-6 lg:mt-0">
-        {/* Section Header matching Popular Destinations */}
-        <Reveal className="text-center space-y-2 mb-8 lg:mb-10">
-          <p className="font-['Kalam'] text-base sm:text-lg font-bold text-[#E58C28]">
-            What We Offer
-          </p>
-          <h2 className="font-black text-[#0B192C] dark:text-white leading-tight" style={{ fontSize: 'clamp(1.4rem, 4vw, 2.25rem)' }}>
-            Everything You Need For A Blessed Journey<br />
-            Explore <span className="bg-[#0A4DA6] text-white px-3 py-0.5 rounded-xl text-base sm:text-xl font-black inline-block align-middle mx-1 shadow-sm">100+</span> Sacred Services
-          </h2>
-        </Reveal>
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 space-y-8 mb-10 lg:mb-20 mt-6 lg:mt-0">
+        {/* Banner with Image Background and Overlay Title */}
+        <div className="relative rounded-3xl overflow-hidden shadow-xl p-6 sm:p-10 lg:p-12 text-center flex flex-col items-center justify-center min-h-[200px] sm:min-h-[260px] border border-white/10">
+          <img
+            src="/banner/explore.png"
+            alt="What We Offer Banner"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          {/* Subtle gradient overlay to ensure text contrast */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/45 to-black/30" />
+
+          {/* Title and Eyebrow Content Overlay */}
+          <div className="relative z-10 space-y-2 max-w-3xl">
+            <p className="font-['Kalam'] text-base sm:text-xl font-bold text-[#E58C28] drop-shadow-md">
+              What We Offer
+            </p>
+            <h2 className="font-black text-white leading-tight drop-shadow-lg" style={{ fontSize: 'clamp(1.4rem, 4vw, 2.35rem)' }}>
+              Everything You Need For A Blessed Journey<br />
+              Explore <span className="bg-[#0A4DA6] text-white px-3 py-0.5 rounded-xl text-base sm:text-xl font-black inline-block align-middle mx-1 shadow-md">100+</span> Sacred Services
+            </h2>
+            <button
+              type="button"
+              onClick={() => navigate('/search')}
+              className="mt-3 inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-white text-[#0A4DA6] hover:bg-gray-100 text-xs font-extrabold shadow-lg transition-all cursor-pointer"
+            >
+              Explore All Services <ArrowRight size={14} />
+            </button>
+          </div>
+        </div>
 
         {/* Service Cards: 1 col mobile, 2 col tablet, 3 col desktop */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
@@ -959,10 +1061,29 @@ export const HomePage: React.FC = () => {
                     {item.state}
                   </p>
                 </div>
-
               </div>
             </div>
           ))}
+
+          {/* View All Card at the End of Horizontal Scroll */}
+          <div
+            onClick={() => navigate('/search')}
+            className="flex-shrink-0 relative group cursor-pointer"
+            style={{ width: 'clamp(200px, 48vw, 220px)' }}
+          >
+            <div className="w-full bg-[#0A4DA6] text-white rounded-3xl overflow-hidden border border-[#0A4DA6] shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between items-center p-6 text-center hover:-translate-y-1 h-full min-h-[266px]">
+              <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center my-auto">
+                <ArrowRight size={26} className="text-white group-hover:translate-x-1.5 transition-transform" />
+              </div>
+              <div className="space-y-1 mb-2">
+                <h4 className="font-black text-lg text-white">View All</h4>
+                <p className="text-[11px] text-blue-100 font-medium">Explore All 50+ Sacred Destinations</p>
+              </div>
+              <span className="px-5 py-2 rounded-full bg-white text-[#0A4DA6] font-black text-xs shadow-md">
+                Browse All →
+              </span>
+            </div>
+          </div>
         </div>
 
       </section>
@@ -1044,26 +1165,33 @@ export const HomePage: React.FC = () => {
       <section id="prashad-section" className="max-w-7xl mx-auto px-4 sm:px-6 space-y-8 mb-12 lg:mb-20">
 
         {/* Banner with Image Background and Overlay Title */}
-        <div className="relative rounded-3xl overflow-hidden shadow-xl p-6 sm:p-8 lg:p-10 flex flex-col items-center justify-center min-h-[180px] sm:min-h-[220px] border border-white/10 text-center">
+        <div className="relative rounded-3xl overflow-hidden shadow-xl p-6 sm:p-10 lg:p-12 text-center flex flex-col items-center justify-center min-h-[200px] sm:min-h-[260px] border border-white/10">
           <img
             src="/banner/prashadbanner.png"
             alt="Sacred Prasad Banner"
             className="absolute inset-0 w-full h-full object-cover"
           />
           {/* Subtle gradient overlay to ensure text contrast */}
-          <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/60 to-black/40" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/45 to-black/30" />
 
           {/* Title and Eyebrow Content Overlay */}
-          <div className="relative z-10 space-y-1.5 max-w-2xl mx-auto">
-            <p className="font-['Kalam'] text-base sm:text-lg font-bold text-[#E58C28] drop-shadow-md">
+          <div className="relative z-10 space-y-2 max-w-3xl">
+            <p className="font-['Kalam'] text-base sm:text-xl font-bold text-[#E58C28] drop-shadow-md">
               Sacred Marketplace & Prasad
             </p>
-            <h2 className="font-black text-white leading-tight drop-shadow-lg text-xl sm:text-3xl lg:text-4xl">
+            <h2 className="font-black text-white leading-tight drop-shadow-lg" style={{ fontSize: 'clamp(1.4rem, 4vw, 2.35rem)' }}>
               Sacred Mahaprasad From Holy Temples
             </h2>
-            <p className="text-xs text-gray-200 font-medium line-clamp-1">
+            <p className="text-xs sm:text-sm text-gray-200 font-medium max-w-xl mx-auto leading-relaxed drop-shadow-md">
               Varanasi Lal Peda, Tirupati Srivari Laddu, Ayodhya Ram Temple Prasad, Puri Mahaprasad & Mathura Peda.
             </p>
+            <button
+              type="button"
+              onClick={() => navigate('/marketplace')}
+              className="mt-3 inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-white text-[#0A4DA6] hover:bg-gray-100 text-xs font-extrabold shadow-lg transition-all cursor-pointer"
+            >
+              Explore Sacred Marketplace <ArrowRight size={14} />
+            </button>
           </div>
         </div>
 
@@ -1139,26 +1267,6 @@ export const HomePage: React.FC = () => {
               </span>
             </div>
           </div>
-        </div>
-
-        {/* Dedicated Next Section CTA Banner */}
-        <div className="bg-gradient-to-r from-[#0B192C] via-[#0A4DA6] to-[#0B192C] text-white rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xl border border-white/10 mt-6">
-          <div className="space-y-1 text-center sm:text-left">
-            <h3 className="font-black text-xl sm:text-2xl text-white">
-              Explore All Sacred Temple Categories & Prashad
-            </h3>
-            <p className="text-xs text-blue-100 font-medium">
-              Varanasi Lal Peda, Tirupati Srivari Laddu, Ayodhya Ram Temple Prasad, Puri Mahaprasad, Mathura Peda, Shirdi Halwa & more.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => navigate('/marketplace/categories')}
-            className="px-8 py-3.5 rounded-full bg-[#E58C28] hover:bg-amber-600 text-white font-black text-xs sm:text-sm shadow-xl transition-all cursor-pointer flex items-center gap-2 shrink-0 group"
-          >
-            <span>View All Categories</span>
-            <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-          </button>
         </div>
 
       </section>
@@ -1278,11 +1386,30 @@ export const HomePage: React.FC = () => {
                       <span className="text-[10px] text-gray-400 font-semibold mt-1.5">No reviews yet</span>
                     )}
                   </div>
-
                 </div>
               </motion.div>
-            ))}
+          ))}
+
+          {/* View All Card at the End of Horizontal Scroll */}
+          <div
+            onClick={() => navigate('/search')}
+            className="flex-shrink-0 relative group cursor-pointer"
+            style={{ width: 'clamp(200px, 48vw, 220px)' }}
+          >
+            <div className="w-full bg-[#0A4DA6] text-white rounded-3xl overflow-hidden border border-[#0A4DA6] shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between items-center p-6 text-center hover:-translate-y-1 h-full min-h-[266px]">
+              <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center my-auto">
+                <ArrowRight size={26} className="text-white group-hover:translate-x-1.5 transition-transform" />
+              </div>
+              <div className="space-y-1 mb-2">
+                <h4 className="font-black text-lg text-white">View All</h4>
+                <p className="text-[11px] text-blue-100 font-medium">Explore All 100+ Verified Stays & Ashrams</p>
+              </div>
+              <span className="px-5 py-2 rounded-full bg-white text-[#0A4DA6] font-black text-xs shadow-md">
+                Browse All →
+              </span>
+            </div>
           </div>
+        </div>
         )}
 
       </section>
@@ -1290,34 +1417,37 @@ export const HomePage: React.FC = () => {
 
 
       {/* ══════════════════════ SPIRITUAL MEDIA & KNOWLEDGE HUB SECTION ══════════════════════ */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 mb-12 lg:mb-20">
-        <div className="bg-[#F4F8FC] dark:bg-[#071322]/60 rounded-[32px] py-10 sm:py-14 px-4 sm:px-8 border border-blue-100/60 dark:border-blue-900/30 shadow-sm relative overflow-hidden space-y-6">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 space-y-8 mb-12 lg:mb-20">
+        {/* Banner with Image Background and Overlay Title */}
+        <div className="relative rounded-3xl overflow-hidden shadow-xl p-6 sm:p-8 lg:p-10 text-center flex flex-col items-center justify-between min-h-[280px] sm:min-h-[340px] border border-white/10">
+          <img
+            src="/banner/Blogs.png"
+            alt="Spiritual Media & Knowledge Hub Banner"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          {/* Subtle gradient overlay to ensure text contrast */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/55 to-black/35" />
 
-          {/* Section Header */}
-          <Reveal className="text-center space-y-2 max-w-2xl mx-auto relative z-10">
-            <p className="font-['Kalam'] text-base sm:text-lg font-bold text-[#E58C28]">
-              Spiritual Media & Knowledge Hub
+          {/* Title and Eyebrow Content Overlay */}
+          <div className="relative z-10 space-y-2 max-w-3xl my-auto pt-4">
+            <p className="font-['Kalam'] text-base sm:text-xl font-bold text-[#E58C28] drop-shadow-md">
+              Spiritual Media &amp; Knowledge Hub
             </p>
-            <h2 className="font-black text-[#0B192C] dark:text-white leading-tight" style={{ fontSize: 'clamp(1.4rem, 4vw, 2.25rem)' }}>
-              Sacred Documentaries, Articles &<br />Pilgrim Yatra Stories
+            <h2 className="font-black text-white leading-tight drop-shadow-lg" style={{ fontSize: 'clamp(1.4rem, 4vw, 2.35rem)' }}>
+              Sacred Documentaries, Articles &amp;<br />Pilgrim Yatra Stories
             </h2>
-          </Reveal>
-
-          {/* Category Filter Tabs */}
-          <div className="flex gap-2 overflow-x-auto pb-2 justify-start sm:justify-center scrollbar-none relative z-10">
-            {['All', 'Articles', 'Videos', 'Temple Stories', 'Pilgrim Experiences', 'Festivals', 'Travel Guides', 'Ashram News'].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => navigate('/blog')}
-                className="px-4 py-2 rounded-full text-xs font-black whitespace-nowrap bg-white dark:bg-[#0B192C] text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-slate-800 hover:bg-[#0A4DA6] hover:text-white transition-all cursor-pointer shadow-sm"
-              >
-                {tab}
-              </button>
-            ))}
+            <button
+              type="button"
+              onClick={() => navigate('/blog')}
+              className="mt-3 inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-white text-[#0A4DA6] hover:bg-gray-100 text-xs font-extrabold shadow-lg transition-all cursor-pointer"
+            >
+              Explore Knowledge Hub <ArrowRight size={14} />
+            </button>
           </div>
+        </div>
 
-          {/* 3 Dynamic Blog / Video Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto mt-6 relative z-10">
+        {/* 4 Dynamic Blog / Video Cards Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto mt-6 relative z-10">
 
             {/* Card 1: Article */}
             <div
@@ -1471,36 +1601,93 @@ export const HomePage: React.FC = () => {
               </div>
             </div>
 
-          </div>
-
-          {/* View All Button */}
-          <div className="text-center pt-4 relative z-10">
-            <button
-              onClick={() => navigate('/blog')}
-              className="px-8 py-3 rounded-full bg-[#0A4DA6] hover:bg-blue-900 text-white font-black text-xs shadow-lg transition-all cursor-pointer inline-flex items-center gap-2"
+            {/* Card 4: Pilgrim Story */}
+            <div
+              onClick={() => navigate('/blog/spiritual-awakening-kashi-ghats')}
+              className="bg-white dark:bg-[#0B192C] rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 flex flex-col justify-between border border-gray-100 dark:border-slate-800 group hover:-translate-y-1 cursor-pointer"
             >
-              <span>Explore Entire Spiritual Media & Knowledge Hub</span>
-              <ArrowRight size={14} />
-            </button>
+              <div>
+                <div className="h-48 sm:h-52 overflow-hidden bg-slate-900 relative">
+                  <img
+                    src="https://images.unsplash.com/photo-1561361513-2d000a50f0dc?auto=format&fit=crop&w=600&q=80"
+                    alt="Spiritual Yatra Experience"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    loading="lazy"
+                  />
+                  <span className="absolute top-3 left-3 bg-[#E58C28] text-white text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full">
+                    Pilgrim Story
+                  </span>
+                  <span className="absolute bottom-3 right-3 bg-black/70 backdrop-blur-md text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-md">
+                    5 min read
+                  </span>
+                </div>
+                <div className="p-5 space-y-2.5">
+                  <div className="flex items-center gap-4 text-[11px] font-bold text-gray-400">
+                    <span className="flex items-center gap-1.5"><Calendar size={13} className="text-[#0A4DA6]" /> 28 March 2025</span>
+                    <span className="flex items-center gap-1.5"><BookOpen size={13} className="text-[#0A4DA6]" /> 4.2K Views</span>
+                  </div>
+                  <h3 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-snug line-clamp-2 group-hover:text-[#0A4DA6] transition-colors">
+                    Spiritual Awakening On The Sacred Ghats Of Kashi
+                  </h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">
+                    A transformative personal yatra story of inner peace, morning meditation, and evening prayers along river Ganga.
+                  </p>
+                </div>
+              </div>
+              <div className="px-5 pb-5 pt-2 flex items-center justify-between border-t border-gray-50 dark:border-slate-800/60 mt-2">
+                <div className="flex items-center gap-2">
+                  <img
+                    src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&h=100&q=80"
+                    alt="Priya Sharma"
+                    className="w-7 h-7 rounded-full object-cover border border-[#E58C28]"
+                  />
+                  <span className="text-xs font-bold text-gray-600 dark:text-gray-300">Priya Sharma</span>
+                </div>
+                <button className="px-3.5 py-1.5 bg-amber-50 dark:bg-amber-950/40 text-[#E58C28] dark:text-amber-300 group-hover:bg-[#E58C28] group-hover:text-white text-xs font-bold rounded-full flex items-center gap-1.5 transition-colors">
+                  <span>Read Story</span>
+                  <ArrowRight size={12} />
+                </button>
+              </div>
+            </div>
+
           </div>
 
-        </div>
       </section>
 
       {/* ══════════════════════ CUSTOMER FEEDBACK & EXPERIENCES SLIDER ══════════════════════ */}
       {customerFeedbacks.length > 0 && (
       <section className="max-w-7xl mx-auto px-4 sm:px-6 mb-12 lg:mb-20 space-y-8">
 
-        {/* Section Header */}
-        <Reveal className="text-center space-y-2">
-          <p className="font-['Kalam'] text-base sm:text-lg font-bold text-[#E58C28]">
-            Customer Feedback & Stories
-          </p>
-          <h2 className="font-black text-[#0B192C] dark:text-white leading-tight" style={{ fontSize: 'clamp(1.4rem, 4vw, 2.25rem)' }}>
-            Loved By Thousands Of Pilgrims<br />
-            Explore <span className="bg-[#E58C28] text-white px-3 py-0.5 rounded-xl text-base sm:text-xl font-black inline-block align-middle mx-1 shadow-sm">4.9/5 ★</span> Real Experiences
-          </h2>
-        </Reveal>
+        {/* Banner with Image Background and Overlay Title */}
+        <div className="relative rounded-3xl overflow-hidden shadow-xl p-6 sm:p-10 lg:p-12 text-center flex flex-col items-center justify-center min-h-[200px] sm:min-h-[260px] border border-white/10">
+          <img
+            src="/banner/feedback.png"
+            alt="Customer Feedback & Stories Banner"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          {/* Subtle gradient overlay to ensure text contrast */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/45 to-black/30" />
+
+          {/* Title and Eyebrow Content Overlay */}
+          <div className="relative z-10 space-y-2 max-w-3xl">
+            <p className="font-['Kalam'] text-base sm:text-xl font-bold text-[#E58C28] drop-shadow-md">
+              Customer Feedback &amp; Stories
+            </p>
+            <h2 className="font-black text-white leading-tight drop-shadow-lg" style={{ fontSize: 'clamp(1.4rem, 4vw, 2.35rem)' }}>
+              Loved By Thousands Of Pilgrims<br />
+              Explore <span className="bg-[#E58C28] text-white px-3 py-0.5 rounded-xl text-base sm:text-xl font-black inline-block align-middle mx-1 shadow-md">4.9/5 ★</span> Real Experiences
+            </h2>
+            <button
+              type="button"
+              onClick={() => {
+                feedbackRef.current?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="mt-3 inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-white text-[#0A4DA6] hover:bg-gray-100 text-xs font-extrabold shadow-lg transition-all cursor-pointer"
+            >
+              Explore Feedback &amp; Stories <ArrowRight size={14} />
+            </button>
+          </div>
+        </div>
 
         {/* Smooth 60FPS Sliding Gallery Carousel (Matching Reference Screenshot) */}
         <div

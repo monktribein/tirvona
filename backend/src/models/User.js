@@ -210,6 +210,12 @@ const userSchema = new mongoose.Schema(
         },
       },
     ],
+    // Bumped whenever existing sessions must be invalidated (e.g. password reset).
+    // The value is embedded in issued JWTs and re-checked on every request.
+    tokenVersion: {
+      type: Number,
+      default: 0,
+    },
   },
   {
     timestamps: true,

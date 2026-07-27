@@ -3,7 +3,7 @@ import MarketplaceWaitlist from '../models/MarketplaceWaitlist.js';
 export const subscribeWaitlist = async (req, res) => {
   try {
     const { email, role } = req.body;
-    if (!email) {
+    if (typeof email !== 'string' || !email.trim()) {
       return res.status(400).json({ success: false, message: 'Email address is required' });
     }
 
