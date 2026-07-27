@@ -4,6 +4,11 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import swaggerUi from 'swagger-ui-express';
+import YAML from 'yaml';
 
 // Config
 import config from './config/env.js';
@@ -97,7 +102,7 @@ const authLimiter = rateLimit({
   message: { success: false, message: 'Too many attempts. Please try again later.' },
 });
 
-import path from 'path';
+// import path from 'path';
 
 // Routing Middleware
 app.use('/uploads', express.static(path.join(process.cwd(), 'public', 'uploads')));
@@ -113,6 +118,19 @@ app.use('/api/offers', offerRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/housekeeping', housekeepingRoutes);
+
+// API documentation (Swagger UI) served from openapi.yaml.
+try {
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  const openapiDoc = YAML.parse(fs.readFileSync(path.join(__dirname, '../openapi.yaml'), 'utf8'));
+  app.get('/api/docs.json', (req, res) => res.json(openapiDoc));
+  app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openapiDoc, {
+    customSiteTitle: 'Tirvona API Docs',
+  }));
+  console.log('API docs available at /api/docs');
+} catch (err) {
+  console.warn('Could not load openapi.yaml for Swagger UI:', err.message);
+}
 
 // Root Endpoint
 app.get('/', (req, res) => {

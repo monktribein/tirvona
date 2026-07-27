@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
@@ -26,7 +26,9 @@ import {
   Compass,
   Bed,
   CheckCircle,
-  Award
+  Award,
+  X,
+  Maximize2
 } from 'lucide-react';
 
 export const AshramDetailPage: React.FC = () => {
@@ -95,6 +97,8 @@ export const AshramDetailPage: React.FC = () => {
   const [bookingError, setBookingError] = useState('');
   const [bookingSuccess, setBookingSuccess] = useState<any>(null);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const touchStartX = useRef(0);
 
   useEffect(() => {
     fetchDetails();
@@ -184,6 +188,35 @@ export const AshramDetailPage: React.FC = () => {
       setCouponMsg('Invalid promo code. Try DIVINE10 or PILGRIM50.');
     }
   };
+
+  const nextImage = () => {
+    const n = (ashram?.images || []).length;
+    if (n > 0) setActiveImageIndex((i) => (i + 1) % n);
+  };
+  const prevImage = () => {
+    const n = (ashram?.images || []).length;
+    if (n > 0) setActiveImageIndex((i) => (i - 1 + n) % n);
+  };
+  const onHeroTouchEnd = (e: React.TouchEvent) => {
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    if (Math.abs(dx) > 40) (dx < 0 ? nextImage() : prevImage());
+  };
+
+  // Keyboard navigation while the lightbox is open.
+  useEffect(() => {
+    if (!lightboxOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setLightboxOpen(false);
+      else if (e.key === 'ArrowRight') nextImage();
+      else if (e.key === 'ArrowLeft') prevImage();
+    };
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = '';
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [lightboxOpen, ashram]);
 
   const calculateDays = () => {
     if (!checkIn || !checkOut) return 1;
@@ -415,65 +448,136 @@ export const AshramDetailPage: React.FC = () => {
   const galleryImages = ashram?.images || [];
 
   return (
-    <div className="max-w-7xl mx-auto px-6 pt-28 lg:pt-32 pb-10 space-y-10">
+    <div className="max-w-7xl mx-auto px-6 pt-2 pb-16 space-y-10">
       {/* Title Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start gap-4 border-b border-gray-100 dark:border-slate-800 pb-8">
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <span className="px-3 py-1 bg-[#0A4DA6] text-white text-[9px] font-extrabold rounded-full flex items-center gap-1 shadow-sm uppercase tracking-wider">
-              <ShieldCheck size={12} /> Verified Stay
-            </span>
-            <span className="text-xs text-gray-400 font-extrabold tracking-wider uppercase">
-              {ashram.address?.city}, {ashram.address?.state}
-            </span>
-          </div>
-          <h2 className="text-3xl md:text-5xl font-extrabold text-[#0B192C] dark:text-white leading-tight">
-            {ashram.name}
-          </h2>
-          <p className="text-xs text-gray-500 flex items-center gap-1">
-            <MapPin size={12} className="text-[#0A4DA6]" /> {ashram.address?.street}, Pin: {ashram.address?.pincode}
-          </p>
+      <div className="flex flex-col items-center text-center gap-3 border-b border-gray-100 dark:border-slate-800 pb-4">
+        <div className="flex items-center justify-center gap-2">
+          <span className="px-3 py-1 bg-[#0A4DA6] text-white text-[9px] font-extrabold rounded-full flex items-center gap-1 shadow-sm uppercase tracking-wider">
+            <ShieldCheck size={12} /> Verified Stay
+          </span>
+          <span className="text-xs text-gray-400 font-extrabold tracking-wider uppercase">
+            {ashram.address?.city}, {ashram.address?.state}
+          </span>
         </div>
-
-        <div className="flex items-center gap-3 bg-gray-50 dark:bg-slate-900 px-4 py-2.5 border border-gray-150 rounded-2xl shrink-0">
-          <Star className="text-[#D4AF37] fill-[#D4AF37]" size={20} />
-          <div className="flex flex-col">
-            <span className="text-sm font-extrabold text-[#0B192C] dark:text-white">{ashram.rating?.average} / 5</span>
-            <span className="text-[9px] text-gray-400 font-bold uppercase">{ashram.rating?.count} reviews</span>
-          </div>
-        </div>
+        <h2 className="text-3xl md:text-5xl font-extrabold text-[#0B192C] dark:text-white leading-tight">
+          {ashram.name}
+        </h2>
+        <p className="text-xs text-gray-500 flex items-center justify-center gap-1">
+          <MapPin size={12} className="text-[#0A4DA6]" /> {ashram.address?.street}, Pin: {ashram.address?.pincode}
+        </p>
       </div>
 
-      {/* Mosaic Collage Photo Gallery */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 h-auto lg:h-[380px]">
-        {/* Main large image */}
-        <div className="lg:col-span-2 h-64 lg:h-full rounded-[24px] overflow-hidden relative shadow-sm">
-          <img 
-            src={galleryImages[activeImageIndex] || galleryImages[0]} 
-            alt="Hero Ashram View" 
-            className="w-full h-full object-cover"
-            onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = 'https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?auto=format&fit=crop&w=800&q=80'; }}
-          />
-        </div>
-        
-        {/* Smaller grid images */}
-        <div className="lg:col-span-2 grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-3 gap-3 overflow-y-auto lg:pr-1 max-h-48 lg:max-h-none">
-          {galleryImages.map((img: string, idx: number) => (
-            <div 
-              key={idx} 
-              onClick={() => setActiveImageIndex(idx)}
-              className={`h-20 lg:h-24 rounded-[16px] overflow-hidden cursor-pointer border-2 transition-all ${idx === activeImageIndex ? 'border-[#0A4DA6] shadow-sm' : 'border-transparent opacity-85 hover:opacity-100'}`}
-            >
-              <img 
-                src={img} 
-                alt={`Gallery index ${idx}`} 
-                className="w-full h-full object-cover" 
-                onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = 'https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?auto=format&fit=crop&w=800&q=80'; }}
-              />
+      {/* Premium Hero + Thumbnail Gallery */}
+      <div className="space-y-3 -mt-4">
+        {/* Hero image (16:9) — click to open lightbox, swipe to change on mobile */}
+        <div
+          className="relative w-full aspect-video rounded-[24px] overflow-hidden shadow-sm cursor-zoom-in group bg-gray-100 dark:bg-slate-900"
+          onClick={() => galleryImages.length > 0 && setLightboxOpen(true)}
+          onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
+          onTouchEnd={onHeroTouchEnd}
+        >
+          <AnimatePresence mode="wait">
+            <motion.img
+              key={activeImageIndex}
+              src={galleryImages[activeImageIndex] || galleryImages[0]}
+              alt="Ashram view"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.35, ease: 'easeInOut' }}
+              className="absolute inset-0 w-full h-full object-cover"
+              onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = 'https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?auto=format&fit=crop&w=1200&q=80'; }}
+            />
+          </AnimatePresence>
+
+          {galleryImages.length > 1 && (
+            <div className="absolute top-4 left-4 px-2.5 py-1 rounded-full bg-black/45 text-white text-[10px] font-bold backdrop-blur-sm">
+              {activeImageIndex + 1} / {galleryImages.length}
             </div>
-          ))}
+          )}
+          <div className="absolute bottom-4 right-4 px-3 py-1.5 rounded-full bg-black/50 text-white text-[11px] font-bold flex items-center gap-1.5 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity">
+            <Maximize2 size={13} /> View Gallery
+          </div>
         </div>
+
+        {/* Thumbnail carousel — swipeable, hover zoom, active highlight */}
+        {galleryImages.length > 1 && (
+          <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-none snap-x" style={{ scrollbarWidth: 'none' }}>
+            {galleryImages.map((img: string, idx: number) => (
+              <button
+                key={idx}
+                onClick={() => setActiveImageIndex(idx)}
+                aria-label={`Show image ${idx + 1}`}
+                className={`relative shrink-0 w-24 h-16 sm:w-28 sm:h-20 rounded-2xl overflow-hidden cursor-pointer border-2 transition-all snap-start group ${
+                  idx === activeImageIndex
+                    ? 'border-[#0A4DA6] ring-2 ring-[#0A4DA6]/20'
+                    : 'border-transparent opacity-70 hover:opacity-100'
+                }`}
+              >
+                <img
+                  src={img}
+                  alt={`Gallery ${idx + 1}`}
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                  onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = 'https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?auto=format&fit=crop&w=400&q=80'; }}
+                />
+              </button>
+            ))}
+          </div>
+        )}
       </div>
+
+      {/* Lightbox */}
+      {lightboxOpen && galleryImages.length > 0 && (
+        <div
+          className="fixed inset-0 z-[70] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setLightboxOpen(false)}
+        >
+          <button
+            onClick={() => setLightboxOpen(false)}
+            className="absolute top-5 right-5 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer"
+            aria-label="Close"
+          >
+            <X size={20} />
+          </button>
+
+          {galleryImages.length > 1 && (
+            <>
+              <button
+                onClick={(e) => { e.stopPropagation(); prevImage(); }}
+                className="absolute left-4 sm:left-8 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer"
+                aria-label="Previous image"
+              >
+                <ChevronLeft size={22} />
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); nextImage(); }}
+                className="absolute right-4 sm:right-8 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer"
+                aria-label="Next image"
+              >
+                <ChevronRight size={22} />
+              </button>
+            </>
+          )}
+
+          <AnimatePresence mode="wait">
+            <motion.img
+              key={activeImageIndex}
+              src={galleryImages[activeImageIndex]}
+              alt="Ashram full view"
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25 }}
+              className="max-h-[85vh] max-w-[92vw] object-contain rounded-lg shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </AnimatePresence>
+
+          <div className="absolute bottom-5 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-white/10 text-white text-xs font-bold">
+            {activeImageIndex + 1} / {galleryImages.length}
+          </div>
+        </div>
+      )}
 
 
       {/* Main Layout Grid */}
@@ -484,9 +588,15 @@ export const AshramDetailPage: React.FC = () => {
           
           {/* About description & History */}
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-5 shadow-sm">
-            <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white flex items-center gap-1.5 border-b border-gray-50 dark:border-slate-850 pb-3">
-              <Compass size={18} className="text-[#0A4DA6]" /> About the Retreat
-            </h3>
+            <div className="flex items-center justify-between gap-3 border-b border-gray-50 dark:border-slate-850 pb-3">
+              <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white flex items-center gap-1.5">
+                <Compass size={18} className="text-[#0A4DA6]" /> About the Retreat
+              </h3>
+              <div className="flex items-center gap-1 bg-gray-50 dark:bg-slate-900 px-3 py-1 border border-gray-150 dark:border-slate-800 rounded-full shrink-0">
+                <Star className="text-[#D4AF37] fill-[#D4AF37]" size={12} />
+                <span className="text-[11px] font-extrabold text-[#0B192C] dark:text-white">{ashram.rating?.average} / 5</span>
+              </div>
+            </div>
             <p className="text-xs text-gray-500 leading-relaxed font-medium">{ashram.description}</p>
             
             {ashram.history && (

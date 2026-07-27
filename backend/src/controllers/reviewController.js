@@ -65,6 +65,24 @@ export const createReview = async (req, res) => {
   }
 };
 
+// @desc    Get recent approved reviews across all ashrams (homepage feed)
+// @route   GET /api/reviews/recent
+// @access  Public
+export const getRecentReviews = async (req, res) => {
+  try {
+    const reviews = await Review.find({ status: 'approved' })
+      .populate('customerId', 'name')
+      .populate('ashramId', 'name address images')
+      .sort({ createdAt: -1 })
+      .limit(12);
+
+    res.json({ success: true, count: reviews.length, data: reviews });
+  } catch (error) {
+    console.error('Recent reviews error:', error);
+    res.status(500).json({ success: false, message: 'Error loading recent reviews' });
+  }
+};
+
 // @desc    Get all approved reviews for an ashram
 // @route   GET /api/reviews/ashram/:ashramId
 // @access  Public

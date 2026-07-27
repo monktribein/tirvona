@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { ShieldCheck, Mail, Phone, Lock, User as UserIcon, Building2 } from 'lucide-react';
-import logo from '../assets/logo.png';
+import {
+  ShieldCheck, Mail, Phone, Lock, User as UserIcon, Building2,
+  BadgeCheck, Headphones, ArrowRight, Landmark, Zap
+} from 'lucide-react';
 
 export const RegisterPage: React.FC = () => {
   const { registerUser } = useAuth();
@@ -17,7 +19,7 @@ export const RegisterPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [govtIdType, setGovtIdType] = useState('Aadhaar');
   const [govtIdNumber, setGovtIdNumber] = useState('');
-  
+
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -26,13 +28,7 @@ export const RegisterPage: React.FC = () => {
     setError('');
     setLoading(true);
 
-    const payload: any = {
-      name,
-      email,
-      phone,
-      password,
-      role,
-    };
+    const payload: any = { name, email, phone, password, role };
 
     if (role === 'owner') {
       payload.govtIdType = govtIdType;
@@ -65,166 +61,262 @@ export const RegisterPage: React.FC = () => {
     }
   };
 
+  const heroFeatures = [
+    { icon: <ShieldCheck size={18} />, label: 'Trusted Properties' },
+    { icon: <Lock size={18} />, label: 'Secure Booking' },
+    { icon: <BadgeCheck size={18} />, label: 'Verified Hosts' },
+    { icon: <Headphones size={18} />, label: '24×7 Support' },
+  ];
+
+  const trustBadges = [
+    { icon: <ShieldCheck size={16} />, title: 'SSL Secure Signup', sub: 'Your data is protected' },
+    { icon: <Landmark size={16} />, title: 'Government', sub: 'Verified Platform' },
+    { icon: <Zap size={16} />, title: 'Instant Access', sub: 'Book right away' },
+  ];
+
   return (
-    <div className="min-h-screen py-16 px-4 sm:px-6 lg:px-8 flex items-center justify-center bg-gray-50/50 dark:bg-[#070F1B]">
-      <div className="w-full max-w-md bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[32px] shadow-sm p-8 space-y-6">
-        
-        {/* Header Branding */}
-        <div className="text-center space-y-3">
-          <img src={logo} alt="Tirvona Logo" className="w-12 h-12 object-contain inline-block" />
-          <h2 className="text-2xl font-black text-[#0B192C] dark:text-white flex items-center justify-center gap-1.5">
-            Create Portal Account <ShieldCheck size={20} className="text-[#0A4DA6]" />
-          </h2>
-          <p className="text-xs text-gray-400">
-            Join the national digital spiritual stays platform
-          </p>
+    <section className="relative w-full min-h-screen bg-[#0B192C] overflow-hidden -mt-24 lg:-mt-28">
+      {/* Full-cover background; section pulled up under the floating navbar so there is no white gap */}
+      <img
+        src="/auth-page/background.png"
+        alt=""
+        className="absolute inset-0 w-full h-full object-cover"
+        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+      />
+      <div className="absolute inset-0 bg-gradient-to-r from-[#0B192C]/90 via-[#0B192C]/60 to-[#0A4DA6]/25" />
+
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-screen grid lg:grid-cols-2 gap-10 lg:gap-12 items-center pt-36 lg:pt-40 pb-16">
+
+        {/* ── Left: Marketing hero ── */}
+        <div className="hidden lg:flex flex-col justify-center text-white space-y-7">
+          <div className="space-y-5">
+            <h1 className="font-black leading-[1.05] tracking-tight" style={{ fontSize: 'clamp(2.5rem, 5vw, 3.75rem)' }}>
+              Begin Your<br />Sacred Journey
+            </h1>
+            <div className="flex items-center gap-3 text-[#E58C28]">
+              <span className="h-px w-24 bg-gradient-to-r from-transparent to-[#E58C28]" />
+              <span className="text-lg">✦</span>
+              <span className="h-px w-24 bg-gradient-to-l from-transparent to-[#E58C28]" />
+            </div>
+            <p className="text-base text-gray-200 max-w-md leading-relaxed">
+              Create a free account in seconds to book verified stays as a pilgrim — or list your ashram and welcome guests from across India.
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            {heroFeatures.map((f) => (
+              <div key={f.label} className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-white/10 border border-white/15 flex items-center justify-center text-[#E58C28] backdrop-blur-sm">
+                  {f.icon}
+                </div>
+                <span className="font-bold text-sm">{f.label}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Stats strip */}
+          <div className="flex items-center gap-6">
+            {[
+              { n: 'Free', l: 'To Join' },
+              { n: '2 min', l: 'Quick Signup' },
+              { n: '0', l: 'Paperwork' },
+            ].map((s, i) => (
+              <React.Fragment key={s.l}>
+                {i > 0 && <span className="h-8 w-px bg-white/20" />}
+                <div>
+                  <p className="text-2xl font-black leading-none">{s.n}</p>
+                  <p className="text-[11px] text-gray-300 font-semibold mt-1">{s.l}</p>
+                </div>
+              </React.Fragment>
+            ))}
+          </div>
+
+          {/* Testimonial */}
+          <blockquote className="border-l-2 border-[#E58C28]/60 pl-4 max-w-md">
+            <p className="text-sm text-gray-200 italic leading-relaxed">
+              “Listing our ashram brought verified pilgrims to our doorstep — the process was effortless.”
+            </p>
+            <footer className="text-[11px] text-gray-400 font-bold mt-1.5">— Swami Anand, Rishikesh</footer>
+          </blockquote>
         </div>
 
-        {/* Role Select Buttons */}
-        <div className="grid grid-cols-2 gap-3">
-          <button
-            type="button"
-            onClick={() => setRole('customer')}
-            className={`p-4 rounded-[20px] border flex flex-col items-center justify-center gap-2 transition-all cursor-pointer ${
-              role === 'customer'
-                ? 'border-[#0A4DA6] bg-[#0A4DA6]/5 text-[#0A4DA6] shadow-sm'
-                : 'border-gray-150 text-gray-400 hover:border-gray-300'
-            }`}
-          >
-            <UserIcon size={18} />
-            <span className="text-xs font-bold">Guest Visitor</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setRole('owner')}
-            className={`p-4 rounded-[20px] border flex flex-col items-center justify-center gap-2 transition-all cursor-pointer ${
-              role === 'owner'
-                ? 'border-[#0A4DA6] bg-[#0A4DA6]/5 text-[#0A4DA6] shadow-sm'
-                : 'border-gray-150 text-gray-400 hover:border-gray-300'
-            }`}
-          >
-            <Building2 size={18} />
-            <span className="text-xs font-bold">Ashram Owner</span>
-          </button>
-        </div>
+        {/* ── Right: Register card ── */}
+        <div className="w-full max-w-md mx-auto lg:ml-auto lg:mr-0 space-y-4">
+          <div className="bg-white/95 dark:bg-[#0B192C]/95 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-[28px] shadow-2xl p-6 sm:p-8 space-y-5">
 
-        {/* Error Alert Box */}
-        {error && (
-          <div className="p-3 bg-danger/10 text-danger border border-danger/20 text-xs rounded-xl font-semibold">
-            {error}
-          </div>
-        )}
-
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-gray-400">Full Name</label>
-            <input
-              type="text"
-              required
-              placeholder="Enter name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
-            />
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-gray-400">Email Address</label>
-            <div className="relative">
-              <Mail className="absolute left-3.5 top-3.5 text-gray-400" size={16} />
-              <input
-                type="email"
-                required
-                placeholder="name@govt.in"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
-              />
+            {/* Brand */}
+            <div className="text-center space-y-2">
+              <img src="/logo/logo.png" alt="Tirvona" className="w-14 h-14 object-contain inline-block" />
+              <h2 className="text-2xl font-black text-[#0B192C] dark:text-white flex items-center justify-center gap-1.5">
+                Create Account <ShieldCheck size={20} className="text-[#0A4DA6]" />
+              </h2>
+              <p className="text-xs text-gray-400 font-semibold">Join the national digital spiritual stays platform</p>
             </div>
-          </div>
 
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-gray-400">Mobile Phone Number</label>
-            <div className="relative">
-              <Phone className="absolute left-3.5 top-3.5 text-gray-400" size={16} />
-              <input
-                type="tel"
-                required
-                placeholder="+91 XXXXX XXXXX"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
-              />
+            {/* Role select */}
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setRole('customer')}
+                className={`p-4 rounded-[20px] border flex flex-col items-center justify-center gap-2 transition-all cursor-pointer ${
+                  role === 'customer'
+                    ? 'border-[#0A4DA6] bg-[#0A4DA6]/5 text-[#0A4DA6] shadow-sm'
+                    : 'border-gray-200 dark:border-slate-800 text-gray-400 hover:border-gray-300'
+                }`}
+              >
+                <UserIcon size={18} />
+                <span className="text-xs font-bold">Guest Visitor</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setRole('owner')}
+                className={`p-4 rounded-[20px] border flex flex-col items-center justify-center gap-2 transition-all cursor-pointer ${
+                  role === 'owner'
+                    ? 'border-[#0A4DA6] bg-[#0A4DA6]/5 text-[#0A4DA6] shadow-sm'
+                    : 'border-gray-200 dark:border-slate-800 text-gray-400 hover:border-gray-300'
+                }`}
+              >
+                <Building2 size={18} />
+                <span className="text-xs font-bold">Ashram Owner</span>
+              </button>
             </div>
-          </div>
 
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-gray-400">Security Password</label>
-            <div className="relative">
-              <Lock className="absolute left-3.5 top-3.5 text-gray-400" size={16} />
-              <input
-                type="password"
-                required
-                placeholder="Minimum 6 characters"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
-              />
-            </div>
-          </div>
+            {error && (
+              <div className="p-3 bg-danger/10 text-danger border border-danger/20 text-xs rounded-xl font-semibold">{error}</div>
+            )}
 
-          {/* Dynamic Owner Verification Section */}
-          {role === 'owner' && (
-            <div className="p-4 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-[20px] space-y-3">
-              <span className="text-[10px] uppercase font-bold text-[#0A4DA6] tracking-wider">
-                Government KYC Verification Required
-              </span>
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-2">
-                  <select
-                    value={govtIdType}
-                    onChange={(e) => setGovtIdType(e.target.value)}
-                    className="p-2.5 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-850 rounded-xl text-xs focus:outline-none"
-                  >
-                    <option value="Aadhaar">Aadhaar Card</option>
-                    <option value="PAN">PAN Card</option>
-                    <option value="Service ID">Service ID</option>
-                    <option value="VoterID">Voter ID</option>
-                  </select>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-extrabold text-[#0B192C] dark:text-gray-200">Full Name</label>
+                <div className="relative">
+                  <UserIcon className="absolute left-3.5 top-3.5 text-gray-400" size={16} />
                   <input
                     type="text"
                     required
-                    placeholder="ID Number"
-                    value={govtIdNumber}
-                    onChange={(e) => setGovtIdNumber(e.target.value)}
-                    className="p-2.5 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-850 rounded-xl text-xs focus:outline-none"
+                    placeholder="Enter your name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
                   />
                 </div>
-                <div className="text-[10px] text-gray-400 leading-normal">
-                  By submitting, you agree to undergo physical and document checks by State/District officers.
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-extrabold text-[#0B192C] dark:text-gray-200">Email Address</label>
+                <div className="relative">
+                  <Mail className="absolute left-3.5 top-3.5 text-gray-400" size={16} />
+                  <input
+                    type="email"
+                    required
+                    placeholder="name@govt.in"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                  />
                 </div>
               </div>
-            </div>
-          )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 bg-[#0A4DA6] text-white rounded-full font-extrabold text-xs shadow-md hover:opacity-95 transition-all cursor-pointer"
-          >
-            {loading ? 'Registering Account...' : 'Create Account'}
-          </button>
-        </form>
+              <div className="space-y-1.5">
+                <label className="text-xs font-extrabold text-[#0B192C] dark:text-gray-200">Mobile Phone Number</label>
+                <div className="relative">
+                  <Phone className="absolute left-3.5 top-3.5 text-gray-400" size={16} />
+                  <input
+                    type="tel"
+                    required
+                    placeholder="+91 98765 43210"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                  />
+                </div>
+              </div>
 
-        <div className="text-center text-xs text-gray-400">
-          Already have an account?{' '}
-          <Link to={`/login${redirect ? `?redirect=${encodeURIComponent(redirect)}` : ''}`} className="text-[#0A4DA6] font-bold hover:underline">
-            Log in here
-          </Link>
+              <div className="space-y-1.5">
+                <label className="text-xs font-extrabold text-[#0B192C] dark:text-gray-200">Security Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-3.5 top-3.5 text-gray-400" size={16} />
+                  <input
+                    type="password"
+                    required
+                    minLength={6}
+                    placeholder="Minimum 6 characters"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                  />
+                </div>
+              </div>
+
+              {/* Owner KYC */}
+              {role === 'owner' && (
+                <div className="p-4 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-[20px] space-y-3 animate-in fade-in duration-200">
+                  <span className="text-[10px] uppercase font-bold text-[#0A4DA6] tracking-wider">
+                    Government KYC Verification Required
+                  </span>
+                  <div className="grid grid-cols-2 gap-2">
+                    <select
+                      value={govtIdType}
+                      onChange={(e) => setGovtIdType(e.target.value)}
+                      className="p-2.5 bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none"
+                    >
+                      <option value="Aadhaar">Aadhaar Card</option>
+                      <option value="PAN">PAN Card</option>
+                      <option value="Service ID">Service ID</option>
+                      <option value="VoterID">Voter ID</option>
+                    </select>
+                    <input
+                      type="text"
+                      required
+                      placeholder="ID Number"
+                      value={govtIdNumber}
+                      onChange={(e) => setGovtIdNumber(e.target.value)}
+                      className="p-2.5 bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none"
+                    />
+                  </div>
+                  <div className="text-[10px] text-gray-400 leading-normal">
+                    By submitting, you agree to undergo physical and document checks by State/District officers.
+                  </div>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3.5 bg-[#0A4DA6] hover:bg-[#083b80] text-white rounded-full font-extrabold text-sm shadow-md shadow-[#0A4DA6]/20 transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60"
+              >
+                {loading ? 'Creating account…' : <>Create Account <ArrowRight size={16} /></>}
+              </button>
+
+              <p className="text-center text-[10px] text-gray-400 font-semibold leading-relaxed">
+                By creating an account you agree to our{' '}
+                <Link to="/terms" className="text-[#0A4DA6] font-bold hover:underline">Terms</Link> &amp;{' '}
+                <Link to="/privacy" className="text-[#0A4DA6] font-bold hover:underline">Privacy Policy</Link>.
+              </p>
+            </form>
+
+            <p className="text-center text-xs text-gray-500 dark:text-gray-400 font-semibold">
+              Already have an account?{' '}
+              <Link to={`/login${redirect ? `?redirect=${encodeURIComponent(redirect)}` : ''}`} className="text-[#0A4DA6] font-black hover:underline">
+                Log in here
+              </Link>
+            </p>
+          </div>
+
+          {/* Trust badges */}
+          <div className="grid grid-cols-3 gap-2 text-white">
+            {trustBadges.map((b) => (
+              <div key={b.title} className="flex items-center gap-2 justify-center sm:justify-start">
+                <div className="text-[#E58C28] shrink-0">{b.icon}</div>
+                <div className="leading-tight">
+                  <p className="text-[10px] sm:text-[11px] font-black">{b.title}</p>
+                  <p className="text-[9px] text-gray-300 font-semibold hidden sm:block">{b.sub}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 };
 export default RegisterPage;

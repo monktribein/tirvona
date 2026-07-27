@@ -225,9 +225,9 @@ export const SearchPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-6 pt-28 lg:pt-32 pb-10 space-y-10">
-      {/* Search Filter Panel */}
-      <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-5 rounded-[28px] shadow-sm">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-1 pb-12 space-y-4 lg:pb-12 lg:h-[calc(100vh-5.5rem)] lg:flex lg:flex-col lg:overflow-hidden">
+      {/* Search Filter Panel — stays fixed below the navbar */}
+      <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-5 rounded-[28px] shadow-sm shrink-0">
         <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
           {/* Destination */}
           <div className="flex flex-col text-left space-y-1.5 relative" ref={autocompleteRef}>
@@ -324,9 +324,9 @@ export const SearchPage: React.FC = () => {
         </form>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        {/* Sidebar Filter and Map Toggle */}
-        <aside className="space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 lg:flex-1 lg:min-h-0">
+        {/* Sidebar Filter and Map Toggle — static */}
+        <aside className="space-y-6 lg:overflow-y-auto lg:pr-1 scrollbar-none">
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[28px] shadow-sm space-y-6">
             <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white flex items-center gap-2 border-b border-gray-50 dark:border-slate-850 pb-3">
               <Filter size={16} className="text-[#0A4DA6]" /> Filters
@@ -399,8 +399,8 @@ export const SearchPage: React.FC = () => {
           </div>
         </aside>
 
-        {/* Results Feed */}
-        <section className="lg:col-span-3 space-y-6">
+        {/* Results Feed — only this scrolls */}
+        <section className="lg:col-span-3 space-y-6 lg:overflow-y-auto lg:pr-2 lg:pb-6 scrollbar-none">
           <div className="flex justify-between items-center bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 px-5 py-3.5 rounded-[20px] shadow-sm">
             <div className="text-xs font-bold text-gray-500">
               Found <span className="text-[#0A4DA6] font-extrabold">{results.length} stays</span> matching{' '}
@@ -416,7 +416,7 @@ export const SearchPage: React.FC = () => {
             </div>
           ) : results.length === 0 ? (
             <div className="text-center py-20 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] space-y-4">
-              <Compass className="mx-auto text-gray-300" size={48} />
+              <img src="/logo/logo.png" alt="Tirvona" className="mx-auto w-[140px] h-auto object-contain opacity-20 dark:opacity-30 select-none" />
               <h4 className="font-extrabold text-base text-[#0B192C] dark:text-white">No retreats found</h4>
               <p className="text-xs text-gray-400 max-w-sm mx-auto leading-relaxed">
                 We couldn't find any approved Ashram matching your query. Try adjusting filters or typing city names like 'Rishikesh', 'Haridwar', or 'Vrindavan'.

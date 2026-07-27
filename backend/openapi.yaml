@@ -1,0 +1,725 @@
+openapi: 3.0.3
+info:
+  title: Tirvona (Ashray Bharat) API
+  version: 1.0.0
+  description: >
+    REST API for the Tirvona sacred-stay booking platform. Stateless JWT auth
+    (Authorization: Bearer <token>), JSON responses in the shape
+    { success, data?, message?, count? }. Suitable for web and Flutter clients.
+servers:
+  - url: http://localhost:5000/api
+    description: Local
+  - url: https://tirvona.onrender.com/api
+    description: Production (replace host)
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ApiResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        message: { type: string }
+        count: { type: integer }
+        data: {}
+    AuthData:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        email: { type: string }
+        phone: { type: string }
+        role: { type: string }
+        status: { type: string }
+        token: { type: string }
+    Error:
+      type: object
+      properties:
+        success: { type: boolean, example: false }
+        message: { type: string }
+  responses:
+    Success:
+      description: Success
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiResponse' }
+    Unauthorized:
+      description: Missing or invalid token
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Forbidden:
+      description: Role not permitted / account suspended
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Auth
+  - name: Ashrams
+  - name: Rooms
+  - name: Bookings
+  - name: Reviews
+  - name: Offers
+  - name: Housekeeping
+  - name: Support
+  - name: Verification
+  - name: Analytics
+  - name: Users
+  - name: Uploads
+
+paths:
+  # ───────────────────────── Auth ─────────────────────────
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new user
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, phone, password]
+              properties:
+                name: { type: string }
+                email: { type: string }
+                phone: { type: string }
+                password: { type: string }
+                role: { type: string, enum: [customer, owner, district_officer, govt_admin] }
+                district: { type: string }
+                state: { type: string }
+      responses:
+        '201': { $ref: '#/components/responses/Success' }
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login with email + password
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string }
+                password: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - properties: { data: { $ref: '#/components/schemas/AuthData' } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /auth/otp/send:
+    post:
+      tags: [Auth]
+      summary: Send login OTP to a phone (demo returns the code)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone]
+              properties: { phone: { type: string } }
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+  /auth/otp/verify:
+    post:
+      tags: [Auth]
+      summary: Verify OTP and login (auto-creates guest customer)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [phone, otp]
+              properties:
+                phone: { type: string }
+                otp: { type: string }
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+  /auth/forgot-password:
+    post:
+      tags: [Auth]
+      summary: Request a password-reset code (demo returns the code)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties: { email: { type: string } }
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+  /auth/reset-password:
+    post:
+      tags: [Auth]
+      summary: Reset password with the code
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, code, newPassword]
+              properties:
+                email: { type: string }
+                code: { type: string }
+                newPassword: { type: string, minLength: 6 }
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Get current user profile
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    put:
+      tags: [Auth]
+      summary: Update own profile (name / phone)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                phone: { type: string }
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /auth/owner-staff:
+    get:
+      tags: [Auth]
+      summary: List staff (owner / super_admin)
+      responses: { '200': { $ref: '#/components/responses/Success' }, '403': { $ref: '#/components/responses/Forbidden' } }
+    post:
+      tags: [Auth]
+      summary: Create staff account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                email: { type: string }
+                phone: { type: string }
+                password: { type: string }
+                role: { type: string, enum: [manager, reception, housekeeping] }
+      responses: { '201': { $ref: '#/components/responses/Success' } }
+  /auth/owner-staff/{id}/password:
+    put:
+      tags: [Auth]
+      summary: Reset a staff member's password
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, properties: { password: { type: string } } }
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+  /auth/owner-staff/{id}/status:
+    put:
+      tags: [Auth]
+      summary: Toggle a staff member's active/suspended status
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+
+  # ───────────────────────── Ashrams ─────────────────────────
+  /ashrams:
+    get:
+      tags: [Ashrams]
+      summary: Search / list approved ashrams
+      security: []
+      parameters:
+        - { name: destination, in: query, schema: { type: string } }
+        - { name: checkIn, in: query, schema: { type: string, format: date } }
+        - { name: checkOut, in: query, schema: { type: string, format: date } }
+        - { name: guests, in: query, schema: { type: integer } }
+        - { name: minPrice, in: query, schema: { type: number } }
+        - { name: maxPrice, in: query, schema: { type: number } }
+        - { name: amenities, in: query, schema: { type: string }, description: comma-separated }
+        - { name: rating, in: query, schema: { type: number } }
+        - { name: verified, in: query, schema: { type: boolean } }
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+    post:
+      tags: [Ashrams]
+      summary: Create an ashram (owner / super_admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                description: { type: string }
+                address: { type: object }
+                history: { type: string }
+                rules: { type: array, items: { type: string } }
+                amenities: { type: array, items: { type: string } }
+      responses: { '201': { $ref: '#/components/responses/Success' } }
+  /ashrams/{id}:
+    get:
+      tags: [Ashrams]
+      summary: Get one ashram + its rooms
+      security: []
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+    put:
+      tags: [Ashrams]
+      summary: Update ashram (owner / manager / super_admin)
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      requestBody: { content: { application/json: { schema: { type: object } } } }
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+  /ashrams/my-listings/all:
+    get:
+      tags: [Ashrams]
+      summary: List ashrams owned by the caller
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+  /ashrams/{id}/documents:
+    post:
+      tags: [Ashrams]
+      summary: Submit KYC document URLs (owner / super_admin)
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                trustDeedUrl: { type: string }
+                fireSafetyCertificateUrl: { type: string }
+                landOwnershipUrl: { type: string }
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+
+  # ───────────────────────── Rooms ─────────────────────────
+  /rooms:
+    post:
+      tags: [Rooms]
+      summary: Create a room category
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ashramId: { type: string }
+                name: { type: string }
+                type: { type: string, enum: [dormitory, private_room, family_room, hall] }
+                acType: { type: string, enum: [AC, Non-AC] }
+                capacity: { type: integer }
+                totalInventory: { type: integer }
+                basePrice: { type: number }
+                amenities: { type: array, items: { type: string } }
+      responses: { '201': { $ref: '#/components/responses/Success' } }
+  /rooms/{id}:
+    put:
+      tags: [Rooms]
+      summary: Update a room
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      requestBody: { content: { application/json: { schema: { type: object } } } }
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+  /rooms/{id}/availability:
+    post:
+      tags: [Rooms]
+      summary: Override availability/price for a date
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                date: { type: string, format: date }
+                bookedCount: { type: integer }
+                maintenanceCount: { type: integer }
+                customPrice: { type: number }
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+  /rooms/{id}/calendar:
+    get:
+      tags: [Rooms]
+      summary: Per-day inventory & pricing
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - { name: startDate, in: query, schema: { type: string, format: date } }
+        - { name: endDate, in: query, schema: { type: string, format: date } }
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+
+  # ───────────────────────── Bookings ─────────────────────────
+  /bookings/create:
+    post:
+      tags: [Bookings]
+      summary: Create a booking (customer)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ashramId: { type: string }
+                roomId: { type: string }
+                checkInDate: { type: string, format: date }
+                checkOutDate: { type: string, format: date }
+                guestsCount: { type: integer }
+                roomsBookedCount: { type: integer }
+                services: { type: object }
+      responses: { '201': { $ref: '#/components/responses/Success' } }
+  /bookings/{id}/payment/order:
+    post:
+      tags: [Bookings]
+      summary: Create Razorpay order (or demo)
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+  /bookings/{id}/payment:
+    post:
+      tags: [Bookings]
+      summary: Verify payment & confirm booking
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                razorpay_order_id: { type: string }
+                razorpay_payment_id: { type: string }
+                razorpay_signature: { type: string }
+                method: { type: string }
+                transactionId: { type: string }
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+  /bookings/history:
+    get:
+      tags: [Bookings]
+      summary: Caller's booking history (customer)
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+  /bookings/dashboard:
+    get:
+      tags: [Bookings]
+      summary: Bookings for owner/staff dashboards
+      parameters:
+        - { name: ashramId, in: query, schema: { type: string } }
+        - { name: status, in: query, schema: { type: string } }
+        - { name: date, in: query, schema: { type: string, format: date } }
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+  /bookings/{id}:
+    get:
+      tags: [Bookings]
+      summary: Get one booking (owner customer or scoped staff)
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /bookings/{id}/checkin:
+    post:
+      tags: [Bookings]
+      summary: Verify 6-digit check-in code
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, properties: { checkInCode: { type: string } } }
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+  /bookings/{id}/checkout:
+    post:
+      tags: [Bookings]
+      summary: Check a guest out
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+  /bookings/{id}/cancel:
+    post:
+      tags: [Bookings]
+      summary: Cancel a booking
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, properties: { reason: { type: string } } }
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+
+  # ───────────────────────── Reviews ─────────────────────────
+  /reviews:
+    post:
+      tags: [Reviews]
+      summary: Create a review (after checkout)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ashramId: { type: string }
+                bookingId: { type: string }
+                comment: { type: string }
+                rating:
+                  type: object
+                  properties:
+                    overall: { type: integer }
+                    cleanliness: { type: integer }
+                    service: { type: integer }
+                    location: { type: integer }
+                    valueForMoney: { type: integer }
+      responses: { '201': { $ref: '#/components/responses/Success' } }
+  /reviews/ashram/{ashramId}:
+    get:
+      tags: [Reviews]
+      summary: Approved reviews for an ashram
+      security: []
+      parameters: [{ name: ashramId, in: path, required: true, schema: { type: string } }]
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+
+  # ───────────────────────── Offers ─────────────────────────
+  /offers/public/active:
+    get:
+      tags: [Offers]
+      summary: Active homepage offers
+      security: []
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+  /offers:
+    post:
+      tags: [Offers]
+      summary: Create an offer (owner / super_admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ashramId: { type: string }
+                title: { type: string }
+                offerType: { type: string }
+                discountPercentage: { type: number }
+                isRateUpgrade: { type: boolean }
+                promoCode: { type: string }
+                bannerText: { type: string }
+                startDate: { type: string, format: date }
+                endDate: { type: string, format: date }
+                isActive: { type: boolean }
+      responses: { '201': { $ref: '#/components/responses/Success' } }
+  /offers/my-offers:
+    get:
+      tags: [Offers]
+      summary: Caller's offers
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+  /offers/{id}:
+    put:
+      tags: [Offers]
+      summary: Update an offer
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      requestBody: { content: { application/json: { schema: { type: object } } } }
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+    delete:
+      tags: [Offers]
+      summary: Delete an offer
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+
+  # ───────────────────────── Housekeeping ─────────────────────────
+  /housekeeping:
+    get:
+      tags: [Housekeeping]
+      summary: Room-unit board (auto-provisions units)
+      parameters: [{ name: ashramId, in: query, schema: { type: string } }]
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+  /housekeeping/{id}:
+    patch:
+      tags: [Housekeeping]
+      summary: Update a room unit's status
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status: { type: string, enum: [clean, dirty, cleaning, maintenance] }
+                notes: { type: string }
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+
+  # ───────────────────────── Support ─────────────────────────
+  /support:
+    post:
+      tags: [Support]
+      summary: Create a support ticket
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string }
+                description: { type: string }
+                category: { type: string }
+      responses: { '201': { $ref: '#/components/responses/Success' } }
+    get:
+      tags: [Support]
+      summary: List tickets (role-scoped)
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+  /support/{id}/message:
+    post:
+      tags: [Support]
+      summary: Add a message to a ticket
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, properties: { text: { type: string } } }
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+  /support/{id}/resolve:
+    post:
+      tags: [Support]
+      summary: Mark a ticket resolved
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+
+  # ───────────────────────── Verification ─────────────────────────
+  /verify/pending:
+    get:
+      tags: [Verification]
+      summary: Ashrams awaiting inspection
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+  /verify/{id}/schedule:
+    post:
+      tags: [Verification]
+      summary: Schedule an inspection
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, properties: { date: { type: string, format: date } } }
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+  /verify/{id}/status:
+    post:
+      tags: [Verification]
+      summary: Approve / reject / suspend an ashram
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status: { type: string, enum: [approved, rejected, suspended] }
+                comments: { type: string }
+                rejectionReason: { type: string }
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+
+  # ───────────────────────── Analytics ─────────────────────────
+  /analytics/dashboard:
+    get:
+      tags: [Analytics]
+      summary: Owner/manager dashboard metrics
+      parameters: [{ name: ashramId, in: query, schema: { type: string } }]
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+  /analytics/system:
+    get:
+      tags: [Analytics]
+      summary: Nationwide stats (govt/super_admin)
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+  /analytics/audit-logs:
+    get:
+      tags: [Analytics]
+      summary: Audit trail (super_admin)
+      parameters:
+        - { name: module, in: query, schema: { type: string } }
+        - { name: action, in: query, schema: { type: string } }
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+
+  # ───────────────────────── Users ─────────────────────────
+  /users/staff:
+    get:
+      tags: [Users]
+      summary: Staff at the owner's ashrams
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+    post:
+      tags: [Users]
+      summary: Create staff tied to an ashram
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                email: { type: string }
+                phone: { type: string }
+                password: { type: string }
+                role: { type: string, enum: [manager, reception, housekeeping] }
+                ashramId: { type: string }
+      responses: { '201': { $ref: '#/components/responses/Success' } }
+  /users/staff/{id}:
+    delete:
+      tags: [Users]
+      summary: Deactivate a staff member
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+  /users:
+    get:
+      tags: [Users]
+      summary: List users (super_admin / govt_admin)
+      parameters:
+        - { name: role, in: query, schema: { type: string } }
+        - { name: status, in: query, schema: { type: string } }
+        - { name: search, in: query, schema: { type: string } }
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+  /users/{id}/status:
+    patch:
+      tags: [Users]
+      summary: Update a user's account status (super_admin)
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status: { type: string, enum: [active, suspended, pending] }
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+
+  # ───────────────────────── Uploads ─────────────────────────
+  /uploads:
+    post:
+      tags: [Uploads]
+      summary: Upload a file to Cloudinary (returns secure URL)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file: { type: string, format: binary }
+                folder: { type: string }
+      responses:
+        '201': { $ref: '#/components/responses/Success' }
+        '503':
+          description: Uploads not configured (missing Cloudinary keys)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
