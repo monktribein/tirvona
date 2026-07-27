@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
-import { ashramService, reviewService, roomService, bookingService } from '../services';
+import { ashramService, reviewService, roomService, bookingService, offerService } from '../services';
 import { getErrorMessage } from '../lib/api';
 import { openRazorpayCheckout } from '../lib/razorpay';
 import { 
@@ -73,21 +73,33 @@ export const AshramDetailPage: React.FC = () => {
     }
   }, [searchParams]);
 
+  const [appliedOfferData, setAppliedOfferData] = useState<any>(null);
+
   const handleValidatePromo = async (codeToTest?: string) => {
-    const code = codeToTest || couponCode;
+    const code = (codeToTest || couponCode).trim().toUpperCase();
     if (!code) return;
     try {
-      const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/offers/validate-promo`, {
+      const currentBookingAmount = (selectedRoom?.basePrice || 350) * Math.max(1, roomsCount) * calculateDays();
+      const res = await offerService.validatePromo({
         promoCode: code,
-        bookingAmount: (selectedRoom?.basePrice || 350) * Math.max(1, roomsCount),
+        bookingAmount: currentBookingAmount,
         ashramId: id,
       });
-      if (res.data.success) {
-        setAppliedDiscount(res.data.data.discountAmount);
-        setCouponMsg(res.data.message);
+      if (res.data?.success && res.data?.valid) {
+        const offerData = res.data.data;
+        setAppliedOfferData(offerData);
+        setAppliedDiscount(offerData.discountAmount);
+        setCouponMsg(res.data.message || `Promo code ${code} applied! Saved ₹${offerData.discountAmount}`);
+      } else {
+        setAppliedOfferData(null);
+        setAppliedDiscount(0);
+        setCouponMsg(res.data?.message || 'Invalid promo code');
       }
     } catch (err: any) {
-      setCouponMsg(err.response?.data?.message || 'Invalid promo code');
+      console.error('Validate promo error:', err);
+      setAppliedOfferData(null);
+      setAppliedDiscount(0);
+      setCouponMsg(err.response?.data?.message || 'Invalid or expired promo code');
     }
   };
 
@@ -201,15 +213,8 @@ export const AshramDetailPage: React.FC = () => {
 
   const handleApplyCoupon = (e: React.MouseEvent) => {
     e.preventDefault();
-    const code = couponCode.trim().toUpperCase();
-    if (code === 'DIVINE10') {
-      setAppliedDiscount(10);
-      setCouponMsg('10% promo discount applied!');
-    } else if (code === 'PILGRIM50') {
-      setAppliedDiscount(50);
-      setCouponMsg('₹50 flat promo discount applied!');
-    } else if (code) {
-      setCouponMsg('Invalid promo code. Try DIVINE10 or PILGRIM50.');
+    if (couponCode.trim()) {
+      handleValidatePromo(couponCode);
     }
   };
 
@@ -261,6 +266,51 @@ export const AshramDetailPage: React.FC = () => {
   const subtotalCalc = basePriceCalc + servicesCalc + donationCalc;
   const discountCalc = appliedDiscount > 0 ? (appliedDiscount <= 100 ? (subtotalCalc * appliedDiscount) / 100 : appliedDiscount) : 0;
   const totalCalc = Math.max(0, subtotalCalc - discountCalc);
+
+  // Reservation Timer (10 Minutes) & Loyalty Rewards State
+  const [reservationSeconds, setReservationSeconds] = useState<number>(600);
+  const [timerActive, setTimerActive] = useState<boolean>(false);
+  const [useLoyalty, setUseLoyalty] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (appliedDiscount > 0 && !timerActive) {
+      setReservationSeconds(600);
+      setTimerActive(true);
+    } else if (appliedDiscount === 0) {
+      setTimerActive(false);
+    }
+  }, [appliedDiscount]);
+
+  useEffect(() => {
+    if (!timerActive) return;
+    const interval = setInterval(() => {
+      setReservationSeconds((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          setTimerActive(false);
+          setAppliedDiscount(0);
+          setAppliedOfferData(null);
+          setCouponMsg('Reservation Expired. Your offer has expired. Please reapply the coupon.');
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [timerActive]);
+
+  const formatTimer = (secs: number) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+
+  const extraGuestCalc = adults > 2 ? (adults - 2) * 200 * daysCount : 0;
+  const loyaltyCalc = useLoyalty ? 100 : 0;
+  const gstCalc = Math.round(subtotalCalc * 0.05);
+  const platformFeeCalc = 0;
+  const totalSavingsCalc = Math.round(discountCalc + loyaltyCalc);
+  const finalPayableCalc = Math.max(0, Math.round(subtotalCalc - discountCalc - loyaltyCalc + gstCalc + platformFeeCalc));
 
   const fetchDetails = async () => {
     setLoading(true);
@@ -407,6 +457,8 @@ export const AshramDetailPage: React.FC = () => {
         locker: { ordered: locker },
         donation: { amount: parseFloat(donation) || 0 },
       },
+      promoCode: couponCode ? couponCode.trim().toUpperCase() : undefined,
+      appliedOfferId: appliedOfferData?.offerId || undefined,
     };
 
     try {
@@ -979,13 +1031,59 @@ export const AshramDetailPage: React.FC = () => {
                   />
                 </div>
 
-                {/* Promo Coupon Code */}
+                {/* SECTION 1: Premium Savings Card (Framer Motion) */}
+                {appliedOfferData && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="p-4 bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-emerald-500/15 border border-emerald-500/30 rounded-[22px] space-y-2 text-left relative overflow-hidden"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="p-2 bg-emerald-500 text-white rounded-full shadow-md text-xs">🎉</span>
+                        <div>
+                          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-black uppercase tracking-wider block">
+                            Congratulations!
+                          </span>
+                          <h4 className="text-xs font-black text-[#0B192C] dark:text-white">
+                            {appliedOfferData.offerName || 'Exclusive Pilgrim Discount'}
+                          </h4>
+                        </div>
+                      </div>
+                      <span className="px-2.5 py-1 bg-emerald-500 text-white rounded-full text-[10px] font-black uppercase shadow-sm">
+                        {appliedOfferData.promoCode}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between items-center pt-1 border-t border-emerald-500/20 text-xs font-bold text-emerald-700 dark:text-emerald-300">
+                      <span>{appliedOfferData.offerCategory || 'Festival Special'}</span>
+                      <span className="font-extrabold text-sm text-emerald-600 dark:text-emerald-400">
+                        -{appliedOfferData.discountType === 'Percentage' ? `${appliedOfferData.discountValue}%` : `₹${appliedOfferData.discountAmount}`}
+                      </span>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* SECTION 4: 10-Minute Reservation Timer */}
+                {timerActive && (
+                  <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 rounded-2xl flex items-center justify-between text-xs font-bold text-amber-800 dark:text-amber-300 animate-pulse">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">⏳</span>
+                      <span>This discounted price has been reserved for you.</span>
+                    </div>
+                    <span className="font-mono font-black text-sm bg-amber-200 dark:bg-amber-900 px-2.5 py-0.5 rounded-lg">
+                      {formatTimer(reservationSeconds)}
+                    </span>
+                  </div>
+                )}
+
+                {/* Promo Coupon Code Entry */}
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-gray-400 uppercase">Promo / Coupon Code</label>
                   <div className="flex gap-2">
                     <input
                       type="text"
-                      placeholder="e.g. DIVINE10"
+                      placeholder="e.g. KUMBH2026"
                       value={couponCode}
                       onChange={(e) => setCouponCode(e.target.value)}
                       className="flex-1 p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs font-semibold uppercase"
@@ -993,15 +1091,45 @@ export const AshramDetailPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={handleApplyCoupon}
-                      className="px-3.5 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 text-xs font-bold rounded-xl cursor-pointer transition-all"
+                      className="px-4 py-2.5 bg-[#0A4DA6] text-white text-xs font-extrabold rounded-xl cursor-pointer hover:bg-[#083b80] transition-all shadow-sm"
                     >
                       Apply
                     </button>
                   </div>
                   {couponMsg && (
-                    <p className={`text-[10px] font-bold ${appliedDiscount > 0 ? 'text-success' : 'text-danger'}`}>{couponMsg}</p>
+                    <p className={`text-[10px] font-bold ${appliedDiscount > 0 ? 'text-emerald-600' : 'text-rose-500'}`}>{couponMsg}</p>
                   )}
                 </div>
+
+                {/* SECTION 5: Loyalty Rewards System */}
+                <div className="p-3.5 bg-blue-50/70 dark:bg-slate-900/80 border border-blue-100 dark:border-slate-800 rounded-2xl flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <Award size={16} className="text-[#E58C28]" />
+                    <div>
+                      <span className="font-extrabold text-[#0B192C] dark:text-white block">Tirvona Loyalty Rewards</span>
+                      <span className="text-[10px] text-gray-500">
+                        {useLoyalty ? 'Applied 100 points (-₹100)' : `Earn ${Math.round(subtotalCalc * 0.05)} reward points after stay`}
+                      </span>
+                    </div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={useLoyalty}
+                    onChange={() => setUseLoyalty(!useLoyalty)}
+                    className="w-4 h-4 text-[#0A4DA6] rounded border-gray-300 cursor-pointer"
+                  />
+                </div>
+
+                {/* SECTION 7: Offer Information & Scarcity */}
+                {appliedOfferData && (
+                  <div className="p-3 bg-gray-50 dark:bg-slate-900/60 rounded-2xl border border-gray-150 dark:border-slate-800 text-[10px] space-y-1 text-gray-500">
+                    <div className="flex justify-between font-bold text-gray-700 dark:text-gray-300">
+                      <span>🔥 Scarcity Alert:</span>
+                      <span className="text-rose-600 font-extrabold">Only {appliedOfferData.remainingRedemptions || 12} offers left today</span>
+                    </div>
+                    <p>• {appliedOfferData.description || 'Valid on direct website bookings only.'}</p>
+                  </div>
+                )}
 
                 {/* Special Requests / Notes */}
                 <div className="space-y-1">
@@ -1015,39 +1143,99 @@ export const AshramDetailPage: React.FC = () => {
                   />
                 </div>
 
-                {/* Estimated Total Breakdown */}
-                <div className="p-4 bg-gray-50 dark:bg-slate-900/60 border border-gray-100 dark:border-slate-800 rounded-[20px] space-y-2 text-xs font-semibold">
-                  <div className="flex justify-between text-gray-500">
-                    <span>Base Stay ({daysCount} night{daysCount > 1 ? 's' : ''}):</span>
+                {/* SECTION 2: Detailed Enterprise Savings Breakdown */}
+                <div className="p-4 bg-gray-50 dark:bg-slate-900/90 border border-gray-200 dark:border-slate-800 rounded-[24px] space-y-2.5 text-xs font-semibold shadow-inner">
+                  <div className="flex justify-between text-gray-600 dark:text-gray-300">
+                    <span>Original Stay Cost ({daysCount} night{daysCount > 1 ? 's' : ''}):</span>
                     <span>₹{basePriceCalc}</span>
                   </div>
+
+                  {extraGuestCalc > 0 && (
+                    <div className="flex justify-between text-gray-600 dark:text-gray-300">
+                      <span>Extra Guest Charges:</span>
+                      <span>₹{extraGuestCalc}</span>
+                    </div>
+                  )}
+
                   {servicesCalc > 0 && (
-                    <div className="flex justify-between text-gray-500">
+                    <div className="flex justify-between text-gray-600 dark:text-gray-300">
                       <span>Add-on Services:</span>
                       <span>₹{servicesCalc}</span>
                     </div>
                   )}
+
                   {donationCalc > 0 && (
-                    <div className="flex justify-between text-gray-500">
-                      <span>Donation:</span>
+                    <div className="flex justify-between text-gray-600 dark:text-gray-300">
+                      <span>Ashram Donation:</span>
                       <span>₹{donationCalc}</span>
                     </div>
                   )}
+
                   {discountCalc > 0 && (
-                    <div className="flex justify-between text-success font-bold">
-                      <span>Discount ({couponCode}):</span>
+                    <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-extrabold">
+                      <span>Coupon Offer Discount ({couponCode}):</span>
                       <span>-₹{discountCalc}</span>
                     </div>
                   )}
-                  <div className="pt-2 border-t border-gray-200 dark:border-slate-800 flex justify-between text-sm font-extrabold text-[#0B192C] dark:text-white">
-                    <span>Estimated Total:</span>
-                    <span className="text-[#0A4DA6]">₹{totalCalc}</span>
+
+                  {useLoyalty && (
+                    <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-extrabold">
+                      <span>Loyalty Reward Discount:</span>
+                      <span>-₹100</span>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between text-gray-400 text-[11px]">
+                    <span>Govt GST (5%):</span>
+                    <span>₹{gstCalc}</span>
                   </div>
+
+                  <div className="flex justify-between text-gray-400 text-[11px]">
+                    <span>Digital India Platform Fee:</span>
+                    <span className="text-emerald-600 font-bold">FREE</span>
+                  </div>
+
+                  <div className="pt-2 border-t border-gray-200 dark:border-slate-800 flex justify-between text-base font-black text-[#0B192C] dark:text-white">
+                    <span>Final Payable Amount:</span>
+                    <span className="text-[#0A4DA6] dark:text-blue-400">₹{finalPayableCalc}</span>
+                  </div>
+                </div>
+
+                {/* SECTION 3 & 6: Savings Highlight & Circular Badge */}
+                {totalSavingsCalc > 0 && (
+                  <motion.div
+                    initial={{ scale: 0.95, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl flex items-center justify-between text-xs font-black text-emerald-700 dark:text-emerald-300"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">💰</span>
+                      <div>
+                        <span>Total Savings ₹{totalSavingsCalc}</span>
+                        <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                          You saved ₹{totalSavingsCalc} on this booking stay.
+                        </p>
+                      </div>
+                    </div>
+                    {/* SECTION 6: Circular Savings Badge */}
+                    <div className="w-11 h-11 rounded-full bg-emerald-500 text-white flex flex-col items-center justify-center font-black text-[9px] shadow-md shrink-0">
+                      <span>SAVED</span>
+                      <span className="text-[10px]">₹{totalSavingsCalc}</span>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* SECTION 8: Payment Confidence Badges */}
+                <div className="grid grid-cols-2 gap-2 text-[10px] font-bold text-gray-500 dark:text-gray-400 pt-1">
+                  <span className="flex items-center gap-1"><ShieldCheck size={12} className="text-emerald-500" /> Govt Verified</span>
+                  <span className="flex items-center gap-1"><Lock size={12} className="text-blue-500" /> Secure Payment</span>
+                  <span className="flex items-center gap-1"><CheckCircle size={12} className="text-teal-500" /> Free Cancellation</span>
+                  <span className="flex items-center gap-1"><Sparkles size={12} className="text-purple-500" /> Instant Confirm</span>
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full py-3 bg-[#0A4DA6] hover:bg-opacity-95 text-white font-extrabold rounded-full text-xs shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all"
+                  className="w-full py-3.5 bg-[#0A4DA6] hover:bg-[#083b80] text-white font-black rounded-full text-xs shadow-lg shadow-[#0A4DA6]/25 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-98"
                 >
                   Book Stay <ArrowRight size={14} />
                 </button>

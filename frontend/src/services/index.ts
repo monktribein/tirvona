@@ -71,7 +71,16 @@ export const verificationService = {
 
 export const userService = {
   list: (params: Record<string, string> = {}) => api.get('/users', { params }),
+  createAccount: (data: unknown) => api.post('/users/create-account', data),
   updateStatus: (id: string, status: string) => api.patch(`/users/${id}/status`, { status }),
+  suspend: (id: string, data: unknown) => api.patch(`/users/${id}/suspend`, data),
+  reactivate: (id: string) => api.patch(`/users/${id}/reactivate`, {}),
+  changeRole: (id: string, role: string) => api.patch(`/users/${id}/role`, { role }),
+  updatePermissions: (id: string, permissions: string[]) => api.patch(`/users/${id}/permissions`, { permissions }),
+  resetPassword: (id: string, password?: string) => api.post(`/users/${id}/reset-password`, { password }),
+  softDelete: (id: string) => api.delete(`/users/${id}/soft-delete`),
+  permanentDelete: (id: string, data: unknown) => api.delete(`/users/${id}/permanent-delete`, { data }),
+  restore: (id: string) => api.patch(`/users/${id}/restore`, {}),
   // Staff management (owners)
   listStaff: () => api.get('/users/staff'),
   createStaff: (data: unknown) => api.post('/users/staff', data),
@@ -100,3 +109,13 @@ export const uploadService = {
     return res.data.data.url as string;
   },
 };
+
+// ── Offers ──────────────────────────────────────────────────────────────────
+export const offerService = {
+  validatePromo: (data: { promoCode: string; bookingAmount?: number; ashramId?: string }) =>
+    api.post('/offers/validate-promo', data),
+  getPublicOffers: () => api.get('/offers/public/all'),
+  getById: (id: string) => api.get(`/offers/public/${id}`),
+};
+
+

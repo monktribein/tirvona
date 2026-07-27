@@ -4,6 +4,7 @@ import Room from '../models/Room.js';
 import Payment from '../models/Payment.js';
 import AuditLog from '../models/AuditLog.js';
 import Ashram from '../models/Ashram.js';
+import Offer from '../models/Offer.js';
 import { scopedAshramIds } from '../utils/ashramAccess.js';
 import { isRazorpayConfigured, createRazorpayOrder, verifyRazorpaySignature } from '../utils/razorpay.js';
 import config from '../config/env.js';
@@ -50,14 +51,10 @@ const releaseInventory = async (roomId, startDate, endDate, count) => {
   }
 };
 
-// Atomically lock `count` rooms for every night. Each night's conditional
-// $inc is atomic, preventing oversell without needing a multi-document
-// transaction (works on standalone Mongo and Atlas alike). Rolls back on the
-// first night that cannot satisfy demand.
+// Atomically lock `count` rooms for every night.
 const lockInventory = async (room, startDate, endDate, count) => {
   const locked = [];
   for (const date of eachNight(startDate, endDate)) {
-    // Ensure the availability document exists so the conditional update can match it.
     await RoomAvailability.updateOne(
       { roomId: room._id, date },
       { $setOnInsert: { bookedCount: 0, maintenanceCount: 0 } },
@@ -80,7 +77,6 @@ const lockInventory = async (room, startDate, endDate, count) => {
     );
 
     if (!updated) {
-      // Roll back the nights already locked in this attempt.
       for (const d of locked) {
         await RoomAvailability.updateOne(
           { roomId: room._id, date: d, bookedCount: { $gte: count } },
@@ -99,7 +95,7 @@ const lockInventory = async (room, startDate, endDate, count) => {
 // @access  Private (Customer)
 export const createBooking = async (req, res) => {
   try {
-    const { ashramId, roomId, checkInDate, checkOutDate, guestsCount, roomsBookedCount, services } = req.body;
+    const { ashramId, roomId, checkInDate, checkOutDate, guestsCount, roomsBookedCount, services, promoCode, appliedOfferId } = req.body;
 
     const room = await Room.findById(roomId);
     if (!room) {
@@ -135,7 +131,6 @@ export const createBooking = async (req, res) => {
         });
       }
 
-      // Calculate price for this specific night
       let dailyPrice = room.basePrice;
       if (availability && availability.customPrice) {
         dailyPrice = availability.customPrice;
@@ -160,25 +155,21 @@ export const createBooking = async (req, res) => {
 
     if (services) {
       if (services.prasad && services.prasad.ordered) {
-        // Sacred Prasad priced at ₹100 per guest
         const price = 100 * guestsCount;
         bookingServices.prasad = { ordered: true, price };
         servicesPrice += price;
       }
       if (services.meals && services.meals.ordered) {
-        // Meals priced at ₹150 per person per day
         const price = 150 * guestsCount * daysCount;
         bookingServices.meals = { ordered: true, price };
         servicesPrice += price;
       }
       if (services.parking && services.parking.ordered) {
-        // Parking priced at ₹100 per day
         const price = 100 * daysCount;
         bookingServices.parking = { ordered: true, price };
         servicesPrice += price;
       }
       if (services.locker && services.locker.ordered) {
-        // Locker priced at ₹50 per day
         const price = 50 * daysCount;
         bookingServices.locker = { ordered: true, price };
         servicesPrice += price;
@@ -189,13 +180,54 @@ export const createBooking = async (req, res) => {
     }
 
     const donationAmount = bookingServices.donation.amount;
-    const totalAmount = calculatedBasePrice + servicesPrice + donationAmount;
+    const originalAmount = calculatedBasePrice + servicesPrice + donationAmount;
+    let discountAmount = 0;
+    let validOffer = null;
 
-    // Generate unique booking credentials
-    const year = new Date().getFullYear();
-    const randomHex = Math.floor(1000 + Math.random() * 9000).toString();
-    const bookingId = `AB-${year}-${randomHex}`;
-    const checkInCode = Math.floor(100000 + Math.random() * 900000).toString();
+    // 3. Offer & Promo Code Validation & Discount Calculation
+    if (promoCode || appliedOfferId) {
+      const cleanCode = promoCode ? promoCode.toUpperCase().trim() : undefined;
+      const query = appliedOfferId ? { _id: appliedOfferId } : { promoCode: cleanCode };
+      validOffer = await Offer.findOne({ ...query, status: 'active' });
+
+      if (validOffer && validOffer.remainingRedemptions > 0) {
+        if (validOffer.discountType === 'Percentage') {
+          discountAmount = (originalAmount * validOffer.discountValue) / 100;
+          if (validOffer.maximumDiscount > 0 && discountAmount > validOffer.maximumDiscount) {
+            discountAmount = validOffer.maximumDiscount;
+          }
+        } else if (validOffer.discountType === 'Flat Amount') {
+          discountAmount = Math.min(validOffer.discountValue, originalAmount);
+        }
+        discountAmount = Math.round(discountAmount);
+      }
+    }
+
+    const extraGuestAmount = guestsCount > 2 ? (guestsCount - 2) * 200 * daysCount : 0;
+    const mealAmount = bookingServices.meals.price;
+    const upgradeAmount = 0;
+    const loyaltyDiscount = req.body.loyaltyDiscount ? Number(req.body.loyaltyDiscount) : 0;
+    const gstAmount = Math.round(originalAmount * 0.05);
+    const platformFee = 0;
+    const totalSavings = discountAmount + loyaltyDiscount;
+    const calculatedFinalAmount = Math.max(0, Math.round(originalAmount - discountAmount - loyaltyDiscount + gstAmount + platformFee));
+    const rewardPointsEarned = Math.round(calculatedFinalAmount * 0.05);
+    const reservationExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+    const paymentSummary = {
+      originalStayCost: calculatedBasePrice,
+      extraGuestAmount,
+      mealAmount,
+      upgradeAmount,
+      servicesPrice,
+      donationAmount,
+      couponDiscount: discountAmount,
+      loyaltyDiscount,
+      gstAmount,
+      platformFee,
+      totalSavings,
+      finalPayableAmount: calculatedFinalAmount,
+    };
 
     const booking = await Booking.create({
       bookingId,
@@ -205,19 +237,48 @@ export const createBooking = async (req, res) => {
       checkInDate: startDate,
       checkOutDate: endDate,
       guestsCount,
-      roomsBookedCount,
+      roomsBookedCount: roomsCount,
       services: bookingServices,
+      offerId: validOffer ? validOffer._id : undefined,
+      appliedOfferId: validOffer ? validOffer._id : undefined,
+      offerName: validOffer ? validOffer.offerTitle : undefined,
+      promoCode: validOffer ? validOffer.promoCode : (promoCode || undefined),
+      discountType: validOffer ? validOffer.discountType : undefined,
+      discountPercentage: validOffer && validOffer.discountType === 'Percentage' ? validOffer.discountValue : 0,
+      loyaltyDiscount,
+      rewardPointsUsed: req.body.rewardPointsUsed ? Number(req.body.rewardPointsUsed) : 0,
+      rewardPointsEarned,
+      reservationExpiresAt,
+      paymentSummary,
       pricing: {
         basePrice: calculatedBasePrice,
         servicesPrice,
         donationAmount,
-        totalAmount,
+        extraGuestAmount,
+        mealAmount,
+        upgradeAmount,
+        discountAmount,
+        loyaltyDiscount,
+        gstAmount,
+        platformFee,
+        originalAmount,
+        finalAmount: calculatedFinalAmount,
+        totalSavings,
+        totalAmount: calculatedFinalAmount,
         amountPaid: 0,
       },
       paymentStatus: 'pending',
       status: 'pending',
       checkInCode,
     });
+
+    // 4. Increment Offer Telemetry & Analytics
+    if (validOffer) {
+      validOffer.redemptionsCount = (validOffer.redemptionsCount || 0) + 1;
+      validOffer.remainingRedemptions = Math.max(0, (validOffer.remainingRedemptions || 1) - 1);
+      validOffer.revenueGenerated = (validOffer.revenueGenerated || 0) + calculatedFinalAmount;
+      await validOffer.save();
+    }
 
     res.status(201).json({
       success: true,

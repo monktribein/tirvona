@@ -33,6 +33,7 @@ import blogRoutes from './routes/blogRoutes.js';
 import plannerRoutes from './routes/plannerRoutes.js';
 import localHubRoutes from './routes/localHubRoutes.js';
 import marketplaceHubRoutes from './routes/marketplaceHubRoutes.js';
+import adminRoutes from './admin/index.js';
 
 // Connect to MongoDB
 connectDB();
@@ -128,6 +129,7 @@ app.use('/api/blog', blogRoutes);
 app.use('/api/planner', plannerRoutes);
 app.use('/api/local', localHubRoutes);
 app.use('/api/marketplace/hub', marketplaceHubRoutes);
+app.use('/api/admin', adminRoutes);
 
 // API documentation (Swagger UI) served from openapi.yaml.
 try {

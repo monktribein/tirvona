@@ -193,3 +193,399 @@ export const updateUserStatus = async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error updating user status' });
   }
 };
+
+// @desc    Suspend a user account with Enterprise Lifecycle controls
+// @route   PATCH /api/users/:id/suspend
+// @access  Private (Super Admin)
+export const suspendUser = async (req, res) => {
+  try {
+    const {
+      reason,
+      suspensionType = 'temporary',
+      durationDays = 7,
+      customEndDate,
+      internalNotes = '',
+      visibleMessage = '',
+    } = req.body;
+
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    if (user._id.toString() === req.user.id) {
+      return res.status(400).json({ success: false, message: 'You cannot suspend your own account' });
+    }
+
+    let endDate = null;
+    if (suspensionType === 'temporary') {
+      if (customEndDate) {
+        endDate = new Date(customEndDate);
+      } else {
+        endDate = new Date(Date.now() + Number(durationDays) * 86400000);
+      }
+    }
+
+    user.isSuspended = true;
+    user.status = suspensionType === 'permanent' ? 'perm_suspended' : 'temp_suspended';
+    user.suspensionReason = reason || 'Terms Violation';
+    user.suspensionType = suspensionType;
+    user.suspendedBy = req.user.id;
+    user.suspendedAt = new Date();
+    user.suspensionEndDate = endDate;
+    user.internalNotes = internalNotes;
+    user.visibleMessage = visibleMessage;
+
+    await user.save();
+
+    await AuditLog.create({
+      userId: req.user.id,
+      action: 'USER_SUSPENDED',
+      module: 'USER_MGMT',
+      details: {
+        targetUserId: user._id,
+        targetUserEmail: user.email,
+        reason,
+        suspensionType,
+        suspensionEndDate: endDate,
+      },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+
+    return res.json({
+      success: true,
+      message: `Account successfully suspended (${suspensionType})`,
+      data: user,
+    });
+  } catch (error) {
+    console.error('Suspend user error:', error);
+    return res.status(500).json({ success: false, message: 'Server error suspending user account' });
+  }
+};
+
+// @desc    Reactivate a suspended user account
+// @route   PATCH /api/users/:id/reactivate
+// @access  Private (Super Admin)
+export const reactivateUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    user.isSuspended = false;
+    user.status = 'active';
+    user.suspensionType = 'none';
+    user.reactivatedAt = new Date();
+    user.reactivatedBy = req.user.id;
+
+    await user.save();
+
+    await AuditLog.create({
+      userId: req.user.id,
+      action: 'USER_REACTIVATED',
+      module: 'USER_MGMT',
+      details: { targetUserId: user._id, targetUserEmail: user.email },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+
+    return res.json({
+      success: true,
+      message: 'Account successfully reactivated',
+      data: user,
+    });
+  } catch (error) {
+    console.error('Reactivate user error:', error);
+    return res.status(500).json({ success: false, message: 'Server error reactivating user account' });
+  }
+};
+
+// @desc    Create a new User / Staff / Enterprise account with IAM auto-generated details
+// @route   POST /api/users/create-account
+// @access  Private (Super Admin)
+export const createAccount = async (req, res) => {
+  try {
+    const {
+      name,
+      email,
+      phone,
+      password,
+      role = 'customer',
+      designation = '',
+      department = '',
+      city = '',
+      state = '',
+      aadhaarId = '',
+      gender = 'Not Specified',
+      dob,
+      assignedAshram,
+      joiningDate,
+      permissions = [],
+      remarks = '',
+      status = 'active',
+    } = req.body;
+
+    const existingEmail = await User.findOne({ email });
+    if (existingEmail) {
+      return res.status(400).json({ success: false, message: 'Email address already registered' });
+    }
+
+    const tempPassword = password || `Tirvona#${Math.floor(1000 + Math.random() * 9000)}`;
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(tempPassword, salt);
+
+    const empId = `EMP-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+    const username = req.body.username || `usr_${name.toLowerCase().replace(/\s+/g, '_')}_${Math.floor(100 + Math.random() * 900)}`;
+
+    const newUser = await User.create({
+      name,
+      email,
+      phone: phone || `+91 ${Math.floor(7000000000 + Math.random() * 2999999999)}`,
+      passwordHash,
+      role,
+      status,
+      employeeId: empId,
+      username,
+      designation,
+      department,
+      city,
+      state,
+      aadhaarId,
+      gender,
+      dob: dob ? new Date(dob) : undefined,
+      assignedAshram: assignedAshram || undefined,
+      joiningDate: joiningDate ? new Date(joiningDate) : new Date(),
+      permissions,
+      remarks,
+    });
+
+    await AuditLog.create({
+      userId: req.user.id,
+      action: 'USER_ACCOUNT_CREATED',
+      module: 'USER_MGMT',
+      details: { targetUserId: newUser._id, email: newUser.email, role: newUser.role, employeeId: empId },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: 'Account created successfully',
+      tempPassword,
+      data: newUser,
+    });
+  } catch (error) {
+    console.error('Create account error:', error);
+    return res.status(500).json({ success: false, message: error.message || 'Server error creating account' });
+  }
+};
+
+// @desc    Change a user's enterprise role
+// @route   PATCH /api/users/:id/role
+// @access  Private (Super Admin)
+export const changeRole = async (req, res) => {
+  try {
+    const { role } = req.body;
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const oldRole = user.role;
+    user.role = role;
+    await user.save();
+
+    await AuditLog.create({
+      userId: req.user.id,
+      action: 'USER_ROLE_CHANGED',
+      module: 'USER_MGMT',
+      details: { targetUserId: user._id, oldRole, newRole: role },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+
+    return res.json({ success: true, message: `Role changed to ${role}`, data: user });
+  } catch (error) {
+    console.error('Change role error:', error);
+    return res.status(500).json({ success: false, message: 'Server error changing user role' });
+  }
+};
+
+// @desc    Update granular permissions for a user
+// @route   PATCH /api/users/:id/permissions
+// @access  Private (Super Admin)
+export const updatePermissions = async (req, res) => {
+  try {
+    const { permissions = [] } = req.body;
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    user.permissions = permissions;
+    await user.save();
+
+    await AuditLog.create({
+      userId: req.user.id,
+      action: 'USER_PERMISSIONS_UPDATED',
+      module: 'USER_MGMT',
+      details: { targetUserId: user._id, permissionsCount: permissions.length },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+
+    return res.json({ success: true, message: 'Permissions updated successfully', data: user });
+  } catch (error) {
+    console.error('Update permissions error:', error);
+    return res.status(500).json({ success: false, message: 'Server error updating permissions' });
+  }
+};
+
+// @desc    Reset password for a user
+// @route   POST /api/users/:id/reset-password
+// @access  Private (Super Admin)
+export const resetUserPassword = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const newTempPassword = req.body.password || `Tirvona#${Math.floor(1000 + Math.random() * 9000)}`;
+    const salt = await bcrypt.genSalt(10);
+    user.passwordHash = await bcrypt.hash(newTempPassword, salt);
+    await user.save();
+
+    await AuditLog.create({
+      userId: req.user.id,
+      action: 'USER_PASSWORD_RESET',
+      module: 'USER_MGMT',
+      details: { targetUserId: user._id },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+
+    return res.json({ success: true, message: 'Password reset successfully', tempPassword: newTempPassword });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    return res.status(500).json({ success: false, message: 'Server error resetting password' });
+  }
+};
+
+// @desc    Soft Delete User Account
+// @route   DELETE /api/users/:id/soft-delete
+// @access  Private (Super Admin)
+export const softDeleteUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    if (user._id.toString() === req.user.id) {
+      return res.status(400).json({ success: false, message: 'You cannot delete your own admin account' });
+    }
+
+    user.status = 'deleted';
+    user.isDeleted = true;
+    user.deletedAt = new Date();
+    user.deletedBy = req.user.id;
+    await user.save();
+
+    await AuditLog.create({
+      userId: req.user.id,
+      action: 'USER_SOFT_DELETED',
+      module: 'USER_MGMT',
+      details: { targetUserId: user._id, email: user.email },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+
+    return res.json({ success: true, message: 'Account soft deleted. Moved to Deleted Accounts queue.', data: user });
+  } catch (error) {
+    console.error('Soft delete error:', error);
+    return res.status(500).json({ success: false, message: 'Server error performing soft delete' });
+  }
+};
+
+// @desc    Permanent Delete User Account (with Security Admin Password Check & 'DELETE' confirmation)
+// @route   DELETE /api/users/:id/permanent-delete
+// @access  Private (Super Admin)
+export const permanentDeleteUser = async (req, res) => {
+  try {
+    const { adminPassword, confirmText } = req.body;
+    if (confirmText !== 'DELETE') {
+      return res.status(400).json({ success: false, message: 'Confirmation string must be "DELETE"' });
+    }
+
+    const admin = await User.findById(req.user.id);
+    if (admin.passwordHash) {
+      const isMatch = await bcrypt.compare(adminPassword || '', admin.passwordHash);
+      if (!isMatch) {
+        return res.status(401).json({ success: false, message: 'Invalid Admin Password' });
+      }
+    }
+
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    if (user._id.toString() === req.user.id) {
+      return res.status(400).json({ success: false, message: 'You cannot permanently delete your own account' });
+    }
+
+    await User.findByIdAndDelete(req.params.id);
+
+    await AuditLog.create({
+      userId: req.user.id,
+      action: 'USER_PERMANENTLY_DELETED',
+      module: 'USER_MGMT',
+      details: { targetUserId: req.params.id, email: user.email },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+
+    return res.json({ success: true, message: 'Account permanently purged from database.' });
+  } catch (error) {
+    console.error('Permanent delete error:', error);
+    return res.status(500).json({ success: false, message: 'Server error performing permanent delete' });
+  }
+};
+
+// @desc    Restore Soft Deleted User Account
+// @route   PATCH /api/users/:id/restore
+// @access  Private (Super Admin)
+export const restoreUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    user.status = 'active';
+    user.isDeleted = false;
+    user.isSuspended = false;
+    user.deletedAt = undefined;
+    user.deletedBy = undefined;
+    await user.save();
+
+    await AuditLog.create({
+      userId: req.user.id,
+      action: 'USER_RESTORED',
+      module: 'USER_MGMT',
+      details: { targetUserId: user._id, email: user.email },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+
+    return res.json({ success: true, message: 'Account restored to Active status.', data: user });
+  } catch (error) {
+    console.error('Restore user error:', error);
+    return res.status(500).json({ success: false, message: 'Server error restoring user account' });
+  }
+};
+
+

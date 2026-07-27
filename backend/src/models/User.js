@@ -30,21 +30,138 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: [
         'super_admin',
+        'national_admin',
+        'state_admin',
         'govt_admin',
         'district_officer',
         'owner',
         'manager',
         'reception',
         'housekeeping',
-        'customer',
+        'banner_manager',
+        'content_manager',
+        'offer_manager',
+        'blog_manager',
+        'local_manager',
+        'marketplace_manager',
+        'finance_manager',
         'support',
+        'inspector',
+        'staff',
+        'volunteer',
+        'customer',
       ],
       default: 'customer',
     },
     status: {
       type: String,
-      enum: ['pending', 'active', 'suspended'],
+      enum: [
+        'active',
+        'pending',
+        'pending_approval',
+        'suspended',
+        'temp_suspended',
+        'perm_suspended',
+        'disabled',
+        'deleted',
+        'archived',
+      ],
       default: 'active',
+    },
+    isSuspended: {
+      type: Boolean,
+      default: false,
+    },
+    suspensionReason: {
+      type: String,
+      default: '',
+    },
+    suspensionType: {
+      type: String,
+      enum: ['temporary', 'permanent', 'none'],
+      default: 'none',
+    },
+    suspendedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
+    suspendedAt: {
+      type: Date,
+    },
+    suspensionEndDate: {
+      type: Date,
+    },
+    internalNotes: {
+      type: String,
+      default: '',
+    },
+    visibleMessage: {
+      type: String,
+      default: '',
+    },
+    reactivatedAt: {
+      type: Date,
+    },
+    reactivatedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
+    employeeId: {
+      type: String,
+      default: function () {
+        return `EMP-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+      },
+    },
+    username: {
+      type: String,
+      default: '',
+    },
+    designation: {
+      type: String,
+      default: '',
+    },
+    department: {
+      type: String,
+      default: '',
+    },
+    aadhaarId: {
+      type: String,
+      default: '',
+    },
+    gender: {
+      type: String,
+      default: 'Not Specified',
+    },
+    dob: {
+      type: Date,
+    },
+    assignedAshram: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Ashram',
+    },
+    joiningDate: {
+      type: Date,
+      default: Date.now,
+    },
+    permissions: [
+      {
+        type: String,
+      },
+    ],
+    remarks: {
+      type: String,
+      default: '',
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    deletedAt: {
+      type: Date,
+    },
+    deletedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
     },
     district: {
       type: String,

@@ -36,6 +36,7 @@ export const LoginPage: React.FC = () => {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(false);
+  const [suspensionInfo, setSuspensionInfo] = useState<any | null>(null);
 
   const getRedirectTarget = () => {
     if (redirect) return redirect;
@@ -54,13 +55,18 @@ export const LoginPage: React.FC = () => {
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuspensionInfo(null);
     setLoading(true);
     const res = await login(email, password);
     setLoading(false);
     if (res.success) {
       navigate(getRedirectTarget());
     } else {
-      setError(res.message || 'Login failed');
+      if (res.isSuspended && res.suspensionData) {
+        setSuspensionInfo(res.suspensionData);
+      } else {
+        setError(res.message || 'Login failed');
+      }
     }
   };
 
@@ -212,11 +218,92 @@ export const LoginPage: React.FC = () => {
               </button>
             </div>
 
-            {error && (
-              <div className="p-3 bg-danger/10 text-danger border border-danger/20 text-xs rounded-xl font-semibold">{error}</div>
-            )}
-            {notice && (
-              <div className="p-3 bg-[#0A4DA6]/10 text-[#0A4DA6] border border-[#0A4DA6]/20 text-xs rounded-xl font-semibold">{notice}</div>
+            {suspensionInfo ? (
+              <div className="bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 rounded-2xl p-6 space-y-4 text-left shadow-lg animate-in zoom-in-95 duration-150">
+                <div className="flex items-center gap-3 border-b border-rose-200 dark:border-rose-900/60 pb-3">
+                  <div className="w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-900/50 text-rose-600 dark:text-rose-300 flex items-center justify-center shrink-0">
+                    <ShieldCheck size={20} />
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-sm text-rose-800 dark:text-rose-200">
+                      {suspensionInfo.suspensionType === 'permanent'
+                        ? 'Account Permanently Suspended'
+                        : 'Account Temporarily Suspended'}
+                    </h3>
+                    <p className="text-[11px] text-rose-600 dark:text-rose-400 font-semibold">
+                      Access to Tirvona platform has been restricted by System Administration.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between items-center py-1 border-b border-rose-100 dark:border-rose-900/40">
+                    <span className="text-gray-500 font-bold">Reason:</span>
+                    <span className="font-extrabold text-rose-700 dark:text-rose-300">{suspensionInfo.suspensionReason}</span>
+                  </div>
+
+                  <div className="flex justify-between items-center py-1 border-b border-rose-100 dark:border-rose-900/40">
+                    <span className="text-gray-500 font-bold">Suspended By:</span>
+                    <span className="font-bold text-gray-700 dark:text-gray-200">{suspensionInfo.suspendedBy || 'Super Admin'}</span>
+                  </div>
+
+                  {suspensionInfo.suspendedAt && (
+                    <div className="flex justify-between items-center py-1 border-b border-rose-100 dark:border-rose-900/40">
+                      <span className="text-gray-500 font-bold">Suspended On:</span>
+                      <span className="font-medium text-gray-700 dark:text-gray-200">{suspensionInfo.suspendedAt}</span>
+                    </div>
+                  )}
+
+                  {suspensionInfo.suspensionType === 'temporary' && (
+                    <>
+                      <div className="flex justify-between items-center py-1 border-b border-rose-100 dark:border-rose-900/40">
+                        <span className="text-gray-500 font-bold">Suspension Ends:</span>
+                        <span className="font-bold text-gray-700 dark:text-gray-200">{suspensionInfo.suspensionEndDate || 'N/A'}</span>
+                      </div>
+
+                      <div className="flex justify-between items-center py-1">
+                        <span className="text-gray-500 font-bold">Remaining Duration:</span>
+                        <span className="font-black text-rose-600 dark:text-rose-400">
+                          {suspensionInfo.remainingDays !== null ? `${suspensionInfo.remainingDays} Days` : 'N/A'}
+                        </span>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {suspensionInfo.visibleMessage && (
+                  <div className="p-3 bg-white/80 dark:bg-slate-900/80 rounded-xl border border-rose-100 dark:border-rose-900 text-xs text-rose-800 dark:text-rose-300 italic">
+                    "{suspensionInfo.visibleMessage}"
+                  </div>
+                )}
+
+                <div className="pt-2 border-t border-rose-200 dark:border-rose-900/60 text-center space-y-2">
+                  <p className="text-xs font-bold text-gray-600 dark:text-gray-300">Need Help? Contact Support</p>
+                  <a
+                    href="mailto:support@tirvona.com"
+                    className="inline-block px-5 py-2 rounded-full bg-rose-600 text-white font-extrabold text-xs hover:bg-rose-700 transition-colors shadow-md"
+                  >
+                    support@tirvona.com
+                  </a>
+                  <div>
+                    <button
+                      onClick={() => setSuspensionInfo(null)}
+                      className="text-[11px] text-gray-400 underline font-semibold mt-1 cursor-pointer"
+                    >
+                      Back to Login
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <>
+                {error && (
+                  <div className="p-3 bg-danger/10 text-danger border border-danger/20 text-xs rounded-xl font-semibold">{error}</div>
+                )}
+                {notice && (
+                  <div className="p-3 bg-[#0A4DA6]/10 text-[#0A4DA6] border border-[#0A4DA6]/20 text-xs rounded-xl font-semibold">{notice}</div>
+                )}
+              </>
             )}
 
             {/* Password form */}

@@ -51,10 +51,11 @@ import MarketplaceCategoryDetailPage from './pages/MarketplaceCategoryDetailPage
 import StaffManagementPage from './pages/StaffManagementPage';
 import ReceptionCheckinPage from './pages/ReceptionCheckinPage';
 import HousekeepingPage from './pages/HousekeepingPage';
-import AdminDashboard from './pages/AdminDashboard';
-import VerificationQueuePage from './pages/VerificationQueuePage';
-import UserManagementPage from './pages/UserManagementPage';
-import AuditLogsPage from './pages/AuditLogsPage';
+const AdminDashboard = lazy(() => import('./admin/dashboard/pages/AdminDashboard'));
+const VerificationQueuePage = lazy(() => import('./admin/ashrams/pages/VerificationQueuePage'));
+const UserManagementPage = lazy(() => import('./admin/users/pages/UserManagementPage'));
+const AuditLogsPage = lazy(() => import('./admin/reports/pages/AuditLogsPage'));
+const EnterpriseModulePage = lazy(() => import('./admin/shared/components/EnterpriseModulePage'));
 
 // Sacred Services Ecosystem & Media Hub Pages
 import { PilgrimageCircuitsPage } from './pages/PilgrimageCircuitsPage';
@@ -226,6 +227,7 @@ const AppContent: React.FC = () => {
           <Route path="/admin/verifications" element={<VerificationQueuePage />} />
           <Route path="/admin/users" element={<UserManagementPage />} />
           <Route path="/admin/audit-logs" element={<AuditLogsPage />} />
+          <Route path="/admin/manage/:moduleKey/:subKey?" element={<EnterpriseModulePage />} />
         </Route>
 
         {/* Fallback */}

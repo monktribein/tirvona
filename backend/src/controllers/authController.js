@@ -114,8 +114,62 @@ export const login = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
 
-    if (user.status === 'suspended') {
-      return res.status(403).json({ success: false, message: 'Your account is suspended.' });
+    // Check Account Lifecycle & Suspension Status
+    const isSuspended = user.isSuspended || ['suspended', 'temp_suspended', 'perm_suspended'].includes(user.status);
+
+    if (isSuspended) {
+      // Auto-Reactivation check for expired temporary suspensions
+      if (
+        user.suspensionType === 'temporary' &&
+        user.suspensionEndDate &&
+        new Date(user.suspensionEndDate) < new Date()
+      ) {
+        user.isSuspended = false;
+        user.status = 'active';
+        user.suspensionType = 'none';
+        user.reactivatedAt = new Date();
+        await user.save();
+
+        await AuditLog.create({
+          userId: user._id,
+          action: 'USER_AUTO_REACTIVATED',
+          module: 'AUTH',
+          details: { reason: 'Temporary suspension duration elapsed' },
+          ipAddress: req.ip,
+          userAgent: req.headers['user-agent'],
+        });
+      } else {
+        // Calculate remaining days for temporary suspension
+        let remainingDays = null;
+        if (user.suspensionEndDate) {
+          const diffMs = new Date(user.suspensionEndDate).getTime() - new Date().getTime();
+          remainingDays = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+        }
+
+        // Fetch suspended by name
+        let suspendedByName = 'Super Admin';
+        if (user.suspendedBy) {
+          const adminUser = await User.findById(user.suspendedBy).select('name');
+          if (adminUser) suspendedByName = adminUser.name;
+        }
+
+        return res.status(403).json({
+          success: false,
+          message: 'Your account is suspended.',
+          isSuspended: true,
+          suspensionData: {
+            status: user.status,
+            suspensionType: user.suspensionType || (user.status === 'perm_suspended' ? 'permanent' : 'temporary'),
+            suspensionReason: user.suspensionReason || 'Terms & Conditions violation',
+            suspendedBy: suspendedByName,
+            suspendedAt: user.suspendedAt ? new Date(user.suspendedAt).toLocaleDateString() : 'N/A',
+            suspensionEndDate: user.suspensionEndDate ? new Date(user.suspensionEndDate).toLocaleDateString() : 'N/A',
+            remainingDays: remainingDays,
+            visibleMessage: user.visibleMessage || '',
+            supportEmail: 'support@tirvona.com',
+          },
+        });
+      }
     }
 
     // Write audit log

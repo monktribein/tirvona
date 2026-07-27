@@ -17,7 +17,7 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
+  login: (email: string, password: string) => Promise<{ success: boolean; message?: string; isSuspended?: boolean; suspensionData?: any }>;
   loginOTP: (phone: string, otp: string) => Promise<{ success: boolean; message?: string }>;
   registerUser: (userData: any) => Promise<{ success: boolean; message?: string }>;
   logout: () => void;
@@ -71,8 +71,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         persistSession(res.data.data);
         return { success: true };
       }
-      return { success: false, message: res.data.message || 'Login failed' };
-    } catch (err) {
+      return {
+        success: false,
+        message: res.data.message || 'Login failed',
+        isSuspended: res.data.isSuspended,
+        suspensionData: res.data.suspensionData,
+      };
+    } catch (err: any) {
+      if (err.response?.data?.isSuspended) {
+        return {
+          success: false,
+          message: err.response.data.message || 'Account Suspended',
+          isSuspended: true,
+          suspensionData: err.response.data.suspensionData,
+        };
+      }
       return { success: false, message: getErrorMessage(err, 'Invalid credentials') };
     }
   };

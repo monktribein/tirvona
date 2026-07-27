@@ -1,0 +1,384 @@
+import React, { useState } from 'react';
+import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../../../contexts/AuthContext';
+import {
+  LayoutDashboard,
+  Home,
+  Bed,
+  Calendar,
+  History,
+  ShieldAlert,
+  Users,
+  LogOut,
+  FileCheck,
+  LifeBuoy,
+  Menu,
+  X,
+  ClipboardList,
+  Tag,
+  Building,
+  ChevronDown,
+  ChevronRight,
+  Sparkles,
+  MapPin,
+  Compass,
+  ShoppingBag,
+  Image,
+  CalendarDays,
+  BarChart3,
+  Settings,
+  Search,
+  Bell,
+  User,
+  ShieldCheck,
+  Sun,
+  Globe,
+  ArrowRight
+} from 'lucide-react';
+
+interface NavGroup {
+  groupName: string;
+  icon: React.ReactNode;
+  links: { label: string; path: string }[];
+}
+
+export const DashboardLayout: React.FC = () => {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
+    'USER MANAGEMENT': true,
+    'ASHRAM MANAGEMENT': true,
+  });
+
+  const toggleGroup = (groupName: string) => {
+    setOpenGroups((prev) => ({ ...prev, [groupName]: !prev[groupName] }));
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
+  if (!user) {
+    navigate('/login');
+    return null;
+  }
+
+  // Super Admin Categorized Navigation Groups
+  const superAdminGroups: NavGroup[] = [
+    {
+      groupName: 'USER MANAGEMENT',
+      icon: <Users size={15} />,
+      links: [
+        { label: 'Users & IAM', path: '/admin/users' },
+        { label: 'Pilgrims', path: '/admin/manage/users/pilgrims' },
+        { label: 'Owners', path: '/admin/manage/users/owners' },
+        { label: 'Banner Managers', path: '/admin/manage/users/banner-managers' },
+        { label: 'Content Managers', path: '/admin/manage/users/content-managers' },
+        { label: 'Staff Members', path: '/admin/manage/users/staff' },
+        { label: 'Roles & Permissions', path: '/admin/manage/users/roles' },
+      ],
+    },
+    {
+      groupName: 'ASHRAM MANAGEMENT',
+      icon: <Building size={15} />,
+      links: [
+        { label: 'All Ashrams', path: '/admin/manage/ashrams/all' },
+        { label: 'Pending Verification', path: '/admin/verifications' },
+        { label: 'Approved Ashrams', path: '/admin/manage/ashrams/approved' },
+        { label: 'Rejected Ashrams', path: '/admin/manage/ashrams/rejected' },
+        { label: 'Amenities', path: '/admin/manage/ashrams/amenities' },
+        { label: 'Categories', path: '/admin/manage/ashrams/categories' },
+        { label: 'Facilities', path: '/admin/manage/ashrams/facilities' },
+        { label: 'Room Categories', path: '/admin/manage/ashrams/room-categories' },
+      ],
+    },
+    {
+      groupName: 'ROOM MANAGEMENT',
+      icon: <Bed size={15} />,
+      links: [
+        { label: 'Rooms', path: '/admin/manage/rooms/all' },
+        { label: 'Availability', path: '/admin/manage/rooms/availability' },
+        { label: 'Pricing', path: '/admin/manage/rooms/pricing' },
+        { label: 'Season Pricing', path: '/admin/manage/rooms/season-pricing' },
+        { label: 'Inventory', path: '/admin/manage/rooms/inventory' },
+      ],
+    },
+    {
+      groupName: 'BOOKINGS',
+      icon: <Calendar size={15} />,
+      links: [
+        { label: 'All Bookings', path: '/admin/manage/bookings/all' },
+        { label: 'Pending Bookings', path: '/admin/manage/bookings/pending' },
+        { label: 'Confirmed Bookings', path: '/admin/manage/bookings/confirmed' },
+        { label: 'Completed Stays', path: '/admin/manage/bookings/completed' },
+        { label: 'Cancelled', path: '/admin/manage/bookings/cancelled' },
+        { label: 'Refund Requests', path: '/admin/manage/bookings/refunds' },
+      ],
+    },
+    {
+      groupName: 'OFFERS & BLOGS',
+      icon: <Tag size={15} />,
+      links: [
+        { label: 'All Offers', path: '/admin/manage/offers/all' },
+        { label: 'Featured Offers', path: '/admin/manage/offers/featured' },
+        { label: 'All Blogs', path: '/admin/manage/blogs/all' },
+        { label: 'Blog Categories', path: '/admin/manage/blogs/categories' },
+        { label: 'Author Approvals', path: '/admin/manage/blogs/authors' },
+      ],
+    },
+    {
+      groupName: 'PLANNER & CIRCUITS',
+      icon: <Compass size={15} />,
+      links: [
+        { label: 'Spiritual Circuits', path: '/admin/manage/planner/circuits' },
+        { label: 'Temple Directory', path: '/admin/manage/planner/temples' },
+        { label: 'Yatra Routes', path: '/admin/manage/planner/routes' },
+        { label: 'Itineraries', path: '/admin/manage/planner/itineraries' },
+        { label: 'Ritual Packages', path: '/admin/manage/planner/rituals' },
+      ],
+    },
+    {
+      groupName: 'LOCAL HUB',
+      icon: <Compass size={15} />,
+      links: [
+        { label: 'Transport', path: '/admin/manage/local/transport' },
+        { label: 'Guides', path: '/admin/manage/local/guides' },
+        { label: 'Restaurants', path: '/admin/manage/local/restaurants' },
+        { label: 'Medical', path: '/admin/manage/local/medical' },
+        { label: 'Emergency', path: '/admin/manage/local/emergency' },
+        { label: 'Shops', path: '/admin/manage/local/shops' },
+        { label: 'Photography', path: '/admin/manage/local/photography' },
+        { label: 'Events', path: '/admin/manage/local/events' },
+      ],
+    },
+    {
+      groupName: 'MARKETPLACE',
+      icon: <ShoppingBag size={15} />,
+      links: [
+        { label: 'Products', path: '/admin/manage/marketplace/products' },
+        { label: 'Categories', path: '/admin/manage/marketplace/categories' },
+        { label: 'Vendors', path: '/admin/manage/marketplace/vendors' },
+        { label: 'Orders', path: '/admin/manage/marketplace/orders' },
+        { label: 'Waitlist', path: '/admin/manage/marketplace/waitlist' },
+        { label: 'Newsletter', path: '/admin/manage/marketplace/newsletter' },
+      ],
+    },
+    {
+      groupName: 'BANNER MANAGEMENT',
+      icon: <Image size={15} />,
+      links: [
+        { label: 'Homepage Banner', path: '/admin/manage/banner/homepage' },
+        { label: 'Hero Slider', path: '/admin/manage/banner/hero-slider' },
+        { label: 'Offers Banner', path: '/admin/manage/banner/offers' },
+        { label: 'Blog Banner', path: '/admin/manage/banner/blog' },
+        { label: 'Marketplace Banner', path: '/admin/manage/banner/marketplace' },
+        { label: 'Destination Banner', path: '/admin/manage/banner/destination' },
+        { label: 'Upload Media', path: '/admin/manage/banner/upload' },
+        { label: 'Approval Queue', path: '/admin/manage/banner/approval' },
+      ],
+    },
+    {
+      groupName: 'REPORTS & AUDIT',
+      icon: <BarChart3 size={15} />,
+      links: [
+        { label: 'Revenue Reports', path: '/admin/manage/reports/revenue' },
+        { label: 'Booking Telemetry', path: '/admin/manage/reports/bookings' },
+        { label: 'System Audit Logs', path: '/admin/audit-logs' },
+      ],
+    },
+  ];
+
+  const standardLinks = [
+    { label: 'Executive Dashboard', path: '/admin/dashboard', icon: <LayoutDashboard size={16} /> },
+    { label: 'Verification Queue', path: '/admin/verifications', icon: <FileCheck size={16} /> },
+    { label: 'Audit Logs', path: '/admin/audit-logs', icon: <History size={16} /> },
+    { label: 'Staff Management', path: '/admin/users', icon: <Users size={16} /> },
+  ];
+
+  const isSuperAdmin = user.role === 'super_admin';
+
+  return (
+    <div className="min-h-screen bg-gray-50/70 dark:bg-[#070F1B] flex flex-row font-sans text-left">
+      {/* ── Left Sidebar (Dark Navy Backdrop Matching Landing Page Footer & Dark Sections) ── */}
+      <aside className="hidden lg:flex flex-col w-72 bg-[#0B192C] text-white border-r border-slate-800 shadow-2xl shrink-0 h-screen sticky top-0 z-30">
+        {/* Brand Header */}
+        <div className="p-6 border-b border-slate-800 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <img src="/logo/logo.png" alt="Tirvona" className="w-9 h-9 object-contain" />
+            <div className="flex flex-col">
+              <span className="font-black text-base tracking-tight text-white flex items-center gap-1.5">
+                Tirvona <span className="text-[#E58C28] text-[9px] px-2 py-0.5 bg-[#E58C28]/15 border border-[#E58C28]/35 rounded-full font-black uppercase">ERP</span>
+              </span>
+              <span className="text-[10px] text-gray-400 font-bold tracking-wider uppercase">Govt Spiritual Console</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Links Navigation */}
+        <nav className="flex-grow p-4 space-y-3 overflow-y-auto max-h-[calc(100vh-160px)]">
+          {isSuperAdmin ? (
+            <div className="space-y-3">
+              {/* Executive Dashboard Link */}
+              <Link
+                to="/admin/dashboard"
+                className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-black transition-all ${
+                  location.pathname === '/admin/dashboard'
+                    ? 'bg-[#0A4DA6] text-white shadow-lg shadow-[#0A4DA6]/30 border-l-4 border-[#E58C28]'
+                    : 'text-gray-300 hover:bg-slate-850 hover:text-white'
+                }`}
+              >
+                <LayoutDashboard size={16} className="text-[#E58C28]" />
+                <span>Executive Dashboard</span>
+              </Link>
+
+              {/* Categorized Super Admin Groups */}
+              {superAdminGroups.map((group) => {
+                const isOpen = openGroups[group.groupName] ?? false;
+                const hasActiveLink = group.links.some((l) => location.pathname === l.path);
+
+                return (
+                  <div key={group.groupName} className="space-y-1">
+                    <button
+                      onClick={() => toggleGroup(group.groupName)}
+                      className={`w-full flex items-center justify-between px-3.5 py-2 text-[10px] font-black uppercase tracking-wider transition-colors text-left rounded-xl ${
+                        hasActiveLink ? 'text-[#E58C28] bg-white/5' : 'text-gray-400 hover:text-gray-200'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        {group.icon}
+                        <span>{group.groupName}</span>
+                      </div>
+                      {isOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                    </button>
+
+                    {isOpen && (
+                      <div className="pl-4 space-y-1 border-l border-slate-800 ml-3">
+                        {group.links.map((link) => {
+                          const isActive = location.pathname === link.path;
+                          return (
+                            <Link
+                              key={link.path}
+                              to={link.path}
+                              className={`flex items-center justify-between px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all ${
+                                isActive
+                                  ? 'bg-[#0A4DA6] text-white shadow-md border-l-2 border-[#E58C28]'
+                                  : 'text-gray-400 hover:text-white hover:bg-slate-850'
+                              }`}
+                            >
+                              <span className="truncate">{link.label}</span>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="space-y-1.5">
+              {standardLinks.map((link) => {
+                const isActive = location.pathname === link.path;
+                return (
+                  <Link
+                    key={link.path}
+                    to={link.path}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-extrabold tracking-wide transition-all ${
+                      isActive
+                        ? 'bg-[#0A4DA6] text-white shadow-md border-l-4 border-[#E58C28]'
+                        : 'text-gray-400 hover:bg-slate-850 hover:text-white'
+                    }`}
+                  >
+                    {link.icon}
+                    <span>{link.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </nav>
+
+        {/* User Profile Bottom Bar */}
+        <div className="p-4 border-t border-slate-800 space-y-3 shrink-0">
+          <div className="flex items-center gap-3 px-2">
+            <div className="w-9 h-9 rounded-full bg-[#E58C28]/20 border border-[#E58C28]/50 flex items-center justify-center font-black text-[#E58C28] text-xs">
+              {user.name.charAt(0).toUpperCase()}
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xs font-extrabold truncate max-w-[140px] text-white">{user.name}</span>
+              <span className="text-[10px] text-[#E58C28] font-black uppercase tracking-wider">{user.role.replace('_', ' ')}</span>
+            </div>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center justify-center gap-2 py-2.5 bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 transition-all rounded-full text-xs font-black cursor-pointer"
+          >
+            <LogOut size={14} />
+            <span>Sign Out</span>
+          </button>
+        </div>
+      </aside>
+
+      {/* ── Right Workspace ── */}
+      <div className="flex-grow flex flex-col min-w-0">
+        
+        {/* Floating Pill Top Navigation Header (Matching Landing Page Top Bar in Image 2) */}
+        <header className="py-4 px-6 lg:px-8 shrink-0 sticky top-0 z-20">
+          <div className="max-w-7xl mx-auto bg-white/95 dark:bg-[#0B192C]/95 backdrop-blur-xl border border-gray-200/80 dark:border-slate-800 rounded-full px-6 py-3 shadow-lg shadow-gray-200/40 dark:shadow-none flex justify-between items-center">
+            
+            {/* Left: Mobile Menu & Govt Badge */}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="lg:hidden p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors text-[#0B192C] dark:text-white"
+              >
+                <Menu size={18} />
+              </button>
+              <span className="px-3.5 py-1 bg-[#E58C28]/15 text-[#E58C28] border border-[#E58C28]/30 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5">
+                🇮🇳 Government Enterprise
+              </span>
+              <h1 className="hidden sm:block text-xs font-black text-[#0B192C] dark:text-white tracking-tight uppercase">
+                {location.pathname.split('/').pop()?.replace(/-/g, ' ') || 'Super Admin Console'}
+              </h1>
+            </div>
+
+            {/* Right: Quick Search + Notifications + Blue Action Pill Button */}
+            <div className="flex items-center gap-3">
+              <div className="relative hidden md:block w-64">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
+                <input
+                  type="text"
+                  placeholder="Search modules, ashrams..."
+                  className="w-full pl-9 pr-4 py-2 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-full text-xs font-medium focus:outline-none focus:border-[#0A4DA6]"
+                />
+              </div>
+
+              <button className="p-2 bg-gray-50 dark:bg-slate-900 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full border border-gray-200 dark:border-slate-800 text-gray-500 relative cursor-pointer">
+                <Bell size={16} />
+                <span className="absolute top-1 right-1 w-2 h-2 bg-rose-500 rounded-full animate-ping" />
+                <span className="absolute top-1 right-1 w-2 h-2 bg-rose-500 rounded-full" />
+              </button>
+
+              {/* Solid Blue Action Pill (Matching Sign Up / Book Now Button in Landing Page Image 2) */}
+              <Link
+                to="/"
+                className="text-xs font-extrabold px-5 py-2 rounded-full bg-[#0A4DA6] hover:bg-[#083b80] text-white transition-all flex items-center gap-1.5 shadow-md shadow-[#0A4DA6]/25 cursor-pointer"
+              >
+                <Globe size={14} className="text-[#E58C28]" /> Public Portal <ArrowRight size={12} />
+              </Link>
+            </div>
+          </div>
+        </header>
+
+        {/* Content Workspace */}
+        <main className="flex-grow p-6 lg:p-8 pb-12 lg:pb-16 overflow-y-auto max-w-7xl w-full mx-auto">
+          <Outlet />
+        </main>
+      </div>
+    </div>
+  );
+};
+export default DashboardLayout;

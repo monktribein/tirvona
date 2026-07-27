@@ -332,6 +332,7 @@ export const duplicateOffer = async (req, res) => {
 };
 
 // @desc    Validate promo code during booking calculation
+// @desc    Validate promo code during booking calculation
 // @route   POST /api/offers/validate-promo
 // @access  Public
 export const validatePromoCode = async (req, res) => {
@@ -342,17 +343,47 @@ export const validatePromoCode = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Promo code is required.' });
     }
 
+    const cleanCode = promoCode.toUpperCase().trim();
     const offer = await Offer.findOne({
-      promoCode: promoCode.toUpperCase().trim(),
+      promoCode: cleanCode,
       status: 'active',
-      validTill: { $gte: new Date() },
     }).populate('ashramId', 'name');
 
     if (!offer) {
       return res.status(404).json({
         success: false,
-        message: 'Invalid or expired promo code.',
+        message: `Invalid promo code "${cleanCode}".`,
       });
+    }
+
+    const now = new Date();
+    if (offer.validFrom && new Date(offer.validFrom) > now) {
+      return res.status(400).json({
+        success: false,
+        message: `Promo code "${cleanCode}" is not active yet. Valid starting ${new Date(offer.validFrom).toLocaleDateString()}.`,
+      });
+    }
+
+    if (offer.validTill && new Date(offer.validTill) < now) {
+      return res.status(400).json({
+        success: false,
+        message: `Promo code "${cleanCode}" expired on ${new Date(offer.validTill).toLocaleDateString()}.`,
+      });
+    }
+
+    // Check Ashram Applicability
+    if (ashramId) {
+      const isSpecificAshramMatch = offer.ashramId && offer.ashramId._id.toString() === ashramId.toString();
+      const isApplicableAshramMatch =
+        offer.applicableAshrams &&
+        offer.applicableAshrams.some((id) => id.toString() === ashramId.toString());
+
+      if (offer.ashramId && offer.applicableAshrams?.length > 0 && !isSpecificAshramMatch && !isApplicableAshramMatch) {
+        return res.status(400).json({
+          success: false,
+          message: `Promo code "${cleanCode}" is not applicable for this ashram stay.`,
+        });
+      }
     }
 
     if (offer.minimumBookingAmount > 0 && bookingAmount < offer.minimumBookingAmount) {
@@ -369,6 +400,10 @@ export const validatePromoCode = async (req, res) => {
       });
     }
 
+    // Increment click counter
+    offer.clicksCount = (offer.clicksCount || 0) + 1;
+    await offer.save();
+
     let discountAmount = 0;
     if (offer.discountType === 'Percentage') {
       discountAmount = (bookingAmount * offer.discountValue) / 100;
@@ -379,18 +414,41 @@ export const validatePromoCode = async (req, res) => {
       discountAmount = Math.min(offer.discountValue, bookingAmount);
     }
 
+    const subtotal = Number(bookingAmount);
+    const gstAmount = Math.round(subtotal * 0.05); // 5% GST for Spiritual Stays
+    const platformFee = 0; // ₹0 Digital India Fee
+    const couponDiscount = Math.round(discountAmount);
+    const totalSavings = couponDiscount;
+    const finalAmount = Math.max(0, Math.round(subtotal - couponDiscount + gstAmount + platformFee));
+    const reservationExpiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 Min Timer
+    const rewardPointsEarned = Math.round(finalAmount * 0.05); // Earn 5% back in reward points
+
     res.json({
       success: true,
       valid: true,
-      message: `Promo code "${offer.promoCode}" applied! You saved ₹${Math.round(discountAmount)}.`,
+      message: `🎉 Congratulations! Promo code "${offer.promoCode}" applied! You saved ₹${couponDiscount}.`,
       data: {
         offerId: offer._id,
+        offerName: offer.offerTitle,
         promoCode: offer.promoCode,
-        offerTitle: offer.offerTitle,
         discountType: offer.discountType,
         discountValue: offer.discountValue,
-        discountAmount: Math.round(discountAmount),
-        finalAmount: Math.max(0, Math.round(bookingAmount - discountAmount)),
+        discountPercentage: offer.discountType === 'Percentage' ? offer.discountValue : 0,
+        originalAmount: subtotal,
+        discountAmount: couponDiscount,
+        savings: totalSavings,
+        totalSavings: totalSavings,
+        gstAmount,
+        platformFee,
+        finalAmount: finalAmount,
+        finalPayableAmount: finalAmount,
+        reservationExpiresAt,
+        rewardPointsEarned,
+        remainingRedemptions: offer.remainingRedemptions || 12,
+        validTill: offer.validTill,
+        offerCategory: offer.offerType || 'Festival Offer',
+        description: offer.description,
+        terms: offer.termsAndConditions || ['Valid on direct website bookings only.', 'Non-transferable.'],
         benefits: {
           upgrade: offer.discountType === 'Free Upgrade',
           meal: offer.discountType === 'Free Meal',
