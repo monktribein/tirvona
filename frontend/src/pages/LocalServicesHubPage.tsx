@@ -186,23 +186,6 @@ export const LocalServicesHubPage: React.FC = () => {
           })}
         </div>
 
-        {/* Emergency Helpline Strip */}
-        <div className="bg-gradient-to-r from-red-600 to-amber-600 text-white rounded-3xl p-4 sm:p-6 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3 text-center sm:text-left">
-            <Ambulance size={28} className="shrink-0" />
-            <div>
-              <h4 className="font-black text-base">Pilgrim Emergency Helpline ({selectedCity})</h4>
-              <p className="text-xs text-red-100 font-medium">Police, Ambulance, Lost & Found, and Temple Trust Medical Desk.</p>
-            </div>
-          </div>
-          <button
-            onClick={() => alert(`Dialing 24/7 Helpline for ${selectedCity}: 108 / +91 98765 00000`)}
-            className="px-6 py-2.5 rounded-full bg-white text-red-600 font-black text-xs shadow-md shrink-0 cursor-pointer"
-          >
-            Call Helpline 📞
-          </button>
-        </div>
-
         {/* Services Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredItems.map((item) => (

@@ -736,10 +736,10 @@ export const HomePage: React.FC = () => {
               Offers
             </h2>
             <Link
-              to="/search"
+              to="/offers"
               className="inline-flex items-center gap-1.5 text-xs font-black text-[#0A4DA6] dark:text-amber-300 hover:text-[#E58C28] transition-all pt-1"
             >
-              <span>Explore All Ashrams</span>
+              <span>Explore All Offers</span>
               <ChevronRight size={14} />
             </Link>
           </div>
@@ -748,7 +748,8 @@ export const HomePage: React.FC = () => {
             {offers.slice(0, 3).map((offer) => (
               <div
                 key={offer._id}
-                className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-5 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between space-y-4 group"
+                className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-5 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between space-y-4 group cursor-pointer"
+                onClick={() => navigate(`/offers?offer=${offer._id}`)}
               >
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
@@ -773,7 +774,7 @@ export const HomePage: React.FC = () => {
                     PROMO: <span className="bg-gray-100 dark:bg-white/10 text-[#0B192C] dark:text-amber-200 px-1.5 py-0.5 rounded font-black">{offer.promoCode}</span>
                   </div>
                   <button
-                    onClick={() => navigate(`/search?destination=${encodeURIComponent(offer.ashramId?.address?.city || '')}`)}
+                    onClick={(e) => { e.stopPropagation(); navigate(`/offers?offer=${offer._id}`); }}
                     className="px-3.5 py-1.5 rounded-full bg-[#0A4DA6] text-white hover:bg-[#083b80] font-extrabold text-xs transition-all flex items-center gap-1 cursor-pointer shadow-md"
                   >
                     <span>Book Now</span>

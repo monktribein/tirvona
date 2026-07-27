@@ -97,7 +97,7 @@ export const PilgrimagePlannerPage: React.FC = () => {
             Govt-Scale Spiritual Tourism Engine
           </span>
           <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight">
-            Tirvona AI Pilgrimage Itinerary Planner
+            Tirvona Pilgrimage Itinerary Planner
           </h1>
           <p className="text-sm sm:text-base text-blue-100 max-w-3xl mx-auto font-medium">
             Generate complete day-by-day travel plans, verified ashram stays, darshan schedules, satvik dining, budget breakdown, and route maps for your sacred yatra.

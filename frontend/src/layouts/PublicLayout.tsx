@@ -124,7 +124,7 @@ export const PublicLayout: React.FC = () => {
   const navLinks = [
     { label: 'Destinations', to: '/search', hasDropdown: false },
     { label: 'Stay', to: '/search', hasDropdown: false },
-    { label: 'Offers & Deals 🏷️', to: '/offers', hasDropdown: false },
+    { label: 'Offers & Deals', to: '/offers', hasDropdown: false },
     { label: 'Darshan & Seva', to: '/faq', hasDropdown: false },
     { label: 'Tirvona Local', to: '/faq', hasDropdown: false },
     { label: 'Events', to: '/offers/category/Festival%20Offer', hasDropdown: false },
