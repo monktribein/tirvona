@@ -1,0 +1,231 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { Search, Play, BookOpen, Calendar, Clock, Eye, Heart, CheckCircle2, ArrowRight } from 'lucide-react';
+
+export const BlogListPage: React.FC = () => {
+  const navigate = useNavigate();
+  const [posts, setPosts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedType, setSelectedType] = useState('All'); // All, article, video
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const categories = [
+    'All',
+    'Temple History',
+    'Travel Guide',
+    'Festival',
+    'Ashram News',
+    'Pilgrim Story',
+    'Prasad',
+    'Videos',
+  ];
+
+  useEffect(() => {
+    fetchPosts();
+  }, [selectedCategory, selectedType]);
+
+  const fetchPosts = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get(
+        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/blog/posts`,
+        { params: { category: selectedCategory, contentType: selectedType, search: searchTerm } }
+      );
+      if (res.data.success) {
+        setPosts(res.data.data);
+      }
+    } catch (err) {
+      console.error('Error fetching blog list:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    fetchPosts();
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-[#070F1B] pt-24 sm:pt-28 pb-16">
+      {/* Primary Hero Banner Section */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 sm:mt-6 mb-8 sm:mb-12">
+        <div className="relative rounded-3xl sm:rounded-[32px] overflow-hidden shadow-2xl border border-white/10 bg-[#0B192C] min-h-[220px] sm:min-h-[300px] md:min-h-[360px] flex flex-col justify-center items-center text-center p-6 sm:p-10">
+          <img
+            src="/banner/media_hub_hero_banner.png"
+            alt="Spiritual Media & Knowledge Hub Banner"
+            className="absolute inset-0 w-full h-full object-cover object-center"
+            loading="lazy"
+          />
+          {/* Subtle gradient overlay to ensure text contrast */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/20" />
+
+          {/* Banner Content Overlay */}
+          <div className="relative z-10 space-y-4 max-w-3xl mx-auto">
+            <span className="px-4 py-1.5 rounded-full bg-white/10 text-amber-300 text-xs font-black uppercase tracking-wider border border-white/20 backdrop-blur-md inline-block shadow-md">
+              Spiritual Media & Knowledge Hub
+            </span>
+            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white leading-tight drop-shadow-lg">
+              Sacred Articles & Spiritual Media
+            </h1>
+            <p className="text-xs sm:text-base text-gray-200 font-medium max-w-2xl mx-auto leading-relaxed drop-shadow-md">
+              Explore authentic temple history, travel guides, live video documentaries, ashram experiences, and mahaprasad stories.
+            </p>
+
+            {/* Integrated Search Bar */}
+            <form onSubmit={handleSearch} className="max-w-xl mx-auto mt-6 flex items-center bg-white dark:bg-[#0B192C] rounded-full p-2 shadow-2xl border border-white/20">
+              <Search size={18} className="text-[#0A4DA6] ml-4 shrink-0" />
+              <input
+                type="text"
+                placeholder="Search articles, videos, temples, or authors..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full bg-transparent px-3 text-xs sm:text-sm font-semibold text-[#0B192C] dark:text-white focus:outline-none"
+              />
+              <button type="submit" className="px-6 py-2.5 rounded-full bg-[#E58C28] hover:bg-amber-600 text-white font-black text-xs transition-colors shrink-0 shadow-md">
+                Search
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      {/* Filter Bar */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-8 space-y-4">
+        {/* Content Type Filter */}
+        <div className="flex justify-center gap-2">
+          {['All', 'article', 'video'].map((type) => (
+            <button
+              key={type}
+              onClick={() => setSelectedType(type)}
+              className={`px-6 py-2 rounded-full text-xs font-black capitalize transition-all cursor-pointer ${
+                selectedType === type
+                  ? 'bg-[#E58C28] text-white shadow-md'
+                  : 'bg-white dark:bg-[#0B192C] text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-slate-800'
+              }`}
+            >
+              {type === 'All' ? 'All Formats' : type === 'article' ? '📄 Articles' : '🎥 Videos'}
+            </button>
+          ))}
+        </div>
+
+        {/* Category Tabs */}
+        <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-none">
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setSelectedCategory(cat)}
+              className={`px-5 py-2.5 rounded-full text-xs font-black whitespace-nowrap transition-all cursor-pointer ${
+                selectedCategory === cat
+                  ? 'bg-[#0A4DA6] text-white shadow-md'
+                  : 'bg-white dark:bg-[#0B192C] text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-slate-800 hover:bg-gray-100'
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Post Grid */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-8">
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-80 bg-gray-200 dark:bg-slate-800 animate-pulse rounded-3xl" />
+            ))}
+          </div>
+        ) : posts.length === 0 ? (
+          <div className="text-center py-16 bg-white dark:bg-[#0B192C] rounded-3xl border border-gray-200 dark:border-slate-800">
+            <BookOpen size={48} className="text-gray-400 mx-auto mb-3" />
+            <h3 className="font-black text-lg text-gray-700 dark:text-gray-200">No Posts Found</h3>
+            <p className="text-xs text-gray-400">Try adjusting your filters or search term.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {posts.map((item) => {
+              const isVideo = item.youtubeUrl || item.contentType === 'video';
+              const targetUrl = isVideo ? `/video/${item.slug}` : `/blog/${item.slug}`;
+              const author = item.authorId || {};
+
+              return (
+                <div
+                  key={item._id}
+                  onClick={() => navigate(targetUrl)}
+                  className="bg-white dark:bg-[#0B192C] rounded-3xl border border-gray-100 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between cursor-pointer group"
+                >
+                  <div>
+                    {/* Image / Video Thumbnail Container */}
+                    <div className="relative h-52 overflow-hidden bg-slate-900">
+                      <img
+                        src={item.coverImage}
+                        alt={item.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                      <span className="absolute top-4 left-4 bg-[#0A4DA6] text-white text-[10px] font-black uppercase px-3 py-1 rounded-full shadow-md">
+                        {item.category}
+                      </span>
+
+                      {/* Dynamic Video Overlay Detection */}
+                      {isVideo ? (
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                          <div className="w-12 h-12 rounded-full bg-red-600/90 text-white flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform">
+                            <Play size={20} className="fill-white ml-1" />
+                          </div>
+                          <span className="absolute bottom-3 right-3 bg-black/80 backdrop-blur-md text-white text-[10px] font-extrabold px-2.5 py-1 rounded-md">
+                            {item.youtubeDuration || 'Video'}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-md text-white text-[10px] font-extrabold px-2.5 py-1 rounded-md">
+                          {item.readingTime || '5 min read'}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="p-6 space-y-3">
+                      <div className="flex items-center gap-3 text-[11px] font-bold text-gray-400">
+                        <span className="flex items-center gap-1"><Calendar size={12} className="text-[#0A4DA6]" /> {new Date(item.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                        <span className="flex items-center gap-1"><Eye size={12} className="text-[#0A4DA6]" /> {item.views} Views</span>
+                      </div>
+
+                      <h3 className="font-black text-lg text-[#0B192C] dark:text-white leading-tight group-hover:text-[#0A4DA6] transition-colors line-clamp-2">
+                        {item.title}
+                      </h3>
+
+                      <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">
+                        {item.excerpt}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Author Strip Footer */}
+                  <div className="p-6 pt-0 flex items-center justify-between border-t border-gray-50 dark:border-slate-800/50 mt-4">
+                    <div className="flex items-center gap-2">
+                      <img
+                        src={author.photo || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&h=100&q=80'}
+                        alt={author.name}
+                        className="w-7 h-7 rounded-full object-cover border border-[#0A4DA6]"
+                      />
+                      <span className="text-xs font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                        {author.name || 'Verified Author'}
+                        <CheckCircle2 size={12} className="text-emerald-500" />
+                      </span>
+                    </div>
+
+                    <button className="px-3.5 py-1.5 rounded-full bg-gray-100 dark:bg-slate-800 group-hover:bg-[#0A4DA6] group-hover:text-white text-gray-700 dark:text-gray-200 text-xs font-bold transition-all flex items-center gap-1">
+                      <span>{isVideo ? 'Watch' : 'Read'}</span>
+                      <ArrowRight size={12} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};

@@ -122,12 +122,12 @@ export const PublicLayout: React.FC = () => {
   };
 
   const navLinks = [
-    { label: 'Destinations', to: '/search', hasDropdown: true },
-    { label: 'Stay', to: '/search', hasDropdown: true },
-    { label: 'Darshan & Seva', to: '/faq', hasDropdown: true },
-    { label: 'Tirvona Local', to: '/faq', hasDropdown: true },
-    { label: 'Marketplace', to: '/faq', hasDropdown: true },
-    { label: 'Events', to: '/faq', hasDropdown: false },
+    { label: 'Destinations', to: '/search', hasDropdown: false },
+    { label: 'Stay', to: '/search', hasDropdown: false },
+    { label: 'Offers & Deals 🏷️', to: '/offers', hasDropdown: false },
+    { label: 'Darshan & Seva', to: '/faq', hasDropdown: false },
+    { label: 'Tirvona Local', to: '/faq', hasDropdown: false },
+    { label: 'Events', to: '/offers/category/Festival%20Offer', hasDropdown: false },
     { label: 'Blog', to: '/faq', hasDropdown: false },
   ];
 
@@ -160,10 +160,9 @@ export const PublicLayout: React.FC = () => {
                   <Link
                     key={link.label}
                     to={link.to}
-                    className="hover:text-[#0A4DA6] dark:hover:text-[#E58C28] transition-colors py-1 flex items-center gap-1 font-semibold text-slate-700 dark:text-slate-200"
+                    className="hover:text-[#0A4DA6] dark:hover:text-[#E58C28] transition-colors py-1 font-semibold text-slate-700 dark:text-slate-200"
                   >
                     <span>{link.label}</span>
-                    {link.hasDropdown && <ChevronDown size={13} className="text-slate-400 dark:text-slate-500 stroke-[2.5]" />}
                   </Link>
                 ))}
               </nav>
@@ -177,8 +176,8 @@ export const PublicLayout: React.FC = () => {
               <div className="flex items-center gap-2 lg:gap-3">
 
                 {/* Currency selector inside navbar */}
-                <button className="hidden sm:flex text-slate-600 dark:text-gray-300 hover:text-[#D4AF37] transition-colors text-xs font-semibold items-center gap-0.5 cursor-pointer px-1.5 py-1">
-                  <span>₹ INR</span><ChevronDown size={11} />
+                <button className="hidden sm:flex text-slate-600 dark:text-gray-300 hover:text-[#D4AF37] transition-colors text-xs font-semibold items-center cursor-pointer px-1.5 py-1">
+                  <span>₹ INR</span>
                 </button>
 
                 {/* Language globe inside navbar */}

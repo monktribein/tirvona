@@ -21,6 +21,7 @@ import {
   Sparkles,
   Award,
   BookOpen,
+  Play,
   ChevronRight,
   ChevronLeft,
   Heart,
@@ -30,6 +31,7 @@ import {
   Bed,
   ChevronDown,
   Headphones,
+  Tag,
 } from 'lucide-react';
 
 export const HomePage: React.FC = () => {
@@ -96,9 +98,10 @@ export const HomePage: React.FC = () => {
 
   const fetchOffers = async () => {
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/offers/public/active`);
+      const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/offers?status=active`);
       if (res.data.success) {
         setOffers(res.data.data);
+        setActiveOffers(res.data.data);
       }
     } catch (err) {
       console.error('Fetch active offers error:', err);
@@ -225,6 +228,28 @@ export const HomePage: React.FC = () => {
     };
   }, [loading]);
 
+  const [activeOffers, setActiveOffers] = useState<any[]>([]);
+  const [marketplaceCategories, setMarketplaceCategories] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetchStays();
+    fetchOffers();
+    fetchMarketplaceCategories();
+  }, []);
+
+  const fetchMarketplaceCategories = async () => {
+    try {
+      const res = await axios.get(
+        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/marketplace/categories`
+      );
+      if (res.data.success) {
+        setMarketplaceCategories(res.data.data);
+      }
+    } catch (err) {
+      console.error('Fetch marketplace categories error:', err);
+    }
+  };
+
   const fetchStays = async () => {
     try {
       const res = await ashramService.search({ verified: 'true' });
@@ -302,12 +327,12 @@ export const HomePage: React.FC = () => {
 
   // Popular Prashad from Ashrams & Temples for carousel
   const popularPrashad = [
-    { name: 'Puri Mahaprasad', img: 'https://images.unsplash.com/photo-1610192244261-3f33de3f55e4?auto=format&fit=crop&w=500&q=80', fallback: 'https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?auto=format&fit=crop&w=500&q=80' },
-    { name: 'Tirupati Laddu', img: 'https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?auto=format&fit=crop&w=500&q=80', fallback: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=500&q=80' },
-    { name: 'Mathura Peda', img: 'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?auto=format&fit=crop&w=500&q=80', fallback: 'https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?auto=format&fit=crop&w=500&q=80' },
-    { name: 'Varanasi Peda', img: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=500&q=80', fallback: 'https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?auto=format&fit=crop&w=500&q=80' },
-    { name: 'Ayodhya Prashad', img: 'https://images.unsplash.com/photo-1599420186946-7b6fb4e297f0?auto=format&fit=crop&w=500&q=80', fallback: 'https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?auto=format&fit=crop&w=500&q=80' },
-    { name: 'Shirdi Sai Halwa', img: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=500&q=80', fallback: 'https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?auto=format&fit=crop&w=500&q=80' },
+    { name: 'Varanasi Peda', slug: 'varanasi-peda', img: 'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?auto=format&fit=crop&w=500&q=80', fallback: 'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?auto=format&fit=crop&w=500&q=80' },
+    { name: 'Mathura Peda', slug: 'mathura-peda', img: 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&w=500&q=80', fallback: 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&w=500&q=80' },
+    { name: 'Tirupati Laddu', slug: 'tirupati-laddu', img: 'https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?auto=format&fit=crop&w=500&q=80', fallback: 'https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?auto=format&fit=crop&w=500&q=80' },
+    { name: 'Ayodhya Prashad', slug: 'ayodhya-prasad', img: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=500&q=80', fallback: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=500&q=80' },
+    { name: 'Puri Mahaprasad', slug: 'puri-mahaprasad', img: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=500&q=80', fallback: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=500&q=80' },
+    { name: 'Shirdi Sai Halwa', slug: 'shirdi-halwa', img: 'https://images.unsplash.com/photo-1505576399279-565b52d4ac71?auto=format&fit=crop&w=500&q=80', fallback: 'https://images.unsplash.com/photo-1505576399279-565b52d4ac71?auto=format&fit=crop&w=500&q=80' },
   ];
 
   // Customer feedback derived from real approved reviews.
@@ -325,18 +350,18 @@ export const HomePage: React.FC = () => {
 
   // 12-icon service strip aligned with Tirvona Theme & Routing
   const serviceIcons = [
-    { id: 'circuits', label: 'Pilgrimage\nCircuits', icon: MapPin, category: 'circuits', target: '/search' },
-    { id: 'temples', label: 'Temple\nDetails', icon: Compass, category: 'temples', target: '/search' },
-    { id: 'guides', label: 'Travel\nGuides', icon: BookOpen, category: 'guides', target: '/faq' },
-    { id: 'events', label: 'Events &\nFestivals', icon: Sparkles, category: 'events', target: '/search' },
-    { id: 'local_guides', label: 'Local\nGuides', icon: Users, category: 'local_guides', target: '/search' },
-    { id: 'cabs', label: 'Transport &\nCabs', icon: MapIcon, category: 'cabs', target: '/search' },
-    { id: 'prasad', label: 'Restaurants\n& Prasad', icon: Activity, category: 'prasad', target: '#prashad-section' },
-    { id: 'shops', label: 'Shops &\nServices', icon: LayoutGrid, category: 'shops', target: '/search' },
-    { id: 'puja', label: 'Puja\nItems', icon: Heart, category: 'puja', target: '/search' },
-    { id: 'products', label: 'Religious\nProducts', icon: Award, category: 'products', target: '/search' },
-    { id: 'books', label: 'Books &\nMedia', icon: BookOpen, category: 'books', target: '/search' },
-    { id: 'handicrafts', label: 'Handicrafts\n& Gifts', icon: Sparkles, category: 'handicrafts', target: '/search' },
+    { id: 'circuits', label: 'Pilgrimage\nCircuits', icon: MapPin, category: 'circuits', target: '/pilgrimage-circuits' },
+    { id: 'temples', label: 'Temple\nDetails', icon: Compass, category: 'temples', target: '/temples' },
+    { id: 'events', label: 'Events &\nFestivals', icon: Sparkles, category: 'events', target: '/events' },
+    { id: 'guides', label: 'Travel\nGuides', icon: BookOpen, category: 'guides', target: '/travel-guides' },
+    { id: 'local_guides', label: 'Local\nGuides', icon: Users, category: 'local_guides', target: '/local-guides' },
+    { id: 'cabs', label: 'Transport &\nCabs', icon: MapIcon, category: 'cabs', target: '/transport' },
+    { id: 'prasad', label: 'Restaurants\n& Prasad', icon: Activity, category: 'prasad', target: '/restaurants' },
+    { id: 'shops', label: 'Shops &\nServices', icon: LayoutGrid, category: 'shops', target: '/shops' },
+    { id: 'puja', label: 'Puja\nItems', icon: Heart, category: 'puja', target: '/puja-items' },
+    { id: 'products', label: 'Religious\nProducts', icon: Award, category: 'products', target: '/religious-products' },
+    { id: 'books', label: 'Books &\nMedia', icon: BookOpen, category: 'books', target: '/books' },
+    { id: 'handicrafts', label: 'Handicrafts\n& Gifts', icon: Sparkles, category: 'handicrafts', target: '/handicrafts' },
   ];
 
   return (
@@ -780,7 +805,7 @@ export const HomePage: React.FC = () => {
           <div
             className="relative rounded-3xl overflow-hidden shadow-lg group cursor-pointer"
             style={{ height: 'clamp(200px, 50vw, 260px)' }}
-            onClick={() => navigate('/search')}
+            onClick={() => navigate('/destinations/planner')}
           >
             <img
               src="https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=700&q=80"
@@ -798,7 +823,7 @@ export const HomePage: React.FC = () => {
               </div>
               <button
                 className="self-start px-5 py-2.5 min-h-[40px] bg-white text-[#0A4DA6] font-extrabold text-xs rounded-full hover:bg-blue-50 transition-all cursor-pointer shadow"
-                onClick={e => { e.stopPropagation(); navigate('/search'); }}
+                onClick={e => { e.stopPropagation(); navigate('/destinations/planner'); }}
               >
                 Explore Destinations
               </button>
@@ -809,7 +834,7 @@ export const HomePage: React.FC = () => {
           <div
             className="relative rounded-3xl overflow-hidden shadow-lg group cursor-pointer"
             style={{ height: 'clamp(200px, 50vw, 260px)' }}
-            onClick={() => navigate('/faq')}
+            onClick={() => navigate('/local')}
           >
             <img
               src="https://images.unsplash.com/photo-1561361058-c24e36e56336?auto=format&fit=crop&w=700&q=80"
@@ -827,7 +852,7 @@ export const HomePage: React.FC = () => {
               </div>
               <button
                 className="self-start px-5 py-2.5 min-h-[40px] bg-white text-[#0A4DA6] font-extrabold text-xs rounded-full hover:bg-blue-50 transition-all cursor-pointer shadow"
-                onClick={e => { e.stopPropagation(); navigate('/faq'); }}
+                onClick={e => { e.stopPropagation(); navigate('/local'); }}
               >
                 Explore Local
               </button>
@@ -838,7 +863,7 @@ export const HomePage: React.FC = () => {
           <div
             className="relative rounded-3xl overflow-hidden shadow-lg group cursor-pointer sm:col-span-2 lg:col-span-1"
             style={{ height: 'clamp(200px, 50vw, 260px)' }}
-            onClick={() => navigate('/faq')}
+            onClick={() => navigate('/marketplace')}
           >
             <img
               src="https://images.unsplash.com/photo-1600618528240-fb9fc964b853?auto=format&fit=crop&w=700&q=80"
@@ -856,7 +881,7 @@ export const HomePage: React.FC = () => {
               </div>
               <button
                 className="self-start px-5 py-2.5 min-h-[40px] bg-white text-[#6B21A8] font-extrabold text-xs rounded-full hover:bg-purple-50 transition-all cursor-pointer shadow"
-                onClick={e => { e.stopPropagation(); navigate('/faq'); }}
+                onClick={e => { e.stopPropagation(); navigate('/marketplace'); }}
               >
                 Visit Marketplace
               </button>
@@ -1018,71 +1043,121 @@ export const HomePage: React.FC = () => {
       <section id="prashad-section" className="max-w-7xl mx-auto px-4 sm:px-6 space-y-8 mb-12 lg:mb-20">
 
         {/* Banner with Image Background and Overlay Title */}
-        <div className="relative rounded-3xl overflow-hidden shadow-xl p-6 sm:p-10 lg:p-12 text-center flex flex-col items-center justify-center min-h-[200px] sm:min-h-[260px] border border-white/10">
+        <div className="relative rounded-3xl overflow-hidden shadow-xl p-6 sm:p-8 lg:p-10 flex flex-col items-center justify-center min-h-[180px] sm:min-h-[220px] border border-white/10 text-center">
           <img
             src="/banner/prashadbanner.png"
             alt="Sacred Prasad Banner"
             className="absolute inset-0 w-full h-full object-cover"
           />
           {/* Subtle gradient overlay to ensure text contrast */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/45 to-black/30" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/60 to-black/40" />
 
           {/* Title and Eyebrow Content Overlay */}
-          <div className="relative z-10 space-y-2 max-w-3xl">
-            <p className="font-['Kalam'] text-base sm:text-xl font-bold text-[#E58C28] drop-shadow-md">
-              Popular Prasad
+          <div className="relative z-10 space-y-1.5 max-w-2xl mx-auto">
+            <p className="font-['Kalam'] text-base sm:text-lg font-bold text-[#E58C28] drop-shadow-md">
+              Sacred Marketplace & Prasad
             </p>
-            <h2 className="font-black text-white leading-tight drop-shadow-lg" style={{ fontSize: 'clamp(1.4rem, 4vw, 2.35rem)' }}>
-              Sacred Mahaprasad From Holy Ashrams<br />
-              Explore <span className="bg-[#0A4DA6] text-white px-3 py-0.5 rounded-xl text-base sm:text-xl font-black inline-block align-middle mx-1 shadow-md">50+</span> Blessed Prasad Items
+            <h2 className="font-black text-white leading-tight drop-shadow-lg text-xl sm:text-3xl lg:text-4xl">
+              Sacred Mahaprasad From Holy Temples
             </h2>
-            <button
-              type="button"
-              onClick={() => navigate('/search?query=Prasad')}
-              className="mt-3 inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-white text-[#0A4DA6] hover:bg-gray-100 text-xs font-extrabold shadow-lg transition-all cursor-pointer"
-            >
-              Explore All Prasad <ArrowRight size={14} />
-            </button>
+            <p className="text-xs text-gray-200 font-medium line-clamp-1">
+              Varanasi Lal Peda, Tirupati Srivari Laddu, Ayodhya Ram Temple Prasad, Puri Mahaprasad & Mathura Peda.
+            </p>
           </div>
         </div>
 
-        {/* Modern Rounded Rectangle Cards Carousel showing ONLY title */}
+        {/* Dynamic Database-Driven Category Cards Carousel */}
         <div
           ref={prashadRef}
           className="flex gap-4 sm:gap-6 overflow-x-auto pb-6 pt-2 scrollbar-none -mx-4 sm:mx-0 px-4 sm:px-0 justify-start"
           style={{ scrollbarWidth: 'none' }}
         >
-          {[...popularPrashad, ...popularPrashad].map((item, idx) => (
-            <div
-              key={idx}
-              onClick={() => navigate(`/search?query=${encodeURIComponent(item.name)}`)}
-              className="flex-shrink-0 relative group cursor-pointer"
-              style={{ width: 'clamp(200px, 48vw, 220px)' }}
-            >
-              {/* Modern Rounded Rectangle Card */}
-              <div className="w-full bg-white dark:bg-[#0B192C] rounded-3xl overflow-hidden border border-gray-100 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col hover:-translate-y-1">
+          {(marketplaceCategories.length > 0 ? marketplaceCategories : popularPrashad).map((item: any, idx: number) => {
+            const categorySlug = item.slug || item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+            const imgUrl = item.coverImage || item.thumbnail || item.img || '/banner/ashram_rishikesh.png';
+            const name = item.name;
+            const subtitle = item.originCity ? `${item.originCity}, ${item.originState}` : 'Sacred Prashad';
 
-                {/* Image Container */}
-                <div className="relative overflow-hidden bg-gray-100 dark:bg-slate-900" style={{ height: 'clamp(170px, 40vw, 190px)' }}>
-                  <img
-                    src={item.img}
-                    alt={item.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    loading="lazy"
-                    onError={e => { e.currentTarget.onerror = null; e.currentTarget.src = item.fallback; }}
-                  />
+            return (
+              <div
+                key={item._id || idx}
+                onClick={() => navigate(`/marketplace/category/${categorySlug}`)}
+                className="flex-shrink-0 relative group cursor-pointer"
+                style={{ width: 'clamp(210px, 48vw, 230px)' }}
+              >
+                {/* Modern Rounded Rectangle Card */}
+                <div className="w-full bg-white dark:bg-[#0B192C] rounded-3xl overflow-hidden border border-gray-100 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col hover:-translate-y-1">
+
+                  {/* Image Container */}
+                  <div className="relative overflow-hidden bg-gray-100 dark:bg-slate-900" style={{ height: 'clamp(170px, 40vw, 190px)' }}>
+                    <img
+                      src={imgUrl}
+                      alt={name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      loading="lazy"
+                      onError={e => { e.currentTarget.onerror = null; e.currentTarget.src = '/prashad/ayodhya_prasad.jpg'; }}
+                    />
+                    {item.trendingBadge && (
+                      <span className="absolute top-3 left-3 bg-[#0A4DA6] text-white text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-sm">
+                        {item.trendingBadge}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Centered Bottom Title Area */}
+                  <div className="p-4 text-center flex flex-col items-center justify-center min-h-[76px]">
+                    <h4 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight line-clamp-1 text-center group-hover:text-[#0A4DA6] transition-colors">
+                      {name}
+                    </h4>
+                    <p className="text-[11px] text-gray-400 font-bold mt-1 text-center line-clamp-1">
+                      {subtitle}
+                    </p>
+                  </div>
+
                 </div>
-
-                {/* Centered Bottom Title Area */}
-                <div className="p-4 text-center flex flex-col items-center justify-center min-h-[72px]">
-                  <h4 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight line-clamp-1 text-center">
-                    {item.name}
-                  </h4>
-                </div>
-
               </div>
+            );
+          })}
+
+          {/* View All Card at the End of Horizontal Scroll */}
+          <div
+            onClick={() => navigate('/marketplace/categories')}
+            className="flex-shrink-0 relative group cursor-pointer"
+            style={{ width: 'clamp(210px, 48vw, 230px)' }}
+          >
+            <div className="w-full bg-[#0A4DA6] text-white rounded-3xl overflow-hidden border border-[#0A4DA6] shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between items-center p-6 text-center hover:-translate-y-1 h-full min-h-[266px]">
+              <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center my-auto">
+                <ArrowRight size={26} className="text-white group-hover:translate-x-1.5 transition-transform" />
+              </div>
+              <div className="space-y-1 mb-2">
+                <h4 className="font-black text-lg text-white">View All</h4>
+                <p className="text-[11px] text-blue-100 font-medium">Explore All 50+ Sacred Prashad & Categories</p>
+              </div>
+              <span className="px-5 py-2 rounded-full bg-white text-[#0A4DA6] font-black text-xs shadow-md">
+                Browse All →
+              </span>
             </div>
-          ))}
+          </div>
+        </div>
+
+        {/* Dedicated Next Section CTA Banner */}
+        <div className="bg-gradient-to-r from-[#0B192C] via-[#0A4DA6] to-[#0B192C] text-white rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xl border border-white/10 mt-6">
+          <div className="space-y-1 text-center sm:text-left">
+            <h3 className="font-black text-xl sm:text-2xl text-white">
+              Explore All Sacred Temple Categories & Prashad
+            </h3>
+            <p className="text-xs text-blue-100 font-medium">
+              Varanasi Lal Peda, Tirupati Srivari Laddu, Ayodhya Ram Temple Prasad, Puri Mahaprasad, Mathura Peda, Shirdi Halwa & more.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate('/marketplace/categories')}
+            className="px-8 py-3.5 rounded-full bg-[#E58C28] hover:bg-amber-600 text-white font-black text-xs sm:text-sm shadow-xl transition-all cursor-pointer flex items-center gap-2 shrink-0 group"
+          >
+            <span>View All Categories</span>
+            <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+          </button>
         </div>
 
       </section>
@@ -1213,146 +1288,199 @@ export const HomePage: React.FC = () => {
 
 
 
-      {/* ══════════════════════ LATEST BLOG & NEWS SECTION (Matching Reference Image 1) ══════════════════════ */}
+      {/* ══════════════════════ SPIRITUAL MEDIA & KNOWLEDGE HUB SECTION ══════════════════════ */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 mb-12 lg:mb-20">
-        <div className="bg-[#F4F8FC] dark:bg-[#071322]/60 rounded-[32px] py-10 sm:py-14 px-4 sm:px-8 border border-blue-100/60 dark:border-blue-900/30 shadow-sm relative overflow-hidden">
+        <div className="bg-[#F4F8FC] dark:bg-[#071322]/60 rounded-[32px] py-10 sm:py-14 px-4 sm:px-8 border border-blue-100/60 dark:border-blue-900/30 shadow-sm relative overflow-hidden space-y-6">
 
           {/* Section Header */}
           <Reveal className="text-center space-y-2 max-w-2xl mx-auto relative z-10">
             <p className="font-['Kalam'] text-base sm:text-lg font-bold text-[#E58C28]">
-              Latest Blog & News
+              Spiritual Media & Knowledge Hub
             </p>
             <h2 className="font-black text-[#0B192C] dark:text-white leading-tight" style={{ fontSize: 'clamp(1.4rem, 4vw, 2.25rem)' }}>
-              Latest News & Spiritual Articles from<br />Our Blog Posts
+              Sacred Documentaries, Articles &<br />Pilgrim Yatra Stories
             </h2>
           </Reveal>
 
-          {/* 3 Blog Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto mt-8 sm:mt-10 relative z-10">
+          {/* Category Filter Tabs */}
+          <div className="flex gap-2 overflow-x-auto pb-2 justify-start sm:justify-center scrollbar-none relative z-10">
+            {['All', 'Articles', 'Videos', 'Temple Stories', 'Pilgrim Experiences', 'Festivals', 'Travel Guides', 'Ashram News'].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => navigate('/blog')}
+                className="px-4 py-2 rounded-full text-xs font-black whitespace-nowrap bg-white dark:bg-[#0B192C] text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-slate-800 hover:bg-[#0A4DA6] hover:text-white transition-all cursor-pointer shadow-sm"
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
 
-            {/* Blog Card 1 */}
-            <div className="bg-white dark:bg-[#0B192C] rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 flex flex-col justify-between border border-gray-100 dark:border-slate-800 group hover:-translate-y-1">
+          {/* 3 Dynamic Blog / Video Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto mt-6 relative z-10">
+
+            {/* Card 1: Article */}
+            <div
+              onClick={() => navigate('/blog/guide-planning-first-ashram-stay')}
+              className="bg-white dark:bg-[#0B192C] rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 flex flex-col justify-between border border-gray-100 dark:border-slate-800 group hover:-translate-y-1 cursor-pointer"
+            >
               <div>
-                <div className="h-48 sm:h-52 overflow-hidden bg-gray-100 dark:bg-slate-900 relative">
+                <div className="h-48 sm:h-52 overflow-hidden bg-slate-900 relative">
                   <img
                     src="https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=600&q=80"
                     alt="Ashram Stay Guide"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     loading="lazy"
                   />
+                  <span className="absolute top-3 left-3 bg-[#0A4DA6] text-white text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full">
+                    Travel Guide
+                  </span>
+                  <span className="absolute bottom-3 right-3 bg-black/70 backdrop-blur-md text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-md">
+                    6 min read
+                  </span>
                 </div>
-                <div className="p-5 space-y-3">
+                <div className="p-5 space-y-2.5">
                   <div className="flex items-center gap-4 text-[11px] font-bold text-gray-400">
                     <span className="flex items-center gap-1.5"><Calendar size={13} className="text-[#0A4DA6]" /> 20 March 2025</span>
-                    <span className="flex items-center gap-1.5"><BookOpen size={13} className="text-[#0A4DA6]" /> Comments (5)</span>
+                    <span className="flex items-center gap-1.5"><BookOpen size={13} className="text-[#0A4DA6]" /> 3.8K Views</span>
                   </div>
                   <h3 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-snug line-clamp-2 group-hover:text-[#0A4DA6] transition-colors">
-                    Essential Guide To Planning Your First Ashram Stay
+                    Essential Guide To Planning Your First Sacred Ashram Stay
                   </h3>
                   <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">
-                    We believe that every pilgrimage should be an unforgettable, peaceful, and spiritually rewarding experience.
+                    Discover essential etiquette, daily schedules, satvik food rules, and spiritual seva tips for a peaceful ashram experience.
                   </p>
                 </div>
               </div>
               <div className="px-5 pb-5 pt-2 flex items-center justify-between border-t border-gray-50 dark:border-slate-800/60 mt-2">
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-full bg-[#0A4DA6] text-white font-extrabold text-xs flex items-center justify-center">
-                    G
-                  </div>
-                  <span className="text-xs font-bold text-gray-600 dark:text-gray-300">Gordon V.</span>
+                  <img
+                    src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&h=100&q=80"
+                    alt="Gordon V. Shastri"
+                    className="w-7 h-7 rounded-full object-cover border border-[#0A4DA6]"
+                  />
+                  <span className="text-xs font-bold text-gray-600 dark:text-gray-300">Gordon V. Shastri</span>
                 </div>
-                <button
-                  onClick={() => navigate('/faq')}
-                  className="px-3.5 py-1.5 bg-[#F0F5FC] dark:bg-blue-950/40 text-gray-700 dark:text-blue-300 hover:bg-[#0A4DA6] hover:text-white text-xs font-bold rounded-full flex items-center gap-1.5 transition-colors cursor-pointer"
-                >
-                  <span>Read More</span>
+                <button className="px-3.5 py-1.5 bg-[#F0F5FC] dark:bg-blue-950/40 text-gray-700 dark:text-blue-300 group-hover:bg-[#0A4DA6] group-hover:text-white text-xs font-bold rounded-full flex items-center gap-1.5 transition-colors">
+                  <span>Read Article</span>
                   <ArrowRight size={12} />
                 </button>
               </div>
             </div>
 
-            {/* Blog Card 2 */}
-            <div className="bg-white dark:bg-[#0B192C] rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 flex flex-col justify-between border border-gray-100 dark:border-slate-800 group hover:-translate-y-1">
+            {/* Card 2: YouTube Video Card with Play Badge */}
+            <div
+              onClick={() => navigate('/video/ganga-aarti-varanasi-spiritual-video')}
+              className="bg-white dark:bg-[#0B192C] rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 flex flex-col justify-between border border-gray-100 dark:border-slate-800 group hover:-translate-y-1 cursor-pointer"
+            >
               <div>
-                <div className="h-48 sm:h-52 overflow-hidden bg-gray-100 dark:bg-slate-900 relative">
+                <div className="h-48 sm:h-52 overflow-hidden bg-slate-900 relative">
                   <img
-                    src="https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?auto=format&fit=crop&w=600&q=80"
-                    alt="Temple Mahaprasad"
+                    src="https://images.unsplash.com/photo-1561361058-c24e36e56336?auto=format&fit=crop&w=600&q=80"
+                    alt="Varanasi Ganga Aarti"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     loading="lazy"
                   />
+                  <span className="absolute top-3 left-3 bg-red-600 text-white text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                    🎥 Video
+                  </span>
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-full bg-red-600/90 text-white flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform">
+                      <Play size={20} className="fill-white ml-1" />
+                    </div>
+                  </div>
+                  <span className="absolute bottom-3 right-3 bg-black/80 backdrop-blur-md text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-md">
+                    18:45
+                  </span>
                 </div>
-                <div className="p-5 space-y-3">
+                <div className="p-5 space-y-2.5">
                   <div className="flex items-center gap-4 text-[11px] font-bold text-gray-400">
-                    <span className="flex items-center gap-1.5"><Calendar size={13} className="text-[#0A4DA6]" /> 20 March 2025</span>
-                    <span className="flex items-center gap-1.5"><BookOpen size={13} className="text-[#0A4DA6]" /> Comments (5)</span>
+                    <span className="flex items-center gap-1.5"><Calendar size={13} className="text-[#0A4DA6]" /> 22 March 2025</span>
+                    <span className="flex items-center gap-1.5"><Activity size={13} className="text-red-500" /> 128K Views</span>
                   </div>
                   <h3 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-snug line-clamp-2 group-hover:text-[#0A4DA6] transition-colors">
-                    Sacred Mahaprasad: Traditions & History Across Holy Shrines
+                    Sacred Ganga Aarti Varanasi: Evening Rituals & Hymns
                   </h3>
                   <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">
-                    Discover the deep spiritual significance and traditional preparation of temple offerings across India.
+                    Watch the grand evening Aarti ceremony held at Dashashwamedh Ghat with live chanting of Vedic hymns and brass lamps.
                   </p>
                 </div>
               </div>
               <div className="px-5 pb-5 pt-2 flex items-center justify-between border-t border-gray-50 dark:border-slate-800/60 mt-2">
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-full bg-[#0A4DA6] text-white font-extrabold text-xs flex items-center justify-center">
-                    R
-                  </div>
-                  <span className="text-xs font-bold text-gray-600 dark:text-gray-300">Richard K.</span>
+                  <img
+                    src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=100&h=100&q=80"
+                    alt="Radhika K. Kulkarni"
+                    className="w-7 h-7 rounded-full object-cover border border-red-500"
+                  />
+                  <span className="text-xs font-bold text-gray-600 dark:text-gray-300">Radhika K.</span>
                 </div>
-                <button
-                  onClick={() => navigate('/faq')}
-                  className="px-3.5 py-1.5 bg-[#F0F5FC] dark:bg-blue-950/40 text-gray-700 dark:text-blue-300 hover:bg-[#0A4DA6] hover:text-white text-xs font-bold rounded-full flex items-center gap-1.5 transition-colors cursor-pointer"
-                >
-                  <span>Read More</span>
+                <button className="px-3.5 py-1.5 bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-300 group-hover:bg-red-600 group-hover:text-white text-xs font-bold rounded-full flex items-center gap-1.5 transition-colors">
+                  <span>Watch Video</span>
                   <ArrowRight size={12} />
                 </button>
               </div>
             </div>
 
-            {/* Blog Card 3 */}
-            <div className="bg-white dark:bg-[#0B192C] rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 flex flex-col justify-between border border-gray-100 dark:border-slate-800 group hover:-translate-y-1">
+            {/* Card 3: Article */}
+            <div
+              onClick={() => navigate('/blog/secrets-temple-mahaprasad-traditions')}
+              className="bg-white dark:bg-[#0B192C] rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 flex flex-col justify-between border border-gray-100 dark:border-slate-800 group hover:-translate-y-1 cursor-pointer"
+            >
               <div>
-                <div className="h-48 sm:h-52 overflow-hidden bg-gray-100 dark:bg-slate-900 relative">
+                <div className="h-48 sm:h-52 overflow-hidden bg-slate-900 relative">
                   <img
-                    src="https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=600&q=80"
-                    alt="Kedarnath Circuit"
+                    src="https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=600&q=80"
+                    alt="Temple Mahaprasad Secrets"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     loading="lazy"
                   />
+                  <span className="absolute top-3 left-3 bg-[#0A4DA6] text-white text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full">
+                    Temple History
+                  </span>
+                  <span className="absolute bottom-3 right-3 bg-black/70 backdrop-blur-md text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-md">
+                    8 min read
+                  </span>
                 </div>
-                <div className="p-5 space-y-3">
+                <div className="p-5 space-y-2.5">
                   <div className="flex items-center gap-4 text-[11px] font-bold text-gray-400">
-                    <span className="flex items-center gap-1.5"><Calendar size={13} className="text-[#0A4DA6]" /> 20 March 2025</span>
-                    <span className="flex items-center gap-1.5"><BookOpen size={13} className="text-[#0A4DA6]" /> Comments (5)</span>
+                    <span className="flex items-center gap-1.5"><Calendar size={13} className="text-[#0A4DA6]" /> 25 March 2025</span>
+                    <span className="flex items-center gap-1.5"><BookOpen size={13} className="text-[#0A4DA6]" /> 2.9K Views</span>
                   </div>
                   <h3 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-snug line-clamp-2 group-hover:text-[#0A4DA6] transition-colors">
-                    Top 10 Sacred Destinations To Visit In Uttarakhand
+                    Secrets of Temple Mahaprasad: Sacred Culinary Traditions
                   </h3>
                   <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">
-                    Explore Himalayan pilgrimage circuits, holy rivers, ancient temples and serene meditation retreats.
+                    Explore the sacred preparation, secret recipes, and spiritual significance of Mahaprasad across Puri, Tirupati and Varanasi.
                   </p>
                 </div>
               </div>
               <div className="px-5 pb-5 pt-2 flex items-center justify-between border-t border-gray-50 dark:border-slate-800/60 mt-2">
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-full bg-[#0A4DA6] text-white font-extrabold text-xs flex items-center justify-center">
-                    M
-                  </div>
-                  <span className="text-xs font-bold text-gray-600 dark:text-gray-300">M. Robinson</span>
+                  <img
+                    src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&h=100&q=80"
+                    alt="Swami Anand Giri"
+                    className="w-7 h-7 rounded-full object-cover border border-[#0A4DA6]"
+                  />
+                  <span className="text-xs font-bold text-gray-600 dark:text-gray-300">Swami Anand</span>
                 </div>
-                <button
-                  onClick={() => navigate('/faq')}
-                  className="px-3.5 py-1.5 bg-[#F0F5FC] dark:bg-blue-950/40 text-gray-700 dark:text-blue-300 hover:bg-[#0A4DA6] hover:text-white text-xs font-bold rounded-full flex items-center gap-1.5 transition-colors cursor-pointer"
-                >
-                  <span>Read More</span>
+                <button className="px-3.5 py-1.5 bg-[#F0F5FC] dark:bg-blue-950/40 text-gray-700 dark:text-blue-300 group-hover:bg-[#0A4DA6] group-hover:text-white text-xs font-bold rounded-full flex items-center gap-1.5 transition-colors">
+                  <span>Read Article</span>
                   <ArrowRight size={12} />
                 </button>
               </div>
             </div>
 
+          </div>
+
+          {/* View All Button */}
+          <div className="text-center pt-4 relative z-10">
+            <button
+              onClick={() => navigate('/blog')}
+              className="px-8 py-3 rounded-full bg-[#0A4DA6] hover:bg-blue-900 text-white font-black text-xs shadow-lg transition-all cursor-pointer inline-flex items-center gap-2"
+            >
+              <span>Explore Entire Spiritual Media & Knowledge Hub</span>
+              <ArrowRight size={14} />
+            </button>
           </div>
 
         </div>

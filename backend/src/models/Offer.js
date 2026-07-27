@@ -2,70 +2,187 @@ import mongoose from 'mongoose';
 
 const offerSchema = new mongoose.Schema(
   {
-    ashramId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Ashram',
-      required: [true, 'Ashram selection is required'],
-    },
     ownerId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
     },
-    title: {
+    ashramId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Ashram',
+    },
+    applicableAshrams: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Ashram',
+      },
+    ],
+    applicableCities: [{ type: String }],
+    applicableStates: [{ type: String }],
+    applicableRoomCategories: [{ type: String }],
+
+    offerTitle: {
       type: String,
-      required: [true, 'Offer title is required'],
+      required: true,
+      trim: true,
+    },
+    shortTitle: {
+      type: String,
+      trim: true,
+    },
+    subtitle: {
+      type: String,
       trim: true,
     },
     offerType: {
       type: String,
-      enum: ['Kumbh Mela', 'Ardhkumbh Mela', 'Weekend Special', 'Festival Deal', 'Seasonal Offer', 'General'],
-      default: 'General',
+      enum: [
+        'Weekend Offer',
+        'Festival Offer',
+        'Mahakumbh Offer',
+        'Seasonal Offer',
+        'Summer Offer',
+        'Winter Offer',
+        'New Ashram Launch',
+        'Donation Campaign',
+        'Room Upgrade',
+        'Food Offer',
+        'Family Package',
+        'Senior Citizen Offer',
+        'Student Offer',
+        'Long Stay Offer',
+        'Corporate Retreat',
+        'Yoga Camp',
+        'Meditation Camp',
+        'Special Darshan',
+        'Custom',
+      ],
+      default: 'Festival Offer',
     },
-    discountPercentage: {
-      type: Number,
-      default: 20,
-      min: 0,
-      max: 100,
+
+    description: {
+      type: String,
+      required: true,
     },
-    isRateUpgrade: {
-      type: Boolean,
-      default: false, // true = price upgrade/surge (e.g. +30%), false = discount (-20%)
+    fullHtmlDescription: {
+      type: String,
     },
+    highlights: [{ type: String }],
+    termsAndConditions: [{ type: String }],
+
+    // Images
+    bannerImage: {
+      type: String,
+      default: '/banner/ashram_rishikesh.png',
+    },
+    thumbnailImage: {
+      type: String,
+      default: '/banner/ashram_rishikesh.png',
+    },
+    desktopBanner: {
+      type: String,
+    },
+    mobileBanner: {
+      type: String,
+    },
+    galleryImages: [{ type: String }],
+
+    // Promo & Discount Configuration
     promoCode: {
       type: String,
-      trim: true,
+      required: true,
       uppercase: true,
-      default: 'SPECIAL20',
+      trim: true,
     },
-    bannerText: {
+    discountType: {
       type: String,
-      required: [true, 'Banner text is required'],
-      default: 'Special festival packages and seasonal booking discounts available!',
+      enum: [
+        'Percentage',
+        'Flat Amount',
+        'Free Upgrade',
+        'Free Meal',
+        'Free Prasad',
+        'Free Donation Coupon',
+      ],
+      default: 'Percentage',
     },
-    startDate: {
+    discountValue: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    maximumDiscount: {
+      type: Number,
+      default: 0,
+    },
+    minimumBookingAmount: {
+      type: Number,
+      default: 0,
+    },
+
+    // Validity & Redemptions
+    validFrom: {
       type: Date,
       required: true,
       default: Date.now,
     },
-    endDate: {
+    validTill: {
       type: Date,
       required: true,
-      default: () => new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // Default 30 days
     },
-    isActive: {
+    maximumRedemptions: {
+      type: Number,
+      default: 100,
+    },
+    remainingRedemptions: {
+      type: Number,
+      default: 100,
+    },
+    perUserLimit: {
+      type: Number,
+      default: 1,
+    },
+
+    // Visibility & Priority
+    priority: {
+      type: Number,
+      default: 1,
+    },
+    featured: {
       type: Boolean,
-      default: true,
+      default: false,
+    },
+    status: {
+      type: String,
+      enum: ['draft', 'scheduled', 'active', 'expired', 'disabled'],
+      default: 'active',
+    },
+
+    // Analytics counters
+    viewsCount: { type: Number, default: 0 },
+    clicksCount: { type: Number, default: 0 },
+    redemptionsCount: { type: Number, default: 0 },
+    revenueGenerated: { type: Number, default: 0 },
+
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
+    updatedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
     },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
-offerSchema.index({ ashramId: 1 });
-offerSchema.index({ ownerId: 1 });
-offerSchema.index({ isActive: 1, startDate: 1, endDate: 1 });
+// Auto update status to expired if validTill has passed
+offerSchema.pre('save', function (next) {
+  if (this.validTill && new Date(this.validTill) < new Date() && this.status === 'active') {
+    this.status = 'expired';
+  }
+  next();
+});
 
-const Offer = mongoose.model('Offer', offerSchema);
+export const Offer = mongoose.model('Offer', offerSchema);
 export default Offer;

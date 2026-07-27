@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { ashramService, reviewService, roomService, bookingService } from '../services';
 import { getErrorMessage } from '../lib/api';
@@ -62,10 +63,33 @@ export const AshramDetailPage: React.FC = () => {
     const qCheckIn = searchParams.get('checkIn');
     const qCheckOut = searchParams.get('checkOut');
     const qGuests = searchParams.get('guests');
+    const qPromo = searchParams.get('promoCode');
     if (qCheckIn) setCheckIn(qCheckIn);
     if (qCheckOut) setCheckOut(qCheckOut);
     if (qGuests) setGuestsCount(parseInt(qGuests) || 1);
+    if (qPromo) {
+      setCouponCode(qPromo);
+      handleValidatePromo(qPromo);
+    }
   }, [searchParams]);
+
+  const handleValidatePromo = async (codeToTest?: string) => {
+    const code = codeToTest || couponCode;
+    if (!code) return;
+    try {
+      const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/offers/validate-promo`, {
+        promoCode: code,
+        bookingAmount: (selectedRoom?.basePrice || 350) * Math.max(1, roomsCount),
+        ashramId: id,
+      });
+      if (res.data.success) {
+        setAppliedDiscount(res.data.data.discountAmount);
+        setCouponMsg(res.data.message);
+      }
+    } catch (err: any) {
+      setCouponMsg(err.response?.data?.message || 'Invalid promo code');
+    }
+  };
 
   // Optional Services
   const [prasad, setPrasad] = useState(false);

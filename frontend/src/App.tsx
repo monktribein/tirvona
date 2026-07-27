@@ -44,6 +44,10 @@ import ManageRoomsPage from './pages/ManageRoomsPage';
 import InventoryCalendarPage from './pages/InventoryCalendarPage';
 import OwnerUsersPage from './pages/OwnerUsersPage';
 import OwnerOffersPage from './pages/OwnerOffersPage';
+import OffersPage from './pages/OffersPage';
+import OfferDetailPage from './pages/OfferDetailPage';
+import MarketplaceCategoriesPage from './pages/MarketplaceCategoriesPage';
+import MarketplaceCategoryDetailPage from './pages/MarketplaceCategoryDetailPage';
 import StaffManagementPage from './pages/StaffManagementPage';
 import ReceptionCheckinPage from './pages/ReceptionCheckinPage';
 import HousekeepingPage from './pages/HousekeepingPage';
@@ -51,6 +55,20 @@ import AdminDashboard from './pages/AdminDashboard';
 import VerificationQueuePage from './pages/VerificationQueuePage';
 import UserManagementPage from './pages/UserManagementPage';
 import AuditLogsPage from './pages/AuditLogsPage';
+
+// Sacred Services Ecosystem & Media Hub Pages
+import { PilgrimageCircuitsPage } from './pages/PilgrimageCircuitsPage';
+import { PilgrimageCircuitDetailPage } from './pages/PilgrimageCircuitDetailPage';
+import { TemplesPage } from './pages/TemplesPage';
+import { TempleDetailPage } from './pages/TempleDetailPage';
+import { EventsFestivalsPage } from './pages/EventsFestivalsPage';
+import { SacredDirectoryModulePage } from './pages/SacredDirectoryModulePage';
+import { BlogListPage } from './pages/BlogListPage';
+import { BlogDetailPage } from './pages/BlogDetailPage';
+import { VideoDetailPage } from './pages/VideoDetailPage';
+import { PilgrimagePlannerPage } from './pages/PilgrimagePlannerPage';
+import { LocalServicesHubPage } from './pages/LocalServicesHubPage';
+import { MarketplaceComingSoonPage } from './pages/MarketplaceComingSoonPage';
 
 // Protected Route Wrapper Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode; allowedRoles?: string[] }> = ({ children, allowedRoles }) => {
@@ -116,6 +134,41 @@ const AppContent: React.FC = () => {
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/refund-policy" element={<RefundPolicyPage />} />
           <Route path="/cookie-policy" element={<CookiePolicyPage />} />
+          {/* Offers & Promotions Directory */}
+          <Route path="/offers" element={<OffersPage />} />
+          <Route path="/offers/:offerId" element={<OfferDetailPage />} />
+          <Route path="/offers/category/:category" element={<OffersPage />} />
+          <Route path="/offers/city/:city" element={<OffersPage />} />
+          {/* Marketplace Directory & Dedicated Landing Pages */}
+          <Route path="/marketplace/categories" element={<MarketplaceCategoriesPage />} />
+          <Route path="/marketplace/category/:slug" element={<MarketplaceCategoryDetailPage />} />
+
+          {/* Sacred Services Ecosystem Modules */}
+          <Route path="/pilgrimage-circuits" element={<PilgrimageCircuitsPage />} />
+          <Route path="/pilgrimage-circuits/:slug" element={<PilgrimageCircuitDetailPage />} />
+          <Route path="/temples" element={<TemplesPage />} />
+          <Route path="/temples/:slug" element={<TempleDetailPage />} />
+          <Route path="/events" element={<EventsFestivalsPage />} />
+          <Route path="/events/:slug" element={<EventsFestivalsPage />} />
+          <Route path="/travel-guides" element={<SacredDirectoryModulePage />} />
+          <Route path="/local-guides" element={<SacredDirectoryModulePage />} />
+          <Route path="/transport" element={<SacredDirectoryModulePage />} />
+          <Route path="/restaurants" element={<SacredDirectoryModulePage />} />
+          <Route path="/shops" element={<SacredDirectoryModulePage />} />
+          <Route path="/puja-items" element={<SacredDirectoryModulePage />} />
+          <Route path="/religious-products" element={<SacredDirectoryModulePage />} />
+          <Route path="/books" element={<SacredDirectoryModulePage />} />
+          <Route path="/handicrafts" element={<SacredDirectoryModulePage />} />
+
+          {/* Spiritual Media & Knowledge Hub Routes */}
+          <Route path="/blog" element={<BlogListPage />} />
+          <Route path="/blog/:slug" element={<BlogDetailPage />} />
+          <Route path="/video/:slug" element={<VideoDetailPage />} />
+
+          {/* Dedicated Cards Routes */}
+          <Route path="/destinations/planner" element={<PilgrimagePlannerPage />} />
+          <Route path="/local" element={<LocalServicesHubPage />} />
+          <Route path="/marketplace" element={<MarketplaceComingSoonPage />} />
         </Route>
 
         {/* Authenticated Customer Routes */}

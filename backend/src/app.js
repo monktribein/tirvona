@@ -27,6 +27,12 @@ import offerRoutes from './routes/offerRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
 import housekeepingRoutes from './routes/housekeepingRoutes.js';
+import marketplaceRoutes from './routes/marketplaceRoutes.js';
+import sacredServicesRoutes from './routes/sacredServicesRoutes.js';
+import blogRoutes from './routes/blogRoutes.js';
+import plannerRoutes from './routes/plannerRoutes.js';
+import localHubRoutes from './routes/localHubRoutes.js';
+import marketplaceHubRoutes from './routes/marketplaceHubRoutes.js';
 
 // Connect to MongoDB
 connectDB();
@@ -102,8 +108,6 @@ const authLimiter = rateLimit({
   message: { success: false, message: 'Too many attempts. Please try again later.' },
 });
 
-// import path from 'path';
-
 // Routing Middleware
 app.use('/uploads', express.static(path.join(process.cwd(), 'public', 'uploads')));
 app.use('/api/auth', authLimiter, authRoutes);
@@ -118,6 +122,12 @@ app.use('/api/offers', offerRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/housekeeping', housekeepingRoutes);
+app.use('/api/marketplace', marketplaceRoutes);
+app.use('/api/services', sacredServicesRoutes);
+app.use('/api/blog', blogRoutes);
+app.use('/api/planner', plannerRoutes);
+app.use('/api/local', localHubRoutes);
+app.use('/api/marketplace/hub', marketplaceHubRoutes);
 
 // API documentation (Swagger UI) served from openapi.yaml.
 try {
