@@ -2,19 +2,30 @@ import mongoose from 'mongoose';
 import dns from 'dns';
 import config from './env.js';
 
-// Some machines have a misconfigured local DNS resolver (e.g. 127.0.0.1) that
-// refuses SRV lookups, which breaks mongodb+srv:// connection strings with
-// "querySrv ECONNREFUSED". Fall back to public resolvers that support SRV.
-dns.setServers(['8.8.8.8', '1.1.1.1']);
+// Fall back to Google & Cloudflare public DNS resolvers for reliable MongoDB SRV lookups
+try {
+  dns.setServers(['8.8.8.8', '1.1.1.1']);
+} catch (e) {
+  // System DNS fallback
+}
 
-const connectDB = async () => {
-  try {
-    const conn = await mongoose.connect(config.mongoUri);
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
-    return conn;
-  } catch (error) {
-    console.error(`Database Connection Error: ${error.message}`);
-    process.exit(1);
+const connectDB = async (retries = 5, delay = 3000) => {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const conn = await mongoose.connect(config.mongoUri, {
+        serverSelectionTimeoutMS: 5000,
+      });
+      console.log(`MongoDB Connected: ${conn.connection.host}`);
+      return conn;
+    } catch (error) {
+      console.error(`Database Connection Attempt ${attempt}/${retries} Failed: ${error.message}`);
+      if (attempt < retries) {
+        console.log(`Retrying MongoDB connection in ${delay / 1000}s...`);
+        await new Promise((res) => setTimeout(res, delay));
+      } else {
+        console.error('All MongoDB connection attempts exhausted. Keeping server alive for retries.');
+      }
+    }
   }
 };
 
