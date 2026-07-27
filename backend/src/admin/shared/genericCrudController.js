@@ -17,6 +17,10 @@ import EventFestival from '../../models/EventFestival.js';
 import SupportTicket from '../../models/SupportTicket.js';
 import AuditLog from '../../models/AuditLog.js';
 import SacredDirectoryItem from '../../models/SacredDirectoryItem.js';
+import InstitutionMaster from '../../models/institution/InstitutionMaster.js';
+import InstitutionContact from '../../models/institution/InstitutionContact.js';
+import InstitutionLocation from '../../models/institution/InstitutionLocation.js';
+import InstitutionQualityAudit from '../../models/institution/InstitutionQualityAudit.js';
 
 // Comprehensive Mongoose Model Registry mapping every enterprise module key
 const MODEL_MAP = {
@@ -25,6 +29,11 @@ const MODEL_MAP = {
   owners: User,
   staff: User,
   ashrams: Ashram,
+  institution: InstitutionMaster,
+  institutions: InstitutionMaster,
+  institution_contacts: InstitutionContact,
+  institution_locations: InstitutionLocation,
+  institution_audits: InstitutionQualityAudit,
   rooms: Room,
   bookings: Booking,
   offers: Offer,

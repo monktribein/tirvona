@@ -33,7 +33,8 @@ import {
   ShieldCheck,
   Sun,
   Globe,
-  ArrowRight
+  ArrowRight,
+  Landmark
 } from 'lucide-react';
 
 interface NavGroup {
@@ -49,6 +50,7 @@ export const DashboardLayout: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
     'USER MANAGEMENT': true,
+    'INSTITUTION MASTER DATA': true,
     'ASHRAM MANAGEMENT': true,
   });
 
@@ -79,6 +81,17 @@ export const DashboardLayout: React.FC = () => {
         { label: 'Content Managers', path: '/admin/manage/users/content-managers' },
         { label: 'Staff Members', path: '/admin/manage/users/staff' },
         { label: 'Roles & Permissions', path: '/admin/manage/users/roles' },
+      ],
+    },
+    {
+      groupName: 'INSTITUTION MASTER DATA',
+      icon: <Landmark size={15} />,
+      links: [
+        { label: 'Institution Profiles', path: '/admin/manage/institution' },
+        { label: 'Trust & Legal Bodies', path: '/admin/manage/institution/trusts' },
+        { label: 'Contacts Directory', path: '/admin/manage/institution_contacts' },
+        { label: 'Locations & GPS', path: '/admin/manage/institution_locations' },
+        { label: 'Quality & Audit', path: '/admin/manage/institution_audits' },
       ],
     },
     {
