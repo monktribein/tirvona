@@ -3,9 +3,11 @@ import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
+import { useNotifications } from '../contexts/NotificationContext';
 import { ashramService, reviewService, roomService, bookingService, offerService } from '../services';
 import { getErrorMessage } from '../lib/api';
 import { openRazorpayCheckout } from '../lib/razorpay';
+import { saveBookingDraft, getBookingDraft, clearBookingDraft, type BookingDraftPayload } from '../utils/bookingDraft';
 import { 
   ShieldCheck, 
   MapPin, 
@@ -29,7 +31,9 @@ import {
   CheckCircle,
   Award,
   X,
-  Maximize2
+  Maximize2,
+  Trash2,
+  Edit3
 } from 'lucide-react';
 
 export const AshramDetailPage: React.FC = () => {
@@ -147,39 +151,45 @@ export const AshramDetailPage: React.FC = () => {
   }, [selectedRoom]);
 
   useEffect(() => {
+    const draft = getBookingDraft();
     const pendingRaw = localStorage.getItem('pending_booking');
-    if (pendingRaw && id) {
+    let pb: any = draft;
+    if (!pb && pendingRaw) {
+      try { pb = JSON.parse(pendingRaw); } catch (e) {}
+    }
+
+    if (pb && id && (pb.ashramId === id || !pb.ashramId)) {
       try {
-        const pb = JSON.parse(pendingRaw);
-        if (pb.ashramId === id) {
-          if (pb.checkInDate) setCheckIn(pb.checkInDate);
-          if (pb.checkOutDate) setCheckOut(pb.checkOutDate);
-          if (pb.guestsCount) setGuestsCount(pb.guestsCount);
-          if (pb.adults !== undefined) setAdults(pb.adults);
-          if (pb.children !== undefined) setChildren(pb.children);
-          if (pb.roomsBookedCount) setRoomsCount(pb.roomsBookedCount);
-          if (pb.services?.prasad?.ordered) setPrasad(true);
-          if (pb.services?.meals?.ordered) setMeals(true);
-          if (pb.services?.parking?.ordered) setParking(true);
-          if (pb.services?.locker?.ordered) setLocker(true);
-          if (pb.services?.donation?.amount) setDonation(pb.services.donation.amount.toString());
-          if (pb.couponCode) setCouponCode(pb.couponCode);
-          if (pb.appliedDiscount) setAppliedDiscount(pb.appliedDiscount);
-          if (pb.specialRequests) setSpecialRequests(pb.specialRequests);
+        if (pb.checkIn || pb.checkInDate) setCheckIn(pb.checkIn || pb.checkInDate);
+        if (pb.checkOut || pb.checkOutDate) setCheckOut(pb.checkOut || pb.checkOutDate);
+        if (pb.guestsCount) setGuestsCount(pb.guestsCount);
+        if (pb.adults !== undefined) setAdults(pb.adults);
+        if (pb.children !== undefined) setChildren(pb.children);
+        if (pb.roomsBookedCount) setRoomsCount(pb.roomsBookedCount);
 
-          if (rooms.length > 0 && pb.roomId) {
-            const match = rooms.find(r => r._id === pb.roomId);
-            if (match) setSelectedRoom(match);
-          }
-
-          setRestoredNotice(true);
-
-          if (pb.scrollPosition !== undefined) {
-            setTimeout(() => {
-              window.scrollTo({ top: pb.scrollPosition, behavior: 'smooth' });
-            }, 350);
-          }
+        const s = pb.services || {};
+        if (s.prasad || s.prasad?.ordered) setPrasad(true);
+        if (s.meals || s.meals?.ordered) setMeals(true);
+        if (s.parking || s.parking?.ordered) setParking(true);
+        if (s.locker || s.locker?.ordered) setLocker(true);
+        if (s.donation) {
+          const donVal = typeof s.donation === 'object' ? s.donation.amount : s.donation;
+          setDonation(donVal ? donVal.toString() : '');
         }
+
+        if (pb.couponCode) {
+          setCouponCode(pb.couponCode);
+          handleValidatePromo(pb.couponCode);
+        }
+        if (pb.appliedDiscount) setAppliedDiscount(pb.appliedDiscount);
+        if (pb.specialRequests) setSpecialRequests(pb.specialRequests);
+
+        if (rooms.length > 0 && pb.roomId) {
+          const match = rooms.find((r) => r._id === pb.roomId);
+          if (match) setSelectedRoom(match);
+        }
+
+        setRestoredNotice(true);
       } catch (e) {
         console.error('Error restoring pending booking:', e);
       }
@@ -211,11 +221,30 @@ export const AshramDetailPage: React.FC = () => {
     setGuestsCount(adults + c);
   };
 
+  const { addNotification } = useNotifications();
+
   const handleApplyCoupon = (e: React.MouseEvent) => {
     e.preventDefault();
     if (couponCode.trim()) {
       handleValidatePromo(couponCode);
     }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedOfferData(null);
+    setAppliedDiscount(0);
+    setCouponCode('');
+    setCouponMsg('');
+    setTimerActive(false);
+    setReservationSeconds(600);
+    addNotification('Coupon Removed', 'Coupon removed successfully. Original stay amount restored.', 'info');
+  };
+
+  const handleChangeCoupon = () => {
+    setAppliedOfferData(null);
+    setAppliedDiscount(0);
+    setCouponMsg('');
+    setTimerActive(false);
   };
 
   const nextImage = () => {
@@ -404,31 +433,30 @@ export const AshramDetailPage: React.FC = () => {
     setBookingSuccess(null);
 
     if (!user) {
-      const pendingData = {
+      const currentUrl = window.location.pathname + window.location.search;
+      const draftPayload: BookingDraftPayload = {
         ashramId: ashram._id,
         roomId: selectedRoom?._id,
-        checkInDate: checkIn,
-        checkOutDate: checkOut,
+        roomType: selectedRoom?.name,
+        checkIn,
+        checkOut,
         guestsCount: adults + children,
         adults,
         children,
-        roomsBookedCount: roomsCount,
         services: {
-          prasad: { ordered: prasad },
-          meals: { ordered: meals },
-          parking: { ordered: parking },
-          locker: { ordered: locker },
-          donation: { amount: parseFloat(donation) || 0 },
+          prasad,
+          meals,
+          parking,
+          locker,
+          donation: parseFloat(donation) || 0,
         },
         couponCode,
         appliedDiscount,
         specialRequests,
-        calculatedPrice: totalCalc,
-        scrollPosition: window.scrollY,
-        savedAt: Date.now(),
+        returnUrl: currentUrl,
+        timestamp: Date.now(),
       };
-      localStorage.setItem('pending_booking', JSON.stringify(pendingData));
-      const currentUrl = window.location.pathname + window.location.search;
+      saveBookingDraft(draftPayload);
       navigate(`/login?redirect=${encodeURIComponent(currentUrl)}`);
       return;
     }
@@ -464,7 +492,7 @@ export const AshramDetailPage: React.FC = () => {
     try {
       const res = await bookingService.create(payload);
       if (res.data.success) {
-        localStorage.removeItem('pending_booking');
+        clearBookingDraft();
         setBookingSuccess(res.data.data);
       }
     } catch (err) {
@@ -1036,14 +1064,15 @@ export const AshramDetailPage: React.FC = () => {
                   <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="p-4 bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-emerald-500/15 border border-emerald-500/30 rounded-[22px] space-y-2 text-left relative overflow-hidden"
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="p-4 bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-emerald-500/15 border border-emerald-500/30 rounded-[22px] space-y-3 text-left relative overflow-hidden shadow-sm"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className="p-2 bg-emerald-500 text-white rounded-full shadow-md text-xs">🎉</span>
                         <div>
                           <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-black uppercase tracking-wider block">
-                            Congratulations!
+                            Offer Applied Successfully
                           </span>
                           <h4 className="text-xs font-black text-[#0B192C] dark:text-white">
                             {appliedOfferData.offerName || 'Exclusive Pilgrim Discount'}
@@ -1055,11 +1084,29 @@ export const AshramDetailPage: React.FC = () => {
                       </span>
                     </div>
 
-                    <div className="flex justify-between items-center pt-1 border-t border-emerald-500/20 text-xs font-bold text-emerald-700 dark:text-emerald-300">
+                    <div className="flex justify-between items-center pt-2 border-t border-emerald-500/20 text-xs font-bold text-emerald-700 dark:text-emerald-300">
                       <span>{appliedOfferData.offerCategory || 'Festival Special'}</span>
                       <span className="font-extrabold text-sm text-emerald-600 dark:text-emerald-400">
-                        -{appliedOfferData.discountType === 'Percentage' ? `${appliedOfferData.discountValue}%` : `₹${appliedOfferData.discountAmount}`}
+                        You Saved ₹{appliedOfferData.discountAmount}
                       </span>
+                    </div>
+
+                    {/* Action Triggers: [ Change Coupon ] [ Remove Coupon ] */}
+                    <div className="flex items-center gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={handleChangeCoupon}
+                        className="flex-1 py-1.5 px-3 bg-[#0A4DA6] hover:bg-[#083b80] text-white text-[10px] font-black rounded-xl flex items-center justify-center gap-1 transition-all cursor-pointer shadow-sm"
+                      >
+                        <Edit3 size={12} /> Change Coupon
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleRemoveCoupon}
+                        className="flex-1 py-1.5 px-3 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800/50 text-[10px] font-black rounded-xl flex items-center justify-center gap-1 transition-all cursor-pointer"
+                      >
+                        <Trash2 size={12} /> Remove Coupon
+                      </button>
                     </div>
                   </motion.div>
                 )}

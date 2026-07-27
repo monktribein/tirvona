@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { authService } from '../services';
 import { getErrorMessage } from '../lib/api';
+import { getBookingDraft } from '../utils/bookingDraft';
 
 // Small multicolor Google mark (lucide has no brand logos).
 const GoogleIcon: React.FC = () => (
@@ -40,6 +41,8 @@ export const LoginPage: React.FC = () => {
 
   const getRedirectTarget = () => {
     if (redirect) return redirect;
+    const draft = getBookingDraft();
+    if (draft && draft.returnUrl) return draft.returnUrl;
     const pendingRaw = localStorage.getItem('pending_booking');
     if (pendingRaw) {
       try {
