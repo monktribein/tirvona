@@ -77,31 +77,33 @@ export const PilgrimagePlannerPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-[#070F1B] pt-20 sm:pt-24 pb-16">
+    <div className="min-h-screen bg-gray-50 dark:bg-[#070F1B] pb-16 space-y-6">
 
-      {/* Breadcrumb Bar */}
-      <div className="bg-white dark:bg-[#0B192C] border-b border-gray-100 dark:border-slate-800/80 py-3 px-4 sm:px-6">
-        <div className="max-w-7xl mx-auto flex items-center gap-2 text-xs font-bold text-gray-500 dark:text-gray-400">
-          <Link to="/" className="hover:text-[#0A4DA6]">Home</Link>
-          <ChevronRight size={13} />
-          <span className="text-[#0A4DA6] dark:text-amber-400 font-black">Destinations</span>
-          <ChevronRight size={13} />
-          <span className="text-gray-700 dark:text-gray-200 font-black">Intelligent Pilgrimage Planner</span>
-        </div>
-      </div>
+      {/* Hero Banner Header Container matching Navbar Layout Width */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-1 sm:pt-3">
+        <div className="relative text-white rounded-3xl py-12 sm:py-16 lg:py-20 px-6 sm:px-10 lg:px-12 shadow-xl overflow-hidden min-h-[240px] sm:min-h-[280px] flex flex-col items-center justify-center text-center border border-white/10">
+          {/* Background Banner Image */}
+          <img
+            src="/banner/intenrity.png"
+            alt="Tirvona Pilgrimage Itinerary Planner Banner"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          {/* Overlay gradient for text contrast */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/55 to-black/40" />
 
-      {/* Hero Banner Header */}
-      <div className="bg-gradient-to-r from-[#0B192C] via-[#0A4DA6] to-[#0B192C] text-white py-12 sm:py-16 px-4 sm:px-6 relative overflow-hidden">
-        <div className="max-w-7xl mx-auto text-center space-y-4 relative z-10">
-          <span className="px-4 py-1 rounded-full bg-white/10 text-amber-300 text-xs font-black uppercase tracking-wider border border-white/20">
-            Govt-Scale Spiritual Tourism Engine
-          </span>
-          <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight">
-            Tirvona Pilgrimage Itinerary Planner
-          </h1>
-          <p className="text-sm sm:text-base text-blue-100 max-w-3xl mx-auto font-medium">
-            Generate complete day-by-day travel plans, verified ashram stays, darshan schedules, satvik dining, budget breakdown, and route maps for your sacred yatra.
-          </p>
+          {/* Banner Content (Centered matching global Tirvona typography & color scheme) */}
+          <div className="max-w-3xl space-y-2.5 relative z-10 mx-auto text-center">
+            <p className="font-['Kalam'] text-base sm:text-xl font-bold text-[#E58C28] drop-shadow-md">
+              Intelligent Yatra Engine
+            </p>
+            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white leading-tight drop-shadow-lg" style={{ fontFamily: "Satoshi, 'General Sans', Manrope, Inter, sans-serif", letterSpacing: '-0.03em' }}>
+              Tirvona Pilgrimage <span className="text-[#D4AF37]">Itinerary Planner</span>
+            </h1>
+
+            <p className="text-xs sm:text-sm lg:text-base text-gray-100 max-w-2xl mx-auto font-medium leading-relaxed drop-shadow">
+              Generate complete day-by-day travel plans, verified ashram stays, darshan schedules, satvik dining, budget breakdown, and route maps for your sacred yatra.
+            </p>
+          </div>
         </div>
       </div>
 

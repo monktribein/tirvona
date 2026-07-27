@@ -155,12 +155,12 @@ export const PublicLayout: React.FC = () => {
             </Link>
 
             {/* Desktop nav links */}
-            <nav className="hidden lg:flex items-center gap-4 xl:gap-6 text-xs xl:text-sm font-medium text-[#1E293B] dark:text-gray-200">
+            <nav className="hidden lg:flex items-center justify-center gap-1 xl:gap-2 text-xs xl:text-sm font-medium text-[#1E293B] dark:text-gray-200">
                 {navLinks.map(link => (
                   <Link
                     key={link.label}
                     to={link.to}
-                    className="hover:text-[#0A4DA6] dark:hover:text-[#E58C28] transition-colors py-1 font-semibold text-slate-700 dark:text-slate-200"
+                    className="px-3 xl:px-3.5 py-1.5 rounded-full font-bold text-slate-700 dark:text-slate-200 hover:text-[#0A4DA6] dark:hover:text-[#E58C28] hover:bg-slate-100/90 dark:hover:bg-slate-800/70 transition-all text-center whitespace-nowrap text-xs xl:text-[13px] tracking-tight"
                   >
                     <span>{link.label}</span>
                   </Link>

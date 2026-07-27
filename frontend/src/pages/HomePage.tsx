@@ -758,8 +758,8 @@ export const HomePage: React.FC = () => {
               _id: 'default-1',
               offerType: 'MAHAKUMBH OFFER',
               discountPercentage: 20,
-              title: 'Mahakumbh Sacred Stay Special',
-              bannerText: 'Special 20% discount on pre-booked ashram rooms during Mahakumbh 2026.',
+              offerTitle: 'Mahakumbh Sacred Stay Special',
+              description: 'Special 20% discount on pre-booked ashram rooms during Mahakumbh 2026.',
               promoCode: 'KUMBH2026',
               image: '/banner/upcominglogo.png',
               ashramId: { address: { city: 'Prayagraj' } }
@@ -768,8 +768,8 @@ export const HomePage: React.FC = () => {
               _id: 'default-2',
               offerType: 'FESTIVAL OFFER',
               discountPercentage: 15,
-              title: 'Festival Season Discount',
-              bannerText: 'Get 15% instant savings on top verified ashrams across Kashi & Haridwar.',
+              offerTitle: 'Festival Season Discount',
+              description: 'Get 15% instant savings on top verified ashrams across Kashi & Haridwar.',
               promoCode: 'FESTIVAL2026',
               image: '/banner/ashram_varanasi.png',
               ashramId: { address: { city: 'Varanasi' } }
@@ -778,8 +778,8 @@ export const HomePage: React.FC = () => {
               _id: 'default-3',
               offerType: 'WEEKEND OFFER',
               discountPercentage: 10,
-              title: 'Weekend Pilgrimage Getaway',
-              bannerText: 'Enjoy ₹500 off on weekend spiritual retreats and daily prasad inclusion.',
+              offerTitle: 'Weekend Spiritual Getaway',
+              description: 'Enjoy ₹500 off on weekend spiritual retreats and daily prasad inclusion.',
               promoCode: 'WEEKEND500',
               image: '/banner/ashram_rishikesh.png',
               ashramId: { address: { city: 'Rishikesh' } }
@@ -790,54 +790,88 @@ export const HomePage: React.FC = () => {
               '/banner/ashram_varanasi.png',
               '/banner/ashram_rishikesh.png'
             ];
-            const cardImg = offer.image || offer.bannerImage || offerImages[idx % offerImages.length];
+            const cardImg = offer.bannerImage || offer.thumbnailImage || offer.image || offerImages[idx % offerImages.length];
+
+            const cardTitle = offer.offerTitle || offer.title || 'Special Ashram Offer';
+            const cardDesc = offer.description || offer.bannerText || 'Book early to get exclusive room rate discounts and complimentary Satvik meals.';
+            const offerBadge = offer.offerType || offer.category || 'FESTIVAL OFFER';
+            const discountBadge = offer.discountValue
+              ? (offer.discountType === 'Percentage' ? `${offer.discountValue}% OFF` : `FLAT ₹${offer.discountValue} OFF`)
+              : `${offer.discountPercentage || 20}% OFF`;
+
+            const targetAshram = offer.ashramId?._id ? offer.ashramId : (offer.applicableAshrams && offer.applicableAshrams[0]);
+            const city = offer.ashramId?.address?.city || targetAshram?.address?.city || (idx === 0 ? 'Prayagraj' : idx === 1 ? 'Varanasi' : 'Rishikesh');
+
+            const handleCardClick = () => {
+              if (targetAshram?._id) {
+                navigate(`/ashram/${targetAshram._id}?promoCode=${encodeURIComponent(offer.promoCode || '')}`);
+              } else if (offer._id && typeof offer._id === 'string' && offer._id.length > 10 && !offer._id.startsWith('default')) {
+                navigate(`/offers/${offer._id}`);
+              } else {
+                navigate(`/search?promoCode=${encodeURIComponent(offer.promoCode || 'KUMBH2026')}`);
+              }
+            };
 
             return (
               <div
                 key={offer._id || idx}
-                className="w-full bg-white dark:bg-[#0B192C] rounded-3xl overflow-hidden border border-gray-100 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col hover:-translate-y-1 group"
+                onClick={handleCardClick}
+                className="w-full bg-white dark:bg-[#0B192C] rounded-3xl overflow-hidden border border-gray-100 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between hover:-translate-y-1 group cursor-pointer"
               >
-                {/* Top Image Container matching other section cards */}
-                <div className="relative overflow-hidden bg-gray-100 dark:bg-slate-900" style={{ height: 'clamp(160px, 35vw, 180px)' }}>
-                  <img
-                    src={cardImg}
-                    alt={offer.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    loading="lazy"
-                    onError={e => { e.currentTarget.onerror = null; e.currentTarget.src = offerImages[idx % offerImages.length]; }}
-                  />
-                  {/* Floating Badges on Image */}
-                  <span className="absolute top-3 left-3 bg-[#E58C28] text-white text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full shadow-md">
-                    {offer.offerType}
-                  </span>
-                  <span className="absolute top-3 right-3 bg-emerald-600/90 text-white backdrop-blur-md text-[10px] font-black px-2.5 py-1 rounded-full shadow-md">
-                    {offer.discountPercentage}% {offer.isRateUpgrade ? 'Rate Upgrade' : 'OFF'}
-                  </span>
-                </div>
+                <div>
+                  {/* Top Image Container */}
+                  <div className="relative overflow-hidden bg-gray-100 dark:bg-slate-900" style={{ height: 'clamp(160px, 35vw, 180px)' }}>
+                    <img
+                      src={cardImg}
+                      alt={cardTitle}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      loading="lazy"
+                      onError={e => { e.currentTarget.onerror = null; e.currentTarget.src = offerImages[idx % offerImages.length]; }}
+                    />
+                    {/* Floating Badges on Image */}
+                    <span className="absolute top-3 left-3 bg-[#E58C28] text-white text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full shadow-md">
+                      {offerBadge}
+                    </span>
+                    <span className="absolute top-3 right-3 bg-emerald-600/90 text-white backdrop-blur-md text-[10px] font-black px-2.5 py-1 rounded-full shadow-md">
+                      {discountBadge}
+                    </span>
+                  </div>
 
-                {/* Bottom Details Area matching other section cards */}
-                <div className="p-5 flex flex-col justify-between flex-grow space-y-4">
-                  <div className="space-y-1.5">
+                  {/* Details Content Area */}
+                  <div className="p-5 space-y-2">
+                    {city && (
+                      <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#0A4DA6] dark:text-amber-400">
+                        <MapPin size={12} />
+                        <span>{city}</span>
+                        {targetAshram?.name && (
+                          <span className="text-gray-400 font-semibold">• {targetAshram.name}</span>
+                        )}
+                      </div>
+                    )}
                     <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white group-hover:text-[#0A4DA6] dark:group-hover:text-amber-300 transition-colors line-clamp-1">
-                      {offer.title}
+                      {cardTitle}
                     </h3>
                     <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed line-clamp-2">
-                      {offer.bannerText}
+                      {cardDesc}
                     </p>
                   </div>
+                </div>
 
-                  <div className="pt-3 border-t border-gray-100 dark:border-slate-800/80 flex items-center justify-between">
-                    <div className="text-[10px] font-mono font-bold text-gray-400">
-                      PROMO: <span className="bg-gray-100 dark:bg-white/10 text-[#0B192C] dark:text-amber-200 px-2 py-0.5 rounded font-black">{offer.promoCode}</span>
-                    </div>
-                    <button
-                      onClick={() => navigate(`/search?destination=${encodeURIComponent(offer.ashramId?.address?.city || '')}`)}
-                      className="px-4 py-1.5 rounded-full bg-[#0A4DA6] text-white hover:bg-[#083b80] font-extrabold text-xs transition-all flex items-center gap-1.5 cursor-pointer shadow-md"
-                    >
-                      <span>Book Now</span>
-                      <ArrowRight size={12} />
-                    </button>
+                {/* Bottom Action Footer */}
+                <div className="p-5 pt-3 border-t border-gray-100 dark:border-slate-800/80 flex items-center justify-between mt-auto">
+                  <div className="text-[10px] font-mono font-bold text-gray-400">
+                    PROMO: <span className="bg-amber-500/10 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded font-black border border-amber-500/20">{offer.promoCode}</span>
                   </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCardClick();
+                    }}
+                    className="px-4 py-1.5 rounded-full bg-[#0A4DA6] hover:bg-[#083b80] text-white font-extrabold text-xs transition-all flex items-center gap-1.5 cursor-pointer shadow-md"
+                  >
+                    <span>Book Offer</span>
+                    <ArrowRight size={12} />
+                  </button>
                 </div>
               </div>
             );

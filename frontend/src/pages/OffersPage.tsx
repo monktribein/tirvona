@@ -96,84 +96,57 @@ export const OffersPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-950 pb-20 space-y-10">
-      {/* Hero Banner Header */}
-      <div className="bg-gradient-to-r from-[#0B192C] via-[#0A4DA6] to-[#0B192C] text-white py-14 px-4 sm:px-8 shadow-xl">
-        <div className="max-w-6xl mx-auto space-y-4">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/20 text-amber-300 text-xs font-black border border-amber-500/30 backdrop-blur-md">
-            <Flame size={14} /> Sacred Pilgrimage Deals & Special Promotions
+      {/* Hero Banner Container matching Navbar Layout Width */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-1 sm:pt-3">
+        <div className="relative text-white rounded-3xl p-6 sm:p-8 lg:p-10 shadow-xl overflow-hidden min-h-[340px] sm:min-h-[380px] flex flex-col justify-between items-center text-center border border-white/10">
+          {/* Background Banner Image */}
+          <img
+            src="/banner/Offerbannerpage.png"
+            alt="Exclusive Ashram Deals & Festival Specials Banner"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          {/* Overlay gradient for text contrast */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/55 to-black/40" />
+
+          {/* Banner Title & Description (Centered matching global Tirvona typography & color scheme) */}
+          <div className="max-w-3xl space-y-2.5 relative z-10 mx-auto text-center my-auto pt-2 pb-6">
+            <p className="font-['Kalam'] text-base sm:text-xl font-bold text-[#E58C28] drop-shadow-md">
+              Live Kumbh &amp; Festival Specials
+            </p>
+            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white leading-tight drop-shadow-lg" style={{ fontFamily: "Satoshi, 'General Sans', Manrope, Inter, sans-serif", letterSpacing: '-0.03em' }}>
+              Exclusive Ashram Deals &amp; <span className="text-[#D4AF37]">Festival Specials</span>
+            </h1>
+
+            <p className="text-xs sm:text-sm lg:text-base text-gray-100 max-w-2xl mx-auto font-medium leading-relaxed drop-shadow">
+              Unlock instant rate upgrades, complimentary Satvik meals, and festival specials across authentic registered Ashrams in Haridwar, Rishikesh, Vrindavan, and Varanasi.
+            </p>
           </div>
 
-          <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight">
-            Exclusive Ashram Deals & Festival Specials
-          </h1>
-
-          <p className="text-sm sm:text-base text-gray-200 max-w-2xl font-medium leading-relaxed">
-            Unlock instant rate upgrades, complimentary Satvik meals, and festival specials across authentic registered Ashrams in Haridwar, Rishikesh, Vrindavan, and Varanasi.
-          </p>
-
-          {/* Quick Breadcrumbs */}
-          <div className="flex items-center gap-2 text-xs font-semibold text-gray-300 pt-2">
-            <Link to="/" className="hover:text-white">Home</Link>
-            <ChevronRight size={12} />
-            <span className="text-amber-400 font-bold">Offers & Special Deals</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Container */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-8 space-y-8">
-        {/* Search & Category Filter Bar */}
-        <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-5 shadow-sm space-y-4">
-          {/* Category Tabs */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`px-4 py-2 rounded-full text-xs font-black whitespace-nowrap transition-all cursor-pointer ${
-                  selectedCategory === cat
-                    ? 'bg-[#0A4DA6] text-white shadow-md shadow-[#0A4DA6]/20'
-                    : 'bg-gray-100 dark:bg-slate-900 text-gray-600 dark:text-gray-300 hover:bg-gray-200'
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
-
-          {/* Search & City Filter */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2 border-t border-gray-100 dark:border-slate-800">
-            {/* City Selector */}
-            <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto">
-              <span className="text-xs font-bold text-gray-400 shrink-0">City:</span>
-              {cities.map((c) => (
-                <button
-                  key={c}
-                  onClick={() => setSelectedCity(c)}
-                  className={`px-3 py-1 rounded-lg text-xs font-extrabold cursor-pointer transition-all ${
-                    selectedCity === c
-                      ? 'bg-amber-500 text-white'
-                      : 'bg-gray-50 dark:bg-slate-900 text-gray-600 dark:text-gray-400 hover:bg-gray-100'
-                  }`}
-                >
-                  {c}
-                </button>
-              ))}
-            </div>
-
-            {/* Search Input */}
-            <div className="relative w-full sm:w-72">
-              <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+          {/* Search Bar Container inside Banner */}
+          <div className="w-full max-w-2xl mx-auto relative z-10 bg-white/95 dark:bg-[#0B192C]/95 backdrop-blur-md border border-white/20 dark:border-slate-800 rounded-full p-2 sm:p-2.5 shadow-2xl flex items-center gap-2">
+            <div className="relative flex-1 flex items-center">
+              <Search size={18} className="absolute left-4 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search offer or promo code..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-full pl-9 pr-4 py-2 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                className="w-full bg-transparent border-none pl-11 pr-4 py-2.5 text-xs sm:text-sm font-semibold focus:outline-none text-gray-800 dark:text-gray-100 placeholder-gray-400"
               />
             </div>
+            <button
+              type="button"
+              className="px-6 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-[#083b80] text-white text-xs sm:text-sm font-extrabold shadow-md transition-all shrink-0 flex items-center gap-1.5 cursor-pointer"
+            >
+              Search <Search size={14} />
+            </button>
           </div>
+
         </div>
+      </div>
+
+      {/* Main Container */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
 
         {/* Offers Cards Grid */}
         {loading ? (
