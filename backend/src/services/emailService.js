@@ -36,6 +36,15 @@ const getTransporter = () => {
       port: config.smtp.port,
       secure: config.smtp.secure,
       auth: { user: config.smtp.user, pass: config.smtp.pass },
+      // Reuse the connection: a cold Gmail TLS handshake costs ~5s, which the
+      // OTP request would otherwise wait on for every single code.
+      pool: true,
+      maxConnections: 3,
+      maxMessages: 50,
+      // Never let a stalled gateway hold an HTTP request open indefinitely.
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 20000,
     });
   }
   return transporter;

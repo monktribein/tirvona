@@ -31,9 +31,25 @@ export const generateOtpToken = (userId, type) =>
  * Carries a *verified* Google identity across the sign-up steps, before any
  * User document exists. `stage` advances 'otp' → 'profile' so a token issued
  * for the OTP step cannot be replayed to skip straight to account creation.
+ *
+ * Only the identity fields are re-signed. Callers legitimately pass a decoded
+ * token back in (resend, stage advance), and that object carries the reserved
+ * `iat`/`exp` claims — leaving them in makes `jwt.sign` throw
+ * "options.expiresIn ... payload already has an exp property".
  */
 export const generateGoogleToken = (profile, stage) =>
-  jwt.sign({ ...profile, purpose: 'google_pending', stage }, config.jwtSecret, { expiresIn: '15m' });
+  jwt.sign(
+    {
+      googleId: profile.googleId,
+      email: profile.email,
+      name: profile.name || '',
+      avatarUrl: profile.avatarUrl || '',
+      purpose: 'google_pending',
+      stage,
+    },
+    config.jwtSecret,
+    { expiresIn: '15m' }
+  );
 
 export const verifyGoogleToken = (token, expectedStage) => {
   try {
