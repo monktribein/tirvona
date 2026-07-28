@@ -49,6 +49,8 @@ interface AuthResult {
   suggestedName?: string;
   /** Verified Google address, returned once the OTP step passes. */
   email?: string;
+  /** The signed-in user, so callers can route by role without re-reading context. */
+  user?: User;
 }
 
 interface AuthContextType {
