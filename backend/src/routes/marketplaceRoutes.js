@@ -1,22 +1,23 @@
 import express from 'express';
 import {
-  getCategories,
-  getCategoryBySlug,
   getProducts,
   getProductBySlug,
-  createCategory,
+  createOrder,
+  createProduct,
+  updateProduct,
+  deleteProduct,
 } from '../controllers/marketplaceController.js';
-import { protect, authorize } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
-// Public routes
-router.get('/categories', getCategories);
-router.get('/category/:slug', getCategoryBySlug);
+// Public API Routes
 router.get('/products', getProducts);
-router.get('/products/:slug', getProductBySlug);
+router.get('/products/:idOrSlug', getProductBySlug);
+router.post('/order', createOrder);
 
-// Admin protected routes
-router.post('/categories', protect, authorize('super_admin', 'govt_admin'), createCategory);
+// Admin Management Routes
+router.post('/products', createProduct);
+router.put('/products/:id', updateProduct);
+router.delete('/products/:id', deleteProduct);
 
 export default router;

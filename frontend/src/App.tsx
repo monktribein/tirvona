@@ -70,6 +70,8 @@ import { BlogDetailPage } from './pages/BlogDetailPage';
 import { VideoDetailPage } from './pages/VideoDetailPage';
 import { PilgrimagePlannerPage } from './pages/PilgrimagePlannerPage';
 import { LocalServicesHubPage } from './pages/LocalServicesHubPage';
+import { ServicesHubPage } from './pages/ServicesHubPage';
+import { MarketplaceHubPage } from './pages/MarketplaceHubPage';
 import { MarketplaceComingSoonPage } from './pages/MarketplaceComingSoonPage';
 
 // Protected Route Wrapper Component
@@ -170,7 +172,8 @@ const AppContent: React.FC = () => {
           {/* Dedicated Cards Routes */}
           <Route path="/destinations/planner" element={<PilgrimagePlannerPage />} />
           <Route path="/local" element={<LocalServicesHubPage />} />
-          <Route path="/marketplace" element={<MarketplaceComingSoonPage />} />
+          <Route path="/services" element={<ServicesHubPage />} />
+          <Route path="/marketplace" element={<MarketplaceHubPage />} />
         </Route>
 
         {/* Authenticated Customer Routes */}

@@ -2,16 +2,7 @@ import mongoose from 'mongoose';
 
 const marketplaceProductSchema = new mongoose.Schema(
   {
-    categoryId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'MarketplaceCategory',
-      required: true,
-    },
-    sellerId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-    },
-    productName: {
+    name: {
       type: String,
       required: true,
       trim: true,
@@ -19,83 +10,93 @@ const marketplaceProductSchema = new mongoose.Schema(
     slug: {
       type: String,
       required: true,
-      trim: true,
       unique: true,
       lowercase: true,
     },
-    price: {
-      type: Number,
+    category: {
+      type: String,
       required: true,
-      min: 0,
+      enum: [
+        'prasad',
+        'rudraksha',
+        'tulsi_mala',
+        'puja_kits',
+        'murti',
+        'ayurveda',
+        'books',
+        'temple_clothes',
+        'handicrafts',
+        'incense',
+        'donations',
+      ],
+      index: true,
     },
-    discountPrice: {
-      type: Number,
-      default: 0,
-    },
-    stock: {
-      type: Number,
-      default: 100,
-    },
-    images: [{ type: String }],
     description: {
       type: String,
       required: true,
     },
+    price: {
+      type: Number,
+      required: true,
+    },
+    salePrice: {
+      type: Number,
+      default: null,
+    },
+    stock: {
+      type: Number,
+      default: 50,
+    },
+    templeSource: {
+      type: String,
+      default: 'Kashi Vishwanath Temple Trust',
+    },
+    authenticityCertificate: {
+      type: String,
+      default: 'Govt Certified & Temple Sanctified',
+    },
     weight: {
       type: String,
-      default: '500g',
+      default: '250g',
+    },
+    images: [{ type: String }],
+    vendor: {
+      name: { type: String, default: 'Tirvona Sacred Heritage Trust' },
+      type: { type: String, default: 'Temple Vendor' },
+      location: { type: String, default: 'Varanasi, UP' },
+      isVerified: { type: Boolean, default: true },
     },
     rating: {
       type: Number,
-      default: 4.8,
+      default: 4.9,
     },
-    reviewsCount: {
+    reviewCount: {
       type: Number,
-      default: 120,
+      default: 28,
     },
-    deliveryDays: {
-      type: Number,
-      default: 2,
-    },
-    templeName: {
-      type: String,
-      required: true,
-    },
-    storeName: {
-      type: String,
-      default: 'Shri Tirvona Certified Temple Vendor',
-    },
-
-    // Badges & Flags
-    festivalSpecial: {
+    specifications: [
+      {
+        key: { type: String },
+        value: { type: String },
+      },
+    ],
+    isFeatured: {
       type: Boolean,
       default: false,
     },
-    featured: {
-      type: Boolean,
-      default: true,
-    },
-    vegetarian: {
-      type: Boolean,
-      default: true,
-    },
-    organic: {
-      type: Boolean,
-      default: true,
-    },
     status: {
       type: String,
-      enum: ['active', 'out_of_stock', 'draft'],
+      enum: ['active', 'out_of_stock', 'suspended'],
       default: 'active',
+      index: true,
     },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+  }
 );
 
-export const MarketplaceProduct = mongoose.model(
-  'MarketplaceProduct',
-  marketplaceProductSchema,
-  'marketplace_products'
-);
+marketplaceProductSchema.index({ category: 1, status: 1 });
 
+const MarketplaceProduct = mongoose.models.MarketplaceProduct || mongoose.model('MarketplaceProduct', marketplaceProductSchema);
 export default MarketplaceProduct;

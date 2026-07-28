@@ -36,8 +36,8 @@ import blogRoutes from './routes/blogRoutes.js';
 import plannerRoutes from './routes/plannerRoutes.js';
 import localHubRoutes from './routes/localHubRoutes.js';
 import marketplaceHubRoutes from './routes/marketplaceHubRoutes.js';
-import institutionRoutes from './routes/institutionRoutes.js';
 import cmsRoutes from './routes/cmsRoutes.js';
+import serviceRoutes from './routes/serviceRoutes.js';
 import adminRoutes from './admin/index.js';
 
 // Connect to MongoDB
@@ -188,6 +188,7 @@ app.use('/api/local', localHubRoutes);
 app.use('/api/marketplace/hub', marketplaceHubRoutes);
 app.use('/api/institution', institutionRoutes);
 app.use('/api/cms', cmsRoutes);
+app.use('/api/enterprise-services', serviceRoutes);
 app.use('/api/admin', adminRoutes);
 
 // API documentation (Swagger UI). Exposed only outside production so the full

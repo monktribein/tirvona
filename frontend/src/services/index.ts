@@ -118,4 +118,7 @@ export const offerService = {
   getById: (id: string) => api.get(`/offers/public/${id}`),
 };
 
+export { serviceEcosystemService } from './service.service';
+export { marketplaceService } from './marketplace.service';
+
 
