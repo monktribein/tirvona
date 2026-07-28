@@ -28,6 +28,7 @@ import {
   LayoutGrid,
   Shield,
   Activity,
+  Utensils,
   Bed,
   ChevronDown,
   Headphones,
@@ -363,7 +364,7 @@ export const HomePage: React.FC = () => {
     img: r.ashramId?.images?.[0] || '/banner/ashram_rishikesh.png',
   }));
 
-  // 12-icon service strip aligned with Tirvona Theme & Routing
+  // Service icons strip aligned with Tirvona Theme & Routing
   const serviceIcons = [
     { id: 'circuits', label: 'Pilgrimage\nCircuits', icon: MapPin, category: 'circuits', target: '/pilgrimage-circuits' },
     { id: 'temples', label: 'Temple\nDetails', icon: Compass, category: 'temples', target: '/temples' },
@@ -371,12 +372,10 @@ export const HomePage: React.FC = () => {
     { id: 'guides', label: 'Travel\nGuides', icon: BookOpen, category: 'guides', target: '/travel-guides' },
     { id: 'local_guides', label: 'Local\nGuides', icon: Users, category: 'local_guides', target: '/local-guides' },
     { id: 'cabs', label: 'Transport &\nCabs', icon: MapIcon, category: 'cabs', target: '/transport' },
-    { id: 'prasad', label: 'Restaurants\n& Prasad', icon: Activity, category: 'prasad', target: '/restaurants' },
+    { id: 'food', label: 'Food &\nDining', icon: Utensils, category: 'food', target: '/restaurants' },
+    { id: 'prasad', label: 'Sacred\nPrasad', icon: Activity, category: 'prasad', target: '#prashad' },
     { id: 'shops', label: 'Shops &\nServices', icon: LayoutGrid, category: 'shops', target: '/shops' },
     { id: 'puja', label: 'Puja\nItems', icon: Heart, category: 'puja', target: '/puja-items' },
-    { id: 'products', label: 'Religious\nProducts', icon: Award, category: 'products', target: '/religious-products' },
-    { id: 'books', label: 'Books &\nMedia', icon: BookOpen, category: 'books', target: '/books' },
-    { id: 'handicrafts', label: 'Handicrafts\n& Gifts', icon: Sparkles, category: 'handicrafts', target: '/handicrafts' },
   ];
 
   // Extract Dynamic Approved Published CMS Sections (Strictly Section-Mapped)
@@ -682,9 +681,9 @@ export const HomePage: React.FC = () => {
           </form>
         </div>
 
-        {/* 12-icon service strip placed directly below booking system */}
+        {/* Service icons strip placed directly below booking system */}
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800/80 rounded-[24px] mt-4 sm:mt-5 p-2 sm:p-2.5 shadow-lg shadow-[#0B192C]/5">
-          <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-12 gap-1 sm:gap-1.5">
+          <div className="grid grid-cols-2 sm:grid-cols-5 lg:grid-cols-10 gap-1 sm:gap-1.5">
             {serviceIcons.map((item, i) => {
               const IconComponent = item.icon;
               const isActive = activeService === i;
@@ -946,7 +945,7 @@ export const HomePage: React.FC = () => {
             </div>
           </div>
 
-          {/* Card 2 — Local (logo blue) */}
+          {/* Card 2 — Services (logo blue) */}
           <div
             className="relative rounded-3xl overflow-hidden shadow-lg group cursor-pointer"
             style={{ height: 'clamp(200px, 50vw, 260px)' }}
@@ -954,7 +953,7 @@ export const HomePage: React.FC = () => {
           >
             <img
               src="https://images.unsplash.com/photo-1561361058-c24e36e56336?auto=format&fit=crop&w=700&q=80"
-              alt="Rishikesh Local Street"
+              alt="Rishikesh Local Services"
               className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               loading="lazy"
               onError={e => { e.currentTarget.onerror = null; e.currentTarget.src = 'https://images.unsplash.com/photo-1606293926075-69a007f4e863?auto=format&fit=crop&w=700&q=80'; }}
@@ -963,14 +962,14 @@ export const HomePage: React.FC = () => {
             <div className="relative z-10 p-5 h-full flex flex-col justify-between">
               <div className="space-y-2 max-w-[70%]">
                 <p className="text-[10px] font-extrabold uppercase tracking-widest text-blue-200">Tirvona</p>
-                <h3 className="font-extrabold text-lg text-white flex items-center gap-1.5 leading-tight">Local <ArrowRight size={15} /></h3>
-                <p className="text-xs text-blue-100/90 leading-relaxed">Find local services, guided tours, transport, food and more near you.</p>
+                <h3 className="font-extrabold text-lg text-white flex items-center gap-1.5 leading-tight">Services <ArrowRight size={15} /></h3>
+                <p className="text-xs text-blue-100/90 leading-relaxed">Find verified services, guided tours, transport, food and more near you.</p>
               </div>
               <button
                 className="self-start px-5 py-2.5 min-h-[40px] bg-white text-[#0A4DA6] font-extrabold text-xs rounded-full hover:bg-blue-50 transition-all cursor-pointer shadow"
                 onClick={e => { e.stopPropagation(); navigate('/local'); }}
               >
-                Explore Local
+                Explore Services
               </button>
             </div>
           </div>

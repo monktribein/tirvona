@@ -126,10 +126,10 @@ export const PublicLayout: React.FC = () => {
     { label: 'Destinations', to: '/search', hasDropdown: false },
     { label: 'Stay', to: '/search', hasDropdown: false },
     { label: 'Offers & Deals', to: '/offers', hasDropdown: false },
-    { label: 'Darshan & Seva', to: '/faq', hasDropdown: false },
-    { label: 'Tirvona Local', to: '/faq', hasDropdown: false },
-    { label: 'Events', to: '/offers/category/Festival%20Offer', hasDropdown: false },
-    { label: 'Blog', to: '/faq', hasDropdown: false },
+    { label: 'Darshan & Seva', to: '/temples', hasDropdown: false },
+    { label: 'Tirvona Services', to: '/local', hasDropdown: false },
+    { label: 'Events', to: '/events', hasDropdown: false },
+    { label: 'Blog', to: '/blog', hasDropdown: false },
   ];
 
   const isHomePage = location.pathname === '/';
@@ -402,11 +402,12 @@ export const PublicLayout: React.FC = () => {
             <div className="lg:col-span-2 space-y-3">
               <h4 className="text-sm font-extrabold text-white">Quick Links</h4>
               <ul className="text-xs space-y-2.5 text-gray-400 font-medium">
+                <li><Link to="/about" className="hover:text-white transition-colors">About Us</Link></li>
                 <li><Link to="/search" className="hover:text-white transition-colors">Ashram Bookings</Link></li>
                 <li><Link to="/search" className="hover:text-white transition-colors">Destinations</Link></li>
-                <li><Link to="/search" className="hover:text-white transition-colors">Pilgrimage Circuits</Link></li>
+                <li><Link to="/pilgrimage-circuits" className="hover:text-white transition-colors">Pilgrimage Circuits</Link></li>
                 <li><Link to="/search" className="hover:text-white transition-colors">Stay Types</Link></li>
-                <li><Link to="/faq" className="hover:text-white transition-colors">How It Works</Link></li>
+                <li><Link to="/help" className="hover:text-white transition-colors">How It Works</Link></li>
               </ul>
             </div>
 
@@ -415,10 +416,10 @@ export const PublicLayout: React.FC = () => {
               <h4 className="text-sm font-extrabold text-white">Popular Services</h4>
               <ul className="text-xs space-y-2.5 text-gray-400 font-medium">
                 <li><Link to="/search" className="hover:text-white transition-colors">Ashram Reservations</Link></li>
-                <li><Link to="/search" className="hover:text-white transition-colors">Temple Darshan & Seva</Link></li>
-                <li><Link to="/search" className="hover:text-white transition-colors">Mahaprasad Delivery</Link></li>
-                <li><Link to="/faq" className="hover:text-white transition-colors">Travel Insurance</Link></li>
-                <li><Link to="/faq" className="hover:text-white transition-colors">Tour Guide Services</Link></li>
+                <li><Link to="/temples" className="hover:text-white transition-colors">Temple Darshan & Seva</Link></li>
+                <li><Link to="/restaurants" className="hover:text-white transition-colors">Mahaprasad Delivery</Link></li>
+                <li><Link to="/stay-policies" className="hover:text-white transition-colors">Travel Insurance</Link></li>
+                <li><Link to="/local-guides" className="hover:text-white transition-colors">Tour Guide Services</Link></li>
                 <li><Link to="/contact" className="hover:text-white transition-colors">Yatra Assistance</Link></li>
               </ul>
             </div>
@@ -493,23 +494,6 @@ export const PublicLayout: React.FC = () => {
             </div>
 
           </div>
-
-          {/* GIANT TYPOGRAPHY WATERMARK WITH IMAGE MASK (Matching Reference Screenshot) */}
-          <div className="py-8 sm:py-12 text-center border-t border-slate-800/80 select-none overflow-hidden">
-            <h1
-              className="text-5xl sm:text-8xl lg:text-[140px] font-black uppercase tracking-tight leading-none text-transparent bg-clip-text bg-cover bg-center"
-              style={{
-                backgroundImage: "url('/auth-page/background.png')",
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                fontFamily: "Satoshi, 'General Sans', Inter, sans-serif",
-                letterSpacing: '-0.04em',
-              }}
-            >
-              Sacred Yatra
-            </h1>
-          </div>
-
         </div>
 
         {/* BOTTOM SUB-FOOTER BAR WITH WAVY SOFT CREAM BACKGROUND (Matching Reference Screenshot) */}
