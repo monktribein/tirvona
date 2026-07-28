@@ -25,23 +25,27 @@ import {
 } from 'lucide-react';
 import { serviceEcosystemService, type ServiceProviderItem } from '../services/service.service';
 import { useNotifications } from '../contexts/NotificationContext';
-import { EnterpriseModal, EnterpriseButton, EnterpriseStatusBadge } from '../admin/shared';
+import { useMemory } from '../contexts/UserMemoryContext';
+import { EnterpriseModal, EnterpriseButton, EnterpriseStatusBadge, EnterpriseSortDropdown, EnterpriseResetButton } from '../admin/shared';
 
 export const ServicesHubPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { addNotification } = useNotifications();
+  const { updateMemoryCategory } = useMemory();
 
   const activeCategoryParam = searchParams.get('category') || 'all';
+  const activeCityParam = searchParams.get('city') || 'all';
 
   const [services, setServices] = useState<ServiceProviderItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCity, setSelectedCity] = useState('all');
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
+  const [selectedCity, setSelectedCity] = useState(activeCityParam);
   const [selectedCategory, setSelectedCategory] = useState(activeCategoryParam);
+  const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'rating');
 
   // Filters
-  const [pureVegOnly, setPureVegOnly] = useState(false);
-  const [govtVerifiedOnly, setGovtVerifiedOnly] = useState(false);
+  const [pureVegOnly, setPureVegOnly] = useState(searchParams.get('pureVeg') === 'true');
+  const [govtVerifiedOnly, setGovtVerifiedOnly] = useState(searchParams.get('govtVerified') === 'true');
 
   // Booking Modal State
   const [selectedService, setSelectedService] = useState<ServiceProviderItem | null>(null);
@@ -67,15 +71,34 @@ export const ServicesHubPage: React.FC = () => {
 
   useEffect(() => {
     fetchServices();
-  }, [selectedCategory, selectedCity, pureVegOnly, govtVerifiedOnly]);
+  }, [selectedCategory, selectedCity, pureVegOnly, govtVerifiedOnly, sortBy]);
 
   const fetchServices = async () => {
     setLoading(true);
     try {
+      // Sync URL Search Parameters
+      const paramsObj: Record<string, string> = {};
+      if (selectedCategory !== 'all') paramsObj.category = selectedCategory;
+      if (selectedCity !== 'all') paramsObj.city = selectedCity;
+      if (searchTerm) paramsObj.search = searchTerm;
+      if (sortBy) paramsObj.sort = sortBy;
+      if (pureVegOnly) paramsObj.pureVeg = 'true';
+      if (govtVerifiedOnly) paramsObj.govtVerified = 'true';
+      setSearchParams(paramsObj);
+
+      // Memory engine auto-save
+      updateMemoryCategory('filters', {
+        serviceCategory: selectedCategory,
+        serviceCity: selectedCity,
+        serviceSearch: searchTerm,
+        serviceSort: sortBy,
+      });
+
       const res = await serviceEcosystemService.getAll({
         category: selectedCategory,
         city: selectedCity,
         search: searchTerm,
+        sortBy,
         pureVeg: pureVegOnly,
         govtVerified: govtVerifiedOnly,
       });
@@ -89,6 +112,16 @@ export const ServicesHubPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleResetFilters = () => {
+    setSelectedCategory('all');
+    setSelectedCity('all');
+    setSearchTerm('');
+    setSortBy('rating');
+    setPureVegOnly(false);
+    setGovtVerifiedOnly(false);
+    setSearchParams({});
   };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -216,27 +249,34 @@ export const ServicesHubPage: React.FC = () => {
             })}
           </div>
 
-          {/* Additional Filter Switches */}
-          <div className="flex flex-wrap items-center gap-4 text-xs pt-2 border-t border-gray-100 dark:border-slate-800 font-bold text-gray-500">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={pureVegOnly}
-                onChange={(e) => setPureVegOnly(e.target.checked)}
-                className="accent-[#0A4DA6] w-4 h-4 rounded"
-              />
-              <span>100% Pure Satvik / Veg</span>
-            </label>
+          {/* Additional Filter Switches & Sort Toolbar */}
+          <div className="flex flex-wrap items-center justify-between gap-4 text-xs pt-2 border-t border-gray-100 dark:border-slate-800 font-bold text-gray-500">
+            <div className="flex items-center gap-4 flex-wrap">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={pureVegOnly}
+                  onChange={(e) => setPureVegOnly(e.target.checked)}
+                  className="accent-[#0A4DA6] w-4 h-4 rounded"
+                />
+                <span>100% Pure Satvik / Veg</span>
+              </label>
 
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={govtVerifiedOnly}
-                onChange={(e) => setGovtVerifiedOnly(e.target.checked)}
-                className="accent-[#0A4DA6] w-4 h-4 rounded"
-              />
-              <span>Govt Certified Only</span>
-            </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={govtVerifiedOnly}
+                  onChange={(e) => setGovtVerifiedOnly(e.target.checked)}
+                  className="accent-[#0A4DA6] w-4 h-4 rounded"
+                />
+                <span>Govt Certified Only</span>
+              </label>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <EnterpriseSortDropdown value={sortBy} onChange={(val) => setSortBy(val)} />
+              <EnterpriseResetButton onReset={handleResetFilters} />
+            </div>
           </div>
         </div>
 

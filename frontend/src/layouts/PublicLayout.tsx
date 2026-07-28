@@ -18,6 +18,13 @@ import {
   Grid,
   ArrowRight,
   Headphones,
+  User,
+  Heart,
+  ShoppingCart,
+  Tag,
+  CreditCard,
+  Settings,
+  Calendar,
 } from 'lucide-react';
 
 // ─── Accordion item for mobile footer ────────────────────────────────────────
@@ -108,8 +115,23 @@ export const PublicLayout: React.FC = () => {
     document.documentElement.classList.toggle('dark');
   };
 
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
+
+  // Close profile dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setProfileDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
   const handleLogout = () => {
     logout();
+    setProfileDropdownOpen(false);
     navigate('/');
     setDrawerOpen(false);
   };
@@ -118,8 +140,8 @@ export const PublicLayout: React.FC = () => {
     if (!user) return '/login';
     if (['district_officer', 'govt_admin', 'super_admin'].includes(user.role)) return '/admin/dashboard';
     if (user.role === 'banner_manager') return '/bannerboy/dashboard';
-    if (user.role !== 'customer') return '/owner/dashboard';
-    return '/dashboard';
+    if (user.role === 'customer') return '/profile';
+    return '/owner/dashboard';
   };
 
   const navLinks = [
@@ -188,21 +210,139 @@ export const PublicLayout: React.FC = () => {
 
                 {/* User Auth / Action Buttons */}
                 {user ? (
-                  <div className="flex items-center gap-2">
-                    <Link
-                      to={getDashboardPath()}
-                      className="text-xs font-bold px-3.5 py-1.5 rounded-full bg-[#0A4DA6]/10 text-[#0A4DA6] border border-[#0A4DA6]/20 hover:bg-[#0A4DA6]/20 transition-all"
-                    >
-                      Dashboard
-                    </Link>
-                    <button
-                      onClick={handleLogout}
-                      className="p-1.5 rounded-full bg-danger/10 text-danger border border-danger/20 hover:bg-danger/20 transition-all cursor-pointer"
-                      title="Logout"
-                    >
-                      <LogOut size={13} />
-                    </button>
-                  </div>
+                  user.role === 'customer' ? (
+                    <div className="flex items-center gap-2">
+                      {/* Notifications Icon */}
+                      <Link
+                        to="/profile/notifications"
+                        className="p-2 rounded-full text-slate-700 dark:text-gray-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer relative"
+                        title="Notifications"
+                      >
+                        <Bell size={16} />
+                        <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-[#E58C28]" />
+                      </Link>
+
+                      {/* Wishlist Icon */}
+                      <Link
+                        to="/profile/wishlist"
+                        className="p-2 rounded-full text-slate-700 dark:text-gray-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
+                        title="Wishlist"
+                      >
+                        <Heart size={16} />
+                      </Link>
+
+                      {/* Cart Icon */}
+                      <Link
+                        to="/marketplace"
+                        className="p-2 rounded-full text-slate-700 dark:text-gray-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
+                        title="Sacred Cart"
+                      >
+                        <ShoppingCart size={16} />
+                      </Link>
+
+                      {/* Profile Avatar Dropdown Trigger */}
+                      <div className="relative" ref={profileRef}>
+                        <button
+                          onClick={() => setProfileDropdownOpen((prev) => !prev)}
+                          className="flex items-center gap-2 p-1 pr-2 rounded-full border border-gray-200 dark:border-slate-700 hover:border-[#0A4DA6] transition-all cursor-pointer bg-gray-50 dark:bg-slate-900"
+                        >
+                          <div className="w-7 h-7 rounded-full bg-[#0A4DA6] text-white font-black text-xs flex items-center justify-center uppercase">
+                            {user.name?.[0] || 'U'}
+                          </div>
+                          <span className="hidden sm:inline text-xs font-extrabold text-[#0B192C] dark:text-white max-w-[90px] truncate">
+                            {user.name?.split(' ')[0]}
+                          </span>
+                          <ChevronDown size={14} className="text-gray-400" />
+                        </button>
+
+                        {/* Profile Dropdown Menu */}
+                        {profileDropdownOpen && (
+                          <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl shadow-2xl py-2 text-xs font-bold text-gray-700 dark:text-gray-200 z-50 divide-y divide-gray-100 dark:divide-slate-800">
+                            <div className="px-4 py-2.5">
+                              <span className="block font-black text-[#0B192C] dark:text-white text-sm">{user.name}</span>
+                              <span className="text-[10px] text-gray-400 font-medium block truncate">{user.email}</span>
+                            </div>
+
+                            <div className="py-1">
+                              <Link
+                                to="/profile"
+                                onClick={() => setProfileDropdownOpen(false)}
+                                className="px-4 py-2 flex items-center gap-2.5 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+                              >
+                                <User size={14} className="text-[#0A4DA6]" /> My Profile
+                              </Link>
+
+                              <Link
+                                to="/profile/bookings"
+                                onClick={() => setProfileDropdownOpen(false)}
+                                className="px-4 py-2 flex items-center gap-2.5 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+                              >
+                                <Calendar size={14} className="text-blue-500" /> My Bookings & Stays
+                              </Link>
+
+                              <Link
+                                to="/profile/wishlist"
+                                onClick={() => setProfileDropdownOpen(false)}
+                                className="px-4 py-2 flex items-center gap-2.5 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+                              >
+                                <Heart size={14} className="text-rose-500" /> Wishlist & Saved
+                              </Link>
+
+                              <Link
+                                to="/profile/coupons"
+                                onClick={() => setProfileDropdownOpen(false)}
+                                className="px-4 py-2 flex items-center gap-2.5 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+                              >
+                                <Tag size={14} className="text-amber-500" /> Coupons & Deals
+                              </Link>
+
+                              <Link
+                                to="/profile/payments"
+                                onClick={() => setProfileDropdownOpen(false)}
+                                className="px-4 py-2 flex items-center gap-2.5 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+                              >
+                                <CreditCard size={14} className="text-emerald-500" /> Payments & Invoices
+                              </Link>
+
+                              <Link
+                                to="/profile/settings"
+                                onClick={() => setProfileDropdownOpen(false)}
+                                className="px-4 py-2 flex items-center gap-2.5 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+                              >
+                                <Settings size={14} className="text-purple-500" /> Account Settings
+                              </Link>
+                            </div>
+
+                            <div className="py-1">
+                              <button
+                                onClick={handleLogout}
+                                className="w-full text-left px-4 py-2 flex items-center gap-2.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors cursor-pointer"
+                              >
+                                <LogOut size={14} /> Sign Out
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    /* Operational Roles (Admin, Owner, Manager, Reception, BannerBoy, Support) */
+                    <div className="flex items-center gap-2">
+                      <Link
+                        to={getDashboardPath()}
+                        className="text-xs font-bold px-3.5 py-1.5 rounded-full bg-[#0A4DA6]/10 text-[#0A4DA6] border border-[#0A4DA6]/20 hover:bg-[#0A4DA6]/20 transition-all"
+                      >
+                        Dashboard
+                      </Link>
+                      <button
+                        onClick={handleLogout}
+                        className="p-1.5 rounded-full bg-danger/10 text-danger border border-danger/20 hover:bg-danger/20 transition-all cursor-pointer"
+                        title="Logout"
+                      >
+                        <LogOut size={13} />
+                      </button>
+                    </div>
+                  )
                 ) : (
                   <div className="flex items-center gap-2">
                     <Link

@@ -2,6 +2,7 @@ import React, { useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
+import { UserMemoryProvider } from './contexts/UserMemoryContext';
 
 // Layouts (eager — always needed)
 import PublicLayout from './layouts/PublicLayout';
@@ -73,6 +74,15 @@ import { LocalServicesHubPage } from './pages/LocalServicesHubPage';
 import { ServicesHubPage } from './pages/ServicesHubPage';
 import { MarketplaceHubPage } from './pages/MarketplaceHubPage';
 import { MarketplaceComingSoonPage } from './pages/MarketplaceComingSoonPage';
+
+// Customer Profile Pages
+import ProfileMainPage from './pages/profile/ProfileMainPage';
+import ProfileBookingsPage from './pages/profile/ProfileBookingsPage';
+import ProfileWishlistPage from './pages/profile/ProfileWishlistPage';
+import ProfileCouponsPage from './pages/profile/ProfileCouponsPage';
+import ProfilePaymentsPage from './pages/profile/ProfilePaymentsPage';
+import ProfileSettingsPage from './pages/profile/ProfileSettingsPage';
+import ProfileNotificationsPage from './pages/profile/ProfileNotificationsPage';
 
 // Protected Route Wrapper Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode; allowedRoles?: string[] }> = ({ children, allowedRoles }) => {
@@ -174,17 +184,17 @@ const AppContent: React.FC = () => {
           <Route path="/local" element={<LocalServicesHubPage />} />
           <Route path="/services" element={<ServicesHubPage />} />
           <Route path="/marketplace" element={<MarketplaceHubPage />} />
-        </Route>
 
-        {/* Authenticated Customer Routes */}
-        <Route
-          element={
-            <ProtectedRoute allowedRoles={['customer']}>
-              <DashboardLayout />
-            </ProtectedRoute>
-          }
-        >
-          <Route path="/dashboard" element={<CustomerDashboard />} />
+          {/* Customer Profile Ecosystem Routes */}
+          <Route path="/profile" element={<ProfileMainPage />} />
+          <Route path="/profile/bookings" element={<ProfileBookingsPage />} />
+          <Route path="/profile/history" element={<ProfileBookingsPage />} />
+          <Route path="/profile/wishlist" element={<ProfileWishlistPage />} />
+          <Route path="/profile/coupons" element={<ProfileCouponsPage />} />
+          <Route path="/profile/payments" element={<ProfilePaymentsPage />} />
+          <Route path="/profile/settings" element={<ProfileSettingsPage />} />
+          <Route path="/profile/notifications" element={<ProfileNotificationsPage />} />
+          <Route path="/dashboard" element={<Navigate to="/profile" replace />} />
         </Route>
 
         {/* Unified Dashboard Routes for Owners & Staff */}
@@ -257,7 +267,9 @@ export const App: React.FC = () => {
   return (
     <AuthProvider>
       <NotificationProvider>
-        <AppContent />
+        <UserMemoryProvider>
+          <AppContent />
+        </UserMemoryProvider>
       </NotificationProvider>
     </AuthProvider>
   );

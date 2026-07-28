@@ -1,53 +1,52 @@
 import ServiceProvider from '../models/ServiceProvider.js';
 import ServiceBooking from '../models/ServiceBooking.js';
+import { buildEnterpriseQuery, buildSortOptions, buildPagination } from '../utils/queryBuilder.js';
 
 // GET /api/services - Filter & List Service Providers
 export const getServices = async (req, res) => {
   try {
-    const { category, city, subcategory, search, pureVeg, govtVerified, minPrice, maxPrice } = req.query;
+    const {
+      category,
+      city,
+      subcategory,
+      search,
+      pureVeg,
+      govtVerified,
+      minPrice,
+      maxPrice,
+      sortBy = 'rating',
+      page = 1,
+      limit = 20,
+    } = req.query;
 
-    const query = { status: 'active' };
+    const customFilters = {};
+    if (subcategory) customFilters.subcategory = new RegExp(subcategory, 'i');
+    if (pureVeg === 'true') customFilters['specifications.pureVeg'] = true;
+    if (govtVerified === 'true') customFilters['specifications.govtVerified'] = true;
 
-    if (category && category !== 'all') {
-      query.category = category;
-    }
+    const query = buildEnterpriseQuery({
+      search,
+      searchFields: ['name', 'description', 'subcategory', 'city', 'tagline'],
+      category,
+      city,
+      status: 'active',
+      minPrice,
+      maxPrice,
+      customFilters,
+    });
 
-    if (subcategory) {
-      query.subcategory = new RegExp(subcategory, 'i');
-    }
+    const sort = buildSortOptions(sortBy);
+    const { skip, limit: limitParsed } = buildPagination(page, limit);
 
-    if (city && city !== 'all') {
-      query.city = new RegExp(city, 'i');
-    }
-
-    if (pureVeg === 'true') {
-      query['specifications.pureVeg'] = true;
-    }
-
-    if (govtVerified === 'true') {
-      query['specifications.govtVerified'] = true;
-    }
-
-    if (search) {
-      query.$or = [
-        { name: new RegExp(search, 'i') },
-        { description: new RegExp(search, 'i') },
-        { subcategory: new RegExp(search, 'i') },
-        { city: new RegExp(search, 'i') },
-      ];
-    }
-
-    if (minPrice || maxPrice) {
-      query['pricing.amount'] = {};
-      if (minPrice) query['pricing.amount'].$gte = Number(minPrice);
-      if (maxPrice) query['pricing.amount'].$lte = Number(maxPrice);
-    }
-
-    const services = await ServiceProvider.find(query).sort({ rating: -1, createdAt: -1 });
+    const [services, total] = await Promise.all([
+      ServiceProvider.find(query).sort(sort).skip(skip).limit(limitParsed),
+      ServiceProvider.countDocuments(query),
+    ]);
 
     return res.status(200).json({
       success: true,
       count: services.length,
+      total,
       data: services,
     });
   } catch (error) {

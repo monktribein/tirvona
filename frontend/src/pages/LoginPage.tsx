@@ -52,7 +52,7 @@ export const LoginPage: React.FC = () => {
         }
       } catch (e) {}
     }
-    return '/';
+    return '/profile';
   };
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {

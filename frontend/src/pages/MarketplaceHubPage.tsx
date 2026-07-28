@@ -20,18 +20,21 @@ import {
 } from 'lucide-react';
 import { marketplaceService, type MarketplaceProductItem } from '../services/marketplace.service';
 import { useNotifications } from '../contexts/NotificationContext';
-import { EnterpriseModal, EnterpriseButton, EnterpriseStatusBadge } from '../admin/shared';
+import { useMemory } from '../contexts/UserMemoryContext';
+import { EnterpriseModal, EnterpriseButton, EnterpriseStatusBadge, EnterpriseSortDropdown, EnterpriseResetButton } from '../admin/shared';
 
 export const MarketplaceHubPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { addNotification } = useNotifications();
+  const { updateMemoryCategory } = useMemory();
 
   const categoryParam = searchParams.get('category') || 'all';
 
   const [products, setProducts] = useState<MarketplaceProductItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
   const [selectedCategory, setSelectedCategory] = useState(categoryParam);
+  const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'rating');
 
   // Cart State
   const [cart, setCart] = useState<Array<{ product: MarketplaceProductItem; qty: number }>>([]);
@@ -62,14 +65,31 @@ export const MarketplaceHubPage: React.FC = () => {
 
   useEffect(() => {
     fetchProducts();
-  }, [selectedCategory]);
+  }, [selectedCategory, sortBy]);
+
+  const fetchServices = async () => {}; // dummy placeholder if referenced
 
   const fetchProducts = async () => {
     setLoading(true);
     try {
+      // Sync URL Params
+      const paramsObj: Record<string, string> = {};
+      if (selectedCategory !== 'all') paramsObj.category = selectedCategory;
+      if (searchTerm) paramsObj.search = searchTerm;
+      if (sortBy) paramsObj.sort = sortBy;
+      setSearchParams(paramsObj);
+
+      // Save to memory
+      updateMemoryCategory('filters', {
+        marketplaceCategory: selectedCategory,
+        marketplaceSearch: searchTerm,
+        marketplaceSort: sortBy,
+      });
+
       const res = await marketplaceService.getProducts({
         category: selectedCategory,
         search: searchTerm,
+        sortBy,
       });
 
       if (res.data?.success) {
@@ -81,6 +101,13 @@ export const MarketplaceHubPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleResetFilters = () => {
+    setSelectedCategory('all');
+    setSearchTerm('');
+    setSortBy('rating');
+    setSearchParams({});
   };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -229,6 +256,15 @@ export const MarketplaceHubPage: React.FC = () => {
                 </button>
               );
             })}
+          </div>
+
+          {/* Sort & Reset Toolbar */}
+          <div className="flex items-center justify-between gap-3 pt-2 border-t border-gray-100 dark:border-slate-800">
+            <span className="text-xs font-bold text-gray-400">Filter & Sort Products</span>
+            <div className="flex items-center gap-3">
+              <EnterpriseSortDropdown value={sortBy} onChange={(val) => setSortBy(val)} />
+              <EnterpriseResetButton onReset={handleResetFilters} />
+            </div>
           </div>
         </div>
 

@@ -43,7 +43,7 @@ export const RegisterPage: React.FC = () => {
         navigate('/owner/dashboard');
       } else {
         const pendingRaw = localStorage.getItem('pending_booking');
-        let target = '/';
+        let target = '/profile';
         if (redirect) {
           target = redirect;
         } else if (pendingRaw) {

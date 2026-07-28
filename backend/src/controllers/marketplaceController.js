@@ -1,45 +1,48 @@
 import MarketplaceProduct from '../models/MarketplaceProduct.js';
 import MarketplaceOrder from '../models/MarketplaceOrder.js';
+import { buildEnterpriseQuery, buildSortOptions, buildPagination } from '../utils/queryBuilder.js';
 
 // GET /api/marketplace/products
 export const getProducts = async (req, res) => {
   try {
-    const { category, search, templeSource, minPrice, maxPrice, featured } = req.query;
+    const {
+      category,
+      search,
+      templeSource,
+      minPrice,
+      maxPrice,
+      featured,
+      sortBy = 'rating',
+      page = 1,
+      limit = 20,
+    } = req.query;
 
-    const query = { status: 'active' };
+    const customFilters = {};
+    if (templeSource) customFilters.templeSource = new RegExp(templeSource, 'i');
+    if (featured === 'true') customFilters.isFeatured = true;
 
-    if (category && category !== 'all') {
-      query.category = category;
-    }
+    const query = buildEnterpriseQuery({
+      search,
+      searchFields: ['name', 'description', 'templeSource', 'category'],
+      category,
+      status: 'active',
+      minPrice,
+      maxPrice,
+      customFilters,
+    });
 
-    if (templeSource) {
-      query.templeSource = new RegExp(templeSource, 'i');
-    }
+    const sort = buildSortOptions(sortBy);
+    const { skip, limit: limitParsed } = buildPagination(page, limit);
 
-    if (featured === 'true') {
-      query.isFeatured = true;
-    }
-
-    if (search) {
-      query.$or = [
-        { name: new RegExp(search, 'i') },
-        { description: new RegExp(search, 'i') },
-        { templeSource: new RegExp(search, 'i') },
-        { category: new RegExp(search, 'i') },
-      ];
-    }
-
-    if (minPrice || maxPrice) {
-      query.price = {};
-      if (minPrice) query.price.$gte = Number(minPrice);
-      if (maxPrice) query.price.$lte = Number(maxPrice);
-    }
-
-    const products = await MarketplaceProduct.find(query).sort({ isFeatured: -1, rating: -1, createdAt: -1 });
+    const [products, total] = await Promise.all([
+      MarketplaceProduct.find(query).sort(sort).skip(skip).limit(limitParsed),
+      MarketplaceProduct.countDocuments(query),
+    ]);
 
     return res.status(200).json({
       success: true,
       count: products.length,
+      total,
       data: products,
     });
   } catch (error) {
