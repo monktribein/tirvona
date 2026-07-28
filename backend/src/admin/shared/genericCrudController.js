@@ -21,6 +21,7 @@ import InstitutionMaster from '../../models/institution/InstitutionMaster.js';
 import InstitutionContact from '../../models/institution/InstitutionContact.js';
 import InstitutionLocation from '../../models/institution/InstitutionLocation.js';
 import InstitutionQualityAudit from '../../models/institution/InstitutionQualityAudit.js';
+import { escapeRegex } from '../../utils/sanitize.js';
 
 // Comprehensive Mongoose Model Registry mapping every enterprise module key
 const MODEL_MAP = {
@@ -61,6 +62,47 @@ const MODEL_MAP = {
   audit: AuditLog,
 };
 
+// Fields that must never be written through the generic CRUD endpoint, on any
+// model. `_id` is handled separately (it selects create vs update).
+const IMMUTABLE_FIELDS = ['__v', 'createdAt', 'updatedAt', 'password', 'passwordHash', 'tokenVersion'];
+
+// Fields that only a Super Admin may write, keyed by Mongoose model name. These
+// are the escalation levers: without this a district_officer could POST
+// { _id, role: 'super_admin' } to /api/admin/crud/users and own the platform.
+const PRIVILEGED_FIELDS = {
+  User: [
+    'role',
+    'status',
+    'isSuspended',
+    'suspensionType',
+    'suspensionReason',
+    'employeeId',
+    'ashramId',
+    // Flipping this by hand would bypass the OTP challenge entirely.
+    'isVerified',
+    'phoneVerifiedAt',
+    'emailVerifiedAt',
+  ],
+  InstitutionMaster: ['status', 'createdById'],
+  Ashram: ['status', 'isVerified', 'ownerId'],
+};
+
+// Secrets and PII that must never leave the server through a generic list.
+const HIDDEN_ON_READ = {
+  User: '-passwordHash -tokenVersion -aadhaarId -govtId',
+};
+
+// Strip everything the caller is not allowed to write for this model.
+const filterWritableFields = (data, TargetModel, user) => {
+  const clean = { ...data };
+  IMMUTABLE_FIELDS.forEach((f) => delete clean[f]);
+
+  if (user?.role !== 'super_admin') {
+    (PRIVILEGED_FIELDS[TargetModel.modelName] || []).forEach((f) => delete clean[f]);
+  }
+  return clean;
+};
+
 // Generic list & search query
 export const getCrudList = async (req, res) => {
   try {
@@ -76,14 +118,20 @@ export const getCrudList = async (req, res) => {
         filter.status = status;
       }
       if (search) {
+        // Escaped so an attacker-supplied term is matched literally and cannot
+        // inject a regex or trigger catastrophic backtracking (ReDoS).
+        const term = escapeRegex(search);
         filter.$or = [
-          { name: { $regex: search, $options: 'i' } },
-          { title: { $regex: search, $options: 'i' } },
-          { email: { $regex: search, $options: 'i' } },
+          { name: { $regex: term, $options: 'i' } },
+          { title: { $regex: term, $options: 'i' } },
+          { email: { $regex: term, $options: 'i' } },
         ];
       }
 
-      const docs = await TargetModel.find(filter).limit(100).sort({ createdAt: -1 });
+      const docs = await TargetModel.find(filter)
+        .select(HIDDEN_ON_READ[TargetModel.modelName] || '')
+        .limit(100)
+        .sort({ createdAt: -1 });
       return res.json({ success: true, count: docs.length, data: docs });
     }
 
@@ -125,12 +173,23 @@ export const saveCrudRecord = async (req, res) => {
     const TargetModel = MODEL_MAP[targetKey] || MODEL_MAP[moduleKey];
 
     if (TargetModel && data._id && !data._id.startsWith('sys_') && !data._id.startsWith('rec_')) {
-      const updated = await TargetModel.findByIdAndUpdate(data._id, data, { new: true });
+      const updates = filterWritableFields(data, TargetModel, req.user);
+      delete updates._id;
+      const updated = await TargetModel.findByIdAndUpdate(data._id, updates, { new: true }).select(
+        HIDDEN_ON_READ[TargetModel.modelName] || ''
+      );
       return res.json({ success: true, message: 'Record updated successfully', data: updated });
     } else if (TargetModel) {
-      delete data._id;
-      const created = await TargetModel.create(data);
-      return res.json({ success: true, message: 'Record created successfully', data: created });
+      const payload = filterWritableFields(data, TargetModel, req.user);
+      delete payload._id;
+      const created = await TargetModel.create(payload);
+      // .select() does not apply to create(), so strip secrets from the echo.
+      const safe = created.toObject();
+      (HIDDEN_ON_READ[TargetModel.modelName] || '')
+        .split(' ')
+        .filter(Boolean)
+        .forEach((f) => delete safe[f.replace('-', '')]);
+      return res.json({ success: true, message: 'Record created successfully', data: safe });
     }
 
     return res.json({
@@ -149,6 +208,12 @@ export const deleteCrudRecord = async (req, res) => {
   try {
     const { moduleKey, id } = req.params;
     const TargetModel = MODEL_MAP[moduleKey];
+
+    // Deleting accounts is a Super Admin action, not general admin CRUD.
+    if (TargetModel?.modelName === 'User' && req.user?.role !== 'super_admin') {
+      return res.status(403).json({ success: false, message: 'Only a Super Admin can delete user accounts' });
+    }
+
     if (TargetModel && !id.startsWith('sys_') && !id.startsWith('rec_')) {
       await TargetModel.findByIdAndDelete(id);
     }

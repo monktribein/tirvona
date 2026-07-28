@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { authService } from '../services';
 import { getErrorMessage, TOKEN_KEY } from '../lib/api';
+import { signInWithGoogle } from '../lib/googleAuth';
 
 interface User {
   id: string;
@@ -13,13 +14,58 @@ interface User {
   state?: string;
 }
 
+// Returned when the backend answers a password login / registration with an OTP
+// challenge instead of a session. `otpToken` is a short-lived pending token that
+// identifies the challenge — it is NOT a session token and is never persisted.
+export interface OtpChallenge {
+  otpToken: string;
+  type: 'PHONE_REGISTER' | 'EMAIL_REGISTER' | 'EMAIL_LOGIN' | 'MOBILE_LOGIN';
+  channel: 'sms' | 'email';
+  /** Already masked by the server, e.g. "s***7@gmail.com" or "98****3210". */
+  sentTo?: string;
+  expiresAt: string;
+}
+
+/** Google sign-up state carried between the OTP step and the profile step. */
+export interface GoogleChallenge {
+  googleToken: string;
+  channel: 'email';
+  type?: string;
+  sentTo?: string;
+  expiresAt?: string;
+}
+
+interface AuthResult {
+  success: boolean;
+  message?: string;
+  isSuspended?: boolean;
+  suspensionData?: any;
+  otpRequired?: boolean;
+  challenge?: OtpChallenge;
+  /** Google sign-up needs an email OTP before the account is created. */
+  googleChallenge?: GoogleChallenge;
+  /** OTP passed; still needs a name + mobile number to create the account. */
+  needsProfile?: boolean;
+  suggestedName?: string;
+  /** Verified Google address, returned once the OTP step passes. */
+  email?: string;
+}
+
 interface AuthContextType {
   user: User | null;
   token: string | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; message?: string; isSuspended?: boolean; suspensionData?: any }>;
+  login: (email: string, password: string) => Promise<AuthResult>;
   loginOTP: (phone: string, otp: string) => Promise<{ success: boolean; message?: string }>;
-  registerUser: (userData: any) => Promise<{ success: boolean; message?: string }>;
+  verifyLoginOtp: (otpToken: string, otp: string) => Promise<AuthResult>;
+  verifyRegistrationOtp: (otpToken: string, otp: string) => Promise<AuthResult>;
+  resendOtp: (otpToken: string) => Promise<{ success: boolean; message?: string; challenge?: OtpChallenge }>;
+  registerUser: (userData: any) => Promise<AuthResult>;
+  // ── Google Sign-In ──
+  loginWithGoogle: () => Promise<AuthResult>;
+  verifyGoogleOtp: (googleToken: string, otp: string) => Promise<AuthResult>;
+  resendGoogleOtp: (googleToken: string) => Promise<{ success: boolean; message?: string; googleChallenge?: GoogleChallenge }>;
+  completeGoogleProfile: (googleToken: string, name: string, phone: string) => Promise<AuthResult>;
   logout: () => void;
 }
 
@@ -64,9 +110,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(userData);
   };
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<AuthResult> => {
     try {
       const res = await authService.login(email, password);
+      // Guest Visitors get an OTP challenge instead of a session. No token is
+      // stored here — the session only exists after the code is verified.
+      if (res.data.success && res.data.otpRequired) {
+        return { success: true, otpRequired: true, challenge: res.data.data, message: res.data.message };
+      }
       if (res.data.success) {
         persistSession(res.data.data);
         return { success: true, user: res.data.data };
@@ -103,9 +154,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const registerUser = async (userData: any) => {
+  const registerUser = async (userData: any): Promise<AuthResult> => {
     try {
       const res = await authService.register(userData);
+      // Guest Visitor registrations return an OTP challenge; Ashram Owner
+      // registrations still return a session immediately, unchanged.
+      if (res.data.success && res.data.otpRequired) {
+        return { success: true, otpRequired: true, challenge: res.data.data, message: res.data.message };
+      }
       if (res.data.success) {
         persistSession(res.data.data);
         return { success: true };
@@ -116,6 +172,126 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // ── OTP challenge completion ───────────────────────────────────────────────
+  // Both verifiers return a full session on success and persist it, so the
+  // caller only has to navigate.
+  const completeChallenge = async (
+    request: Promise<{ data: any }>,
+    fallback: string
+  ): Promise<AuthResult> => {
+    try {
+      const res = await request;
+      if (res.data.success) {
+        persistSession(res.data.data);
+        return { success: true };
+      }
+      return { success: false, message: res.data.message || fallback };
+    } catch (err) {
+      return { success: false, message: getErrorMessage(err, fallback) };
+    }
+  };
+
+  const verifyLoginOtp = (otpToken: string, otp: string) =>
+    completeChallenge(authService.verifyLoginOtp(otpToken, otp), 'Invalid OTP');
+
+  const verifyRegistrationOtp = (otpToken: string, otp: string) =>
+    completeChallenge(authService.verifyRegistrationOtp(otpToken, otp), 'Invalid OTP');
+
+  // ── Google Sign-In ─────────────────────────────────────────────────────────
+
+  /**
+   * Opens Google's chooser and exchanges the ID token with our API.
+   * Returning users get a session immediately; new users get an email OTP
+   * challenge, and no account exists until the profile step completes.
+   */
+  const loginWithGoogle = async (): Promise<AuthResult> => {
+    let credential: string;
+    try {
+      credential = await signInWithGoogle();
+    } catch (err: any) {
+      return { success: false, message: err?.message || 'Google sign-in was cancelled.' };
+    }
+
+    try {
+      const res = await authService.google(credential);
+      if (res.data.success && res.data.otpRequired) {
+        return { success: true, otpRequired: true, googleChallenge: res.data.data, message: res.data.message };
+      }
+      if (res.data.success) {
+        persistSession(res.data.data);
+        return { success: true, message: res.data.message };
+      }
+      return { success: false, message: res.data.message || 'Google sign-in failed' };
+    } catch (err: any) {
+      if (err.response?.data?.isSuspended) {
+        return {
+          success: false,
+          message: err.response.data.message || 'Account Suspended',
+          isSuspended: true,
+          suspensionData: err.response.data.suspensionData,
+        };
+      }
+      return { success: false, message: getErrorMessage(err, 'Google sign-in failed') };
+    }
+  };
+
+  const verifyGoogleOtp = async (googleToken: string, otp: string): Promise<AuthResult> => {
+    try {
+      const res = await authService.googleVerifyOtp(googleToken, otp);
+      if (res.data.success) {
+        // Verified, but the account is not created until name + phone arrive.
+        return {
+          success: true,
+          needsProfile: true,
+          googleChallenge: { googleToken: res.data.data.googleToken, channel: 'email' },
+          suggestedName: res.data.data.suggestedName,
+          email: res.data.data.email,
+          message: res.data.message,
+        };
+      }
+      return { success: false, message: res.data.message || 'Invalid OTP' };
+    } catch (err) {
+      return { success: false, message: getErrorMessage(err, 'Invalid OTP') };
+    }
+  };
+
+  const resendGoogleOtp = async (googleToken: string) => {
+    try {
+      const res = await authService.googleResendOtp(googleToken);
+      if (res.data.success) {
+        return { success: true, message: res.data.message, googleChallenge: res.data.data };
+      }
+      return { success: false, message: res.data.message || 'Could not resend OTP' };
+    } catch (err) {
+      return { success: false, message: getErrorMessage(err, 'Could not resend OTP') };
+    }
+  };
+
+  const completeGoogleProfile = async (googleToken: string, name: string, phone: string): Promise<AuthResult> => {
+    try {
+      const res = await authService.googleComplete(googleToken, name, phone);
+      if (res.data.success) {
+        persistSession(res.data.data);
+        return { success: true, message: res.data.message };
+      }
+      return { success: false, message: res.data.message || 'Could not finish creating your account' };
+    } catch (err) {
+      return { success: false, message: getErrorMessage(err, 'Could not finish creating your account') };
+    }
+  };
+
+  const resendOtp = async (otpToken: string) => {
+    try {
+      const res = await authService.resendOtp(otpToken);
+      if (res.data.success) {
+        return { success: true, message: res.data.message, challenge: res.data.data };
+      }
+      return { success: false, message: res.data.message || 'Could not resend OTP' };
+    } catch (err) {
+      return { success: false, message: getErrorMessage(err, 'Could not resend OTP') };
+    }
+  };
+
   const logout = () => {
     localStorage.removeItem(TOKEN_KEY);
     setToken(null);
@@ -123,7 +299,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, loginOTP, registerUser, logout }}>
+    <AuthContext.Provider
+      value={{
+        user, token, loading, login, loginOTP, registerUser, logout,
+        verifyLoginOtp, verifyRegistrationOtp, resendOtp,
+        loginWithGoogle, verifyGoogleOtp, resendGoogleOtp, completeGoogleProfile,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

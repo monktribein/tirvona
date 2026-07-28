@@ -4,8 +4,24 @@ import api from '../lib/api';
 export const authService = {
   login: (email: string, password: string) => api.post('/auth/login', { email, password }),
   register: (data: unknown) => api.post('/auth/register', data),
+  // OTP challenge (Guest Visitors). `otpToken` identifies the pending challenge.
+  verifyRegistrationOtp: (otpToken: string, otp: string) =>
+    api.post('/auth/register/verify-otp', { otpToken, otp }),
+  verifyLoginOtp: (otpToken: string, otp: string) => api.post('/auth/login/verify-otp', { otpToken, otp }),
+  resendOtp: (otpToken: string) => api.post('/auth/resend-otp', { otpToken }),
+  // Legacy passwordless phone-OTP login, still used by the "Login with OTP" tab.
   sendOtp: (phone: string) => api.post('/auth/otp/send', { phone }),
   verifyOtp: (phone: string, otp: string) => api.post('/auth/otp/verify', { phone, otp }),
+  // Google Sign-In. `credential` is the ID token from Google Identity Services.
+  google: (credential: string) => api.post('/auth/google', { credential }),
+  googleVerifyOtp: (googleToken: string, otp: string) => api.post('/auth/google/verify-otp', { googleToken, otp }),
+  googleResendOtp: (googleToken: string) => api.post('/auth/google/resend-otp', { googleToken }),
+  googleComplete: (googleToken: string, name: string, phone: string) =>
+    api.post('/auth/google/complete', { googleToken, name, phone }),
+  // Password reset by emailed link.
+  forgotPassword: (email: string) => api.post('/auth/forgot-password', { email }),
+  verifyResetToken: (token: string) => api.get(`/auth/reset-password/${token}`),
+  resetPassword: (token: string, newPassword: string) => api.post('/auth/reset-password', { token, newPassword }),
   me: () => api.get('/auth/me'),
 };
 

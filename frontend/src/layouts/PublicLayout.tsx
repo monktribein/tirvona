@@ -634,6 +634,10 @@ export const PublicLayout: React.FC = () => {
             </div>
 
           </div>
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
         </div>
 
         {/* BOTTOM SUB-FOOTER BAR WITH WAVY SOFT CREAM BACKGROUND (Matching Reference Screenshot) */}

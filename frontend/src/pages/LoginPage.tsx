@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth, type OtpChallenge } from '../contexts/AuthContext';
+import OtpChallengeForm from '../components/OtpChallengeForm';
+import CompleteProfileModal from '../components/CompleteProfileModal';
+import useGoogleAuth from '../hooks/useGoogleAuth';
+import { isGoogleConfigured } from '../lib/googleAuth';
 import {
   ShieldCheck, Lock, Mail, Phone, Eye, EyeOff, BadgeCheck,
   Headphones, ArrowRight, Landmark, Zap, Smartphone
@@ -20,7 +24,7 @@ const GoogleIcon: React.FC = () => (
 );
 
 export const LoginPage: React.FC = () => {
-  const { login, loginOTP } = useAuth();
+  const { login, loginOTP, verifyLoginOtp, resendOtp } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirect = searchParams.get('redirect');
@@ -38,6 +42,17 @@ export const LoginPage: React.FC = () => {
   const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(false);
   const [suspensionInfo, setSuspensionInfo] = useState<any | null>(null);
+  // Set when a Guest Visitor's password is accepted and an OTP is issued.
+  const [loginChallenge, setLoginChallenge] = useState<OtpChallenge | null>(null);
+
+  const google = useGoogleAuth(() => navigate(getRedirectTarget()));
+
+  const handleGoogle = async () => {
+    setError('');
+    setNotice('');
+    const message = await google.start();
+    if (message) setError(message);
+  };
 
   const getRedirectTarget = () => {
     if (redirect) return redirect;
@@ -63,6 +78,11 @@ export const LoginPage: React.FC = () => {
     const res = await login(email, password);
     setLoading(false);
     if (res.success) {
+      // Guest Visitors: password accepted, now confirm the OTP.
+      if (res.otpRequired && res.challenge) {
+        setLoginChallenge(res.challenge);
+        return;
+      }
       navigate(getRedirectTarget());
     } else {
       if (res.isSuspended && res.suspensionData) {
@@ -70,6 +90,32 @@ export const LoginPage: React.FC = () => {
       } else {
         setError(res.message || 'Login failed');
       }
+    }
+  };
+
+  // Emails a reset link to the address already typed in the Email / Phone field.
+  // The reply is deliberately the same whether or not the address is registered.
+  const handleForgotPassword = async () => {
+    setError('');
+    setNotice('');
+    const identifier = email.trim();
+    if (!identifier) {
+      setError('Enter your registered email address above, then click Forgot Password.');
+      return;
+    }
+    if (!identifier.includes('@')) {
+      setError('Password reset links are sent by email. Please enter your registered email address.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await authService.forgotPassword(identifier);
+      setNotice(res.data.message || 'If that email is registered, a password reset link has been sent to it.');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Could not send the reset link. Please try again.'));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -83,11 +129,7 @@ export const LoginPage: React.FC = () => {
       setLoading(false);
       if (res.data.success) {
         setOtpSent(true);
-        if (res.data.otp) {
-          setServerOtpMsg(`[DEV ONLY] Simulated SMS sent! Use OTP code: ${res.data.otp}`);
-        } else {
-          setServerOtpMsg('OTP sent to your registered phone number.');
-        }
+        setServerOtpMsg('OTP sent to your registered phone number.');
       }
     } catch (err) {
       setLoading(false);
@@ -205,6 +247,36 @@ export const LoginPage: React.FC = () => {
               <p className="text-xs text-gray-400 font-semibold">Sign in to continue your spiritual journey</p>
             </div>
 
+            {google.stage === 'otp' && google.challenge ? (
+              /* Google sign-up: verify the address before the account exists. */
+              <OtpChallengeForm
+                challenge={google.challenge}
+                destination={google.challenge.sentTo || ''}
+                title="Verify Email"
+                onVerify={(otp) => google.verifyOtp(otp)}
+                onResend={google.resendOtp}
+                onCancel={google.reset}
+                /* Advancing to the profile modal is handled by the hook. */
+                onVerified={() => {}}
+              />
+            ) : loginChallenge ? (
+              /* OTP step for Guest Visitors — same card, styling untouched. */
+              <OtpChallengeForm
+                challenge={loginChallenge}
+                /* The identifier they typed is also where the code was sent. */
+                destination={email}
+                title="Verify OTP"
+                onVerify={(otp) => verifyLoginOtp(loginChallenge.otpToken, otp)}
+                onResend={async () => {
+                  const res = await resendOtp(loginChallenge.otpToken);
+                  if (res.challenge) setLoginChallenge(res.challenge);
+                  return res;
+                }}
+                onCancel={() => setLoginChallenge(null)}
+                onVerified={() => navigate(getRedirectTarget())}
+              />
+            ) : (
+            <>
             {/* Tabs */}
             <div className="flex bg-gray-100 dark:bg-slate-900 p-1 rounded-full">
               <button
@@ -357,8 +429,9 @@ export const LoginPage: React.FC = () => {
                   </label>
                   <button
                     type="button"
-                    onClick={() => { switchMode(true); setNotice('No password? Sign in instantly with a Mobile OTP.'); }}
-                    className="text-xs font-bold text-[#0A4DA6] hover:underline cursor-pointer"
+                    onClick={handleForgotPassword}
+                    disabled={loading}
+                    className="text-xs font-bold text-[#0A4DA6] hover:underline cursor-pointer disabled:opacity-60"
                   >
                     Forgot Password?
                   </button>
@@ -440,10 +513,12 @@ export const LoginPage: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <button
                 type="button"
-                onClick={() => setNotice('Google sign-in is coming soon. Please use Password or Mobile OTP.')}
-                className="flex items-center justify-center gap-2 py-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold text-[#0B192C] dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-800 transition-all cursor-pointer"
+                onClick={handleGoogle}
+                disabled={google.busy || !isGoogleConfigured()}
+                title={isGoogleConfigured() ? undefined : 'Google Sign-In is not configured on this deployment'}
+                className="flex items-center justify-center gap-2 py-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold text-[#0B192C] dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-800 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <GoogleIcon /> Continue with Google
+                <GoogleIcon /> {google.busy ? 'Connecting…' : 'Continue with Google'}
               </button>
               <button
                 type="button"
@@ -465,6 +540,8 @@ export const LoginPage: React.FC = () => {
             <p className="flex items-center justify-center gap-1.5 text-[10px] text-gray-400 font-semibold">
               <Lock size={11} /> 256-bit encrypted sign-in · We never share your data
             </p>
+            </>
+            )}
           </div>
 
           {/* Trust badges */}
@@ -481,6 +558,18 @@ export const LoginPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Google sign-up final step: the account is created only when this
+          modal is submitted. */}
+      {google.stage === 'profile' && (
+        <CompleteProfileModal
+          email={google.email}
+          suggestedName={google.suggestedName}
+          onSubmit={google.completeProfile}
+          onDone={() => navigate(getRedirectTarget())}
+          onCancel={google.reset}
+        />
+      )}
     </section>
   );
 };

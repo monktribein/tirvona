@@ -119,72 +119,79 @@ export const LocalServicesHubPage: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-[#070F1B] pt-20 sm:pt-24 pb-16">
+    <div className="min-h-screen bg-gray-50 dark:bg-[#070F1B] pb-16 space-y-6">
 
-      {/* Breadcrumb Bar */}
-      <div className="bg-white dark:bg-[#0B192C] border-b border-gray-100 dark:border-slate-800/80 py-3 px-4 sm:px-6">
-        <div className="max-w-7xl mx-auto flex items-center gap-2 text-xs font-bold text-gray-500 dark:text-gray-400">
-          <Link to="/" className="hover:text-[#0A4DA6]">Home</Link>
-          <ChevronRight size={13} />
-          <span className="text-[#0A4DA6] dark:text-amber-400 font-black">Local Services Hub</span>
-        </div>
-      </div>
+      {/* Hero Banner Header Container matching Navbar Layout Width */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-1 sm:pt-3">
+        <div className="relative text-white rounded-3xl p-6 sm:p-8 lg:p-10 shadow-xl overflow-hidden min-h-[340px] sm:min-h-[380px] flex flex-col justify-between items-center text-center border border-white/10">
+          {/* Background Banner Image */}
+          <img
+            src="/banner/itnerity.png"
+            alt="Local Services, Transport & Guides Banner"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          {/* Overlay gradient for text contrast */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/55 to-black/40" />
 
-      {/* Hero Header */}
-      <div className="bg-gradient-to-r from-[#0B192C] via-[#0A4DA6] to-[#0B192C] text-white py-12 sm:py-16 px-4 sm:px-6 relative overflow-hidden">
-        <div className="max-w-7xl mx-auto text-center space-y-4 relative z-10">
-          <span className="px-4 py-1 rounded-full bg-white/10 text-amber-300 text-xs font-black uppercase tracking-wider border border-white/20">
-            Tirvona Local Pilgrim Ecosystem
-          </span>
-          <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight">
-            Local Services, Transport & Guides
-          </h1>
-          <p className="text-sm sm:text-base text-blue-100 max-w-2xl mx-auto font-medium">
-            Find verified cabs, certified temple guides, satvik dining, 24/7 emergency medical care, and sacred stores near you.
-          </p>
+          {/* Banner Content (Centered matching global Tirvona typography & color scheme) */}
+          <div className="max-w-3xl space-y-2.5 relative z-10 mx-auto text-center my-auto pt-2 pb-4">
+            <p className="font-['Kalam'] text-base sm:text-xl font-bold text-[#E58C28] drop-shadow-md">
+              Tirvona Local Pilgrim Ecosystem
+            </p>
+            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white leading-tight drop-shadow-lg" style={{ fontFamily: "Satoshi, 'General Sans', Manrope, Inter, sans-serif", letterSpacing: '-0.03em' }}>
+              Local Services, Transport &amp; <span className="text-[#D4AF37]">Guides</span>
+            </h1>
 
-          {/* Location Selector */}
-          <div className="max-w-md mx-auto mt-6 flex items-center bg-white dark:bg-[#0B192C] rounded-full p-2 shadow-xl border border-white/20">
-            <MapPin size={18} className="text-[#0A4DA6] ml-4 shrink-0" />
-            <select
-              value={selectedCity}
-              onChange={(e) => setSelectedCity(e.target.value)}
-              className="w-full bg-transparent px-3 text-xs sm:text-sm font-black text-[#0B192C] dark:text-white focus:outline-none cursor-pointer"
-            >
-              <option value="Varanasi">Varanasi (Kashi Dham)</option>
-              <option value="Haridwar">Haridwar & Rishikesh</option>
-              <option value="Ayodhya">Ayodhya Ram Janmabhoomi</option>
-              <option value="Kedarnath">Kedarnath & Badrinath</option>
-              <option value="Ujjain">Ujjain Mahakal</option>
-              <option value="Puri">Puri Jagannath</option>
-            </select>
-          </div>
-        </div>
-      </div>
+            <p className="text-xs sm:text-sm lg:text-base text-gray-100 max-w-2xl mx-auto font-medium leading-relaxed drop-shadow">
+              Find verified cabs, certified temple guides, satvik dining, 24/7 emergency medical care, and sacred stores near you.
+            </p>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-8 space-y-8">
-
-        {/* Category Tabs */}
-        <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-none">
-          {categories.map((cat) => {
-            const IconComp = cat.icon;
-            const active = selectedCategory === cat.id;
-            return (
-              <button
-                key={cat.id}
-                onClick={() => setSelectedCategory(cat.id)}
-                className={`px-5 py-2.5 rounded-full text-xs font-black whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer ${
-                  active
-                    ? 'bg-[#0A4DA6] text-white shadow-md'
-                    : 'bg-white dark:bg-[#0B192C] text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-slate-800 hover:bg-gray-100'
-                }`}
+            {/* Location Selector */}
+            <div className="max-w-xs mx-auto mt-3 flex items-center bg-white/95 dark:bg-[#0B192C]/95 backdrop-blur-md rounded-full px-3 py-1.5 shadow-lg border border-white/20">
+              <MapPin size={16} className="text-[#0A4DA6] ml-2 shrink-0" />
+              <select
+                value={selectedCity}
+                onChange={(e) => setSelectedCity(e.target.value)}
+                className="w-full bg-transparent px-2 text-xs font-black text-[#0B192C] dark:text-white focus:outline-none cursor-pointer"
               >
-                <IconComp size={14} />
-                <span>{cat.label}</span>
-              </button>
-            );
-          })}
+                <option value="Varanasi">Varanasi (Kashi Dham)</option>
+                <option value="Haridwar">Haridwar &amp; Rishikesh</option>
+                <option value="Ayodhya">Ayodhya Ram Janmabhoomi</option>
+                <option value="Kedarnath">Kedarnath &amp; Badrinath</option>
+                <option value="Ujjain">Ujjain Mahakal</option>
+                <option value="Puri">Puri Jagannath</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Category Tabs Container inside Banner */}
+          <div className="w-full relative z-10 bg-white/95 dark:bg-[#0B192C]/95 backdrop-blur-md border border-white/20 dark:border-slate-800 rounded-2xl p-3 sm:p-4 shadow-2xl">
+            <div className="flex items-center justify-center gap-2 overflow-x-auto pb-1 scrollbar-none w-full">
+              {categories.map((cat) => {
+                const IconComp = cat.icon;
+                const active = selectedCategory === cat.id;
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => setSelectedCategory(cat.id)}
+                    className={`px-4 py-2 rounded-full text-xs font-black whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer ${
+                      active
+                        ? 'bg-[#0A4DA6] text-white shadow-md shadow-[#0A4DA6]/20'
+                        : 'bg-gray-100 dark:bg-slate-900 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    <IconComp size={14} />
+                    <span>{cat.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
         </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 space-y-8">
 
         {/* Services Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -237,20 +244,15 @@ export const LocalServicesHubPage: React.FC = () => {
           ))}
         </div>
 
-        {/* Link to Marketplace Banner */}
-        <div className="bg-gradient-to-r from-purple-950 via-slate-900 to-indigo-950 text-white rounded-[32px] p-8 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4 border border-purple-500/20">
-          <div className="space-y-1 text-center sm:text-left">
-            <span className="px-3 py-0.5 rounded-full bg-purple-500/20 text-purple-300 text-[10px] font-black uppercase">
-              Tirvona Sacred Marketplace
-            </span>
-            <h4 className="font-black text-lg">Looking for Temple Prasad, Puja Bhandar & Spiritual Items?</h4>
-            <p className="text-xs text-purple-200">Explore the upcoming Tirvona Sacred Merchandise & Prasad Delivery Marketplace.</p>
-          </div>
+        {/* Explore Marketplace Button */}
+        <div className="pt-6 flex justify-center">
           <button
+            type="button"
             onClick={() => navigate('/marketplace')}
-            className="px-6 py-3 rounded-full bg-purple-600 hover:bg-purple-700 text-white font-black text-xs shadow-lg shrink-0 cursor-pointer"
+            className="inline-flex items-center gap-2.5 px-8 py-3.5 rounded-full bg-[#0A4DA6] hover:bg-blue-900 text-white font-extrabold text-sm shadow-xl hover:shadow-2xl transition-all cursor-pointer group"
           >
-            Visit Marketplace →
+            <span>Explore Marketplace</span>
+            <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
           </button>
         </div>
 

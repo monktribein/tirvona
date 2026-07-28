@@ -18,6 +18,7 @@ import notificationsRoutes from './notifications/index.js';
 import settingsRoutes from './settings/index.js';
 
 import { getCrudList, saveCrudRecord, deleteCrudRecord } from './shared/genericCrudController.js';
+import { protect, restrictTo } from '../middlewares/authMiddleware.js';
 
 const adminRouter = Router();
 
@@ -39,9 +40,14 @@ adminRouter.use('/analytics', analyticsRoutes);
 adminRouter.use('/notifications', notificationsRoutes);
 adminRouter.use('/settings', settingsRoutes);
 
-// Generic Enterprise CRUD endpoints
-adminRouter.get('/crud/:moduleKey', getCrudList);
-adminRouter.post('/crud/:moduleKey', saveCrudRecord);
-adminRouter.delete('/crud/:moduleKey/:id', deleteCrudRecord);
+// Generic Enterprise CRUD endpoints. These reach every model in the registry
+// (including User), so they are authenticated and limited to the same roles the
+// admin dashboard itself is gated to. Per-model field rules live in the
+// controller — role alone is not enough here.
+const adminOnly = [protect, restrictTo('super_admin', 'govt_admin', 'district_officer')];
+
+adminRouter.get('/crud/:moduleKey', adminOnly, getCrudList);
+adminRouter.post('/crud/:moduleKey', adminOnly, saveCrudRecord);
+adminRouter.delete('/crud/:moduleKey/:id', adminOnly, deleteCrudRecord);
 
 export default adminRouter;

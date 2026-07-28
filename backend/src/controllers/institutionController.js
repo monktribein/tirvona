@@ -2,6 +2,27 @@ import InstitutionMaster from '../models/institution/InstitutionMaster.js';
 import InstitutionContact from '../models/institution/InstitutionContact.js';
 import InstitutionLocation from '../models/institution/InstitutionLocation.js';
 import InstitutionQualityAudit from '../models/institution/InstitutionQualityAudit.js';
+import { escapeRegex } from '../utils/sanitize.js';
+
+// Fields a district_officer / govt_admin may write. `status` and `createdById`
+// are deliberately excluded so a create/update cannot self-promote a profile to
+// verified or reassign its owner — only Super Admin can move `status`.
+const EDITABLE_FIELDS = [
+  'legalName',
+  'trustName',
+  'registrationNo',
+  'trustType',
+  'establishedYear',
+  'taxExemption80G',
+  'fcraRegistered',
+  'ashramId',
+];
+
+const pickEditable = (body = {}) =>
+  EDITABLE_FIELDS.reduce((acc, key) => {
+    if (body[key] !== undefined) acc[key] = body[key];
+    return acc;
+  }, {});
 
 // @desc    Get all institution profiles with filtering & search
 // @route   GET /api/institution
@@ -11,16 +32,26 @@ export const getInstitutions = async (req, res) => {
     const { district, state, trustType, search } = req.query;
     const filter = {};
 
-    if (trustType) filter.trustType = trustType;
+    if (trustType) filter.trustType = String(trustType);
 
-    let institutions = await InstitutionMaster.find(filter).sort({ createdAt: -1 });
+    // district/state live on InstitutionLocation, so resolve them to ids first
+    if (district || state) {
+      const locationFilter = {};
+      if (district) locationFilter.district = String(district);
+      if (state) locationFilter.state = String(state);
 
-    if (search) {
-      const q = search.toLowerCase();
-      institutions = institutions.filter(
-        (i) => i.legalName.toLowerCase().includes(q) || (i.registrationNo && i.registrationNo.toLowerCase().includes(q))
-      );
+      const locations = await InstitutionLocation.find(locationFilter).select('institutionId').lean();
+      filter._id = { $in: locations.map((l) => l.institutionId) };
     }
+
+    // Matched in Mongo (not in JS) so the whole collection is never loaded into
+    // memory; the term is escaped so it cannot inject a regex or cause ReDoS.
+    if (search) {
+      const term = new RegExp(escapeRegex(search), 'i');
+      filter.$or = [{ legalName: term }, { trustName: term }, { registrationNo: term }];
+    }
+
+    const institutions = await InstitutionMaster.find(filter).sort({ createdAt: -1 }).limit(100).lean();
 
     res.json({
       success: true,
@@ -79,7 +110,8 @@ export const createInstitution = async (req, res) => {
       registrationNo: registrationNo || `REG-${Date.now()}`,
       trustType: trustType || 'Religious Trust',
       establishedYear: establishedYear || 1950,
-      status: 'verified',
+      // New profiles start unverified — only a Super Admin can promote them.
+      status: req.user?.role === 'super_admin' ? 'verified' : 'onboarding',
       createdById: req.user ? req.user.id : undefined,
     });
 
@@ -119,7 +151,14 @@ export const createInstitution = async (req, res) => {
 // @access  Private (Super Admin / District Admin)
 export const updateInstitution = async (req, res) => {
   try {
-    const master = await InstitutionMaster.findByIdAndUpdate(req.params.id, req.body, {
+    const updates = pickEditable(req.body);
+
+    // `status` is a privileged field: only Super Admin may change it.
+    if (req.body.status !== undefined && req.user?.role === 'super_admin') {
+      updates.status = req.body.status;
+    }
+
+    const master = await InstitutionMaster.findByIdAndUpdate(req.params.id, updates, {
       new: true,
       runValidators: true,
     });

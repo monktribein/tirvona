@@ -46,6 +46,52 @@ const config = {
       return Boolean(this.keyId && this.keySecret);
     },
   },
+  // OTP policy. Kept in one place so the services, the model TTL and the
+  // rate limiters all agree on the same numbers.
+  otp: {
+    // Master switch for SMS delivery. While false, every OTP — registration and
+    // login — is delivered by email instead, and no SMS is dispatched. The MSG91
+    // service and all phone-OTP code paths stay intact; set this to `true` (and
+    // fill in MSG91_AUTH_KEY) to turn phone OTP back on.
+    smsEnabled: process.env.OTP_SMS_ENABLED === 'true',
+    length: parseInt(process.env.OTP_LENGTH, 10) || 6,
+    expiryMinutes: parseInt(process.env.OTP_EXPIRY_MINUTES, 10) || 5,
+    maxAttempts: parseInt(process.env.OTP_MAX_ATTEMPTS, 10) || 5,
+    resendCooldownSeconds: parseInt(process.env.OTP_RESEND_COOLDOWN_SECONDS, 10) || 30,
+  },
+  // MSG91 transactional SMS gateway.
+  msg91: {
+    authKey: process.env.MSG91_AUTH_KEY,
+    senderId: process.env.MSG91_SENDER_ID || 'TRVONA',
+    templateId: process.env.MSG91_TEMPLATE_ID,
+    route: process.env.MSG91_ROUTE || '4',
+    countryCode: process.env.MSG91_COUNTRY_CODE || '91',
+    get configured() {
+      return Boolean(this.authKey);
+    },
+  },
+  // Google Sign-In. The client ID is public (it ships in the frontend bundle);
+  // it is kept here so the backend can verify that an ID token was minted for
+  // *this* application and not some other Google project.
+  google: {
+    clientId: process.env.GOOGLE_CLIENT_ID,
+    get configured() {
+      return Boolean(this.clientId);
+    },
+  },
+  // SMTP transport for Nodemailer.
+  smtp: {
+    host: process.env.SMTP_HOST,
+    port: parseInt(process.env.SMTP_PORT, 10) || 587,
+    secure: process.env.SMTP_SECURE === 'true',
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+    fromName: process.env.SMTP_FROM_NAME || 'Tirvona',
+    fromEmail: process.env.SMTP_FROM_EMAIL || 'no-reply@tirvona.com',
+    get configured() {
+      return Boolean(this.host && this.user && this.pass);
+    },
+  },
 };
 
 export default config;

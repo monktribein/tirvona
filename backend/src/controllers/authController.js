@@ -1,7 +1,11 @@
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import User from '../models/User.js';
 import AuditLog from '../models/AuditLog.js';
 import config from '../config/env.js';
+import { sendPasswordResetEmail } from '../services/emailService.js';
+import { validateEmail, validatePassword, normalizeEmail } from '../utils/validators.js';
+import { maskEmail } from '../utils/otpLogger.js';
 
 // Helper to sign JWT token. `tv` (token version) is embedded so a password
 // reset can invalidate previously-issued tokens (see authMiddleware.protect).
@@ -14,8 +18,8 @@ const generateToken = (id, tokenVersion = 0) => {
 // Memory store for mock OTPs (in production, use Redis or MongoDB collection with TTL index)
 const otpStore = new Map();
 
-// Memory store for password-reset codes (in production, use Redis/DB with TTL).
-const resetStore = new Map();
+// Password resets no longer use an in-memory store: the token hash lives on the
+// User document, so links survive a restart and work across multiple instances.
 
 // @desc    Register a new user
 // @route   POST /api/auth/register
@@ -110,113 +114,11 @@ export const register = async (req, res) => {
   }
 };
 
-// @desc    Authenticate user & get token
-// @route   POST /api/auth/login
-// @access  Public
-export const login = async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    // Credentials must be strings (defends against non-string / injection payloads).
-    if (typeof email !== 'string' || typeof password !== 'string') {
-      return res.status(401).json({ success: false, message: 'Invalid credentials' });
-    }
-
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(401).json({ success: false, message: 'Invalid credentials' });
-    }
-
-    const isMatch = await user.matchPassword(password);
-    if (!isMatch) {
-      return res.status(401).json({ success: false, message: 'Invalid credentials' });
-    }
-
-    // Check Account Lifecycle & Suspension Status
-    const isSuspended = user.isSuspended || ['suspended', 'temp_suspended', 'perm_suspended'].includes(user.status);
-
-    if (isSuspended) {
-      // Auto-Reactivation check for expired temporary suspensions
-      if (
-        user.suspensionType === 'temporary' &&
-        user.suspensionEndDate &&
-        new Date(user.suspensionEndDate) < new Date()
-      ) {
-        user.isSuspended = false;
-        user.status = 'active';
-        user.suspensionType = 'none';
-        user.reactivatedAt = new Date();
-        await user.save();
-
-        await AuditLog.create({
-          userId: user._id,
-          action: 'USER_AUTO_REACTIVATED',
-          module: 'AUTH',
-          details: { reason: 'Temporary suspension duration elapsed' },
-          ipAddress: req.ip,
-          userAgent: req.headers['user-agent'],
-        });
-      } else {
-        // Calculate remaining days for temporary suspension
-        let remainingDays = null;
-        if (user.suspensionEndDate) {
-          const diffMs = new Date(user.suspensionEndDate).getTime() - new Date().getTime();
-          remainingDays = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
-        }
-
-        // Fetch suspended by name
-        let suspendedByName = 'Super Admin';
-        if (user.suspendedBy) {
-          const adminUser = await User.findById(user.suspendedBy).select('name');
-          if (adminUser) suspendedByName = adminUser.name;
-        }
-
-        return res.status(403).json({
-          success: false,
-          message: 'Your account is suspended.',
-          isSuspended: true,
-          suspensionData: {
-            status: user.status,
-            suspensionType: user.suspensionType || (user.status === 'perm_suspended' ? 'permanent' : 'temporary'),
-            suspensionReason: user.suspensionReason || 'Terms & Conditions violation',
-            suspendedBy: suspendedByName,
-            suspendedAt: user.suspendedAt ? new Date(user.suspendedAt).toLocaleDateString() : 'N/A',
-            suspensionEndDate: user.suspensionEndDate ? new Date(user.suspensionEndDate).toLocaleDateString() : 'N/A',
-            remainingDays: remainingDays,
-            visibleMessage: user.visibleMessage || '',
-            supportEmail: 'support@tirvona.com',
-          },
-        });
-      }
-    }
-
-    // Write audit log
-    await AuditLog.create({
-      userId: user._id,
-      action: 'USER_LOGIN_PASSWORD',
-      module: 'AUTH',
-      details: { email: user.email },
-      ipAddress: req.ip,
-      userAgent: req.headers['user-agent'],
-    });
-
-    res.json({
-      success: true,
-      data: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        role: user.role,
-        status: user.status,
-        token: generateToken(user._id, user.tokenVersion),
-      },
-    });
-  } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ success: false, message: 'Server error during login' });
-  }
-};
+// NOTE: `login` used to live here. It is now `loginWithOtp` in
+// controllers/otpAuthController.js, which adds the Guest Visitor OTP challenge
+// and email-or-mobile identifier lookup. The suspension and auto-reactivation
+// logic it contained moved verbatim into services/authenticationService.js
+// (`evaluateSuspension`) and is shared by both login paths.
 
 // @desc    Send OTP to phone
 // @route   POST /api/auth/otp/send
@@ -244,12 +146,11 @@ export const sendOTP = async (req, res) => {
     console.log(`[SMS GATEWAY MOCK] OTP for phone ${phone}: ${otp}`);
     console.log(`=============================================\n`);
 
+    // The code is never returned in the response, in any environment.
     res.json({
       success: true,
-      message: 'OTP sent successfully (Simulated)',
+      message: 'OTP sent successfully',
       phone,
-      // OTP is only echoed outside production for local testing; never leak it in prod.
-      ...(config.isProduction ? {} : { otp }),
     });
   } catch (error) {
     console.error('Send OTP error:', error);
@@ -381,72 +282,133 @@ export const updateMe = async (req, res) => {
   }
 };
 
-// @desc    Request a password-reset code (customer self-service)
+// How long a reset link stays valid.
+const RESET_LINK_EXPIRY_MINUTES = 30;
+
+// The frontend origin the reset link points at. CLIENT_URL may hold a
+// comma-separated CORS list, so the first entry is the canonical app URL.
+const getClientOrigin = () =>
+  (config.clientUrl ? config.clientUrl.split(',')[0].trim() : '') || 'http://localhost:5173';
+
+const hashResetToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
+
+// @desc    Email a password-reset link to a registered address
 // @route   POST /api/auth/forgot-password
 // @access  Public
 export const forgotPassword = async (req, res) => {
+  // Identical response in every branch — an attacker must not be able to tell
+  // registered addresses from unregistered ones by the reply or its timing.
+  const genericResponse = {
+    success: true,
+    message: 'If that email is registered, a password reset link has been sent to it.',
+  };
+
   try {
     const { email } = req.body;
-    if (!email) {
-      return res.status(400).json({ success: false, message: 'Email is required' });
+    const emailError = validateEmail(email);
+    if (emailError) {
+      return res.status(400).json({ success: false, message: emailError });
     }
 
-    const user = await User.findOne({ email: email.toLowerCase().trim() });
-    // Always respond success to avoid leaking which emails exist.
+    const user = await User.findOne({ email: normalizeEmail(email) });
     if (!user) {
-      return res.json({ success: true, message: 'If that account exists, a reset code has been sent.' });
+      console.log(`[PASSWORD RESET] Requested for unregistered address ${maskEmail(email)} — no mail sent.`);
+      return res.json(genericResponse);
     }
 
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    resetStore.set(user.email, { code, expiresAt: Date.now() + 15 * 60 * 1000 });
+    // Raw token goes in the email; only its hash is persisted.
+    const token = crypto.randomBytes(32).toString('hex');
+    user.resetTokenHash = hashResetToken(token);
+    user.resetTokenExpiresAt = new Date(Date.now() + RESET_LINK_EXPIRY_MINUTES * 60 * 1000);
+    await user.save();
 
-    // Demo: log + return code. In production send via email/SMS and omit from the response.
-    console.log(`\n[PASSWORD RESET] Code for ${user.email}: ${code}\n`);
+    const resetUrl = `${getClientOrigin()}/reset-password?token=${token}`;
 
-    // C2: never return the reset code in the API response. It is delivered
-    // out-of-band (email/SMS); the console log below stands in for that in dev.
-    res.json({
-      success: true,
-      message: 'If that account exists, a reset code has been sent.',
+    const delivery = await sendPasswordResetEmail({
+      to: user.email,
+      name: user.name,
+      resetUrl,
+      expiryMinutes: RESET_LINK_EXPIRY_MINUTES,
     });
+
+    if (delivery.simulated) {
+      // No SMTP configured — print the link so local development still works.
+      console.log(`[PASSWORD RESET:DEV] Link for ${maskEmail(user.email)}: ${resetUrl}`);
+    } else if (!delivery.sent) {
+      console.error(`[PASSWORD RESET] Delivery failed for ${maskEmail(user.email)}: ${delivery.error}`);
+    } else {
+      console.log(`[PASSWORD RESET] Link sent to ${maskEmail(user.email)}`);
+    }
+
+    await AuditLog.create({
+      userId: user._id,
+      action: 'PASSWORD_RESET_REQUESTED',
+      module: 'AUTH',
+      details: { email: user.email, delivered: Boolean(delivery.sent) },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+
+    return res.json(genericResponse);
   } catch (error) {
     console.error('Forgot password error:', error);
-    res.status(500).json({ success: false, message: 'Server error requesting password reset' });
+    return res.status(500).json({ success: false, message: 'Server error requesting password reset' });
   }
 };
 
-// @desc    Reset the password using the emailed code
+// @desc    Check a reset token before showing the new-password form
+// @route   GET /api/auth/reset-password/:token
+// @access  Public
+export const verifyResetToken = async (req, res) => {
+  try {
+    const { token } = req.params;
+    const user = await User.findOne({
+      resetTokenHash: hashResetToken(String(token || '')),
+      resetTokenExpiresAt: { $gt: new Date() },
+    }).select('+resetTokenHash +resetTokenExpiresAt email');
+
+    if (!user) {
+      return res.status(400).json({ success: false, message: 'This reset link is invalid or has expired.' });
+    }
+
+    return res.json({ success: true, data: { email: maskEmail(user.email) } });
+  } catch (error) {
+    console.error('Verify reset token error:', error);
+    return res.status(500).json({ success: false, message: 'Server error validating reset link' });
+  }
+};
+
+// @desc    Set a new password using the emailed reset link
 // @route   POST /api/auth/reset-password
 // @access  Public
 export const resetPassword = async (req, res) => {
   try {
-    const { email, code, newPassword } = req.body;
-    if (!email || !code || !newPassword) {
-      return res.status(400).json({ success: false, message: 'email, code and newPassword are required' });
+    const { token, newPassword } = req.body;
+
+    if (!token || typeof token !== 'string') {
+      return res.status(400).json({ success: false, message: 'This reset link is invalid or has expired.' });
     }
-    if (newPassword.length < 6) {
-      return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' });
+    const passwordError = validatePassword(newPassword);
+    if (passwordError) {
+      return res.status(400).json({ success: false, message: passwordError });
     }
 
-    const key = email.toLowerCase().trim();
-    const entry = resetStore.get(key);
-    if (!entry || Date.now() > entry.expiresAt) {
-      resetStore.delete(key);
-      return res.status(400).json({ success: false, message: 'Reset code expired or not requested' });
-    }
-    if (entry.code !== code) {
-      return res.status(400).json({ success: false, message: 'Invalid reset code' });
-    }
+    // The token must match AND still be unexpired — both are checked in the
+    // query so an expired token can never select a user.
+    const user = await User.findOne({
+      resetTokenHash: hashResetToken(token),
+      resetTokenExpiresAt: { $gt: new Date() },
+    }).select('+resetTokenHash +resetTokenExpiresAt');
 
-    const user = await User.findOne({ email: key });
     if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
+      return res.status(400).json({ success: false, message: 'This reset link is invalid or has expired.' });
     }
 
     user.passwordHash = newPassword; // pre-save hook hashes it
-    user.tokenVersion = (user.tokenVersion || 0) + 1; // revoke any existing sessions
+    user.tokenVersion = (user.tokenVersion || 0) + 1; // revoke every existing session
+    user.resetTokenHash = undefined; // single use
+    user.resetTokenExpiresAt = undefined;
     await user.save();
-    resetStore.delete(key);
 
     await AuditLog.create({
       userId: user._id,
@@ -457,10 +419,10 @@ export const resetPassword = async (req, res) => {
       userAgent: req.headers['user-agent'],
     });
 
-    res.json({ success: true, message: 'Password reset successfully. You can now log in.' });
+    return res.json({ success: true, message: 'Password reset successfully. You can now log in.' });
   } catch (error) {
     console.error('Reset password error:', error);
-    res.status(500).json({ success: false, message: 'Server error resetting password' });
+    return res.status(500).json({ success: false, message: 'Server error resetting password' });
   }
 };
 

@@ -3,7 +3,10 @@ import { useParams } from 'react-router-dom';
 import EnterpriseDataTable, { type TableColumn } from './EnterpriseDataTable';
 import { useNotifications } from '../../../contexts/NotificationContext';
 import api, { getErrorMessage } from '../../../lib/api';
+<<<<<<< Updated upstream
 import axios from 'axios';
+=======
+>>>>>>> Stashed changes
 import {
   Image,
   FileText,
@@ -212,10 +215,54 @@ export const EnterpriseModulePage: React.FC<{ moduleName?: string; defaultColumn
 
   const moduleConfig = getModuleConfig();
 
+<<<<<<< Updated upstream
   const handleEditOpen = (item: any) => {
     setEditingItem(item);
     setFormData(item);
     setIsModalOpen(true);
+=======
+  useEffect(() => {
+    fetchModuleData();
+  }, [activeModule, activeSubKey]);
+
+  const fetchModuleData = async () => {
+    setLoading(true);
+    try {
+      const endpoint = `/admin/crud/${activeModule}${activeSubKey ? `?subKey=${activeSubKey}` : ''}`;
+      const res = await api.get(endpoint);
+      if (res.data?.success) {
+        setData(res.data.data || []);
+      } else {
+        setData(generateFallbackData());
+      }
+    } catch (err) {
+      console.warn(`API load for ${activeModule}:`, err);
+      setData(generateFallbackData());
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const generateFallbackData = () => {
+    const list = [];
+    for (let i = 1; i <= 8; i++) {
+      list.push({
+        _id: `rec_${activeModule}_${activeSubKey || 'main'}_${i}`,
+        name: `${formatTitle(activeSubKey || activeModule)} Item #${100 + i}`,
+        title: `${formatTitle(activeSubKey || activeModule)} Entry #${100 + i}`,
+        category: activeSubKey ? formatTitle(activeSubKey) : 'General',
+        promoCode: `DISCOUNT${2026 + i}`,
+        discountPct: 10 + i * 2,
+        price: 499 + i * 100,
+        city: i % 2 === 0 ? 'Rishikesh' : 'Haridwar',
+        deviceType: i % 2 === 0 ? 'desktop' : 'all',
+        priorityOrder: i,
+        status: i % 3 === 0 ? 'pending' : 'active',
+        createdAt: new Date(Date.now() - i * 86400000).toISOString(),
+      });
+    }
+    return list;
+>>>>>>> Stashed changes
   };
 
   const handleCreateOpen = () => {
@@ -226,11 +273,24 @@ export const EnterpriseModulePage: React.FC<{ moduleName?: string; defaultColumn
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
+<<<<<<< Updated upstream
     if (formData._id) {
       setData((prev) => prev.map((x) => (x._id === formData._id ? { ...x, ...formData } : x)));
     } else {
       const newItem = { ...formData, _id: `rec_${Date.now()}`, createdAt: new Date().toISOString() };
       setData((prev) => [newItem, ...prev]);
+=======
+    try {
+      const endpoint = `/admin/crud/${activeModule}${activeSubKey ? `?subKey=${activeSubKey}` : ''}`;
+      await api.post(endpoint, formData);
+      addNotification('Saved Successfully', `Record updated in ${title}.`, 'success');
+      setIsModalOpen(false);
+      fetchModuleData();
+    } catch (err) {
+      // Report the real failure — a rejected save (e.g. 403 on a privileged
+      // field) must not be painted over with a local-only "success".
+      addNotification('Save Failed', getErrorMessage(err, `Could not save this ${title} record.`), 'error');
+>>>>>>> Stashed changes
     }
     addNotification('Saved Successfully', `Record updated in ${title}.`, 'success');
     setIsModalOpen(false);
@@ -238,12 +298,12 @@ export const EnterpriseModulePage: React.FC<{ moduleName?: string; defaultColumn
 
   const handleDelete = async (id: string) => {
     try {
-      await axios.delete(`/api/admin/crud/${activeModule}/${id}`);
+      await api.delete(`/admin/crud/${activeModule}/${id}`);
       addNotification('Deleted', 'Record removed.', 'info');
       setData((prev) => prev.filter((x) => x._id !== id));
     } catch (err) {
-      setData((prev) => prev.filter((x) => x._id !== id));
-      addNotification('Deleted', 'Record removed.', 'info');
+      // Keep the row on screen if the server refused the delete.
+      addNotification('Delete Failed', getErrorMessage(err, 'Could not remove this record.'), 'error');
     }
   };
 

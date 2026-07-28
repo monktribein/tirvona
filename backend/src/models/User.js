@@ -216,6 +216,51 @@ const userSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    // Account verification (OTP). Defaults to `true` on purpose: every account
+    // that predates the OTP feature — and every account created through an
+    // internal//admin flow — is trusted as-is. Only public self-registration
+    // explicitly writes `false`, so existing users are never locked out.
+    // `scripts/migrate_users_verified.js` backfills the field on old documents.
+    isVerified: {
+      type: Boolean,
+      default: true,
+      index: true,
+    },
+    phoneVerifiedAt: {
+      type: Date,
+    },
+    emailVerifiedAt: {
+      type: Date,
+    },
+    lastLoginAt: {
+      type: Date,
+    },
+    // Google Sign-In. `googleId` is the Google account's stable `sub` claim —
+    // never the email, which a user can change.
+    googleId: {
+      type: String,
+      index: true,
+      sparse: true,
+    },
+    authProvider: {
+      type: String,
+      enum: ['local', 'google'],
+      default: 'local',
+    },
+    avatarUrl: {
+      type: String,
+      default: '',
+    },
+    // Password reset link. Only the SHA-256 of the token is stored, so a leaked
+    // database dump cannot be used to reset anyone's password. Cleared on use.
+    resetTokenHash: {
+      type: String,
+      select: false,
+    },
+    resetTokenExpiresAt: {
+      type: Date,
+      select: false,
+    },
   },
   {
     timestamps: true,

@@ -16,6 +16,7 @@ const AshramDetailPage = lazy(() => import('./pages/AshramDetailPage'));
 const FaqPage = lazy(() => import('./pages/FaqPage'));
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const RegisterPage = lazy(() => import('./pages/RegisterPage'));
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'));
 // Company
 const AboutPage = lazy(() => import('./pages/AboutPage'));
 const CareersPage = lazy(() => import('./pages/CareersPage'));
@@ -130,6 +131,7 @@ const AppContent: React.FC = () => {
           <Route path="/faq" element={<FaqPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           {/* Company */}
           <Route path="/about" element={<AboutPage />} />
           <Route path="/careers" element={<CareersPage />} />

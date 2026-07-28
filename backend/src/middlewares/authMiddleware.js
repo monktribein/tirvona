@@ -9,7 +9,14 @@ export const protect = async (req, res, next) => {
     try {
       token = req.headers.authorization.split(' ')[1];
       const decoded = jwt.verify(token, config.jwtSecret);
-      
+
+      // A pending-OTP token identifies a half-authenticated user mid-challenge.
+      // It is signed with the same secret, so it must be explicitly rejected
+      // here or it would work as a full session token.
+      if (decoded.purpose === 'otp_pending' || decoded.purpose === 'google_pending') {
+        return res.status(401).json({ success: false, message: 'OTP verification is not complete' });
+      }
+
       const user = await User.findById(decoded.id);
       if (!user) {
         return res.status(401).json({ success: false, message: 'User not found' });
