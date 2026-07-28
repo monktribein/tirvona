@@ -69,7 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const res = await authService.login(email, password);
       if (res.data.success) {
         persistSession(res.data.data);
-        return { success: true };
+        return { success: true, user: res.data.data };
       }
       return {
         success: false,

@@ -51,6 +51,7 @@ import MarketplaceCategoryDetailPage from './pages/MarketplaceCategoryDetailPage
 import StaffManagementPage from './pages/StaffManagementPage';
 import ReceptionCheckinPage from './pages/ReceptionCheckinPage';
 import HousekeepingPage from './pages/HousekeepingPage';
+import BannerBoyDashboard from './pages/BannerBoyDashboard';
 const AdminDashboard = lazy(() => import('./admin/dashboard/pages/AdminDashboard'));
 const VerificationQueuePage = lazy(() => import('./admin/ashrams/pages/VerificationQueuePage'));
 const UserManagementPage = lazy(() => import('./admin/users/pages/UserManagementPage'));
@@ -202,6 +203,17 @@ const AppContent: React.FC = () => {
           <Route path="/owner/staff" element={<StaffManagementPage />} />
           <Route path="/staff/reception" element={<ReceptionCheckinPage />} />
           <Route path="/staff/housekeeping" element={<HousekeepingPage />} />
+        </Route>
+
+        {/* BannerBoy CMS Portal using Shared Enterprise DashboardLayout */}
+        <Route
+          element={
+            <ProtectedRoute allowedRoles={['banner_manager', 'super_admin']}>
+              <DashboardLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route path="/bannerboy/dashboard" element={<BannerBoyDashboard />} />
         </Route>
 
         {/* Support Tickets shared across Roles */}

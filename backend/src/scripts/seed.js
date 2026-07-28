@@ -203,6 +203,16 @@ const seedUsers = async () => {
     status: 'active'
   });
 
+  // Create BannerBoy (CMS Manager)
+  const bannerboy = await upsertUser({
+    name: 'BannerBoy',
+    email: 'bannerboy@tirvona.com',
+    phone: '9123456785',
+    passwordHash: 'admin123',
+    role: 'banner_manager',
+    status: 'active'
+  });
+
   // Additional Customer Accounts for simulated review generation
   const simulatedPilgrims = [];
   const pilgrimNames = [

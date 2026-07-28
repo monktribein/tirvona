@@ -117,6 +117,7 @@ export const PublicLayout: React.FC = () => {
   const getDashboardPath = () => {
     if (!user) return '/login';
     if (['district_officer', 'govt_admin', 'super_admin'].includes(user.role)) return '/admin/dashboard';
+    if (user.role === 'banner_manager') return '/bannerboy/dashboard';
     if (user.role !== 'customer') return '/owner/dashboard';
     return '/dashboard';
   };

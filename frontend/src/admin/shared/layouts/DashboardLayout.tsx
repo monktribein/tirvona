@@ -204,6 +204,27 @@ export const DashboardLayout: React.FC = () => {
     },
   ];
 
+  const bannerBoyLinks = [
+    { label: 'CMS Dashboard', path: '/bannerboy/dashboard', icon: <LayoutDashboard size={16} /> },
+    { label: 'Banner Management', path: '/bannerboy/dashboard', icon: <Image size={16} /> },
+    { label: 'Homepage CMS', path: '/bannerboy/dashboard', icon: <ClipboardList size={16} /> },
+    { label: 'Media Library', path: '/bannerboy/dashboard', icon: <Sparkles size={16} /> },
+    { label: 'Announcements', path: '/bannerboy/dashboard', icon: <Bell size={16} /> },
+    { label: 'Pending Approvals', path: '/bannerboy/dashboard', icon: <FileCheck size={16} /> },
+    { label: 'My Activity', path: '/bannerboy/dashboard', icon: <History size={16} /> },
+    { label: 'CMS Profile', path: '/bannerboy/dashboard', icon: <User size={16} /> },
+  ];
+
+  const ownerLinks = [
+    { label: 'Overview Dashboard', path: '/owner/dashboard', icon: <LayoutDashboard size={16} /> },
+    { label: 'Manage Ashrams', path: '/owner/ashrams', icon: <Building size={16} /> },
+    { label: 'Manage Rooms', path: '/owner/rooms', icon: <Bed size={16} /> },
+    { label: 'Inventory Calendar', path: '/owner/calendar', icon: <CalendarDays size={16} /> },
+    { label: 'Offers & Deals', path: '/owner/offers', icon: <Tag size={16} /> },
+    { label: 'Users & Guests', path: '/owner/users', icon: <Users size={16} /> },
+    { label: 'Staff Management', path: '/owner/staff', icon: <ShieldCheck size={16} /> },
+  ];
+
   const standardLinks = [
     { label: 'Executive Dashboard', path: '/admin/dashboard', icon: <LayoutDashboard size={16} /> },
     { label: 'Verification Queue', path: '/admin/verifications', icon: <FileCheck size={16} /> },
@@ -212,6 +233,14 @@ export const DashboardLayout: React.FC = () => {
   ];
 
   const isSuperAdmin = user.role === 'super_admin';
+  const isBannerBoy = user.role === 'banner_manager';
+  const isOwnerOrStaff = ['owner', 'manager', 'reception', 'housekeeping'].includes(user.role);
+
+  const activeRoleLinks = isBannerBoy
+    ? bannerBoyLinks
+    : isOwnerOrStaff
+    ? ownerLinks
+    : standardLinks;
 
   return (
     <div className="min-h-screen bg-gray-50/70 dark:bg-[#070F1B] flex flex-row font-sans text-left">
@@ -293,7 +322,7 @@ export const DashboardLayout: React.FC = () => {
             </div>
           ) : (
             <div className="space-y-1.5">
-              {standardLinks.map((link) => {
+              {activeRoleLinks.map((link) => {
                 const isActive = location.pathname === link.path;
                 return (
                   <Link
