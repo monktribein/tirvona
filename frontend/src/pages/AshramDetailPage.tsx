@@ -36,6 +36,8 @@ import {
   Edit3
 } from 'lucide-react';
 
+import { volunteerService, type VolunteerJobItem } from '../services/volunteer.service';
+
 export const AshramDetailPage: React.FC = () => {
   const { id } = useParams();
   const [searchParams] = useSearchParams();
@@ -48,6 +50,7 @@ export const AshramDetailPage: React.FC = () => {
 
   const [ashram, setAshram] = useState<any>(null);
   const [rooms, setRooms] = useState<any[]>([]);
+  const [volunteerJobs, setVolunteerJobs] = useState<VolunteerJobItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Booking Flow parameters
@@ -355,6 +358,7 @@ export const AshramDetailPage: React.FC = () => {
         if (id) {
           fetchReviews(id);
           fetchRelated(res.data.data.ashram.address?.city, id);
+          fetchVolunteerJobs(res.data.data.ashram.address?.city);
         }
       }
     } catch (err) {
@@ -383,6 +387,17 @@ export const AshramDetailPage: React.FC = () => {
       }
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const fetchVolunteerJobs = async (city: string) => {
+    try {
+      const res = await volunteerService.getJobs({ city });
+      if (res.data.success) {
+        setVolunteerJobs(res.data.data);
+      }
+    } catch (err) {
+      console.error('Volunteer jobs load error:', err);
     }
   };
 
@@ -833,6 +848,43 @@ export const AshramDetailPage: React.FC = () => {
               </div>
             </div>
           </div>
+
+          {/* Current Opportunities / Volunteer Seva Section */}
+          {volunteerJobs.length > 0 && (
+            <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-4 shadow-sm">
+              <div className="flex items-center justify-between border-b border-gray-50 dark:border-slate-850 pb-3">
+                <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white flex items-center gap-2">
+                  <Sparkles size={18} className="text-[#E58C28]" /> Current Volunteer & Career Opportunities ({volunteerJobs.length})
+                </h3>
+                <Link to="/volunteer" className="text-xs font-black text-[#0A4DA6] hover:underline">
+                  View All Directory →
+                </Link>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {volunteerJobs.map((j) => (
+                  <div key={j._id} className="p-4 bg-gray-50/70 dark:bg-slate-900/60 border border-gray-100 dark:border-slate-800 rounded-2xl space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-black uppercase text-[#0A4DA6] bg-blue-50 dark:bg-slate-850 px-2 py-0.5 rounded-full">
+                        {j.department}
+                      </span>
+                      <span className="text-[10px] font-bold text-gray-400">{j.openingsCount} Openings</span>
+                    </div>
+
+                    <h4 className="text-xs font-black text-[#0B192C] dark:text-white">{j.title}</h4>
+                    <p className="text-[11px] font-extrabold text-[#E58C28]">{j.stipend}</p>
+
+                    <Link
+                      to="/volunteer"
+                      className="inline-block mt-2 px-3 py-1 bg-[#0A4DA6] hover:bg-[#083b80] text-white text-[10px] font-extrabold rounded-full transition-colors"
+                    >
+                      Apply for Seva
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Reviews List */}
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-5 shadow-sm">

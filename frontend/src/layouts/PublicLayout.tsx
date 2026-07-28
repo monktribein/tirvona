@@ -3,6 +3,7 @@ import logo from '../assets/logo.png';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
+import NotificationDropdown from '../components/shared/NotificationDropdown';
 import {
   LogOut,
   Menu,
@@ -150,6 +151,7 @@ export const PublicLayout: React.FC = () => {
     { label: 'Offers & Deals', to: '/offers', hasDropdown: false },
     { label: 'Darshan & Seva', to: '/temples', hasDropdown: false },
     { label: 'Tirvona Services', to: '/local', hasDropdown: false },
+    { label: 'Volunteer & Careers', to: '/volunteer', hasDropdown: false },
     { label: 'Events', to: '/events', hasDropdown: false },
     { label: 'Blog', to: '/blog', hasDropdown: false },
   ];
@@ -212,15 +214,8 @@ export const PublicLayout: React.FC = () => {
                 {user ? (
                   user.role === 'customer' ? (
                     <div className="flex items-center gap-2">
-                      {/* Notifications Icon */}
-                      <Link
-                        to="/profile/notifications"
-                        className="p-2 rounded-full text-slate-700 dark:text-gray-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer relative"
-                        title="Notifications"
-                      >
-                        <Bell size={16} />
-                        <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-[#E58C28]" />
-                      </Link>
+                      {/* Notifications Active Bell Dropdown */}
+                      <NotificationDropdown />
 
                       {/* Wishlist Icon */}
                       <Link

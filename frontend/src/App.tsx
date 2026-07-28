@@ -75,6 +75,8 @@ import { LocalServicesHubPage } from './pages/LocalServicesHubPage';
 import { ServicesHubPage } from './pages/ServicesHubPage';
 import { MarketplaceHubPage } from './pages/MarketplaceHubPage';
 import { MarketplaceComingSoonPage } from './pages/MarketplaceComingSoonPage';
+import { VolunteerHubPage } from './pages/VolunteerHubPage';
+import OwnerVolunteerPage from './pages/owner/OwnerVolunteerPage';
 
 // Customer Profile Pages
 import ProfileMainPage from './pages/profile/ProfileMainPage';
@@ -186,6 +188,8 @@ const AppContent: React.FC = () => {
           <Route path="/local" element={<LocalServicesHubPage />} />
           <Route path="/services" element={<ServicesHubPage />} />
           <Route path="/marketplace" element={<MarketplaceHubPage />} />
+          <Route path="/volunteer" element={<VolunteerHubPage />} />
+          <Route path="/careers" element={<VolunteerHubPage />} />
 
           {/* Customer Profile Ecosystem Routes */}
           <Route path="/profile" element={<ProfileMainPage />} />
@@ -214,6 +218,7 @@ const AppContent: React.FC = () => {
           <Route path="/owner/rooms" element={<ManageRoomsPage />} />
           <Route path="/owner/calendar" element={<InventoryCalendarPage />} />
           <Route path="/owner/offers" element={<OwnerOffersPage />} />
+          <Route path="/owner/volunteer" element={<OwnerVolunteerPage />} />
           <Route path="/owner/users" element={<OwnerUsersPage />} />
           <Route path="/owner/staff" element={<StaffManagementPage />} />
           <Route path="/staff/reception" element={<ReceptionCheckinPage />} />

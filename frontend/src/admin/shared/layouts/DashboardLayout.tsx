@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
+import NotificationDropdown from '../../../components/shared/NotificationDropdown';
 import {
   LayoutDashboard,
   Home,
@@ -17,6 +18,7 @@ import {
   ClipboardList,
   Tag,
   Building,
+  Heart,
   ChevronDown,
   ChevronRight,
   Sparkles,
@@ -221,6 +223,7 @@ export const DashboardLayout: React.FC = () => {
     { label: 'Manage Rooms', path: '/owner/rooms', icon: <Bed size={16} /> },
     { label: 'Inventory Calendar', path: '/owner/calendar', icon: <CalendarDays size={16} /> },
     { label: 'Offers & Deals', path: '/owner/offers', icon: <Tag size={16} /> },
+    { label: 'Volunteer & Careers', path: '/owner/volunteer', icon: <Heart size={16} /> },
     { label: 'Users & Guests', path: '/owner/users', icon: <Users size={16} /> },
     { label: 'Staff Management', path: '/owner/staff', icon: <ShieldCheck size={16} /> },
   ];
@@ -398,11 +401,8 @@ export const DashboardLayout: React.FC = () => {
                 />
               </div>
 
-              <button className="p-2 bg-gray-50 dark:bg-slate-900 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full border border-gray-200 dark:border-slate-800 text-gray-500 relative cursor-pointer">
-                <Bell size={16} />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-rose-500 rounded-full animate-ping" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-rose-500 rounded-full" />
-              </button>
+              {/* Active Notifications Bell */}
+              <NotificationDropdown />
 
               {/* Solid Blue Action Pill (Matching Sign Up / Book Now Button in Landing Page Image 2) */}
               <Link
