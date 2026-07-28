@@ -11,6 +11,7 @@ import swaggerUi from 'swagger-ui-express';
 import YAML from 'yaml';
 import jwt from 'jsonwebtoken';
 import compression from 'compression';
+import mongoose from 'mongoose';
 
 // Config
 import config from './config/env.js';
@@ -225,8 +226,52 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = config.port;
+
+// Handle server listen errors gracefully (e.g. EADDRINUSE port conflict)
+httpServer.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`\n❌ ERROR: Port ${PORT} is already in use by another process.`);
+    console.error(`👉 Stop any background process using port ${PORT} before restarting.\n`);
+  } else {
+    console.error('❌ Server startup error:', err);
+  }
+  process.exit(1);
+});
+
+// Start HTTP & Socket.io server
 httpServer.listen(PORT, () => {
-  console.log(`Server listening (${config.nodeEnv}) on port ${PORT}`);
+  console.log(`🚀 Server listening (${config.nodeEnv}) on port ${PORT}`);
+});
+
+// Graceful shutdown sequence
+const gracefulShutdown = async (signal) => {
+  console.log(`\nReceived ${signal}. Starting graceful shutdown...`);
+  httpServer.close(async () => {
+    console.log('HTTP server closed.');
+    try {
+      await mongoose.connection.close();
+      console.log('MongoDB connection closed.');
+    } catch (err) {
+      console.error('Error closing MongoDB connection:', err);
+    }
+    process.exit(0);
+  });
+
+  setTimeout(() => {
+    console.error('Forcefully shutting down server due to timeout.');
+    process.exit(1);
+  }, 10000);
+};
+
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Promise Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception thrown:', err);
 });
 
 export default app;

@@ -6,7 +6,7 @@ import {
   updateInstitution,
   deleteInstitution,
 } from '../controllers/institutionController.js';
-import { protect, authorize } from '../middleware/authMiddleware.js';
+import { protect, authorize } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 

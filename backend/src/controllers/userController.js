@@ -1,3 +1,4 @@
+import bcrypt from 'bcryptjs';
 import User from '../models/User.js';
 import Ashram from '../models/Ashram.js';
 import AuditLog from '../models/AuditLog.js';
@@ -335,17 +336,17 @@ export const createAccount = async (req, res) => {
     }
 
     const tempPassword = password || `Tirvona#${Math.floor(1000 + Math.random() * 9000)}`;
-    const salt = await bcrypt.genSalt(10);
-    const passwordHash = await bcrypt.hash(tempPassword, salt);
 
     const empId = `EMP-2026-${Math.floor(1000 + Math.random() * 9000)}`;
     const username = req.body.username || `usr_${name.toLowerCase().replace(/\s+/g, '_')}_${Math.floor(100 + Math.random() * 900)}`;
 
+    // Pass tempPassword directly as passwordHash.
+    // User.js pre('save') middleware will hash it with bcrypt before inserting into DB.
     const newUser = await User.create({
       name,
       email,
       phone: phone || `+91 ${Math.floor(7000000000 + Math.random() * 2999999999)}`,
-      passwordHash,
+      passwordHash: tempPassword,
       role,
       status,
       employeeId: empId,
@@ -380,6 +381,13 @@ export const createAccount = async (req, res) => {
     });
   } catch (error) {
     console.error('Create account error:', error);
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern || {})[0] || 'field';
+      return res.status(400).json({ success: false, message: `Account creation failed: Duplicate ${field} already exists.` });
+    }
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ success: false, message: error.message });
+    }
     return res.status(500).json({ success: false, message: error.message || 'Server error creating account' });
   }
 };
@@ -456,8 +464,8 @@ export const resetUserPassword = async (req, res) => {
     }
 
     const newTempPassword = req.body.password || `Tirvona#${Math.floor(1000 + Math.random() * 9000)}`;
-    const salt = await bcrypt.genSalt(10);
-    user.passwordHash = await bcrypt.hash(newTempPassword, salt);
+    // Assigning raw newTempPassword triggers User.js pre('save') hook to hash it ONCE
+    user.passwordHash = newTempPassword;
     await user.save();
 
     await AuditLog.create({
@@ -524,7 +532,7 @@ export const permanentDeleteUser = async (req, res) => {
 
     const admin = await User.findById(req.user.id);
     if (admin.passwordHash) {
-      const isMatch = await bcrypt.compare(adminPassword || '', admin.passwordHash);
+      const isMatch = await admin.matchPassword(adminPassword || '');
       if (!isMatch) {
         return res.status(401).json({ success: false, message: 'Invalid Admin Password' });
       }

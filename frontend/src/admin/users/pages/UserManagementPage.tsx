@@ -123,6 +123,7 @@ export const UserManagementPage: React.FC = () => {
     name: '',
     email: '',
     phone: '',
+    password: '',
     role: 'staff',
     designation: '',
     department: '',
@@ -737,20 +738,43 @@ export const UserManagementPage: React.FC = () => {
             {/* Step 3: Auto Credentials & Permissions */}
             {createStep === 3 && (
               <div className="space-y-4 text-xs">
-                <div className="p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 rounded-2xl space-y-2">
-                  <h4 className="font-extrabold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
-                    <Sparkles size={16} /> Auto-Generated System Identifiers
-                  </h4>
-                  <div className="grid grid-cols-2 gap-2 text-[11px]">
-                    <div>
-                      <span className="text-gray-500 font-bold block">Employee ID:</span>
-                      <span className="font-mono font-bold text-[#0B192C] dark:text-white">EMP-2026-9912</span>
+                <div className="p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-2xl space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-extrabold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                      <Sparkles size={16} /> Password & System Credentials
+                    </h4>
+                    <span className="text-[10px] font-mono bg-amber-100 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200 px-2 py-0.5 rounded-md font-bold">
+                      Employee ID: Auto
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    <div className="space-y-1">
+                      <label className="font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1">
+                        <Key size={13} className="text-[#0A4DA6]" /> Initial Password (Custom / Manual)
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Enter custom password (or leave for auto)"
+                        value={newAccountData.password || ''}
+                        onChange={(e) => setNewAccountData({ ...newAccountData, password: e.target.value })}
+                        className="w-full p-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-[#0A4DA6] font-mono text-xs"
+                      />
                     </div>
-                    <div>
-                      <span className="text-gray-500 font-bold block">Temporary Password:</span>
-                      <span className="font-mono font-bold text-emerald-600">Tirvona#2026!Pass</span>
+
+                    <div className="space-y-1">
+                      <label className="font-bold text-gray-500">Active Password Summary</label>
+                      <div className="p-2.5 bg-white/80 dark:bg-slate-900/80 border border-gray-200 dark:border-slate-800 rounded-xl text-[11px] flex items-center gap-1.5">
+                        <span className="text-gray-400 font-medium">Setting:</span>
+                        <span className="font-mono font-bold text-emerald-600 truncate">
+                          {newAccountData.password ? newAccountData.password : 'Tirvona#2026!Pass (Auto)'}
+                        </span>
+                      </div>
                     </div>
                   </div>
+                  <p className="text-[10px] text-amber-700 dark:text-amber-400 font-medium">
+                    💡 Tip: Enter your own custom password above, or leave blank to automatically assign the system default password (<code className="font-bold">Tirvona#2026!Pass</code>).
+                  </p>
                 </div>
 
                 <div className="space-y-2">
@@ -881,6 +905,80 @@ export const UserManagementPage: React.FC = () => {
             <div className="flex gap-3 pt-3 border-t border-gray-100 dark:border-slate-800">
               <button type="button" onClick={() => setPermTarget(null)} className="flex-1 py-2 bg-gray-100 text-gray-700 rounded-full font-bold text-xs">Cancel</button>
               <button type="submit" className="flex-1 py-2 bg-[#0A4DA6] text-white rounded-full font-bold text-xs">Save Permissions</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* ── Reset Password Modal ── */}
+      {resetPassTarget && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <form
+            onSubmit={handleResetPasswordSubmit}
+            className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-md w-full rounded-[28px] p-6 space-y-4 text-left shadow-2xl animate-in zoom-in-95 duration-150"
+          >
+            <div className="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-3">
+              <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white flex items-center gap-2">
+                <Key size={18} className="text-purple-600" /> Reset User Password
+              </h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setResetPassTarget(null);
+                  setNewTempPassword('');
+                }}
+                className="text-gray-400 hover:text-gray-600 cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="p-3 bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-900/50 rounded-xl space-y-1">
+                <span className="font-bold text-purple-900 dark:text-purple-200">
+                  Target Account: {resetPassTarget.name} ({resetPassTarget.email})
+                </span>
+                <p className="text-[11px] text-gray-500">
+                  Set a new custom password or leave blank to automatically generate a secure system password.
+                </p>
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-bold text-gray-700 dark:text-gray-300">New Password (Custom or Auto)</label>
+                <input
+                  type="text"
+                  placeholder="Enter new password (or leave blank for auto)"
+                  value={newTempPassword}
+                  onChange={(e) => setNewTempPassword(e.target.value)}
+                  className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-mono text-xs focus:outline-none focus:border-purple-600"
+                />
+              </div>
+
+              <div className="p-2.5 bg-gray-50 dark:bg-slate-900 rounded-xl text-[11px] flex items-center justify-between border border-gray-200 dark:border-slate-800">
+                <span className="text-gray-500 font-medium">Assigned Password:</span>
+                <span className="font-mono font-bold text-emerald-600">
+                  {newTempPassword ? newTempPassword : 'Auto-Generated Password'}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-3 border-t border-gray-100 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => {
+                  setResetPassTarget(null);
+                  setNewTempPassword('');
+                }}
+                className="flex-1 py-2.5 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 rounded-full font-bold text-xs cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="flex-1 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-full font-extrabold text-xs shadow-md cursor-pointer"
+              >
+                Reset Password
+              </button>
             </div>
           </form>
         </div>
