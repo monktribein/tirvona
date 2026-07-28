@@ -47,7 +47,7 @@ export const HomePage: React.FC = () => {
   const [feedbacks, setFeedbacks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'top_rated' | 'most_booked' | 'recent' | 'govt_recom'>('top_rated');
-  const [searchTab, setSearchTab] = useState<'destinations' | 'stay' | 'darshan' | 'experiences'>('destinations');
+  const [searchTab, setSearchTab] = useState<'destinations' | 'stay' | 'experiences'>('stay');
   const [activeService, setActiveService] = useState<number>(0);
 
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -398,9 +398,9 @@ export const HomePage: React.FC = () => {
         {/* Background Image Container */}
         <div className="absolute inset-0 z-0">
           <img
-            src={activeHeroBg}
-            alt="Sacred Destination Banner"
-            className="w-full h-full object-cover object-[center_25%] transition-all duration-700"
+            src={heroBg}
+            alt="Rishikesh Tera Manzil Temple"
+            className="w-full h-full object-cover object-[center_25%]"
             loading="eager"
           />
           {/* Subtle gradient overlay to enhance temple colors while ensuring sharp text contrast */}
@@ -409,37 +409,6 @@ export const HomePage: React.FC = () => {
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full flex justify-center">
           <div className="max-w-4xl lg:max-w-5xl mx-auto space-y-6 text-center flex flex-col items-center">
-
-            {/* Top Bar Announcement Pill (if approved by BannerBoy & Owner) */}
-            {activeAnnouncement && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/20 backdrop-blur-md border border-amber-400/40 text-amber-300 font-extrabold text-xs shadow-lg mb-2"
-              >
-                <Sparkles size={14} className="text-amber-400" />
-                <span>{activeAnnouncement}</span>
-              </motion.div>
-            )}
-
-            {/* Simple text label hero eyebrow aligned with main heading */}
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="mb-4 sm:mb-5 block"
-            >
-              <span
-                className="text-lg sm:text-xl block leading-tight"
-                style={{
-                  fontFamily: "Kalam, cursive, sans-serif",
-                  fontWeight: 700,
-                  color: '#E58C28',
-                }}
-              >
-                Welcome to Sacred Destinations
-              </span>
-            </motion.div>
 
             {/* Main Display Heading */}
             <motion.h1
@@ -452,7 +421,8 @@ export const HomePage: React.FC = () => {
                 letterSpacing: '-0.03em',
               }}
             >
-              <span className="block">{activeHeading}</span>
+              <span className="block whitespace-nowrap">Connecting Sacred Destinations,</span>
+              <span className="block whitespace-nowrap text-[#D4AF37] mt-1 sm:mt-1.5">Empowering Communities.</span>
             </motion.h1>
 
             {/* Body paragraph per requested specs: Satoshi 500 #6B6B6B / text-slate-200 */}
@@ -512,7 +482,6 @@ export const HomePage: React.FC = () => {
             {[
               { id: 'destinations', icon: <Compass size={14} />, label: 'Destinations' },
               { id: 'stay', icon: <Bed size={14} />, label: 'Stay' },
-              { id: 'darshan', icon: <Heart size={14} />, label: 'Darshan & Seva' },
               { id: 'experiences', icon: <Sparkles size={14} />, label: 'Experiences' },
             ].map(tab => {
               const active = searchTab === tab.id;

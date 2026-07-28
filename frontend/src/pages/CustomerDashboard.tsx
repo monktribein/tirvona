@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
 import { bookingService, reviewService } from '../services';
 import { getErrorMessage } from '../lib/api';
+import { EnterpriseStatusBadge } from '../admin/shared';
 import { 
   MapPin, 
   Calendar, 
@@ -149,15 +150,7 @@ export const CustomerDashboard: React.FC = () => {
                     <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white leading-snug">{b.ashramId?.name}</h3>
                     <p className="text-[10px] text-gray-400 font-bold flex items-center gap-0.5 uppercase"><MapPin size={10} className="text-[#0A4DA6]" /> {b.ashramId?.address?.city}</p>
                   </div>
-                  <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-extrabold capitalize border ${
-                    b.status === 'confirmed' ? 'bg-success/15 text-success border-success/30' :
-                    b.status === 'checked_in' ? 'bg-[#0A4DA6]/15 text-[#0A4DA6] border-[#0A4DA6]/30' :
-                    b.status === 'checked_out' ? 'bg-blue-500/10 text-blue-500 border-blue-500/20' :
-                    b.status === 'cancelled' ? 'bg-danger/10 text-danger border-danger/20' :
-                    'bg-gray-100 text-gray-500 border-gray-200'
-                  }`}>
-                    {b.status}
-                  </span>
+                  <EnterpriseStatusBadge status={b.status} />
                 </div>
 
                 {/* Dates */}

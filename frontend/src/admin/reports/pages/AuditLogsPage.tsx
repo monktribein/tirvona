@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { RefreshCw, Clock } from 'lucide-react';
+import { RefreshCw, Clock, History } from 'lucide-react';
 import { analyticsService } from '../../../services';
+import { EnterprisePageHeader } from '../../shared';
 
 export const AuditLogsPage: React.FC = () => {
   const [logs, setLogs] = useState<any[]>([]);
@@ -30,18 +31,20 @@ export const AuditLogsPage: React.FC = () => {
 
   return (
     <div className="space-y-6 text-left">
-      <div className="flex justify-between items-center bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[24px] shadow-sm">
-        <div>
-          <h2 className="text-base font-extrabold text-[#0B192C] dark:text-white">Security & System Audit Logs</h2>
-          <p className="text-xs text-gray-400 font-semibold mt-1">Track all logins, registration status transitions, overrides, and counter check-ins.</p>
-        </div>
-        <button
-          onClick={fetchLogs}
-          className="p-2.5 bg-gray-50 dark:bg-slate-900 hover:bg-gray-100 border border-gray-100 dark:border-slate-800 rounded-xl text-gray-500 cursor-pointer transition-colors"
-        >
-          <RefreshCw size={16} />
-        </button>
-      </div>
+      <EnterprisePageHeader
+        title="Security & System Audit Logs"
+        subtitle="Track real-time logins, RBAC transitions, system overrides, and counter check-in events."
+        icon={<History size={22} />}
+        badgeText="TELEMETRY ACTIVE"
+        actions={
+          <button
+            onClick={fetchLogs}
+            className="px-4 py-2 bg-[#0A4DA6] text-white hover:bg-[#083b80] rounded-full text-xs font-bold flex items-center gap-2 shadow-md cursor-pointer transition-all"
+          >
+            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Refresh Logs
+          </button>
+        }
+      />
 
       {error && (
         <div className="p-4 bg-danger/10 text-danger border border-danger/20 text-xs font-bold rounded-2xl">

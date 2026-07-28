@@ -364,14 +364,19 @@ export const UserManagementPage: React.FC = () => {
   return (
     <div className="space-y-6 text-left max-w-7xl mx-auto pb-12">
       {/* ── Page Header & Create Button ── */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[28px] shadow-sm gap-4">
-        <div>
-          <h2 className="text-lg font-extrabold text-[#0B192C] dark:text-white flex items-center gap-2">
-            <UserCheck size={20} className="text-[#0A4DA6]" /> Enterprise Identity & Access Management (IAM)
-          </h2>
-          <p className="text-xs text-gray-400 font-semibold mt-1">
-            Complete account lifecycle administration, granular permissions, role assignments, soft delete, and security auditing.
-          </p>
+      <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[28px] shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="w-12 h-12 rounded-2xl bg-[#0A4DA6]/10 text-[#0A4DA6] flex items-center justify-center shrink-0 border border-[#0A4DA6]/15">
+            <UserCheck size={22} />
+          </div>
+          <div>
+            <h2 className="text-xl sm:text-2xl font-black text-[#0B192C] dark:text-white tracking-tight">
+              Enterprise Identity & Access Management (IAM)
+            </h2>
+            <p className="text-xs text-gray-400 font-semibold mt-0.5">
+              Complete account lifecycle administration, granular permissions, role assignments, soft delete, and security auditing.
+            </p>
+          </div>
         </div>
 
         <div className="flex items-center gap-2">
@@ -381,7 +386,7 @@ export const UserManagementPage: React.FC = () => {
                 setCreateStep(1);
                 setIsCreateOpen(true);
               }}
-              className="px-4 py-2.5 bg-[#0A4DA6] hover:bg-[#083b80] text-white rounded-full text-xs font-black flex items-center gap-1.5 shadow-md shadow-[#0A4DA6]/20 cursor-pointer"
+              className="px-5 py-2.5 bg-[#0A4DA6] hover:bg-[#083b80] text-white rounded-full text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-[#0A4DA6]/20 cursor-pointer"
             >
               <UserPlus size={16} /> Create New Account
             </button>

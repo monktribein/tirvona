@@ -114,8 +114,29 @@ export const OwnerDashboard: React.FC = () => {
 
   return (
     <div className="space-y-8">
+      {/* Enterprise Page Header */}
+      <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[28px] shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="w-12 h-12 rounded-2xl bg-[#0A4DA6]/10 text-[#0A4DA6] flex items-center justify-center shrink-0 border border-[#0A4DA6]/15">
+            <Bed size={22} />
+          </div>
+          <div>
+            <h2 className="text-xl sm:text-2xl font-black text-[#0B192C] dark:text-white tracking-tight">
+              Ashram Owner Management Portal
+            </h2>
+            <p className="text-xs text-gray-400 font-semibold mt-0.5">
+              Live telemetry, room occupancy, guest reservations, and pending CMS change approvals.
+            </p>
+          </div>
+        </div>
+
+        <span className="px-3.5 py-1.5 bg-[#E58C28]/15 text-[#E58C28] border border-[#E58C28]/30 rounded-full text-xs font-black uppercase tracking-wider">
+          Verified Trust Portal
+        </span>
+      </div>
+
       {error && (
-        <div className="p-4 bg-danger/10 text-danger border border-danger/20 text-xs font-bold rounded-2xl">
+        <div className="p-4 bg-rose-50 text-rose-600 border border-rose-200 text-xs font-bold rounded-2xl">
           {error}
         </div>
       )}
@@ -123,50 +144,66 @@ export const OwnerDashboard: React.FC = () => {
       {/* Metric Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Gross Revenue */}
-        <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-5 rounded-[24px] shadow-sm flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Gross Revenue</span>
-            <h3 className="text-2xl font-extrabold text-[#0B192C] dark:text-white">₹{analytics?.revenue || '0'}</h3>
-            <span className="text-[9px] text-success font-semibold flex items-center gap-0.5"><TrendingUp size={10} /> +12% this month</span>
+        <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-5 rounded-[24px] shadow-lg shadow-gray-200/40 dark:shadow-none hover:shadow-xl transition-all space-y-3">
+          <div className="flex justify-between items-start">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 flex items-center justify-center">
+              <DollarSign size={20} />
+            </div>
+            <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-full text-[10px] font-black uppercase">
+              +12% MO.
+            </span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-success/10 text-success flex items-center justify-center">
-            <DollarSign size={20} />
+          <div>
+            <span className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider block">Gross Revenue</span>
+            <h3 className="text-2xl font-black text-[#0B192C] dark:text-white mt-0.5">₹{analytics?.revenue || '0'}</h3>
           </div>
         </div>
 
         {/* Today's Revenue */}
-        <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-5 rounded-[24px] shadow-sm flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Today's Revenue</span>
-            <h3 className="text-2xl font-extrabold text-[#0A4DA6]">₹{analytics?.todayRevenue || '0'}</h3>
-            <span className="text-[9px] text-gray-500 font-semibold">Immediate collection</span>
+        <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-5 rounded-[24px] shadow-lg shadow-gray-200/40 dark:shadow-none hover:shadow-xl transition-all space-y-3">
+          <div className="flex justify-between items-start">
+            <div className="w-10 h-10 rounded-2xl bg-[#0A4DA6]/10 text-[#0A4DA6] flex items-center justify-center">
+              <TrendingUp size={20} />
+            </div>
+            <span className="px-2.5 py-0.5 bg-[#0A4DA6]/10 text-[#0A4DA6] border border-[#0A4DA6]/20 rounded-full text-[10px] font-black uppercase">
+              TODAY
+            </span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-[#0A4DA6]/10 text-[#0A4DA6] flex items-center justify-center">
-            <TrendingUp size={20} />
+          <div>
+            <span className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider block">Today's Revenue</span>
+            <h3 className="text-2xl font-black text-[#0A4DA6] mt-0.5">₹{analytics?.todayRevenue || '0'}</h3>
           </div>
         </div>
 
         {/* Bed Occupancy */}
-        <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-5 rounded-[24px] shadow-sm flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Bed Occupancy</span>
-            <h3 className="text-2xl font-extrabold text-[#0B192C] dark:text-white">{analytics?.occupancyRate || '0'}%</h3>
-            <span className="text-[9px] text-gray-500 font-medium">Of active physical rooms</span>
+        <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-5 rounded-[24px] shadow-lg shadow-gray-200/40 dark:shadow-none hover:shadow-xl transition-all space-y-3">
+          <div className="flex justify-between items-start">
+            <div className="w-10 h-10 rounded-2xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 flex items-center justify-center">
+              <Bed size={20} />
+            </div>
+            <span className="px-2.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-full text-[10px] font-black uppercase">
+              OCCUPANCY
+            </span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-            <Bed size={20} />
+          <div>
+            <span className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider block">Bed Occupancy Rate</span>
+            <h3 className="text-2xl font-black text-[#0B192C] dark:text-white mt-0.5">{analytics?.occupancyRate || '0'}%</h3>
           </div>
         </div>
 
         {/* Available Rooms */}
-        <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-5 rounded-[24px] shadow-sm flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Available Rooms</span>
-            <h3 className="text-2xl font-extrabold text-success">{analytics?.availableRooms || '0'}</h3>
-            <span className="text-[9px] text-gray-500 font-medium">Vacant clean rooms</span>
+        <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-5 rounded-[24px] shadow-lg shadow-gray-200/40 dark:shadow-none hover:shadow-xl transition-all space-y-3">
+          <div className="flex justify-between items-start">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 flex items-center justify-center">
+              <Check size={20} />
+            </div>
+            <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-full text-[10px] font-black uppercase">
+              VACANT
+            </span>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-success/10 text-success flex items-center justify-center">
-            <Check size={20} />
+          <div>
+            <span className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider block">Available Rooms</span>
+            <h3 className="text-2xl font-black text-emerald-600 mt-0.5">{analytics?.availableRooms || '0'} Rooms</h3>
           </div>
         </div>
       </div>

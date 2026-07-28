@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { FileCheck, ShieldAlert, FileText, X } from 'lucide-react';
+import { FileCheck, ShieldAlert, FileText, X, ShieldCheck } from 'lucide-react';
 import { useNotifications } from '../../../contexts/NotificationContext';
 import { verificationService } from '../../../services';
 import { getErrorMessage } from '../../../lib/api';
+import { EnterprisePageHeader } from '../../shared';
 
 export const VerificationQueuePage: React.FC = () => {
   const { addNotification } = useNotifications();
@@ -54,10 +55,12 @@ export const VerificationQueuePage: React.FC = () => {
 
   return (
     <div className="space-y-6 text-left">
-      <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[24px] shadow-sm">
-        <h2 className="text-base font-extrabold text-[#0B192C] dark:text-white">Government Ashram Verification Queue</h2>
-        <p className="text-xs text-gray-400 font-semibold mt-1">Screen trust deeds, review local fire certificates, and submit inspection results.</p>
-      </div>
+      <EnterprisePageHeader
+        title="Government Ashram Verification Queue"
+        subtitle="Screen trust deeds, review local fire certificates, and submit inspection decisions."
+        icon={<ShieldCheck size={22} />}
+        badgeText={`${pendingList.length} PENDING INSPECTIONS`}
+      />
 
       {loading ? (
         <div className="h-40 bg-gray-50 border border-gray-100 rounded-[24px] animate-pulse" />
