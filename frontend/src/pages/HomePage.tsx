@@ -77,10 +77,13 @@ export const HomePage: React.FC = () => {
   const featuredRef = useRef<HTMLDivElement>(null);
   const feedbackRef = useRef<HTMLDivElement>(null);
 
+  const [publishedCms, setPublishedCms] = useState<any>({});
+
   useEffect(() => {
     fetchStays();
     fetchOffers();
     fetchFeedbacks();
+    fetchPublishedCms();
     const handleClickOutside = (event: MouseEvent) => {
       if (autocompleteRef.current && !autocompleteRef.current.contains(event.target as Node)) {
         setShowSuggestions(false);
@@ -95,6 +98,18 @@ export const HomePage: React.FC = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const fetchPublishedCms = async () => {
+    try {
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const res = await axios.get(`${baseUrl}/api/cms/published`);
+      if (res.data?.success) {
+        setPublishedCms(res.data.data);
+      }
+    } catch (err) {
+      console.warn('Published CMS load:', err);
+    }
+  };
 
   const fetchOffers = async () => {
     try {
@@ -364,6 +379,16 @@ export const HomePage: React.FC = () => {
     { id: 'handicrafts', label: 'Handicrafts\n& Gifts', icon: Sparkles, category: 'handicrafts', target: '/handicrafts' },
   ];
 
+  // Extract Dynamic Approved Published CMS Sections (Strictly Section-Mapped)
+  const publishedHero = publishedCms.hero_banner || {};
+  const publishedFestival = publishedCms.festival_banner || {};
+  const publishedOffer = publishedCms.offer_banner || {};
+  const activeHeroBg = publishedHero.bannerImage || heroBg;
+  const activeHeading = publishedHero.heading || 'Connecting Sacred Destinations, Empowering Communities.';
+  const activeSubtitle = publishedHero.subtitle || 'Plan your pilgrimage, book stays, explore holy places, shop spiritual products and contribute to a greater cause.';
+  const activeCtaText = publishedHero.ctaText || 'Explore Sacred Stays';
+  const activeAnnouncement = publishedHero.announcement || publishedCms.announcement?.announcement || '';
+
   return (
     <div className="pb-16 lg:pb-24 overflow-x-hidden">
 
@@ -373,9 +398,9 @@ export const HomePage: React.FC = () => {
         {/* Background Image Container */}
         <div className="absolute inset-0 z-0">
           <img
-            src={heroBg}
-            alt="Rishikesh Tera Manzil Temple"
-            className="w-full h-full object-cover object-[center_25%]"
+            src={activeHeroBg}
+            alt="Sacred Destination Banner"
+            className="w-full h-full object-cover object-[center_25%] transition-all duration-700"
             loading="eager"
           />
           {/* Subtle gradient overlay to enhance temple colors while ensuring sharp text contrast */}
@@ -384,6 +409,18 @@ export const HomePage: React.FC = () => {
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full flex justify-center">
           <div className="max-w-4xl lg:max-w-5xl mx-auto space-y-6 text-center flex flex-col items-center">
+
+            {/* Top Bar Announcement Pill (if approved by BannerBoy & Owner) */}
+            {activeAnnouncement && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/20 backdrop-blur-md border border-amber-400/40 text-amber-300 font-extrabold text-xs shadow-lg mb-2"
+              >
+                <Sparkles size={14} className="text-amber-400" />
+                <span>{activeAnnouncement}</span>
+              </motion.div>
+            )}
 
             {/* Simple text label hero eyebrow aligned with main heading */}
             <motion.div
@@ -415,8 +452,7 @@ export const HomePage: React.FC = () => {
                 letterSpacing: '-0.03em',
               }}
             >
-              <span className="block whitespace-nowrap">Connecting Sacred Destinations,</span>
-              <span className="block whitespace-nowrap text-[#D4AF37] mt-1 sm:mt-1.5">Empowering Communities.</span>
+              <span className="block">{activeHeading}</span>
             </motion.h1>
 
             {/* Body paragraph per requested specs: Satoshi 500 #6B6B6B / text-slate-200 */}
@@ -430,7 +466,7 @@ export const HomePage: React.FC = () => {
                 fontWeight: 500,
               }}
             >
-              Plan your pilgrimage, book stays, explore holy places, shop spiritual products and contribute to a greater cause.
+              {activeSubtitle}
             </motion.p>
 
             {/* Hero Action Buttons */}
@@ -445,7 +481,7 @@ export const HomePage: React.FC = () => {
                 onClick={() => navigate('/search')}
                 className="bg-[#0A4DA6] hover:bg-[#083D85] text-white text-xs sm:text-sm font-bold pl-5 pr-1.5 py-2 rounded-full flex items-center gap-3 shadow-md hover:shadow-lg transition-all cursor-pointer group border border-white/20"
               >
-                <span>Explore Sacred Stays</span>
+                <span>{activeCtaText}</span>
                 <div className="w-7 h-7 rounded-full bg-white text-[#0A4DA6] flex items-center justify-center transition-transform group-hover:translate-x-1 shadow-xs">
                   <ArrowRight size={14} className="stroke-[2.5]" />
                 </div>

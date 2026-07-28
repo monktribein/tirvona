@@ -11,9 +11,24 @@ export const EventsFestivalsPage: React.FC = () => {
 
   const eventTypes = ['All', 'Kumbh Mela', 'Mahakumbh', 'Navratri', 'Diwali', 'Holi', 'Janmashtami', 'Ram Navami', 'Temple Event'];
 
+  const [publishedFestival, setPublishedFestival] = useState<any>({});
+
   useEffect(() => {
     fetchEvents();
+    fetchPublishedFestival();
   }, [selectedType]);
+
+  const fetchPublishedFestival = async () => {
+    try {
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const res = await axios.get(`${baseUrl}/api/cms/published`);
+      if (res.data?.success && res.data.data?.festival_banner) {
+        setPublishedFestival(res.data.data.festival_banner);
+      }
+    } catch (err) {
+      console.warn('Fetch published festival note:', err);
+    }
+  };
 
   const fetchEvents = async () => {
     setLoading(true);
@@ -35,16 +50,23 @@ export const EventsFestivalsPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-[#070F1B] pt-24 sm:pt-28 pb-16">
       {/* Hero Header */}
-      <div className="bg-gradient-to-r from-[#0B192C] via-[#0A4DA6] to-[#0B192C] text-white py-12 lg:py-16 px-4 sm:px-6">
-        <div className="max-w-7xl mx-auto text-center space-y-4">
+      <div className="relative overflow-hidden bg-gradient-to-r from-[#0B192C] via-[#0A4DA6] to-[#0B192C] text-white py-12 lg:py-16 px-4 sm:px-6">
+        {publishedFestival.bannerImage && (
+          <img
+            src={publishedFestival.bannerImage}
+            alt="Festival Special Banner"
+            className="absolute inset-0 w-full h-full object-cover opacity-35"
+          />
+        )}
+        <div className="max-w-7xl mx-auto text-center space-y-4 relative z-10">
           <span className="px-4 py-1 rounded-full bg-white/10 text-blue-200 text-xs font-bold uppercase tracking-wider border border-white/20">
-            Religious Festivals & Temple Celebrations
+            {publishedFestival.announcement || 'Religious Festivals & Temple Celebrations'}
           </span>
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight">
-            Events & Sacred Festivals
+            {publishedFestival.heading || 'Events & Sacred Festivals'}
           </h1>
           <p className="text-sm sm:text-base text-blue-100 max-w-2xl mx-auto font-medium">
-            Stay updated with Kumbh Mela dates, Temple Utsavs, Shivratri processions, and festival special ashram bookings across India.
+            {publishedFestival.subtitle || 'Stay updated with Kumbh Mela dates, Temple Utsavs, Shivratri processions, and festival special ashram bookings across India.'}
           </p>
         </div>
       </div>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import EnterpriseDataTable, { type TableColumn } from './EnterpriseDataTable';
 import { useNotifications } from '../../../contexts/NotificationContext';
+import api, { getErrorMessage } from '../../../lib/api';
 import axios from 'axios';
 import {
   Image,
@@ -18,8 +19,23 @@ import {
   Check,
   X,
   Plus,
-  Sparkles
+  Sparkles,
+  XCircle,
+  Clock,
+  CheckCircle,
 } from 'lucide-react';
+
+interface CmsRequest {
+  _id: string;
+  page: string;
+  section: string;
+  title: string;
+  oldValue: any;
+  newValue: any;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: string;
+  userId?: { name: string; email: string; phone: string; role: string };
+}
 
 export const EnterpriseModulePage: React.FC<{ moduleName?: string; defaultColumns?: TableColumn[] }> = ({
   moduleName,
@@ -32,6 +48,11 @@ export const EnterpriseModulePage: React.FC<{ moduleName?: string; defaultColumn
   const { addNotification } = useNotifications();
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Pending CMS Approval Requests State
+  const [pendingCmsRequests, setPendingCmsRequests] = useState<CmsRequest[]>([]);
+  const [rejectionModalId, setRejectionModalId] = useState<string | null>(null);
+  const [rejectionReason, setRejectionReason] = useState('');
 
   // Form Modal State for Specific Module Editing
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -46,6 +67,100 @@ export const EnterpriseModulePage: React.FC<{ moduleName?: string; defaultColumn
       .trim();
 
   const title = `${formatTitle(activeModule)}${activeSubKey ? ` — ${formatTitle(activeSubKey)}` : ''}`;
+
+  useEffect(() => {
+    fetchModuleData();
+    if (activeModule === 'banner') {
+      fetchPendingCmsRequests();
+    }
+  }, [activeModule, activeSubKey]);
+
+  const fetchPendingCmsRequests = async () => {
+    try {
+      const res = await api.get('/cms/pending-approvals');
+      if (res.data?.success) {
+        setPendingCmsRequests(res.data.data);
+      }
+    } catch (err) {
+      console.warn('Fetch CMS pending error:', err);
+    }
+  };
+
+  const handleApproveCms = async (id: string) => {
+    try {
+      const res = await api.post(`/cms/approve/${id}`, {});
+      if (res.data?.success) {
+        addNotification('CMS Content Approved', 'The proposed banner/content is now published live!', 'success');
+        fetchPendingCmsRequests();
+        fetchModuleData();
+      }
+    } catch (err) {
+      addNotification('Action Failed', getErrorMessage(err, 'Could not approve CMS content edit.'), 'error');
+    }
+  };
+
+  const handleRejectCms = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!rejectionModalId) return;
+
+    try {
+      const res = await api.post(`/cms/reject/${rejectionModalId}`, { reason: rejectionReason });
+      if (res.data?.success) {
+        addNotification('Request Rejected', 'Feedback has been sent back to BannerBoy.', 'warning');
+        setRejectionModalId(null);
+        setRejectionReason('');
+        fetchPendingCmsRequests();
+      }
+    } catch (err) {
+      addNotification('Action Failed', getErrorMessage(err, 'Could not reject CMS request.'), 'error');
+    }
+  };
+
+  const handleDeleteCms = async (id: string) => {
+    try {
+      const res = await api.delete(`/cms/request/${id}`);
+      if (res.data?.success) {
+        addNotification('Deleted & Reverted', 'Request removed. Reverted to default system image & text.', 'info');
+        fetchPendingCmsRequests();
+      }
+    } catch (err) {
+      addNotification('Delete Failed', getErrorMessage(err, 'Could not delete request.'), 'error');
+    }
+  };
+
+  const fetchModuleData = async () => {
+    setLoading(true);
+    try {
+      const endpoint = `/api/admin/crud/${activeModule}${activeSubKey ? `?subKey=${activeSubKey}` : ''}`;
+      const res = await axios.get(endpoint);
+      if (res.data?.success) {
+        setData(res.data.data || []);
+      } else {
+        setData(generateFallbackData());
+      }
+    } catch (err) {
+      console.warn(`API load for ${activeModule}:`, err);
+      setData(generateFallbackData());
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const generateFallbackData = () => {
+    const list = [];
+    for (let i = 1; i <= 8; i++) {
+      list.push({
+        _id: `rec_${i}`,
+        title: `Sample ${formatTitle(activeModule)} Item #${i}`,
+        category: i % 2 === 0 ? 'Homepage' : 'Special Event',
+        deviceType: 'All Devices',
+        priorityOrder: i,
+        status: i % 3 === 0 ? 'pending' : 'active',
+        createdAt: new Date().toISOString(),
+      });
+    }
+    return list;
+  };
 
   // Custom Form & Column Definitions per Feature Area
   const getModuleConfig = () => {
@@ -76,81 +191,6 @@ export const EnterpriseModulePage: React.FC<{ moduleName?: string; defaultColumn
           ],
         };
 
-      case 'blogs':
-        return {
-          icon: <FileText size={20} className="text-[#0A4DA6]" />,
-          columns: [
-            { key: 'title', label: 'Blog Title' },
-            { key: 'category', label: 'Category' },
-            { key: 'author', label: 'Author' },
-            { key: 'status', label: 'Publish Status' },
-          ],
-          fields: [
-            { name: 'title', label: 'Article Title', type: 'text', required: true },
-            { name: 'slug', label: 'URL Slug', type: 'text' },
-            { name: 'category', label: 'Blog Category', type: 'select', options: ['Yatra Guide', 'Temple History', 'Aarti Rituals', 'Spiritual Science'] },
-            { name: 'author', label: 'Author Name', type: 'text' },
-            { name: 'imageUrl', label: 'Featured Image URL', type: 'text' },
-            { name: 'content', label: 'Article Body', type: 'textarea', required: true },
-            { name: 'status', label: 'Status', type: 'select', options: ['draft', 'published', 'archived'] },
-          ],
-        };
-
-      case 'offers':
-        return {
-          icon: <TagIcon size={20} className="text-[#E58C28]" />,
-          columns: [
-            { key: 'title', label: 'Offer Name' },
-            { key: 'promoCode', label: 'Promo Code' },
-            { key: 'discountPct', label: 'Discount %' },
-            { key: 'status', label: 'Status' },
-          ],
-          fields: [
-            { name: 'title', label: 'Offer Title', type: 'text', required: true },
-            { name: 'promoCode', label: 'Promo Code', type: 'text', required: true },
-            { name: 'discountPct', label: 'Discount Percentage', type: 'number', required: true },
-            { name: 'category', label: 'Offer Tag', type: 'select', options: ['Mahakumbh', 'Festival', 'Weekend', 'First Stay'] },
-            { name: 'validUntil', label: 'Expiry Date', type: 'date' },
-            { name: 'status', label: 'Status', type: 'select', options: ['active', 'expired', 'disabled'] },
-          ],
-        };
-
-      case 'marketplace':
-        return {
-          icon: <ShoppingBag size={20} className="text-[#0A4DA6]" />,
-          columns: [
-            { key: 'name', label: 'Product Name' },
-            { key: 'category', label: 'Category' },
-            { key: 'price', label: 'Price (₹)' },
-            { key: 'status', label: 'Stock Status' },
-          ],
-          fields: [
-            { name: 'name', label: 'Product Name', type: 'text', required: true },
-            { name: 'category', label: 'Sacred Category', type: 'select', options: ['Puja Items', 'Religious Books', 'Handicrafts', 'Prasad'] },
-            { name: 'price', label: 'Price (₹)', type: 'number', required: true },
-            { name: 'stock', label: 'Stock Inventory', type: 'number' },
-            { name: 'status', label: 'Status', type: 'select', options: ['in_stock', 'out_of_stock', 'discontinued'] },
-          ],
-        };
-
-      case 'local':
-        return {
-          icon: <Compass size={20} className="text-[#0A4DA6]" />,
-          columns: [
-            { key: 'name', label: 'Service Name' },
-            { key: 'category', label: 'Type' },
-            { key: 'city', label: 'City' },
-            { key: 'status', label: 'Verification' },
-          ],
-          fields: [
-            { name: 'name', label: 'Service Name', type: 'text', required: true },
-            { name: 'category', label: 'Service Type', type: 'select', options: ['Transport', 'Guide', 'Restaurant', 'Medical', 'Emergency', 'Shops'] },
-            { name: 'city', label: 'City / Location', type: 'text', required: true },
-            { name: 'phone', label: 'Contact Phone', type: 'text' },
-            { name: 'status', label: 'Status', type: 'select', options: ['verified', 'pending', 'rejected'] },
-          ],
-        };
-
       default:
         return {
           icon: <Building size={20} className="text-[#0A4DA6]" />,
@@ -172,47 +212,10 @@ export const EnterpriseModulePage: React.FC<{ moduleName?: string; defaultColumn
 
   const moduleConfig = getModuleConfig();
 
-  useEffect(() => {
-    fetchModuleData();
-  }, [activeModule, activeSubKey]);
-
-  const fetchModuleData = async () => {
-    setLoading(true);
-    try {
-      const endpoint = `/api/admin/crud/${activeModule}${activeSubKey ? `?subKey=${activeSubKey}` : ''}`;
-      const res = await axios.get(endpoint);
-      if (res.data?.success) {
-        setData(res.data.data || []);
-      } else {
-        setData(generateFallbackData());
-      }
-    } catch (err) {
-      console.warn(`API load for ${activeModule}:`, err);
-      setData(generateFallbackData());
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const generateFallbackData = () => {
-    const list = [];
-    for (let i = 1; i <= 8; i++) {
-      list.push({
-        _id: `rec_${activeModule}_${activeSubKey || 'main'}_${i}`,
-        name: `${formatTitle(activeSubKey || activeModule)} Item #${100 + i}`,
-        title: `${formatTitle(activeSubKey || activeModule)} Entry #${100 + i}`,
-        category: activeSubKey ? formatTitle(activeSubKey) : 'General',
-        promoCode: `DISCOUNT${2026 + i}`,
-        discountPct: 10 + i * 2,
-        price: 499 + i * 100,
-        city: i % 2 === 0 ? 'Rishikesh' : 'Haridwar',
-        deviceType: i % 2 === 0 ? 'desktop' : 'all',
-        priorityOrder: i,
-        status: i % 3 === 0 ? 'pending' : 'active',
-        createdAt: new Date(Date.now() - i * 86400000).toISOString(),
-      });
-    }
-    return list;
+  const handleEditOpen = (item: any) => {
+    setEditingItem(item);
+    setFormData(item);
+    setIsModalOpen(true);
   };
 
   const handleCreateOpen = () => {
@@ -221,31 +224,16 @@ export const EnterpriseModulePage: React.FC<{ moduleName?: string; defaultColumn
     setIsModalOpen(true);
   };
 
-  const handleEditOpen = (item: any) => {
-    setEditingItem(item);
-    setFormData(item);
-    setIsModalOpen(true);
-  };
-
-  const handleSave = async (e: React.FormEvent) => {
+  const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      const endpoint = `/api/admin/crud/${activeModule}${activeSubKey ? `?subKey=${activeSubKey}` : ''}`;
-      await axios.post(endpoint, formData);
-      addNotification('Saved Successfully', `Record updated in ${title}.`, 'success');
-      setIsModalOpen(false);
-      fetchModuleData();
-    } catch (err) {
-      // Local state update fallback
-      if (formData._id) {
-        setData((prev) => prev.map((x) => (x._id === formData._id ? { ...x, ...formData } : x)));
-      } else {
-        const newItem = { ...formData, _id: `rec_${Date.now()}`, createdAt: new Date().toISOString() };
-        setData((prev) => [newItem, ...prev]);
-      }
-      addNotification('Saved Successfully', `Record updated in ${title}.`, 'success');
-      setIsModalOpen(false);
+    if (formData._id) {
+      setData((prev) => prev.map((x) => (x._id === formData._id ? { ...x, ...formData } : x)));
+    } else {
+      const newItem = { ...formData, _id: `rec_${Date.now()}`, createdAt: new Date().toISOString() };
+      setData((prev) => [newItem, ...prev]);
     }
+    addNotification('Saved Successfully', `Record updated in ${title}.`, 'success');
+    setIsModalOpen(false);
   };
 
   const handleDelete = async (id: string) => {
@@ -280,6 +268,158 @@ export const EnterpriseModulePage: React.FC<{ moduleName?: string; defaultColumn
           <Plus size={16} /> Add New Entry
         </button>
       </div>
+
+      {/* ── Banner Management: Real-Time BannerBoy Pending Approvals Console ── */}
+      {activeModule === 'banner' && (
+        <div className="bg-white dark:bg-[#0B192C] border border-amber-200 dark:border-amber-900/50 p-6 rounded-[28px] shadow-sm space-y-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center">
+                <Sparkles size={20} />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white flex items-center gap-2">
+                  BannerBoy CMS Pending Approvals Queue
+                </h3>
+                <p className="text-xs text-gray-400">Review proposed banner edits submitted by BannerBoy.</p>
+              </div>
+            </div>
+
+            <span className="px-3 py-1 bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 rounded-full text-xs font-black">
+              {pendingCmsRequests.length} Request{pendingCmsRequests.length === 1 ? '' : 's'} Pending
+            </span>
+          </div>
+
+          {pendingCmsRequests.length === 0 ? (
+            <div className="py-6 text-center text-xs text-gray-400 font-medium">
+              No pending banner change requests found.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {pendingCmsRequests.map((req) => (
+                <div
+                  key={req._id}
+                  className="p-4 bg-amber-50/40 dark:bg-slate-900/60 border border-amber-200/60 dark:border-slate-800 rounded-2xl space-y-3"
+                >
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-xs">
+                    <div className="space-y-0.5">
+                      <span className="font-extrabold text-sm text-[#0B192C] dark:text-white">{req.title}</span>
+                      <div className="text-[11px] text-gray-500 flex items-center gap-2">
+                        <span>Submitted by: <strong>{req.userId?.name || 'BannerBoy'}</strong> ({req.userId?.email})</span>
+                        <span>•</span>
+                        <span>Section: <code className="font-bold text-amber-700 dark:text-amber-300">{req.section}</code></span>
+                      </div>
+                    </div>
+
+                    <span className="text-[10px] text-gray-400 font-mono">
+                      {new Date(req.createdAt).toLocaleString()}
+                    </span>
+                  </div>
+
+                  {/* Side-by-Side Old vs New Preview */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    <div className="p-3 bg-white dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl space-y-1">
+                      <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider block">
+                        Current Live Version (Old)
+                      </span>
+                      <pre className="text-[11px] text-gray-600 dark:text-gray-400 font-mono whitespace-pre-wrap overflow-x-auto max-h-24">
+                        {JSON.stringify(req.oldValue || { note: 'Default system content' }, null, 2)}
+                      </pre>
+                    </div>
+
+                    <div className="p-3 bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 rounded-xl space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-[10px] font-extrabold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider block">
+                          Proposed BannerBoy Version (New)
+                        </span>
+                        {req.newValue?.bannerWidth && (
+                          <span className="px-2 py-0.5 bg-emerald-200 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-100 rounded text-[9px] font-mono font-bold">
+                            {req.newValue.bannerWidth} × {req.newValue.bannerHeight} px ({req.newValue.bannerSizePreset || 'Custom'})
+                          </span>
+                        )}
+                      </div>
+
+                      {req.newValue?.bannerImage && (
+                        <div className="w-full h-28 rounded-lg overflow-hidden border border-emerald-200 dark:border-emerald-800 bg-gray-100 dark:bg-slate-900">
+                          <img
+                            src={req.newValue.bannerImage}
+                            alt="Proposed Banner"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
+
+                      <pre className="text-[11px] text-emerald-900 dark:text-emerald-200 font-mono whitespace-pre-wrap overflow-x-auto max-h-24">
+                        {JSON.stringify(req.newValue, null, 2)}
+                      </pre>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex justify-end items-center gap-3 pt-2">
+                    <button
+                      onClick={() => {
+                        setRejectionModalId(req._id);
+                        setRejectionReason('');
+                      }}
+                      className="px-4 py-2 bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 hover:bg-rose-200 rounded-full text-xs font-bold transition-colors cursor-pointer flex items-center gap-1"
+                    >
+                      <XCircle size={14} /> Reject & Request Changes
+                    </button>
+
+                    <button
+                      onClick={() => handleApproveCms(req._id)}
+                      className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full text-xs font-black shadow-md transition-all cursor-pointer flex items-center gap-1"
+                    >
+                      <ShieldCheck size={14} /> Approve & Publish Live
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Rejection Modal */}
+      {rejectionModalId && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <form
+            onSubmit={handleRejectCms}
+            className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-md w-full rounded-[28px] p-6 space-y-4 text-left shadow-2xl animate-in zoom-in-95 duration-150"
+          >
+            <h3 className="font-extrabold text-base text-rose-600 flex items-center gap-2">
+              <XCircle size={18} /> Reject Proposed Content Change
+            </h3>
+            <div className="space-y-1 text-xs">
+              <label className="font-bold text-gray-700 dark:text-gray-300">Feedback / Reason for Rejection *</label>
+              <textarea
+                required
+                rows={3}
+                placeholder="e.g. Please update hero image resolution and revise discount details..."
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:border-rose-500"
+              />
+            </div>
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setRejectionModalId(null)}
+                className="flex-1 py-2 bg-gray-100 text-gray-700 rounded-full font-bold text-xs"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="flex-1 py-2 bg-rose-600 text-white rounded-full font-extrabold text-xs shadow"
+              >
+                Confirm Rejection
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {/* Module Table Data */}
       <EnterpriseDataTable

@@ -230,10 +230,28 @@ export const OwnerDashboard: React.FC = () => {
                   </div>
 
                   {/* New Proposed Value */}
-                  <div className="p-3 bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 rounded-xl space-y-1">
-                    <span className="text-[10px] font-extrabold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider block">
-                      Proposed BannerBoy Version (New)
-                    </span>
+                  <div className="p-3 bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 rounded-xl space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[10px] font-extrabold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider block">
+                        Proposed BannerBoy Version (New)
+                      </span>
+                      {req.newValue?.bannerWidth && (
+                        <span className="px-2 py-0.5 bg-emerald-200 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-100 rounded text-[9px] font-mono font-bold">
+                          {req.newValue.bannerWidth} × {req.newValue.bannerHeight} px ({req.newValue.bannerSizePreset || 'Custom'})
+                        </span>
+                      )}
+                    </div>
+
+                    {req.newValue?.bannerImage && (
+                      <div className="w-full h-24 rounded-lg overflow-hidden border border-emerald-200 dark:border-emerald-800 bg-gray-100 dark:bg-slate-900">
+                        <img
+                          src={req.newValue.bannerImage}
+                          alt="Proposed Banner"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+
                     <pre className="text-[11px] text-emerald-900 dark:text-emerald-200 font-mono whitespace-pre-wrap overflow-x-auto max-h-24">
                       {JSON.stringify(req.newValue, null, 2)}
                     </pre>

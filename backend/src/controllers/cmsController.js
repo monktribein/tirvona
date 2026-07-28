@@ -186,3 +186,57 @@ export const getPublishedContent = async (req, res) => {
     return res.status(500).json({ success: false, message: 'Server error loading published CMS content' });
   }
 };
+
+// @desc    Delete change request and revert to original default
+// @route   DELETE /api/cms/request/:id
+// @access  Private (owner, super_admin, govt_admin, banner_manager)
+export const deleteChangeRequest = async (req, res) => {
+  try {
+    const request = await ContentChangeRequest.findByIdAndDelete(req.params.id);
+    if (!request) {
+      return res.status(404).json({ success: false, message: 'Change request not found' });
+    }
+
+    await AuditLog.create({
+      userId: req.user.id,
+      action: 'CMS_CHANGE_REQUEST_DELETED',
+      module: 'CMS',
+      details: { requestId: req.params.id, section: request.section },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+
+    return res.json({ success: true, message: 'Change request deleted. Reverted to default system content.' });
+  } catch (error) {
+    console.error('Delete change request error:', error);
+    return res.status(500).json({ success: false, message: 'Server error deleting change request' });
+  }
+};
+
+// @desc    Reset a CMS section back to original default image & text
+// @route   POST /api/cms/reset-section/:section
+// @access  Private (owner, super_admin, govt_admin)
+export const resetSectionContent = async (req, res) => {
+  try {
+    const { section } = req.params;
+    const result = await ContentChangeRequest.deleteMany({ section });
+
+    await AuditLog.create({
+      userId: req.user.id,
+      action: 'CMS_SECTION_RESET',
+      module: 'CMS',
+      details: { section, count: result.deletedCount },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+
+    return res.json({
+      success: true,
+      message: `Reset ${section} section. Restored original system default image & text.`,
+      deletedCount: result.deletedCount,
+    });
+  } catch (error) {
+    console.error('Reset section error:', error);
+    return res.status(500).json({ success: false, message: 'Server error resetting section content' });
+  }
+};

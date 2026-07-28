@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { analyticsService } from '../../../services';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useNotifications } from '../../../contexts/NotificationContext';
+import api, { getErrorMessage } from '../../../lib/api';
 import {
   Building2,
   MapPin,
@@ -58,11 +59,12 @@ export const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
 
   const [stats, setStats] = useState<any>(null);
+  const [pendingCmsRequests, setPendingCmsRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   // Interactive Tab States
-  const [approvalTab, setApprovalTab] = useState<'ashrams' | 'owners' | 'banners' | 'blogs' | 'offers'>('ashrams');
+  const [approvalTab, setApprovalTab] = useState<'ashrams' | 'owners' | 'banners' | 'blogs' | 'offers'>('banners');
   const [selectedHub, setSelectedHub] = useState<string>('Rishikesh');
 
   // Time State
@@ -70,9 +72,45 @@ export const AdminDashboard: React.FC = () => {
 
   useEffect(() => {
     fetchSystemStats();
+    fetchPendingCmsRequests();
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  const fetchPendingCmsRequests = async () => {
+    try {
+      const res = await api.get('/cms/pending-approvals');
+      if (res.data?.success) {
+        setPendingCmsRequests(res.data.data);
+      }
+    } catch (err) {
+      console.warn('Fetch CMS pending error:', err);
+    }
+  };
+
+  const handleApproveCms = async (id: string) => {
+    try {
+      const res = await api.post(`/cms/approve/${id}`, {});
+      if (res.data?.success) {
+        addNotification('CMS Content Approved', 'The proposed banner/content is now published live!', 'success');
+        fetchPendingCmsRequests();
+      }
+    } catch (err) {
+      addNotification('Action Failed', getErrorMessage(err, 'Could not approve CMS content edit.'), 'error');
+    }
+  };
+
+  const handleRejectCms = async (id: string) => {
+    try {
+      const res = await api.post(`/cms/reject/${id}`, { reason: 'Does not align with trust guidelines' });
+      if (res.data?.success) {
+        addNotification('Request Rejected', 'Feedback sent back to BannerBoy.', 'warning');
+        fetchPendingCmsRequests();
+      }
+    } catch (err) {
+      addNotification('Action Failed', getErrorMessage(err, 'Could not reject CMS request.'), 'error');
+    }
+  };
 
   const fetchSystemStats = async () => {
     setLoading(true);
@@ -354,9 +392,9 @@ export const AdminDashboard: React.FC = () => {
               </h3>
               <div className="flex gap-1.5">
                 {[
+                  { id: 'banners', label: `Banners (${pendingCmsRequests.length})` },
                   { id: 'ashrams', label: 'Ashrams (34)' },
                   { id: 'owners', label: 'Owners (12)' },
-                  { id: 'banners', label: 'Banners (5)' },
                   { id: 'blogs', label: 'Blogs (8)' },
                   { id: 'offers', label: 'Offers (4)' },
                 ].map((t) => (
@@ -377,7 +415,61 @@ export const AdminDashboard: React.FC = () => {
 
             {/* Pending List Items */}
             <div className="space-y-3">
-              {[
+            {approvalTab === 'banners' ? (
+              pendingCmsRequests.length === 0 ? (
+                <div className="py-8 text-center text-xs text-gray-400 font-bold">
+                  No pending banner change requests found.
+                </div>
+              ) : (
+                pendingCmsRequests.map((req) => (
+                  <div
+                    key={req._id}
+                    className="p-4 bg-amber-50/40 dark:bg-slate-900/60 rounded-2xl border border-amber-200/60 dark:border-slate-800 space-y-3 text-xs"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div>
+                        <span className="font-extrabold text-sm text-[#0B192C] dark:text-white">{req.title}</span>
+                        <p className="text-[11px] text-gray-500">
+                          Submitted by <strong>{req.userId?.name || 'BannerBoy'}</strong> ({req.userId?.email}) • Section: <code className="font-bold text-amber-700">{req.section}</code>
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {req.newValue?.bannerWidth && (
+                          <span className="px-2 py-0.5 bg-amber-100 text-amber-900 rounded text-[10px] font-mono font-bold">
+                            {req.newValue.bannerWidth} × {req.newValue.bannerHeight} px
+                          </span>
+                        )}
+                        <span className="text-[10px] font-mono text-gray-400">
+                          {new Date(req.createdAt).toLocaleTimeString()}
+                        </span>
+                      </div>
+                    </div>
+
+                    {req.newValue?.bannerImage && (
+                      <div className="w-full h-24 rounded-lg overflow-hidden border border-amber-200 dark:border-slate-800 bg-gray-100 dark:bg-slate-900">
+                        <img src={req.newValue.bannerImage} alt="Proposed Banner" className="w-full h-full object-cover" />
+                      </div>
+                    )}
+
+                    <div className="flex justify-end items-center gap-2 pt-1">
+                      <button
+                        onClick={() => handleRejectCms(req._id)}
+                        className="px-3.5 py-1.5 rounded-full bg-rose-50 text-rose-600 border border-rose-200 font-bold text-[10px] flex items-center gap-1 cursor-pointer"
+                      >
+                        <X size={12} /> Reject
+                      </button>
+                      <button
+                        onClick={() => handleApproveCms(req._id)}
+                        className="px-5 py-2 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[11px] flex items-center gap-1 cursor-pointer shadow-md"
+                      >
+                        <Check size={12} /> Approve & Publish Live
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )
+            ) : (
+              [
                 { name: 'Parmarth Niketan Branch #2 (Rishikesh)', owner: 'Nakul Jain', submitted: '2 hours ago', code: 'ASH-8812' },
                 { name: 'Ganga Kripa Dharamshala (Haridwar)', owner: 'Swami Vidyanand', submitted: '4 hours ago', code: 'ASH-8814' },
                 { name: 'Shree Krishna Retreat (Vrindavan)', owner: 'Radha Trust Board', submitted: '6 hours ago', code: 'ASH-8819' },
@@ -411,7 +503,8 @@ export const AdminDashboard: React.FC = () => {
                     </button>
                   </div>
                 </div>
-              ))}
+              ))
+            )}
             </div>
           </div>
 
