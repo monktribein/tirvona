@@ -234,21 +234,17 @@ export const PublicLayout: React.FC = () => {
 
                 {/* User Auth / Action Buttons */}
                 {user ? (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 sm:gap-2">
                     {/* Notifications Active Bell Dropdown */}
                     <NotificationDropdown />
 
-                    {/* Role Badge */}
-                    <span className="hidden xl:inline-flex px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#E58C28]/15 text-[#E58C28] border border-[#E58C28]/30">
-                      {getRoleBadgeLabel()}
-                    </span>
-
-                    {/* Explicit Dashboard Button */}
+                    {/* Dashboard Button */}
                     <Link
                       to={getDashboardPath()}
-                      className="text-xs font-extrabold px-3.5 py-1.5 rounded-full bg-[#0A4DA6] text-white hover:bg-opacity-95 shadow-sm transition-all flex items-center gap-1 cursor-pointer shrink-0"
+                      className="hidden sm:flex text-xs font-extrabold px-3 py-1.5 rounded-full bg-[#0A4DA6] hover:bg-blue-800 text-white shadow-sm transition-all items-center gap-1.5 shrink-0"
                     >
-                      <LayoutDashboard size={13} /> {getDashboardLabel()}
+                      <LayoutDashboard size={13} />
+                      <span className="hidden md:inline">{getDashboardLabel()}</span>
                     </Link>
 
                     {/* Profile Avatar Dropdown Trigger */}
@@ -260,7 +256,7 @@ export const PublicLayout: React.FC = () => {
                         <div className="w-7 h-7 rounded-full bg-[#0A4DA6] text-white font-black text-xs flex items-center justify-center uppercase">
                           {user.name?.[0] || 'U'}
                         </div>
-                        <span className="hidden sm:inline text-xs font-extrabold text-[#0B192C] dark:text-white max-w-[80px] truncate">
+                        <span className="hidden md:inline text-xs font-extrabold text-[#0B192C] dark:text-white max-w-[80px] truncate">
                           {user.name?.split(' ')[0]}
                         </span>
                         <ChevronDown size={14} className="text-gray-400" />
