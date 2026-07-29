@@ -64,7 +64,10 @@ export const googleAuth = async (req, res) => {
         existing.isVerified = true;
         existing.emailVerifiedAt = new Date();
       }
-      await existing.save();
+      // Modified-only: this links a Google identity onto an account that may
+      // predate the current schema. A full-document validation would reject the
+      // whole sign-in over an unrelated legacy field the user cannot fix.
+      await existing.save({ validateModifiedOnly: true });
 
       await recordLogin(existing, req, 'USER_LOGIN_GOOGLE');
 

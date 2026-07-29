@@ -134,7 +134,9 @@ export const evaluateSuspension = async (user, req) => {
     user.status = 'active';
     user.suspensionType = 'none';
     user.reactivatedAt = new Date();
-    await user.save();
+    // Modified-only, for the same reason as recordLogin: an unrelated legacy
+    // field must not stop a lapsed suspension from being lifted.
+    await user.save({ validateModifiedOnly: true });
 
     await AuditLog.create({
       userId: user._id,
@@ -211,10 +213,19 @@ export const startLoginChallenge = async (user, identifier) => {
   return { ...result, type, channel: result.channel || (useEmail ? 'email' : 'sms'), sentTo: channelValue };
 };
 
-/** Record a completed login. Kept here so every path writes the same audit row. */
+/**
+ * Record a completed login. Kept here so every path writes the same audit row.
+ *
+ * `validateModifiedOnly` is essential, not cosmetic: a plain save() re-validates
+ * the ENTIRE document, so one legacy field written before the current schema —
+ * e.g. a status of 'inactive' that predates the enum — would throw here and
+ * lock that account out of every login path on the platform, even though this
+ * function only touches `lastLoginAt`. Newly-set values are still validated,
+ * because those count as modified.
+ */
 export const recordLogin = async (user, req, action) => {
   user.lastLoginAt = new Date();
-  await user.save();
+  await user.save({ validateModifiedOnly: true });
 
   await AuditLog.create({
     userId: user._id,

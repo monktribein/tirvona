@@ -320,7 +320,9 @@ export const forgotPassword = async (req, res) => {
     const token = crypto.randomBytes(32).toString('hex');
     user.resetTokenHash = hashResetToken(token);
     user.resetTokenExpiresAt = new Date(Date.now() + RESET_LINK_EXPIRY_MINUTES * 60 * 1000);
-    await user.save();
+    // Modified-only: a legacy field elsewhere on the document must not stop
+    // someone requesting a reset — that is the one path left to a locked-out user.
+    await user.save({ validateModifiedOnly: true });
 
     const resetUrl = `${getClientOrigin()}/reset-password?token=${token}`;
 
@@ -408,7 +410,9 @@ export const resetPassword = async (req, res) => {
     user.tokenVersion = (user.tokenVersion || 0) + 1; // revoke every existing session
     user.resetTokenHash = undefined; // single use
     user.resetTokenExpiresAt = undefined;
-    await user.save();
+    // Modified-only, so a legacy field cannot block the actual reset either.
+    // The new password IS validated, because it is a modified path.
+    await user.save({ validateModifiedOnly: true });
 
     await AuditLog.create({
       userId: user._id,
