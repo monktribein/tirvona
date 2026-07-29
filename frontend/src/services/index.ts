@@ -147,6 +147,7 @@ export const platformSettingsService = {
 export { serviceEcosystemService } from './service.service';
 export { marketplaceService } from './marketplace.service';
 export { enterpriseNotificationService } from './enterpriseNotification.service';
+export { approvalService } from './approval.service';
 
 
 

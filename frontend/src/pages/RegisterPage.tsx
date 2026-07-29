@@ -49,21 +49,11 @@ export const RegisterPage: React.FC = () => {
   };
 
   const goAfterSignup = () => {
-    const pendingRaw = localStorage.getItem('pending_booking');
-    // Default landing after signup is the customer profile (set upstream);
-    // a redirect param or a pending booking still wins.
-    let target = '/profile';
     if (redirect) {
-      target = redirect;
-    } else if (pendingRaw) {
-      try {
-        const pb = JSON.parse(pendingRaw);
-        if (pb.ashramId) {
-          target = `/ashram/${pb.ashramId}?checkIn=${pb.checkInDate || ''}&checkOut=${pb.checkOutDate || ''}&guests=${pb.guestsCount || 1}`;
-        }
-      } catch (e) {}
+      navigate(redirect);
+    } else {
+      navigate('/');
     }
-    navigate(target);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -87,11 +77,7 @@ export const RegisterPage: React.FC = () => {
         setChallenge(res.challenge);
         return;
       }
-      if (role === 'owner') {
-        navigate('/owner/dashboard');
-      } else {
-        goAfterSignup();
-      }
+      goAfterSignup();
     } else {
       setError(res.message || 'Registration failed');
     }

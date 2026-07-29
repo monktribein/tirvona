@@ -65,6 +65,8 @@ const AdminPlatformSettingsPage = lazy(() => import('./pages/admin/AdminPlatform
 const EnterpriseNotificationCenterPage = lazy(
   () => import('./admin/notifications/pages/EnterpriseNotificationCenterPage').then((m) => ({ default: m.EnterpriseNotificationCenterPage }))
 );
+const RoomCategoryApprovalsPage = lazy(() => import('./admin/approvals/pages/RoomCategoryApprovalsPage'));
+const CentralApprovalCenterPage = lazy(() => import('./admin/approvals/pages/CentralApprovalCenterPage'));
 
 // Sacred Services Ecosystem & Media Hub Pages
 import { PilgrimageCircuitsPage } from './pages/PilgrimageCircuitsPage';
@@ -270,6 +272,8 @@ const AppContent: React.FC = () => {
           <Route path="/admin/settings/pricing" element={<AdminPlatformSettingsPage />} />
           <Route path="/admin/manage/platform-settings" element={<AdminPlatformSettingsPage />} />
           <Route path="/admin/enterprise-notifications/:subSection?" element={<EnterpriseNotificationCenterPage />} />
+          <Route path="/admin/approvals/room-categories" element={<RoomCategoryApprovalsPage />} />
+          <Route path="/admin/approvals/:moduleType?" element={<CentralApprovalCenterPage />} />
           <Route path="/admin/manage/:moduleKey/:subKey?" element={<EnterpriseModulePage />} />
         </Route>
 

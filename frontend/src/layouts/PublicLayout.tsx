@@ -141,8 +141,30 @@ export const PublicLayout: React.FC = () => {
     if (!user) return '/login';
     if (['district_officer', 'govt_admin', 'super_admin'].includes(user.role)) return '/admin/dashboard';
     if (user.role === 'banner_manager') return '/bannerboy/dashboard';
-    if (user.role === 'customer') return '/profile';
-    return '/owner/dashboard';
+    if (['owner', 'stay_admin'].includes(user.role)) return '/owner/dashboard';
+    if (user.role === 'support') return '/support-tickets';
+    return '/profile';
+  };
+
+  const getDashboardLabel = () => {
+    if (!user) return 'Dashboard';
+    if (['district_officer', 'govt_admin', 'super_admin'].includes(user.role)) return 'Admin Dashboard';
+    if (user.role === 'banner_manager') return 'Banner CMS';
+    if (['owner', 'stay_admin'].includes(user.role)) return 'Stay Admin Dashboard';
+    if (user.role === 'support') return 'Support Console';
+    return 'My Dashboard';
+  };
+
+  const getRoleBadgeLabel = () => {
+    if (!user) return '';
+    if (user.role === 'super_admin') return 'Super Admin';
+    if (user.role === 'govt_admin') return 'Govt Admin';
+    if (user.role === 'district_officer') return 'District Admin';
+    if (['owner', 'stay_admin'].includes(user.role)) return 'Stay Admin';
+    if (user.role === 'banner_manager') return 'BannerBoy';
+    if (user.role === 'volunteer') return 'Volunteer';
+    if (user.role === 'support') return 'Support';
+    return 'Pilgrim';
   };
 
   const navLinks = [
@@ -212,132 +234,94 @@ export const PublicLayout: React.FC = () => {
 
                 {/* User Auth / Action Buttons */}
                 {user ? (
-                  user.role === 'customer' ? (
-                    <div className="flex items-center gap-2">
-                      {/* Notifications Active Bell Dropdown */}
-                      <NotificationDropdown />
+                  <div className="flex items-center gap-2">
+                    {/* Notifications Active Bell Dropdown */}
+                    <NotificationDropdown />
 
-                      {/* Wishlist Icon */}
-                      <Link
-                        to="/profile/wishlist"
-                        className="p-2 rounded-full text-slate-700 dark:text-gray-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
-                        title="Wishlist"
-                      >
-                        <Heart size={16} />
-                      </Link>
+                    {/* Role Badge */}
+                    <span className="hidden xl:inline-flex px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#E58C28]/15 text-[#E58C28] border border-[#E58C28]/30">
+                      {getRoleBadgeLabel()}
+                    </span>
 
-                      {/* Cart Icon */}
-                      <Link
-                        to="/marketplace"
-                        className="p-2 rounded-full text-slate-700 dark:text-gray-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
-                        title="Sacred Cart"
-                      >
-                        <ShoppingCart size={16} />
-                      </Link>
+                    {/* Explicit Dashboard Button */}
+                    <Link
+                      to={getDashboardPath()}
+                      className="text-xs font-extrabold px-3.5 py-1.5 rounded-full bg-[#0A4DA6] text-white hover:bg-opacity-95 shadow-sm transition-all flex items-center gap-1 cursor-pointer shrink-0"
+                    >
+                      <LayoutDashboard size={13} /> {getDashboardLabel()}
+                    </Link>
 
-                      {/* Profile Avatar Dropdown Trigger */}
-                      <div className="relative" ref={profileRef}>
-                        <button
-                          onClick={() => setProfileDropdownOpen((prev) => !prev)}
-                          className="flex items-center gap-2 p-1 pr-2 rounded-full border border-gray-200 dark:border-slate-700 hover:border-[#0A4DA6] transition-all cursor-pointer bg-gray-50 dark:bg-slate-900"
-                        >
-                          <div className="w-7 h-7 rounded-full bg-[#0A4DA6] text-white font-black text-xs flex items-center justify-center uppercase">
-                            {user.name?.[0] || 'U'}
-                          </div>
-                          <span className="hidden sm:inline text-xs font-extrabold text-[#0B192C] dark:text-white max-w-[90px] truncate">
-                            {user.name?.split(' ')[0]}
-                          </span>
-                          <ChevronDown size={14} className="text-gray-400" />
-                        </button>
-
-                        {/* Profile Dropdown Menu */}
-                        {profileDropdownOpen && (
-                          <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl shadow-2xl py-2 text-xs font-bold text-gray-700 dark:text-gray-200 z-50 divide-y divide-gray-100 dark:divide-slate-800">
-                            <div className="px-4 py-2.5">
-                              <span className="block font-black text-[#0B192C] dark:text-white text-sm">{user.name}</span>
-                              <span className="text-[10px] text-gray-400 font-medium block truncate">{user.email}</span>
-                            </div>
-
-                            <div className="py-1">
-                              <Link
-                                to="/profile"
-                                onClick={() => setProfileDropdownOpen(false)}
-                                className="px-4 py-2 flex items-center gap-2.5 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
-                              >
-                                <User size={14} className="text-[#0A4DA6]" /> My Profile
-                              </Link>
-
-                              <Link
-                                to="/profile/bookings"
-                                onClick={() => setProfileDropdownOpen(false)}
-                                className="px-4 py-2 flex items-center gap-2.5 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
-                              >
-                                <Calendar size={14} className="text-blue-500" /> My Bookings & Stays
-                              </Link>
-
-                              <Link
-                                to="/profile/wishlist"
-                                onClick={() => setProfileDropdownOpen(false)}
-                                className="px-4 py-2 flex items-center gap-2.5 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
-                              >
-                                <Heart size={14} className="text-rose-500" /> Wishlist & Saved
-                              </Link>
-
-                              <Link
-                                to="/profile/coupons"
-                                onClick={() => setProfileDropdownOpen(false)}
-                                className="px-4 py-2 flex items-center gap-2.5 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
-                              >
-                                <Tag size={14} className="text-amber-500" /> Coupons & Deals
-                              </Link>
-
-                              <Link
-                                to="/profile/payments"
-                                onClick={() => setProfileDropdownOpen(false)}
-                                className="px-4 py-2 flex items-center gap-2.5 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
-                              >
-                                <CreditCard size={14} className="text-emerald-500" /> Payments & Invoices
-                              </Link>
-
-                              <Link
-                                to="/profile/settings"
-                                onClick={() => setProfileDropdownOpen(false)}
-                                className="px-4 py-2 flex items-center gap-2.5 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
-                              >
-                                <Settings size={14} className="text-purple-500" /> Account Settings
-                              </Link>
-                            </div>
-
-                            <div className="py-1">
-                              <button
-                                onClick={handleLogout}
-                                className="w-full text-left px-4 py-2 flex items-center gap-2.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors cursor-pointer"
-                              >
-                                <LogOut size={14} /> Sign Out
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    /* Operational Roles (Admin, Owner, Manager, Reception, BannerBoy, Support) */
-                    <div className="flex items-center gap-2">
-                      <Link
-                        to={getDashboardPath()}
-                        className="text-xs font-bold px-3.5 py-1.5 rounded-full bg-[#0A4DA6]/10 text-[#0A4DA6] border border-[#0A4DA6]/20 hover:bg-[#0A4DA6]/20 transition-all"
-                      >
-                        Dashboard
-                      </Link>
+                    {/* Profile Avatar Dropdown Trigger */}
+                    <div className="relative" ref={profileRef}>
                       <button
-                        onClick={handleLogout}
-                        className="p-1.5 rounded-full bg-danger/10 text-danger border border-danger/20 hover:bg-danger/20 transition-all cursor-pointer"
-                        title="Logout"
+                        onClick={() => setProfileDropdownOpen((prev) => !prev)}
+                        className="flex items-center gap-1.5 p-1 pr-2 rounded-full border border-gray-200 dark:border-slate-700 hover:border-[#0A4DA6] transition-all cursor-pointer bg-gray-50 dark:bg-slate-900"
                       >
-                        <LogOut size={13} />
+                        <div className="w-7 h-7 rounded-full bg-[#0A4DA6] text-white font-black text-xs flex items-center justify-center uppercase">
+                          {user.name?.[0] || 'U'}
+                        </div>
+                        <span className="hidden sm:inline text-xs font-extrabold text-[#0B192C] dark:text-white max-w-[80px] truncate">
+                          {user.name?.split(' ')[0]}
+                        </span>
+                        <ChevronDown size={14} className="text-gray-400" />
                       </button>
+
+                      {/* Profile Dropdown Menu */}
+                      {profileDropdownOpen && (
+                        <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl shadow-2xl py-2 text-xs font-bold text-gray-700 dark:text-gray-200 z-50 divide-y divide-gray-100 dark:divide-slate-800">
+                          <div className="px-4 py-2.5">
+                            <span className="block font-black text-[#0B192C] dark:text-white text-sm">{user.name}</span>
+                            <span className="text-[10px] text-[#E58C28] font-black uppercase tracking-wider block mt-0.5">
+                              {getRoleBadgeLabel()} • {user.email}
+                            </span>
+                          </div>
+
+                          <div className="py-1">
+                            <Link
+                              to={getDashboardPath()}
+                              onClick={() => setProfileDropdownOpen(false)}
+                              className="px-4 py-2 flex items-center gap-2.5 text-[#0A4DA6] font-extrabold hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+                            >
+                              <LayoutDashboard size={14} /> {getDashboardLabel()}
+                            </Link>
+
+                            <Link
+                              to="/profile"
+                              onClick={() => setProfileDropdownOpen(false)}
+                              className="px-4 py-2 flex items-center gap-2.5 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+                            >
+                              <User size={14} className="text-[#0A4DA6]" /> My Profile
+                            </Link>
+
+                            <Link
+                              to="/profile/bookings"
+                              onClick={() => setProfileDropdownOpen(false)}
+                              className="px-4 py-2 flex items-center gap-2.5 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+                            >
+                              <Calendar size={14} className="text-blue-500" /> My Bookings & Stays
+                            </Link>
+
+                            <Link
+                              to="/profile/wishlist"
+                              onClick={() => setProfileDropdownOpen(false)}
+                              className="px-4 py-2 flex items-center gap-2.5 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+                            >
+                              <Heart size={14} className="text-rose-500" /> Wishlist & Saved
+                            </Link>
+                          </div>
+
+                          <div className="py-1">
+                            <button
+                              onClick={handleLogout}
+                              className="w-full text-left px-4 py-2 flex items-center gap-2.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors cursor-pointer"
+                            >
+                              <LogOut size={14} /> Sign Out
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  )
+                  </div>
                 ) : (
                   <div className="flex items-center gap-2">
                     <Link

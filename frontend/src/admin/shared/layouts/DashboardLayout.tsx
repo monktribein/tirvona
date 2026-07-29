@@ -51,6 +51,7 @@ export const DashboardLayout: React.FC = () => {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
+    'APPROVAL CENTER': true,
     'USER MANAGEMENT': true,
     'INSTITUTION MASTER DATA': true,
     'ASHRAM MANAGEMENT': true,
@@ -72,6 +73,28 @@ export const DashboardLayout: React.FC = () => {
 
   // Super Admin Categorized Navigation Groups
   const superAdminGroups: NavGroup[] = [
+    {
+      groupName: 'APPROVAL CENTER',
+      icon: <FileCheck size={15} />,
+      links: [
+        { label: '📥 All Requests', path: '/admin/approvals/all' },
+        { label: '🏨 Ashram Requests', path: '/admin/approvals/ashram' },
+        { label: '🛏 Room Category Requests', path: '/admin/approvals/room-category' },
+        { label: '🏠 Room Requests', path: '/admin/approvals/room' },
+        { label: '🛁 Amenities & Facilities', path: '/admin/approvals/amenities' },
+        { label: '💰 Pricing Change Requests', path: '/admin/approvals/pricing' },
+        { label: '🎁 Offers & Coupons', path: '/admin/approvals/offer' },
+        { label: '🖼 Gallery & Media', path: '/admin/approvals/gallery' },
+        { label: '🙋 Volunteer & Careers', path: '/admin/approvals/volunteer' },
+        { label: '🛍 Marketplace Products', path: '/admin/approvals/marketplace' },
+        { label: '🚕 Local Services', path: '/admin/approvals/service' },
+        { label: '📰 Blogs & Articles', path: '/admin/approvals/blog' },
+        { label: '🎉 Events & Festivals', path: '/admin/approvals/event' },
+        { label: '🛕 Temple Directory', path: '/admin/approvals/temple' },
+        { label: '📢 Banner & CMS', path: '/admin/approvals/banner' },
+        { label: '⚙ Other Requests', path: '/admin/approvals/other' },
+      ],
+    },
     {
       groupName: 'USER MANAGEMENT',
       icon: <Users size={15} />,
@@ -108,12 +131,14 @@ export const DashboardLayout: React.FC = () => {
         { label: 'Categories', path: '/admin/manage/ashrams/categories' },
         { label: 'Facilities', path: '/admin/manage/ashrams/facilities' },
         { label: 'Room Categories', path: '/admin/manage/ashrams/room-categories' },
+        { label: 'Category Approvals', path: '/admin/approvals/room-categories' },
       ],
     },
     {
       groupName: 'ROOM MANAGEMENT',
       icon: <Bed size={15} />,
       links: [
+        { label: 'Category Approvals', path: '/admin/approvals/room-categories' },
         { label: 'Rooms', path: '/admin/manage/rooms/all' },
         { label: 'Availability', path: '/admin/manage/rooms/availability' },
         { label: 'Pricing', path: '/admin/manage/rooms/pricing' },

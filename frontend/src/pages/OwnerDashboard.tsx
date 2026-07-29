@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { analyticsService, bookingService } from '../services';
+import { analyticsService, bookingService, approvalService } from '../services';
 import api, { getErrorMessage } from '../lib/api';
 import { useNotifications } from '../contexts/NotificationContext';
 import {
@@ -19,6 +19,10 @@ import {
   MessageSquare,
   ArrowRight,
   ShieldCheck,
+  Plus,
+  Send,
+  FileText,
+  HelpCircle,
 } from 'lucide-react';
 
 interface CmsRequest {
@@ -44,10 +48,82 @@ export const OwnerDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // ── Approval Workflow State ──
+  const [categoryRequests, setCategoryRequests] = useState<any[]>([]);
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [submittingCategory, setSubmittingCategory] = useState(false);
+  const [categoryForm, setCategoryForm] = useState({
+    name: '',
+    description: '',
+    maxGuests: 2,
+    defaultAmenities: 'WiFi, Hot Water, Daily Prayers',
+    suggestedBasePrice: 800,
+    reasonForRequest: '',
+    notes: '',
+  });
+
   useEffect(() => {
     fetchDashboardData();
     fetchPendingCmsRequests();
+    fetchCategoryRequests();
   }, []);
+
+  const fetchCategoryRequests = async () => {
+    try {
+      const res = await approvalService.getRoomCategoryRequests();
+      if (res.success) {
+        setCategoryRequests(res.data);
+      }
+    } catch (err) {
+      console.error('Error loading category requests:', err);
+    }
+  };
+
+  const handleCategorySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!categoryForm.name.trim()) return;
+
+    setSubmittingCategory(true);
+    try {
+      const res = await approvalService.submitRoomCategoryRequest({
+        name: categoryForm.name.trim(),
+        description: categoryForm.description,
+        maxGuests: Number(categoryForm.maxGuests),
+        defaultAmenities: categoryForm.defaultAmenities.split(',').map((s) => s.trim()).filter(Boolean),
+        suggestedBasePrice: Number(categoryForm.suggestedBasePrice),
+        reasonForRequest: categoryForm.reasonForRequest,
+        notes: categoryForm.notes,
+      });
+
+      if (res.success) {
+        addNotification(
+          'Approval Request Submitted',
+          `Request for room category "${categoryForm.name}" has been sent to Super Admin for approval.`,
+          'success'
+        );
+        setIsCategoryModalOpen(false);
+        setCategoryForm({
+          name: '',
+          description: '',
+          maxGuests: 2,
+          defaultAmenities: 'WiFi, Hot Water, Daily Prayers',
+          suggestedBasePrice: 800,
+          reasonForRequest: '',
+          notes: '',
+        });
+        fetchCategoryRequests();
+      }
+    } catch (err) {
+      console.error('Error submitting category request:', err);
+      addNotification(
+        'Submission Failed',
+        getErrorMessage(err, 'Failed to submit room category request.'),
+        'error'
+      );
+    } finally {
+      setSubmittingCategory(false);
+    }
+  };
 
   const fetchDashboardData = async () => {
     setLoading(true);
@@ -357,6 +433,180 @@ export const OwnerDashboard: React.FC = () => {
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* ── Room Category Approval Request Workflow (Stay Admin Console) ── */}
+      <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[24px] shadow-sm space-y-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-gray-100 dark:border-slate-800 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#0A4DA6]/10 text-[#0A4DA6] flex items-center justify-center">
+              <Bed size={20} />
+            </div>
+            <div>
+              <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white flex items-center gap-2">
+                Room Category Approval Workflow
+              </h3>
+              <p className="text-xs text-gray-400">Request additional custom room categories for Super Admin review & approval.</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsCategoryModalOpen(true)}
+            className="px-4 py-2 bg-[#0A4DA6] hover:bg-opacity-95 text-white text-xs font-bold rounded-full transition-all flex items-center gap-1.5 shadow-sm shrink-0 cursor-pointer"
+          >
+            <Plus size={14} /> Request New Room Category
+          </button>
+        </div>
+
+        {/* Requests History List */}
+        {categoryRequests.length === 0 ? (
+          <div className="p-6 text-center text-xs text-gray-400 font-semibold bg-gray-50/50 dark:bg-slate-900/40 rounded-2xl border border-dashed border-gray-200 dark:border-slate-800">
+            No room category requests submitted yet. Click "+ Request New Room Category" to initiate a request.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-gray-100 dark:border-slate-800 text-gray-400 font-bold uppercase text-[10px] tracking-wider">
+                  <th className="py-2.5 px-3">Request ID</th>
+                  <th className="py-2.5 px-3">Category Name</th>
+                  <th className="py-2.5 px-3">Max Guests</th>
+                  <th className="py-2.5 px-3">Suggested Base Price</th>
+                  <th className="py-2.5 px-3">Status</th>
+                  <th className="py-2.5 px-3">Review Comment</th>
+                </tr>
+              </thead>
+              <tbody>
+                {categoryRequests.map((req) => (
+                  <tr key={req._id} className="border-b border-gray-100 dark:border-slate-800 hover:bg-gray-50/50 dark:hover:bg-slate-900/40">
+                    <td className="py-3 px-3 font-bold text-[#0A4DA6]">{req.requestId}</td>
+                    <td className="py-3 px-3 font-bold text-[#0B192C] dark:text-white">{req.categoryData?.name}</td>
+                    <td className="py-3 px-3 font-semibold">{req.categoryData?.maxGuests} Guests</td>
+                    <td className="py-3 px-3 font-bold">₹{req.categoryData?.suggestedBasePrice}</td>
+                    <td className="py-3 px-3">
+                      <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase border ${
+                        req.status === 'approved' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' :
+                        req.status === 'rejected' ? 'bg-rose-500/10 text-rose-600 border-rose-500/20' :
+                        req.status === 'needs_modification' ? 'bg-amber-500/10 text-amber-600 border-amber-500/20' :
+                        'bg-blue-500/10 text-blue-600 border-blue-500/20'
+                      }`}>
+                        {req.status?.replace('_', ' ')}
+                      </span>
+                    </td>
+                    <td className="py-3 px-3 text-gray-400 max-w-xs truncate">{req.reviewComment || '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* ── Request New Room Category Modal ── */}
+      {isCategoryModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 max-w-lg w-full space-y-4 shadow-2xl animate-in fade-in zoom-in duration-200">
+            <div className="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-3">
+              <h3 className="font-extrabold text-lg text-[#0B192C] dark:text-white flex items-center gap-2">
+                <Bed size={20} className="text-[#0A4DA6]" /> Request New Room Category
+              </h3>
+              <button
+                onClick={() => setIsCategoryModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleCategorySubmit} className="space-y-3.5 text-left">
+              <div>
+                <label className="block text-[11px] font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-1">
+                  Category Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Deluxe VIP Suite, Satsang Family Hall"
+                  value={categoryForm.name}
+                  onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })}
+                  className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#0A4DA6]"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-1">
+                    Max Guest Capacity *
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="50"
+                    required
+                    value={categoryForm.maxGuests}
+                    onChange={(e) => setCategoryForm({ ...categoryForm, maxGuests: Number(e.target.value) })}
+                    className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#0A4DA6]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-1">
+                    Suggested Base Price (₹)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={categoryForm.suggestedBasePrice}
+                    onChange={(e) => setCategoryForm({ ...categoryForm, suggestedBasePrice: Number(e.target.value) })}
+                    className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#0A4DA6]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-1">
+                  Default Amenities (comma separated)
+                </label>
+                <input
+                  type="text"
+                  value={categoryForm.defaultAmenities}
+                  onChange={(e) => setCategoryForm({ ...categoryForm, defaultAmenities: e.target.value })}
+                  className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#0A4DA6]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-1">
+                  Reason for Request *
+                </label>
+                <textarea
+                  rows={2}
+                  required
+                  placeholder="Explain why this category is required for pilgrim lodging..."
+                  value={categoryForm.reasonForRequest}
+                  onChange={(e) => setCategoryForm({ ...categoryForm, reasonForRequest: e.target.value })}
+                  className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#0A4DA6]"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsCategoryModalOpen(false)}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-full font-bold text-xs"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingCategory}
+                  className="px-5 py-2 bg-[#0A4DA6] text-white rounded-full font-extrabold text-xs shadow-md hover:bg-opacity-95 disabled:opacity-50"
+                >
+                  {submittingCategory ? 'Submitting...' : 'Submit Request for Approval'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 

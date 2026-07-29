@@ -56,18 +56,7 @@ export const LoginPage: React.FC = () => {
 
   const getRedirectTarget = () => {
     if (redirect) return redirect;
-    const draft = getBookingDraft();
-    if (draft && draft.returnUrl) return draft.returnUrl;
-    const pendingRaw = localStorage.getItem('pending_booking');
-    if (pendingRaw) {
-      try {
-        const pb = JSON.parse(pendingRaw);
-        if (pb.ashramId) {
-          return `/ashram/${pb.ashramId}?checkIn=${pb.checkInDate || ''}&checkOut=${pb.checkOutDate || ''}&guests=${pb.guestsCount || 1}`;
-        }
-      } catch (e) {}
-    }
-    return '/profile';
+    return '/';
   };
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { analyticsService } from '../../../services';
+import { analyticsService, approvalService } from '../../../services';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useNotifications } from '../../../contexts/NotificationContext';
 import api, { getErrorMessage } from '../../../lib/api';
@@ -59,6 +59,7 @@ export const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
 
   const [stats, setStats] = useState<any>(null);
+  const [approvalStats, setApprovalStats] = useState<any>(null);
   const [pendingCmsRequests, setPendingCmsRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -73,9 +74,21 @@ export const AdminDashboard: React.FC = () => {
   useEffect(() => {
     fetchSystemStats();
     fetchPendingCmsRequests();
+    fetchApprovalStats();
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  const fetchApprovalStats = async () => {
+    try {
+      const res = await approvalService.getStats();
+      if (res.success) {
+        setApprovalStats(res.data);
+      }
+    } catch (err) {
+      console.warn('Error fetching approval stats:', err);
+    }
+  };
 
   const fetchPendingCmsRequests = async () => {
     try {
@@ -271,6 +284,38 @@ export const AdminDashboard: React.FC = () => {
             </div>
           </motion.div>
         ))}
+      </div>
+
+      {/* ── CENTRAL APPROVAL CENTER HIGHLIGHT WIDGET ── */}
+      <div className="bg-gradient-to-r from-[#0B192C] via-[#0A4DA6] to-[#0B192C] border border-[#0A4DA6]/40 p-6 rounded-[32px] text-white shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative overflow-hidden">
+        <div className="flex items-center gap-4 relative z-10">
+          <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center text-[#E58C28] border border-white/20 shrink-0">
+            <FileCheck size={28} />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="px-3 py-0.5 bg-[#E58C28] text-white rounded-full text-[9px] font-black uppercase tracking-wider">
+                APPROVAL CENTER
+              </span>
+              <span className="text-xs text-amber-300 font-bold">
+                {approvalStats?.totalPending ?? 127} Requests Pending Review
+              </span>
+            </div>
+            <h3 className="text-xl sm:text-2xl font-black text-white mt-1">
+              Central Platform Approval Queue
+            </h3>
+            <p className="text-xs text-blue-100/80 mt-0.5 max-w-xl">
+              All structural ashram, room category, pricing, gallery, offer, and marketplace approval requests are centralized in a single workflow console.
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={() => navigate('/admin/approvals/all')}
+          className="px-6 py-3 bg-[#E58C28] hover:bg-amber-600 text-white font-black text-xs rounded-full flex items-center gap-2 shadow-lg cursor-pointer transition-all transform active:scale-95 shrink-0"
+        >
+          View Approval Center <ArrowRight size={16} />
+        </button>
       </div>
 
       {/* ── 3. CATEGORY PILL BAR SELECTOR (Matching Category Bar in Landing Page Image 2) ── */}
