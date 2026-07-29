@@ -172,14 +172,7 @@ export const ParkingBookingDetailPage: React.FC = () => {
 
   return (
     <div className="pb-16 lg:pb-24 pt-8 sm:pt-10">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-5">
-        <button
-          onClick={() => navigate('/parking/my-bookings')}
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-500 dark:text-gray-400 hover:text-[#0A4DA6] transition-colors cursor-pointer"
-        >
-          <ChevronLeft size={15} className="stroke-[2.5]" />
-          My bookings
-        </button>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-5">
 
         {justBooked && booking.paymentStatus === 'paid' && (
           <motion.div

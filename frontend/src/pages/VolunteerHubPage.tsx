@@ -161,42 +161,44 @@ export const VolunteerHubPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50/70 dark:bg-[#070F1B] pb-20 text-left">
-      {/* ── 1. Devotional Hero Banner ── */}
-      <section className="bg-gradient-to-r from-[#0B192C] via-[#0A4DA6] to-[#0B192C] text-white py-14 px-4 sm:px-6 lg:px-8 border-b border-white/10 relative overflow-hidden">
-        <div className="absolute -right-10 -top-10 w-96 h-96 bg-[#E58C28]/15 rounded-full blur-3xl pointer-events-none" />
-        <div className="max-w-7xl mx-auto space-y-4 relative z-10">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="px-3.5 py-1 bg-[#E58C28]/20 text-[#E58C28] border border-[#E58C28]/35 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow-sm">
-              <ShieldCheck size={12} /> National Spiritual Careers & Volunteer Portal
-            </span>
-            <span className="px-3.5 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 rounded-full text-[10px] font-black uppercase tracking-wider">
-              100% Government Verified Ashrams
-            </span>
-          </div>
+      {/* ── 1. Devotional Hero Banner Container matching Navbar Layout Width ── */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-1 sm:pt-3">
+        <section className="relative text-white rounded-3xl p-6 sm:p-8 lg:p-10 shadow-xl overflow-hidden min-h-[340px] sm:min-h-[380px] flex flex-col justify-between items-center text-center border border-white/10">
+          {/* Background Banner Image */}
+          <img
+            src="/banner/popular.png"
+            alt="Volunteer & Careers Banner"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          {/* Overlay gradient for text contrast */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/55 to-black/40" />
 
-          <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight">
-            Serve with Devotion, <span className="text-[#E58C28]">Build Your Career</span>
-          </h1>
-          <p className="text-xs sm:text-sm text-blue-100/90 font-medium max-w-2xl leading-relaxed">
-            Explore volunteer opportunities, internships, Ganga Aarti seva, digital fellowships, kitchen management, and temple careers across Rishikesh, Haridwar, Varanasi, Vrindavan, and Ayodhya.
-          </p>
+          {/* Banner Content */}
+          <div className="max-w-3xl space-y-3 relative z-10 mx-auto text-center my-auto pt-2 pb-4">
+            <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight text-white drop-shadow-lg" style={{ fontFamily: "Satoshi, 'General Sans', Manrope, Inter, sans-serif", letterSpacing: '-0.03em' }}>
+              Serve with Devotion, <span className="text-[#E58C28]">Build Your Career</span>
+            </h1>
+            <p className="text-xs sm:text-sm text-blue-100/90 font-medium max-w-2xl mx-auto leading-relaxed drop-shadow">
+              Explore volunteer opportunities, internships, Ganga Aarti seva, digital fellowships, kitchen management, and temple careers across Rishikesh, Haridwar, Varanasi, Vrindavan, and Ayodhya.
+            </p>
 
-          <div className="flex flex-wrap items-center gap-3 pt-2">
-            <a
-              href="#openings"
-              className="px-6 py-3 bg-[#E58C28] hover:bg-[#d47f22] text-white text-xs font-black rounded-full shadow-lg shadow-[#E58C28]/30 flex items-center gap-2 transition-all cursor-pointer"
-            >
-              Explore Opportunities <ArrowRight size={14} />
-            </a>
-            <span className="text-xs font-extrabold text-blue-200 flex items-center gap-1.5">
-              <CheckCircle2 size={14} className="text-emerald-400" /> Free Accommodation & Satvik Meals Provided
-            </span>
+            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+              <a
+                href="#openings"
+                className="px-6 py-3 bg-[#E58C28] hover:bg-[#d47f22] text-white text-xs font-black rounded-full shadow-lg shadow-[#E58C28]/30 flex items-center gap-2 transition-all cursor-pointer"
+              >
+                Explore Opportunities <ArrowRight size={14} />
+              </a>
+              <span className="text-xs font-extrabold text-blue-200 flex items-center gap-1.5 drop-shadow">
+                <CheckCircle2 size={14} className="text-emerald-400" /> Free Accommodation &amp; Satvik Meals Provided
+              </span>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
 
       {/* ── 2. Search & Category Filters Bar ── */}
-      <section id="openings" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6 relative z-20 space-y-6">
+      <section id="openings" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 relative z-20 space-y-6">
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-4 sm:p-5 shadow-xl space-y-4">
           <form onSubmit={handleSearchSubmit} className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-grow">
@@ -237,11 +239,10 @@ export const VolunteerHubPage: React.FC = () => {
                 <button
                   key={t.id}
                   onClick={() => setSelectedType(t.id)}
-                  className={`px-4 py-2 rounded-full text-xs font-extrabold flex items-center gap-2 shrink-0 transition-all cursor-pointer ${
-                    isActive
-                      ? 'bg-[#0A4DA6] text-white shadow-md shadow-[#0A4DA6]/25'
-                      : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200'
-                  }`}
+                  className={`px-4 py-2 rounded-full text-xs font-extrabold flex items-center gap-2 shrink-0 transition-all cursor-pointer ${isActive
+                    ? 'bg-[#0A4DA6] text-white shadow-md shadow-[#0A4DA6]/25'
+                    : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200'
+                    }`}
                 >
                   {t.icon}
                   <span>{t.label}</span>
@@ -494,12 +495,12 @@ export const VolunteerHubPage: React.FC = () => {
               />
             </div>
 
-            <div className="pt-3 border-t border-gray-100 dark:border-slate-800 flex justify-end gap-3">
+            <div className="pt-3 border-t border-gray-100 dark:border-slate-800 flex items-center justify-end gap-3">
               <EnterpriseButton variant="outline" onClick={() => setSelectedJob(null)}>
                 Cancel
               </EnterpriseButton>
-              <EnterpriseButton type="submit" variant="primary" loading={isSubmitting}>
-                <Send size={14} /> Submit Application
+              <EnterpriseButton type="submit" variant="primary" loading={isSubmitting} icon={<Send size={14} />} className="px-5">
+                Submit Application
               </EnterpriseButton>
             </div>
           </form>

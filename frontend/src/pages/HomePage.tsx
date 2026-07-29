@@ -1379,10 +1379,10 @@ export const HomePage: React.FC = () => {
             {/* Card 1: Article */}
             <div
               onClick={() => navigate('/blog/guide-planning-first-ashram-stay')}
-              className="bg-white dark:bg-[#0B192C] rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 flex flex-col justify-between border border-gray-100 dark:border-slate-800 group hover:-translate-y-1 cursor-pointer"
+              className="bg-white dark:bg-[#0B192C] rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 flex flex-col justify-between border border-gray-100 dark:border-slate-800 group hover:-translate-y-1 cursor-pointer h-full"
             >
-              <div>
-                <div className="h-48 sm:h-52 overflow-hidden bg-slate-900 relative">
+              <div className="flex flex-col flex-1">
+                <div className="h-44 sm:h-48 overflow-hidden bg-slate-900 relative shrink-0">
                   <img
                     src="https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=600&q=80"
                     alt="Ashram Stay Guide"
@@ -1396,29 +1396,29 @@ export const HomePage: React.FC = () => {
                     6 min read
                   </span>
                 </div>
-                <div className="p-5 space-y-2.5">
+                <div className="p-5 space-y-2.5 flex-1 flex flex-col justify-between">
                   <div className="flex items-center gap-4 text-[11px] font-bold text-gray-400">
                     <span className="flex items-center gap-1.5"><Calendar size={13} className="text-[#0A4DA6]" /> 20 March 2025</span>
                     <span className="flex items-center gap-1.5"><BookOpen size={13} className="text-[#0A4DA6]" /> 3.8K Views</span>
                   </div>
-                  <h3 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-snug line-clamp-2 group-hover:text-[#0A4DA6] transition-colors">
+                  <h3 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-snug line-clamp-2 h-11 sm:h-12 flex items-start group-hover:text-[#0A4DA6] transition-colors">
                     Essential Guide To Planning Your First Sacred Ashram Stay
                   </h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed h-9 overflow-hidden">
                     Discover essential etiquette, daily schedules, satvik food rules, and spiritual seva tips for a peaceful ashram experience.
                   </p>
                 </div>
               </div>
-              <div className="px-5 pb-5 pt-2 flex items-center justify-between border-t border-gray-50 dark:border-slate-800/60 mt-2">
-                <div className="flex items-center gap-2">
+              <div className="px-5 py-3 flex items-center justify-between border-t border-gray-50 dark:border-slate-800/60 mt-auto shrink-0 h-16">
+                <div className="flex items-center gap-2 min-w-0 flex-1 pr-2">
                   <img
                     src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&h=100&q=80"
                     alt="Gordon V. Shastri"
-                    className="w-7 h-7 rounded-full object-cover border border-[#0A4DA6]"
+                    className="w-7 h-7 rounded-full object-cover border border-[#0A4DA6] shrink-0"
                   />
-                  <span className="text-xs font-bold text-gray-600 dark:text-gray-300">Gordon V. Shastri</span>
+                  <span className="text-xs font-bold text-gray-600 dark:text-gray-300 truncate">Gordon V. Shastri</span>
                 </div>
-                <button className="px-3.5 py-1.5 bg-[#F0F5FC] dark:bg-blue-950/40 text-gray-700 dark:text-blue-300 group-hover:bg-[#0A4DA6] group-hover:text-white text-xs font-bold rounded-full flex items-center gap-1.5 transition-colors">
+                <button className="px-3.5 py-1.5 bg-[#F0F5FC] dark:bg-blue-950/40 text-gray-700 dark:text-blue-300 group-hover:bg-[#0A4DA6] group-hover:text-white text-xs font-bold rounded-full flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0">
                   <span>Read Article</span>
                   <ArrowRight size={12} />
                 </button>
@@ -1428,10 +1428,10 @@ export const HomePage: React.FC = () => {
             {/* Card 2: YouTube Video Card with Play Badge */}
             <div
               onClick={() => navigate('/video/ganga-aarti-varanasi-spiritual-video')}
-              className="bg-white dark:bg-[#0B192C] rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 flex flex-col justify-between border border-gray-100 dark:border-slate-800 group hover:-translate-y-1 cursor-pointer"
+              className="bg-white dark:bg-[#0B192C] rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 flex flex-col justify-between border border-gray-100 dark:border-slate-800 group hover:-translate-y-1 cursor-pointer h-full"
             >
-              <div>
-                <div className="h-48 sm:h-52 overflow-hidden bg-slate-900 relative">
+              <div className="flex flex-col flex-1">
+                <div className="h-44 sm:h-48 overflow-hidden bg-slate-900 relative shrink-0">
                   <img
                     src="https://images.unsplash.com/photo-1561361058-c24e36e56336?auto=format&fit=crop&w=600&q=80"
                     alt="Varanasi Ganga Aarti"
@@ -1450,29 +1450,29 @@ export const HomePage: React.FC = () => {
                     18:45
                   </span>
                 </div>
-                <div className="p-5 space-y-2.5">
+                <div className="p-5 space-y-2.5 flex-1 flex flex-col justify-between">
                   <div className="flex items-center gap-4 text-[11px] font-bold text-gray-400">
                     <span className="flex items-center gap-1.5"><Calendar size={13} className="text-[#0A4DA6]" /> 22 March 2025</span>
                     <span className="flex items-center gap-1.5"><Activity size={13} className="text-red-500" /> 128K Views</span>
                   </div>
-                  <h3 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-snug line-clamp-2 group-hover:text-[#0A4DA6] transition-colors">
-                    Sacred Ganga Aarti Varanasi: Evening Rituals & Hymns
+                  <h3 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-snug line-clamp-2 h-11 sm:h-12 flex items-start group-hover:text-[#0A4DA6] transition-colors">
+                    Sacred Ganga Aarti Varanasi: Evening Rituals &amp; Hymns
                   </h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed h-9 overflow-hidden">
                     Watch the grand evening Aarti ceremony held at Dashashwamedh Ghat with live chanting of Vedic hymns and brass lamps.
                   </p>
                 </div>
               </div>
-              <div className="px-5 pb-5 pt-2 flex items-center justify-between border-t border-gray-50 dark:border-slate-800/60 mt-2">
-                <div className="flex items-center gap-2">
+              <div className="px-5 py-3 flex items-center justify-between border-t border-gray-50 dark:border-slate-800/60 mt-auto shrink-0 h-16">
+                <div className="flex items-center gap-2 min-w-0 flex-1 pr-2">
                   <img
                     src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=100&h=100&q=80"
                     alt="Radhika K. Kulkarni"
-                    className="w-7 h-7 rounded-full object-cover border border-red-500"
+                    className="w-7 h-7 rounded-full object-cover border border-red-500 shrink-0"
                   />
-                  <span className="text-xs font-bold text-gray-600 dark:text-gray-300">Radhika K.</span>
+                  <span className="text-xs font-bold text-gray-600 dark:text-gray-300 truncate">Radhika K.</span>
                 </div>
-                <button className="px-3.5 py-1.5 bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-300 group-hover:bg-red-600 group-hover:text-white text-xs font-bold rounded-full flex items-center gap-1.5 transition-colors">
+                <button className="px-3.5 py-1.5 bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-300 group-hover:bg-red-600 group-hover:text-white text-xs font-bold rounded-full flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0">
                   <span>Watch Video</span>
                   <ArrowRight size={12} />
                 </button>
@@ -1482,10 +1482,10 @@ export const HomePage: React.FC = () => {
             {/* Card 3: Article */}
             <div
               onClick={() => navigate('/blog/secrets-temple-mahaprasad-traditions')}
-              className="bg-white dark:bg-[#0B192C] rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 flex flex-col justify-between border border-gray-100 dark:border-slate-800 group hover:-translate-y-1 cursor-pointer"
+              className="bg-white dark:bg-[#0B192C] rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 flex flex-col justify-between border border-gray-100 dark:border-slate-800 group hover:-translate-y-1 cursor-pointer h-full"
             >
-              <div>
-                <div className="h-48 sm:h-52 overflow-hidden bg-slate-900 relative">
+              <div className="flex flex-col flex-1">
+                <div className="h-44 sm:h-48 overflow-hidden bg-slate-900 relative shrink-0">
                   <img
                     src="https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=600&q=80"
                     alt="Temple Mahaprasad Secrets"
@@ -1499,29 +1499,29 @@ export const HomePage: React.FC = () => {
                     8 min read
                   </span>
                 </div>
-                <div className="p-5 space-y-2.5">
+                <div className="p-5 space-y-2.5 flex-1 flex flex-col justify-between">
                   <div className="flex items-center gap-4 text-[11px] font-bold text-gray-400">
                     <span className="flex items-center gap-1.5"><Calendar size={13} className="text-[#0A4DA6]" /> 25 March 2025</span>
                     <span className="flex items-center gap-1.5"><BookOpen size={13} className="text-[#0A4DA6]" /> 2.9K Views</span>
                   </div>
-                  <h3 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-snug line-clamp-2 group-hover:text-[#0A4DA6] transition-colors">
+                  <h3 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-snug line-clamp-2 h-11 sm:h-12 flex items-start group-hover:text-[#0A4DA6] transition-colors">
                     Secrets of Temple Mahaprasad: Sacred Culinary Traditions
                   </h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed h-9 overflow-hidden">
                     Explore the sacred preparation, secret recipes, and spiritual significance of Mahaprasad across Puri, Tirupati and Varanasi.
                   </p>
                 </div>
               </div>
-              <div className="px-5 pb-5 pt-2 flex items-center justify-between border-t border-gray-50 dark:border-slate-800/60 mt-2">
-                <div className="flex items-center gap-2">
+              <div className="px-5 py-3 flex items-center justify-between border-t border-gray-50 dark:border-slate-800/60 mt-auto shrink-0 h-16">
+                <div className="flex items-center gap-2 min-w-0 flex-1 pr-2">
                   <img
                     src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&h=100&q=80"
                     alt="Swami Anand Giri"
-                    className="w-7 h-7 rounded-full object-cover border border-[#0A4DA6]"
+                    className="w-7 h-7 rounded-full object-cover border border-[#0A4DA6] shrink-0"
                   />
-                  <span className="text-xs font-bold text-gray-600 dark:text-gray-300">Swami Anand</span>
+                  <span className="text-xs font-bold text-gray-600 dark:text-gray-300 truncate">Swami Anand</span>
                 </div>
-                <button className="px-3.5 py-1.5 bg-[#F0F5FC] dark:bg-blue-950/40 text-gray-700 dark:text-blue-300 group-hover:bg-[#0A4DA6] group-hover:text-white text-xs font-bold rounded-full flex items-center gap-1.5 transition-colors">
+                <button className="px-3.5 py-1.5 bg-[#F0F5FC] dark:bg-blue-950/40 text-gray-700 dark:text-blue-300 group-hover:bg-[#0A4DA6] group-hover:text-white text-xs font-bold rounded-full flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0">
                   <span>Read Article</span>
                   <ArrowRight size={12} />
                 </button>
@@ -1531,10 +1531,10 @@ export const HomePage: React.FC = () => {
             {/* Card 4: Pilgrim Story */}
             <div
               onClick={() => navigate('/blog/spiritual-awakening-kashi-ghats')}
-              className="bg-white dark:bg-[#0B192C] rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 flex flex-col justify-between border border-gray-100 dark:border-slate-800 group hover:-translate-y-1 cursor-pointer"
+              className="bg-white dark:bg-[#0B192C] rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 flex flex-col justify-between border border-gray-100 dark:border-slate-800 group hover:-translate-y-1 cursor-pointer h-full"
             >
-              <div>
-                <div className="h-48 sm:h-52 overflow-hidden bg-slate-900 relative">
+              <div className="flex flex-col flex-1">
+                <div className="h-44 sm:h-48 overflow-hidden bg-slate-900 relative shrink-0">
                   <img
                     src="https://images.unsplash.com/photo-1561361513-2d000a50f0dc?auto=format&fit=crop&w=600&q=80"
                     alt="Spiritual Yatra Experience"
@@ -1548,29 +1548,29 @@ export const HomePage: React.FC = () => {
                     5 min read
                   </span>
                 </div>
-                <div className="p-5 space-y-2.5">
+                <div className="p-5 space-y-2.5 flex-1 flex flex-col justify-between">
                   <div className="flex items-center gap-4 text-[11px] font-bold text-gray-400">
                     <span className="flex items-center gap-1.5"><Calendar size={13} className="text-[#0A4DA6]" /> 28 March 2025</span>
                     <span className="flex items-center gap-1.5"><BookOpen size={13} className="text-[#0A4DA6]" /> 4.2K Views</span>
                   </div>
-                  <h3 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-snug line-clamp-2 group-hover:text-[#0A4DA6] transition-colors">
+                  <h3 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-snug line-clamp-2 h-11 sm:h-12 flex items-start group-hover:text-[#0A4DA6] transition-colors">
                     Spiritual Awakening On The Sacred Ghats Of Kashi
                   </h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed h-9 overflow-hidden">
                     A transformative personal yatra story of inner peace, morning meditation, and evening prayers along river Ganga.
                   </p>
                 </div>
               </div>
-              <div className="px-5 pb-5 pt-2 flex items-center justify-between border-t border-gray-50 dark:border-slate-800/60 mt-2">
-                <div className="flex items-center gap-2">
+              <div className="px-5 py-3 flex items-center justify-between border-t border-gray-50 dark:border-slate-800/60 mt-auto shrink-0 h-16">
+                <div className="flex items-center gap-2 min-w-0 flex-1 pr-2">
                   <img
                     src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&h=100&q=80"
                     alt="Priya Sharma"
-                    className="w-7 h-7 rounded-full object-cover border border-[#E58C28]"
+                    className="w-7 h-7 rounded-full object-cover border border-[#E58C28] shrink-0"
                   />
-                  <span className="text-xs font-bold text-gray-600 dark:text-gray-300">Priya Sharma</span>
+                  <span className="text-xs font-bold text-gray-600 dark:text-gray-300 truncate">Priya Sharma</span>
                 </div>
-                <button className="px-3.5 py-1.5 bg-amber-50 dark:bg-amber-950/40 text-[#E58C28] dark:text-amber-300 group-hover:bg-[#E58C28] group-hover:text-white text-xs font-bold rounded-full flex items-center gap-1.5 transition-colors">
+                <button className="px-3.5 py-1.5 bg-amber-50 dark:bg-amber-950/40 text-[#E58C28] dark:text-amber-300 group-hover:bg-[#E58C28] group-hover:text-white text-xs font-bold rounded-full flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0">
                   <span>Read Story</span>
                   <ArrowRight size={12} />
                 </button>

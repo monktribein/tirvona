@@ -102,22 +102,8 @@ export const VideoDetailPage: React.FC = () => {
   const embedUrl = post.youtubeVideoId ? `https://www.youtube.com/embed/${post.youtubeVideoId}?autoplay=1` : null;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-[#070F1B] pt-20 sm:pt-24 pb-16">
-      
-      {/* 1. Breadcrumb Bar */}
-      <div className="bg-white dark:bg-[#0B192C] border-b border-gray-100 dark:border-slate-800/80 py-3 px-4 sm:px-6">
-        <div className="max-w-7xl mx-auto flex items-center gap-2 text-xs font-bold text-gray-500 dark:text-gray-400 overflow-x-auto scrollbar-none">
-          <Link to="/" className="hover:text-[#0A4DA6] transition-colors">Home</Link>
-          <ChevronRight size={13} className="text-gray-400 shrink-0" />
-          <Link to="/blog" className="hover:text-[#0A4DA6] transition-colors">Media Hub</Link>
-          <ChevronRight size={13} className="text-gray-400 shrink-0" />
-          <span className="text-red-600 font-extrabold flex items-center gap-1">🎥 Videos</span>
-          <ChevronRight size={13} className="text-gray-400 shrink-0" />
-          <span className="text-gray-700 dark:text-gray-200 font-extrabold truncate max-w-[200px] sm:max-w-xs">{post.title}</span>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-6 space-y-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-[#070F1B] pb-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-1 sm:pt-3 space-y-8">
 
         {/* 2. Embedded 16:9 Responsive Video Player Container */}
         <div className="relative rounded-[32px] overflow-hidden shadow-2xl bg-black border border-gray-800 aspect-video w-full">
@@ -273,10 +259,10 @@ export const VideoDetailPage: React.FC = () => {
 
           </div>
 
-          {/* Right Sticky Sidebar (Desktop Only) */}
+          {/* Right Static Sidebar (Desktop Only) */}
           <div className="space-y-6">
 
-            <div className="bg-white dark:bg-[#0B192C] rounded-[32px] p-6 border border-gray-100 dark:border-slate-800 shadow-sm space-y-4 sticky top-24">
+            <div className="bg-white dark:bg-[#0B192C] rounded-[32px] p-6 border border-gray-100 dark:border-slate-800 shadow-sm space-y-4">
               <h5 className="font-black text-xs text-gray-400 uppercase tracking-wider">Related Videos & Media</h5>
 
               <div className="space-y-4">

@@ -49,12 +49,12 @@ export const BlogListPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-[#070F1B] pt-24 sm:pt-28 pb-16">
+    <div className="min-h-screen bg-gray-50 dark:bg-[#070F1B] pb-16">
       {/* Primary Hero Banner Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 sm:mt-6 mb-8 sm:mb-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-1 sm:pt-3 mb-8 sm:mb-12">
         <div className="relative rounded-3xl sm:rounded-[32px] overflow-hidden shadow-2xl border border-white/10 bg-[#0B192C] min-h-[220px] sm:min-h-[300px] md:min-h-[360px] flex flex-col justify-center items-center text-center p-6 sm:p-10">
           <img
-            src="/banner/media_hub_hero_banner.png"
+            src="/banner/popular.png"
             alt="Spiritual Media & Knowledge Hub Banner"
             className="absolute inset-0 w-full h-full object-cover object-center"
             loading="lazy"
@@ -92,42 +92,7 @@ export const BlogListPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Filter Bar */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-8 space-y-4">
-        {/* Content Type Filter */}
-        <div className="flex justify-center gap-2">
-          {['All', 'article', 'video'].map((type) => (
-            <button
-              key={type}
-              onClick={() => setSelectedType(type)}
-              className={`px-6 py-2 rounded-full text-xs font-black capitalize transition-all cursor-pointer ${
-                selectedType === type
-                  ? 'bg-[#E58C28] text-white shadow-md'
-                  : 'bg-white dark:bg-[#0B192C] text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-slate-800'
-              }`}
-            >
-              {type === 'All' ? 'All Formats' : type === 'article' ? '📄 Articles' : '🎥 Videos'}
-            </button>
-          ))}
-        </div>
 
-        {/* Category Tabs */}
-        <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-none">
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-5 py-2.5 rounded-full text-xs font-black whitespace-nowrap transition-all cursor-pointer ${
-                selectedCategory === cat
-                  ? 'bg-[#0A4DA6] text-white shadow-md'
-                  : 'bg-white dark:bg-[#0B192C] text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-slate-800 hover:bg-gray-100'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-      </div>
 
       {/* Post Grid */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-8">
@@ -185,37 +150,37 @@ export const BlogListPage: React.FC = () => {
                       )}
                     </div>
 
-                    <div className="p-6 space-y-3">
+                    <div className="p-6 space-y-3 flex-1 flex flex-col justify-between">
                       <div className="flex items-center gap-3 text-[11px] font-bold text-gray-400">
                         <span className="flex items-center gap-1"><Calendar size={12} className="text-[#0A4DA6]" /> {new Date(item.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
                         <span className="flex items-center gap-1"><Eye size={12} className="text-[#0A4DA6]" /> {item.views} Views</span>
                       </div>
 
-                      <h3 className="font-black text-lg text-[#0B192C] dark:text-white leading-tight group-hover:text-[#0A4DA6] transition-colors line-clamp-2">
+                      <h3 className="font-black text-lg text-[#0B192C] dark:text-white leading-tight group-hover:text-[#0A4DA6] transition-colors line-clamp-2 h-12 flex items-start">
                         {item.title}
                       </h3>
 
-                      <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed h-9 overflow-hidden">
                         {item.excerpt}
                       </p>
                     </div>
                   </div>
 
                   {/* Author Strip Footer */}
-                  <div className="p-6 pt-0 flex items-center justify-between border-t border-gray-50 dark:border-slate-800/50 mt-4">
-                    <div className="flex items-center gap-2">
+                  <div className="px-6 py-4 flex items-center justify-between border-t border-gray-50 dark:border-slate-800/50 mt-auto shrink-0 h-16">
+                    <div className="flex items-center gap-2 min-w-0 flex-1 pr-2">
                       <img
                         src={author.photo || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&h=100&q=80'}
                         alt={author.name}
-                        className="w-7 h-7 rounded-full object-cover border border-[#0A4DA6]"
+                        className="w-7 h-7 rounded-full object-cover border border-[#0A4DA6] shrink-0"
                       />
-                      <span className="text-xs font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1">
-                        {author.name || 'Verified Author'}
-                        <CheckCircle2 size={12} className="text-emerald-500" />
+                      <span className="text-xs font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1 truncate">
+                        <span className="truncate">{author.name || 'Verified Author'}</span>
+                        <CheckCircle2 size={12} className="text-emerald-500 shrink-0" />
                       </span>
                     </div>
 
-                    <button className="px-3.5 py-1.5 rounded-full bg-gray-100 dark:bg-slate-800 group-hover:bg-[#0A4DA6] group-hover:text-white text-gray-700 dark:text-gray-200 text-xs font-bold transition-all flex items-center gap-1">
+                    <button className="px-3.5 py-1.5 rounded-full bg-gray-100 dark:bg-slate-800 group-hover:bg-[#0A4DA6] group-hover:text-white text-gray-700 dark:text-gray-200 text-xs font-bold transition-all flex items-center gap-1 whitespace-nowrap shrink-0">
                       <span>{isVideo ? 'Watch' : 'Read'}</span>
                       <ArrowRight size={12} />
                     </button>

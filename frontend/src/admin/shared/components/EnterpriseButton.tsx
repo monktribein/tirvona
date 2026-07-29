@@ -18,7 +18,7 @@ export const EnterpriseButton: React.FC<EnterpriseButtonProps> = ({
   ...props
 }) => {
   const baseClasses =
-    'rounded-full font-extrabold inline-flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs disabled:opacity-50 disabled:cursor-not-allowed';
+    'rounded-full font-extrabold inline-flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap';
 
   const sizeClasses =
     size === 'sm'

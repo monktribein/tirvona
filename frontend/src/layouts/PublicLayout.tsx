@@ -190,14 +190,11 @@ export const PublicLayout: React.FC = () => {
   };
 
   const navLinks = [
-    { label: 'Destinations', to: '/search', hasDropdown: false },
     { label: 'Stay', to: '/search', hasDropdown: false },
     { label: 'Offers & Deals', to: '/offers', hasDropdown: false },
     { label: 'Darshan & Seva', to: '/temples', hasDropdown: false },
     { label: 'Tirvona Services', to: '/local', hasDropdown: false },
-    { label: 'Volunteer & Careers', to: '/volunteer', hasDropdown: false },
     { label: 'Events', to: '/events', hasDropdown: false },
-    { label: 'Blog', to: '/blog', hasDropdown: false },
   ];
 
   const isHomePage = location.pathname === '/';
@@ -557,6 +554,8 @@ export const PublicLayout: React.FC = () => {
                 <li><Link to="/search" className="hover:text-white transition-colors">Ashram Bookings</Link></li>
                 <li><Link to="/search" className="hover:text-white transition-colors">Destinations</Link></li>
                 <li><Link to="/pilgrimage-circuits" className="hover:text-white transition-colors">Pilgrimage Circuits</Link></li>
+                <li><Link to="/blog" className="hover:text-white transition-colors">Blog &amp; Articles</Link></li>
+                <li><Link to="/volunteer" className="hover:text-white transition-colors">Volunteer &amp; Careers</Link></li>
                 <li><Link to="/search" className="hover:text-white transition-colors">Stay Types</Link></li>
                 <li><Link to="/help" className="hover:text-white transition-colors">How It Works</Link></li>
               </ul>

@@ -135,22 +135,8 @@ export const BlogDetailPage: React.FC = () => {
   const author = post.authorId || {};
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-[#070F1B] pt-20 sm:pt-24 pb-16">
-      
-      {/* 1. Breadcrumb Bar */}
-      <div className="bg-white dark:bg-[#0B192C] border-b border-gray-100 dark:border-slate-800/80 py-3 px-4 sm:px-6">
-        <div className="max-w-7xl mx-auto flex items-center gap-2 text-xs font-bold text-gray-500 dark:text-gray-400 overflow-x-auto scrollbar-none">
-          <Link to="/" className="hover:text-[#0A4DA6] transition-colors">Home</Link>
-          <ChevronRight size={13} className="text-gray-400 shrink-0" />
-          <Link to="/blog" className="hover:text-[#0A4DA6] transition-colors">Media Hub</Link>
-          <ChevronRight size={13} className="text-gray-400 shrink-0" />
-          <span className="text-[#0A4DA6] dark:text-amber-400 font-extrabold whitespace-nowrap">{post.category}</span>
-          <ChevronRight size={13} className="text-gray-400 shrink-0" />
-          <span className="text-gray-700 dark:text-gray-200 font-extrabold truncate max-w-[200px] sm:max-w-xs">{post.title}</span>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-6 space-y-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-[#070F1B] pb-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-1 sm:pt-3 space-y-8">
 
         {/* 2. Tirvona Hero Section */}
         <div className="relative rounded-[32px] overflow-hidden shadow-2xl min-h-[400px] sm:min-h-[480px] flex items-end p-6 sm:p-12 border border-gray-100 dark:border-slate-800 group">
@@ -393,11 +379,11 @@ export const BlogDetailPage: React.FC = () => {
 
           </div>
 
-          {/* Right Sticky Sidebar (Desktop Only - 1 Col) */}
+          {/* Right Static Sidebar (Desktop Only - 1 Col) */}
           <div className="space-y-6">
 
             {/* Sidebar Author Card */}
-            <div className="bg-white dark:bg-[#0B192C] rounded-[32px] p-6 border border-gray-100 dark:border-slate-800 shadow-sm space-y-4 sticky top-24">
+            <div className="bg-white dark:bg-[#0B192C] rounded-[32px] p-6 border border-gray-100 dark:border-slate-800 shadow-sm space-y-4">
               <div className="text-center space-y-2">
                 <img
                   src={author.photo || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&h=300&q=80'}
