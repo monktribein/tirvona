@@ -240,7 +240,11 @@ export const SearchPage: React.FC = () => {
   const selectSuggestion = (sug: string) => {
     setDestination(sug);
     setShowSuggestions(false);
-    setSearchParams({ destination: sug, checkIn: checkInQuery, checkOut: checkOutQuery, guests: guestsQuery });
+    const params: Record<string, string> = { destination: sug };
+    if (checkInQuery) params.checkIn = checkInQuery;
+    if (checkOutQuery) params.checkOut = checkOutQuery;
+    if (guestsQuery) params.guests = guestsQuery;
+    setSearchParams(params);
   };
 
   const buildDetailLink = (ashramId: string) => {

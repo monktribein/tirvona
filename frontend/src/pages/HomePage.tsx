@@ -958,7 +958,7 @@ export const HomePage: React.FC = () => {
           {[...sacredDestinations, ...sacredDestinations].map((item, idx) => (
             <div
               key={idx}
-              onClick={() => navigate(`/search?destination=${encodeURIComponent(item.name)}${checkIn ? `&checkIn=${checkIn}` : ''}${checkOut ? `&checkOut=${checkOut}` : ''}${guests ? `&guests=${guests}` : ''}`)}
+              onClick={() => navigate(`/search?destination=${encodeURIComponent(item.name)}${checkIn ? `&checkIn=${checkIn}` : ''}${checkOut ? `&checkOut=${checkOut}` : ''}${totalGuests ? `&guests=${totalGuests}` : ''}`)}
               className="flex-shrink-0 relative group cursor-pointer"
               style={{ width: 'clamp(200px, 48vw, 220px)' }}
             >
@@ -1264,7 +1264,7 @@ export const HomePage: React.FC = () => {
               <motion.div
                 key={`${ashram._id}-${idx}`}
                 layout
-                onClick={() => navigate(`/ashram/${ashram._id}${checkIn || checkOut ? `?checkIn=${checkIn}&checkOut=${checkOut}&guests=${guests}` : ''}`)}
+                onClick={() => navigate(`/ashram/${ashram._id}${checkIn || checkOut ? `?checkIn=${checkIn}&checkOut=${checkOut}&guests=${totalGuests}` : ''}`)}
                 className="flex-shrink-0 relative group cursor-pointer"
                 style={{ width: 'clamp(200px, 48vw, 220px)' }}
               >
