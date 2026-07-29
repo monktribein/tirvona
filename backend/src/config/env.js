@@ -79,17 +79,25 @@ const config = {
       return Boolean(this.clientId);
     },
   },
-  // SMTP transport for Nodemailer.
-  smtp: {
-    host: process.env.SMTP_HOST,
-    port: parseInt(process.env.SMTP_PORT, 10) || 587,
-    secure: process.env.SMTP_SECURE === 'true',
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-    fromName: process.env.SMTP_FROM_NAME || 'Tirvona',
-    fromEmail: process.env.SMTP_FROM_EMAIL || 'no-reply@tirvona.com',
+  // Resend transactional email (OTP, password reset, notifications, messages).
+  // Replaces the previous SMTP/Nodemailer transport: a single HTTPS API key
+  // instead of host/port/user/pass, no connection pool to go stale, and no
+  // Gmail App Password to be silently revoked mid-process.
+  //
+  // `fromEmail` must be on a domain verified in the Resend dashboard, otherwise
+  // Resend rejects the send. Use `onboarding@resend.dev` for local testing —
+  // it only delivers to the address that owns the Resend account.
+  resend: {
+    apiKey: process.env.RESEND_API_KEY,
+    fromName: process.env.EMAIL_FROM_NAME || 'Tirvona',
+    fromEmail: process.env.EMAIL_FROM_EMAIL || 'no-reply@tirvona.com',
+    replyTo: process.env.EMAIL_REPLY_TO || 'support@tirvona.com',
     get configured() {
-      return Boolean(this.host && this.user && this.pass);
+      return Boolean(this.apiKey);
+    },
+    // Full RFC 5322 sender used on every message.
+    get from() {
+      return `${this.fromName} <${this.fromEmail}>`;
     },
   },
 };

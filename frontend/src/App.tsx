@@ -56,6 +56,16 @@ import StaffManagementPage from './pages/StaffManagementPage';
 import ReceptionCheckinPage from './pages/ReceptionCheckinPage';
 import HousekeepingPage from './pages/HousekeepingPage';
 import BannerBoyDashboard from './pages/BannerBoyDashboard';
+// Parking System — a self-contained module. Lazy-loaded so it ships as its own
+// chunk and adds nothing to the initial bundle of any existing route.
+const ParkingHubPage = lazy(() => import('./modules/parking/pages/ParkingHubPage'));
+const ParkingDetailPage = lazy(() => import('./modules/parking/pages/ParkingDetailPage'));
+const ParkingCheckoutPage = lazy(() => import('./modules/parking/pages/ParkingCheckoutPage'));
+const ParkingBookingDetailPage = lazy(() => import('./modules/parking/pages/ParkingBookingDetailPage'));
+const ParkingMyBookingsPage = lazy(() => import('./modules/parking/pages/ParkingMyBookingsPage'));
+const ParkingGuardPanelPage = lazy(() => import('./modules/parking/pages/ParkingGuardPanelPage'));
+const ParkingPartnerDashboardPage = lazy(() => import('./modules/parking/pages/ParkingPartnerDashboardPage'));
+
 const AdminDashboard = lazy(() => import('./admin/dashboard/pages/AdminDashboard'));
 const VerificationQueuePage = lazy(() => import('./admin/ashrams/pages/VerificationQueuePage'));
 const UserManagementPage = lazy(() => import('./admin/users/pages/UserManagementPage'));
@@ -199,6 +209,12 @@ const AppContent: React.FC = () => {
           <Route path="/volunteer" element={<VolunteerHubPage />} />
           <Route path="/careers" element={<VolunteerHubPage />} />
 
+          {/* ── Parking System (public discovery) ──
+              Static segments are declared before the `/parking/:slug` catch-all
+              so a listing slug can never shadow them. */}
+          <Route path="/parking" element={<ParkingHubPage />} />
+          <Route path="/parking/:slug" element={<ParkingDetailPage />} />
+
           {/* Customer Profile Ecosystem Routes */}
           <Route path="/profile" element={<ProfileMainPage />} />
           <Route path="/profile/bookings" element={<ProfileBookingsPage />} />
@@ -209,6 +225,29 @@ const AppContent: React.FC = () => {
           <Route path="/profile/settings" element={<ProfileSettingsPage />} />
           <Route path="/profile/notifications" element={<ProfileNotificationsPage />} />
           <Route path="/dashboard" element={<Navigate to="/profile" replace />} />
+        </Route>
+
+        {/* ── Parking System (authenticated) ──
+            Only a signed-in session is required here, deliberately: parking
+            roles are grants in the `parking_staff` collection, not values of
+            `User.role`, so `allowedRoles` cannot express them. The real
+            authorisation is the capability check the parking API performs on
+            every request, and each panel renders an explicit "not assigned"
+            state when the caller holds no grant. React Router ranks these
+            static paths above `/parking/:slug`, so no listing slug can shadow
+            them. */}
+        <Route
+          element={
+            <ProtectedRoute>
+              <PublicLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route path="/parking/checkout" element={<ParkingCheckoutPage />} />
+          <Route path="/parking/my-bookings" element={<ParkingMyBookingsPage />} />
+          <Route path="/parking/booking/:id" element={<ParkingBookingDetailPage />} />
+          <Route path="/parking/gate" element={<ParkingGuardPanelPage />} />
+          <Route path="/parking/partner" element={<ParkingPartnerDashboardPage />} />
         </Route>
 
         {/* Unified Dashboard Routes for Owners & Staff */}

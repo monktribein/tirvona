@@ -76,6 +76,24 @@ const otpSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    // Outcome of the actual send. The record is written before delivery is
+    // attempted, so without these you cannot tell "code created" from "code
+    // delivered" after the fact — which makes "I never got the email" reports
+    // impossible to diagnose.
+    delivered: {
+      type: Boolean,
+      default: false,
+    },
+    deliveryError: {
+      type: String,
+      default: '',
+    },
+    // Resend email id (or SMS gateway request id), for correlating with the
+    // provider's own logs — e.g. https://resend.com/emails/<id>.
+    providerMessageId: {
+      type: String,
+      default: '',
+    },
   },
   { timestamps: true }
 );

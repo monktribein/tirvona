@@ -23,6 +23,8 @@ export const authService = {
   verifyResetToken: (token: string) => api.get(`/auth/reset-password/${token}`),
   resetPassword: (token: string, newPassword: string) => api.post('/auth/reset-password', { token, newPassword }),
   me: () => api.get('/auth/me'),
+  /** Update the signed-in user's own name / phone. */
+  updateMe: (data: { name?: string; phone?: string }) => api.put('/auth/me', data),
 };
 
 // ── Ashrams ──────────────────────────────────────────────────────────────────

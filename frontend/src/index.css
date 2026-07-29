@@ -48,7 +48,7 @@
   --warning: #E58C28;
   --danger: #EF4444;
   
-  --border: #F1F5F9;
+  --border: rgba(229, 140, 40, 0.35);
   --input: #F8FAFC;
   --ring: rgba(10, 77, 166, 0.2);
 }
@@ -74,7 +74,7 @@
   --warning: #E58C28;
   --danger: #EF4444;
   
-  --border: #1E293B;
+  --border: rgba(229, 140, 40, 0.35);
   --input: #1E293B;
   --ring: rgba(10, 77, 166, 0.3);
 }
@@ -283,5 +283,19 @@ option:hover {
     animation: none;
   }
   .otp-check-draw { stroke-dashoffset: 0; }
+}
+
+/* Global Shadow Removal Rule */
+*, ::before, ::after {
+  box-shadow: none !important;
+}
+
+/* Global Thin Golden Border Rule for Cards & Containers */
+[class*="border-gray-"],
+[class*="border-slate-"],
+[class*="border-zinc-"],
+[class*="border-neutral-"],
+[class*="border-white/"] {
+  border-color: rgba(229, 140, 40, 0.35) !important;
 }
 

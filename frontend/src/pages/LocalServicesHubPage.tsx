@@ -126,7 +126,7 @@ export const LocalServicesHubPage: React.FC = () => {
         <div className="relative text-white rounded-3xl p-6 sm:p-8 lg:p-10 shadow-xl overflow-hidden min-h-[340px] sm:min-h-[380px] flex flex-col justify-between items-center text-center border border-white/10">
           {/* Background Banner Image */}
           <img
-            src="/banner/itnerity.png"
+            src="/banner/popular.png"
             alt="Local Services, Transport & Guides Banner"
             className="absolute inset-0 w-full h-full object-cover"
           />

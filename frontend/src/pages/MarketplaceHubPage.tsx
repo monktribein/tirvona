@@ -67,7 +67,7 @@ export const MarketplaceHubPage: React.FC = () => {
     fetchProducts();
   }, [selectedCategory, sortBy]);
 
-  const fetchServices = async () => {}; // dummy placeholder if referenced
+  const fetchServices = async () => { }; // dummy placeholder if referenced
 
   const fetchProducts = async () => {
     setLoading(true);
@@ -190,67 +190,78 @@ export const MarketplaceHubPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50/70 dark:bg-[#070F1B] pb-24 text-left">
-      {/* ── 1. Hero Header Banner ── */}
-      <section className="bg-gradient-to-r from-[#0B192C] via-[#0A4DA6] to-[#0B192C] text-white py-12 px-4 sm:px-6 lg:px-8 border-b border-white/10 relative overflow-hidden">
-        <div className="absolute right-0 top-0 w-80 h-80 bg-[#E58C28]/20 rounded-full blur-3xl pointer-events-none" />
-        <div className="max-w-7xl mx-auto space-y-4 relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-          <div className="space-y-3 max-w-2xl">
-            <div className="flex items-center gap-2">
-              <span className="px-3 py-1 bg-[#E58C28]/20 text-[#E58C28] border border-[#E58C28]/35 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow-sm">
-                <ShieldCheck size={12} /> Temple Sanctified Products
-              </span>
-            </div>
-            <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight">
-              Spiritual <span className="text-[#E58C28]">Marketplace</span>
-            </h1>
-            <p className="text-xs sm:text-sm text-blue-100/90 font-medium leading-relaxed">
-              Order authentic Temple Prasad, Lab-Certified Rudraksha, Vrindavan Tulsi Mala, Panchmukhi Brass Diyas, and Nitya Puja Samagri directly from sacred temple vendors.
-            </p>
-          </div>
+      {/* Hero Banner Header Container matching Navbar Layout Width */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-1 sm:pt-3">
+        <div className="relative text-white rounded-3xl p-6 sm:p-8 lg:p-10 shadow-xl overflow-hidden min-h-[260px] sm:min-h-[300px] flex flex-col items-center justify-center text-center border border-white/10">
+          {/* Background Banner Image */}
+          <img
+            src="/banner/marketplace.png"
+            alt="Spiritual Marketplace Banner"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          {/* Overlay gradient for text contrast */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/55 to-black/40" />
 
-          {/* Cart Floating Button */}
+          {/* Top Right Sacred Cart Button */}
           <button
             onClick={() => setIsCartOpen(true)}
-            className="px-5 py-3 bg-[#E58C28] hover:bg-[#d67e1f] text-white font-extrabold rounded-full text-xs flex items-center gap-2 shadow-xl shadow-[#E58C28]/20 cursor-pointer transition-transform hover:scale-105 shrink-0"
+            className="absolute top-4 sm:top-6 right-4 sm:right-6 z-20 px-4 sm:px-5 py-2.5 bg-[#E58C28] hover:bg-[#d67e1f] text-white font-extrabold rounded-full text-xs flex items-center gap-2 shadow-xl shadow-[#E58C28]/30 cursor-pointer transition-transform hover:scale-105"
           >
             <ShoppingCart size={16} />
             <span>Sacred Cart ({cart.reduce((a, b) => a + b.qty, 0)})</span>
           </button>
+
+          {/* Banner Content (Centered matching global Tirvona typography & color scheme) */}
+          <div className="max-w-3xl space-y-2.5 relative z-10 mx-auto text-center my-auto pt-2 pb-4">
+            <p className="font-['Kalam'] text-base sm:text-xl font-bold text-[#E58C28] drop-shadow-md">
+              Temple Sanctified Products
+            </p>
+            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white leading-tight drop-shadow-lg" style={{ fontFamily: "Satoshi, 'General Sans', Manrope, Inter, sans-serif", letterSpacing: '-0.03em' }}>
+              Spiritual <span className="text-[#D4AF37]">Marketplace</span>
+            </h1>
+
+            <p className="text-xs sm:text-sm lg:text-base text-gray-100 max-w-2xl mx-auto font-medium leading-relaxed drop-shadow">
+              Order authentic Temple Prasad, Lab-Certified Rudraksha, Vrindavan Tulsi Mala, Panchmukhi Brass Diyas, and Nitya Puja Samagri directly from sacred temple vendors.
+            </p>
+
+            {/* Search Bar Container inside Banner */}
+            <form onSubmit={handleSearchSubmit} className="w-full max-w-2xl mx-auto mt-4 relative z-10 bg-white/95 dark:bg-[#0B192C]/95 backdrop-blur-md border border-white/20 dark:border-slate-800 rounded-full p-2 sm:p-2.5 shadow-2xl flex items-center gap-2">
+              <div className="relative flex-1 flex items-center">
+                <Search size={18} className="absolute left-4 text-gray-400" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Search Kashi Prasad, Rudraksha mala, Brass Diya, Bhagavad Gita..."
+                  className="w-full pl-11 pr-4 py-2 bg-transparent text-xs sm:text-sm font-bold text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none"
+                />
+              </div>
+              <button
+                type="submit"
+                className="px-6 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-blue-900 text-white text-xs font-black shadow-md transition-colors cursor-pointer shrink-0"
+              >
+                Search
+              </button>
+            </form>
+          </div>
         </div>
-      </section>
+      </div>
 
-      {/* ── 2. Search & Category Filter Bar ── */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6 relative z-20 space-y-6">
-        <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-4 sm:p-5 shadow-xl space-y-4">
-          <form onSubmit={handleSearchSubmit} className="flex gap-3">
-            <div className="relative flex-grow">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search Kashi Prasad, Rudraksha mala, Brass Diya, Bhagavad Gita..."
-                className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-full text-xs font-bold focus:outline-none focus:border-[#0A4DA6]"
-              />
-            </div>
-            <EnterpriseButton type="submit" variant="primary" className="px-6 py-2.5 text-xs shrink-0">
-              Search
-            </EnterpriseButton>
-          </form>
-
+      {/* ── 2. Category Filter & Sort Toolbar ── */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 space-y-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           {/* Category Filter Pills */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none pt-1">
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-none">
             {categories.map((cat) => {
               const isActive = selectedCategory === cat.id;
               return (
                 <button
                   key={cat.id}
                   onClick={() => { setSelectedCategory(cat.id); setSearchParams({ category: cat.id }); }}
-                  className={`px-4 py-2 rounded-full text-xs font-extrabold whitespace-nowrap transition-all cursor-pointer ${
-                    isActive
-                      ? 'bg-[#0A4DA6] text-white shadow-md shadow-[#0A4DA6]/25'
-                      : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200'
-                  }`}
+                  className={`px-4 py-2 rounded-full text-xs font-extrabold whitespace-nowrap transition-all cursor-pointer ${isActive
+                    ? 'bg-[#0A4DA6] text-white shadow-md shadow-[#0A4DA6]/25'
+                    : 'bg-white dark:bg-[#0B192C] text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-slate-800 hover:bg-gray-100'
+                    }`}
                 >
                   {cat.label}
                 </button>
@@ -258,100 +269,21 @@ export const MarketplaceHubPage: React.FC = () => {
             })}
           </div>
 
-          {/* Sort & Reset Toolbar */}
-          <div className="flex items-center justify-between gap-3 pt-2 border-t border-gray-100 dark:border-slate-800">
-            <span className="text-xs font-bold text-gray-400">Filter & Sort Products</span>
-            <div className="flex items-center gap-3">
-              <EnterpriseSortDropdown value={sortBy} onChange={(val) => setSortBy(val)} />
-              <EnterpriseResetButton onReset={handleResetFilters} />
-            </div>
+          {/* Sort & Reset Controls */}
+          <div className="flex items-center gap-3 shrink-0 self-end md:self-auto">
+            <EnterpriseSortDropdown value={sortBy} onChange={(val) => setSortBy(val)} />
+            <EnterpriseResetButton onReset={handleResetFilters} />
           </div>
         </div>
 
-        {/* ── 3. Products Grid ── */}
-        {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
-            {[1, 2, 3, 4, 5, 6].map((n) => (
-              <div key={n} className="h-72 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] animate-pulse" />
-            ))}
-          </div>
-        ) : products.length === 0 ? (
-          <div className="text-center py-20 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] space-y-4">
-            <ShoppingBag className="mx-auto text-gray-300" size={48} />
-            <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white">No spiritual products found</h3>
-            <p className="text-xs text-gray-400">Try changing your search keywords or category filters.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-2">
-            {products.map((p) => (
-              <div
-                key={p._id}
-                className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] overflow-hidden shadow-lg shadow-gray-200/40 dark:shadow-none hover:shadow-2xl transition-all duration-300 flex flex-col justify-between"
-              >
-                {/* Image Banner */}
-                <div className="relative h-48 w-full bg-slate-900 overflow-hidden">
-                  <img
-                    src={p.images?.[0] || 'https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=600&q=80'}
-                    alt={p.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-
-                  {/* Temple Source Tag */}
-                  <span className="absolute top-3 left-3 px-3 py-1 bg-white/90 dark:bg-[#0B192C]/90 text-[#0A4DA6] dark:text-white rounded-full text-[10px] font-black shadow-sm">
-                    🏛️ {p.templeSource}
-                  </span>
-
-                  {/* Rating Tag */}
-                  <div className="absolute top-3 right-3 px-2.5 py-1 bg-amber-400 text-slate-950 rounded-full text-xs font-black flex items-center gap-1 shadow-sm">
-                    <Star size={12} className="fill-slate-950" />
-                    <span>{p.rating.toFixed(1)}</span>
-                  </div>
-                </div>
-
-                {/* Content */}
-                <div className="p-5 space-y-4 flex-grow flex flex-col justify-between">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-1.5 text-[10px] font-extrabold text-emerald-600">
-                      <ShieldCheck size={12} />
-                      <span>{p.authenticityCertificate}</span>
-                    </div>
-                    <h3 className="font-black text-base text-[#0B192C] dark:text-white leading-tight">
-                      {p.name}
-                    </h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium line-clamp-2">
-                      {p.description}
-                    </p>
-                  </div>
-
-                  {/* Pricing & Cart Button */}
-                  <div className="pt-3 border-t border-gray-100 dark:border-slate-800 flex justify-between items-center">
-                    <div>
-                      <span className="text-[10px] text-gray-400 block font-bold uppercase">Price (Incl. GST)</span>
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-lg font-black text-[#0A4DA6] dark:text-white">
-                          ₹{p.salePrice || p.price}
-                        </span>
-                        {p.salePrice && (
-                          <span className="text-xs text-gray-400 line-through">₹{p.price}</span>
-                        )}
-                      </div>
-                    </div>
-
-                    <EnterpriseButton
-                      variant="primary"
-                      size="sm"
-                      onClick={() => addToCart(p)}
-                      className="gap-1.5"
-                    >
-                      <ShoppingCart size={14} /> Add to Cart
-                    </EnterpriseButton>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        {/* ── 3. Production Coming Soon Banner Image ── */}
+        <div className="mt-8 bg-white dark:bg-[#0B192C] rounded-[32px] p-6 sm:p-10 border border-gray-100 dark:border-slate-800 text-center flex items-center justify-center overflow-hidden">
+          <img
+            src="/banner/coming%20soon/marketplace.png"
+            alt="Marketplace Coming Soon Banner"
+            className="max-w-full max-h-[500px] w-auto h-auto object-contain rounded-2xl"
+          />
+        </div>
       </section>
 
       {/* ── 4. Cart Modal ── */}
@@ -491,9 +423,8 @@ export const MarketplaceHubPage: React.FC = () => {
                   key={m}
                   type="button"
                   onClick={() => setPaymentMethod(m)}
-                  className={`p-2.5 border rounded-xl font-extrabold uppercase text-[10px] cursor-pointer transition-all ${
-                    paymentMethod === m ? 'border-[#0A4DA6] bg-blue-50 text-[#0A4DA6]' : 'border-gray-200 text-gray-500'
-                  }`}
+                  className={`p-2.5 border rounded-xl font-extrabold uppercase text-[10px] cursor-pointer transition-all ${paymentMethod === m ? 'border-[#0A4DA6] bg-blue-50 text-[#0A4DA6]' : 'border-gray-200 text-gray-500'
+                    }`}
                 >
                   {m === 'upi' ? '⚡ UPI / GPay' : m === 'cod' ? '💵 Cash on Delivery' : '💳 Credit/Debit Card'}
                 </button>

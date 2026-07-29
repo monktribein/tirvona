@@ -332,7 +332,7 @@ export const forgotPassword = async (req, res) => {
     });
 
     if (delivery.simulated) {
-      // No SMTP configured — print the link so local development still works.
+      // No RESEND_API_KEY — print the link so local development still works.
       console.log(`[PASSWORD RESET:DEV] Link for ${maskEmail(user.email)}: ${resetUrl}`);
     } else if (!delivery.sent) {
       console.error(`[PASSWORD RESET] Delivery failed for ${maskEmail(user.email)}: ${delivery.error}`);

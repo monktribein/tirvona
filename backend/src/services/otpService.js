@@ -113,6 +113,19 @@ export const issueOtp = async ({ user, type, channelValue, identifier, ignoreCoo
     error: delivery.error,
   });
 
+  // Persist the outcome so a later "I never received it" can be answered from
+  // the database instead of from lost console output.
+  await Otp.updateOne(
+    { _id: record._id },
+    {
+      $set: {
+        delivered: Boolean(delivery.sent),
+        deliveryError: delivery.error || '',
+        providerMessageId: delivery.messageId || delivery.requestId || '',
+      },
+    }
+  );
+
   // The generated code is never returned to the caller — not even in
   // development. It exists only in the delivered email/SMS and as a hash in the
   // database. Anything else would be a bypass of the whole challenge.

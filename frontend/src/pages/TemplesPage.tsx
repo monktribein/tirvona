@@ -36,22 +36,34 @@ export const TemplesPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-[#070F1B] pt-24 sm:pt-28 pb-16">
-      {/* Hero Header */}
-      <div className="bg-gradient-to-r from-[#0B192C] via-[#0A4DA6] to-[#0B192C] text-white py-12 lg:py-16 px-4 sm:px-6">
-        <div className="max-w-7xl mx-auto text-center space-y-4">
-          <span className="px-4 py-1 rounded-full bg-white/10 text-blue-200 text-xs font-bold uppercase tracking-wider border border-white/20">
-            Sacred Shrines & Mandir Directory
-          </span>
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight">
-            Holy Temples of India
-          </h1>
-          <p className="text-sm sm:text-base text-blue-100 max-w-2xl mx-auto font-medium">
-            Explore authentic Darshan timings, Aarti schedules, temple rules, history, dress code, and official trust details.
-          </p>
+    <div className="min-h-screen bg-gray-50 dark:bg-[#070F1B] pb-16">
+      {/* Hero Banner Header Container matching Navbar Layout Width */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-1 sm:pt-3">
+        <div className="relative text-white rounded-3xl p-6 sm:p-8 lg:p-10 shadow-xl overflow-hidden min-h-[340px] sm:min-h-[380px] flex flex-col justify-between items-center text-center border border-white/10">
+          {/* Background Banner Image */}
+          <img
+            src="/banner/popular.png"
+            alt="Holy Temples of India Banner"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          {/* Overlay gradient for text contrast */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/55 to-black/40" />
 
-          {/* Search Bar */}
-          <form onSubmit={handleSearch} className="max-w-xl mx-auto mt-6 flex items-center bg-white dark:bg-[#0B192C] rounded-full p-2 shadow-xl border border-white/20">
+          {/* Banner Content */}
+          <div className="max-w-3xl space-y-2.5 relative z-10 mx-auto text-center my-auto pt-2 pb-4">
+            <span className="px-4 py-1 rounded-full bg-white/15 backdrop-blur-md text-blue-200 text-xs font-bold uppercase tracking-wider border border-white/20">
+              Sacred Shrines &amp; Mandir Directory
+            </span>
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white drop-shadow-lg" style={{ fontFamily: "Satoshi, 'General Sans', Manrope, Inter, sans-serif", letterSpacing: '-0.03em' }}>
+              Holy Temples of India
+            </h1>
+            <p className="text-sm sm:text-base text-gray-100 max-w-2xl mx-auto font-medium drop-shadow">
+              Explore authentic Darshan timings, Aarti schedules, temple rules, history, dress code, and official trust details.
+            </p>
+          </div>
+
+          {/* Search Bar Container inside Banner */}
+          <form onSubmit={handleSearch} className="w-full max-w-xl mx-auto relative z-10 bg-white/95 dark:bg-[#0B192C]/95 backdrop-blur-md rounded-full p-2 shadow-2xl border border-white/20 flex items-center">
             <Search size={18} className="text-gray-400 ml-4 shrink-0" />
             <input
               type="text"

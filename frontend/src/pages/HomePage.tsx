@@ -12,7 +12,7 @@ import heroPng from '../assets/hero.png';
 import {
   Search,
   MapPin,
-  Map as MapIcon,
+  CircleParking,
   Calendar,
   Users,
   ShieldCheck,
@@ -376,7 +376,10 @@ export const HomePage: React.FC = () => {
     { id: 'events', label: 'Events &\nFestivals', icon: Sparkles, category: 'events', target: '/events' },
     { id: 'guides', label: 'Travel\nGuides', icon: BookOpen, category: 'guides', target: '/travel-guides' },
     { id: 'local_guides', label: 'Local\nGuides', icon: Users, category: 'local_guides', target: '/local-guides' },
-    { id: 'cabs', label: 'Transport &\nCabs', icon: MapIcon, category: 'cabs', target: '/transport' },
+    // Parking replaces the former "Transport & Cabs" tile and opens the Parking
+    // module. Transport itself is unchanged and still reachable from the Local
+    // Services hub (/local) and its own /transport route.
+    { id: 'parking', label: 'Parking', icon: CircleParking, category: 'parking', target: '/parking' },
     { id: 'food', label: 'Food &\nDining', icon: Utensils, category: 'food', target: '/restaurants' },
     { id: 'prasad', label: 'Sacred\nPrasad', icon: Activity, category: 'prasad', target: '#prashad' },
     { id: 'shops', label: 'Shops &\nServices', icon: LayoutGrid, category: 'shops', target: '/shops' },

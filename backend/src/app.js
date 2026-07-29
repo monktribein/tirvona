@@ -16,6 +16,7 @@ import mongoose from 'mongoose';
 // Config
 import config from './config/env.js';
 import connectDB from './config/db.js';
+import { verifyEmailTransport } from './services/emailService.js';
 
 // Routes imports
 import authRoutes from './routes/authRoutes.js';
@@ -45,6 +46,9 @@ import platformSettingsRoutes from './routes/platformSettingsRoutes.js';
 import enterpriseNotificationRoutes from './routes/enterpriseNotificationRoutes.js';
 import approvalRoutes from './routes/approvalRoutes.js';
 import adminRoutes from './admin/index.js';
+// Parking System — a self-contained module. Everything it owns lives under
+// modules/parking and its own `parking_*` collections; this is its only mount.
+import parkingRoutes from './modules/parking/index.js';
 
 // Connect to MongoDB
 connectDB();
@@ -172,7 +176,11 @@ const apiLimiter = rateLimit({
 });
 
 // Routing Middleware
-app.use('/uploads', express.static(path.join(process.cwd(), 'public', 'uploads')));
+// NOTE: the `/uploads` static route was removed. All media now lives on
+// Cloudinary — nothing writes to public/uploads any more, and no database
+// record references it. Serving user-uploaded files from our own origin was
+// also a stored-XSS surface (an uploaded .html/.svg is executed as same-origin
+// content), so dropping the route closes that permanently.
 app.use('/api', apiLimiter);
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/ashrams', ashramRoutes);
@@ -201,6 +209,7 @@ app.use('/api/platform-settings', platformSettingsRoutes);
 app.use('/api/enterprise-notifications', enterpriseNotificationRoutes);
 app.use('/api/approvals', approvalRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/parking', parkingRoutes);
 
 // API documentation (Swagger UI). Exposed only outside production so the full
 // API schema is not handed to attackers in prod.
@@ -255,6 +264,8 @@ httpServer.on('error', (err) => {
 // Start HTTP & Socket.io server
 httpServer.listen(PORT, () => {
   console.log(`🚀 Server listening (${config.nodeEnv}) on port ${PORT}`);
+  // Surface a bad Resend API key at boot instead of on a real user's OTP.
+  verifyEmailTransport();
 });
 
 // Graceful shutdown sequence

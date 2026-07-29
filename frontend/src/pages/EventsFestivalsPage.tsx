@@ -48,26 +48,31 @@ export const EventsFestivalsPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-[#070F1B] pt-24 sm:pt-28 pb-16">
-      {/* Hero Header */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-[#0B192C] via-[#0A4DA6] to-[#0B192C] text-white py-12 lg:py-16 px-4 sm:px-6">
-        {publishedFestival.bannerImage && (
+    <div className="min-h-screen bg-gray-50 dark:bg-[#070F1B] pb-16">
+      {/* Hero Banner Header Container matching Navbar Layout Width */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-1 sm:pt-3">
+        <div className="relative text-white rounded-3xl p-6 sm:p-8 lg:p-10 shadow-xl overflow-hidden min-h-[300px] flex flex-col justify-between items-center text-center border border-white/10">
+          {/* Background Banner Image */}
           <img
-            src={publishedFestival.bannerImage}
-            alt="Festival Special Banner"
-            className="absolute inset-0 w-full h-full object-cover opacity-35"
+            src={publishedFestival.bannerImage || '/banner/popular.png'}
+            alt="Events & Sacred Festivals Banner"
+            className="absolute inset-0 w-full h-full object-cover"
           />
-        )}
-        <div className="max-w-7xl mx-auto text-center space-y-4 relative z-10">
-          <span className="px-4 py-1 rounded-full bg-white/10 text-blue-200 text-xs font-bold uppercase tracking-wider border border-white/20">
-            {publishedFestival.announcement || 'Religious Festivals & Temple Celebrations'}
-          </span>
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight">
-            {publishedFestival.heading || 'Events & Sacred Festivals'}
-          </h1>
-          <p className="text-sm sm:text-base text-blue-100 max-w-2xl mx-auto font-medium">
-            {publishedFestival.subtitle || 'Stay updated with Kumbh Mela dates, Temple Utsavs, Shivratri processions, and festival special ashram bookings across India.'}
-          </p>
+          {/* Overlay gradient */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/55 to-black/40" />
+
+          {/* Banner Content */}
+          <div className="max-w-3xl space-y-2.5 relative z-10 mx-auto text-center my-auto pt-2 pb-4">
+            <span className="px-4 py-1 rounded-full bg-white/15 backdrop-blur-md text-blue-200 text-xs font-bold uppercase tracking-wider border border-white/20">
+              {publishedFestival.announcement || 'Religious Festivals & Temple Celebrations'}
+            </span>
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white drop-shadow-lg" style={{ fontFamily: "Satoshi, 'General Sans', Manrope, Inter, sans-serif", letterSpacing: '-0.03em' }}>
+              {publishedFestival.heading || 'Events & Sacred Festivals'}
+            </h1>
+            <p className="text-sm sm:text-base text-gray-100 max-w-2xl mx-auto font-medium drop-shadow">
+              {publishedFestival.subtitle || 'Stay updated with Kumbh Mela dates, Temple Utsavs, Shivratri processions, and festival special ashram bookings across India.'}
+            </p>
+          </div>
         </div>
       </div>
 

@@ -68,6 +68,8 @@ interface AuthContextType {
   verifyGoogleOtp: (googleToken: string, otp: string) => Promise<AuthResult>;
   resendGoogleOtp: (googleToken: string) => Promise<{ success: boolean; message?: string; googleChallenge?: GoogleChallenge }>;
   completeGoogleProfile: (googleToken: string, name: string, phone: string) => Promise<AuthResult>;
+  /** Re-fetch the signed-in user, e.g. after they edit their own profile. */
+  refreshUser: () => Promise<void>;
   logout: () => void;
 }
 
@@ -304,6 +306,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     <AuthContext.Provider
       value={{
         user, token, loading, login, loginOTP, registerUser, logout,
+        refreshUser: fetchUserProfile,
         verifyLoginOtp, verifyRegistrationOtp, resendOtp,
         loginWithGoogle, verifyGoogleOtp, resendGoogleOtp, completeGoogleProfile,
       }}

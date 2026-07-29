@@ -12,6 +12,8 @@ import { GuestRoomSelector } from '../components/shared/GuestRoomSelector';
 import { GuestReviewsCarousel } from '../components/shared/GuestReviewsCarousel';
 import { VerifiedBadge } from '../components/shared/VerifiedBadge';
 import { useBookingSearch } from '../contexts/BookingSearchContext';
+import TirvonaMap from '../components/TirvonaMap';
+import { hasValidCoordinates } from '../utils/geo';
 import { 
   ShieldCheck, 
   MapPin, 
@@ -658,6 +660,27 @@ export const AshramDetailPage: React.FC = () => {
   }
 
   const galleryImages = ashram?.images || [];
+
+  /**
+   * The stay's position as [latitude, longitude], or null when none is set.
+   *
+   * Stored as GeoJSON, i.e. [longitude, latitude] — the reverse of what a map
+   * takes. The Ashram schema also DEFAULTS unset coordinates to New Delhi
+   * (77.209, 28.613), so a record that was never geocoded would otherwise be
+   * drawn confidently in Delhi. That exact pair is therefore treated as "not
+   * set" rather than shown, since a wrong pin is worse than no pin.
+   */
+  const SCHEMA_DEFAULT_LNG_LAT = [77.209, 28.613];
+  const ashramLatLng: [number, number] | null = (() => {
+    const pair = ashram?.address?.coordinates?.coordinates;
+    if (!Array.isArray(pair) || pair.length !== 2) return null;
+
+    const [lng, lat] = pair.map(Number);
+    if (!hasValidCoordinates(lat, lng)) return null;
+    if (lng === SCHEMA_DEFAULT_LNG_LAT[0] && lat === SCHEMA_DEFAULT_LNG_LAT[1]) return null;
+
+    return [lat, lng];
+  })();
 
   return (
     <div className="max-w-7xl mx-auto px-6 pt-2 pb-16 space-y-10">
@@ -1478,20 +1501,54 @@ export const AshramDetailPage: React.FC = () => {
 
 
 
-          {/* Location Coordinates Widget */}
-          <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[28px] shadow-sm space-y-4 text-center relative overflow-hidden flex flex-col items-center justify-center">
-            <div className="absolute inset-0 bg-[#0A4DA6]/5 pointer-events-none" />
-            <Map className="text-[#0A4DA6]" size={24} />
-            <h4 className="text-xs font-extrabold text-[#0B192C] dark:text-white">Retreat Coordinates</h4>
-            <p className="text-[9px] text-gray-400">Lat: {ashram.address?.coordinates?.coordinates?.[1]} , Lon: {ashram.address?.coordinates?.coordinates?.[0]}</p>
-            <a 
-              href={`https://www.google.com/maps/search/?api=1&query=${ashram?.address?.coordinates?.coordinates?.[1]},${ashram?.address?.coordinates?.coordinates?.[0]}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-5 py-2 bg-[#0A4DA6]/10 text-[#0A4DA6] border border-[#0A4DA6]/20 rounded-full text-[9px] font-bold hover:bg-[#0A4DA6]/15 transition-all text-center inline-block cursor-pointer"
-            >
-              View Google Maps
-            </a>
+          {/* Location map.
+              Previously this panel printed the raw "Lat: … , Lon: …" pair as
+              text. It now renders the position on an OpenStreetMap/Leaflet map;
+              the Google Maps link is kept because it is what hands a phone over
+              to turn-by-turn navigation. */}
+          <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[28px] shadow-sm space-y-4">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <h4 className="inline-flex items-center gap-2 text-xs font-extrabold text-[#0B192C] dark:text-white">
+                <Map className="text-[#0A4DA6]" size={16} /> Location
+              </h4>
+              {ashramLatLng && (
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${ashramLatLng[0]},${ashramLatLng[1]}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-1.5 bg-[#0A4DA6]/10 text-[#0A4DA6] border border-[#0A4DA6]/20 rounded-full text-[9px] font-bold hover:bg-[#0A4DA6]/15 transition-all inline-block cursor-pointer"
+                >
+                  Get Directions
+                </a>
+              )}
+            </div>
+
+            {ashramLatLng ? (
+              <>
+                <TirvonaMap
+                  height="260px"
+                  zoom={15}
+                  center={ashramLatLng}
+                  ariaLabel={`Map showing ${ashram.name}`}
+                  markers={[
+                    {
+                      id: ashram._id || 'ashram',
+                      latitude: ashramLatLng[0],
+                      longitude: ashramLatLng[1],
+                      title: ashram.name,
+                      subtitle: [ashram.address?.street, ashram.address?.city].filter(Boolean).join(', '),
+                    },
+                  ]}
+                />
+                <p className="text-[9px] text-gray-400 text-center">
+                  {ashram.address?.street}, {ashram.address?.city} — {ashram.address?.pincode}
+                </p>
+              </>
+            ) : (
+              <p className="text-[10px] text-gray-400 font-medium text-center py-6">
+                No map location has been set for this stay yet.
+              </p>
+            )}
           </div>
         </div>
 

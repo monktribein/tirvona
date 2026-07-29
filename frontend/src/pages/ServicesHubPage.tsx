@@ -167,26 +167,36 @@ export const ServicesHubPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50/70 dark:bg-[#070F1B] pb-20 text-left">
       {/* ── 1. Page Header Banner ── */}
-      <section className="bg-gradient-to-r from-[#0B192C] via-[#0A4DA6] to-[#0B192C] text-white py-12 px-4 sm:px-6 lg:px-8 border-b border-white/10 relative overflow-hidden">
-        <div className="absolute -right-10 -top-10 w-96 h-96 bg-[#E58C28]/15 rounded-full blur-3xl pointer-events-none" />
-        <div className="max-w-7xl mx-auto space-y-4 relative z-10">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="px-3.5 py-1 bg-[#E58C28]/20 text-[#E58C28] border border-[#E58C28]/35 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow-sm">
-              <ShieldCheck size={12} /> National Spiritual Ecosystem
-            </span>
-            <span className="px-3.5 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 rounded-full text-[10px] font-black uppercase tracking-wider">
-              100% Government Verified
-            </span>
-          </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-1 sm:pt-3">
+        <section className="relative text-white rounded-3xl p-6 sm:p-8 lg:p-10 shadow-xl overflow-hidden min-h-[300px] flex flex-col justify-between items-center text-center border border-white/10">
+          {/* Background Banner Image */}
+          <img
+            src="/banner/popular.png"
+            alt="Enterprise Local Services Directory Banner"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          {/* Overlay gradient */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/55 to-black/40" />
 
-          <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight">
-            Enterprise Local Services <span className="text-[#E58C28]">Directory</span>
-          </h1>
-          <p className="text-xs sm:text-sm text-blue-100/90 font-medium max-w-2xl leading-relaxed">
-            Verified transport cabs, certified temple guides, pure Satvik bhojnalayas, 24x7 emergency medical assistance, and sacred puja vendors across India's holy circuits.
-          </p>
-        </div>
-      </section>
+          <div className="max-w-3xl space-y-3 relative z-10 mx-auto text-center my-auto pt-2 pb-4">
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <span className="px-3.5 py-1 bg-[#E58C28]/20 text-[#E58C28] border border-[#E58C28]/35 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow-sm">
+                <ShieldCheck size={12} /> National Spiritual Ecosystem
+              </span>
+              <span className="px-3.5 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 rounded-full text-[10px] font-black uppercase tracking-wider">
+                100% Government Verified
+              </span>
+            </div>
+
+            <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight">
+              Enterprise Local Services <span className="text-[#E58C28]">Directory</span>
+            </h1>
+            <p className="text-xs sm:text-sm text-blue-100/90 font-medium max-w-2xl mx-auto leading-relaxed">
+              Verified transport cabs, certified temple guides, pure Satvik bhojnalayas, 24x7 emergency medical assistance, and sacred puja vendors across India's holy circuits.
+            </p>
+          </div>
+        </section>
+      </div>
 
       {/* ── 2. Search & Category Bar ── */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6 relative z-20 space-y-6">

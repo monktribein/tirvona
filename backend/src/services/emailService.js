@@ -1,6 +1,6 @@
 import path from 'path';
 import fs from 'fs';
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import config from '../config/env.js';
 
 // Optimised copy of the brand mark (320px wide, ~26KB) generated from
@@ -8,46 +8,162 @@ import config from '../config/env.js';
 // API is deployed separately from the frontend.
 const LOGO_PATH = path.join(process.cwd(), 'public', 'email', 'logo.png');
 
-// Read once at boot; a missing file must not take the mailer down.
-let logoBuffer = null;
+// Read and encode once at boot; a missing file must not take the mailer down.
+//
+// Stored base64 rather than as a Buffer: the Resend SDK forwards `content`
+// to JSON.stringify untouched, which would turn a Buffer into a
+// {type:'Buffer',data:[…]} integer array roughly four times the size of the
+// equivalent base64 string, on every single email we send.
+let logoBase64 = null;
 try {
-  logoBuffer = fs.readFileSync(LOGO_PATH);
+  logoBase64 = fs.readFileSync(LOGO_PATH).toString('base64');
 } catch {
   console.warn(`[EMAIL] Brand logo not found at ${LOGO_PATH}; emails will send without it.`);
 }
 
 // Inline attachment referenced by <img src="cid:tirvona-logo">. Gmail refuses to
 // render base64 data URIs, so CID is the only reliable way to embed the mark.
+//
+// The field is `contentId` (Nodemailer called it `cid`). Use the SDK's camelCase
+// spelling, not the REST API's `content_id`: the SDK maps `contentId` onto the
+// wire format and ignores unknown keys, so snake_case here would be silently
+// dropped and the logo would render as a broken image.
 const logoAttachment = () =>
-  logoBuffer
-    ? [{ filename: 'tirvona-logo.png', content: logoBuffer, cid: LOGO_CID, contentDisposition: 'inline' }]
+  logoBase64
+    ? [{
+        filename: 'tirvona-logo.png',
+        content: logoBase64,
+        contentId: LOGO_CID,
+        contentType: 'image/png',
+      }]
     : [];
 
-// Nodemailer transport, created lazily and reused. When SMTP is not configured
-// the service degrades to dev mode (logged, not sent) rather than throwing, so
-// local development and the existing test environment keep working.
-let transporter = null;
+// Resend client, created lazily and reused. When no API key is configured the
+// service degrades to dev mode (logged, not sent) rather than throwing, so local
+// development and the existing test environment keep working.
+//
+// There is no connection pool to manage here: Resend is a stateless HTTPS API,
+// which is precisely why the previous SMTP transport needed cache-invalidation
+// logic (a revoked Gmail App Password left a dead pool behind) and this does not.
+let client = null;
 
-const getTransporter = () => {
-  if (!config.smtp.configured) return null;
-  if (!transporter) {
-    transporter = nodemailer.createTransport({
-      host: config.smtp.host,
-      port: config.smtp.port,
-      secure: config.smtp.secure,
-      auth: { user: config.smtp.user, pass: config.smtp.pass },
-      // Reuse the connection: a cold Gmail TLS handshake costs ~5s, which the
-      // OTP request would otherwise wait on for every single code.
-      pool: true,
-      maxConnections: 3,
-      maxMessages: 50,
-      // Never let a stalled gateway hold an HTTP request open indefinitely.
-      connectionTimeout: 10000,
-      greetingTimeout: 10000,
-      socketTimeout: 20000,
-    });
+const getClient = () => {
+  if (!config.resend.configured) return null;
+  if (!client) client = new Resend(config.resend.apiKey);
+  return client;
+};
+
+// Resend's SDK reports API failures as a returned `error` object rather than a
+// throw, so both shapes have to be normalised into one message string.
+const errorMessage = (error) =>
+  error?.message || error?.name || (typeof error === 'string' ? error : 'Unknown email error');
+
+/**
+ * Check the Resend API key at boot so a bad one surfaces immediately in the
+ * startup log, rather than as a failed OTP for a real user later on.
+ *
+ * The probe lists domains, which is the cheapest authenticated call available.
+ * A *sending-only* key legitimately cannot read domains, so that specific
+ * rejection is reported as "usable but unverified" instead of a failure —
+ * treating it as fatal would false-alarm on a correctly-scoped production key.
+ */
+export const verifyEmailTransport = async () => {
+  const mail = getClient();
+  if (!mail) {
+    console.warn('[EMAIL] RESEND_API_KEY not set — OTP, password-reset and notification emails will not be sent.');
+    return false;
   }
-  return transporter;
+
+  try {
+    const { error } = await mail.domains.list();
+
+    if (!error) {
+      console.log(`[EMAIL] Resend ready as ${config.resend.from}`);
+      return true;
+    }
+
+    if (error.name === 'restricted_api_key') {
+      console.log(`[EMAIL] Resend ready as ${config.resend.from} (send-only key; domain list not readable).`);
+      return true;
+    }
+
+    // The SDK reports an unreachable API as a returned `application_error`
+    // rather than a throw, so it arrives here rather than in the catch. Blaming
+    // the key for what is actually a network outage would send whoever reads
+    // this log rotating a perfectly good credential.
+    if (error.name === 'application_error') {
+      console.error(`[EMAIL] Could not reach Resend: ${errorMessage(error)}`);
+      console.error('[EMAIL] This looks like a network/DNS problem, not a bad key.');
+      return false;
+    }
+
+    console.error(`[EMAIL] RESEND KEY REJECTED: ${errorMessage(error)}`);
+    console.error('[EMAIL] Emails will fail until this is fixed. Check RESEND_API_KEY in .env.');
+    return false;
+  } catch (error) {
+    console.error(`[EMAIL] Could not reach Resend: ${errorMessage(error)}`);
+    return false;
+  }
+};
+
+/**
+ * Low-level sender every email in the platform goes through — OTP, password
+ * reset, notifications and messages alike.
+ *
+ * Returns { sent, simulated, messageId?, error? } and never throws, so a mail
+ * outage can never break the flow that triggered it. `simulated: true` means no
+ * API key is configured (a dev-mode state), which callers must not treat as a
+ * delivery failure.
+ */
+export const sendEmail = async ({
+  to,
+  subject,
+  html,
+  text,
+  replyTo = config.resend.replyTo,
+  attachments = [],
+  headers = {},
+  tags,
+  label = 'email',
+}) => {
+  const mail = getClient();
+  if (!mail) {
+    console.log(`[EMAIL:DEV] ${label} for ${to} — RESEND_API_KEY not configured, not sent.`);
+    return { sent: false, simulated: true };
+  }
+
+  try {
+    const { data, error } = await mail.emails.send({
+      from: config.resend.from,
+      to,
+      replyTo,
+      subject,
+      html,
+      text,
+      attachments,
+      headers: {
+        // Marks the message as transactional so it is not treated as bulk mail,
+        // and tells clients not to auto-reply to it.
+        'X-Auto-Response-Suppress': 'All',
+        'Auto-Submitted': 'auto-generated',
+        Precedence: 'transactional',
+        ...headers,
+      },
+      ...(tags ? { tags } : {}),
+    });
+
+    if (error) {
+      console.error(`[EMAIL] Resend rejected ${label} for ${to}: ${errorMessage(error)}`);
+      return { sent: false, simulated: false, error: errorMessage(error) };
+    }
+
+    // An id back from Resend is the proof it accepted the message for delivery.
+    console.log(`[EMAIL] ${label} accepted by Resend for ${to} — id ${data?.id}`);
+    return { sent: true, simulated: false, messageId: data?.id };
+  } catch (error) {
+    console.error(`[EMAIL] Failed to deliver ${label} to ${to}:`, errorMessage(error));
+    return { sent: false, simulated: false, error: errorMessage(error) };
+  }
 };
 
 // ── Brand tokens ────────────────────────────────────────────────────────────
@@ -77,7 +193,8 @@ export const LOGO_CID = 'tirvona-logo';
 const baseTemplate = ({ heading, intro, bodyHtml, preheader = '' }) => `
 <!--[if mso]><style>body,table,td{font-family:'Segoe UI',Arial,sans-serif !important;}</style><![endif]-->
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+  /* No @import here on purpose: Gmail strips web fonts anyway, and a remote
+     fetch inside an email body is a spam-filter signal for zero visual gain. */
   @media only screen and (max-width:600px){
     .tv-wrap{width:100% !important;}
     .tv-pad{padding-left:24px !important;padding-right:24px !important;}
@@ -208,6 +325,34 @@ const passwordResetTemplate = ({ name, resetUrl, expiryMinutes }) =>
     `,
   });
 
+// Generic transactional shell for notifications and messages (booking
+// confirmed, check-in code issued, ticket replied, owner approved…), so every
+// non-auth email inherits the same brand frame as the OTP and reset mails
+// instead of each caller hand-rolling its own HTML.
+const notificationTemplate = ({ name, heading, intro, bodyHtml = '', ctaLabel, ctaUrl, preheader }) =>
+  baseTemplate({
+    preheader: preheader || intro || heading,
+    heading,
+    intro: `Namaste${name ? ` ${name}` : ''}, ${intro}`,
+    bodyHtml: `
+      ${bodyHtml}
+      ${ctaLabel && ctaUrl ? `
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0 0;">
+        <tr>
+          <td align="center">
+            <!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="${ctaUrl}" style="height:48px;v-text-anchor:middle;width:230px;" arcsize="50%" fillcolor="${BRAND.blue}" stroke="f"><w:anchorlock/><center style="color:#FFFFFF;font-family:sans-serif;font-size:15px;font-weight:bold;">${ctaLabel}</center></v:roundrect><![endif]-->
+            <!--[if !mso]><!-->
+            <a href="${ctaUrl}"
+               style="display:inline-block;padding:15px 38px;background:${BRAND.blue};color:#FFFFFF;font-size:15px;font-weight:800;font-family:${FONT_STACK};text-decoration:none;border-radius:999px;">
+              ${ctaLabel}
+            </a>
+            <!--<![endif]-->
+          </td>
+        </tr>
+      </table>` : ''}
+    `,
+  });
+
 const PURPOSE_LABELS = {
   EMAIL_LOGIN: 'login',
   MOBILE_LOGIN: 'login',
@@ -224,29 +369,15 @@ const PURPOSE_LABELS = {
  */
 export const sendOtpEmail = async ({ to, name, otp, type, expiryMinutes }) => {
   const purpose = PURPOSE_LABELS[type] || 'verification';
-  const subject = `Your Tirvona ${purpose} code`;
 
-  const mail = getTransporter();
-  if (!mail) {
-    // Dev mode: no SMTP configured. The code is printed so local flows work.
-    console.log(`[EMAIL:DEV] OTP email for ${to} (${type}) — SMTP not configured, not sent.`);
-    return { sent: false, simulated: true };
-  }
-
-  try {
-    await mail.sendMail({
-      from: `"${config.smtp.fromName}" <${config.smtp.fromEmail}>`,
-      to,
-      subject,
-      html: otpTemplate({ name, otp, expiryMinutes, purpose }),
-      text: `Your Tirvona ${purpose} code is ${otp}. It expires in ${expiryMinutes} minutes. Never share this code with anyone.`,
-      attachments: logoAttachment(),
-    });
-    return { sent: true, simulated: false };
-  } catch (error) {
-    console.error(`[EMAIL] Failed to deliver OTP to ${to}:`, error.message);
-    return { sent: false, simulated: false, error: error.message };
-  }
+  return sendEmail({
+    to,
+    label: `OTP (${type})`,
+    subject: `Your Tirvona ${purpose} code`,
+    html: otpTemplate({ name, otp, expiryMinutes, purpose }),
+    text: `Your Tirvona ${purpose} code is ${otp}. It expires in ${expiryMinutes} minutes. Never share this code with anyone.`,
+    attachments: logoAttachment(),
+  });
 };
 
 /**
@@ -254,27 +385,46 @@ export const sendOtpEmail = async ({ to, name, otp, type, expiryMinutes }) => {
  * reports `sent: false` on failure so the caller can log it without leaking
  * whether the address exists.
  */
-export const sendPasswordResetEmail = async ({ to, name, resetUrl, expiryMinutes }) => {
-  const mail = getTransporter();
-  if (!mail) {
-    console.log(`[EMAIL:DEV] Password reset link for ${to} — SMTP not configured, not sent.`);
-    return { sent: false, simulated: true };
-  }
+export const sendPasswordResetEmail = async ({ to, name, resetUrl, expiryMinutes }) =>
+  sendEmail({
+    to,
+    label: 'password reset',
+    subject: 'Reset your Tirvona password',
+    html: passwordResetTemplate({ name, resetUrl, expiryMinutes }),
+    text: `Reset your Tirvona password using this link (valid ${expiryMinutes} minutes): ${resetUrl}\n\nIf you did not request this, ignore this email.`,
+    attachments: logoAttachment(),
+  });
 
-  try {
-    await mail.sendMail({
-      from: `"${config.smtp.fromName}" <${config.smtp.fromEmail}>`,
-      to,
-      subject: 'Reset your Tirvona password',
-      html: passwordResetTemplate({ name, resetUrl, expiryMinutes }),
-      text: `Reset your Tirvona password using this link (valid ${expiryMinutes} minutes): ${resetUrl}\n\nIf you did not request this, ignore this email.`,
-      attachments: logoAttachment(),
-    });
-    return { sent: true, simulated: false };
-  } catch (error) {
-    console.error(`[EMAIL] Failed to deliver password reset to ${to}:`, error.message);
-    return { sent: false, simulated: false, error: error.message };
-  }
-};
+/**
+ * Send a branded notification or message — booking confirmations, check-in
+ * codes, support-ticket replies, owner approvals, and anything else the app
+ * needs to mail a user. Same never-throws contract as the two above.
+ *
+ * `bodyHtml` is inserted verbatim into the template, so callers must pass
+ * trusted markup only; anything derived from user input has to be escaped
+ * before it gets here.
+ */
+export const sendNotificationEmail = async ({
+  to,
+  name,
+  subject,
+  heading,
+  intro,
+  bodyHtml,
+  ctaLabel,
+  ctaUrl,
+  preheader,
+  text,
+}) =>
+  sendEmail({
+    to,
+    label: 'notification',
+    subject,
+    html: notificationTemplate({ name, heading: heading || subject, intro, bodyHtml, ctaLabel, ctaUrl, preheader }),
+    // Plain-text alternative matters for deliverability; fall back to a stripped
+    // version of the message rather than shipping an HTML-only email.
+    text: text || `${heading || subject}\n\n${intro || ''}${ctaUrl ? `\n\n${ctaLabel || 'Open'}: ${ctaUrl}` : ''}`,
+    attachments: logoAttachment(),
+  });
 
-export default { sendOtpEmail, sendPasswordResetEmail };
+export default { sendEmail, sendOtpEmail, sendPasswordResetEmail, sendNotificationEmail };

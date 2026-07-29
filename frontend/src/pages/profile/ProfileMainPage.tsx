@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   User,
@@ -21,37 +21,125 @@ import {
   Mail,
   Award,
   ChevronRight,
+  CircleParking,
+  XCircle,
+  Loader2,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { EnterpriseButton, EnterpriseModal } from '../../admin/shared';
+import { authService } from '../../services';
+import { getErrorMessage } from '../../lib/api';
+import useMyBookings from '../../hooks/useMyBookings';
 
 export const ProfileMainPage: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
   const { addNotification } = useNotifications();
 
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editName, setEditName] = useState(user?.name || 'Sacred Pilgrim');
-  const [editPhone, setEditPhone] = useState(user?.phone || '+91 98765 43210');
+  const { bookings, loading: bookingsLoading, counts } = useMyBookings(Boolean(user));
 
-  const handleSaveProfile = (e: React.FormEvent) => {
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editName, setEditName] = useState(user?.name || '');
+  const [editPhone, setEditPhone] = useState(user?.phone || '');
+  const [saving, setSaving] = useState(false);
+
+  // Keep the form in step with the session once /auth/me resolves.
+  useEffect(() => {
+    if (user) {
+      setEditName(user.name || '');
+      setEditPhone(user.phone || '');
+    }
+  }, [user]);
+
+  /**
+   * Persist the profile edit.
+   *
+   * This previously only fired a success toast without calling the API, so the
+   * change was lost on reload. It now writes through PUT /api/auth/me and
+   * refreshes the session so the header and this page show the new values.
+   */
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    addNotification('Profile Updated', 'Your profile details have been saved successfully!', 'success');
-    setIsEditModalOpen(false);
+    if (saving) return;
+
+    setSaving(true);
+    try {
+      const res = await authService.updateMe({ name: editName.trim(), phone: editPhone.trim() });
+
+      if (res.data?.success) {
+        await refreshUser();
+        addNotification('Profile Updated', 'Your profile details have been saved.', 'success');
+        setIsEditModalOpen(false);
+      } else {
+        addNotification('Update Failed', res.data?.message || 'Could not save your profile.', 'error');
+      }
+    } catch (err) {
+      addNotification('Update Failed', getErrorMessage(err, 'Could not save your profile.'), 'error');
+    } finally {
+      setSaving(false);
+    }
   };
 
+  // Counts come from the real booking feeds. Wishlist and coupons have no
+  // backing endpoint yet, so they are omitted rather than invented — a made-up
+  // number on a profile page is worse than one fewer tile.
   const quickStats = [
-    { label: 'Upcoming Stays', count: '2', to: '/profile/bookings', color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400' },
-    { label: 'Completed Stays', count: '8', to: '/profile/bookings', color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' },
-    { label: 'Wishlist Ashrams', count: '5', to: '/profile/wishlist', color: 'bg-rose-500/10 text-rose-600 dark:text-rose-400' },
-    { label: 'Active Coupons', count: '3', to: '/profile/coupons', color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400' },
+    {
+      label: 'Upcoming Bookings',
+      count: bookingsLoading ? '—' : String(counts.upcoming),
+      to: '/profile/bookings',
+      color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
+    },
+    {
+      label: 'Completed',
+      count: bookingsLoading ? '—' : String(counts.completed),
+      to: '/profile/bookings',
+      color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
+    },
+    {
+      label: 'Ashram Stays',
+      count: bookingsLoading ? '—' : String(counts.stays),
+      to: '/profile/bookings',
+      color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
+    },
+    {
+      label: 'Parking Bookings',
+      count: bookingsLoading ? '—' : String(counts.parking),
+      to: '/profile/bookings',
+      color: 'bg-rose-500/10 text-rose-600 dark:text-rose-400',
+    },
   ];
 
-  const recentActivity = [
-    { title: 'Booking Confirmed at Swarg Ashram', location: 'Rishikesh', date: 'Jul 26, 2026', icon: <CheckCircle2 className="text-emerald-500" size={16} /> },
-    { title: 'Added Parmarth Niketan to Wishlist', location: 'Rishikesh', date: 'Jul 24, 2026', icon: <Heart className="text-rose-500" size={16} /> },
-    { title: 'Claimed Monks Special Promo Coupon (20% OFF)', location: 'System', date: 'Jul 20, 2026', icon: <Tag className="text-amber-500" size={16} /> },
-  ];
+  /** The five most recent bookings, newest first. */
+  const recentActivity = useMemo(
+    () =>
+      [...bookings]
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, 5)
+        .map((b) => ({
+          key: `${b.kind}-${b.id}`,
+          title:
+            b.kind === 'parking'
+              ? `Parking at ${b.title}`
+              : `${b.status === 'cancelled' ? 'Cancelled' : 'Booked'} ${b.title}`,
+          location: b.location || 'Tirvona',
+          date: new Date(b.createdAt).toLocaleDateString('en-IN', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+          }),
+          to: b.kind === 'parking' ? `/parking/booking/${b.id}` : '/profile/bookings',
+          icon:
+            b.category === 'cancelled' ? (
+              <XCircle className="text-rose-500" size={16} />
+            ) : b.kind === 'parking' ? (
+              <CircleParking className="text-[#0A4DA6]" size={16} />
+            ) : (
+              <CheckCircle2 className="text-emerald-500" size={16} />
+            ),
+        })),
+    [bookings],
+  );
 
   return (
     <div className="min-h-screen bg-gray-50/70 dark:bg-[#070F1B] pb-24 text-left">
@@ -216,20 +304,36 @@ export const ProfileMainPage: React.FC = () => {
             </h3>
 
             <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-5 shadow-lg space-y-4">
-              {recentActivity.map((act, idx) => (
-                <div key={idx} className="flex items-start gap-3 pb-3 border-b border-gray-100 dark:border-slate-800 last:border-0 last:pb-0">
-                  <div className="p-2 bg-gray-50 dark:bg-slate-900 rounded-xl shrink-0">
-                    {act.icon}
-                  </div>
-                  <div className="space-y-0.5 text-xs">
-                    <h4 className="font-extrabold text-[#0B192C] dark:text-white">{act.title}</h4>
-                    <p className="text-[10px] text-gray-400 font-bold flex items-center gap-2">
-                      <span>📍 {act.location}</span>
-                      <span>• {act.date}</span>
-                    </p>
-                  </div>
+              {bookingsLoading ? (
+                Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="h-12 bg-gray-100 dark:bg-slate-800 animate-pulse rounded-xl" />
+                ))
+              ) : recentActivity.length === 0 ? (
+                <div className="text-center py-8 space-y-2">
+                  <Clock size={28} className="text-gray-300 dark:text-slate-700 mx-auto" />
+                  <p className="text-xs font-bold text-gray-400">No activity yet</p>
+                  <p className="text-[10px] text-gray-400 font-medium">
+                    Your bookings will appear here once you make one.
+                  </p>
                 </div>
-              ))}
+              ) : (
+                recentActivity.map((act) => (
+                  <Link
+                    key={act.key}
+                    to={act.to}
+                    className="flex items-start gap-3 pb-3 border-b border-gray-100 dark:border-slate-800 last:border-0 last:pb-0 hover:opacity-80 transition-opacity"
+                  >
+                    <div className="p-2 bg-gray-50 dark:bg-slate-900 rounded-xl shrink-0">{act.icon}</div>
+                    <div className="space-y-0.5 text-xs min-w-0">
+                      <h4 className="font-extrabold text-[#0B192C] dark:text-white line-clamp-1">{act.title}</h4>
+                      <p className="text-[10px] text-gray-400 font-bold flex items-center gap-2">
+                        <span>📍 {act.location}</span>
+                        <span>• {act.date}</span>
+                      </p>
+                    </div>
+                  </Link>
+                ))
+              )}
             </div>
 
             {/* Need Yatra Assistance Card */}
@@ -286,8 +390,13 @@ export const ProfileMainPage: React.FC = () => {
             <EnterpriseButton variant="outline" onClick={() => setIsEditModalOpen(false)}>
               Cancel
             </EnterpriseButton>
-            <EnterpriseButton type="submit" variant="primary">
-              Save Changes
+            <EnterpriseButton
+              type="submit"
+              variant="primary"
+              disabled={saving}
+              icon={saving ? <Loader2 size={14} className="animate-spin" /> : undefined}
+            >
+              {saving ? 'Saving…' : 'Save Changes'}
             </EnterpriseButton>
           </div>
         </form>

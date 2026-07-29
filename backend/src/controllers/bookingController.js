@@ -498,7 +498,9 @@ export const processBookingPayment = async (req, res) => {
 export const getBookingHistory = async (req, res) => {
   try {
     const bookings = await Booking.find({ customerId: req.user.id })
-      .populate('ashramId', 'name address rules')
+      // `images` is additive: the profile booking list renders a thumbnail.
+      // Existing consumers of this endpoint are unaffected by the extra field.
+      .populate('ashramId', 'name address rules images')
       .populate('roomId', 'name acType type')
       .sort({ createdAt: -1 });
 

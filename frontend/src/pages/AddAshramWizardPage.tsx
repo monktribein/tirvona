@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ashramService } from '../services';
 import { FileUploader } from '../components/FileUploader';
+import TirvonaMap from '../components/TirvonaMap';
 import {
   ChevronRight, ChevronLeft, Check, AlertCircle, Plus, X, Building2, MapPin,
   Phone, Mail, Globe, Image, BookOpen, Sparkles, Layers, Bed, DollarSign,
@@ -684,11 +685,8 @@ const AddAshramWizardPage: React.FC = () => {
     }
   };
 
-  // ─── Map Embed ────────────────────────────────────────────────────────────────
-
-  const mapEmbedSrc = formData.lat && formData.lng
-    ? `https://maps.google.com/maps?q=${formData.lat},${formData.lng}&z=15&output=embed`
-    : null;
+  // The Google Maps embed URL that used to back the read-only iframe on the map
+  // step is gone — that step now renders an interactive OpenStreetMap picker.
 
   // ─── Error Badge ──────────────────────────────────────────────────────────────
 
@@ -1389,20 +1387,53 @@ const AddAshramWizardPage: React.FC = () => {
       case 17:
         return (
           <div className="space-y-5">
-            <SectionHeader icon={<Map size={22} />} title="Google Maps" subtitle="Live map preview based on GPS coordinates entered in Step 3." />
-            {formData.lat && formData.lng ? (
-              <div className="space-y-4">
-                <div className="h-96 rounded-[24px] overflow-hidden border border-gray-200 dark:border-slate-700 shadow-sm">
-                  <iframe
-                    title="Ashram Location Map"
-                    width="100%"
-                    height="100%"
-                    style={{ border: 0 }}
-                    loading="lazy"
-                    allowFullScreen
-                    src={`https://maps.google.com/maps?q=${formData.lat},${formData.lng}&z=15&output=embed`}
-                  />
-                </div>
+            <SectionHeader
+              icon={<Map size={22} />}
+              title="Map Location"
+              subtitle="Click the map or drag the pin to set the exact entrance. Coordinates update automatically."
+            />
+
+            {/* Interactive OpenStreetMap picker.
+                Replaces the previous Google Maps `output=embed` iframe, which
+                was read-only — an owner could preview a position but not set
+                one, and had to type coordinates by hand in Step 3. This is
+                editable, needs no API key, and writes straight back into the
+                same `lat`/`lng` form fields, so the submit payload is unchanged. */}
+            <div className="space-y-4">
+              <TirvonaMap
+                height="384px"
+                zoom={formData.lat && formData.lng ? 16 : 5}
+                center={
+                  formData.lat && formData.lng
+                    ? [parseFloat(formData.lat), parseFloat(formData.lng)]
+                    : [22.5937, 78.9629] // Centre of India, until a pin is placed
+                }
+                draggableMarker
+                ariaLabel="Pick the ashram location on the map"
+                markers={
+                  formData.lat && formData.lng
+                    ? [
+                        {
+                          id: 'ashram-pin',
+                          latitude: parseFloat(formData.lat),
+                          longitude: parseFloat(formData.lng),
+                          title: formData.name || 'Ashram location',
+                          subtitle: 'Drag to adjust',
+                        },
+                      ]
+                    : []
+                }
+                onMapClick={(lat, lng) => {
+                  set('lat', lat.toFixed(6));
+                  set('lng', lng.toFixed(6));
+                }}
+                onMarkerDrag={(lat, lng) => {
+                  set('lat', lat.toFixed(6));
+                  set('lng', lng.toFixed(6));
+                }}
+              />
+
+              {formData.lat && formData.lng ? (
                 <div className="flex flex-col sm:flex-row gap-3">
                   <div className="flex-1 p-4 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl space-y-1">
                     <span className="text-[10px] font-bold text-gray-400 uppercase">Coordinates</span>
@@ -1416,23 +1447,21 @@ const AddAshramWizardPage: React.FC = () => {
                     rel="noopener noreferrer"
                     className="flex items-center gap-2 px-5 py-3 bg-[#0A4DA6]/10 text-[#0A4DA6] border border-[#0A4DA6]/20 rounded-xl text-xs font-bold hover:bg-[#0A4DA6]/15 transition-all"
                   >
-                    <Map size={14} /> Open in Google Maps
+                    <Map size={14} /> Verify on Google Maps
                   </a>
                 </div>
-              </div>
-            ) : (
-              <div className="h-80 bg-gray-50 dark:bg-slate-900 border-2 border-dashed border-gray-200 dark:border-slate-700 rounded-[24px] flex flex-col items-center justify-center space-y-3">
-                <Map size={40} className="text-gray-300" />
-                <p className="text-sm font-semibold text-gray-400">No GPS coordinates entered yet.</p>
-                <p className="text-xs text-gray-300">Go back to Step 3 (Address & GPS) and fill in the Latitude and Longitude to see the map here.</p>
-                <button
-                  onClick={() => setStep(2)}
-                  className="px-5 py-2.5 bg-[#0A4DA6] text-white rounded-full text-xs font-bold hover:bg-[#0A4DA6]/90 transition-colors"
-                >
-                  Go to Address Step
-                </button>
-              </div>
-            )}
+              ) : (
+                <div className="p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/40 rounded-xl flex items-start gap-2.5">
+                  <Map size={16} className="text-amber-600 shrink-0 mt-0.5" />
+                  <div className="space-y-0.5">
+                    <p className="text-xs font-extrabold text-amber-900 dark:text-amber-200">No location set yet</p>
+                    <p className="text-[11px] font-medium text-amber-700 dark:text-amber-300/90">
+                      Click anywhere on the map to drop a pin, or enter Latitude and Longitude in Step 3.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         );
 
@@ -1583,20 +1612,26 @@ const AddAshramWizardPage: React.FC = () => {
               </div>
             </div>
 
-            {/* ── Preview: Map ── */}
+            {/* ── Preview: Map ──
+                Read-only here (interactive={false}), so the reviewer can see the
+                pin without being able to nudge it on the final confirmation step. */}
             {formData.lat && formData.lng && (
-              <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] overflow-hidden shadow-sm">
-                <div className="h-64">
-                  <iframe
-                    title="Preview Map"
-                    width="100%"
-                    height="100%"
-                    style={{ border: 0 }}
-                    loading="lazy"
-                    src={`https://maps.google.com/maps?q=${formData.lat},${formData.lng}&z=15&output=embed`}
-                  />
-                </div>
-              </div>
+              <TirvonaMap
+                height="256px"
+                zoom={15}
+                interactive={false}
+                center={[parseFloat(formData.lat), parseFloat(formData.lng)]}
+                ariaLabel="Preview of the ashram location"
+                markers={[
+                  {
+                    id: 'preview-pin',
+                    latitude: parseFloat(formData.lat),
+                    longitude: parseFloat(formData.lng),
+                    title: formData.name || 'Ashram location',
+                    subtitle: [formData.city, formData.state].filter(Boolean).join(', '),
+                  },
+                ]}
+              />
             )}
           </div>
         );
