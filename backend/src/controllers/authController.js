@@ -432,7 +432,7 @@ export const resetPassword = async (req, res) => {
 export const getOwnerStaff = async (req, res) => {
   try {
     // Only Master Owner (owner@tirvona.com) or Super Admin can view global ashram credentials
-    if (req.user.email !== 'owner@tirvona.com' && req.user.role !== 'super_admin') {
+    if (req.user.email !== 'stayadmin@tirvona.com' && req.user.role !== 'super_admin') {
       return res.status(403).json({
         success: false,
         message: 'Access denied: Only Master Platform Owner can access global credentials.',
@@ -461,7 +461,7 @@ export const createOwnerStaff = async (req, res) => {
     // C4: only the Master Platform Owner or a Super Admin may provision accounts
     // through this global endpoint (same gate as getOwnerStaff). Regular owners
     // manage their ashram staff via the ownership-scoped /users/staff endpoints.
-    if (req.user.email !== 'owner@tirvona.com' && req.user.role !== 'super_admin') {
+    if (req.user.email !== 'stayadmin@tirvona.com' && req.user.role !== 'super_admin') {
       return res.status(403).json({
         success: false,
         message: 'Access denied: Only the Master Platform Owner can provision staff here.',
@@ -551,7 +551,7 @@ export const resetStaffPassword = async (req, res) => {
     }
 
     // C3: only the Master Platform Owner / Super Admin may use this endpoint...
-    if (req.user.email !== 'owner@tirvona.com' && req.user.role !== 'super_admin') {
+    if (req.user.email !== 'stayadmin@tirvona.com' && req.user.role !== 'super_admin') {
       return res.status(403).json({
         success: false,
         message: 'Access denied: Only the Master Platform Owner can reset staff passwords here.',
@@ -603,7 +603,7 @@ export const toggleStaffStatus = async (req, res) => {
   try {
     // C3: same authorization as staff password reset — master owner / super admin
     // only, and only against manageable staff/owner accounts.
-    if (req.user.email !== 'owner@tirvona.com' && req.user.role !== 'super_admin') {
+    if (req.user.email !== 'stayadmin@tirvona.com' && req.user.role !== 'super_admin') {
       return res.status(403).json({
         success: false,
         message: 'Access denied: Only the Master Platform Owner can change staff status here.',

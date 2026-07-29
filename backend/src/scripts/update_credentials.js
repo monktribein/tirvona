@@ -50,7 +50,7 @@ const run = async () => {
     console.log(`\n✅ Done! Updated ${updated} email(s). All passwords set to: admin123`);
     console.log('\n📋 Quick Login Credentials:');
     console.log('   Guest Stay      : pilgrim@tirvona.com  / admin123');
-    console.log('   Ashram Owner    : owner@tirvona.com    / admin123');
+    console.log('   Ashram Stay Admin: stayadmin@tirvona.com / admin123');
     console.log('   District Officer: officer@tirvona.com  / admin123');
     console.log('   Super Admin     : admin@tirvona.com    / admin123');
   } catch (err) {

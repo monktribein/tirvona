@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Star, ShieldCheck, ChevronLeft, ChevronRight, ThumbsUp, X, MessageSquareQuote, Sparkles } from 'lucide-react';
+import { VerifiedBadge } from './VerifiedBadge';
 
 interface ReviewItem {
   _id: string;
@@ -138,9 +139,7 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({ revi
             <h3 className="text-base sm:text-lg font-black text-[#0B192C] dark:text-white flex items-center gap-2">
               <MessageSquareQuote size={20} className="text-[#0A4DA6]" /> Guest Reviews ({reviews.length})
             </h3>
-            <span className="px-2.5 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-extrabold rounded-full flex items-center gap-1 border border-emerald-500/20">
-              <ShieldCheck size={11} /> Verified Pilgrims
-            </span>
+            <VerifiedBadge isVerified={true} text="Verified Pilgrims" size="sm" />
           </div>
           <p className="text-xs text-gray-400 font-semibold mt-0.5">
             Authentic experiences shared by devotees and pilgrims who stayed at {ashramName || 'this Ashram'}.

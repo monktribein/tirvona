@@ -118,7 +118,7 @@ const seedUsers = async () => {
   // Create Owner
   const owner = await upsertUser({
     name: 'Swami Chinmayananda (Ashram Trust)',
-    email: 'owner@tirvona.com',
+    email: 'stayadmin@tirvona.com',
     phone: '7777777777',
     passwordHash: 'admin123',
     role: 'owner',

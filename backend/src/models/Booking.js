@@ -151,9 +151,10 @@ const bookingSchema = new mongoose.Schema(
   }
 );
 
-bookingSchema.index({ customerId: 1 });
-bookingSchema.index({ ashramId: 1 });
+bookingSchema.index({ customerId: 1, createdAt: -1 });
+bookingSchema.index({ ashramId: 1, status: 1 });
 bookingSchema.index({ status: 1 });
+bookingSchema.index({ checkInDate: 1, checkOutDate: 1 });
 
 const Booking = mongoose.model('Booking', bookingSchema);
 export default Booking;

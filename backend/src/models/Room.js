@@ -61,6 +61,7 @@ const roomSchema = new mongoose.Schema(
 );
 
 roomSchema.index({ ashramId: 1 });
+roomSchema.index({ ashramId: 1, status: 1 });
 roomSchema.index({ type: 1 });
 
 const Room = mongoose.model('Room', roomSchema);

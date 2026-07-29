@@ -24,7 +24,7 @@ const seedOffers = async () => {
       process.exit(0);
     }
 
-    const masterOwner = await User.findOne({ email: 'owner@tirvona.com' });
+    const masterOwner = await User.findOne({ email: 'stayadmin@tirvona.com' });
     const ownerId = masterOwner?._id || ashrams[0].ownerId;
 
     const sampleOffers = [

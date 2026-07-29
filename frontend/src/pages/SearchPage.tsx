@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ashramService } from '../services';
 import { SearchResultStatus } from '../components/shared/SearchResultStatus';
 import { GuestRoomSelector } from '../components/shared/GuestRoomSelector';
+import { VerifiedBadge } from '../components/shared/VerifiedBadge';
 import { useBookingSearch } from '../contexts/BookingSearchContext';
 import { 
   Filter, 
@@ -460,8 +461,8 @@ export const SearchPage: React.FC = () => {
                       className="w-full h-full object-cover" 
                       onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = 'https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?auto=format&fit=crop&w=400&q=80'; }}
                     />
-                    <span className="absolute top-3.5 left-3.5 bg-[#0A4DA6] text-white text-[8px] font-extrabold px-3 py-1 rounded-full shadow-sm flex items-center gap-0.5 uppercase tracking-wider">
-                      <ShieldCheck size={10} /> Verified
+                    <span className="absolute top-3.5 left-3.5">
+                      <VerifiedBadge isVerified={ashram.isVerified ?? (ashram.status === 'approved')} text="Verified" size="sm" />
                     </span>
                   </div>
 

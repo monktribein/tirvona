@@ -122,7 +122,7 @@ export const OwnerDashboard: React.FC = () => {
           </div>
           <div>
             <h2 className="text-xl sm:text-2xl font-black text-[#0B192C] dark:text-white tracking-tight">
-              Ashram Owner Management Portal
+              Ashram Stay Admin Portal
             </h2>
             <p className="text-xs text-gray-400 font-semibold mt-0.5">
               Live telemetry, room occupancy, guest reservations, and pending CMS change approvals.

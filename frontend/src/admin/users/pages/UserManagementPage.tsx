@@ -72,7 +72,7 @@ const ALL_ROLES = [
   { id: 'state_admin', label: 'State Admin' },
   { id: 'govt_admin', label: 'Government Admin' },
   { id: 'district_officer', label: 'District Officer' },
-  { id: 'owner', label: 'Ashram Owner' },
+  { id: 'owner', label: 'Ashram Stay Admin' },
   { id: 'manager', label: 'Ashram Manager' },
   { id: 'reception', label: 'Receptionist' },
   { id: 'housekeeping', label: 'Housekeeping' },

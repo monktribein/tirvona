@@ -161,7 +161,7 @@ export const updateAshram = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Ashram not found' });
     }
 
-    const isMasterOwner = req.user.email === 'owner@tirvona.com' || req.user.role === 'super_admin';
+    const isMasterOwner = req.user.email === 'stayadmin@tirvona.com' || req.user.role === 'super_admin';
 
     // Authorization checks — H2: scope managers to the ashram they are employed
     // at (canManageAshram), instead of letting ANY manager edit ANY ashram.

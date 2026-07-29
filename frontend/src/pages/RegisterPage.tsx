@@ -242,7 +242,7 @@ export const RegisterPage: React.FC = () => {
                 }`}
               >
                 <Building2 size={18} />
-                <span className="text-xs font-bold">Ashram Owner</span>
+                <span className="text-xs font-bold">Ashram Stay Admin</span>
               </button>
             </div>
 

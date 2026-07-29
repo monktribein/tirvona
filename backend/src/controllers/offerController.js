@@ -165,7 +165,7 @@ export const getActiveOffers = async (req, res) => {
 // @access  Private (Owner / Admin)
 export const getMyOffers = async (req, res) => {
   try {
-    const isMasterOwner = req.user.email === 'owner@tirvona.com' || req.user.role === 'super_admin';
+    const isMasterOwner = req.user.email === 'stayadmin@tirvona.com' || req.user.role === 'super_admin';
     const filter = isMasterOwner ? {} : { ownerId: req.user.id };
 
     const offers = await Offer.find(filter)
@@ -244,7 +244,7 @@ export const updateOffer = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Offer not found' });
     }
 
-    const isMasterOwner = req.user.email === 'owner@tirvona.com' || req.user.role === 'super_admin';
+    const isMasterOwner = req.user.email === 'stayadmin@tirvona.com' || req.user.role === 'super_admin';
     if (offer.ownerId.toString() !== req.user.id && !isMasterOwner) {
       return res.status(403).json({ success: false, message: 'Not authorized to modify this offer' });
     }
@@ -280,7 +280,7 @@ export const deleteOffer = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Offer not found' });
     }
 
-    const isMasterOwner = req.user.email === 'owner@tirvona.com' || req.user.role === 'super_admin';
+    const isMasterOwner = req.user.email === 'stayadmin@tirvona.com' || req.user.role === 'super_admin';
     if (offer.ownerId.toString() !== req.user.id && !isMasterOwner) {
       return res.status(403).json({ success: false, message: 'Not authorized to delete this offer' });
     }

@@ -10,6 +10,7 @@ import { openRazorpayCheckout } from '../lib/razorpay';
 import { saveBookingDraft, getBookingDraft, clearBookingDraft, type BookingDraftPayload } from '../utils/bookingDraft';
 import { GuestRoomSelector } from '../components/shared/GuestRoomSelector';
 import { GuestReviewsCarousel } from '../components/shared/GuestReviewsCarousel';
+import { VerifiedBadge } from '../components/shared/VerifiedBadge';
 import { useBookingSearch } from '../contexts/BookingSearchContext';
 import { 
   ShieldCheck, 
@@ -665,9 +666,7 @@ export const AshramDetailPage: React.FC = () => {
         <div className="max-w-3xl md:max-w-4xl mx-auto flex flex-col items-center text-center space-y-3.5 px-2">
           {/* Badge & City/State */}
           <div className="flex items-center justify-center gap-2">
-            <span className="px-3 py-1 bg-[#0A4DA6] text-white text-[9px] font-extrabold rounded-full flex items-center gap-1 shadow-sm uppercase tracking-wider">
-              <ShieldCheck size={12} /> Verified Stay
-            </span>
+            <VerifiedBadge isVerified={ashram.isVerified ?? (ashram.status === 'approved')} text="Verified Stay" size="md" />
             <span className="text-xs text-gray-400 font-extrabold tracking-wider uppercase">
               {[ashram.address?.city, ashram.address?.state].filter(Boolean).join(', ')}
             </span>

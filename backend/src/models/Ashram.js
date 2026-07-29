@@ -170,10 +170,13 @@ const ashramSchema = new mongoose.Schema(
   }
 );
 
-// Geo index for spatial search
+// Geo index & compound performance indexes for high-frequency queries
 ashramSchema.index({ 'address.coordinates': '2dsphere' });
 ashramSchema.index({ status: 1 });
 ashramSchema.index({ ownerId: 1 });
+ashramSchema.index({ status: 1, 'address.city': 1 });
+ashramSchema.index({ status: 1, 'rating.average': -1 });
+ashramSchema.index({ isVerified: 1, status: 1 });
 
 const Ashram = mongoose.model('Ashram', ashramSchema);
 export default Ashram;

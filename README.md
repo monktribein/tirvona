@@ -114,7 +114,7 @@ All accounts are configured with the password `admin123` by default:
 | Role | Email | Description |
 |---|---|---|
 | **Pilgrim / Customer** | `pilgrim@tirvona.com` | Guest booking portal testing. |
-| **Ashram Owner** | `owner@tirvona.com` | Ashram Trust management dashboard. |
+| **Ashram Stay Admin** | `stayadmin@tirvona.com` | Ashram Trust management dashboard. |
 | **District Officer** | `officer@tirvona.com` | Local magistrate inspection & verification. |
 | **Super Admin** | `admin@tirvona.com` | Global platform configuration and audit logs. |
 | **Ashram Manager** | `manager@tirvona.com` | On-site operations manager. |
