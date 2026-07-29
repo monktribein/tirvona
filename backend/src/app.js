@@ -41,6 +41,7 @@ import cmsRoutes from './routes/cmsRoutes.js';
 import serviceRoutes from './routes/serviceRoutes.js';
 import userMemoryRoutes from './routes/userMemoryRoutes.js';
 import volunteerRoutes from './routes/volunteerRoutes.js';
+import platformSettingsRoutes from './routes/platformSettingsRoutes.js';
 import adminRoutes from './admin/index.js';
 
 // Connect to MongoDB
@@ -194,6 +195,7 @@ app.use('/api/cms', cmsRoutes);
 app.use('/api/enterprise-services', serviceRoutes);
 app.use('/api/user-memory', userMemoryRoutes);
 app.use('/api/volunteer', volunteerRoutes);
+app.use('/api/platform-settings', platformSettingsRoutes);
 app.use('/api/admin', adminRoutes);
 
 // API documentation (Swagger UI). Exposed only outside production so the full

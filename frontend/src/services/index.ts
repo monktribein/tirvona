@@ -34,6 +34,10 @@ export const ashramService = {
   create: (data: unknown) => api.post('/ashrams', data),
   update: (id: string, data: unknown) => api.put(`/ashrams/${id}`, data),
   uploadDocuments: (id: string, data: unknown) => api.post(`/ashrams/${id}/documents`, data),
+  getAddOns: (ashramId: string) => api.get(`/ashrams/${ashramId}/add-ons`),
+  createAddOn: (ashramId: string, data: unknown) => api.post(`/ashrams/${ashramId}/add-ons`, data),
+  updateAddOn: (ashramId: string, serviceId: string, data: unknown) => api.put(`/ashrams/${ashramId}/add-ons/${serviceId}`, data),
+  deleteAddOn: (ashramId: string, serviceId: string) => api.delete(`/ashrams/${ashramId}/add-ons/${serviceId}`),
 };
 
 // ── Rooms ────────────────────────────────────────────────────────────────────
@@ -132,6 +136,12 @@ export const offerService = {
     api.post('/offers/validate-promo', data),
   getPublicOffers: () => api.get('/offers/public/all'),
   getById: (id: string) => api.get(`/offers/public/${id}`),
+};
+
+// ── Platform Settings ────────────────────────────────────────────────────────
+export const platformSettingsService = {
+  getSettings: () => api.get('/platform-settings'),
+  updateSettings: (data: unknown) => api.put('/platform-settings', data),
 };
 
 export { serviceEcosystemService } from './service.service';

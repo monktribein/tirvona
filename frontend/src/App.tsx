@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { UserMemoryProvider } from './contexts/UserMemoryContext';
+import { BookingSearchProvider } from './contexts/BookingSearchContext';
 
 // Layouts (eager — always needed)
 import PublicLayout from './layouts/PublicLayout';
@@ -46,6 +47,7 @@ import ManageRoomsPage from './pages/ManageRoomsPage';
 import InventoryCalendarPage from './pages/InventoryCalendarPage';
 import OwnerUsersPage from './pages/OwnerUsersPage';
 import OwnerOffersPage from './pages/OwnerOffersPage';
+import OwnerAddOnsPage from './pages/owner/OwnerAddOnsPage';
 import OffersPage from './pages/OffersPage';
 import OfferDetailPage from './pages/OfferDetailPage';
 import MarketplaceCategoriesPage from './pages/MarketplaceCategoriesPage';
@@ -59,6 +61,7 @@ const VerificationQueuePage = lazy(() => import('./admin/ashrams/pages/Verificat
 const UserManagementPage = lazy(() => import('./admin/users/pages/UserManagementPage'));
 const AuditLogsPage = lazy(() => import('./admin/reports/pages/AuditLogsPage'));
 const EnterpriseModulePage = lazy(() => import('./admin/shared/components/EnterpriseModulePage'));
+const AdminPlatformSettingsPage = lazy(() => import('./pages/admin/AdminPlatformSettingsPage'));
 
 // Sacred Services Ecosystem & Media Hub Pages
 import { PilgrimageCircuitsPage } from './pages/PilgrimageCircuitsPage';
@@ -213,6 +216,8 @@ const AppContent: React.FC = () => {
         >
           <Route path="/owner/dashboard" element={<OwnerDashboard />} />
           <Route path="/owner/ashrams" element={<ManageAshramsPage />} />
+          <Route path="/owner/add-ons" element={<OwnerAddOnsPage />} />
+          <Route path="/admin/manage/ashrams/add-ons" element={<OwnerAddOnsPage />} />
           <Route path="/owner/all-ashrams" element={<AllAshramsPage />} />
           <Route path="/owner/ashrams/add" element={<AddAshramWizardPage />} />
           <Route path="/owner/rooms" element={<ManageRoomsPage />} />
@@ -259,6 +264,8 @@ const AppContent: React.FC = () => {
           <Route path="/admin/verifications" element={<VerificationQueuePage />} />
           <Route path="/admin/users" element={<UserManagementPage />} />
           <Route path="/admin/audit-logs" element={<AuditLogsPage />} />
+          <Route path="/admin/settings/pricing" element={<AdminPlatformSettingsPage />} />
+          <Route path="/admin/manage/platform-settings" element={<AdminPlatformSettingsPage />} />
           <Route path="/admin/manage/:moduleKey/:subKey?" element={<EnterpriseModulePage />} />
         </Route>
 
@@ -275,7 +282,9 @@ export const App: React.FC = () => {
     <AuthProvider>
       <NotificationProvider>
         <UserMemoryProvider>
-          <AppContent />
+          <BookingSearchProvider>
+            <AppContent />
+          </BookingSearchProvider>
         </UserMemoryProvider>
       </NotificationProvider>
     </AuthProvider>

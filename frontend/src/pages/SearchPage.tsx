@@ -2,6 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ashramService } from '../services';
+import { SearchResultStatus } from '../components/shared/SearchResultStatus';
+import { GuestRoomSelector } from '../components/shared/GuestRoomSelector';
+import { useBookingSearch } from '../contexts/BookingSearchContext';
 import { 
   Filter, 
   MapPin, 
@@ -28,13 +31,18 @@ export const SearchPage: React.FC = () => {
   const typeQuery = searchParams.get('type') || '';
   const checkInQuery = searchParams.get('checkIn') || '';
   const checkOutQuery = searchParams.get('checkOut') || '';
-  const guestsQuery = searchParams.get('guests') || '1';
+  const roomsQuery = searchParams.get('rooms');
+  const adultsQuery = searchParams.get('adults');
+  const childrenQuery = searchParams.get('children');
+  const guestsQuery = searchParams.get('guests');
   
   const navigate = useNavigate();
-  const [destination, setDestination] = useState(activeKeyword);
+  const { searchState, updateBookingSearch, totalGuests } = useBookingSearch();
+
+  const [destination, setDestination] = useState(activeKeyword || searchState.destination);
   const [stayType, setStayType] = useState(typeQuery);
-  const [checkIn, setCheckIn] = useState(checkInQuery);
-  const [checkOut, setCheckOut] = useState(checkOutQuery);
+  const [checkIn, setCheckIn] = useState(checkInQuery || searchState.checkIn);
+  const [checkOut, setCheckOut] = useState(checkOutQuery || searchState.checkOut);
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -81,11 +89,23 @@ export const SearchPage: React.FC = () => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
-    setDestination(activeKeyword);
+
+    const updates: any = {};
+    if (activeKeyword) updates.destination = activeKeyword;
+    if (checkInQuery) updates.checkIn = checkInQuery;
+    if (checkOutQuery) updates.checkOut = checkOutQuery;
+    if (roomsQuery) updates.rooms = Number(roomsQuery);
+    if (adultsQuery) updates.adults = Number(adultsQuery);
+    if (childrenQuery !== null && childrenQuery !== undefined) updates.children = Number(childrenQuery);
+    if (Object.keys(updates).length > 0) {
+      updateBookingSearch(updates);
+    }
+
+    setDestination(activeKeyword || searchState.destination);
     setStayType(typeQuery);
-    setCheckIn(checkInQuery);
-    setCheckOut(checkOutQuery);
-  }, [activeKeyword, typeQuery, checkInQuery, checkOutQuery]);
+    setCheckIn(checkInQuery || searchState.checkIn);
+    setCheckOut(checkOutQuery || searchState.checkOut);
+  }, [activeKeyword, typeQuery, checkInQuery, checkOutQuery, roomsQuery, adultsQuery, childrenQuery]);
 
   useEffect(() => {
     fetchAshrams();
@@ -121,12 +141,20 @@ export const SearchPage: React.FC = () => {
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    updateBookingSearch({
+      destination,
+      checkIn,
+      checkOut,
+    });
     const params: Record<string, string> = {};
     if (destination) params.destination = destination;
     if (stayType) params.type = stayType;
     if (checkIn) params.checkIn = checkIn;
     if (checkOut) params.checkOut = checkOut;
-    if (guestsQuery) params.guests = guestsQuery;
+    params.rooms = String(searchState.rooms);
+    params.adults = String(searchState.adults);
+    params.children = String(searchState.children);
+    params.guests = String(totalGuests);
     setSearchParams(params);
   };
 
@@ -217,9 +245,14 @@ export const SearchPage: React.FC = () => {
 
   const buildDetailLink = (ashramId: string) => {
     const params = new URLSearchParams();
-    if (checkInQuery) params.set('checkIn', checkInQuery);
-    if (checkOutQuery) params.set('checkOut', checkOutQuery);
-    if (guestsQuery) params.set('guests', guestsQuery);
+    const activeCheckIn = checkIn || searchState.checkIn;
+    const activeCheckOut = checkOut || searchState.checkOut;
+    if (activeCheckIn) params.set('checkIn', activeCheckIn);
+    if (activeCheckOut) params.set('checkOut', activeCheckOut);
+    params.set('rooms', String(searchState.rooms));
+    params.set('adults', String(searchState.adults));
+    params.set('children', String(searchState.children));
+    params.set('guests', String(totalGuests));
     const qStr = params.toString();
     return `/ashram/${ashramId}${qStr ? `?${qStr}` : ''}`;
   };
@@ -296,22 +329,10 @@ export const SearchPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Guest Count */}
+          {/* Guest & Room Count */}
           <div className="flex flex-col text-left space-y-1.5">
-            <label className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400">Guest Count</label>
-            <div className="relative">
-              <select
-                value={guestsQuery}
-                onChange={(e) => setSearchParams({ destination, checkIn: checkInQuery, checkOut: checkOutQuery, guests: e.target.value })}
-                className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl pl-9 pr-3 py-3 text-xs font-semibold focus:outline-none cursor-pointer appearance-none"
-              >
-                <option value="1">1 Guest</option>
-                <option value="2">2 Guests</option>
-                <option value="3">3 Guests</option>
-                <option value="4">4+ Guests</option>
-              </select>
-              <Users className="absolute left-3 top-3.5 text-gray-400" size={14} />
-            </div>
+            <label className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400">Guests & Rooms</label>
+            <GuestRoomSelector compact />
           </div>
 
           {/* Search Action */}
@@ -401,12 +422,11 @@ export const SearchPage: React.FC = () => {
 
         {/* Results Feed — only this scrolls */}
         <section className="lg:col-span-3 space-y-6 lg:overflow-y-auto lg:pr-2 lg:pb-6 scrollbar-none">
-          <div className="flex justify-between items-center bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 px-5 py-3.5 rounded-[20px] shadow-sm">
-            <div className="text-xs font-bold text-gray-500">
-              Found <span className="text-[#0A4DA6] font-extrabold">{results.length} stays</span> matching{' '}
-              {activeKeyword ? `"${activeKeyword}"` : 'all locations'}
-            </div>
-          </div>
+          <SearchResultStatus
+            loading={loading}
+            destination={activeKeyword}
+            count={results.length}
+          />
 
           {loading ? (
             <div className="space-y-4">
@@ -416,10 +436,9 @@ export const SearchPage: React.FC = () => {
             </div>
           ) : results.length === 0 ? (
             <div className="text-center py-20 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] space-y-4">
-              <img src="/logo/logo.png" alt="Tirvona" className="mx-auto w-[140px] h-auto object-contain opacity-20 dark:opacity-30 select-none" />
-              <h4 className="font-extrabold text-base text-[#0B192C] dark:text-white">No retreats found</h4>
+              <h4 className="font-extrabold text-base text-[#0B192C] dark:text-white">No verified Ashrams found matching {activeKeyword ? `"${activeKeyword}"` : 'your query'}</h4>
               <p className="text-xs text-gray-400 max-w-sm mx-auto leading-relaxed">
-                We couldn't find any approved Ashram matching your query. Try adjusting filters or typing city names like 'Rishikesh', 'Haridwar', or 'Vrindavan'.
+                Try adjusting filters or typing city names like 'Rishikesh', 'Haridwar', or 'Vrindavan'.
               </p>
             </div>
           ) : (

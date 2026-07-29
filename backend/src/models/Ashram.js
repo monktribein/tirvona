@@ -121,6 +121,22 @@ const ashramSchema = new mongoose.Schema(
         type: String, // e.g. WiFi, Hot Water, Meditation Hall, Cow Shelter, River View, Lift, Wheelchair
       },
     ],
+    addOnServices: [
+      {
+        name: { type: String, required: true },
+        price: { type: Number, required: true, min: 0 },
+        unit: {
+          type: String,
+          enum: ['per_day', 'per_meal', 'per_person', 'one_time', 'per_box'],
+          default: 'per_day',
+        },
+        unitLabel: { type: String, default: 'Day' },
+        maxQuantity: { type: Number, default: 10 },
+        enabled: { type: Boolean, default: true },
+        iconUrl: { type: String, default: '' },
+        description: { type: String, default: '' },
+      },
+    ],
     documents: {
       trustDeedUrl: { type: String, default: '' },
       fireSafetyCertificateUrl: { type: String, default: '' },

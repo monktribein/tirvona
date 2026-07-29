@@ -5,6 +5,8 @@ import axios from 'axios';
 import { ashramService, reviewService } from '../services';
 import { Reveal } from '../components/Reveal';
 import { DatePicker } from '../components/DatePicker';
+import { GuestRoomSelector } from '../components/shared/GuestRoomSelector';
+import { useBookingSearch } from '../contexts/BookingSearchContext';
 import heroBg from '../assets/rishikesh-tera-manzil-temple.jpg';
 import heroPng from '../assets/hero.png';
 import {
@@ -37,11 +39,17 @@ import {
 
 export const HomePage: React.FC = () => {
   const navigate = useNavigate();
-  const [destination, setDestination] = useState('');
+  const { searchState, updateBookingSearch, totalGuests } = useBookingSearch();
+  const [destination, setDestination] = useState(searchState.destination || '');
   const [stayType, setStayType] = useState('');
-  const [checkIn, setCheckIn] = useState('');
-  const [checkOut, setCheckOut] = useState('');
-  const [guests, setGuests] = useState('1');
+  const [checkIn, setCheckIn] = useState(searchState.checkIn || '');
+  const [checkOut, setCheckOut] = useState(searchState.checkOut || '');
+
+  useEffect(() => {
+    setDestination(searchState.destination || '');
+    setCheckIn(searchState.checkIn || '');
+    setCheckOut(searchState.checkOut || '');
+  }, [searchState.destination, searchState.checkIn, searchState.checkOut]);
 
   const [ashrams, setAshrams] = useState<any[]>([]);
   const [offers, setOffers] = useState<any[]>([]);
@@ -54,17 +62,8 @@ export const HomePage: React.FC = () => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const autocompleteRef = useRef<HTMLDivElement>(null);
-  const [guestsOpen, setGuestsOpen] = useState(false);
-  const guestsRef = useRef<HTMLDivElement>(null);
   const [activityOpen, setActivityOpen] = useState(false);
   const activityRef = useRef<HTMLDivElement>(null);
-
-  const guestOptions = [
-    { value: '1', label: '1 Person' },
-    { value: '2', label: '1 - 2 People' },
-    { value: '3', label: '3 - 4 People' },
-    { value: '5', label: '5+ People' },
-  ];
 
   const activityOptions = [
     { value: '', label: 'Trip Type' },
@@ -88,9 +87,6 @@ export const HomePage: React.FC = () => {
     const handleClickOutside = (event: MouseEvent) => {
       if (autocompleteRef.current && !autocompleteRef.current.contains(event.target as Node)) {
         setShowSuggestions(false);
-      }
-      if (guestsRef.current && !guestsRef.current.contains(event.target as Node)) {
-        setGuestsOpen(false);
       }
       if (activityRef.current && !activityRef.current.contains(event.target as Node)) {
         setActivityOpen(false);
@@ -280,12 +276,21 @@ export const HomePage: React.FC = () => {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    updateBookingSearch({
+      destination,
+      checkIn,
+      checkOut,
+    });
+
     const params = new URLSearchParams();
     if (destination) params.set('destination', destination);
     if (stayType) params.set('type', stayType);
     if (checkIn) params.set('checkIn', checkIn);
     if (checkOut) params.set('checkOut', checkOut);
-    if (guests) params.set('guests', guests);
+    params.set('rooms', String(searchState.rooms));
+    params.set('adults', String(searchState.adults));
+    params.set('children', String(searchState.children));
+    params.set('guests', String(totalGuests));
     if (searchTab && searchTab !== 'destinations') params.set('tab', searchTab);
     navigate(`/search?${params.toString()}`);
   };
@@ -515,7 +520,7 @@ export const HomePage: React.FC = () => {
           <form onSubmit={handleSearch} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4 lg:gap-0 items-center">
 
             {/* Field 1: DESTINATIONS */}
-            <div className="lg:col-span-3 relative lg:pr-4 lg:border-r border-gray-200 dark:border-slate-800" ref={autocompleteRef}>
+            <div className="lg:col-span-4 relative lg:pr-4 lg:border-r border-gray-200 dark:border-slate-800" ref={autocompleteRef}>
               <label className="block text-[10px] font-extrabold uppercase tracking-wider text-gray-400 mb-1.5 pl-1">Destinations</label>
               <div className="relative flex items-center">
                 <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-[#0A4DA6] dark:text-amber-400 flex items-center justify-center shrink-0 mr-2.5">
@@ -549,54 +554,6 @@ export const HomePage: React.FC = () => {
               </AnimatePresence>
             </div>
 
-            {/* Field 2: ALL ACTIVITY */}
-            <div className="lg:col-span-2 relative lg:px-4 lg:border-r border-gray-200 dark:border-slate-800">
-              <label className="block text-[10px] font-extrabold uppercase tracking-wider text-gray-400 mb-1.5 pl-1">All Activity</label>
-              <div className="relative flex items-center" ref={activityRef}>
-                <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-[#0A4DA6] dark:text-amber-400 flex items-center justify-center shrink-0 mr-2">
-                  <Bed size={15} />
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setActivityOpen(o => !o)}
-                  className="w-full text-left bg-transparent p-0 pr-5 text-xs sm:text-sm font-bold focus:outline-none cursor-pointer text-[#0B192C] dark:text-white truncate"
-                >
-                  {activityOptions.find(o => o.value === stayType)?.label || 'Trip Type'}
-                </button>
-                <ChevronDown size={14} className={`absolute right-0 text-gray-400 pointer-events-none transition-transform duration-200 ${activityOpen ? 'rotate-180' : ''}`} />
-
-                <AnimatePresence>
-                  {activityOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 6, scale: 0.98 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 6, scale: 0.98 }}
-                      transition={{ duration: 0.15, ease: 'easeOut' }}
-                      className="absolute left-0 top-full mt-3 w-full min-w-[176px] bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl shadow-xl shadow-[#0B192C]/10 overflow-hidden z-50 p-1.5"
-                    >
-                      {activityOptions.map(opt => {
-                        const active = stayType === opt.value;
-                        return (
-                          <button
-                            key={opt.value || 'any'}
-                            type="button"
-                            onClick={() => { setStayType(opt.value); setActivityOpen(false); }}
-                            className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center justify-between gap-2 transition-colors ${active
-                              ? 'bg-[#0A4DA6] text-white'
-                              : 'text-[#0B192C] dark:text-gray-200 hover:bg-[#0A4DA6]/10 hover:text-[#0A4DA6] dark:hover:text-white'
-                              }`}
-                          >
-                            <span>{opt.label}</span>
-                            {active && <CheckCircle size={13} className="shrink-0" />}
-                          </button>
-                        );
-                      })}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            </div>
-
             {/* Field 3: CHECK IN */}
             <div className="lg:col-span-2 relative lg:px-4 lg:border-r border-gray-200 dark:border-slate-800">
               <label className="block text-[10px] font-extrabold uppercase tracking-wider text-gray-400 mb-1.5 pl-1">Check In</label>
@@ -620,53 +577,8 @@ export const HomePage: React.FC = () => {
             </div>
 
             {/* Field 4: GUESTS & SEARCH */}
-            <div className="lg:col-span-3 relative lg:pl-4 flex items-center justify-between gap-3">
-              <div className="flex-1 min-w-0">
-                <label className="block text-[10px] font-extrabold uppercase tracking-wider text-gray-400 mb-1.5 pl-1">Guests</label>
-                <div className="relative flex items-center" ref={guestsRef}>
-                  <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-[#0A4DA6] dark:text-amber-400 flex items-center justify-center shrink-0 mr-2.5">
-                    <Users size={16} />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setGuestsOpen(o => !o)}
-                    className="w-full text-left bg-transparent p-0 pr-5 text-xs sm:text-sm font-bold focus:outline-none cursor-pointer text-[#0B192C] dark:text-white truncate"
-                  >
-                    {guestOptions.find(o => o.value === guests)?.label || '1 Person'}
-                  </button>
-                  <ChevronDown size={14} className={`absolute right-0 text-gray-400 pointer-events-none transition-transform duration-200 ${guestsOpen ? 'rotate-180' : ''}`} />
-
-                  <AnimatePresence>
-                    {guestsOpen && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 6, scale: 0.98 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 6, scale: 0.98 }}
-                        transition={{ duration: 0.15, ease: 'easeOut' }}
-                        className="absolute right-0 top-full mt-3 w-full min-w-[160px] bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl shadow-xl shadow-[#0B192C]/10 overflow-hidden z-50 p-1.5"
-                      >
-                        {guestOptions.map(opt => {
-                          const active = guests === opt.value;
-                          return (
-                            <button
-                              key={opt.value}
-                              type="button"
-                              onClick={() => { setGuests(opt.value); setGuestsOpen(false); }}
-                              className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center justify-between gap-2 transition-colors ${active
-                                ? 'bg-[#0A4DA6] text-white'
-                                : 'text-[#0B192C] dark:text-gray-200 hover:bg-[#0A4DA6]/10 hover:text-[#0A4DA6] dark:hover:text-white'
-                                }`}
-                            >
-                              <span>{opt.label}</span>
-                              {active && <CheckCircle size={13} className="shrink-0" />}
-                            </button>
-                          );
-                        })}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              </div>
+            <div className="lg:col-span-4 relative lg:pl-4 flex items-center justify-between gap-3">
+              <GuestRoomSelector />
 
               {/* Search Button */}
               <button

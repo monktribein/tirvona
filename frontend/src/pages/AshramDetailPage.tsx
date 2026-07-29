@@ -4,10 +4,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
-import { ashramService, reviewService, roomService, bookingService, offerService } from '../services';
+import { ashramService, reviewService, roomService, bookingService, offerService, platformSettingsService } from '../services';
 import { getErrorMessage } from '../lib/api';
 import { openRazorpayCheckout } from '../lib/razorpay';
 import { saveBookingDraft, getBookingDraft, clearBookingDraft, type BookingDraftPayload } from '../utils/bookingDraft';
+import { GuestRoomSelector } from '../components/shared/GuestRoomSelector';
+import { GuestReviewsCarousel } from '../components/shared/GuestReviewsCarousel';
+import { useBookingSearch } from '../contexts/BookingSearchContext';
 import { 
   ShieldCheck, 
   MapPin, 
@@ -44,9 +47,19 @@ export const AshramDetailPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const initialCheckIn = searchParams.get('checkIn') || '';
-  const initialCheckOut = searchParams.get('checkOut') || '';
-  const initialGuests = parseInt(searchParams.get('guests') || '1') || 1;
+  const { searchState, updateBookingSearch, totalGuests: searchTotalGuests } = useBookingSearch();
+
+  const qCheckIn = searchParams.get('checkIn');
+  const qCheckOut = searchParams.get('checkOut');
+  const qRooms = searchParams.get('rooms');
+  const qAdults = searchParams.get('adults');
+  const qChildren = searchParams.get('children');
+
+  const initialCheckIn = qCheckIn || searchState.checkIn || '';
+  const initialCheckOut = qCheckOut || searchState.checkOut || '';
+  const initialRooms = qRooms ? parseInt(qRooms) : searchState.rooms || 1;
+  const initialAdults = qAdults ? parseInt(qAdults) : searchState.adults || 2;
+  const initialChildren = qChildren !== null && qChildren !== undefined ? parseInt(qChildren) : searchState.children || 0;
 
   const [ashram, setAshram] = useState<any>(null);
   const [rooms, setRooms] = useState<any[]>([]);
@@ -57,8 +70,7 @@ export const AshramDetailPage: React.FC = () => {
   const [checkIn, setCheckIn] = useState(initialCheckIn);
   const [checkOut, setCheckOut] = useState(initialCheckOut);
   const [selectedRoom, setSelectedRoom] = useState<any>(null);
-  const [guestsCount, setGuestsCount] = useState(initialGuests);
-  const [roomsCount, setRoomsCount] = useState(1);
+  const [roomsCount, setRoomsCount] = useState(initialRooms);
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
@@ -69,11 +81,9 @@ export const AshramDetailPage: React.FC = () => {
   useEffect(() => {
     const qCheckIn = searchParams.get('checkIn');
     const qCheckOut = searchParams.get('checkOut');
-    const qGuests = searchParams.get('guests');
     const qPromo = searchParams.get('promoCode');
     if (qCheckIn) setCheckIn(qCheckIn);
     if (qCheckOut) setCheckOut(qCheckOut);
-    if (qGuests) setGuestsCount(parseInt(qGuests) || 1);
     if (qPromo) {
       setCouponCode(qPromo);
       handleValidatePromo(qPromo);
@@ -118,8 +128,25 @@ export const AshramDetailPage: React.FC = () => {
   const [donation, setDonation] = useState('');
 
   // Extended Booking Fields
-  const [adults, setAdults] = useState(1);
-  const [children, setChildren] = useState(0);
+  const [adults, setAdults] = useState(initialAdults);
+  const [children, setChildren] = useState(initialChildren);
+  const guestsCount = adults + children;
+
+  useEffect(() => {
+    if (searchState.rooms) setRoomsCount(searchState.rooms);
+    if (searchState.adults) setAdults(searchState.adults);
+    if (searchState.children !== undefined) setChildren(searchState.children);
+  }, [searchState.rooms, searchState.adults, searchState.children]);
+
+  useEffect(() => {
+    updateBookingSearch({
+      checkIn,
+      checkOut,
+      rooms: roomsCount,
+      adults,
+      children,
+    });
+  }, [checkIn, checkOut]);
   const [couponCode, setCouponCode] = useState('');
   const [appliedDiscount, setAppliedDiscount] = useState(0);
   const [couponMsg, setCouponMsg] = useState('');
@@ -132,7 +159,7 @@ export const AshramDetailPage: React.FC = () => {
 
   // Reviews
   const [reviews, setReviews] = useState<any[]>([]);
-  const [showAllReviews, setShowAllReviews] = useState(false);
+
 
   // Related stays
   const [relatedStays, setRelatedStays] = useState<any[]>([]);
@@ -165,7 +192,6 @@ export const AshramDetailPage: React.FC = () => {
       try {
         if (pb.checkIn || pb.checkInDate) setCheckIn(pb.checkIn || pb.checkInDate);
         if (pb.checkOut || pb.checkOutDate) setCheckOut(pb.checkOut || pb.checkOutDate);
-        if (pb.guestsCount) setGuestsCount(pb.guestsCount);
         if (pb.adults !== undefined) setAdults(pb.adults);
         if (pb.children !== undefined) setChildren(pb.children);
         if (pb.roomsBookedCount) setRoomsCount(pb.roomsBookedCount);
@@ -215,13 +241,11 @@ export const AshramDetailPage: React.FC = () => {
   const handleAdultsChange = (val: number) => {
     const a = Math.max(1, val);
     setAdults(a);
-    setGuestsCount(a + children);
   };
 
   const handleChildrenChange = (val: number) => {
     const c = Math.max(0, val);
     setChildren(c);
-    setGuestsCount(adults + c);
   };
 
   const { addNotification } = useNotifications();
@@ -279,6 +303,17 @@ export const AshramDetailPage: React.FC = () => {
     };
   }, [lightboxOpen, ashram]);
 
+  // Add-On Services Dynamic Pricing State
+  const [addOnQuantities, setAddOnQuantities] = useState<Record<string, number>>({});
+
+  const handleUpdateAddOnQty = (serviceId: string, delta: number, maxQty: number = 10) => {
+    setAddOnQuantities((prev) => {
+      const current = prev[serviceId] || 0;
+      const next = Math.max(0, Math.min(maxQty, current + delta));
+      return { ...prev, [serviceId]: next };
+    });
+  };
+
   const calculateDays = () => {
     if (!checkIn || !checkOut) return 1;
     const start = new Date(checkIn).getTime();
@@ -289,11 +324,41 @@ export const AshramDetailPage: React.FC = () => {
 
   const daysCount = calculateDays();
   const basePriceCalc = (selectedRoom?.basePrice || 0) * roomsCount * daysCount;
+
+  // Dynamic Database-Driven Add-On Services Calculation
+  let dynamicAddOnsCalc = 0;
+  const activeAddOnsList: any[] = [];
+  const availableAddOns = ashram?.addOnServices || [];
+
+  availableAddOns.forEach((item: any) => {
+    if (!item.enabled) return;
+    const qty = addOnQuantities[item._id] || 0;
+    if (qty > 0) {
+      let itemTotal = item.price * qty;
+      if (item.unit === 'per_day') {
+        itemTotal = item.price * qty * daysCount;
+      } else if (item.unit === 'per_person') {
+        itemTotal = item.price * qty * (adults + children);
+      }
+      dynamicAddOnsCalc += itemTotal;
+      activeAddOnsList.push({
+        serviceId: item._id,
+        name: item.name,
+        price: item.price,
+        unit: item.unit,
+        unitLabel: item.unitLabel,
+        quantity: qty,
+        totalPrice: itemTotal,
+      });
+    }
+  });
+
   const prasadCalc = prasad ? 100 * (adults + children) : 0;
   const mealsCalc = meals ? 150 * (adults + children) * daysCount : 0;
   const parkingCalc = parking ? 100 * daysCount : 0;
   const lockerCalc = locker ? 50 * daysCount : 0;
-  const servicesCalc = prasadCalc + mealsCalc + parkingCalc + lockerCalc;
+  const legacyServicesCalc = prasadCalc + mealsCalc + parkingCalc + lockerCalc;
+  const servicesCalc = dynamicAddOnsCalc + legacyServicesCalc;
   const donationCalc = parseFloat(donation) || 0;
   const subtotalCalc = basePriceCalc + servicesCalc + donationCalc;
   const discountCalc = appliedDiscount > 0 ? (appliedDiscount <= 100 ? (subtotalCalc * appliedDiscount) / 100 : appliedDiscount) : 0;
@@ -337,10 +402,36 @@ export const AshramDetailPage: React.FC = () => {
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
+  // Platform Fee Settings State
+  const [platformSettings, setPlatformSettings] = useState<{
+    enabled: boolean;
+    type: 'flat' | 'percentage';
+    value: number;
+    label: string;
+  }>({
+    enabled: true,
+    type: 'flat',
+    value: 49,
+    label: 'Tirvona Platform Fee',
+  });
+
+  useEffect(() => {
+    platformSettingsService.getSettings().then((res) => {
+      if (res.data?.success && res.data.data?.platformFee) {
+        setPlatformSettings(res.data.data.platformFee);
+      }
+    }).catch(() => {});
+  }, []);
+
   const extraGuestCalc = adults > 2 ? (adults - 2) * 200 * daysCount : 0;
   const loyaltyCalc = useLoyalty ? 100 : 0;
   const gstCalc = Math.round(subtotalCalc * 0.05);
-  const platformFeeCalc = 0;
+  const platformFeeCalc = !platformSettings.enabled
+    ? 0
+    : platformSettings.type === 'percentage'
+    ? Math.round((subtotalCalc * platformSettings.value) / 100)
+    : Math.round(platformSettings.value || 49);
+
   const totalSavingsCalc = Math.round(discountCalc + loyaltyCalc);
   const finalPayableCalc = Math.max(0, Math.round(subtotalCalc - discountCalc - loyaltyCalc + gstCalc + platformFeeCalc));
 
@@ -494,6 +585,7 @@ export const AshramDetailPage: React.FC = () => {
       guestsCount,
       roomsBookedCount: roomsCount,
       services: {
+        selectedAddOns: activeAddOnsList,
         prasad: { ordered: prasad },
         meals: { ordered: meals },
         parking: { ordered: parking },
@@ -568,22 +660,83 @@ export const AshramDetailPage: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-6 pt-2 pb-16 space-y-10">
-      {/* Title Header */}
-      <div className="flex flex-col items-center text-center gap-3 border-b border-gray-100 dark:border-slate-800 pb-4">
-        <div className="flex items-center justify-center gap-2">
-          <span className="px-3 py-1 bg-[#0A4DA6] text-white text-[9px] font-extrabold rounded-full flex items-center gap-1 shadow-sm uppercase tracking-wider">
-            <ShieldCheck size={12} /> Verified Stay
-          </span>
-          <span className="text-xs text-gray-400 font-extrabold tracking-wider uppercase">
-            {ashram.address?.city}, {ashram.address?.state}
-          </span>
+      {/* Title Header — Equalized Visual Width Container */}
+      <div className="border-b border-gray-100 dark:border-slate-800 pb-5">
+        <div className="max-w-3xl md:max-w-4xl mx-auto flex flex-col items-center text-center space-y-3.5 px-2">
+          {/* Badge & City/State */}
+          <div className="flex items-center justify-center gap-2">
+            <span className="px-3 py-1 bg-[#0A4DA6] text-white text-[9px] font-extrabold rounded-full flex items-center gap-1 shadow-sm uppercase tracking-wider">
+              <ShieldCheck size={12} /> Verified Stay
+            </span>
+            <span className="text-xs text-gray-400 font-extrabold tracking-wider uppercase">
+              {[ashram.address?.city, ashram.address?.state].filter(Boolean).join(', ')}
+            </span>
+          </div>
+
+          {/* Row 1: Ashram Name */}
+          <h2 className="text-3xl md:text-5xl font-extrabold text-[#0B192C] dark:text-white leading-tight">
+            {ashram.name}
+          </h2>
+
+          {/* Row 2: Address • PIN Code • Phone • Email (Visually Equalized Width) */}
+          <div className="text-xs font-bold text-gray-600 dark:text-gray-300 flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1.5 leading-relaxed">
+            <span className="flex items-center gap-1.5">
+              <MapPin size={14} className="text-[#0A4DA6] shrink-0" />
+              <span>
+                {[
+                  ashram.address?.street,
+                  ashram.address?.city,
+                  ashram.address?.state,
+                  ashram.address?.pincode ? `PIN Code: ${ashram.address.pincode}` : null,
+                ]
+                  .filter(Boolean)
+                  .join(', ')}
+              </span>
+            </span>
+
+            <span className="text-gray-300 dark:text-slate-700 font-black">•</span>
+
+            {(() => {
+              const rawPhone = ashram.contact?.phone || ashram.phone || ashram.ownerId?.phone || '+91 135 244 0001';
+              const digits = rawPhone.replace(/\D/g, '');
+              const formatted = digits.length === 10 ? `+91 ${digits.slice(0, 5)} ${digits.slice(5)}` : rawPhone;
+              return (
+                <a
+                  href={`tel:${rawPhone}`}
+                  className="flex items-center gap-1.5 hover:text-[#0A4DA6] transition-colors shrink-0"
+                >
+                  <Phone size={13} className="text-[#0A4DA6] shrink-0" />
+                  <span>{formatted}</span>
+                </a>
+              );
+            })()}
+
+            <span className="text-gray-300 dark:text-slate-700 font-black">•</span>
+
+            <a
+              href={`mailto:${ashram.contact?.email || ashram.email || ashram.ownerId?.email || 'stay@trust.in'}`}
+              className="flex items-center gap-1.5 hover:text-[#0A4DA6] transition-colors shrink-0"
+            >
+              <Mail size={13} className="text-[#0A4DA6] shrink-0" />
+              <span>{ashram.contact?.email || ashram.email || ashram.ownerId?.email || 'stay@trust.in'}</span>
+            </a>
+
+            {ashram.website && (
+              <>
+                <span className="text-gray-300 dark:text-slate-700 font-black">•</span>
+                <a
+                  href={ashram.website.startsWith('http') ? ashram.website : `https://${ashram.website}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 hover:text-[#0A4DA6] transition-colors shrink-0"
+                >
+                  <Globe size={13} className="text-[#0A4DA6] shrink-0" />
+                  <span>{ashram.website}</span>
+                </a>
+              </>
+            )}
+          </div>
         </div>
-        <h2 className="text-3xl md:text-5xl font-extrabold text-[#0B192C] dark:text-white leading-tight">
-          {ashram.name}
-        </h2>
-        <p className="text-xs text-gray-500 flex items-center justify-center gap-1">
-          <MapPin size={12} className="text-[#0A4DA6]" /> {ashram.address?.street}, Pin: {ashram.address?.pincode}
-        </p>
       </div>
 
       {/* Premium Hero + Thumbnail Gallery */}
@@ -886,43 +1039,8 @@ export const AshramDetailPage: React.FC = () => {
             </div>
           )}
 
-          {/* Reviews List */}
-          <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-5 shadow-sm">
-            <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white flex items-center gap-1.5 border-b border-gray-50 dark:border-slate-850 pb-3">
-              <Star size={18} className="text-[#0A4DA6]" /> Guest Reviews ({reviews.length})
-            </h3>
-             {reviews.length === 0 ? (
-              <p className="text-xs text-gray-400 italic">No reviews posted yet for this ashram stay.</p>
-            ) : (
-              <div className="space-y-4">
-                <div className="space-y-4">
-                  {reviews.slice(0, showAllReviews ? reviews.length : 3).map((rev) => (
-                    <div key={rev._id} className="p-4 bg-gray-50/50 dark:bg-slate-900/10 border border-gray-100 dark:border-slate-800 rounded-[20px] space-y-2">
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="font-extrabold text-secondary dark:text-white">{rev.customerId?.name}</span>
-                        <span className="flex items-center gap-0.5 px-2.5 py-0.5 bg-gray-50 dark:bg-slate-900 border border-gray-150 rounded-full text-[10px] font-bold">
-                          <Star size={10} className="fill-[#D4AF37] text-[#D4AF37]" /> {rev.rating?.overall} / 5
-                        </span>
-                      </div>
-                      <p className="text-xs text-gray-500 font-medium leading-relaxed">"{rev.comment}"</p>
-                    </div>
-                  ))}
-                </div>
-
-                {reviews.length > 3 && (
-                  <div className="text-center pt-2">
-                    <button
-                      type="button"
-                      onClick={() => setShowAllReviews(!showAllReviews)}
-                      className="px-5 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 text-gray-600 dark:text-gray-300 rounded-full text-[10px] font-bold transition-all cursor-pointer"
-                    >
-                      {showAllReviews ? 'View Less' : `View More (${reviews.length - 3} reviews)`}
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+          {/* Enterprise Guest Reviews Carousel */}
+          <GuestReviewsCarousel reviews={reviews} ashramName={ashram?.name} />
 
         </div>
 
@@ -987,114 +1105,82 @@ export const AshramDetailPage: React.FC = () => {
                   <span className="text-[10px] font-bold text-[#0A4DA6]">₹{selectedRoom?.basePrice} / bed per night</span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-gray-400 uppercase">Adults (12+ yrs)</label>
-                    <input
-                      type="number"
-                      min={1}
-                      max={10}
-                      value={adults}
-                      onChange={(e) => handleAdultsChange(parseInt(e.target.value) || 1)}
-                      className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs text-center font-bold"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-gray-400 uppercase">Children (0-11 yrs)</label>
-                    <input
-                      type="number"
-                      min={0}
-                      max={10}
-                      value={children}
-                      onChange={(e) => handleChildrenChange(parseInt(e.target.value) || 0)}
-                      className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs text-center font-bold"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-gray-400 uppercase">Total Guests</label>
-                    <input
-                      type="number"
-                      readOnly
-                      value={guestsCount}
-                      className="w-full p-2.5 bg-gray-100 dark:bg-slate-800 border border-gray-100 dark:border-slate-800 rounded-xl text-xs text-center font-bold text-gray-500 cursor-not-allowed"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-gray-400 uppercase">Rooms Count</label>
-                    <input
-                      type="number"
-                      min={1}
-                      max={5}
-                      value={roomsCount}
-                      onChange={(e) => setRoomsCount(parseInt(e.target.value) || 1)}
-                      className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs text-center font-bold"
-                    />
-                  </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400">Guests & Rooms</label>
+                  <GuestRoomSelector compact />
                 </div>
 
                 {/* Add ons - 4 distinct options */}
-                <div className="pt-3 border-t border-gray-100 dark:border-slate-800 space-y-2.5">
-                  <span className="text-[10px] uppercase font-bold text-gray-400">Add-on Services</span>
-                  <div className="space-y-2">
-                    {/* 1. Prasad */}
-                    <label className="flex items-center justify-between text-xs font-semibold cursor-pointer select-none">
-                      <div className="flex items-center gap-2">
-                        <Sparkles size={14} className="text-[#0A4DA6]" />
-                        <span>Sacred Prasad Box</span>
-                      </div>
-                      <input
-                        type="checkbox"
-                        checked={prasad}
-                        onChange={() => setPrasad(!prasad)}
-                        className="rounded border-gray-200 text-[#0A4DA6] w-4 h-4 cursor-pointer"
-                      />
-                    </label>
+                {/* Dynamic Database-Driven Add-on Services */}
+                <div className="pt-3 border-t border-gray-100 dark:border-slate-800 space-y-3">
+                  <span className="text-[10px] uppercase font-extrabold tracking-wider text-gray-400 block">
+                    Add-on Services (Dynamic Pricing)
+                  </span>
+                  
+                  {availableAddOns.filter((a: any) => a.enabled !== false).length === 0 ? (
+                    <p className="text-[11px] text-gray-400 italic">No add-on services available for this ashram.</p>
+                  ) : (
+                    <div className="space-y-2.5">
+                      {availableAddOns
+                        .filter((item: any) => item.enabled !== false)
+                        .map((item: any) => {
+                          const qty = addOnQuantities[item._id] || 0;
+                          return (
+                            <div
+                              key={item._id}
+                              className={`p-3 rounded-2xl border transition-all text-xs font-semibold flex items-center justify-between gap-2 ${
+                                qty > 0
+                                  ? 'bg-[#0A4DA6]/5 border-[#0A4DA6]/30'
+                                  : 'bg-gray-50/70 dark:bg-slate-900/60 border-gray-100 dark:border-slate-800'
+                              }`}
+                            >
+                              <div className="space-y-0.5 flex-1 min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                  <Sparkles size={13} className="text-[#0A4DA6] shrink-0" />
+                                  <span className="font-extrabold text-[#0B192C] dark:text-white truncate">
+                                    {item.name}
+                                  </span>
+                                </div>
+                                <span className="text-[10px] font-bold text-[#0A4DA6] block">
+                                  ₹{item.price} <span className="text-gray-400 font-medium">/ {item.unitLabel || 'Unit'}</span>
+                                </span>
+                              </div>
 
-                    {/* 2. Meals */}
-                    <label className="flex items-center justify-between text-xs font-semibold cursor-pointer select-none">
-                      <div className="flex items-center gap-2">
-                        <Coffee size={14} className="text-[#0A4DA6]" />
-                        <span>Satvik Meals</span>
-                      </div>
-                      <input
-                        type="checkbox"
-                        checked={meals}
-                        onChange={() => setMeals(!meals)}
-                        className="rounded border-gray-200 text-[#0A4DA6] w-4 h-4 cursor-pointer"
-                      />
-                    </label>
-
-                    {/* 3. Parking */}
-                    <label className="flex items-center justify-between text-xs font-semibold cursor-pointer select-none">
-                      <div className="flex items-center gap-2">
-                        <ParkingCircle size={14} className="text-[#0A4DA6]" />
-                        <span>Parking Slot</span>
-                      </div>
-                      <input
-                        type="checkbox"
-                        checked={parking}
-                        onChange={() => setParking(!parking)}
-                        className="rounded border-gray-200 text-[#0A4DA6] w-4 h-4 cursor-pointer"
-                      />
-                    </label>
-
-                    {/* 4. Locker Access */}
-                    <label className="flex items-center justify-between text-xs font-semibold cursor-pointer select-none">
-                      <div className="flex items-center gap-2">
-                        <Lock size={14} className="text-[#0A4DA6]" />
-                        <span>Locker Access</span>
-                      </div>
-                      <input
-                        type="checkbox"
-                        checked={locker}
-                        onChange={() => setLocker(!locker)}
-                        className="rounded border-gray-200 text-[#0A4DA6] w-4 h-4 cursor-pointer"
-                      />
-                    </label>
-                  </div>
+                              {/* Quantity Stepper */}
+                              <div className="flex items-center gap-1.5 shrink-0 select-none">
+                                <button
+                                  type="button"
+                                  onClick={() => handleUpdateAddOnQty(item._id, -1, item.maxQuantity)}
+                                  disabled={qty <= 0}
+                                  className={`w-6 h-6 rounded-full border flex items-center justify-center text-xs font-bold transition-all ${
+                                    qty <= 0
+                                      ? 'border-gray-200 text-gray-300 dark:border-slate-800 dark:text-slate-700 cursor-not-allowed'
+                                      : 'border-[#0A4DA6] text-[#0A4DA6] hover:bg-[#0A4DA6] hover:text-white cursor-pointer'
+                                  }`}
+                                >
+                                  -
+                                </button>
+                                <span className="w-5 text-center text-xs font-extrabold text-[#0B192C] dark:text-white tabular-nums">
+                                  {qty}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleUpdateAddOnQty(item._id, 1, item.maxQuantity)}
+                                  disabled={qty >= (item.maxQuantity || 10)}
+                                  className={`w-6 h-6 rounded-full border flex items-center justify-center text-xs font-bold transition-all ${
+                                    qty >= (item.maxQuantity || 10)
+                                      ? 'border-gray-200 text-gray-300 dark:border-slate-800 dark:text-slate-700 cursor-not-allowed'
+                                      : 'border-[#0A4DA6] text-[#0A4DA6] hover:bg-[#0A4DA6] hover:text-white cursor-pointer'
+                                  }`}
+                                >
+                                  +
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  )}
                 </div>
 
                 {/* Donation */}
@@ -1244,6 +1330,7 @@ export const AshramDetailPage: React.FC = () => {
 
                 {/* SECTION 2: Detailed Enterprise Savings Breakdown */}
                 <div className="p-4 bg-gray-50 dark:bg-slate-900/90 border border-gray-200 dark:border-slate-800 rounded-[24px] space-y-2.5 text-xs font-semibold shadow-inner">
+                  {/* 1. Original Stay Cost */}
                   <div className="flex justify-between text-gray-600 dark:text-gray-300">
                     <span>Original Stay Cost ({daysCount} night{daysCount > 1 ? 's' : ''}):</span>
                     <span>₹{basePriceCalc}</span>
@@ -1270,30 +1357,42 @@ export const AshramDetailPage: React.FC = () => {
                     </div>
                   )}
 
+                  {/* 2. Government GST */}
+                  <div className="flex justify-between text-gray-500 text-[11px]">
+                    <span>Government GST (5%):</span>
+                    <span>₹{gstCalc}</span>
+                  </div>
+
+                  {/* 3. Tirvona Platform Fee */}
+                  {platformSettings.enabled && (
+                    <div className="flex justify-between text-[#0A4DA6] font-extrabold text-[11px]">
+                      <span>{platformSettings.label || 'Tirvona Platform Fee'}:</span>
+                      <span>
+                        ₹{platformFeeCalc}
+                        {platformSettings.type === 'percentage' && (
+                          <span className="text-[10px] text-gray-400 font-normal ml-1">({platformSettings.value}%)</span>
+                        )}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* 4. Coupon Discount (if applicable) */}
                   {discountCalc > 0 && (
                     <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-extrabold">
-                      <span>Coupon Offer Discount ({couponCode}):</span>
+                      <span>Coupon Discount ({couponCode}):</span>
                       <span>-₹{discountCalc}</span>
                     </div>
                   )}
 
+                  {/* 5. Loyalty Discount (if applicable) */}
                   {useLoyalty && (
                     <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-extrabold">
-                      <span>Loyalty Reward Discount:</span>
+                      <span>Loyalty Discount:</span>
                       <span>-₹100</span>
                     </div>
                   )}
 
-                  <div className="flex justify-between text-gray-400 text-[11px]">
-                    <span>Govt GST (5%):</span>
-                    <span>₹{gstCalc}</span>
-                  </div>
-
-                  <div className="flex justify-between text-gray-400 text-[11px]">
-                    <span>Digital India Platform Fee:</span>
-                    <span className="text-emerald-600 font-bold">FREE</span>
-                  </div>
-
+                  {/* 6. Final Payable Amount */}
                   <div className="pt-2 border-t border-gray-200 dark:border-slate-800 flex justify-between text-base font-black text-[#0B192C] dark:text-white">
                     <span>Final Payable Amount:</span>
                     <span className="text-[#0A4DA6] dark:text-blue-400">₹{finalPayableCalc}</span>
@@ -1378,17 +1477,7 @@ export const AshramDetailPage: React.FC = () => {
             )}
           </div>
 
-          {/* Contact Trust Info */}
-          <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 shadow-sm space-y-4">
-            <h4 className="font-extrabold text-xs text-[#0B192C] dark:text-white uppercase tracking-wider">Contact Ashram Trust</h4>
-            <div className="space-y-3 text-[11px] text-gray-500">
-              <p className="flex items-center gap-2"><Phone size={12} className="text-[#0A4DA6]" /> {ashram.ownerId?.phone || '+91 135 244 0001'}</p>
-              <p className="flex items-center gap-2"><Mail size={12} className="text-[#0A4DA6]" /> {ashram.email || 'stay@trust.in'}</p>
-              {ashram.website && (
-                <p className="flex items-center gap-2"><Globe size={12} className="text-[#0A4DA6]" /> {ashram.website}</p>
-              )}
-            </div>
-          </div>
+
 
           {/* Location Coordinates Widget */}
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[28px] shadow-sm space-y-4 text-center relative overflow-hidden flex flex-col items-center justify-center">

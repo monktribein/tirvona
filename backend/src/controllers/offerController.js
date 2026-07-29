@@ -416,7 +416,25 @@ export const validatePromoCode = async (req, res) => {
 
     const subtotal = Number(bookingAmount);
     const gstAmount = Math.round(subtotal * 0.05); // 5% GST for Spiritual Stays
-    const platformFee = 0; // ₹0 Digital India Fee
+
+    let platformFee = 49;
+    try {
+      const PlatformSettings = (await import('../models/PlatformSettings.js')).default;
+      const settings = await PlatformSettings.findOne({ key: 'main' });
+      if (settings && settings.platformFee && settings.platformFee.enabled) {
+        const feeConfig = settings.platformFee;
+        if (feeConfig.type === 'percentage') {
+          platformFee = Math.round((subtotal * feeConfig.value) / 100);
+        } else {
+          platformFee = Math.round(feeConfig.value);
+        }
+      } else if (settings && settings.platformFee && !settings.platformFee.enabled) {
+        platformFee = 0;
+      }
+    } catch (e) {
+      console.warn('Fallback platform fee in offerController');
+    }
+
     const couponDiscount = Math.round(discountAmount);
     const totalSavings = couponDiscount;
     const finalAmount = Math.max(0, Math.round(subtotal - couponDiscount + gstAmount + platformFee));

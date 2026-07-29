@@ -74,6 +74,17 @@ const bookingSchema = new mongoose.Schema(
       donation: {
         amount: { type: Number, default: 0 },
       },
+      selectedAddOns: [
+        {
+          serviceId: { type: String },
+          name: { type: String, required: true },
+          price: { type: Number, required: true },
+          unit: { type: String },
+          unitLabel: { type: String },
+          quantity: { type: Number, required: true, default: 1 },
+          totalPrice: { type: Number, required: true, default: 0 },
+        },
+      ],
     },
     pricing: {
       basePrice: { type: Number, required: true },

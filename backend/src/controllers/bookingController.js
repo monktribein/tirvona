@@ -5,6 +5,7 @@ import Payment from '../models/Payment.js';
 import AuditLog from '../models/AuditLog.js';
 import Ashram from '../models/Ashram.js';
 import Offer from '../models/Offer.js';
+import PlatformSettings from '../models/PlatformSettings.js';
 import { scopedAshramIds } from '../utils/ashramAccess.js';
 import { isRazorpayConfigured, createRazorpayOrder, verifyRazorpaySignature } from '../utils/razorpay.js';
 import config from '../config/env.js';
@@ -165,23 +166,46 @@ export const createBooking = async (req, res) => {
     };
 
     if (services) {
+      if (Array.isArray(services.selectedAddOns) && services.selectedAddOns.length > 0) {
+        bookingServices.selectedAddOns = services.selectedAddOns.map((item) => {
+          const qty = Math.max(1, parseInt(item.quantity, 10) || 1);
+          const price = Math.max(0, parseFloat(item.price) || 0);
+          let itemTotal = price * qty;
+          if (item.unit === 'per_day') {
+            itemTotal = price * qty * daysCount;
+          } else if (item.unit === 'per_person') {
+            itemTotal = price * qty * guestsCount;
+          }
+          servicesPrice += itemTotal;
+          return {
+            serviceId: item.serviceId || item._id,
+            name: item.name,
+            price,
+            unit: item.unit || 'per_day',
+            unitLabel: item.unitLabel || 'Day',
+            quantity: qty,
+            totalPrice: itemTotal,
+          };
+        });
+      }
+
       if (services.prasad && services.prasad.ordered) {
-        const price = 100 * guestsCount;
+        const price = (services.prasad.price || 100) * guestsCount;
         bookingServices.prasad = { ordered: true, price };
         servicesPrice += price;
       }
       if (services.meals && services.meals.ordered) {
-        const price = 150 * guestsCount * daysCount;
+        const price = (services.meals.price || 150) * guestsCount * daysCount;
         bookingServices.meals = { ordered: true, price };
         servicesPrice += price;
       }
       if (services.parking && services.parking.ordered) {
-        const price = 100 * daysCount;
+        const price = (services.parking.price || 100) * daysCount;
         bookingServices.parking = { ordered: true, price };
         servicesPrice += price;
       }
       if (services.locker && services.locker.ordered) {
-        const price = 50 * daysCount;
+        const price = (services.locker.price || 50) * daysCount;
         bookingServices.locker = { ordered: true, price };
         servicesPrice += price;
       }
@@ -220,7 +244,25 @@ export const createBooking = async (req, res) => {
     const upgradeAmount = 0;
     const loyaltyDiscount = req.body.loyaltyDiscount ? Number(req.body.loyaltyDiscount) : 0;
     const gstAmount = Math.round(originalAmount * 0.05);
-    const platformFee = 0;
+
+    // Fetch dynamic Platform Fee from PlatformSettings database
+    let platformFee = 49;
+    try {
+      const settings = await PlatformSettings.findOne({ key: 'main' });
+      if (settings && settings.platformFee && settings.platformFee.enabled) {
+        const feeConfig = settings.platformFee;
+        if (feeConfig.type === 'percentage') {
+          platformFee = Math.round((originalAmount * feeConfig.value) / 100);
+        } else {
+          platformFee = Math.round(feeConfig.value);
+        }
+      } else if (settings && settings.platformFee && !settings.platformFee.enabled) {
+        platformFee = 0;
+      }
+    } catch (e) {
+      console.warn('Fallback to default platform fee calculation');
+    }
+
     const totalSavings = discountAmount + loyaltyDiscount;
     const calculatedFinalAmount = Math.max(0, Math.round(originalAmount - discountAmount - loyaltyDiscount + gstAmount + platformFee));
     const rewardPointsEarned = Math.round(calculatedFinalAmount * 0.05);

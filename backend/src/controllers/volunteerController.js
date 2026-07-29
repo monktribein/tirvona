@@ -139,6 +139,19 @@ export const getOwnerJobs = async (req, res) => {
   }
 };
 
+// GET /api/volunteer/applications - Fetch all applications (Owner / Admin)
+export const getApplications = async (req, res) => {
+  try {
+    const applications = await VolunteerApplication.find()
+      .sort({ createdAt: -1 })
+      .populate('jobId', 'title ashramName city department');
+    return res.status(200).json({ success: true, count: applications.length, data: applications });
+  } catch (error) {
+    console.error('getApplications error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to fetch volunteer applications.' });
+  }
+};
+
 // PUT /api/volunteer/applications/:id/status - Update Application Status
 export const updateApplicationStatus = async (req, res) => {
   try {

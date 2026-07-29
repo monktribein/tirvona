@@ -117,6 +117,7 @@ export const DashboardLayout: React.FC = () => {
         { label: 'Rooms', path: '/admin/manage/rooms/all' },
         { label: 'Availability', path: '/admin/manage/rooms/availability' },
         { label: 'Pricing', path: '/admin/manage/rooms/pricing' },
+        { label: 'Platform Pricing', path: '/admin/settings/pricing' },
         { label: 'Season Pricing', path: '/admin/manage/rooms/season-pricing' },
         { label: 'Inventory', path: '/admin/manage/rooms/inventory' },
       ],
@@ -220,6 +221,7 @@ export const DashboardLayout: React.FC = () => {
   const ownerLinks = [
     { label: 'Overview Dashboard', path: '/owner/dashboard', icon: <LayoutDashboard size={16} /> },
     { label: 'Manage Ashrams', path: '/owner/ashrams', icon: <Building size={16} /> },
+    { label: 'Add-On Services', path: '/owner/add-ons', icon: <Sparkles size={16} /> },
     { label: 'Manage Rooms', path: '/owner/rooms', icon: <Bed size={16} /> },
     { label: 'Inventory Calendar', path: '/owner/calendar', icon: <CalendarDays size={16} /> },
     { label: 'Offers & Deals', path: '/owner/offers', icon: <Tag size={16} /> },

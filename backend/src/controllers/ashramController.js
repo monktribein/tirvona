@@ -408,6 +408,17 @@ export const getAshramById = async (req, res) => {
 
     const rooms = await Room.find({ ashramId: ashram._id });
 
+    // Auto-seed default add-ons if missing
+    if (!ashram.addOnServices || ashram.addOnServices.length === 0) {
+      ashram.addOnServices = [
+        { name: 'Sacred Prasad Box', price: 50, unit: 'per_box', unitLabel: 'Box', maxQuantity: 10, enabled: true, description: 'Blessed mahaprasad prepared in traditional satvik method.' },
+        { name: 'Satvik Meals (Pure Veg)', price: 120, unit: 'per_meal', unitLabel: 'Meal', maxQuantity: 10, enabled: true, description: 'Freshly prepared organic satvik thali meal.' },
+        { name: 'Parking Slot (Car/Bus)', price: 80, unit: 'per_day', unitLabel: 'Day', maxQuantity: 5, enabled: true, description: 'Secured CCTV monitored parking inside premises.' },
+        { name: 'Personal Locker Access', price: 30, unit: 'per_day', unitLabel: 'Day', maxQuantity: 5, enabled: true, description: 'Safe lockable storage for valuables.' },
+      ];
+      await ashram.save();
+    }
+
     res.json({
       success: true,
       data: {
@@ -417,5 +428,153 @@ export const getAshramById = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Error fetching Ashram details' });
+  }
+};
+
+// ── Add-On Services Controllers ──────────────────────────────────────────────
+
+// @desc    Get Add-On Services for an ashram
+// @route   GET /api/ashrams/:id/add-ons
+// @access  Public
+export const getAddOns = async (req, res) => {
+  try {
+    const ashram = await Ashram.findById(req.params.id);
+    if (!ashram) {
+      return res.status(404).json({ success: false, message: 'Ashram not found' });
+    }
+
+    // Auto-seed if empty
+    if (!ashram.addOnServices || ashram.addOnServices.length === 0) {
+      ashram.addOnServices = [
+        { name: 'Sacred Prasad Box', price: 50, unit: 'per_box', unitLabel: 'Box', maxQuantity: 10, enabled: true, description: 'Blessed mahaprasad prepared in traditional satvik method.' },
+        { name: 'Satvik Meals (Pure Veg)', price: 120, unit: 'per_meal', unitLabel: 'Meal', maxQuantity: 10, enabled: true, description: 'Freshly prepared organic satvik thali meal.' },
+        { name: 'Parking Slot (Car/Bus)', price: 80, unit: 'per_day', unitLabel: 'Day', maxQuantity: 5, enabled: true, description: 'Secured CCTV monitored parking inside premises.' },
+        { name: 'Personal Locker Access', price: 30, unit: 'per_day', unitLabel: 'Day', maxQuantity: 5, enabled: true, description: 'Safe lockable storage for valuables.' },
+      ];
+      await ashram.save();
+    }
+
+    res.json({
+      success: true,
+      count: ashram.addOnServices.length,
+      data: ashram.addOnServices,
+    });
+  } catch (error) {
+    console.error('getAddOns error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch add-on services' });
+  }
+};
+
+// @desc    Add a new Add-On Service to an ashram
+// @route   POST /api/ashrams/:id/add-ons
+// @access  Private (Owner / Super Admin)
+export const createAddOn = async (req, res) => {
+  try {
+    const ashram = await Ashram.findById(req.params.id);
+    if (!ashram) {
+      return res.status(404).json({ success: false, message: 'Ashram not found' });
+    }
+
+    if (!canManageAshram(req.user, ashram)) {
+      return res.status(403).json({ success: false, message: 'Not authorized to manage this ashram' });
+    }
+
+    const { name, price, unit, unitLabel, maxQuantity, enabled, iconUrl, description } = req.body;
+    if (!name || price === undefined) {
+      return res.status(400).json({ success: false, message: 'Name and price are required' });
+    }
+
+    const newAddOn = {
+      name,
+      price: parseFloat(price) || 0,
+      unit: unit || 'per_day',
+      unitLabel: unitLabel || 'Day',
+      maxQuantity: parseInt(maxQuantity, 10) || 10,
+      enabled: enabled !== undefined ? Boolean(enabled) : true,
+      iconUrl: iconUrl || '',
+      description: description || '',
+    };
+
+    ashram.addOnServices.push(newAddOn);
+    await ashram.save();
+
+    res.status(201).json({
+      success: true,
+      message: 'Add-On Service created successfully',
+      data: ashram.addOnServices,
+    });
+  } catch (error) {
+    console.error('createAddOn error:', error);
+    res.status(500).json({ success: false, message: 'Failed to create add-on service' });
+  }
+};
+
+// @desc    Update an Add-On Service
+// @route   PUT /api/ashrams/:id/add-ons/:serviceId
+// @access  Private (Owner / Super Admin)
+export const updateAddOn = async (req, res) => {
+  try {
+    const ashram = await Ashram.findById(req.params.id);
+    if (!ashram) {
+      return res.status(404).json({ success: false, message: 'Ashram not found' });
+    }
+
+    if (!canManageAshram(req.user, ashram)) {
+      return res.status(403).json({ success: false, message: 'Not authorized to manage this ashram' });
+    }
+
+    const service = ashram.addOnServices.id(req.params.serviceId);
+    if (!service) {
+      return res.status(404).json({ success: false, message: 'Add-On service not found' });
+    }
+
+    const { name, price, unit, unitLabel, maxQuantity, enabled, iconUrl, description } = req.body;
+    if (name !== undefined) service.name = name;
+    if (price !== undefined) service.price = parseFloat(price) || 0;
+    if (unit !== undefined) service.unit = unit;
+    if (unitLabel !== undefined) service.unitLabel = unitLabel;
+    if (maxQuantity !== undefined) service.maxQuantity = parseInt(maxQuantity, 10) || 10;
+    if (enabled !== undefined) service.enabled = Boolean(enabled);
+    if (iconUrl !== undefined) service.iconUrl = iconUrl;
+    if (description !== undefined) service.description = description;
+
+    await ashram.save();
+
+    res.json({
+      success: true,
+      message: 'Add-On Service updated successfully',
+      data: ashram.addOnServices,
+    });
+  } catch (error) {
+    console.error('updateAddOn error:', error);
+    res.status(500).json({ success: false, message: 'Failed to update add-on service' });
+  }
+};
+
+// @desc    Delete an Add-On Service
+// @route   DELETE /api/ashrams/:id/add-ons/:serviceId
+// @access  Private (Owner / Super Admin)
+export const deleteAddOn = async (req, res) => {
+  try {
+    const ashram = await Ashram.findById(req.params.id);
+    if (!ashram) {
+      return res.status(404).json({ success: false, message: 'Ashram not found' });
+    }
+
+    if (!canManageAshram(req.user, ashram)) {
+      return res.status(403).json({ success: false, message: 'Not authorized to manage this ashram' });
+    }
+
+    ashram.addOnServices.pull(req.params.serviceId);
+    await ashram.save();
+
+    res.json({
+      success: true,
+      message: 'Add-On Service deleted successfully',
+      data: ashram.addOnServices,
+    });
+  } catch (error) {
+    console.error('deleteAddOn error:', error);
+    res.status(500).json({ success: false, message: 'Failed to delete add-on service' });
   }
 };
