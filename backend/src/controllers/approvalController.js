@@ -481,11 +481,9 @@ export const addApprovalComment = async (req, res) => {
   }
 };
 
-// Re-export legacy controller methods for backwards compatibility
-export {
-  createRoomCategoryRequest,
-  getRoomCategoryRequests,
-  getRoomCategoryRequestById,
-  reviewRoomCategoryRequest,
-  resubmitRoomCategoryRequest,
-} from './approvalController.js';
+// Legacy Room Category Request Aliases for Backwards Compatibility
+export const createRoomCategoryRequest = createApprovalRequest;
+export const getRoomCategoryRequests = getApprovalRequests;
+export const getRoomCategoryRequestById = getApprovalRequestById;
+export const reviewRoomCategoryRequest = reviewApprovalRequest;
+export const resubmitRoomCategoryRequest = createApprovalRequest;

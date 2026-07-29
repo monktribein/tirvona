@@ -1,5 +1,5 @@
 import express from 'express';
-import { protect, requireSuperAdmin } from '../middleware/auth.js';
+import { protect, restrictTo } from '../middlewares/authMiddleware.js';
 import {
   createApprovalRequest,
   getApprovalRequests,
@@ -15,6 +15,8 @@ import {
 } from '../controllers/approvalController.js';
 
 const router = express.Router();
+
+const requireSuperAdmin = restrictTo('super_admin');
 
 router.use(protect);
 
