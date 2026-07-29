@@ -62,6 +62,9 @@ const UserManagementPage = lazy(() => import('./admin/users/pages/UserManagement
 const AuditLogsPage = lazy(() => import('./admin/reports/pages/AuditLogsPage'));
 const EnterpriseModulePage = lazy(() => import('./admin/shared/components/EnterpriseModulePage'));
 const AdminPlatformSettingsPage = lazy(() => import('./pages/admin/AdminPlatformSettingsPage'));
+const EnterpriseNotificationCenterPage = lazy(
+  () => import('./admin/notifications/pages/EnterpriseNotificationCenterPage').then((m) => ({ default: m.EnterpriseNotificationCenterPage }))
+);
 
 // Sacred Services Ecosystem & Media Hub Pages
 import { PilgrimageCircuitsPage } from './pages/PilgrimageCircuitsPage';
@@ -266,6 +269,7 @@ const AppContent: React.FC = () => {
           <Route path="/admin/audit-logs" element={<AuditLogsPage />} />
           <Route path="/admin/settings/pricing" element={<AdminPlatformSettingsPage />} />
           <Route path="/admin/manage/platform-settings" element={<AdminPlatformSettingsPage />} />
+          <Route path="/admin/enterprise-notifications/:subSection?" element={<EnterpriseNotificationCenterPage />} />
           <Route path="/admin/manage/:moduleKey/:subKey?" element={<EnterpriseModulePage />} />
         </Route>
 

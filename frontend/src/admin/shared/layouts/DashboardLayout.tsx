@@ -205,6 +205,20 @@ export const DashboardLayout: React.FC = () => {
         { label: 'System Audit Logs', path: '/admin/audit-logs' },
       ],
     },
+    {
+      groupName: 'ENTERPRISE NOTIFICATIONS',
+      icon: <Bell size={15} />,
+      links: [
+        { label: 'Dashboard', path: '/admin/enterprise-notifications/dashboard' },
+        { label: 'All Notifications', path: '/admin/enterprise-notifications/all' },
+        { label: 'System Activities', path: '/admin/enterprise-notifications/activities' },
+        { label: 'Authentication Logs', path: '/admin/enterprise-notifications/auth-logs' },
+        { label: 'Bookings Telemetry', path: '/admin/enterprise-notifications/bookings' },
+        { label: 'Payment Audit', path: '/admin/enterprise-notifications/payments' },
+        { label: 'Banner CMS Queue', path: '/admin/enterprise-notifications/cms' },
+        { label: 'Audit Timeline', path: '/admin/enterprise-notifications/timeline' },
+      ],
+    },
   ];
 
   const bannerBoyLinks = [
