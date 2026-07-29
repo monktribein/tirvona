@@ -12,7 +12,6 @@ import {
   Sun,
   Moon,
   Globe,
-  ChevronDown,
   ChevronUp,
   ChevronRight,
   LayoutDashboard,
@@ -155,6 +154,29 @@ export const PublicLayout: React.FC = () => {
     return 'My Dashboard';
   };
 
+  /**
+   * Whether this user has a real operational console to jump to.
+   *
+   * A visitor's "dashboard" is just /profile, which the avatar menu already
+   * links to — so the nav button was a duplicate taking up width. Staff and
+   * admin roles land somewhere genuinely different, so they keep the shortcut.
+   */
+  const hasOperationalDashboard = () => {
+    if (!user) return false;
+    return [
+      'super_admin',
+      'govt_admin',
+      'district_officer',
+      'owner',
+      'stay_admin',
+      'manager',
+      'reception',
+      'housekeeping',
+      'banner_manager',
+      'support',
+    ].includes(user.role);
+  };
+
   const getRoleBadgeLabel = () => {
     if (!user) return '';
     if (user.role === 'super_admin') return 'Super Admin';
@@ -238,28 +260,36 @@ export const PublicLayout: React.FC = () => {
                     {/* Notifications Active Bell Dropdown */}
                     <NotificationDropdown />
 
-                    {/* Dashboard Button */}
-                    <Link
-                      to={getDashboardPath()}
-                      className="hidden sm:flex text-xs font-extrabold px-3 py-1.5 rounded-full bg-[#0A4DA6] hover:bg-blue-800 text-white shadow-sm transition-all items-center gap-1.5 shrink-0"
-                    >
-                      <LayoutDashboard size={13} />
-                      <span className="hidden md:inline">{getDashboardLabel()}</span>
-                    </Link>
+                    {/* Dashboard Button — staff and admin roles only.
+                        Hidden for visitors, whose dashboard is /profile and is
+                        already one tap away in the avatar menu below. */}
+                    {hasOperationalDashboard() && (
+                      <Link
+                        to={getDashboardPath()}
+                        className="hidden sm:flex text-xs font-extrabold px-3 py-1.5 rounded-full bg-[#0A4DA6] hover:bg-blue-800 text-white shadow-sm transition-all items-center gap-1.5 shrink-0"
+                      >
+                        <LayoutDashboard size={13} />
+                        <span className="hidden md:inline">{getDashboardLabel()}</span>
+                      </Link>
+                    )}
 
-                    {/* Profile Avatar Dropdown Trigger */}
+                    {/* Profile Avatar Dropdown Trigger.
+                        Icon only — the name and chevron were dropped because the
+                        nav bar had outgrown its width. The name is not lost: it
+                        is the first line of the dropdown, and it stays available
+                        to screen readers and on hover via the label/title. */}
                     <div className="relative" ref={profileRef}>
                       <button
                         onClick={() => setProfileDropdownOpen((prev) => !prev)}
-                        className="flex items-center gap-1.5 p-1 pr-2 rounded-full border border-gray-200 dark:border-slate-700 hover:border-[#0A4DA6] transition-all cursor-pointer bg-gray-50 dark:bg-slate-900"
+                        aria-label={`Account menu for ${user.name}`}
+                        aria-haspopup="menu"
+                        aria-expanded={profileDropdownOpen}
+                        title={user.name}
+                        className={`w-9 h-9 shrink-0 rounded-full bg-[#0A4DA6] text-white font-black text-xs flex items-center justify-center uppercase cursor-pointer transition-all hover:bg-[#083D85] ring-2 ring-offset-2 ring-offset-white dark:ring-offset-[#0B192C] ${
+                          profileDropdownOpen ? 'ring-[#0A4DA6]/40' : 'ring-transparent'
+                        }`}
                       >
-                        <div className="w-7 h-7 rounded-full bg-[#0A4DA6] text-white font-black text-xs flex items-center justify-center uppercase">
-                          {user.name?.[0] || 'U'}
-                        </div>
-                        <span className="hidden md:inline text-xs font-extrabold text-[#0B192C] dark:text-white max-w-[80px] truncate">
-                          {user.name?.split(' ')[0]}
-                        </span>
-                        <ChevronDown size={14} className="text-gray-400" />
+                        {user.name?.[0] || 'U'}
                       </button>
 
                       {/* Profile Dropdown Menu */}
@@ -410,14 +440,20 @@ export const PublicLayout: React.FC = () => {
               </Link>
             ))}
 
-            {/* Dashboard link if logged in */}
+            {/* Dashboard / profile link if logged in.
+                Kept for every role, unlike the desktop button: this drawer has
+                no other route to the profile, so hiding it for visitors would
+                leave them no way in on mobile. The label follows the role so a
+                visitor is not sent to "Dashboard" and shown their profile. */}
             {user && (
               <Link
                 to={getDashboardPath()}
                 onClick={() => setDrawerOpen(false)}
                 className="flex items-center justify-between py-3.5 px-3 rounded-xl text-sm font-bold text-primary hover:bg-primary/5 transition-colors"
               >
-                <span className="flex items-center gap-2"><LayoutDashboard size={15} /> Dashboard</span>
+                <span className="flex items-center gap-2">
+                  <LayoutDashboard size={15} /> {hasOperationalDashboard() ? getDashboardLabel() : 'My Profile'}
+                </span>
                 <ChevronRight size={14} className="text-primary/50" />
               </Link>
             )}

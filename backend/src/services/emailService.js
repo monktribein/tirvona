@@ -87,13 +87,24 @@ export const verifyEmailTransport = async () => {
       return true;
     }
 
-    // The SDK reports an unreachable API as a returned `application_error`
-    // rather than a throw, so it arrives here rather than in the catch. Blaming
-    // the key for what is actually a network outage would send whoever reads
-    // this log rotating a perfectly good credential.
+    // An `application_error` that carries an HTTP statusCode means the request
+    // REACHED Resend and Resend answered — so it is not a network problem.
+    //
+    // Verified against the live API: an invalid or revoked key returns
+    // HTTP 500 `application_error` "Something went wrong", byte-identical to
+    // what a made-up key returns. A *missing* key returns a clean 401, and the
+    // API root returns 200 even while this happens. Resend simply reports bad
+    // credentials as a 500 instead of a 401.
+    //
+    // This branch previously reported the opposite ("network/DNS problem, not a
+    // bad key"), which sent readers looking at their connection while the real
+    // fault was the credential.
     if (error.name === 'application_error') {
-      console.error(`[EMAIL] Could not reach Resend: ${errorMessage(error)}`);
-      console.error('[EMAIL] This looks like a network/DNS problem, not a bad key.');
+      console.error(`[EMAIL] RESEND KEY REJECTED: ${errorMessage(error)}`);
+      console.error('[EMAIL] Resend reports invalid/revoked keys as a 500, so this is almost certainly');
+      console.error('[EMAIL] a bad RESEND_API_KEY — not a network fault. Issue a new key at');
+      console.error('[EMAIL] https://resend.com/api-keys and update backend/.env.');
+      console.error('[EMAIL] (If https://api.resend.com/ is also failing, it is a Resend outage instead.)');
       return false;
     }
 
@@ -101,7 +112,10 @@ export const verifyEmailTransport = async () => {
     console.error('[EMAIL] Emails will fail until this is fixed. Check RESEND_API_KEY in .env.');
     return false;
   } catch (error) {
+    // A thrown error means no HTTP response at all — DNS failure, refused
+    // connection, TLS problem. THIS is the genuine network case.
     console.error(`[EMAIL] Could not reach Resend: ${errorMessage(error)}`);
+    console.error('[EMAIL] No response received — this is a network/DNS problem, not the key.');
     return false;
   }
 };
