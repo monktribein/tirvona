@@ -22,6 +22,7 @@ import {
   XCircle,
   Clock,
   CheckCircle,
+  Key,
 } from 'lucide-react';
 
 interface CmsRequest {
@@ -47,6 +48,7 @@ export const EnterpriseModulePage: React.FC<{ moduleName?: string; defaultColumn
   const { addNotification } = useNotifications();
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isCredentialsListOpen, setIsCredentialsListOpen] = useState(true);
 
   // Pending CMS Approval Requests State
   const [pendingCmsRequests, setPendingCmsRequests] = useState<CmsRequest[]>([]);
@@ -201,9 +203,32 @@ export const EnterpriseModulePage: React.FC<{ moduleName?: string; defaultColumn
           columns: [
             { key: 'name', label: 'Full Name' },
             { key: 'email', label: 'Email Address' },
+            {
+              key: 'defaultPassword',
+              label: 'Default Password',
+              render: (_: any, item: any) => (
+                <div className="flex items-center gap-1.5 font-mono text-xs">
+                  <span className="font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 px-2.5 py-1 rounded-lg border border-amber-200/70 dark:border-amber-900/50">
+                    admin123
+                  </span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const text = `Email: ${item.email}\nPassword: admin123`;
+                      navigator.clipboard.writeText(text);
+                      addNotification('Credentials Copied!', `Copied login ID & password for ${item.name || item.email}`, 'success');
+                    }}
+                    className="px-2 py-1 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-md text-[10px] font-bold text-gray-700 dark:text-gray-300 transition-colors cursor-pointer"
+                    title="Copy Login Email & Password"
+                  >
+                    📋 Copy ID/Pass
+                  </button>
+                </div>
+              ),
+            },
             { key: 'phone', label: 'Phone Number' },
             { key: 'role', label: 'User Role' },
-            { key: 'status', label: 'Account Status' },
           ],
           fields: [
             { name: 'name', label: 'Full Name', type: 'text', required: true },
@@ -552,6 +577,85 @@ export const EnterpriseModulePage: React.FC<{ moduleName?: string; defaultColumn
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* All Ashram Owners Master Credentials Toolbar */}
+      {(activeModule === 'owners' || activeSubKey === 'owners') && (
+        <div className="bg-gradient-to-r from-amber-50/80 to-orange-50/80 dark:from-slate-900 dark:to-slate-900 border border-amber-200/80 dark:border-amber-900/40 p-5 rounded-[24px] shadow-sm mb-6 text-left space-y-4 animate-in fade-in">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-amber-500/15 text-amber-700 dark:text-amber-400 rounded-2xl border border-amber-500/20">
+                <Key size={22} />
+              </div>
+              <div>
+                <h4 className="text-sm font-black text-[#0B192C] dark:text-white flex items-center gap-2">
+                  All Ashram Owner Credentials & Quick Login Master List
+                </h4>
+                <p className="text-xs font-bold text-gray-500 dark:text-gray-400">
+                  Standard Password for all Ashram Trustee Accounts: <code className="bg-amber-100 dark:bg-amber-950 px-2 py-0.5 rounded text-amber-700 font-mono font-bold">admin123</code>
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsCredentialsListOpen(!isCredentialsListOpen)}
+              className="px-4 py-2 bg-[#0A4DA6] hover:bg-blue-700 text-white rounded-full text-xs font-black shadow transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              <ShieldCheck size={14} /> {isCredentialsListOpen ? 'Hide Master Directory' : 'Show Master Credentials Directory'}
+            </button>
+          </div>
+
+          {/* Expandable Master Credentials Directory Table */}
+          {isCredentialsListOpen && (
+            <div className="pt-3 border-t border-amber-200/60 dark:border-slate-800 animate-in fade-in duration-200">
+              <div className="max-h-[320px] overflow-y-auto rounded-2xl border border-amber-200/50 dark:border-slate-800 bg-white dark:bg-[#0B192C] shadow-inner">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-amber-50/80 dark:bg-slate-900 border-b border-amber-100 dark:border-slate-800 text-[10px] uppercase font-black text-amber-800 dark:text-amber-400 sticky top-0 backdrop-blur-md">
+                    <tr>
+                      <th className="py-3 px-4">Ashram / Owner Name</th>
+                      <th className="py-3 px-4">Login Email Address</th>
+                      <th className="py-3 px-4">Standard Password</th>
+                      <th className="py-3 px-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 dark:divide-slate-800 font-bold">
+                    {data.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="py-6 text-center text-gray-400">
+                          No owner accounts loaded.
+                        </td>
+                      </tr>
+                    ) : (
+                      data.map((item) => (
+                        <tr key={item._id || item.email} className="hover:bg-amber-50/40 dark:hover:bg-slate-900/50 transition-colors">
+                          <td className="py-2.5 px-4 text-[#0B192C] dark:text-white flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                            {item.name || 'Ashram Trustee'}
+                          </td>
+                          <td className="py-2.5 px-4 font-mono text-blue-600 dark:text-blue-400">{item.email}</td>
+                          <td className="py-2.5 px-4 font-mono text-amber-600 dark:text-amber-400">admin123</td>
+                          <td className="py-2.5 px-4 text-right">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard.writeText(`Email: ${item.email}\nPassword: admin123`);
+                                addNotification('Credentials Copied!', `Copied login ID & password for ${item.name || item.email}`, 'success');
+                              }}
+                              className="px-3 py-1 bg-amber-100 text-amber-800 hover:bg-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:hover:bg-amber-900/60 rounded-full text-[10px] font-black cursor-pointer transition-colors"
+                            >
+                              📋 Copy Credentials
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

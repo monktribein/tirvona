@@ -117,14 +117,14 @@ export const OwnerVolunteerPage: React.FC = () => {
 
   const handleStatusUpdate = async (appId: string, status: string) => {
     try {
-      const res = await volunteerService.getApplications(); // trigger update status endpoint if available
-      // optimistic update
+      await volunteerService.updateApplicationStatus(appId, status);
       setApplications((prev) =>
         prev.map((app) => (app._id === appId ? { ...app, status } : app))
       );
       addNotification('Applicant Status Updated', `Application marked as ${status.toUpperCase()}.`, 'success');
     } catch (err) {
       console.error('Update status error:', err);
+      addNotification('Error', 'Failed to update application status.', 'error');
     }
   };
 

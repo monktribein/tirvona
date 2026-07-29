@@ -80,6 +80,10 @@ export const volunteerService = {
   getApplications: async (params?: { jobId?: string; status?: string }) => {
     return api.get('/volunteer/applications', { params });
   },
+
+  updateApplicationStatus: async (id: string, status: string, notes?: string) => {
+    return api.put(`/volunteer/applications/${id}/status`, { status, notes });
+  },
 };
 
 export default volunteerService;
