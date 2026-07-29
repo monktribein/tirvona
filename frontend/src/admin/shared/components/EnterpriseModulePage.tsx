@@ -192,20 +192,83 @@ export const EnterpriseModulePage: React.FC<{ moduleName?: string; defaultColumn
           ],
         };
 
+      case 'users':
+      case 'pilgrims':
+      case 'owners':
+      case 'staff':
+        return {
+          icon: <Users size={20} className="text-[#0A4DA6]" />,
+          columns: [
+            { key: 'name', label: 'Full Name' },
+            { key: 'email', label: 'Email Address' },
+            { key: 'phone', label: 'Phone Number' },
+            { key: 'role', label: 'User Role' },
+            { key: 'status', label: 'Account Status' },
+          ],
+          fields: [
+            { name: 'name', label: 'Full Name', type: 'text', required: true },
+            { name: 'email', label: 'Email Address', type: 'email', required: true },
+            { name: 'phone', label: 'Phone Number', type: 'text' },
+            { name: 'role', label: 'Role', type: 'select', options: ['customer', 'owner', 'manager', 'reception', 'housekeeping', 'banner_manager', 'super_admin'] },
+            { name: 'status', label: 'Status', type: 'select', options: ['active', 'suspended', 'pending', 'inactive'] },
+          ],
+        };
+
+      case 'ashrams':
+        return {
+          icon: <Building size={20} className="text-[#0A4DA6]" />,
+          columns: [
+            { key: 'name', label: 'Ashram Name' },
+            { key: 'city', label: 'Location City', render: (_: any, item: any) => item.address?.city || item.city || 'N/A' },
+            { key: 'rating', label: 'Overall Rating', render: (val: any) => `⭐ ${val || 4.8}` },
+            { key: 'isVerified', label: 'Verification', render: (val: any) => val ? 'Verified' : 'Unverified' },
+            { key: 'status', label: 'Status' },
+          ],
+          fields: [
+            { name: 'name', label: 'Ashram Name', type: 'text', required: true },
+            { name: 'email', label: 'Contact Email', type: 'email' },
+            { name: 'phone', label: 'Contact Phone', type: 'text' },
+            { name: 'status', label: 'Status', type: 'select', options: ['approved', 'pending', 'rejected', 'archived'] },
+          ],
+        };
+
+      case 'volunteer':
+      case 'volunteer_jobs':
+      case 'volunteer_applications':
+        return {
+          icon: <Sparkles size={20} className="text-[#0A4DA6]" />,
+          columns: [
+            { key: 'title', label: 'Position / Seva Title' },
+            { key: 'department', label: 'Department' },
+            { key: 'openingsCount', label: 'Openings' },
+            { key: 'stipend', label: 'Stipend / Support' },
+            { key: 'status', label: 'Status' },
+          ],
+          fields: [
+            { name: 'title', label: 'Position Title', type: 'text', required: true },
+            { name: 'department', label: 'Department', type: 'text', required: true },
+            { name: 'openingsCount', label: 'Openings Count', type: 'number' },
+            { name: 'stipend', label: 'Stipend', type: 'text' },
+            { name: 'description', label: 'Description', type: 'textarea' },
+            { name: 'status', label: 'Status', type: 'select', options: ['active', 'closed', 'draft'] },
+          ],
+        };
+
       default:
         return {
           icon: <Building size={20} className="text-[#0A4DA6]" />,
           columns: defaultColumns || [
-            { key: 'name', label: 'Record Name / Title' },
-            { key: 'category', label: 'Category / Tag' },
-            { key: 'owner', label: 'Managed By' },
-            { key: 'status', label: 'Status' },
+            { key: 'name', label: 'Record Name / Title', render: (v: any, item: any) => v || item.title || item.bookingId || item._id },
+            { key: 'category', label: 'Category / Tag', render: (v: any, item: any) => v || item.department || item.type || 'General' },
+            { key: 'owner', label: 'Managed By', render: (v: any, item: any) => v || item.customerId?.name || 'System Admin' },
+            { key: 'status', label: 'Status', render: (v: any) => v || 'active' },
           ],
           fields: [
             { name: 'name', label: 'Record Name', type: 'text', required: true },
+            { name: 'title', label: 'Title / Subject', type: 'text' },
             { name: 'category', label: 'Category', type: 'text' },
             { name: 'details', label: 'Description', type: 'textarea' },
-            { name: 'status', label: 'Status', type: 'select', options: ['active', 'pending', 'archived'] },
+            { name: 'status', label: 'Status', type: 'select', options: ['active', 'pending', 'approved', 'rejected', 'archived'] },
           ],
         };
     }
@@ -234,8 +297,6 @@ export const EnterpriseModulePage: React.FC<{ moduleName?: string; defaultColumn
       setIsModalOpen(false);
       fetchModuleData();
     } catch (err) {
-      // Report the real failure — a rejected save (e.g. 403 on a privileged
-      // field) must not be painted over with a local-only "success".
       addNotification('Save Failed', getErrorMessage(err, `Could not save this ${title} record.`), 'error');
     }
   };
@@ -244,10 +305,79 @@ export const EnterpriseModulePage: React.FC<{ moduleName?: string; defaultColumn
     try {
       await api.delete(`/admin/crud/${activeModule}/${id}`);
       addNotification('Deleted', 'Record removed.', 'info');
-      setData((prev) => prev.filter((x) => x._id !== id));
+      setData((prev) => prev.filter((x) => (x._id || x.id) !== id));
     } catch (err) {
-      // Keep the row on screen if the server refused the delete.
       addNotification('Delete Failed', getErrorMessage(err, 'Could not remove this record.'), 'error');
+    }
+  };
+
+  const handleBulkDelete = async (ids: string[]) => {
+    try {
+      await Promise.all(ids.map((id) => api.delete(`/admin/crud/${activeModule}/${id}`)));
+      addNotification('Bulk Delete Complete', `${ids.length} records removed.`, 'info');
+      fetchModuleData();
+    } catch (err) {
+      addNotification('Bulk Delete Error', getErrorMessage(err, 'Could not remove selected records.'), 'error');
+    }
+  };
+
+  const handleBulkApprove = async (ids: string[]) => {
+    try {
+      await Promise.all(
+        ids.map((id) => {
+          const item = data.find((d) => (d._id || d.id) === id);
+          if (!item) return Promise.resolve();
+          return api.post(`/admin/crud/${activeModule}${activeSubKey ? `?subKey=${activeSubKey}` : ''}`, {
+            ...item,
+            status: 'approved',
+            isVerified: true,
+          });
+        })
+      );
+      addNotification('Bulk Approval Complete', `${ids.length} records approved.`, 'success');
+      fetchModuleData();
+    } catch (err) {
+      addNotification('Bulk Action Error', getErrorMessage(err, 'Could not approve selected items.'), 'error');
+    }
+  };
+
+  const handleBulkReject = async (ids: string[]) => {
+    try {
+      await Promise.all(
+        ids.map((id) => {
+          const item = data.find((d) => (d._id || d.id) === id);
+          if (!item) return Promise.resolve();
+          return api.post(`/admin/crud/${activeModule}${activeSubKey ? `?subKey=${activeSubKey}` : ''}`, {
+            ...item,
+            status: 'rejected',
+            isVerified: false,
+          });
+        })
+      );
+      addNotification('Bulk Rejection Complete', `${ids.length} records marked as rejected.`, 'warning');
+      fetchModuleData();
+    } catch (err) {
+      addNotification('Bulk Action Error', getErrorMessage(err, 'Could not reject selected items.'), 'error');
+    }
+  };
+
+  const handleToggleStatus = async (item: any) => {
+    try {
+      const currentStatus = item.status || (item.isVerified ? 'approved' : 'pending');
+      const nextStatus = currentStatus === 'active' || currentStatus === 'approved' ? 'inactive' : 'active';
+      const nextVerified = nextStatus === 'active';
+
+      const endpoint = `/admin/crud/${activeModule}${activeSubKey ? `?subKey=${activeSubKey}` : ''}`;
+      await api.post(endpoint, {
+        ...item,
+        status: nextStatus,
+        isVerified: nextVerified,
+      });
+
+      addNotification('Status Updated', `Status changed to ${nextStatus}.`, 'success');
+      fetchModuleData();
+    } catch (err) {
+      addNotification('Update Failed', getErrorMessage(err, 'Could not update status.'), 'error');
     }
   };
 
@@ -433,6 +563,10 @@ export const EnterpriseModulePage: React.FC<{ moduleName?: string; defaultColumn
         loading={loading}
         onSave={(item) => handleEditOpen(item)}
         onDelete={(id) => handleDelete(id)}
+        onBulkDelete={(ids) => handleBulkDelete(ids)}
+        onBulkApprove={(ids) => handleBulkApprove(ids)}
+        onBulkReject={(ids) => handleBulkReject(ids)}
+        onToggleStatus={(item) => handleToggleStatus(item)}
       />
 
       {/* Dedicated Form Modal */}

@@ -21,6 +21,12 @@ import InstitutionMaster from '../../models/institution/InstitutionMaster.js';
 import InstitutionContact from '../../models/institution/InstitutionContact.js';
 import InstitutionLocation from '../../models/institution/InstitutionLocation.js';
 import InstitutionQualityAudit from '../../models/institution/InstitutionQualityAudit.js';
+import VolunteerJob from '../../models/VolunteerJob.js';
+import VolunteerApplication from '../../models/VolunteerApplication.js';
+import Review from '../../models/Review.js';
+import Payment from '../../models/Payment.js';
+import ServiceBooking from '../../models/ServiceBooking.js';
+import ServiceProvider from '../../models/ServiceProvider.js';
 import { escapeRegex } from '../../utils/sanitize.js';
 
 // Comprehensive Mongoose Model Registry mapping every enterprise module key
@@ -60,6 +66,14 @@ const MODEL_MAP = {
   support: SupportTicket,
   reports: AuditLog,
   audit: AuditLog,
+  volunteer: VolunteerJob,
+  volunteer_jobs: VolunteerJob,
+  volunteer_applications: VolunteerApplication,
+  reviews: Review,
+  payments: Payment,
+  services: ServiceBooking,
+  service_bookings: ServiceBooking,
+  providers: ServiceProvider,
 };
 
 // Fields that must never be written through the generic CRUD endpoint, on any
@@ -114,18 +128,43 @@ export const getCrudList = async (req, res) => {
 
     if (TargetModel) {
       const filter = {};
+
+      // Sub-key filtering logic (e.g. ashrams/approved, ashrams/rejected, bookings/pending, offers/featured)
+      if (subKey) {
+        const lowerSubKey = subKey.toLowerCase();
+        if (['approved', 'verified'].includes(lowerSubKey)) {
+          if (TargetModel.schema.paths.isVerified) filter.isVerified = true;
+          else if (TargetModel.schema.paths.status) filter.status = 'approved';
+        } else if (['rejected', 'unverified'].includes(lowerSubKey)) {
+          if (TargetModel.schema.paths.status) filter.status = 'rejected';
+          else if (TargetModel.schema.paths.isVerified) filter.isVerified = false;
+        } else if (['pending', 'unverified'].includes(lowerSubKey)) {
+          if (TargetModel.schema.paths.status) filter.status = 'pending';
+          else if (TargetModel.schema.paths.isVerified) filter.isVerified = false;
+        } else if (['confirmed', 'completed', 'cancelled', 'refunds'].includes(lowerSubKey)) {
+          filter.status = lowerSubKey === 'refunds' ? 'refund_requested' : lowerSubKey;
+        } else if (['featured'].includes(lowerSubKey)) {
+          filter.isFeatured = true;
+        }
+      }
+
       if (status && status !== 'all') {
         filter.status = status;
       }
+
       if (search) {
-        // Escaped so an attacker-supplied term is matched literally and cannot
-        // inject a regex or trigger catastrophic backtracking (ReDoS).
         const term = escapeRegex(search);
-        filter.$or = [
-          { name: { $regex: term, $options: 'i' } },
-          { title: { $regex: term, $options: 'i' } },
-          { email: { $regex: term, $options: 'i' } },
-        ];
+        const searchConditions = [];
+        if (TargetModel.schema.paths.name) searchConditions.push({ name: { $regex: term, $options: 'i' } });
+        if (TargetModel.schema.paths.title) searchConditions.push({ title: { $regex: term, $options: 'i' } });
+        if (TargetModel.schema.paths.email) searchConditions.push({ email: { $regex: term, $options: 'i' } });
+        if (TargetModel.schema.paths.bookingId) searchConditions.push({ bookingId: { $regex: term, $options: 'i' } });
+        if (TargetModel.schema.paths.promoCode) searchConditions.push({ promoCode: { $regex: term, $options: 'i' } });
+        if (TargetModel.schema.paths.department) searchConditions.push({ department: { $regex: term, $options: 'i' } });
+
+        if (searchConditions.length > 0) {
+          filter.$or = searchConditions;
+        }
       }
 
       const docs = await TargetModel.find(filter)
