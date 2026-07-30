@@ -17,9 +17,19 @@ export const uploadSingle = async (req, res) => {
     }
 
     if (!isCloudinaryConfigured()) {
-      return res.status(503).json({
-        success: false,
-        message: 'Image uploads are unavailable: the media storage service is not configured.',
+      // Fallback in local development when Cloudinary keys are not set: return base64 Data URI
+      const mime = req.file.mimetype || 'image/jpeg';
+      const base64Data = req.file.buffer.toString('base64');
+      const dataUrl = `data:${mime};base64,${base64Data}`;
+      return res.status(201).json({
+        success: true,
+        data: {
+          url: dataUrl,
+          publicId: `local_${Date.now()}`,
+          resourceType: 'image',
+          bytes: req.file.size,
+          format: mime.split('/')[1] || 'jpeg',
+        },
       });
     }
 

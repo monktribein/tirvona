@@ -193,5 +193,15 @@ ashramSchema.index({ status: 1, 'rating.average': -1 });
 // a null key and which no query could ever use. Note that deleting the line
 // does NOT drop the existing index from MongoDB; run scripts/sync_indexes.js.
 
+// Security Guard: Prevent temporary test documents from being created in production
+ashramSchema.pre('save', function (next) {
+  if (this.name && (this.name.startsWith('TEMP_') || this.name.startsWith('AUDIT_TEST_'))) {
+    if (process.env.NODE_ENV === 'production') {
+      return next(new Error('Creation of temporary test ashrams is blocked in production.'));
+    }
+  }
+  next();
+});
+
 const Ashram = mongoose.model('Ashram', ashramSchema);
 export default Ashram;

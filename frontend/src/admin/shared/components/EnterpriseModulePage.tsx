@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import EnterpriseDataTable, { type TableColumn } from './EnterpriseDataTable';
+import ImageGalleryManager from './ImageGalleryManager';
+import LocalHubEnterpriseDrawer from './LocalHubEnterpriseDrawer';
 import { useNotifications } from '../../../contexts/NotificationContext';
 import api, { getErrorMessage } from '../../../lib/api';
 import {
@@ -59,6 +61,10 @@ export const EnterpriseModulePage: React.FC<{ moduleName?: string; defaultColumn
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any | null>(null);
   const [formData, setFormData] = useState<Record<string, any>>({});
+
+  // Local Hub 7-Section Enterprise Drawer State
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [managingItem, setManagingItem] = useState<any | null>(null);
 
   const formatTitle = (str: string) =>
     str
@@ -187,7 +193,6 @@ export const EnterpriseModulePage: React.FC<{ moduleName?: string; defaultColumn
               type: 'select',
               options: ['homepage', 'hero_slider', 'offers', 'blog', 'marketplace', 'destination', 'festival', 'mobile', 'desktop'],
             },
-            { name: 'imageUrl', label: 'Banner Image URL / Cloudinary', type: 'text', required: true },
             { name: 'targetUrl', label: 'Target Action Link', type: 'text' },
             { name: 'priorityOrder', label: 'Display Order Priority', type: 'number' },
             { name: 'status', label: 'Status', type: 'select', options: ['active', 'pending', 'approved', 'rejected', 'scheduled'] },
@@ -257,6 +262,58 @@ export const EnterpriseModulePage: React.FC<{ moduleName?: string; defaultColumn
           ],
         };
 
+      case 'local':
+        return {
+          icon: <Compass size={20} className="text-[#0A4DA6]" />,
+          columns: [
+            {
+              key: 'image',
+              label: 'Image',
+              render: (val: any) => (
+                <div className="w-12 h-10 rounded-lg overflow-hidden border border-gray-200 dark:border-slate-800 bg-slate-900 shrink-0">
+                  <img
+                    src={val || 'https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=600&q=80'}
+                    alt="Service Thumbnail"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=600&q=80';
+                    }}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ),
+            },
+            { key: 'title', label: 'Service / Provider Title' },
+            { key: 'city', label: 'City' },
+            { key: 'category', label: 'Category' },
+            { key: 'price', label: 'Price / Fare' },
+            { key: 'phone', label: 'Contact Phone' },
+            { key: 'badge', label: 'Badge' },
+            { key: 'status', label: 'Status' },
+          ],
+          fields: [
+            { name: 'title', label: 'Service Title', type: 'text', required: true },
+            {
+              name: 'city',
+              label: 'City',
+              type: 'select',
+              options: ['Varanasi', 'Haridwar', 'Rishikesh', 'Ayodhya', 'Kedarnath', 'Ujjain', 'Puri'],
+            },
+            {
+              name: 'category',
+              label: 'Service Category',
+              type: 'select',
+              options: ['transport', 'guides', 'food', 'medical', 'emergency', 'shops', 'photography', 'stays', 'events'],
+            },
+            { name: 'price', label: 'Price / Fare (e.g. ₹400 / transfer)', type: 'text' },
+            { name: 'phone', label: 'Contact Phone Number', type: 'text' },
+            { name: 'location', label: 'Specific Location / Landmark', type: 'text', required: true },
+            { name: 'badge', label: 'Verification Badge (e.g. VERIFIED OPERATOR)', type: 'text' },
+            { name: 'rating', label: 'Rating (1.0 - 5.0)', type: 'number' },
+            { name: 'description', label: 'Service Description', type: 'textarea', required: true },
+            { name: 'status', label: 'Status', type: 'select', options: ['active', 'draft'] },
+          ],
+        };
+
       case 'volunteer':
       case 'volunteer_jobs':
       case 'volunteer_applications':
@@ -316,8 +373,13 @@ export const EnterpriseModulePage: React.FC<{ moduleName?: string; defaultColumn
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const payload = {
+        ...formData,
+        image: formData.image || formData.coverImage || formData.imageUrl || 'https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=600&q=80',
+        imageUrl: formData.image || formData.coverImage || formData.imageUrl || 'https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=600&q=80',
+      };
       const endpoint = `/admin/crud/${activeModule}${activeSubKey ? `?subKey=${activeSubKey}` : ''}`;
-      await api.post(endpoint, formData);
+      await api.post(endpoint, payload);
       addNotification('Saved Successfully', `Record updated in ${title}.`, 'success');
       setIsModalOpen(false);
       fetchModuleData();
@@ -666,11 +728,34 @@ export const EnterpriseModulePage: React.FC<{ moduleName?: string; defaultColumn
         data={data}
         loading={loading}
         onSave={(item) => handleEditOpen(item)}
+        onManage={
+          activeModule === 'local'
+            ? (item) => {
+                setManagingItem(item);
+                setIsDrawerOpen(true);
+              }
+            : undefined
+        }
         onDelete={(id) => handleDelete(id)}
         onBulkDelete={(ids) => handleBulkDelete(ids)}
         onBulkApprove={(ids) => handleBulkApprove(ids)}
         onBulkReject={(ids) => handleBulkReject(ids)}
         onToggleStatus={(item) => handleToggleStatus(item)}
+      />
+
+      {/* Local Hub 7-Section Full Enterprise Manager Drawer */}
+      <LocalHubEnterpriseDrawer
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        item={managingItem}
+        categoryKey={activeSubKey || 'transport'}
+        onSave={async (updatedData) => {
+          const endpoint = `/admin/crud/local${activeSubKey ? `?subKey=${activeSubKey}` : ''}`;
+          await api.post(endpoint, updatedData);
+          addNotification('MongoDB Updated Live', `Saved changes for ${updatedData.title || 'Local Service'} to database.`, 'success');
+          setIsDrawerOpen(false);
+          fetchModuleData();
+        }}
       />
 
       {/* Dedicated Form Modal */}
@@ -689,7 +774,35 @@ export const EnterpriseModulePage: React.FC<{ moduleName?: string; defaultColumn
               </button>
             </div>
 
-            <div className="space-y-4 max-h-[400px] overflow-y-auto pr-1 text-xs">
+            <div className="space-y-4 max-h-[450px] overflow-y-auto pr-1 text-xs">
+              {/* Universal Image Gallery & Upload Manager */}
+              <ImageGalleryManager
+                coverImage={formData.image || formData.coverImage || formData.imageUrl || ''}
+                onCoverImageChange={(url) => {
+                  setFormData((prev) => ({
+                    ...prev,
+                    image: url,
+                    coverImage: url,
+                    imageUrl: url,
+                  }));
+                }}
+                gallery={
+                  Array.isArray(formData.gallery)
+                    ? formData.gallery
+                    : Array.isArray(formData.images)
+                    ? formData.images
+                    : []
+                }
+                onGalleryChange={(urls) => {
+                  setFormData((prev) => ({
+                    ...prev,
+                    gallery: urls,
+                    images: urls,
+                  }));
+                }}
+                label={`${title} Image & Gallery Manager`}
+              />
+
               {moduleConfig.fields.map((f) => (
                 <div key={f.name} className="space-y-1">
                   <label className="font-bold text-gray-700 dark:text-gray-300">

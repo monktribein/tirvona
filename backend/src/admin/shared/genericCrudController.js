@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import User from '../../models/User.js';
 import Ashram from '../../models/Ashram.js';
 import Room from '../../models/Room.js';
@@ -123,14 +124,16 @@ export const getCrudList = async (req, res) => {
     const { moduleKey } = req.params;
     const { subKey, search, status } = req.query;
 
-    const targetKey = subKey || moduleKey;
+    const targetKey = moduleKey === 'local' ? 'local' : (subKey || moduleKey);
     const TargetModel = MODEL_MAP[targetKey] || MODEL_MAP[moduleKey];
 
     if (TargetModel) {
       const filter = {};
 
-      // Sub-key filtering logic (e.g. ashrams/approved, ashrams/rejected, bookings/pending, offers/featured)
-      if (subKey) {
+      if (moduleKey === 'local' && subKey) {
+        const catMap = { restaurants: 'food' };
+        filter.category = catMap[subKey.toLowerCase()] || subKey.toLowerCase();
+      } else if (subKey) {
         const lowerSubKey = subKey.toLowerCase();
         if (['approved', 'verified'].includes(lowerSubKey)) {
           if (TargetModel.schema.paths.isVerified) filter.isVerified = true;
@@ -205,24 +208,49 @@ const formatTitle = (str) =>
 export const saveCrudRecord = async (req, res) => {
   try {
     const { moduleKey } = req.params;
-    const data = req.body;
+    const data = req.body || {};
     const subKey = req.query.subKey;
 
-    const targetKey = subKey || moduleKey;
+    const targetKey = moduleKey === 'local' ? 'local' : (subKey || moduleKey);
     const TargetModel = MODEL_MAP[targetKey] || MODEL_MAP[moduleKey];
 
-    if (TargetModel && data._id && !data._id.startsWith('sys_') && !data._id.startsWith('rec_')) {
+    if (moduleKey === 'local') {
+      const validCategories = ['transport', 'guides', 'food', 'medical', 'emergency', 'shops', 'photography', 'stays', 'events'];
+      let cat = (data.category || subKey || 'transport').toString().toLowerCase();
+      if (cat === 'restaurants') cat = 'food';
+      if (cat === 'cabs') cat = 'transport';
+      if (!validCategories.includes(cat)) cat = 'transport';
+
+      data.category = cat;
+      data.city = data.city || 'Varanasi';
+      data.title = data.title || data.name || 'Local Service Item';
+      data.location = data.location || data.address || data.city || 'Varanasi';
+      data.description = data.description || data.details || 'Verified local service provider';
+      data.image = data.image || data.imageUrl || data.coverImage || 'https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=600&q=80';
+    }
+
+    const hasValidId =
+      typeof data._id === 'string' &&
+      mongoose.Types.ObjectId.isValid(data._id) &&
+      !data._id.startsWith('sys_') &&
+      !data._id.startsWith('rec_');
+
+    if (TargetModel && hasValidId) {
       const updates = filterWritableFields(data, TargetModel, req.user);
       delete updates._id;
-      const updated = await TargetModel.findByIdAndUpdate(data._id, updates, { new: true }).select(
+      let updated = await TargetModel.findByIdAndUpdate(data._id, updates, { new: true }).select(
         HIDDEN_ON_READ[TargetModel.modelName] || ''
       );
-      return res.json({ success: true, message: 'Record updated successfully', data: updated });
+      if (!updated) {
+        const payload = filterWritableFields(data, TargetModel, req.user);
+        delete payload._id;
+        updated = await TargetModel.create(payload);
+      }
+      return res.json({ success: true, message: 'Record saved successfully', data: updated });
     } else if (TargetModel) {
       const payload = filterWritableFields(data, TargetModel, req.user);
       delete payload._id;
       const created = await TargetModel.create(payload);
-      // .select() does not apply to create(), so strip secrets from the echo.
       const safe = created.toObject();
       (HIDDEN_ON_READ[TargetModel.modelName] || '')
         .split(' ')
@@ -238,7 +266,7 @@ export const saveCrudRecord = async (req, res) => {
     });
   } catch (err) {
     console.error('Generic CRUD save error:', err);
-    return res.status(500).json({ success: false, message: err.message });
+    return res.status(500).json({ success: false, message: err.message || 'Error saving record' });
   }
 };
 
@@ -246,19 +274,20 @@ export const saveCrudRecord = async (req, res) => {
 export const deleteCrudRecord = async (req, res) => {
   try {
     const { moduleKey, id } = req.params;
-    const TargetModel = MODEL_MAP[moduleKey];
+    const targetKey = moduleKey === 'local' ? 'local' : moduleKey;
+    const TargetModel = MODEL_MAP[targetKey] || MODEL_MAP[moduleKey];
 
     // Deleting accounts is a Super Admin action, not general admin CRUD.
     if (TargetModel?.modelName === 'User' && req.user?.role !== 'super_admin') {
       return res.status(403).json({ success: false, message: 'Only a Super Admin can delete user accounts' });
     }
 
-    if (TargetModel && !id.startsWith('sys_') && !id.startsWith('rec_')) {
+    if (TargetModel && typeof id === 'string' && mongoose.Types.ObjectId.isValid(id) && !id.startsWith('sys_') && !id.startsWith('rec_')) {
       await TargetModel.findByIdAndDelete(id);
     }
     return res.json({ success: true, message: 'Record deleted successfully' });
   } catch (err) {
     console.error('Generic CRUD delete error:', err);
-    return res.status(500).json({ success: false, message: err.message });
+    return res.status(500).json({ success: false, message: err.message || 'Error deleting record' });
   }
 };

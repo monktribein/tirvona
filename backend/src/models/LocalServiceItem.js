@@ -17,7 +17,35 @@ const localServiceItemSchema = new mongoose.Schema(
     price: { type: String, default: 'Contact for Fare' },
     description: { type: String, required: true },
     image: { type: String, required: true },
-    status: { type: String, enum: ['active', 'draft'], default: 'active' },
+    gallery: [{ type: String }],
+    status: { type: String, enum: ['active', 'draft', 'pending', 'approved', 'rejected'], default: 'active' },
+
+    // SECTION 1: Address & Coordinates
+    address: { type: String },
+    latitude: { type: Number },
+    longitude: { type: Number },
+
+    // SECTION 3: Pricing
+    discount: { type: Number, default: 0 },
+    gst: { type: Number, default: 0 },
+
+    // SECTION 4: Contact
+    email: { type: String },
+    website: { type: String },
+
+    // SECTION 5: Availability
+    openingHours: { type: String, default: '06:00 AM' },
+    closingHours: { type: String, default: '09:00 PM' },
+    weeklyOff: { type: String, default: 'None' },
+
+    // SECTION 6: Verification & Flags
+    isVerified: { type: Boolean, default: true },
+    isFeatured: { type: Boolean, default: false },
+
+    // SECTION 7: SEO
+    slug: { type: String },
+    metaTitle: { type: String },
+    metaDescription: { type: String },
   },
   { timestamps: true }
 );

@@ -609,6 +609,15 @@ const runLiveAudit = async () => {
     else logResult('Bookings', 'DELETE (DB Write)', 'FAIL');
   } catch (err) {
     logResult('Bookings', 'FULL FLOW', 'FAIL', err.message);
+  } finally {
+    // Master safety purge to guarantee zero orphaned test records remain in DB
+    try {
+      await Ashram.deleteMany({ name: { $regex: /^(TEMP_|AUDIT_TEST_)/i } });
+      await Room.deleteMany({ name: { $regex: /^(TEMP_|AUDIT_TEST_)/i } });
+      await Booking.deleteMany({ bookingId: { $regex: /^TVN-AUDIT/i } });
+    } catch (purgeErr) {
+      console.error('Master purge error:', purgeErr);
+    }
   }
 
   console.log('\n======================================================');

@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import axios from 'axios';
 import {
   MapPin,
   Car,
@@ -19,6 +20,7 @@ import {
   ArrowRight,
   Heart,
   BookOpen,
+  Loader2,
 } from 'lucide-react';
 
 export const LocalServicesHubPage: React.FC = () => {
@@ -26,6 +28,8 @@ export const LocalServicesHubPage: React.FC = () => {
 
   const [selectedCity, setSelectedCity] = useState('Varanasi');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [items, setItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const categories = [
     { id: 'All', label: 'All Services', icon: MapPin },
@@ -39,84 +43,29 @@ export const LocalServicesHubPage: React.FC = () => {
     { id: 'events', label: 'Aartis & Events', icon: Sparkles },
   ];
 
-  const localItems = [
-    {
-      id: '1',
-      category: 'transport',
-      title: 'Haridwar - Rishikesh AC Auto & Innova Cab Hub',
-      location: 'Haridwar Railway Station',
-      phone: '+91 98765 11111',
-      rating: 4.9,
-      badge: 'VERIFIED OPERATOR',
-      price: '₹400 / transfer',
-      desc: '24/7 prepaid auto rickshaws, station transfers, and hill cabs with certified mountain drivers.',
-      image: 'https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=600&q=80',
-    },
-    {
-      id: '2',
-      category: 'guides',
-      title: 'Pandit Ramesh Shastri (Licensed Kashi Guide)',
-      location: 'Dashashwamedh Ghat, Varanasi',
-      phone: '+91 98390 22222',
-      rating: 5.0,
-      badge: 'CERTIFIED SHASTRI',
-      price: '₹1,200 / tour',
-      desc: 'Ministry of Tourism certified guide for Ganga Aarti history, temple corridor walks, and Sankat Mochan history.',
-      image: 'https://images.unsplash.com/photo-1561361058-c24e36e56336?auto=format&fit=crop&w=600&q=80',
-    },
-    {
-      id: '3',
-      category: 'food',
-      title: 'Shiv Shakti Satvik Bhojnalaya',
-      location: 'Near Kashi Vishwanath Gate 4, Varanasi',
-      phone: '+91 542 239 0000',
-      rating: 4.8,
-      badge: '100% PURE SATVIK',
-      price: '₹180 / thali',
-      desc: 'Onion-garlic free traditional thali, fresh cow ghee rotis, and pure Gangajal drinking water.',
-      image: 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&w=600&q=80',
-    },
-    {
-      id: '4',
-      category: 'medical',
-      title: '24/7 Pilgrimage Medical Center & Ambulance',
-      location: 'Rishikesh Ram Jhula',
-      phone: '108 / +91 94120 33333',
-      rating: 4.9,
-      badge: '24/7 EMERGENCY',
-      price: 'Emergency Aid',
-      desc: 'Free oxygen cylinders, first aid kit, mountain emergency doctors, and ambulance services for yatris.',
-      image: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=600&q=80',
-    },
-    {
-      id: '5',
-      category: 'shops',
-      title: 'Ganga Kripa Certified Rudraksha & Bhandar',
-      location: 'Har Ki Pauri, Haridwar',
-      phone: '+91 98765 44444',
-      rating: 4.9,
-      badge: 'GOVT CERTIFIED',
-      price: 'Authentic Store',
-      desc: 'Government lab tested 1-14 Mukhi Nepal Rudrakshas, pure Sphatik malas, and brass puja thalis.',
-      image: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=600&q=80',
-    },
-    {
-      id: '6',
-      category: 'events',
-      title: 'Dashashwamedh Ghat Ganga Aarti (Daily 6:30 PM)',
-      location: 'Varanasi',
-      phone: 'Free Access',
-      rating: 5.0,
-      badge: 'DAILY EVENING AARTI',
-      price: 'Free Entry',
-      desc: 'Grand evening brass lamp ritual on the holy river Ganga with live Vedic chanting.',
-      image: 'https://images.unsplash.com/photo-1561361058-c24e36e56336?auto=format&fit=crop&w=600&q=80',
-    },
-  ];
+  useEffect(() => {
+    fetchLocalServices();
+  }, [selectedCity, selectedCategory]);
 
-  const filteredItems = localItems.filter(
-    (item) => selectedCategory === 'All' || item.category === selectedCategory
-  );
+  const fetchLocalServices = async () => {
+    setLoading(true);
+    try {
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const res = await axios.get(`${baseUrl}/api/local`, {
+        params: {
+          city: selectedCity,
+          category: selectedCategory,
+        },
+      });
+      if (res.data?.success) {
+        setItems(res.data.data || []);
+      }
+    } catch (err) {
+      console.error('Error fetching local services:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-[#070F1B] pb-16 space-y-6">
@@ -193,56 +142,70 @@ export const LocalServicesHubPage: React.FC = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 space-y-8">
 
-        {/* Services Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredItems.map((item) => (
-            <div
-              key={item.id}
-              className="bg-white dark:bg-[#0B192C] rounded-[32px] border border-gray-100 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group"
-            >
-              <div>
-                <div className="relative h-48 overflow-hidden bg-slate-900">
-                  <img
-                    src={item.image}
-                    alt={item.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <span className="absolute top-4 left-4 bg-[#0A4DA6] text-white text-[10px] font-black uppercase px-3 py-1 rounded-full shadow-md">
-                    {item.badge}
-                  </span>
-                  <span className="absolute top-4 right-4 bg-black/60 backdrop-blur-md text-white text-[10px] font-extrabold px-3 py-1 rounded-full border border-white/20">
-                    ★ {item.rating}
-                  </span>
-                </div>
-
-                <div className="p-6 space-y-3">
-                  <div className="flex items-center gap-1.5 text-[11px] font-bold text-gray-400">
-                    <MapPin size={13} className="text-[#0A4DA6]" />
-                    <span>{item.location}</span>
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-16 space-y-3">
+            <Loader2 className="animate-spin text-[#0A4DA6]" size={36} />
+            <p className="text-sm font-bold text-gray-500">Loading verified local services...</p>
+          </div>
+        ) : items.length === 0 ? (
+          <div className="text-center py-16 bg-white dark:bg-[#0B192C] rounded-3xl border border-gray-100 dark:border-slate-800 p-8 shadow-sm">
+            <p className="text-base font-bold text-gray-700 dark:text-gray-200">
+              No local services found for {selectedCity} in {selectedCategory === 'All' ? 'this area' : selectedCategory}.
+            </p>
+            <p className="text-xs text-gray-500 mt-1">Super Admin can add new listings for this city directly from the Local Hub module.</p>
+          </div>
+        ) : (
+          /* Services Cards Grid */
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {items.map((item) => (
+              <div
+                key={item._id || item.id}
+                className="bg-white dark:bg-[#0B192C] rounded-[32px] border border-gray-100 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group"
+              >
+                <div>
+                  <div className="relative h-48 overflow-hidden bg-slate-900">
+                    <img
+                      src={item.image || 'https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=600&q=80'}
+                      alt={item.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <span className="absolute top-4 left-4 bg-[#0A4DA6] text-white text-[10px] font-black uppercase px-3 py-1 rounded-full shadow-md">
+                      {item.badge || 'VERIFIED OPERATOR'}
+                    </span>
+                    <span className="absolute top-4 right-4 bg-black/60 backdrop-blur-md text-white text-[10px] font-extrabold px-3 py-1 rounded-full border border-white/20">
+                      ★ {item.rating || '4.9'}
+                    </span>
                   </div>
-                  <h3 className="font-black text-base text-[#0B192C] dark:text-white leading-tight">
-                    {item.title}
-                  </h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">
-                    {item.desc}
-                  </p>
+
+                  <div className="p-6 space-y-3">
+                    <div className="flex items-center gap-1.5 text-[11px] font-bold text-gray-400">
+                      <MapPin size={13} className="text-[#0A4DA6]" />
+                      <span>{item.location || item.city}</span>
+                    </div>
+                    <h3 className="font-black text-base text-[#0B192C] dark:text-white leading-tight">
+                      {item.title}
+                    </h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">
+                      {item.description || item.desc}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-6 pt-0 flex items-center justify-between border-t border-gray-50 dark:border-slate-800/50 mt-4">
+                  <span className="text-xs font-black text-[#0A4DA6] dark:text-amber-400">
+                    {item.price || 'Contact for Fare'}
+                  </span>
+                  <button
+                    onClick={() => alert(`Contacting ${item.title}: ${item.phone || '+91 98765 00000'}`)}
+                    className="px-4 py-2 rounded-full bg-[#0A4DA6] hover:bg-blue-900 text-white font-black text-xs shadow-md transition-colors cursor-pointer"
+                  >
+                    Contact &amp; Book
+                  </button>
                 </div>
               </div>
-
-              <div className="p-6 pt-0 flex items-center justify-between border-t border-gray-50 dark:border-slate-800/50 mt-4">
-                <span className="text-xs font-black text-[#0A4DA6] dark:text-amber-400">
-                  {item.price}
-                </span>
-                <button
-                  onClick={() => alert(`Contacting ${item.title}: ${item.phone}`)}
-                  className="px-4 py-2 rounded-full bg-[#0A4DA6] hover:bg-blue-900 text-white font-black text-xs shadow-md transition-colors cursor-pointer"
-                >
-                  Contact & Book
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         {/* Explore Marketplace Button */}
         <div className="pt-6 flex justify-center">
@@ -260,3 +223,6 @@ export const LocalServicesHubPage: React.FC = () => {
     </div>
   );
 };
+
+export default LocalServicesHubPage;
+
