@@ -35,6 +35,7 @@ import {
   ChevronDown,
   Headphones,
   Tag,
+  HeartHandshake,
 } from 'lucide-react';
 
 export const HomePage: React.FC = () => {
@@ -399,6 +400,7 @@ export const HomePage: React.FC = () => {
     { id: 'prasad', label: 'Sacred\nPrasad', icon: Activity, category: 'prasad', target: '#prashad' },
     { id: 'shops', label: 'Shops &\nServices', icon: LayoutGrid, category: 'shops', target: '/shops' },
     { id: 'puja', label: 'Puja\nItems', icon: Heart, category: 'puja', target: '/puja-items' },
+    { id: 'volunteer', label: 'Volunteer', icon: HeartHandshake, category: 'volunteer', target: '/volunteer' },
   ];
 
   // Extract Dynamic Approved Published CMS Sections (Strictly Section-Mapped)
@@ -611,9 +613,12 @@ export const HomePage: React.FC = () => {
           </form>
         </div>
 
-        {/* Service icons strip placed directly below booking system */}
-        <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800/80 rounded-[24px] mt-4 sm:mt-5 p-2 sm:p-2.5 shadow-lg shadow-[#0B192C]/5">
-          <div className="grid grid-cols-2 sm:grid-cols-5 lg:grid-cols-10 gap-1 sm:gap-1.5">
+        {/* Service icons strip placed directly below booking system (Single Row Flex Container) */}
+        <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800/80 rounded-[24px] mt-4 sm:mt-5 p-2 sm:p-2.5 shadow-lg shadow-[#0B192C]/5 overflow-hidden">
+          <div
+            className="flex flex-nowrap items-center justify-between gap-1 sm:gap-1.5 overflow-x-auto scrollbar-none py-0.5 w-full"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
             {serviceIcons.map((item, i) => {
               const IconComponent = item.icon;
               const isActive = activeService === i;
@@ -630,7 +635,7 @@ export const HomePage: React.FC = () => {
                       navigate(`${item.target}?category=${item.category}`);
                     }
                   }}
-                  className={`flex flex-col items-center gap-1.5 py-2.5 sm:py-3 px-1 text-center rounded-2xl transition-all cursor-pointer group ${
+                  className={`flex-1 min-w-[78px] sm:min-w-[88px] lg:min-w-0 flex flex-col items-center justify-center gap-1.5 py-2.5 sm:py-3 px-1 text-center rounded-2xl transition-all cursor-pointer group shrink-0 lg:shrink ${
                     isActive
                       ? 'bg-[#0A4DA6] text-white shadow-md shadow-[#0A4DA6]/25 scale-[1.02]'
                       : 'hover:bg-blue-50/80 dark:hover:bg-slate-800 text-slate-700 dark:text-gray-200'

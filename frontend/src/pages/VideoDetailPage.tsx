@@ -98,8 +98,21 @@ export const VideoDetailPage: React.FC = () => {
   }
 
   const { post, comments, relatedPosts } = data;
-  const author = post.authorId || {};
-  const embedUrl = post.youtubeVideoId ? `https://www.youtube.com/embed/${post.youtubeVideoId}?autoplay=1` : null;
+  const author = post?.authorId || {};
+
+  const extractYouTubeId = (input?: any): string => {
+    if (!input) return '50HnOmsPpxI';
+    const str = typeof input === 'string' ? input.trim() : String(input);
+    if (/^[a-zA-Z0-9_-]{11}$/.test(str)) {
+      return str;
+    }
+    const regExp = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+    const match = str.match(regExp);
+    return match && match[1] ? match[1] : '50HnOmsPpxI';
+  };
+
+  const videoId = extractYouTubeId(post.youtubeVideoId || post.youtubeUrl || post.videoUrl || post.content);
+  const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1&rel=0`;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-[#070F1B] pb-16">
@@ -107,19 +120,13 @@ export const VideoDetailPage: React.FC = () => {
 
         {/* 2. Embedded 16:9 Responsive Video Player Container */}
         <div className="relative rounded-[32px] overflow-hidden shadow-2xl bg-black border border-gray-800 aspect-video w-full">
-          {embedUrl ? (
-            <iframe
-              src={embedUrl}
-              title={post.title}
-              className="w-full h-full border-0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-white">
-              <p className="text-xs font-bold">Video Embed Unavailable</p>
-            </div>
-          )}
+          <iframe
+            src={embedUrl}
+            title={post.title || 'Sacred Video'}
+            className="w-full h-full border-0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowFullScreen
+          />
         </div>
 
         {/* 3. Main 2-Column Desktop Layout */}

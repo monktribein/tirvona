@@ -251,6 +251,27 @@ export const BlogDetailPage: React.FC = () => {
 
             {/* Main Article Container */}
             <div className="bg-white dark:bg-[#0B192C] rounded-[32px] p-6 sm:p-10 border border-gray-100 dark:border-slate-800 shadow-sm space-y-6">
+
+              {/* Embedded Video Player if post is video or has youtube URL */}
+              {(post.contentType === 'video' || post.youtubeUrl || post.youtubeVideoId) && (
+                <div className="relative rounded-2xl overflow-hidden shadow-xl bg-black aspect-video w-full mb-6 border border-gray-800">
+                  <iframe
+                    src={`https://www.youtube.com/embed/${(() => {
+                      const input = post.youtubeVideoId || post.youtubeUrl || post.videoUrl || post.content;
+                      if (!input) return '50HnOmsPpxI';
+                      const str = typeof input === 'string' ? input.trim() : String(input);
+                      if (/^[a-zA-Z0-9_-]{11}$/.test(str)) return str;
+                      const regExp = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+                      const match = str.match(regExp);
+                      return match && match[1] ? match[1] : '50HnOmsPpxI';
+                    })()}?autoplay=1&enablejsapi=1&rel=0`}
+                    title={post.title}
+                    className="w-full h-full border-0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                  />
+                </div>
+              )}
               
               {/* Formatted Text Content */}
               <div className="prose dark:prose-invert max-w-none text-sm sm:text-base leading-relaxed text-slate-700 dark:text-gray-200 space-y-4 whitespace-pre-line font-medium">

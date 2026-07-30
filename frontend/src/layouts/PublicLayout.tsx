@@ -555,7 +555,8 @@ export const PublicLayout: React.FC = () => {
                 <li><Link to="/search" className="hover:text-white transition-colors">Destinations</Link></li>
                 <li><Link to="/pilgrimage-circuits" className="hover:text-white transition-colors">Pilgrimage Circuits</Link></li>
                 <li><Link to="/blog" className="hover:text-white transition-colors">Blog &amp; Articles</Link></li>
-                <li><Link to="/volunteer" className="hover:text-white transition-colors">Volunteer &amp; Careers</Link></li>
+                <li><Link to="/careers" className="hover:text-white transition-colors">Careers</Link></li>
+                <li><Link to="/volunteer" className="hover:text-white transition-colors">Volunteer Opportunities</Link></li>
                 <li><Link to="/search" className="hover:text-white transition-colors">Stay Types</Link></li>
                 <li><Link to="/help" className="hover:text-white transition-colors">How It Works</Link></li>
               </ul>
