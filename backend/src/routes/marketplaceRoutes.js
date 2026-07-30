@@ -2,6 +2,7 @@ import express from 'express';
 import {
   getProducts,
   getProductBySlug,
+  getCategories,
   createOrder,
   createProduct,
   updateProduct,
@@ -11,6 +12,7 @@ import {
 const router = express.Router();
 
 // Public API Routes
+router.get('/categories', getCategories);
 router.get('/products', getProducts);
 router.get('/products/:idOrSlug', getProductBySlug);
 router.post('/order', createOrder);

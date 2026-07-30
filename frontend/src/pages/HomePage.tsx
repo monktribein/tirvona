@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import { ashramService, reviewService, marketplaceService } from '../services';
+import { visitorArticleService } from '../services/visitorArticleService';
 import { Reveal } from '../components/Reveal';
 import { DatePicker } from '../components/DatePicker';
 import { GuestRoomSelector } from '../components/shared/GuestRoomSelector';
@@ -114,7 +115,6 @@ export const HomePage: React.FC = () => {
       const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/offers?status=active`);
       if (res.data.success) {
         setOffers(res.data.data);
-        setActiveOffers(res.data.data);
       }
     } catch (err) {
       console.error('Fetch active offers error:', err);
@@ -239,9 +239,9 @@ export const HomePage: React.FC = () => {
       cancelAnimationFrame(animationFrameId);
       disposers.forEach((d) => d());
     };
-  }, [loading]);
+  }, [loading, feedbacks.length]);
 
-  const [activeOffers, setActiveOffers] = useState<any[]>([]);
+  const [homePosts, setHomePosts] = useState<any[]>([]);
   const [marketplaceCategories, setMarketplaceCategories] = useState<any[]>([]);
   const [marketplaceProducts, setMarketplaceProducts] = useState<any[]>([]);
 
@@ -250,6 +250,7 @@ export const HomePage: React.FC = () => {
     fetchOffers();
     fetchMarketplaceCategories();
     fetchMarketplaceProducts();
+    fetchHomePosts();
 
     const handleMarketplaceSync = () => {
       fetchMarketplaceProducts();
@@ -273,16 +274,64 @@ export const HomePage: React.FC = () => {
     }
   };
 
+  const fetchHomePosts = async () => {
+    try {
+      const [blogRes, visitorRes] = await Promise.all([
+        axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/blog/posts`).catch(() => null),
+        visitorArticleService.getPublicArticles({ limit: 4 }).catch(() => null),
+      ]);
+
+      const blogData = (blogRes?.data?.success ? blogRes.data.data : []).map((bp: any) => ({
+        _id: bp._id,
+        title: bp.title,
+        slug: bp.slug,
+        excerpt: bp.excerpt || bp.subtitle,
+        coverImage: bp.coverImage,
+        category: bp.category || 'Spiritual Guide',
+        createdAt: bp.createdAt,
+        views: bp.views || 3820,
+        readingTime: bp.readingTime || '6 min read',
+        contentType: bp.contentType || 'article',
+        author: bp.authorId || { name: 'Vedic Scholar', photo: bp.coverImage },
+      }));
+
+      const visitorData = (visitorRes?.data?.success ? visitorRes.data.data : []).map((va: any) => ({
+        _id: va._id,
+        title: va.title,
+        slug: va.slug,
+        excerpt: va.shortDescription,
+        coverImage: va.featuredImage,
+        category: va.category || 'Pilgrim Story',
+        createdAt: va.createdAt,
+        views: va.viewsCount || 1850,
+        readingTime: '5 min read',
+        isVerifiedStay: true,
+        contentType: 'article',
+        author: {
+          name: va.visitorId?.name || 'Verified Pilgrim',
+          photo: va.visitorId?.avatar || va.featuredImage,
+        },
+      }));
+
+      const combined = [...visitorData, ...blogData].slice(0, 4);
+      if (combined.length > 0) {
+        setHomePosts(combined);
+      }
+    } catch (err) {
+      console.error('Error fetching home posts:', err);
+    }
+  };
+
   const fetchMarketplaceCategories = async () => {
     try {
-      const res = await axios.get(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/marketplace/categories`
-      );
-      if (res.data.success) {
+      const res = await axios
+        .get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/marketplace/categories`)
+        .catch(() => null);
+      if (res?.data?.success) {
         setMarketplaceCategories(res.data.data);
       }
     } catch (err) {
-      console.error('Fetch marketplace categories error:', err);
+      // Silently ignore if marketplace categories endpoint is not active
     }
   };
 
@@ -372,18 +421,88 @@ export const HomePage: React.FC = () => {
 
 
 
-  // Customer feedback derived from real approved reviews.
-  const customerFeedbacks = feedbacks.map((r) => ({
-    name: r.ashramId?.name || 'Verified Stay',
-    location: r.ashramId?.address
-      ? [r.ashramId.address.city, r.ashramId.address.state].filter(Boolean).join(', ')
-      : '',
-    reviewer: r.customerId?.name || 'Verified Guest',
-    rating: Math.max(1, Math.round(r.rating?.overall || 5)),
-    ratingValue: (r.rating?.overall || 5).toFixed(1),
-    comment: r.comment,
-    img: r.ashramId?.images?.[0] || '/banner/ashram_rishikesh.png',
-  }));
+  // Customer feedback with varied authentic images and fallback support
+  const demoFeedbacks = [
+    {
+      name: 'Parmarth Niketan Ashram',
+      location: 'Rishikesh, Uttarakhand',
+      reviewer: 'Tanvi Desai',
+      rating: 5,
+      ratingValue: '5.0',
+      comment: 'Clean beds, very quiet and right next to the holy river Ganga. Morning yoga and sunset Aarti made our stay unforgettable.',
+      img: '/banner/ashram_rishikesh.png',
+    },
+    {
+      name: 'Swarg Ashram Trust',
+      location: 'Rishikesh, Uttarakhand',
+      reviewer: 'Deepak Choudhary',
+      rating: 5,
+      ratingValue: '4.9',
+      comment: 'Helpful reception team. Excellent meditation hall facilities, pure satvik food, and peaceful garden surroundings.',
+      img: '/banner/ashram_himalayas.png',
+    },
+    {
+      name: 'Kashi Vishwanath Annakshetra',
+      location: 'Varanasi, Uttar Pradesh',
+      reviewer: 'Pranav Mishra',
+      rating: 5,
+      ratingValue: '5.0',
+      comment: 'Delicious satvik vegetarian prasad and beautiful ancient temple compound. Walking distance from Dashashwamedh Ghat.',
+      img: '/banner/ashram_varanasi.png',
+    },
+    {
+      name: 'Bhagwat Dham Ashram',
+      location: 'Vrindavan, Uttar Pradesh',
+      reviewer: 'Vikram Singh',
+      rating: 4,
+      ratingValue: '4.8',
+      comment: 'Extremely peaceful stay. The environment is pure spiritual bliss and clean. Radha Krishna kirtans were soulful.',
+      img: '/banner/ashram_vrindavan.png',
+    },
+    {
+      name: 'Bholagiri Ashram',
+      location: 'Haridwar, Uttarakhand',
+      reviewer: 'Pooja Bhatt',
+      rating: 5,
+      ratingValue: '4.9',
+      comment: 'Highly safe for solo women pilgrims. Clean toilets, spacious rooms, and divine early morning Ganga view.',
+      img: '/banner/accomendation.png',
+    },
+    {
+      name: 'Geeta Bhawan',
+      location: 'Rishikesh, Uttarakhand',
+      reviewer: 'Suresh Iyer',
+      rating: 5,
+      ratingValue: '5.0',
+      comment: 'Loved the morning Havan and spiritual satsangs. Very economical, clean rooms and divine atmosphere.',
+      img: '/banner/popular.png',
+    },
+  ];
+
+  const feedbackImages = [
+    '/banner/ashram_rishikesh.png',
+    '/banner/ashram_himalayas.png',
+    '/banner/ashram_varanasi.png',
+    '/banner/ashram_vrindavan.png',
+    '/banner/accomendation.png',
+    '/banner/popular.png',
+    '/banner/explore.png',
+    '/banner/Blogs.png',
+  ];
+
+  const customerFeedbacks = feedbacks.length > 0
+    ? feedbacks.map((r, i) => ({
+      name: r.ashramId?.name || 'Verified Ashram Stay',
+      location: r.ashramId?.address
+        ? [r.ashramId.address.city, r.ashramId.address.state].filter(Boolean).join(', ')
+        : 'Rishikesh, Uttarakhand',
+      reviewer: r.customerId?.name || 'Verified Guest',
+      rating: Math.max(1, Math.round(r.rating?.overall || 5)),
+      ratingValue: (r.rating?.overall || 5).toFixed(1),
+      comment: r.comment,
+      img: feedbackImages[i % feedbackImages.length],
+    }))
+    : demoFeedbacks;
 
   // Service icons strip aligned with Tirvona Theme & Routing
   const serviceIcons = [
@@ -635,22 +754,19 @@ export const HomePage: React.FC = () => {
                       navigate(`${item.target}?category=${item.category}`);
                     }
                   }}
-                  className={`flex-1 min-w-[78px] sm:min-w-[88px] lg:min-w-0 flex flex-col items-center justify-center gap-1.5 py-2.5 sm:py-3 px-1 text-center rounded-2xl transition-all cursor-pointer group shrink-0 lg:shrink ${
-                    isActive
+                  className={`flex-1 min-w-[78px] sm:min-w-[88px] lg:min-w-0 flex flex-col items-center justify-center gap-1.5 py-2.5 sm:py-3 px-1 text-center rounded-2xl transition-all cursor-pointer group shrink-0 lg:shrink ${isActive
                       ? 'bg-[#0A4DA6] text-white shadow-md shadow-[#0A4DA6]/25 scale-[1.02]'
                       : 'hover:bg-blue-50/80 dark:hover:bg-slate-800 text-slate-700 dark:text-gray-200'
-                  }`}
+                    }`}
                 >
-                  <div className={`p-1.5 rounded-xl transition-colors ${
-                    isActive
-                      ? 'bg-white/20 text-white'
-                      : 'bg-blue-50 dark:bg-blue-900/30 text-[#0A4DA6] group-hover:bg-[#0A4DA6] group-hover:text-white'
-                  }`}>
+                  <div className={`p-1.5 rounded-xl transition-colors ${isActive
+                    ? 'bg-white/20 text-white'
+                    : 'bg-blue-50 dark:bg-blue-900/30 text-[#0A4DA6] group-hover:bg-[#0A4DA6] group-hover:text-white'
+                    }`}>
                     <IconComponent size={16} className="stroke-[2.5]" />
                   </div>
-                  <span className={`text-[8px] sm:text-[9px] font-bold whitespace-pre-line text-center leading-tight ${
-                    isActive ? 'text-white font-extrabold' : 'text-slate-700 dark:text-gray-300'
-                  }`}>
+                  <span className={`text-[8px] sm:text-[9px] font-bold whitespace-pre-line text-center leading-tight ${isActive ? 'text-white font-extrabold' : 'text-slate-700 dark:text-gray-300'
+                    }`}>
                     {item.label}
                   </span>
                 </button>
@@ -1157,8 +1273,8 @@ export const HomePage: React.FC = () => {
             const subtitle = isProduct
               ? item.templeSource || 'Sanctified Product'
               : item.originCity
-              ? `${item.originCity}, ${item.originState}`
-              : 'Sacred Prashad';
+                ? `${item.originCity}, ${item.originState}`
+                : 'Sacred Prashad';
             const priceDisplay = isProduct ? (item.salePrice ? `₹${item.salePrice}` : `₹${item.price}`) : null;
 
             return (
@@ -1352,28 +1468,28 @@ export const HomePage: React.FC = () => {
                   </div>
                 </div>
               </motion.div>
-          ))}
+            ))}
 
-          {/* View All Card at the End of Horizontal Scroll */}
-          <div
-            onClick={() => navigate('/search')}
-            className="flex-shrink-0 relative group cursor-pointer"
-            style={{ width: 'clamp(200px, 48vw, 220px)' }}
-          >
-            <div className="w-full bg-[#0A4DA6] text-white rounded-3xl overflow-hidden border border-[#0A4DA6] shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between items-center p-6 text-center hover:-translate-y-1 h-full min-h-[266px]">
-              <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center my-auto">
-                <ArrowRight size={26} className="text-white group-hover:translate-x-1.5 transition-transform" />
+            {/* View All Card at the End of Horizontal Scroll */}
+            <div
+              onClick={() => navigate('/search')}
+              className="flex-shrink-0 relative group cursor-pointer"
+              style={{ width: 'clamp(200px, 48vw, 220px)' }}
+            >
+              <div className="w-full bg-[#0A4DA6] text-white rounded-3xl overflow-hidden border border-[#0A4DA6] shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between items-center p-6 text-center hover:-translate-y-1 h-full min-h-[266px]">
+                <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center my-auto">
+                  <ArrowRight size={26} className="text-white group-hover:translate-x-1.5 transition-transform" />
+                </div>
+                <div className="space-y-1 mb-2">
+                  <h4 className="font-black text-lg text-white">View All</h4>
+                  <p className="text-[11px] text-blue-100 font-medium">Explore All 100+ Verified Stays & Ashrams</p>
+                </div>
+                <span className="px-5 py-2 rounded-full bg-white text-[#0A4DA6] font-black text-xs shadow-md">
+                  Browse All →
+                </span>
               </div>
-              <div className="space-y-1 mb-2">
-                <h4 className="font-black text-lg text-white">View All</h4>
-                <p className="text-[11px] text-blue-100 font-medium">Explore All 100+ Verified Stays & Ashrams</p>
-              </div>
-              <span className="px-5 py-2 rounded-full bg-white text-[#0A4DA6] font-black text-xs shadow-md">
-                Browse All →
-              </span>
             </div>
           </div>
-        </div>
         )}
 
       </section>
@@ -1412,307 +1528,165 @@ export const HomePage: React.FC = () => {
 
         {/* 4 Dynamic Blog / Video Cards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto mt-6 relative z-10">
+          {homePosts.map((item) => {
+            const isVideo = item.contentType === 'video';
+            const targetUrl = isVideo ? `/video/${item.slug}` : `/blog/${item.slug}`;
+            const author = item.author || {};
 
-            {/* Card 1: Article */}
-            <div
-              onClick={() => navigate('/blog/guide-planning-first-ashram-stay')}
-              className="bg-white dark:bg-[#0B192C] rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 flex flex-col justify-between border border-gray-100 dark:border-slate-800 group hover:-translate-y-1 cursor-pointer h-full"
-            >
-              <div className="flex flex-col flex-1">
-                <div className="h-44 sm:h-48 overflow-hidden bg-slate-900 relative shrink-0">
-                  <img
-                    src="https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=600&q=80"
-                    alt="Ashram Stay Guide"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    loading="lazy"
-                  />
-                  <span className="absolute top-3 left-3 bg-[#0A4DA6] text-white text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full">
-                    Travel Guide
-                  </span>
-                  <span className="absolute bottom-3 right-3 bg-black/70 backdrop-blur-md text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-md">
-                    6 min read
-                  </span>
-                </div>
-                <div className="p-5 space-y-2.5 flex-1 flex flex-col justify-between">
-                  <div className="flex items-center gap-4 text-[11px] font-bold text-gray-400">
-                    <span className="flex items-center gap-1.5"><Calendar size={13} className="text-[#0A4DA6]" /> 20 March 2025</span>
-                    <span className="flex items-center gap-1.5"><BookOpen size={13} className="text-[#0A4DA6]" /> 3.8K Views</span>
+            return (
+              <div
+                key={item._id}
+                onClick={() => navigate(targetUrl)}
+                className="bg-white dark:bg-[#0B192C] rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 flex flex-col justify-between border border-gray-100 dark:border-slate-800 group hover:-translate-y-1 cursor-pointer h-full"
+              >
+                <div className="flex flex-col flex-1">
+                  <div className="h-44 sm:h-48 overflow-hidden bg-slate-900 relative shrink-0">
+                    <img
+                      src={item.coverImage}
+                      alt={item.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      loading="lazy"
+                      onError={e => { e.currentTarget.onerror = null; e.currentTarget.src = '/blogs/rishikesh_ashram_1785404729056.png'; }}
+                    />
+                    <span className={`absolute top-3 left-3 text-white text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full ${isVideo ? 'bg-red-600 flex items-center gap-1' : 'bg-[#0A4DA6]'
+                      }`}>
+                      {isVideo ? '🎥 Video' : item.category}
+                    </span>
+                    {item.isVerifiedStay && (
+                      <span className="absolute top-3 right-3 bg-emerald-600 text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-full flex items-center gap-1 shadow-xs">
+                        <ShieldCheck size={10} /> Verified Stay
+                      </span>
+                    )}
+                    {isVideo && (
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                        <div className="w-12 h-12 rounded-full bg-red-600/90 text-white flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform">
+                          <Play size={20} className="fill-white ml-1" />
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  <h3 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-snug line-clamp-2 h-11 sm:h-12 flex items-start group-hover:text-[#0A4DA6] transition-colors">
-                    Essential Guide To Planning Your First Sacred Ashram Stay
-                  </h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed h-9 overflow-hidden">
-                    Discover essential etiquette, daily schedules, satvik food rules, and spiritual seva tips for a peaceful ashram experience.
-                  </p>
-                </div>
-              </div>
-              <div className="px-5 py-3 flex items-center justify-between border-t border-gray-50 dark:border-slate-800/60 mt-auto shrink-0 h-16">
-                <div className="flex items-center gap-2 min-w-0 flex-1 pr-2">
-                  <img
-                    src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&h=100&q=80"
-                    alt="Gordon V. Shastri"
-                    className="w-7 h-7 rounded-full object-cover border border-[#0A4DA6] shrink-0"
-                  />
-                  <span className="text-xs font-bold text-gray-600 dark:text-gray-300 truncate">Gordon V. Shastri</span>
-                </div>
-                <button className="px-3.5 py-1.5 bg-[#F0F5FC] dark:bg-blue-950/40 text-gray-700 dark:text-blue-300 group-hover:bg-[#0A4DA6] group-hover:text-white text-xs font-bold rounded-full flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0">
-                  <span>Read Article</span>
-                  <ArrowRight size={12} />
-                </button>
-              </div>
-            </div>
-
-            {/* Card 2: YouTube Video Card with Play Badge */}
-            <div
-              onClick={() => navigate('/video/ganga-aarti-varanasi-spiritual-video')}
-              className="bg-white dark:bg-[#0B192C] rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 flex flex-col justify-between border border-gray-100 dark:border-slate-800 group hover:-translate-y-1 cursor-pointer h-full"
-            >
-              <div className="flex flex-col flex-1">
-                <div className="h-44 sm:h-48 overflow-hidden bg-slate-900 relative shrink-0">
-                  <img
-                    src="https://images.unsplash.com/photo-1561361058-c24e36e56336?auto=format&fit=crop&w=600&q=80"
-                    alt="Varanasi Ganga Aarti"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    loading="lazy"
-                  />
-                  <span className="absolute top-3 left-3 bg-red-600 text-white text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                    🎥 Video
-                  </span>
-                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                    <div className="w-12 h-12 rounded-full bg-red-600/90 text-white flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform">
-                      <Play size={20} className="fill-white ml-1" />
+                  <div className="p-5 space-y-2.5 flex-1 flex flex-col justify-between">
+                    <div className="flex items-center gap-4 text-[11px] font-bold text-gray-400">
+                      <span className="flex items-center gap-1.5"><Calendar size={13} className="text-[#0A4DA6]" /> {new Date(item.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                      <span className="flex items-center gap-1.5"><BookOpen size={13} className="text-[#0A4DA6]" /> {item.views} Views</span>
                     </div>
+                    <h3 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-snug line-clamp-2 h-11 sm:h-12 flex items-start group-hover:text-[#0A4DA6] transition-colors">
+                      {item.title}
+                    </h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed h-9 overflow-hidden">
+                      {item.excerpt}
+                    </p>
                   </div>
-                  <span className="absolute bottom-3 right-3 bg-black/80 backdrop-blur-md text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-md">
-                    18:45
-                  </span>
                 </div>
-                <div className="p-5 space-y-2.5 flex-1 flex flex-col justify-between">
-                  <div className="flex items-center gap-4 text-[11px] font-bold text-gray-400">
-                    <span className="flex items-center gap-1.5"><Calendar size={13} className="text-[#0A4DA6]" /> 22 March 2025</span>
-                    <span className="flex items-center gap-1.5"><Activity size={13} className="text-red-500" /> 128K Views</span>
+                <div className="px-5 py-3 flex items-center justify-between border-t border-gray-50 dark:border-slate-800/60 mt-auto shrink-0 h-16">
+                  <div className="flex items-center gap-2 min-w-0 flex-1 pr-2">
+                    <img
+                      src={author.photo || author.avatar || item.coverImage}
+                      alt={author.name || 'Author'}
+                      className="w-7 h-7 rounded-full object-cover border border-[#0A4DA6] shrink-0"
+                      onError={e => { e.currentTarget.onerror = null; e.currentTarget.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'; }}
+                    />
+                    <span className="text-xs font-bold text-gray-600 dark:text-gray-300 truncate">{author.name || 'Verified Author'}</span>
                   </div>
-                  <h3 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-snug line-clamp-2 h-11 sm:h-12 flex items-start group-hover:text-[#0A4DA6] transition-colors">
-                    Sacred Ganga Aarti Varanasi: Evening Rituals &amp; Hymns
-                  </h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed h-9 overflow-hidden">
-                    Watch the grand evening Aarti ceremony held at Dashashwamedh Ghat with live chanting of Vedic hymns and brass lamps.
-                  </p>
+                  <button className="px-3.5 py-1.5 bg-[#F0F5FC] dark:bg-blue-950/40 text-gray-700 dark:text-blue-300 group-hover:bg-[#0A4DA6] group-hover:text-white text-xs font-bold rounded-full flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0">
+                    <span>{isVideo ? 'Watch Video' : 'Read Article'}</span>
+                    <ArrowRight size={12} />
+                  </button>
                 </div>
               </div>
-              <div className="px-5 py-3 flex items-center justify-between border-t border-gray-50 dark:border-slate-800/60 mt-auto shrink-0 h-16">
-                <div className="flex items-center gap-2 min-w-0 flex-1 pr-2">
-                  <img
-                    src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=100&h=100&q=80"
-                    alt="Radhika K. Kulkarni"
-                    className="w-7 h-7 rounded-full object-cover border border-red-500 shrink-0"
-                  />
-                  <span className="text-xs font-bold text-gray-600 dark:text-gray-300 truncate">Radhika K.</span>
-                </div>
-                <button className="px-3.5 py-1.5 bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-300 group-hover:bg-red-600 group-hover:text-white text-xs font-bold rounded-full flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0">
-                  <span>Watch Video</span>
-                  <ArrowRight size={12} />
-                </button>
-              </div>
-            </div>
-
-            {/* Card 3: Article */}
-            <div
-              onClick={() => navigate('/blog/secrets-temple-mahaprasad-traditions')}
-              className="bg-white dark:bg-[#0B192C] rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 flex flex-col justify-between border border-gray-100 dark:border-slate-800 group hover:-translate-y-1 cursor-pointer h-full"
-            >
-              <div className="flex flex-col flex-1">
-                <div className="h-44 sm:h-48 overflow-hidden bg-slate-900 relative shrink-0">
-                  <img
-                    src="https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=600&q=80"
-                    alt="Temple Mahaprasad Secrets"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    loading="lazy"
-                  />
-                  <span className="absolute top-3 left-3 bg-[#0A4DA6] text-white text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full">
-                    Temple History
-                  </span>
-                  <span className="absolute bottom-3 right-3 bg-black/70 backdrop-blur-md text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-md">
-                    8 min read
-                  </span>
-                </div>
-                <div className="p-5 space-y-2.5 flex-1 flex flex-col justify-between">
-                  <div className="flex items-center gap-4 text-[11px] font-bold text-gray-400">
-                    <span className="flex items-center gap-1.5"><Calendar size={13} className="text-[#0A4DA6]" /> 25 March 2025</span>
-                    <span className="flex items-center gap-1.5"><BookOpen size={13} className="text-[#0A4DA6]" /> 2.9K Views</span>
-                  </div>
-                  <h3 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-snug line-clamp-2 h-11 sm:h-12 flex items-start group-hover:text-[#0A4DA6] transition-colors">
-                    Secrets of Temple Mahaprasad: Sacred Culinary Traditions
-                  </h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed h-9 overflow-hidden">
-                    Explore the sacred preparation, secret recipes, and spiritual significance of Mahaprasad across Puri, Tirupati and Varanasi.
-                  </p>
-                </div>
-              </div>
-              <div className="px-5 py-3 flex items-center justify-between border-t border-gray-50 dark:border-slate-800/60 mt-auto shrink-0 h-16">
-                <div className="flex items-center gap-2 min-w-0 flex-1 pr-2">
-                  <img
-                    src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&h=100&q=80"
-                    alt="Swami Anand Giri"
-                    className="w-7 h-7 rounded-full object-cover border border-[#0A4DA6] shrink-0"
-                  />
-                  <span className="text-xs font-bold text-gray-600 dark:text-gray-300 truncate">Swami Anand</span>
-                </div>
-                <button className="px-3.5 py-1.5 bg-[#F0F5FC] dark:bg-blue-950/40 text-gray-700 dark:text-blue-300 group-hover:bg-[#0A4DA6] group-hover:text-white text-xs font-bold rounded-full flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0">
-                  <span>Read Article</span>
-                  <ArrowRight size={12} />
-                </button>
-              </div>
-            </div>
-
-            {/* Card 4: Pilgrim Story */}
-            <div
-              onClick={() => navigate('/blog/spiritual-awakening-kashi-ghats')}
-              className="bg-white dark:bg-[#0B192C] rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 flex flex-col justify-between border border-gray-100 dark:border-slate-800 group hover:-translate-y-1 cursor-pointer h-full"
-            >
-              <div className="flex flex-col flex-1">
-                <div className="h-44 sm:h-48 overflow-hidden bg-slate-900 relative shrink-0">
-                  <img
-                    src="https://images.unsplash.com/photo-1561361513-2d000a50f0dc?auto=format&fit=crop&w=600&q=80"
-                    alt="Spiritual Yatra Experience"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    loading="lazy"
-                  />
-                  <span className="absolute top-3 left-3 bg-[#E58C28] text-white text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full">
-                    Pilgrim Story
-                  </span>
-                  <span className="absolute bottom-3 right-3 bg-black/70 backdrop-blur-md text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-md">
-                    5 min read
-                  </span>
-                </div>
-                <div className="p-5 space-y-2.5 flex-1 flex flex-col justify-between">
-                  <div className="flex items-center gap-4 text-[11px] font-bold text-gray-400">
-                    <span className="flex items-center gap-1.5"><Calendar size={13} className="text-[#0A4DA6]" /> 28 March 2025</span>
-                    <span className="flex items-center gap-1.5"><BookOpen size={13} className="text-[#0A4DA6]" /> 4.2K Views</span>
-                  </div>
-                  <h3 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-snug line-clamp-2 h-11 sm:h-12 flex items-start group-hover:text-[#0A4DA6] transition-colors">
-                    Spiritual Awakening On The Sacred Ghats Of Kashi
-                  </h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed h-9 overflow-hidden">
-                    A transformative personal yatra story of inner peace, morning meditation, and evening prayers along river Ganga.
-                  </p>
-                </div>
-              </div>
-              <div className="px-5 py-3 flex items-center justify-between border-t border-gray-50 dark:border-slate-800/60 mt-auto shrink-0 h-16">
-                <div className="flex items-center gap-2 min-w-0 flex-1 pr-2">
-                  <img
-                    src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&h=100&q=80"
-                    alt="Priya Sharma"
-                    className="w-7 h-7 rounded-full object-cover border border-[#E58C28] shrink-0"
-                  />
-                  <span className="text-xs font-bold text-gray-600 dark:text-gray-300 truncate">Priya Sharma</span>
-                </div>
-                <button className="px-3.5 py-1.5 bg-amber-50 dark:bg-amber-950/40 text-[#E58C28] dark:text-amber-300 group-hover:bg-[#E58C28] group-hover:text-white text-xs font-bold rounded-full flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0">
-                  <span>Read Story</span>
-                  <ArrowRight size={12} />
-                </button>
-              </div>
-            </div>
-
-          </div>
+            );
+          })}
+        </div>
 
       </section>
 
       {/* ══════════════════════ CUSTOMER FEEDBACK & EXPERIENCES SLIDER ══════════════════════ */}
       {customerFeedbacks.length > 0 && (
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 mb-12 lg:mb-20 space-y-8">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 mb-12 lg:mb-20 space-y-8">
 
-        {/* Banner with Image Background and Overlay Title */}
-        <div className="relative rounded-3xl overflow-hidden shadow-xl p-6 sm:p-10 lg:p-12 text-center flex flex-col items-center justify-center min-h-[200px] sm:min-h-[260px] border border-white/10">
-          <img
-            src="/banner/feedback.png"
-            alt="Customer Feedback & Stories Banner"
-            className="absolute inset-0 w-full h-full object-cover"
-          />
-          {/* Subtle gradient overlay to ensure text contrast */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/45 to-black/30" />
+          {/* Banner with Image Background and Overlay Title */}
+          <div className="relative rounded-3xl overflow-hidden shadow-xl p-6 sm:p-10 lg:p-12 text-center flex flex-col items-center justify-center min-h-[200px] sm:min-h-[260px] border border-white/10">
+            <img
+              src="/banner/feedback.png"
+              alt="Customer Feedback & Stories Banner"
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+            {/* Subtle gradient overlay to ensure text contrast */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/45 to-black/30" />
 
-          {/* Title and Eyebrow Content Overlay */}
-          <div className="relative z-10 space-y-2 max-w-3xl">
-            <p className="font-['Kalam'] text-base sm:text-xl font-bold text-[#E58C28] drop-shadow-md">
-              Customer Feedback &amp; Stories
-            </p>
-            <h2 className="font-black text-white leading-tight drop-shadow-lg" style={{ fontSize: 'clamp(1.4rem, 4vw, 2.35rem)' }}>
-              Loved By Thousands Of Pilgrims<br />
-              Explore <span className="bg-[#E58C28] text-white px-3 py-0.5 rounded-xl text-base sm:text-xl font-black inline-block align-middle mx-1 shadow-md">4.9/5 ★</span> Real Experiences
-            </h2>
-            <button
-              type="button"
-              onClick={() => {
-                feedbackRef.current?.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="mt-3 inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-white text-[#0A4DA6] hover:bg-gray-100 text-xs font-extrabold shadow-lg transition-all cursor-pointer"
-            >
-              Explore Feedback &amp; Stories <ArrowRight size={14} />
-            </button>
+            {/* Title and Eyebrow Content Overlay */}
+            <div className="relative z-10 space-y-2 max-w-3xl">
+              <p className="font-['Kalam'] text-base sm:text-xl font-bold text-[#E58C28] drop-shadow-md">
+                Customer Feedback &amp; Stories
+              </p>
+              <h2 className="font-black text-white leading-tight drop-shadow-lg" style={{ fontSize: 'clamp(1.4rem, 4vw, 2.35rem)' }}>
+                Loved By Thousands Of Pilgrims<br />
+                Explore <span className="bg-[#E58C28] text-white px-3 py-0.5 rounded-xl text-base sm:text-xl font-black inline-block align-middle mx-1 shadow-md">4.9/5 ★</span> Real Experiences
+              </h2>
+            </div>
           </div>
-        </div>
 
-        {/* Smooth 60FPS Sliding Gallery Carousel (Matching Reference Screenshot) */}
-        <div
-          ref={feedbackRef}
-          className="flex gap-4 sm:gap-6 overflow-x-auto pb-6 pt-2 scrollbar-none -mx-4 sm:mx-0 px-4 sm:px-0 justify-start"
-          style={{ scrollbarWidth: 'none' }}
-        >
-          {[...customerFeedbacks, ...customerFeedbacks].map((fb, idx) => (
-            <div
-              key={idx}
-              className="flex-shrink-0 relative group cursor-pointer"
-              style={{ width: 'clamp(240px, 50vw, 280px)' }}
-            >
-              {/* Rounded Image Card Container (Matching Reference Screenshot Aspect & Border Radius) */}
-              <div className="w-full bg-white dark:bg-[#0B192C] rounded-[28px] overflow-hidden border border-gray-100 dark:border-slate-800 shadow-md hover:shadow-2xl transition-all duration-500 flex flex-col hover:-translate-y-1.5 h-[340px] sm:h-[380px] relative">
+          {/* Smooth 60FPS Sliding Gallery Carousel (Matching Reference Screenshot) */}
+          <div
+            ref={feedbackRef}
+            className="flex gap-4 sm:gap-6 overflow-x-auto pb-6 pt-2 scrollbar-none -mx-4 sm:mx-0 px-4 sm:px-0 justify-start"
+            style={{ scrollbarWidth: 'none' }}
+          >
+            {[...customerFeedbacks, ...customerFeedbacks].map((fb, idx) => (
+              <div
+                key={idx}
+                className="flex-shrink-0 relative group cursor-pointer"
+                style={{ width: 'clamp(240px, 50vw, 280px)' }}
+              >
+                {/* Rounded Image Card Container (Matching Reference Screenshot Aspect & Border Radius) */}
+                <div className="w-full bg-white dark:bg-[#0B192C] rounded-[28px] overflow-hidden border border-gray-100 dark:border-slate-800 shadow-md hover:shadow-2xl transition-all duration-500 flex flex-col hover:-translate-y-1.5 h-[340px] sm:h-[380px] relative">
 
-                {/* Full Height Background Image */}
-                <img
-                  src={fb.img}
-                  alt={fb.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                  loading="lazy"
-                />
+                  {/* Full Height Background Image */}
+                  <img
+                    src={fb.img}
+                    alt={fb.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                    loading="lazy"
+                    onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/banner/ashram_rishikesh.png'; }}
+                  />
 
-                {/* Dark Gradient Overlay for Text Readability */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+                  {/* Dark Gradient Overlay for Text Readability */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
 
-                {/* Overlay Card Content — fixed layout: rating top, review middle, user bottom */}
-                <div className="absolute inset-0 p-5 flex flex-col justify-between text-white z-10">
-                  {/* Top: Star Rating Badge */}
-                  <div className="flex items-center gap-1 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full w-fit text-[#FFD700] text-xs font-bold border border-white/20 shadow-xs">
-                    {[...Array(fb.rating)].map((_, i) => (
-                      <Star key={i} size={11} className="fill-[#FFD700] text-[#FFD700]" />
-                    ))}
-                    <span className="text-white text-[10px] ml-1 font-extrabold">{fb.ratingValue}</span>
-                  </div>
+                  {/* Overlay Card Content — fixed layout: rating top, review middle, user bottom */}
+                  <div className="absolute inset-0 p-5 flex flex-col justify-between text-white z-10">
+                    {/* Top: Star Rating Badge (Centered at Top) */}
+                    <div className="flex items-center gap-1 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full w-fit mx-auto text-[#FFD700] text-xs font-bold border border-white/20 shadow-xs">
+                      {[...Array(fb.rating)].map((_, i) => (
+                        <Star key={i} size={11} className="fill-[#FFD700] text-[#FFD700]" />
+                      ))}
+                      <span className="text-white text-[10px] ml-1 font-extrabold">{fb.ratingValue}</span>
+                    </div>
 
-                  {/* Bottom: review text (fixed height) + user info */}
-                  <div className="space-y-3">
-                    <p className="text-xs text-gray-100 font-medium leading-relaxed italic line-clamp-4 min-h-[4.5rem] drop-shadow-xs">
-                      "{fb.comment}"
-                    </p>
+                    {/* Bottom: review text (fixed height) + user info */}
+                    <div className="space-y-3">
+                      <p className="text-xs text-gray-100 font-medium leading-relaxed italic line-clamp-4 min-h-[4.5rem] drop-shadow-xs">
+                        "{fb.comment}"
+                      </p>
 
-                    <div className="pt-3 border-t border-white/20 flex items-center justify-between gap-2">
-                      <div className="min-w-0">
-                        <h4 className="font-extrabold text-sm text-white leading-none truncate">{fb.reviewer}</h4>
-                        <p className="text-[10px] text-gray-300 font-semibold mt-1 truncate">{fb.name}{fb.location ? ` · ${fb.location}` : ''}</p>
-                      </div>
-                      <div className="w-7 h-7 rounded-full bg-[#0A4DA6] text-white flex items-center justify-center shadow-xs shrink-0">
-                        <CheckCircle size={14} className="stroke-[2.5]" />
+                      <div className="pt-3 border-t border-white/20 flex items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <h4 className="font-extrabold text-sm text-white leading-none truncate">{fb.reviewer}</h4>
+                          <p className="text-[10px] text-gray-300 font-semibold mt-1 truncate">{fb.name}{fb.location ? ` · ${fb.location}` : ''}</p>
+                        </div>
+                        <div className="w-7 h-7 rounded-full bg-[#0A4DA6] text-white flex items-center justify-center shadow-xs shrink-0">
+                          <CheckCircle size={14} className="stroke-[2.5]" />
+                        </div>
                       </div>
                     </div>
                   </div>
+
                 </div>
-
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
 
-      </section>
+        </section>
       )}
 
 

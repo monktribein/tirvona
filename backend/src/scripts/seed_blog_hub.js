@@ -1,5 +1,10 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
+import dns from 'dns';
+
+try {
+  dns.setServers(['8.8.8.8', '1.1.1.1']);
+} catch (e) {}
 import BlogAuthor from '../models/BlogAuthor.js';
 import BlogPost from '../models/BlogPost.js';
 import BlogComment from '../models/BlogComment.js';
@@ -81,10 +86,10 @@ Many ashrams welcome guests to participate in voluntary service (Seva) such as p
         `.trim(),
         excerpt: 'Discover essential etiquette, daily schedules, satvik food rules, and spiritual seva tips for a peaceful first ashram experience.',
         contentType: 'article',
-        coverImage: 'https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=1200&q=80',
+        coverImage: '/blogs/rishikesh_ashram_1785404729056.png',
         gallery: [
-          'https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=800&q=80',
-          'https://images.unsplash.com/photo-1598977123418-45f04b61582e?auto=format&fit=crop&w=800&q=80',
+          '/blogs/rishikesh_ashram_1785404729056.png',
+          '/blogs/ganga_aarti_vns_1785404714879.png',
         ],
         authorId: author1,
         category: 'Travel Guide',
@@ -109,7 +114,7 @@ The Aarti is an offering of gratitude to Mother Ganga, who is revered as the giv
         `.trim(),
         excerpt: 'Watch the mesmerizing evening Ganga Aarti at Dashashwamedh Ghat Varanasi with divine brass lamp rituals and conch sounds.',
         contentType: 'video',
-        coverImage: 'https://images.unsplash.com/photo-1561361058-c24e36e56336?auto=format&fit=crop&w=1200&q=80',
+        coverImage: '/blogs/ganga_aarti_vns_1785404714879.png',
         youtubeUrl: 'https://www.youtube.com/watch?v=0kFhPVA888U',
         youtubeVideoId: '0kFhPVA888U',
         youtubeDuration: '18:45',
@@ -141,7 +146,7 @@ Peda offerings at Kashi and Mathura are slow-roasted over low wood flames for ho
         `.trim(),
         excerpt: 'Explore the sacred preparation, secret recipes, and spiritual significance of Mahaprasad across India\'s ancient temples.',
         contentType: 'article',
-        coverImage: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=1200&q=80',
+        coverImage: '/blogs/temple_prasad_1785404756481.png',
         authorId: author3,
         category: 'Temple History',
         tags: ['Mahaprasad', 'Puri Khaja', 'Tirupati Laddu', 'Prasad'],
@@ -162,7 +167,7 @@ Journey to the holy shrine of Kedarnath nestled amidst snow-capped peaks of the 
         `.trim(),
         excerpt: 'Experience the breathtaking journey to Kedarnath Temple with 4K drone visuals, stone architecture breakdown, and pilgrim stories.',
         contentType: 'video',
-        coverImage: 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=1200&q=80',
+        coverImage: '/blogs/hindi_yatra_story_1785404742334.png',
         youtubeUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
         youtubeVideoId: 'dQw4w9WgXcQ',
         youtubeDuration: '24:10',

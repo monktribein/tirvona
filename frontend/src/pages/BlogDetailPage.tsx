@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
+import { visitorArticleService } from '../services/visitorArticleService';
 import {
   Calendar,
   Clock,
@@ -20,6 +21,7 @@ import {
   Sparkles,
   ArrowUpRight,
   ThumbsUp,
+  User,
 } from 'lucide-react';
 
 export const BlogDetailPage: React.FC = () => {
@@ -30,6 +32,7 @@ export const BlogDetailPage: React.FC = () => {
   const [likes, setLikes] = useState(0);
   const [hasLiked, setHasLiked] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   // New comment state
   const [userName, setUserName] = useState('');
@@ -37,6 +40,7 @@ export const BlogDetailPage: React.FC = () => {
   const [submittingComment, setSubmittingComment] = useState(false);
 
   useEffect(() => {
+    setSelectedImage(null);
     fetchPostDetail();
   }, [slug]);
 
@@ -45,10 +49,45 @@ export const BlogDetailPage: React.FC = () => {
     try {
       const res = await axios.get(
         `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/blog/posts/${slug}`
-      );
-      if (res.data.success) {
+      ).catch(() => null);
+
+      if (res?.data?.success) {
         setData(res.data.data);
         setLikes(res.data.data.post.likes || 0);
+      } else {
+        // Fallback to Verified Visitor Article API
+        const vRes = await visitorArticleService.getPublicArticleBySlug(slug!);
+        if (vRes.data?.success) {
+          const va = vRes.data.data.article;
+          setData({
+            post: {
+              _id: va._id,
+              title: va.title,
+              category: va.category,
+              content: va.content,
+              subtitle: va.shortDescription,
+              coverImage: va.featuredImage,
+              createdAt: va.createdAt,
+              readingTime: '5 min read',
+              views: va.viewsCount || 1,
+              likes: va.likesCount || 0,
+              gallery: va.galleryImages || [],
+              tags: va.tags || [],
+              isVerifiedStay: true,
+              ashramName: va.ashramId?.name,
+              authorId: {
+                name: va.visitorId?.name || 'Verified Pilgrim',
+                photo: va.visitorId?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&h=300&q=80',
+                verified: true,
+                designation: 'Verified Stay Traveler',
+                bio: `Completed stay at ${va.ashramId?.name || 'Ashram'}. Shared authentic pilgrim experience.`,
+              },
+            },
+            comments: vRes.data.data.comments || [],
+            relatedPosts: vRes.data.data.relatedArticles || [],
+          });
+          setLikes(va.likesCount || 0);
+        }
       }
     } catch (err) {
       console.error('Error fetching blog detail:', err);
@@ -134,123 +173,192 @@ export const BlogDetailPage: React.FC = () => {
   const { post, comments, relatedPosts } = data;
   const author = post.authorId || {};
 
+  const renderFormattedContent = (text: string) => {
+    if (!text) return null;
+    const blocks = text.split('\n\n');
+    return blocks.map((block, idx) => {
+      const trimmed = block.trim();
+      if (trimmed.startsWith('### ')) {
+        return (
+          <h3 key={idx} className="text-lg sm:text-xl font-extrabold text-[#0B192C] dark:text-white pt-2 pb-1 border-b border-gray-100 dark:border-slate-800">
+            {trimmed.replace('### ', '')}
+          </h3>
+        );
+      }
+      if (trimmed.startsWith('## ')) {
+        return (
+          <h2 key={idx} className="text-xl sm:text-2xl font-black text-[#0B192C] dark:text-white pt-3 pb-1">
+            {trimmed.replace('## ', '')}
+          </h2>
+        );
+      }
+      if (trimmed.startsWith('- ')) {
+        const lines = trimmed.split('\n');
+        return (
+          <ul key={idx} className="space-y-2 py-1 pl-1">
+            {lines.map((line, lIdx) => {
+              const cleanLine = line.replace(/^- /, '');
+              const parts = cleanLine.split(/(\*\*.*?\*\*)/g);
+              return (
+                <li key={lIdx} className="flex items-start gap-2 text-slate-700 dark:text-gray-200 text-sm sm:text-base">
+                  <span className="w-2 h-2 rounded-full bg-[#0A4DA6] mt-2 shrink-0" />
+                  <span>
+                    {parts.map((p, pIdx) => {
+                      if (p.startsWith('**') && p.endsWith('**')) {
+                        return <strong key={pIdx} className="font-extrabold text-[#0B192C] dark:text-white">{p.slice(2, -2)}</strong>;
+                      }
+                      return p;
+                    })}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        );
+      }
+      const parts = trimmed.split(/(\*\*.*?\*\*)/g);
+      return (
+        <p key={idx} className="leading-relaxed text-slate-700 dark:text-gray-200 text-sm sm:text-base font-medium">
+          {parts.map((p, pIdx) => {
+            if (p.startsWith('**') && p.endsWith('**')) {
+              return <strong key={pIdx} className="font-extrabold text-[#0B192C] dark:text-white">{p.slice(2, -2)}</strong>;
+            }
+            return p;
+          })}
+        </p>
+      );
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-[#070F1B] pb-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-1 sm:pt-3 space-y-8">
 
-        {/* 2. Tirvona Hero Section */}
-        <div className="relative rounded-[32px] overflow-hidden shadow-2xl min-h-[400px] sm:min-h-[480px] flex items-end p-6 sm:p-12 border border-gray-100 dark:border-slate-800 group">
-          <img
-            src={post.coverImage}
-            alt={post.title}
-            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0B192C] via-[#0B192C]/70 to-transparent" />
-
-          <div className="relative z-10 space-y-4 max-w-4xl text-white">
-            
-            {/* Top Toolbar */}
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="px-4 py-1 rounded-full bg-[#0A4DA6] text-white text-xs font-black uppercase tracking-wider shadow-md">
-                  {post.category}
-                </span>
-                <span className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-white text-xs font-bold flex items-center gap-1.5">
-                  <Calendar size={13} className="text-amber-400" />
-                  {new Date(post.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
-                </span>
-                <span className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-white text-xs font-bold flex items-center gap-1.5">
-                  <Clock size={13} className="text-amber-400" />
-                  {post.readingTime}
-                </span>
-              </div>
-
-              {/* Action Toolbar */}
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handleShare}
-                  className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md text-white transition-colors"
-                  title="Share Article"
-                >
-                  <Share2 size={15} />
-                </button>
-                <button
-                  onClick={() => setIsBookmarked(!isBookmarked)}
-                  className={`p-2.5 rounded-full backdrop-blur-md transition-colors ${
-                    isBookmarked ? 'bg-amber-500 text-white' : 'bg-white/10 hover:bg-white/20 text-white'
-                  }`}
-                  title="Bookmark"
-                >
-                  <Bookmark size={15} className={isBookmarked ? 'fill-white' : ''} />
-                </button>
-                <button
-                  onClick={handlePrint}
-                  className="p-2.5 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md text-white transition-colors hidden sm:block"
-                  title="Print Article"
-                >
-                  <Printer size={15} />
-                </button>
-              </div>
-            </div>
-
-            {/* Title & Subtitle */}
-            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black leading-tight tracking-tight drop-shadow-sm">
-              {post.title}
-            </h1>
-
-            {post.subtitle && (
-              <p className="text-sm sm:text-base text-blue-100 font-medium leading-relaxed max-w-3xl">
-                {post.subtitle}
-              </p>
-            )}
-
-            {/* Author Profile Strip */}
-            <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-white/20">
-              <div className="flex items-center gap-3">
-                <img
-                  src={author.photo || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&h=300&q=80'}
-                  alt={author.name}
-                  className="w-12 h-12 rounded-full object-cover border-2 border-[#E58C28] shadow-md"
-                />
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <h4 className="font-extrabold text-sm text-white">{author.name || 'Verified Scholar'}</h4>
-                    {author.verified && (
-                      <CheckCircle2 size={15} className="text-emerald-400 fill-emerald-400/20" />
-                    )}
-                  </div>
-                  <p className="text-[11px] text-blue-200 font-semibold">{author.designation || 'Spiritual Research Writer'}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 text-xs font-bold">
-                <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/40 backdrop-blur-md border border-white/10">
-                  <Eye size={14} className="text-amber-400" />
-                  <span>{post.views} Views</span>
-                </span>
-                <button
-                  onClick={handleLike}
-                  className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-black transition-all cursor-pointer shadow-md ${
-                    hasLiked ? 'bg-red-600 text-white' : 'bg-white text-[#0B192C] hover:bg-amber-400'
-                  }`}
-                >
-                  <Heart size={14} className={hasLiked ? 'fill-white text-white' : 'text-red-500'} />
-                  <span>{likes}</span>
-                </button>
-              </div>
-            </div>
-
+        {/* 1. Centered Header Section (Matching 2nd image UI) */}
+        <div className="text-center space-y-3 max-w-4xl mx-auto py-2">
+          <div className="flex items-center justify-center gap-2 flex-wrap">
+            <span className="px-3.5 py-1 rounded-full bg-blue-50 dark:bg-blue-950/40 text-[#0A4DA6] dark:text-blue-300 border border-blue-100 dark:border-slate-800 text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow-xs">
+              <ShieldCheck size={12} className="text-emerald-500" />
+              {post.category || 'TRAVEL GUIDE'} • RISHIKESH, UTTARAKHAND
+            </span>
           </div>
+
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#0B192C] dark:text-white tracking-tight leading-tight">
+            {post.title}
+          </h1>
+
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-semibold flex items-center justify-center gap-3 flex-wrap pt-1">
+            <span className="flex items-center gap-2 text-[#0B192C] dark:text-gray-200 font-extrabold">
+              <img
+                src={author.photo || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&h=300&q=80'}
+                alt={author.name}
+                className="w-6 h-7 rounded-md object-cover border border-[#0A4DA6] shrink-0 shadow-xs"
+                onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&h=300&q=80'; }}
+              />
+              <span>{author.name || 'Gordon V. Shastri'}</span>
+            </span>
+            <span>•</span>
+            <span className="flex items-center gap-1">
+              <Calendar size={13} className="text-[#E58C28]" /> {new Date(post.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+            </span>
+            <span>•</span>
+            <span className="flex items-center gap-1">
+              <Clock size={13} className="text-[#0A4DA6]" /> {post.readingTime}
+            </span>
+            <span>•</span>
+            <span className="flex items-center gap-1">
+              <Eye size={13} className="text-emerald-600" /> {post.views || 3840} Views
+            </span>
+          </p>
+
+          {/* Action Buttons Toolbar */}
+          <div className="flex items-center justify-center gap-2 pt-2">
+            <button
+              onClick={handleLike}
+              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-black transition-all cursor-pointer shadow-xs border ${hasLiked
+                ? 'bg-rose-600 text-white border-rose-600'
+                : 'bg-white dark:bg-slate-800 text-[#0B192C] dark:text-gray-200 border-gray-200 dark:border-slate-700 hover:bg-rose-50'
+                }`}
+            >
+              <Heart size={14} className={hasLiked ? 'fill-white text-white' : 'text-rose-500'} />
+              <span>{likes} Likes</span>
+            </button>
+
+            <button
+              onClick={handleShare}
+              className="px-3.5 py-1.5 rounded-full bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-slate-700 text-xs font-extrabold flex items-center gap-1.5 hover:bg-gray-50 cursor-pointer shadow-xs transition-all"
+              title="Share Article"
+            >
+              <Share2 size={14} className="text-[#0A4DA6]" />
+              <span>Share</span>
+            </button>
+
+            <button
+              onClick={() => setIsBookmarked(!isBookmarked)}
+              className={`px-3.5 py-1.5 rounded-full border text-xs font-extrabold flex items-center gap-1.5 cursor-pointer shadow-xs transition-all ${isBookmarked
+                ? 'bg-amber-500 text-white border-amber-500'
+                : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-slate-700 hover:bg-amber-50'
+                }`}
+              title="Bookmark"
+            >
+              <Bookmark size={14} className={isBookmarked ? 'fill-white' : 'text-amber-500'} />
+              <span>{isBookmarked ? 'Saved' : 'Save'}</span>
+            </button>
+
+            <button
+              onClick={handlePrint}
+              className="p-2 rounded-full bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 cursor-pointer hidden sm:flex items-center justify-center shadow-xs"
+              title="Print Article"
+            >
+              <Printer size={14} />
+            </button>
+          </div>
+        </div>
+
+        {/* 2. Main Hero Image Block (Clean image without dark text overlay) */}
+        <div className="space-y-4">
+          <div className="relative rounded-[28px] overflow-hidden shadow-xl h-[380px] sm:h-[480px] w-full border border-gray-100 dark:border-slate-800 bg-gray-100 dark:bg-slate-800 group">
+            <img
+              src={selectedImage || post.coverImage || '/blogs/rishikesh_ashram_1785404729056.png'}
+              alt={post.title}
+              className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-500"
+              onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/blogs/rishikesh_ashram_1785404729056.png'; }}
+            />
+          </div>
+
+          {/* Photo Gallery Thumbnails Strip */}
+          {post.gallery?.length > 0 && (
+            <div className="flex items-center gap-3 overflow-x-auto pb-1">
+              {[post.coverImage, ...post.gallery].filter(Boolean).slice(0, 5).map((imgUrl: string, idx: number) => {
+                const active = (selectedImage || post.coverImage) === imgUrl;
+                return (
+                  <div
+                    key={idx}
+                    onClick={() => setSelectedImage(imgUrl)}
+                    className={`w-24 h-16 sm:w-28 sm:h-20 rounded-2xl overflow-hidden border-2 ${active ? 'border-[#0A4DA6] shadow-lg scale-105' : 'border-white dark:border-slate-800'
+                      } shrink-0 cursor-pointer hover:opacity-90 transition-all`}
+                  >
+                    <img
+                      src={imgUrl}
+                      alt={`Thumbnail ${idx}`}
+                      className="w-full h-full object-cover"
+                      onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/blogs/rishikesh_ashram_1785404729056.png'; }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* 3. Main 2-Column Desktop Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-          {/* Left Main Content Area (2 Cols) */}
-          <div className="lg:col-span-2 space-y-8">
+          {/* Left Main Content Area (2 Cols - All inside ONE single container card) */}
+          <div className="lg:col-span-2">
 
-            {/* Main Article Container */}
-            <div className="bg-white dark:bg-[#0B192C] rounded-[32px] p-6 sm:p-10 border border-gray-100 dark:border-slate-800 shadow-sm space-y-6">
+            {/* ONE Single Main Container Card */}
+            <div className="bg-white dark:bg-[#0B192C] rounded-[32px] p-6 sm:p-10 border border-gray-100 dark:border-slate-800 shadow-sm space-y-8">
 
               {/* Embedded Video Player if post is video or has youtube URL */}
               {(post.contentType === 'video' || post.youtubeUrl || post.youtubeVideoId) && (
@@ -272,14 +380,14 @@ export const BlogDetailPage: React.FC = () => {
                   />
                 </div>
               )}
-              
-              {/* Formatted Text Content */}
-              <div className="prose dark:prose-invert max-w-none text-sm sm:text-base leading-relaxed text-slate-700 dark:text-gray-200 space-y-4 whitespace-pre-line font-medium">
-                {post.content}
+
+              {/* Formatted Article Text Content */}
+              <div className="space-y-4">
+                {renderFormattedContent(post.content)}
               </div>
 
               {/* Sample Pull Quote */}
-              <div className="my-8 p-6 rounded-2xl bg-blue-50/70 dark:bg-slate-900/80 border-l-4 border-[#0A4DA6] space-y-2">
+              <div className="my-6 p-6 rounded-2xl bg-blue-50/70 dark:bg-slate-900/80 border-l-4 border-[#0A4DA6] space-y-2">
                 <p className="font-['Kalam'] text-base sm:text-lg font-bold text-[#0A4DA6] dark:text-amber-400">
                   "Every pilgrimage is a sacred inward journey towards peace, self-realization, and divine grace."
                 </p>
@@ -288,7 +396,7 @@ export const BlogDetailPage: React.FC = () => {
 
               {/* Image Gallery */}
               {post.gallery?.length > 0 && (
-                <div className="space-y-3 pt-4">
+                <div className="space-y-3 pt-2">
                   <h4 className="font-black text-base text-[#0B192C] dark:text-white">Sacred Photo Gallery</h4>
                   <div className="grid grid-cols-2 gap-4">
                     {post.gallery.map((img: string, i: number) => (
@@ -300,102 +408,89 @@ export const BlogDetailPage: React.FC = () => {
                 </div>
               )}
 
-              {/* Tags */}
-              {post.tags?.length > 0 && (
-                <div className="pt-6 border-t border-gray-100 dark:border-slate-800 flex flex-wrap gap-2 items-center">
-                  <span className="text-xs font-black text-gray-400 uppercase mr-2">Tags:</span>
-                  {post.tags.map((tag: string, i: number) => (
-                    <span
-                      key={i}
-                      className="px-3.5 py-1 rounded-full bg-gray-100 dark:bg-slate-800 text-xs font-bold text-[#0A4DA6] dark:text-amber-400 hover:bg-[#0A4DA6] hover:text-white transition-colors cursor-pointer"
-                    >
-                      #{tag}
+              {/* Integrated Publisher / Author Profile Section (Left side Passport Size Photo) */}
+              <div className="pt-6 border-t border-gray-100 dark:border-slate-800 flex flex-col sm:flex-row items-center sm:items-start gap-5 bg-gray-50/80 dark:bg-slate-900/60 p-6 rounded-2xl">
+                <img
+                  src={author.photo || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&h=300&q=80'}
+                  alt={author.name}
+                  className="w-20 h-24 rounded-xl object-cover border-2 border-[#0A4DA6] shadow-md shrink-0"
+                  onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&h=300&q=80'; }}
+                />
+                <div className="space-y-1.5 text-center sm:text-left">
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                    <h4 className="font-black text-base text-[#0B192C] dark:text-white">{author.name}</h4>
+                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 text-[10px] font-black uppercase flex items-center gap-1">
+                      <CheckCircle2 size={11} /> VERIFIED AUTHOR
                     </span>
+                  </div>
+                  <p className="text-xs font-bold text-[#0A4DA6] dark:text-amber-400">
+                    {author.designation} • {author.organization}
+                  </p>
+                  <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed font-medium">
+                    {author.bio}
+                  </p>
+                  <div className="pt-1 flex flex-wrap items-center justify-center sm:justify-start gap-4 text-xs font-bold text-gray-500">
+                    <span>Experience: <strong className="text-gray-800 dark:text-gray-200">{author.experience || '10+ Years'}</strong></span>
+                    <span>Articles: <strong className="text-gray-800 dark:text-gray-200">{author.articlesCount || 12} Published</strong></span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Integrated Comments Section */}
+              <div className="pt-6 border-t border-gray-100 dark:border-slate-800 space-y-6">
+                <h3 className="font-black text-xl text-[#0B192C] dark:text-white flex items-center gap-2">
+                  <MessageSquare size={20} className="text-[#0A4DA6]" />
+                  <span>Pilgrim Discussion & Comments ({comments?.length || 0})</span>
+                </h3>
+
+                {/* Add Comment Form */}
+                <form onSubmit={handleAddComment} className="space-y-3 p-5 rounded-2xl bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800">
+                  <h5 className="font-bold text-xs text-[#0B192C] dark:text-white">Leave a Devotional Comment</h5>
+                  <input
+                    type="text"
+                    placeholder="Your Name (e.g. Ramesh Devotee)..."
+                    value={userName}
+                    onChange={(e) => setUserName(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 text-xs font-bold focus:outline-none"
+                  />
+                  <textarea
+                    rows={3}
+                    placeholder="Share your spiritual thoughts or feedback on this article..."
+                    value={commentText}
+                    onChange={(e) => setCommentText(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 text-xs font-medium focus:outline-none"
+                  />
+                  <button
+                    type="submit"
+                    disabled={submittingComment}
+                    className="px-6 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-blue-900 text-white font-black text-xs shadow-md transition-colors cursor-pointer"
+                  >
+                    Submit Comment
+                  </button>
+                </form>
+
+                {/* Comments List */}
+                <div className="space-y-4">
+                  {comments?.map((c: any) => (
+                    <div key={c._id} className="p-4 rounded-2xl bg-gray-50/80 dark:bg-slate-900/80 border border-gray-100 dark:border-slate-800 space-y-2">
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-full bg-[#0A4DA6] text-white font-extrabold text-xs flex items-center justify-center">
+                            {c.userName.charAt(0)}
+                          </div>
+                          <h5 className="font-bold text-xs text-[#0B192C] dark:text-white">{c.userName}</h5>
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-600 text-[9px] font-black">
+                            VERIFIED PILGRIM
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-gray-400">{new Date(c.createdAt).toLocaleDateString('en-IN')}</span>
+                      </div>
+                      <p className="text-xs text-gray-600 dark:text-gray-300 font-medium pl-9">{c.comment}</p>
+                    </div>
                   ))}
                 </div>
-              )}
-            </div>
-
-            {/* Author Profile Card (Matching Homepage Style) */}
-            <div className="bg-white dark:bg-[#0B192C] rounded-[32px] p-6 sm:p-8 border border-gray-100 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row items-center sm:items-start gap-6">
-              <img
-                src={author.photo || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&h=300&q=80'}
-                alt={author.name}
-                className="w-24 h-24 rounded-full object-cover border-4 border-[#0A4DA6] shadow-md shrink-0"
-              />
-              <div className="space-y-2 text-center sm:text-left">
-                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                  <h4 className="font-black text-lg text-[#0B192C] dark:text-white">{author.name}</h4>
-                  <span className="px-3 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 text-[10px] font-black uppercase flex items-center gap-1">
-                    <CheckCircle2 size={12} /> VERIFIED AUTHOR
-                  </span>
-                </div>
-                <p className="text-xs font-bold text-[#0A4DA6] dark:text-amber-400">
-                  {author.designation} • {author.organization}
-                </p>
-                <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed font-medium">
-                  {author.bio}
-                </p>
-                <div className="pt-2 flex flex-wrap items-center justify-center sm:justify-start gap-4 text-xs font-bold text-gray-500">
-                  <span>Experience: <strong className="text-gray-800 dark:text-gray-200">{author.experience || '10+ Years'}</strong></span>
-                  <span>Articles: <strong className="text-gray-800 dark:text-gray-200">{author.articlesCount || 12} Published</strong></span>
-                </div>
               </div>
-            </div>
 
-            {/* Comments Section */}
-            <div className="bg-white dark:bg-[#0B192C] rounded-[32px] p-6 sm:p-8 border border-gray-100 dark:border-slate-800 shadow-sm space-y-6">
-              <h3 className="font-black text-xl text-[#0B192C] dark:text-white flex items-center gap-2">
-                <MessageSquare size={20} className="text-[#0A4DA6]" />
-                <span>Pilgrim Discussion & Comments ({comments?.length || 0})</span>
-              </h3>
-
-              {/* Add Comment Form */}
-              <form onSubmit={handleAddComment} className="space-y-3 p-5 rounded-2xl bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800">
-                <h5 className="font-bold text-xs text-[#0B192C] dark:text-white">Leave a Devotional Comment</h5>
-                <input
-                  type="text"
-                  placeholder="Your Name (e.g. Ramesh Devotee)..."
-                  value={userName}
-                  onChange={(e) => setUserName(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 text-xs font-bold focus:outline-none"
-                />
-                <textarea
-                  rows={3}
-                  placeholder="Share your spiritual thoughts or feedback on this article..."
-                  value={commentText}
-                  onChange={(e) => setCommentText(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 text-xs font-medium focus:outline-none"
-                />
-                <button
-                  type="submit"
-                  disabled={submittingComment}
-                  className="px-6 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-blue-900 text-white font-black text-xs shadow-md transition-colors cursor-pointer"
-                >
-                  Submit Comment
-                </button>
-              </form>
-
-              {/* Comments List */}
-              <div className="space-y-4">
-                {comments?.map((c: any) => (
-                  <div key={c._id} className="p-4 rounded-2xl bg-gray-50/80 dark:bg-slate-900/80 border border-gray-100 dark:border-slate-800 space-y-2">
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full bg-[#0A4DA6] text-white font-extrabold text-xs flex items-center justify-center">
-                          {c.userName.charAt(0)}
-                        </div>
-                        <h5 className="font-bold text-xs text-[#0B192C] dark:text-white">{c.userName}</h5>
-                        <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-600 text-[9px] font-black">
-                          VERIFIED PILGRIM
-                        </span>
-                      </div>
-                      <span className="text-[10px] text-gray-400">{new Date(c.createdAt).toLocaleDateString('en-IN')}</span>
-                    </div>
-                    <p className="text-xs text-gray-600 dark:text-gray-300 font-medium pl-9">{c.comment}</p>
-                  </div>
-                ))}
-              </div>
             </div>
 
           </div>
@@ -403,13 +498,14 @@ export const BlogDetailPage: React.FC = () => {
           {/* Right Static Sidebar (Desktop Only - 1 Col) */}
           <div className="space-y-6">
 
-            {/* Sidebar Author Card */}
+            {/* Sidebar Author Card with Passport Size Image */}
             <div className="bg-white dark:bg-[#0B192C] rounded-[32px] p-6 border border-gray-100 dark:border-slate-800 shadow-sm space-y-4">
               <div className="text-center space-y-2">
                 <img
                   src={author.photo || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&h=300&q=80'}
                   alt={author.name}
-                  className="w-20 h-20 rounded-full object-cover border-4 border-[#0A4DA6] shadow-md mx-auto"
+                  className="w-20 h-24 rounded-xl object-cover border-2 border-[#0A4DA6] shadow-md mx-auto"
+                  onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&h=300&q=80'; }}
                 />
                 <h4 className="font-black text-base text-[#0B192C] dark:text-white flex items-center justify-center gap-1">
                   <span>{author.name}</span>
@@ -429,9 +525,10 @@ export const BlogDetailPage: React.FC = () => {
                       className="flex gap-3 items-center group cursor-pointer"
                     >
                       <img
-                        src={item.coverImage}
+                        src={item.coverImage || item.featuredImage || '/blogs/rishikesh_ashram_1785404729056.png'}
                         alt={item.title}
                         className="w-14 h-14 rounded-xl object-cover shrink-0 group-hover:scale-105 transition-transform"
+                        onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/blogs/rishikesh_ashram_1785404729056.png'; }}
                       />
                       <div className="space-y-0.5">
                         <h6 className="font-extrabold text-xs text-[#0B192C] dark:text-white line-clamp-2 group-hover:text-[#0A4DA6] transition-colors">
@@ -462,37 +559,6 @@ export const BlogDetailPage: React.FC = () => {
           </div>
 
         </div>
-
-        {/* 4. Pre-Footer CTA Banner */}
-        <div className="mt-12 bg-gradient-to-r from-[#0B192C] via-[#0A4DA6] to-[#0B192C] text-white rounded-[32px] p-8 sm:p-10 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-6 border border-white/10">
-          <div className="space-y-2 text-center md:text-left max-w-2xl">
-            <span className="px-3.5 py-1 rounded-full bg-white/10 text-amber-300 text-xs font-black uppercase tracking-wider">
-              Continue Your Sacred Journey
-            </span>
-            <h3 className="text-2xl sm:text-3xl font-black">
-              Explore Verified Ashrams & Temple Circuits
-            </h3>
-            <p className="text-xs sm:text-sm text-blue-100 font-medium">
-              Over 500+ verified ashrams, Char Dham circuits, and satvik bhojnalayas across Rishikesh, Varanasi, Haridwar & Vrindavan.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3 shrink-0">
-            <button
-              onClick={() => navigate('/search')}
-              className="px-6 py-3 rounded-full bg-[#E58C28] hover:bg-amber-600 text-white font-black text-xs shadow-xl transition-all"
-            >
-              Book Ashram Stay
-            </button>
-            <button
-              onClick={() => navigate('/blog')}
-              className="px-6 py-3 rounded-full bg-white/10 hover:bg-white/20 text-white font-black text-xs border border-white/20 backdrop-blur-md transition-all"
-            >
-              Explore More Articles
-            </button>
-          </div>
-        </div>
-
       </div>
     </div>
   );

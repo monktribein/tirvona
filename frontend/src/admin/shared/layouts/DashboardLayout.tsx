@@ -36,7 +36,8 @@ import {
   Sun,
   Globe,
   ArrowRight,
-  Landmark
+  Landmark,
+  FileText,
 } from 'lucide-react';
 
 interface NavGroup {
