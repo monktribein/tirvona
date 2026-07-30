@@ -466,7 +466,7 @@ export const HomePage: React.FC = () => {
       rating: 5,
       ratingValue: '4.9',
       comment: 'Highly safe for solo women pilgrims. Clean toilets, spacious rooms, and divine early morning Ganga view.',
-      img: 'https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=600&q=80',
+      img: '/banner/accomendation.png',
     },
     {
       name: 'Geeta Bhawan',
@@ -475,7 +475,7 @@ export const HomePage: React.FC = () => {
       rating: 5,
       ratingValue: '5.0',
       comment: 'Loved the morning Havan and spiritual satsangs. Very economical, clean rooms and divine atmosphere.',
-      img: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=600&q=80',
+      img: '/banner/popular.png',
     },
   ];
 
@@ -484,24 +484,24 @@ export const HomePage: React.FC = () => {
     '/banner/ashram_himalayas.png',
     '/banner/ashram_varanasi.png',
     '/banner/ashram_vrindavan.png',
-    'https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=600&q=80',
+    '/banner/accomendation.png',
+    '/banner/popular.png',
+    '/banner/explore.png',
+    '/banner/Blogs.png',
   ];
 
   const customerFeedbacks = feedbacks.length > 0
     ? feedbacks.map((r, i) => ({
-        name: r.ashramId?.name || 'Verified Ashram Stay',
-        location: r.ashramId?.address
-          ? [r.ashramId.address.city, r.ashramId.address.state].filter(Boolean).join(', ')
-          : 'Rishikesh, Uttarakhand',
-        reviewer: r.customerId?.name || 'Verified Guest',
-        rating: Math.max(1, Math.round(r.rating?.overall || 5)),
-        ratingValue: (r.rating?.overall || 5).toFixed(1),
-        comment: r.comment,
-        img: (r.ashramId?.images?.[0] && !r.ashramId.images[0].includes('placeholder'))
-          ? r.ashramId.images[0]
-          : feedbackImages[i % feedbackImages.length],
-      }))
+      name: r.ashramId?.name || 'Verified Ashram Stay',
+      location: r.ashramId?.address
+        ? [r.ashramId.address.city, r.ashramId.address.state].filter(Boolean).join(', ')
+        : 'Rishikesh, Uttarakhand',
+      reviewer: r.customerId?.name || 'Verified Guest',
+      rating: Math.max(1, Math.round(r.rating?.overall || 5)),
+      ratingValue: (r.rating?.overall || 5).toFixed(1),
+      comment: r.comment,
+      img: feedbackImages[i % feedbackImages.length],
+    }))
     : demoFeedbacks;
 
   // Service icons strip aligned with Tirvona Theme & Routing
@@ -754,15 +754,14 @@ export const HomePage: React.FC = () => {
                       navigate(`${item.target}?category=${item.category}`);
                     }
                   }}
-                  className={`flex-1 min-w-[78px] sm:min-w-[88px] lg:min-w-0 flex flex-col items-center justify-center gap-1.5 py-2.5 sm:py-3 px-1 text-center rounded-2xl transition-all cursor-pointer group shrink-0 lg:shrink ${
-                    isActive
+                  className={`flex-1 min-w-[78px] sm:min-w-[88px] lg:min-w-0 flex flex-col items-center justify-center gap-1.5 py-2.5 sm:py-3 px-1 text-center rounded-2xl transition-all cursor-pointer group shrink-0 lg:shrink ${isActive
                       ? 'bg-[#0A4DA6] text-white shadow-md shadow-[#0A4DA6]/25 scale-[1.02]'
                       : 'hover:bg-blue-50/80 dark:hover:bg-slate-800 text-slate-700 dark:text-gray-200'
                     }`}
                 >
                   <div className={`p-1.5 rounded-xl transition-colors ${isActive
-                      ? 'bg-white/20 text-white'
-                      : 'bg-blue-50 dark:bg-blue-900/30 text-[#0A4DA6] group-hover:bg-[#0A4DA6] group-hover:text-white'
+                    ? 'bg-white/20 text-white'
+                    : 'bg-blue-50 dark:bg-blue-900/30 text-[#0A4DA6] group-hover:bg-[#0A4DA6] group-hover:text-white'
                     }`}>
                     <IconComponent size={16} className="stroke-[2.5]" />
                   </div>
@@ -1274,8 +1273,8 @@ export const HomePage: React.FC = () => {
             const subtitle = isProduct
               ? item.templeSource || 'Sanctified Product'
               : item.originCity
-              ? `${item.originCity}, ${item.originState}`
-              : 'Sacred Prashad';
+                ? `${item.originCity}, ${item.originState}`
+                : 'Sacred Prashad';
             const priceDisplay = isProduct ? (item.salePrice ? `₹${item.salePrice}` : `₹${item.price}`) : null;
 
             return (
@@ -1648,6 +1647,7 @@ export const HomePage: React.FC = () => {
                     alt={fb.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                     loading="lazy"
+                    onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/banner/ashram_rishikesh.png'; }}
                   />
 
                   {/* Dark Gradient Overlay for Text Readability */}
