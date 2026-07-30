@@ -282,9 +282,14 @@ export const searchAshrams = async (req, res) => {
       }
     }
 
-    if (verified === 'true') {
-      query.status = 'approved';
-    }
+    // NOTE: `?verified=true` is accepted and intentionally has no effect on the
+    // result set. This endpoint is customer-facing and already pins
+    // status: 'approved' above, and "approved" IS the verified state — there is
+    // no separate verification flag on the Ashram schema. The parameter is still
+    // destructured and documented here (rather than silently dropped) because
+    // the frontend sends it; treating it as a no-op keeps the contract stable.
+    // The previous `if (verified === 'true') query.status = 'approved'` branch
+    // re-assigned the value it already held and has been removed.
 
     if (amenities) {
       const amenitiesList = amenities.split(',');
@@ -295,7 +300,29 @@ export const searchAshrams = async (req, res) => {
       query['rating.average'] = { $gte: parseFloat(rating) };
     }
 
-    let ashrams = await Ashram.find(query);
+    const matchedAshrams = await Ashram.find(query);
+
+    // ── Batched enrichment ───────────────────────────────────────────────────
+    // Every active room for every matched ashram in ONE query, then grouped in
+    // memory. This replaces the previous per-ashram Room.find() (N queries).
+    // `.lean()` is safe here: rooms are only ever used for arithmetic below and
+    // are never serialised into the response.
+    const roomsByAshram = new Map();
+    if (matchedAshrams.length > 0) {
+      const allRooms = await Room.find({
+        ashramId: { $in: matchedAshrams.map((a) => a._id) },
+        status: 'active',
+      }).lean();
+
+      for (const room of allRooms) {
+        const key = room.ashramId.toString();
+        const bucket = roomsByAshram.get(key);
+        if (bucket) bucket.push(room);
+        else roomsByAshram.set(key, [room]);
+      }
+    }
+
+    let ashrams;
 
     // Filter by price and availability if dates are provided
     if (checkIn && checkOut) {
@@ -303,24 +330,54 @@ export const searchAshrams = async (req, res) => {
       const endDate = new Date(checkOut);
       const daysCount = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
 
+      // The stay's nights, resolved once instead of re-walked per room. Each
+      // entry keeps both forms the pricing logic needs: `cursor` (the mutating
+      // loop date, compared against pricingRules) and `key` (the UTC calendar
+      // day, which is what RoomAvailability.date actually stores).
+      const nights = [];
+      for (let d = new Date(startDate); d < endDate; d.setDate(d.getDate() + 1)) {
+        nights.push({ cursor: new Date(d), key: d.toISOString().split('T')[0] });
+      }
+
+      // Every availability row for every room across every night in ONE query,
+      // replacing the innermost findOne (rooms x nights queries).
+      const availabilityByRoomDate = new Map();
+      if (roomsByAshram.size > 0 && nights.length > 0) {
+        const allRoomIds = [];
+        for (const bucket of roomsByAshram.values()) {
+          for (const room of bucket) allRoomIds.push(room._id);
+        }
+
+        const availabilityRows = await RoomAvailability.find({
+          roomId: { $in: allRoomIds },
+          date: { $in: nights.map((n) => new Date(n.key)) },
+        }).lean();
+
+        for (const row of availabilityRows) {
+          // Keyed identically to the lookup below. The `date` $in above only
+          // matches exact UTC midnights, so this round-trips to the same key.
+          availabilityByRoomDate.set(
+            `${row.roomId.toString()}|${row.date.toISOString().split('T')[0]}`,
+            row
+          );
+        }
+      }
+
       const filteredAshrams = [];
 
-      for (let ashram of ashrams) {
-        const rooms = await Room.find({ ashramId: ashram._id, status: 'active' });
+      for (const ashram of matchedAshrams) {
+        const rooms = roomsByAshram.get(ashram._id.toString()) || [];
         let hasAvailableRoom = false;
         let lowestPrice = Infinity;
 
-        for (let room of rooms) {
+        for (const room of rooms) {
           // Check inventory for dates
           let isAvailable = true;
           let calculatedTotalPrice = 0;
+          const roomKey = room._id.toString();
 
-          for (let d = new Date(startDate); d < endDate; d.setDate(d.getDate() + 1)) {
-            const dateStr = d.toISOString().split('T')[0];
-            const availability = await RoomAvailability.findOne({
-              roomId: room._id,
-              date: new Date(dateStr),
-            });
+          for (const { cursor, key } of nights) {
+            const availability = availabilityByRoomDate.get(`${roomKey}|${key}`);
 
             const booked = availability ? availability.bookedCount : 0;
             const maintenance = availability ? availability.maintenanceCount : 0;
@@ -337,8 +394,8 @@ export const searchAshrams = async (req, res) => {
               dailyPrice = availability.customPrice;
             } else {
               // Check pricing rules matching this date
-              const activeRule = room.pricingRules.find(
-                (rule) => d >= rule.startDate && d <= rule.endDate
+              const activeRule = (room.pricingRules || []).find(
+                (rule) => cursor >= rule.startDate && cursor <= rule.endDate
               );
               if (activeRule) {
                 dailyPrice = activeRule.overridePrice || (room.basePrice * activeRule.multiplier);
@@ -373,11 +430,11 @@ export const searchAshrams = async (req, res) => {
     } else {
       // If no dates provided, just append general rooms basic pricing
       const populatedAshrams = [];
-      for (let ashram of ashrams) {
-        const rooms = await Room.find({ ashramId: ashram._id, status: 'active' });
+      for (const ashram of matchedAshrams) {
+        const rooms = roomsByAshram.get(ashram._id.toString()) || [];
         const prices = rooms.map((r) => r.basePrice);
         const lowestPrice = prices.length > 0 ? Math.min(...prices) : 0;
-        
+
         const ashramObj = ashram.toObject();
         ashramObj.lowestNightPrice = lowestPrice;
         populatedAshrams.push(ashramObj);

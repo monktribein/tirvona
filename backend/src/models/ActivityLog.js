@@ -102,11 +102,13 @@ const activityLogSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Same reasoning as AuditLog: unbounded growth, always read newest-first, so
+// each filter facet carries `timestamp` as its trailing sort key.
 activityLogSchema.index({ timestamp: -1 });
-activityLogSchema.index({ userId: 1 });
-activityLogSchema.index({ module: 1 });
-activityLogSchema.index({ action: 1 });
-activityLogSchema.index({ severity: 1 });
+activityLogSchema.index({ userId: 1, timestamp: -1 });
+activityLogSchema.index({ module: 1, timestamp: -1 });
+activityLogSchema.index({ action: 1, timestamp: -1 });
+activityLogSchema.index({ severity: 1, timestamp: -1 });
 
 const ActivityLog = mongoose.model('ActivityLog', activityLogSchema);
 export default ActivityLog;

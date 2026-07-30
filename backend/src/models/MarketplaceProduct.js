@@ -29,7 +29,6 @@ const marketplaceProductSchema = new mongoose.Schema(
         'incense',
         'donations',
       ],
-      index: true,
     },
     description: {
       type: String,

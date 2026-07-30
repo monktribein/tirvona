@@ -23,5 +23,10 @@ const tripItinerarySchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Saved itineraries are listed newest-first, optionally filtered by status.
+// (No owner field exists on this schema, so there is no per-user index.)
+tripItinerarySchema.index({ status: 1, createdAt: -1 });
+tripItinerarySchema.index({ destination: 1, status: 1 });
+
 const TripItinerary = mongoose.model('TripItinerary', tripItinerarySchema);
 export default TripItinerary;

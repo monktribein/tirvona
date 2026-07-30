@@ -17,14 +17,12 @@ const parkingStaffSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-      index: true,
     },
     // FK → parking_partners._id
     partnerId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'ParkingPartner',
       required: true,
-      index: true,
     },
     // FK → parking_locations._id. Empty means "every location of this partner",
     // which is how a partner-level grant is expressed.

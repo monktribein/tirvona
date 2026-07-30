@@ -32,7 +32,7 @@ const parkingPartnerSchema = new mongoose.Schema(
     address: {
       line1: { type: String, default: '' },
       line2: { type: String, default: '' },
-      city: { type: String, default: '', index: true },
+      city: { type: String, default: '' },
       district: { type: String, default: '' },
       state: { type: String, default: '', index: true },
       pincode: { type: String, default: '' },
@@ -63,7 +63,6 @@ const parkingPartnerSchema = new mongoose.Schema(
       type: String,
       enum: ['pending', 'active', 'suspended', 'rejected'],
       default: 'pending',
-      index: true,
     },
     isVerified: { type: Boolean, default: false },
     verifiedAt: { type: Date },

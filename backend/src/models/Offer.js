@@ -184,5 +184,17 @@ offerSchema.pre('save', function (next) {
   next();
 });
 
+// This model previously carried NO indexes at all, so every promo-code
+// validation in the booking path was a full collection scan.
+// Promo lookup during checkout. Sparse: most offers have no code.
+offerSchema.index({ promoCode: 1 }, { sparse: true });
+// Public offers listing: { status: 'active', validTill: { $gte: now } }.
+offerSchema.index({ status: 1, validTill: 1 });
+// Owner's own offers, newest first.
+offerSchema.index({ ownerId: 1, createdAt: -1 });
+// Offers attached to a property — both the single ref and the multi-ref array.
+offerSchema.index({ ashramId: 1, status: 1 });
+offerSchema.index({ applicableAshrams: 1, status: 1 });
+
 export const Offer = mongoose.model('Offer', offerSchema);
 export default Offer;

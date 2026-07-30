@@ -26,6 +26,9 @@ import {
   CreditCard,
   Settings,
   Calendar,
+  ShieldCheck,
+  Sparkles,
+  PhoneCall,
 } from 'lucide-react';
 
 // ─── Accordion item for mobile footer ────────────────────────────────────────
@@ -525,37 +528,36 @@ export const PublicLayout: React.FC = () => {
         <Outlet />
       </main>
 
-      {/* ── Footer matching exact reference image design ── */}
-      <footer className="bg-[#0B192C] text-gray-400 pt-14 sm:pt-16 pb-0 relative overflow-hidden border-t border-slate-800">
+      {/* ── Redesigned Premium & Spacious Footer ── */}
+      <footer className="bg-[#06101E] text-slate-300 pt-14 sm:pt-16 pb-0 relative overflow-hidden border-t border-slate-800/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
-          {/* Top 5-Column Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-6 pb-10 sm:pb-14">
+          {/* Main 4-Column Grid with Generous Spacing */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12 pb-14">
             
-            {/* Col 1: Brand & Help Callout — lg:col-span-3 */}
-            <div className="lg:col-span-3 space-y-4">
-              <Link to="/" className="flex items-center gap-2.5">
-                <img src={logo} alt="Tirvona" className="w-10 h-10 object-contain" />
+            {/* Col 1: Brand & Contact Info */}
+            <div className="space-y-5">
+              <Link to="/" className="flex items-center gap-3 group">
+                <img src={logo} alt="Tirvona" className="w-11 h-11 object-contain transition-transform group-hover:scale-105" />
                 <div className="flex flex-col leading-none">
-                  <span className="text-xl font-black text-white">tirvona<span className="text-[#D4AF37] text-[10px] align-super">™</span></span>
-                  <span className="text-[8px] font-bold tracking-widest text-[#E58C28] uppercase">One Nation, One Spiritual Stay</span>
+                  <span className="text-2xl font-black text-white tracking-tight">tirvona<span className="text-[#E58C28] text-xs align-super">™</span></span>
+                  <span className="text-[9px] font-extrabold tracking-widest text-[#E58C28] uppercase mt-1">One Nation, One Spiritual Stay</span>
                 </div>
               </Link>
-              <p className="text-xs text-gray-400 leading-relaxed max-w-xs">
-                We take care of every detail so you can travel with confidence, comfort & spiritual peace.
+              
+              <p className="text-xs text-slate-300 leading-relaxed font-medium">
+                Connecting sacred destinations across India. We take care of every detail so you can travel with peace, comfort, and divine grace.
               </p>
               
-              {/* Need Help Callout */}
-              <div className="pt-2 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-[#E58C28] shrink-0">
-                  <Headphones size={20} />
-                </div>
-                <div>
-                  <span className="block text-[10px] text-gray-400 dark:text-gray-400 font-bold uppercase tracking-wider">Need help? Call or Email us</span>
-                  <a href="tel:+917836055511" className="text-sm sm:text-base font-black text-white hover:text-[#E58C28] transition-colors block">
-                    +91 78360 55511
+              {/* Need Help Box */}
+              <div className="pt-2">
+                <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2">
+                  <span className="text-[10px] text-amber-400 font-extrabold uppercase tracking-wider block">24/7 Pilgrim Support</span>
+                  <a href="tel:+917836055511" className="text-base font-black text-white hover:text-[#E58C28] transition-colors flex items-center gap-2">
+                    <PhoneCall size={15} className="text-[#E58C28]" />
+                    <span>+91 78360 55511</span>
                   </a>
-                  <a href="mailto:support@tirvona.com" className="text-xs font-bold text-gray-300 hover:text-[#E58C28] transition-colors flex items-center gap-1.5 mt-1">
+                  <a href="mailto:support@tirvona.com" className="text-xs font-semibold text-slate-300 hover:text-[#E58C28] transition-colors flex items-center gap-2">
                     <Mail size={13} className="text-[#E58C28]" />
                     <span>support@tirvona.com</span>
                   </a>
@@ -563,132 +565,135 @@ export const PublicLayout: React.FC = () => {
               </div>
             </div>
 
-            {/* Col 2: Quick Links — lg:col-span-2 */}
-            <div className="lg:col-span-2 space-y-3">
-              <h4 className="text-sm font-extrabold text-white">Quick Links</h4>
-              <ul className="text-xs space-y-2.5 text-gray-400 font-medium">
-                <li><Link to="/about" className="hover:text-white transition-colors">About Us</Link></li>
-                <li><Link to="/search" className="hover:text-white transition-colors">Ashram Bookings</Link></li>
-                <li><Link to="/search" className="hover:text-white transition-colors">Destinations</Link></li>
-                <li><Link to="/pilgrimage-circuits" className="hover:text-white transition-colors">Pilgrimage Circuits</Link></li>
-                <li><Link to="/blog" className="hover:text-white transition-colors">Blog &amp; Articles</Link></li>
-                <li><Link to="/careers" className="hover:text-white transition-colors">Careers</Link></li>
-                <li><Link to="/volunteer" className="hover:text-white transition-colors">Volunteer Opportunities</Link></li>
-                <li><Link to="/search" className="hover:text-white transition-colors">Stay Types</Link></li>
-                <li><Link to="/help" className="hover:text-white transition-colors">How It Works</Link></li>
+            {/* Col 2: Quick Links */}
+            <div className="space-y-4">
+              <h4 className="text-sm font-black text-white uppercase tracking-wider border-l-2 border-[#E58C28] pl-3">
+                Quick Links
+              </h4>
+              <ul className="text-xs space-y-3 text-slate-300 font-medium pt-1">
+                <li><Link to="/about" className="hover:text-amber-400 transition-colors flex items-center gap-1.5"><ArrowRight size={11} className="text-slate-500" /> About Us</Link></li>
+                <li><Link to="/search" className="hover:text-amber-400 transition-colors flex items-center gap-1.5"><ArrowRight size={11} className="text-slate-500" /> Ashram Bookings</Link></li>
+                <li><Link to="/search" className="hover:text-amber-400 transition-colors flex items-center gap-1.5"><ArrowRight size={11} className="text-slate-500" /> Destinations</Link></li>
+                <li><Link to="/pilgrimage-circuits" className="hover:text-amber-400 transition-colors flex items-center gap-1.5"><ArrowRight size={11} className="text-slate-500" /> Pilgrimage Circuits</Link></li>
+                <li><Link to="/blog" className="hover:text-amber-400 transition-colors flex items-center gap-1.5"><ArrowRight size={11} className="text-slate-500" /> Blog &amp; Articles</Link></li>
+                <li><Link to="/careers" className="hover:text-amber-400 transition-colors flex items-center gap-1.5"><ArrowRight size={11} className="text-slate-500" /> Careers</Link></li>
+                <li><Link to="/volunteer" className="hover:text-amber-400 transition-colors flex items-center gap-1.5"><ArrowRight size={11} className="text-slate-500" /> Volunteer Opportunities</Link></li>
               </ul>
             </div>
 
-            {/* Col 3: Popular Services — lg:col-span-2 */}
-            <div className="lg:col-span-2 space-y-3">
-              <h4 className="text-sm font-extrabold text-white">Popular Services</h4>
-              <ul className="text-xs space-y-2.5 text-gray-400 font-medium">
-                <li><Link to="/search" className="hover:text-white transition-colors">Ashram Reservations</Link></li>
-                <li><Link to="/temples" className="hover:text-white transition-colors">Temple Darshan & Seva</Link></li>
-                <li><Link to="/restaurants" className="hover:text-white transition-colors">Mahaprasad Delivery</Link></li>
-                <li><Link to="/stay-policies" className="hover:text-white transition-colors">Travel Insurance</Link></li>
-                <li><Link to="/local-guides" className="hover:text-white transition-colors">Tour Guide Services</Link></li>
-                <li><Link to="/contact" className="hover:text-white transition-colors">Yatra Assistance</Link></li>
+            {/* Col 3: Popular Services */}
+            <div className="space-y-4">
+              <h4 className="text-sm font-black text-white uppercase tracking-wider border-l-2 border-[#0A4DA6] pl-3">
+                Popular Services
+              </h4>
+              <ul className="text-xs space-y-3 text-slate-300 font-medium pt-1">
+                <li><Link to="/search" className="hover:text-amber-400 transition-colors flex items-center gap-1.5"><ArrowRight size={11} className="text-slate-500" /> Ashram Reservations</Link></li>
+                <li><Link to="/temples" className="hover:text-amber-400 transition-colors flex items-center gap-1.5"><ArrowRight size={11} className="text-slate-500" /> Temple Darshan &amp; Seva</Link></li>
+                <li><Link to="/restaurants" className="hover:text-amber-400 transition-colors flex items-center gap-1.5"><ArrowRight size={11} className="text-slate-500" /> Mahaprasad Delivery</Link></li>
+                <li><Link to="/parking" className="hover:text-amber-400 transition-colors flex items-center gap-1.5"><ArrowRight size={11} className="text-slate-500" /> Parking Spot Booking</Link></li>
+                <li><Link to="/local-guides" className="hover:text-amber-400 transition-colors flex items-center gap-1.5"><ArrowRight size={11} className="text-slate-500" /> Tour Guide Services</Link></li>
+                <li><Link to="/contact" className="hover:text-amber-400 transition-colors flex items-center gap-1.5"><ArrowRight size={11} className="text-slate-500" /> Yatra Assistance</Link></li>
               </ul>
             </div>
 
-            {/* Col 4: Newsletter — lg:col-span-3 */}
-            <div className="lg:col-span-3 space-y-3">
-              <h4 className="text-sm font-extrabold text-white">Newsletter</h4>
-              <p className="text-xs text-gray-400">Get every sacred travel news update</p>
-              <form onSubmit={e => e.preventDefault()} className="space-y-2.5 pt-1">
-                <input
-                  type="email"
-                  placeholder="Email address"
-                  className="w-full bg-white/5 border border-white/10 rounded-full px-4 py-2.5 text-xs text-white placeholder:text-gray-400 focus:outline-none focus:border-[#E58C28]"
-                />
-                <button
-                  type="submit"
-                  className="w-full bg-[#0A4DA6] hover:bg-[#083b80] text-white text-xs font-extrabold py-2.5 px-5 rounded-full flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer"
-                >
-                  <span>Subscribe</span>
-                  <div className="w-5 h-5 rounded-full bg-white text-[#0A4DA6] flex items-center justify-center">
-                    <ArrowRight size={12} className="stroke-[3]" />
-                  </div>
-                </button>
+            {/* Col 4: Newsletter & Social Connection */}
+            <div className="space-y-5">
+              <h4 className="text-sm font-black text-white uppercase tracking-wider border-l-2 border-emerald-500 pl-3">
+                Stay Connected
+              </h4>
+              <p className="text-xs text-slate-300 font-medium leading-relaxed">
+                Subscribe for sacred yatra updates, upcoming festival darshan alerts &amp; exclusive stays.
+              </p>
+              
+              {/* Clean Newsletter Form */}
+              <form onSubmit={e => e.preventDefault()} className="space-y-3">
+                <div className="relative">
+                  <input
+                    type="email"
+                    placeholder="Enter your email address..."
+                    className="w-full bg-slate-900/90 border border-slate-700/80 rounded-2xl px-4 py-3 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-[#0A4DA6] transition-colors"
+                  />
+                  <button
+                    type="submit"
+                    className="mt-2.5 w-full bg-[#0A4DA6] hover:bg-blue-700 text-white text-xs font-black py-3 px-5 rounded-2xl flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer"
+                  >
+                    <span>Subscribe to Updates</span>
+                    <ArrowRight size={14} />
+                  </button>
+                </div>
               </form>
-            </div>
 
-            {/* Col 5: Follow Us — lg:col-span-2 */}
-            <div className="lg:col-span-2 space-y-3">
-              <h4 className="text-sm font-extrabold text-white">Follow Us</h4>
-              <div className="flex items-center gap-3 pt-1">
-                {/* Facebook */}
-                <a
-                  href="https://facebook.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-9 h-9 rounded-full bg-white/5 border border-white/10 hover:bg-[#0A4DA6] hover:border-[#0A4DA6] text-gray-400 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-xs group"
-                  title="Facebook"
-                >
-                  <svg className="w-4 h-4 fill-current transition-transform group-hover:scale-110" viewBox="0 0 24 24">
-                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                  </svg>
-                </a>
+              {/* Social Media Links */}
+              <div className="pt-2 space-y-2">
+                <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider block">Follow Us</span>
+                <div className="flex items-center gap-3">
+                  <a
+                    href="https://facebook.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-9 h-9 rounded-xl bg-slate-900 border border-slate-800 hover:bg-[#0A4DA6] text-slate-400 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-sm group"
+                    title="Facebook"
+                  >
+                    <svg className="w-4 h-4 fill-current transition-transform group-hover:scale-110" viewBox="0 0 24 24">
+                      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                    </svg>
+                  </a>
 
-                {/* Instagram */}
-                <a
-                  href="https://instagram.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-9 h-9 rounded-full bg-white/5 border border-white/10 hover:bg-[#0A4DA6] hover:border-[#0A4DA6] text-gray-400 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-xs group"
-                  title="Instagram"
-                >
-                  <svg className="w-4 h-4 stroke-current fill-none transition-transform group-hover:scale-110" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
-                    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
-                    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
-                  </svg>
-                </a>
+                  <a
+                    href="https://instagram.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-9 h-9 rounded-xl bg-slate-900 border border-slate-800 hover:bg-rose-600 text-slate-400 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-sm group"
+                    title="Instagram"
+                  >
+                    <svg className="w-4 h-4 stroke-current fill-none transition-transform group-hover:scale-110" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                    </svg>
+                  </a>
 
-                {/* YouTube */}
-                <a
-                  href="https://youtube.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-9 h-9 rounded-full bg-white/5 border border-white/10 hover:bg-[#0A4DA6] hover:border-[#0A4DA6] text-gray-400 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-xs group"
-                  title="YouTube"
-                >
-                  <svg className="w-4 h-4 fill-current transition-transform group-hover:scale-110" viewBox="0 0 24 24">
-                    <path d="M23.498 6.163a3.003 3.003 0 0 0-2.11-2.11C19.517 3.545 12 3.545 12 3.545s-7.517 0-9.388.507a3.003 3.003 0 0 0-2.11 2.11C0 8.033 0 12 0 12s0 3.967.502 5.837a3.003 3.003 0 0 0 2.11 2.11c1.871.507 9.388.507 9.388.507s7.517 0 9.388-.507a3.003 3.003 0 0 0 2.11-2.11C24 15.967 24 12 24 12s0-3.967-.502-5.837zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
-                  </svg>
-                </a>
+                  <a
+                    href="https://youtube.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-9 h-9 rounded-xl bg-slate-900 border border-slate-800 hover:bg-red-600 text-slate-400 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-sm group"
+                    title="YouTube"
+                  >
+                    <svg className="w-4 h-4 fill-current transition-transform group-hover:scale-110" viewBox="0 0 24 24">
+                      <path d="M23.498 6.163a3.003 3.003 0 0 0-2.11-2.11C19.517 3.545 12 3.545 12 3.545s-7.517 0-9.388.507a3.003 3.003 0 0 0-2.11 2.11C0 8.033 0 12 0 12s0 3.967.502 5.837a3.003 3.003 0 0 0 2.11 2.11c1.871.507 9.388.507 9.388.507s7.517 0 9.388-.507a3.003 3.003 0 0 0 2.11-2.11C24 15.967 24 12 24 12s0-3.967-.502-5.837zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+                    </svg>
+                  </a>
+                </div>
               </div>
             </div>
 
           </div>
         </div>
 
-        {/* BOTTOM SUB-FOOTER BAR WITH WAVY SOFT CREAM BACKGROUND (Matching Reference Screenshot) */}
-        <div className="bg-[#071322] text-gray-400 pt-6 pb-6 border-t border-slate-800 relative">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs font-semibold">
+        {/* BOTTOM SUB-FOOTER BAR */}
+        <div className="bg-[#030914] text-slate-400 py-6 border-t border-slate-800/80">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs font-medium">
             
-            {/* Left Copyright */}
-            <div className="text-gray-400">
-              © {new Date().getFullYear()} <span className="text-white font-extrabold">Tirvona</span>. All Rights Reserved.
+            {/* Copyright */}
+            <div>
+              © {new Date().getFullYear()} <span className="text-white font-black">Tirvona</span>. All Rights Reserved.
             </div>
 
-            {/* Right Links */}
-            <div className="flex items-center gap-6 text-xs font-medium text-gray-400">
-              <Link to="/privacy" className="hover:text-white transition-colors">Privacy policy</Link>
-              <Link to="/terms" className="hover:text-white transition-colors">Terms & Conditions</Link>
-              <Link to="/faq" className="hover:text-white transition-colors">FAQs</Link>
+            {/* Legal Links */}
+            <div className="flex items-center gap-6 text-xs font-semibold text-slate-400">
+              <Link to="/privacy" className="hover:text-amber-400 transition-colors">Privacy Policy</Link>
+              <Link to="/terms" className="hover:text-amber-400 transition-colors">Terms &amp; Conditions</Link>
+              <Link to="/faq" className="hover:text-amber-400 transition-colors">FAQs</Link>
             </div>
 
-            {/* Scroll To Top Button */}
             <button
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-              className="w-9 h-9 rounded-full bg-[#0A4DA6] hover:bg-[#083b80] text-white flex items-center justify-center shadow-md transition-transform hover:scale-105 cursor-pointer shrink-0"
+              className="w-10 h-10 rounded-full bg-[#0A4DA6] hover:bg-blue-600 text-white flex items-center justify-center shadow-lg transition-transform hover:scale-105 cursor-pointer shrink-0"
               title="Back to Top"
             >
-              <ChevronUp size={18} className="stroke-[3]" />
+              <ChevronUp size={20} className="stroke-[3]" />
             </button>
-
           </div>
         </div>
 

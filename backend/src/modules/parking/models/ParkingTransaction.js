@@ -30,20 +30,17 @@ const parkingTransactionSchema = new mongoose.Schema(
     partnerId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'ParkingPartner',
-      index: true,
     },
     // FK → parking_locations._id
     locationId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'ParkingLocation',
-      index: true,
     },
 
     type: {
       type: String,
       enum: PARKING_TRANSACTION_TYPE_VALUES,
       required: true,
-      index: true,
     },
 
     // Positive = money into the platform, negative = money out (refund/payout).

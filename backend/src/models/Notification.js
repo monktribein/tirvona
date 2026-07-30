@@ -59,11 +59,16 @@ const notificationSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Every listing query filters on one facet and then sorts { createdAt: -1 }.
+// Single-field indexes served the filter but forced an in-memory sort of the
+// entire match; the compounds below let MongoDB walk the index in sort order
+// and stop at the page limit.
 notificationSchema.index({ createdAt: -1 });
-notificationSchema.index({ recipientId: 1 });
-notificationSchema.index({ recipientRole: 1 });
-notificationSchema.index({ isRead: 1 });
-notificationSchema.index({ severity: 1 });
+notificationSchema.index({ isRead: 1, createdAt: -1 });
+notificationSchema.index({ severity: 1, createdAt: -1 });
+notificationSchema.index({ type: 1, createdAt: -1 });
+notificationSchema.index({ recipientId: 1, isRead: 1, createdAt: -1 });
+notificationSchema.index({ recipientRole: 1, createdAt: -1 });
 
 const Notification = mongoose.model('Notification', notificationSchema);
 export default Notification;

@@ -13,7 +13,6 @@ const parkingQrCodeSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'ParkingBooking',
       required: true,
-      index: true,
     },
     // FK → parking_locations._id — checked on scan so a pass issued for one
     // facility cannot open the gate at another.
@@ -35,7 +34,6 @@ const parkingQrCodeSchema = new mongoose.Schema(
     tokenHash: {
       type: String,
       required: true,
-      index: true,
     },
     // Short public handle printed under the QR, for a human read-out over the
     // phone. Not a credential on its own — scanning still requires the token.

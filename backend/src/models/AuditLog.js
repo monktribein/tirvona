@@ -29,9 +29,13 @@ const auditLogSchema = new mongoose.Schema({
   },
 });
 
+// Audit logs grow without bound and are always read newest-first, so every
+// filter facet needs `timestamp` trailing it or the read degrades into a
+// full scan plus an in-memory sort.
 auditLogSchema.index({ timestamp: -1 });
-auditLogSchema.index({ userId: 1 });
-auditLogSchema.index({ module: 1 });
+auditLogSchema.index({ module: 1, timestamp: -1 });
+auditLogSchema.index({ userId: 1, timestamp: -1 });
+auditLogSchema.index({ action: 1, timestamp: -1 });
 
 const AuditLog = mongoose.model('AuditLog', auditLogSchema);
 export default AuditLog;

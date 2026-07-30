@@ -37,5 +37,11 @@ const sacredDirectoryItemSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// One collection backs nine public routes (travel-guides, transport, shops,
+// books, …), each selecting { status: 'active', moduleType } and ranking by
+// rating — so moduleType is the primary selectivity after status.
+sacredDirectoryItemSchema.index({ status: 1, moduleType: 1, rating: -1 });
+sacredDirectoryItemSchema.index({ status: 1, moduleType: 1, category: 1 });
+
 const SacredDirectoryItem = mongoose.model('SacredDirectoryItem', sacredDirectoryItemSchema);
 export default SacredDirectoryItem;

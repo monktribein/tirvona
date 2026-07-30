@@ -133,10 +133,23 @@ export const DashboardLayout: React.FC = () => {
     navigate('/');
   };
 
-  if (!user) {
-    navigate('/login');
-    return null;
-  }
+  // Redirect unauthenticated visitors from an effect, not during render.
+  //
+  // This used to be `if (!user) { navigate('/login'); return null; }` right
+  // here, which had two defects:
+  //   1. navigate() during render updates the router while React is rendering
+  //      this component.
+  //   2. The early return sat ABOVE the useEffect declared further down, so
+  //      that hook was skipped whenever `user` was null. React requires the
+  //      same hooks in the same order on every render, so the moment `user`
+  //      flipped truthy -> null (i.e. on logout) the component rendered fewer
+  //      hooks than the previous pass and React threw "Rendered fewer hooks
+  //      than expected".
+  // The bail-out now lives below every hook; see the `if (!user) return null`
+  // after the last useEffect.
+  React.useEffect(() => {
+    if (!user) navigate('/login');
+  }, [user, navigate]);
 
   // Super Admin Categorized Navigation Groups
   const superAdminGroups: NavGroup[] = [
@@ -463,6 +476,11 @@ export const DashboardLayout: React.FC = () => {
       }
     }
   }, [location.pathname, user?.role]);
+
+  // Safe to bail out only here: every hook above has now run unconditionally,
+  // so the hook count is identical on every render. The effect further up
+  // performs the actual redirect to /login.
+  if (!user) return null;
 
   const renderSidebarContent = (isMobile = false) => (
     <>

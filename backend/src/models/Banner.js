@@ -75,4 +75,10 @@ const bannerSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Active-banner selection for a slot, ordered by priority, plus the moderation
+// queue (status + newest-first).
+bannerSchema.index({ status: 1, category: 1, priorityOrder: 1 });
+bannerSchema.index({ status: 1, startDate: 1, endDate: 1 });
+bannerSchema.index({ status: 1, createdAt: -1 });
+
 export default mongoose.model('Banner', bannerSchema);

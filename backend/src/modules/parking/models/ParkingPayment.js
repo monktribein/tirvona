@@ -17,7 +17,6 @@ const parkingPaymentSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'ParkingBooking',
       required: true,
-      index: true,
     },
     // FK → users._id
     userId: {
@@ -30,7 +29,6 @@ const parkingPaymentSchema = new mongoose.Schema(
     partnerId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'ParkingPartner',
-      index: true,
     },
 
     amount: { type: Number, required: true, min: 0 },

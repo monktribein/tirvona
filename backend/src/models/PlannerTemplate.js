@@ -27,5 +27,9 @@ const plannerTemplateSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Planner templates are read as { status: 'active' }. (`slug` is already
+// indexed by its unique: true.)
+plannerTemplateSchema.index({ status: 1, createdAt: -1 });
+
 const PlannerTemplate = mongoose.model('PlannerTemplate', plannerTemplateSchema);
 export default PlannerTemplate;

@@ -20,7 +20,6 @@ const parkingCommissionSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'ParkingPartner',
       required: true,
-      index: true,
     },
     // FK → parking_locations._id
     locationId: {
@@ -43,7 +42,6 @@ const parkingCommissionSchema = new mongoose.Schema(
       type: String,
       enum: ['pending', 'processing', 'settled', 'on_hold', 'reversed'],
       default: 'pending',
-      index: true,
     },
     settledAt: { type: Date, default: null },
     settlementReference: { type: String, default: '' },

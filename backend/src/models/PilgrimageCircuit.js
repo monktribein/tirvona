@@ -50,5 +50,10 @@ const pilgrimageCircuitSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Circuits listing: { status: 'active' } sorted { displayOrder, createdAt },
+// optionally faceted by circuitType.
+pilgrimageCircuitSchema.index({ status: 1, circuitType: 1 });
+pilgrimageCircuitSchema.index({ status: 1, createdAt: -1 });
+
 const PilgrimageCircuit = mongoose.model('PilgrimageCircuit', pilgrimageCircuitSchema);
 export default PilgrimageCircuit;

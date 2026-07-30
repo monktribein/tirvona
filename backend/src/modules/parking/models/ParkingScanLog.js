@@ -16,7 +16,6 @@ const parkingScanLogSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'ParkingBooking',
       default: null,
-      index: true,
     },
     // FK → parking_qr_codes._id
     qrCodeId: {
@@ -30,7 +29,6 @@ const parkingScanLogSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'ParkingLocation',
       required: true,
-      index: true,
     },
     // FK → users._id — the guard/manager who scanned.
     scannedByUserId: {
@@ -56,7 +54,6 @@ const parkingScanLogSchema = new mongoose.Schema(
       type: String,
       enum: Object.values(PARKING_SCAN_RESULTS),
       required: true,
-      index: true,
     },
 
     // Recorded on failures for forensics. Truncated and never the full token, so

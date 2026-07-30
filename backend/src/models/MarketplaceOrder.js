@@ -60,5 +60,11 @@ const marketplaceOrderSchema = new mongoose.Schema(
   }
 );
 
+// Customer order history and the admin fulfilment queue. (`orderNumber` is
+// already indexed by its unique: true.)
+marketplaceOrderSchema.index({ customerId: 1, createdAt: -1 });
+marketplaceOrderSchema.index({ orderStatus: 1, createdAt: -1 });
+marketplaceOrderSchema.index({ paymentStatus: 1, createdAt: -1 });
+
 const MarketplaceOrder = mongoose.models.MarketplaceOrder || mongoose.model('MarketplaceOrder', marketplaceOrderSchema);
 export default MarketplaceOrder;

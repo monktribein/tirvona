@@ -34,5 +34,11 @@ const templeSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Temples directory: { status: 'active' } faceted by city/state, ranked by
+// rating. (`slug` is already indexed by its unique: true.)
+templeSchema.index({ status: 1, rating: -1, createdAt: -1 });
+templeSchema.index({ status: 1, city: 1 });
+templeSchema.index({ status: 1, state: 1 });
+
 const Temple = mongoose.model('Temple', templeSchema);
 export default Temple;

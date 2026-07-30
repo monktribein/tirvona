@@ -15,7 +15,6 @@ const parkingSettingSchema = new mongoose.Schema(
       type: String,
       enum: ['platform', 'partner', 'location'],
       required: true,
-      index: true,
     },
     // FK → parking_partners._id (scope 'partner')
     partnerId: {

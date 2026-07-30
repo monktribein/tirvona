@@ -12,5 +12,8 @@ const blogCommentSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Comment thread for a post: { postId, status: 'approved' } sorted newest-first.
+blogCommentSchema.index({ postId: 1, status: 1, createdAt: -1 });
+
 const BlogComment = mongoose.model('BlogComment', blogCommentSchema);
 export default BlogComment;

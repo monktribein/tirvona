@@ -11,7 +11,6 @@ const parkingReviewSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'ParkingLocation',
       required: true,
-      index: true,
     },
     // FK → users._id
     customerId: {

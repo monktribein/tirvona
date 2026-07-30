@@ -13,7 +13,6 @@ const parkingLocationSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'ParkingPartner',
       required: true,
-      index: true,
     },
     name: {
       type: String,
@@ -106,7 +105,6 @@ const parkingLocationSchema = new mongoose.Schema(
       type: String,
       enum: ['draft', 'pending', 'active', 'inactive', 'suspended'],
       default: 'draft',
-      index: true,
     },
     isFeatured: { type: Boolean, default: false },
     isVerified: { type: Boolean, default: false },

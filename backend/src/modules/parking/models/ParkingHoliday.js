@@ -23,7 +23,6 @@ const parkingHolidaySchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'ParkingLocation',
       default: null,
-      index: true,
     },
 
     startDate: { type: Date, required: true, index: true },
@@ -40,7 +39,7 @@ const parkingHolidaySchema = new mongoose.Schema(
       default: 'festival',
     },
 
-    isActive: { type: Boolean, default: true, index: true },
+    isActive: { type: Boolean, default: true },
     // FK → users._id
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   },

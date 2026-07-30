@@ -11,7 +11,6 @@ const parkingSlotSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'ParkingLocation',
       required: true,
-      index: true,
     },
     // FK → parking_slot_types._id
     slotTypeId: {

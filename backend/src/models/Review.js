@@ -46,7 +46,11 @@ const reviewSchema = new mongoose.Schema(
 
 // Ensure a customer can only review an ashram once per booking
 reviewSchema.index({ bookingId: 1 }, { unique: true });
-reviewSchema.index({ ashramId: 1, status: 1 });
+reviewSchema.index({ ashramId: 1, status: 1, createdAt: -1 });
+// Global approved-review feed. `status` is not a prefix of the compound above,
+// so that index cannot serve this query at all.
+reviewSchema.index({ status: 1, createdAt: -1 });
+reviewSchema.index({ customerId: 1, createdAt: -1 });
 
 const Review = mongoose.model('Review', reviewSchema);
 export default Review;

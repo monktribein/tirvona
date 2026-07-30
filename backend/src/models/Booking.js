@@ -152,9 +152,17 @@ const bookingSchema = new mongoose.Schema(
 );
 
 bookingSchema.index({ customerId: 1, createdAt: -1 });
-bookingSchema.index({ ashramId: 1, status: 1 });
 bookingSchema.index({ status: 1 });
 bookingSchema.index({ checkInDate: 1, checkOutDate: 1 });
+
+// getDashboardBookings filters { ashramId, status } and always sorts
+// { createdAt: -1 } with NO limit. Without createdAt in the index MongoDB must
+// materialise the whole match and sort it in memory, which does not merely run
+// slowly — it aborts with "Sort exceeded memory limit" past 32MB. Supersedes
+// the old { ashramId: 1, status: 1 }, which is a prefix of this.
+bookingSchema.index({ ashramId: 1, status: 1, createdAt: -1 });
+// Reception desk arrivals board: { ashramId, checkInDate: { $gte, $lt } }.
+bookingSchema.index({ ashramId: 1, checkInDate: 1 });
 
 const Booking = mongoose.model('Booking', bookingSchema);
 export default Booking;

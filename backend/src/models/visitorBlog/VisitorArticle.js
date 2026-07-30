@@ -12,7 +12,6 @@ const visitorArticleSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-      index: true,
     },
     bookingId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -24,7 +23,6 @@ const visitorArticleSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Ashram',
       required: true,
-      index: true,
     },
     ownerId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -93,7 +91,6 @@ const visitorArticleSchema = new mongoose.Schema(
       type: String,
       enum: ['draft', 'pending', 'approved', 'rejected'],
       default: 'draft',
-      index: true,
     },
     rejectionReason: {
       type: String,

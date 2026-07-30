@@ -6,7 +6,10 @@
   "main": "src/app.js",
   "scripts": {
     "start": "node src/app.js",
-    "dev": "nodemon src/app.js"
+    "dev": "nodemon src/app.js",
+    "check:indexes": "node src/scripts/check_index_paths.js",
+    "sync:indexes": "node src/scripts/sync_indexes.js",
+    "sync:indexes:apply": "node src/scripts/sync_indexes.js --apply"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

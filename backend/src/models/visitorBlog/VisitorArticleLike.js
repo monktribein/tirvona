@@ -6,7 +6,6 @@ const visitorArticleLikeSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'VisitorArticle',
       required: true,
-      index: true,
     },
     userId: {
       type: mongoose.Schema.Types.ObjectId,

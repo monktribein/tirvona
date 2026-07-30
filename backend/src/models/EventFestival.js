@@ -27,5 +27,9 @@ const eventFestivalSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Events listing sorts { startDate: 1 } and optionally facets by eventType.
+eventFestivalSchema.index({ startDate: 1 });
+eventFestivalSchema.index({ eventType: 1, startDate: 1 });
+
 const EventFestival = mongoose.model('EventFestival', eventFestivalSchema);
 export default EventFestival;

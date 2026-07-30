@@ -17,7 +17,7 @@ const parkingVehicleTypeSchema = new mongoose.Schema(
     // Standard slot units this class consumes (a bus needs four bays).
     footprint: { type: Number, default: 1, min: 0 },
     displayOrder: { type: Number, default: 0 },
-    isActive: { type: Boolean, default: true, index: true },
+    isActive: { type: Boolean, default: true },
   },
   { timestamps: true, collection: 'parking_vehicle_types' }
 );

@@ -14,7 +14,6 @@ const parkingPricingSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'ParkingLocation',
       required: true,
-      index: true,
     },
     // FK → parking_slot_types._id. Null means "any slot type at this location".
     slotTypeId: {

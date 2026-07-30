@@ -56,5 +56,10 @@ const serviceBookingSchema = new mongoose.Schema(
   }
 );
 
+// Customer's service history, and the provider-side queue for a given service.
+serviceBookingSchema.index({ customerId: 1, createdAt: -1 });
+serviceBookingSchema.index({ serviceId: 1, status: 1, bookingDate: 1 });
+serviceBookingSchema.index({ status: 1, createdAt: -1 });
+
 const ServiceBooking = mongoose.models.ServiceBooking || mongoose.model('ServiceBooking', serviceBookingSchema);
 export default ServiceBooking;

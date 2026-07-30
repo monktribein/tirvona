@@ -22,5 +22,9 @@ const localServiceItemSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Local services hub: filtered by city + category within active listings.
+localServiceItemSchema.index({ status: 1, city: 1, category: 1 });
+localServiceItemSchema.index({ status: 1, category: 1, rating: -1 });
+
 const LocalServiceItem = mongoose.model('LocalServiceItem', localServiceItemSchema);
 export default LocalServiceItem;

@@ -49,5 +49,12 @@ const blogPostSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Public blog listing always pins status: 'published' and sorts newest-first,
+// optionally faceted by category or contentType. (`slug` is already indexed by
+// its unique: true.)
+blogPostSchema.index({ status: 1, createdAt: -1 });
+blogPostSchema.index({ status: 1, category: 1, createdAt: -1 });
+blogPostSchema.index({ status: 1, contentType: 1, createdAt: -1 });
+
 const BlogPost = mongoose.model('BlogPost', blogPostSchema);
 export default BlogPost;

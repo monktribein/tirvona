@@ -13,14 +13,12 @@ const parkingNotificationSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-      index: true,
     },
     // FK → parking_bookings._id
     bookingId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'ParkingBooking',
       default: null,
-      index: true,
     },
 
     event: {

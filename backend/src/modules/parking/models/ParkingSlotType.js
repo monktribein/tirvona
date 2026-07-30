@@ -12,7 +12,6 @@ const parkingSlotTypeSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'ParkingLocation',
       required: true,
-      index: true,
     },
     name: { type: String, required: true, trim: true },
     code: { type: String, trim: true, uppercase: true, default: '' },

@@ -27,14 +27,12 @@ const parkingBookingSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-      index: true,
     },
     // FK → parking_locations._id
     locationId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'ParkingLocation',
       required: true,
-      index: true,
     },
     // FK → parking_partners._id — denormalised so partner reports never need a
     // join through the location collection.
@@ -42,7 +40,6 @@ const parkingBookingSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'ParkingPartner',
       required: true,
-      index: true,
     },
     // FK → parking_slot_types._id
     slotTypeId: {
@@ -120,7 +117,6 @@ const parkingBookingSchema = new mongoose.Schema(
       type: String,
       enum: PARKING_BOOKING_STATUS_VALUES,
       default: PARKING_BOOKING_STATUS.PENDING,
-      index: true,
     },
     paymentStatus: {
       type: String,

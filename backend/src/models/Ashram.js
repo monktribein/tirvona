@@ -170,13 +170,28 @@ const ashramSchema = new mongoose.Schema(
   }
 );
 
-// Geo index & compound performance indexes for high-frequency queries
+// Geo index & compound performance indexes for high-frequency queries.
+//
+// Index set is deliberately minimal: an index whose key pattern is a strict
+// PREFIX of another index can never be the only usable plan, so it costs write
+// throughput and RAM for nothing. Both prefixes that used to live here
+// ({ status: 1 } and { status: 1, 'address.city': 1 }) were removed for that
+// reason — `{ status: 'approved' }` is still served by the compounds below.
 ashramSchema.index({ 'address.coordinates': '2dsphere' });
-ashramSchema.index({ status: 1 });
 ashramSchema.index({ ownerId: 1 });
-ashramSchema.index({ status: 1, 'address.city': 1 });
+// Public search landing (GET /api/ashrams) — equality on status, then the
+// city facet, then the rating ordering. Also serves { status } and
+// { status, 'address.city' } on its own via prefix matching.
+ashramSchema.index({ status: 1, 'address.city': 1, 'rating.average': -1 });
+// Rating-ranked listing with no city facet.
 ashramSchema.index({ status: 1, 'rating.average': -1 });
-ashramSchema.index({ isVerified: 1, status: 1 });
+
+// REMOVED: ashramSchema.index({ isVerified: 1, status: 1 })
+// `isVerified` is not a path on this schema — verification is modelled purely
+// as status: 'approved'. Mongoose creates indexes from schema.index() without
+// validating the path, so this built a real index in which every document held
+// a null key and which no query could ever use. Note that deleting the line
+// does NOT drop the existing index from MongoDB; run scripts/sync_indexes.js.
 
 const Ashram = mongoose.model('Ashram', ashramSchema);
 export default Ashram;
