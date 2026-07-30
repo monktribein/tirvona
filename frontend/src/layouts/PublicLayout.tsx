@@ -253,7 +253,7 @@ export const PublicLayout: React.FC = () => {
 
                 {/* User Auth / Action Buttons */}
                 {user ? (
-                  <div className="flex items-center gap-1.5 sm:gap-2">
+                  <div className="flex items-center gap-2">
                     {/* Notifications Active Bell Dropdown */}
                     <NotificationDropdown />
 

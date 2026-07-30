@@ -54,8 +54,12 @@ export const LoginPage: React.FC = () => {
     if (message) setError(message);
   };
 
-  const getRedirectTarget = () => {
+  const getRedirectTarget = (role?: string) => {
     if (redirect) return redirect;
+    if (role === 'super_admin' || role === 'govt_admin' || role === 'district_officer') return '/admin/dashboard';
+    if (role === 'owner' || role === 'stay_admin') return '/owner/dashboard';
+    if (role === 'banner_manager') return '/bannerboy/dashboard';
+    if (role === 'support') return '/support-tickets';
     return '/';
   };
 
@@ -72,7 +76,7 @@ export const LoginPage: React.FC = () => {
         setLoginChallenge(res.challenge);
         return;
       }
-      navigate(getRedirectTarget());
+      navigate(getRedirectTarget(res.user?.role));
     } else {
       if (res.isSuspended && res.suspensionData) {
         setSuspensionInfo(res.suspensionData);
