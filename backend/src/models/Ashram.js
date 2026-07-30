@@ -178,5 +178,15 @@ ashramSchema.index({ status: 1, 'address.city': 1 });
 ashramSchema.index({ status: 1, 'rating.average': -1 });
 ashramSchema.index({ isVerified: 1, status: 1 });
 
+// Security Guard: Prevent temporary test documents from being created in production
+ashramSchema.pre('save', function (next) {
+  if (this.name && (this.name.startsWith('TEMP_') || this.name.startsWith('AUDIT_TEST_'))) {
+    if (process.env.NODE_ENV === 'production') {
+      return next(new Error('Creation of temporary test ashrams is blocked in production.'));
+    }
+  }
+  next();
+});
+
 const Ashram = mongoose.model('Ashram', ashramSchema);
 export default Ashram;
