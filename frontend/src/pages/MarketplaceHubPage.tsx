@@ -65,6 +65,15 @@ export const MarketplaceHubPage: React.FC = () => {
 
   useEffect(() => {
     fetchProducts();
+
+    const handleMarketplaceSync = () => {
+      fetchProducts();
+    };
+
+    window.addEventListener('marketplace_updated', handleMarketplaceSync);
+    return () => {
+      window.removeEventListener('marketplace_updated', handleMarketplaceSync);
+    };
   }, [selectedCategory, sortBy]);
 
   const fetchServices = async () => { }; // dummy placeholder if referenced
@@ -276,13 +285,141 @@ export const MarketplaceHubPage: React.FC = () => {
           </div>
         </div>
 
-        {/* ── 3. Production Coming Soon Banner Image ── */}
-        <div className="mt-8 bg-white dark:bg-[#0B192C] rounded-[32px] p-6 sm:p-10 border border-gray-100 dark:border-slate-800 text-center flex items-center justify-center overflow-hidden">
-          <img
-            src="/banner/coming%20soon/marketplace.png"
-            alt="Marketplace Coming Soon Banner"
-            className="max-w-full max-h-[500px] w-auto h-auto object-contain rounded-2xl"
-          />
+        {/* ── 3. Live Marketplace Products Grid ── */}
+        <div className="mt-8">
+          {loading ? (
+            <div className="py-20 text-center space-y-3 bg-white dark:bg-[#0B192C] rounded-[32px] border border-gray-100 dark:border-slate-800">
+              <Sparkles className="animate-spin mx-auto text-[#0A4DA6]" size={32} />
+              <p className="text-sm font-extrabold text-gray-600 dark:text-gray-300">
+                Fetching sanctified marketplace products...
+              </p>
+            </div>
+          ) : products.length === 0 ? (
+            <div className="py-20 text-center space-y-4 bg-white dark:bg-[#0B192C] rounded-[32px] border border-gray-100 dark:border-slate-800 p-8">
+              <ShoppingBag className="mx-auto text-gray-300 dark:text-gray-600" size={48} />
+              <h3 className="text-lg font-black text-gray-800 dark:text-white">No Spiritual Products Found</h3>
+              <p className="text-xs text-gray-400 max-w-md mx-auto">
+                No products match the selected filters. Try resetting filters or search terms.
+              </p>
+              <button
+                onClick={handleResetFilters}
+                className="px-6 py-2.5 bg-[#0A4DA6] text-white font-extrabold text-xs rounded-full shadow-md"
+              >
+                Reset Search & Filters
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {products.map((product) => {
+                const coverImage =
+                  product.images?.[0] ||
+                  'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?auto=format&fit=crop&w=600&q=80';
+                const effectivePrice = product.salePrice || product.price;
+                const discountPercent =
+                  product.salePrice && product.price > product.salePrice
+                    ? Math.round(((product.price - product.salePrice) / product.price) * 100)
+                    : 0;
+
+                return (
+                  <div
+                    key={product._id}
+                    className="bg-white dark:bg-[#0B192C] rounded-[24px] border border-gray-100 dark:border-slate-800/80 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col justify-between group"
+                  >
+                    <div>
+                      {/* Image & Badges Container */}
+                      <div className="relative aspect-[4/3] w-full bg-gray-100 dark:bg-slate-900 overflow-hidden">
+                        <img
+                          src={coverImage}
+                          alt={product.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src =
+                              'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?auto=format&fit=crop&w=600&q=80';
+                          }}
+                        />
+
+                        {/* Overlay Gradient */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+
+                        {/* Top Left Discount Tag */}
+                        {discountPercent > 0 && (
+                          <span className="absolute top-3 left-3 px-2.5 py-1 bg-rose-600 text-white font-black text-[10px] rounded-full shadow-md uppercase tracking-wider">
+                            {discountPercent}% OFF
+                          </span>
+                        )}
+
+                        {/* Top Right Rating Pill */}
+                        <span className="absolute top-3 right-3 px-2.5 py-1 bg-black/60 backdrop-blur-md text-amber-400 font-extrabold text-[11px] rounded-full flex items-center gap-1 shadow-md">
+                          <Star size={12} className="fill-amber-400" />
+                          <span>{product.rating || 4.9}</span>
+                          <span className="text-gray-300 font-normal">({product.reviewCount || 34})</span>
+                        </span>
+                      </div>
+
+                      {/* Content Card Body */}
+                      <div className="p-5 space-y-3">
+                        {/* Category & Temple Source */}
+                        <div className="flex items-center justify-between gap-2 text-[11px]">
+                          <span className="px-2.5 py-0.5 rounded-full bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-extrabold uppercase tracking-wide">
+                            {product.category}
+                          </span>
+                          <span className="text-gray-400 font-bold flex items-center gap-1 truncate">
+                            <ShieldCheck size={12} className="text-[#0A4DA6]" />
+                            <span className="truncate">{product.templeSource || 'Temple Trust'}</span>
+                          </span>
+                        </div>
+
+                        {/* Product Title */}
+                        <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white line-clamp-2 leading-snug">
+                          {product.name}
+                        </h3>
+
+                        {/* Authenticity Certificate line */}
+                        <p className="text-[11px] text-gray-500 dark:text-gray-400 font-medium flex items-center gap-1">
+                          <CheckCircle size={12} className="text-emerald-500 shrink-0" />
+                          <span className="truncate">{product.authenticityCertificate || 'Govt Certified'}</span>
+                        </p>
+
+                        {/* Price & Stock */}
+                        <div className="flex items-baseline justify-between pt-1 border-t border-gray-100 dark:border-slate-800/60">
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-lg font-black text-[#0A4DA6] dark:text-blue-400">
+                              ₹{effectivePrice}
+                            </span>
+                            {product.salePrice && product.price > product.salePrice && (
+                              <span className="text-xs text-gray-400 line-through">₹{product.price}</span>
+                            )}
+                          </div>
+
+                          <span
+                            className={`text-[10px] font-extrabold ${
+                              (product.stock ?? 50) > 0
+                                ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full'
+                                : 'text-rose-500 bg-rose-50 dark:bg-rose-950/40 px-2 py-0.5 rounded-full'
+                            }`}
+                          >
+                            {(product.stock ?? 50) > 0 ? 'In Stock' : 'Out of Stock'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Add to Cart Footer Button */}
+                    <div className="p-4 pt-0">
+                      <button
+                        onClick={() => addToCart(product)}
+                        disabled={(product.stock ?? 50) <= 0}
+                        className="w-full py-2.5 px-4 bg-[#0A4DA6] hover:bg-blue-900 disabled:bg-gray-300 dark:disabled:bg-slate-800 text-white font-extrabold text-xs rounded-xl flex items-center justify-center gap-2 shadow-md shadow-[#0A4DA6]/20 transition-all cursor-pointer"
+                      >
+                        <ShoppingCart size={15} />
+                        <span>Add to Sacred Cart</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </section>
 

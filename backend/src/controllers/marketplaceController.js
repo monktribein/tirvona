@@ -12,26 +12,35 @@ export const getProducts = async (req, res) => {
       minPrice,
       maxPrice,
       featured,
-      sortBy = 'rating',
+      status: requestedStatus,
+      sortBy = 'newest',
       page = 1,
-      limit = 20,
+      limit = 50,
     } = req.query;
 
     const customFilters = {};
     if (templeSource) customFilters.templeSource = new RegExp(templeSource, 'i');
     if (featured === 'true') customFilters.isFeatured = true;
 
+    // Handle status filtering flexibility (Admin may request 'all', 'out_of_stock', 'suspended', etc.)
+    let statusFilter = 'active';
+    if (requestedStatus === 'all') {
+      statusFilter = undefined;
+    } else if (requestedStatus) {
+      statusFilter = requestedStatus;
+    }
+
     const query = buildEnterpriseQuery({
       search,
       searchFields: ['name', 'description', 'templeSource', 'category'],
       category,
-      status: 'active',
+      status: statusFilter,
       minPrice,
       maxPrice,
       customFilters,
     });
 
-    const sort = buildSortOptions(sortBy);
+    const sort = sortBy === 'newest' ? { isFeatured: -1, updatedAt: -1, createdAt: -1 } : buildSortOptions(sortBy);
     const { skip, limit: limitParsed } = buildPagination(page, limit);
 
     const [products, total] = await Promise.all([
@@ -107,18 +116,34 @@ export const createOrder = async (req, res) => {
 // Admin Product Management
 export const createProduct = async (req, res) => {
   try {
-    const product = await MarketplaceProduct.create(req.body);
+    const payload = { ...req.body };
+    if (!payload.slug && payload.name) {
+      payload.slug = payload.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '') + `-${Date.now().toString().slice(-4)}`;
+    }
+    const product = await MarketplaceProduct.create(payload);
     return res.status(201).json({ success: true, data: product });
   } catch (error) {
+    console.error('createProduct error:', error);
     return res.status(400).json({ success: false, message: error.message });
   }
 };
 
 export const updateProduct = async (req, res) => {
   try {
-    const product = await MarketplaceProduct.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const payload = { ...req.body };
+    if (!payload.slug && payload.name) {
+      payload.slug = payload.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+    }
+    const product = await MarketplaceProduct.findByIdAndUpdate(req.params.id, payload, { new: true, runValidators: true });
     return res.status(200).json({ success: true, data: product });
   } catch (error) {
+    console.error('updateProduct error:', error);
     return res.status(400).json({ success: false, message: error.message });
   }
 };
@@ -128,6 +153,7 @@ export const deleteProduct = async (req, res) => {
     await MarketplaceProduct.findByIdAndDelete(req.params.id);
     return res.status(200).json({ success: true, message: 'Product deleted.' });
   } catch (error) {
+    console.error('deleteProduct error:', error);
     return res.status(500).json({ success: false, message: error.message });
   }
 };

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
-import { ashramService, reviewService } from '../services';
+import { ashramService, reviewService, marketplaceService } from '../services';
 import { Reveal } from '../components/Reveal';
 import { DatePicker } from '../components/DatePicker';
 import { GuestRoomSelector } from '../components/shared/GuestRoomSelector';
@@ -242,12 +242,35 @@ export const HomePage: React.FC = () => {
 
   const [activeOffers, setActiveOffers] = useState<any[]>([]);
   const [marketplaceCategories, setMarketplaceCategories] = useState<any[]>([]);
+  const [marketplaceProducts, setMarketplaceProducts] = useState<any[]>([]);
 
   useEffect(() => {
     fetchStays();
     fetchOffers();
     fetchMarketplaceCategories();
+    fetchMarketplaceProducts();
+
+    const handleMarketplaceSync = () => {
+      fetchMarketplaceProducts();
+      fetchMarketplaceCategories();
+    };
+
+    window.addEventListener('marketplace_updated', handleMarketplaceSync);
+    return () => {
+      window.removeEventListener('marketplace_updated', handleMarketplaceSync);
+    };
   }, []);
+
+  const fetchMarketplaceProducts = async () => {
+    try {
+      const res = await marketplaceService.getProducts({ limit: 10 });
+      if (res.data?.success && Array.isArray(res.data.data)) {
+        setMarketplaceProducts(res.data.data);
+      }
+    } catch (err) {
+      console.error('Fetch marketplace products error:', err);
+    }
+  };
 
   const fetchMarketplaceCategories = async () => {
     try {
@@ -346,15 +369,7 @@ export const HomePage: React.FC = () => {
     { name: 'Ayodhya', state: 'Uttar Pradesh', rating: '4.7', tours: '25 Stays', img: 'https://images.unsplash.com/photo-1609137144813-7d84b06385a7?auto=format&fit=crop&w=500&q=80', fallback: 'https://images.unsplash.com/photo-1599420186946-7b6fb4e297f0?auto=format&fit=crop&w=500&q=80' },
   ];
 
-  // Popular Prashad from Ashrams & Temples for carousel
-  const popularPrashad = [
-    { name: 'Varanasi Peda', slug: 'varanasi-peda', img: 'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?auto=format&fit=crop&w=500&q=80', fallback: 'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?auto=format&fit=crop&w=500&q=80' },
-    { name: 'Mathura Peda', slug: 'mathura-peda', img: 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&w=500&q=80', fallback: 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&w=500&q=80' },
-    { name: 'Tirupati Laddu', slug: 'tirupati-laddu', img: 'https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?auto=format&fit=crop&w=500&q=80', fallback: 'https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?auto=format&fit=crop&w=500&q=80' },
-    { name: 'Ayodhya Prashad', slug: 'ayodhya-prasad', img: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=500&q=80', fallback: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=500&q=80' },
-    { name: 'Puri Mahaprasad', slug: 'puri-mahaprasad', img: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=500&q=80', fallback: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=500&q=80' },
-    { name: 'Shirdi Sai Halwa', slug: 'shirdi-halwa', img: 'https://images.unsplash.com/photo-1505576399279-565b52d4ac71?auto=format&fit=crop&w=500&q=80', fallback: 'https://images.unsplash.com/photo-1505576399279-565b52d4ac71?auto=format&fit=crop&w=500&q=80' },
-  ];
+
 
   // Customer feedback derived from real approved reviews.
   const customerFeedbacks = feedbacks.map((r) => ({
@@ -1122,22 +1137,29 @@ export const HomePage: React.FC = () => {
           </div>
         </div>
 
-        {/* Dynamic Database-Driven Category Cards Carousel */}
+        {/* Dynamic Database-Driven Marketplace Product Cards Carousel */}
         <div
           ref={prashadRef}
           className="flex gap-4 sm:gap-6 overflow-x-auto pb-6 pt-2 scrollbar-none -mx-4 sm:mx-0 px-4 sm:px-0 justify-start"
           style={{ scrollbarWidth: 'none' }}
         >
-          {(marketplaceCategories.length > 0 ? marketplaceCategories : popularPrashad).map((item: any, idx: number) => {
-            const categorySlug = item.slug || item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-            const imgUrl = item.coverImage || item.thumbnail || item.img || '/banner/ashram_rishikesh.png';
+          {(marketplaceProducts.length > 0 ? marketplaceProducts : marketplaceCategories).map((item: any, idx: number) => {
+            const isProduct = !!item.price || Array.isArray(item.images);
+            const imgUrl = isProduct
+              ? item.images?.[0] || 'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?auto=format&fit=crop&w=500&q=80'
+              : item.coverImage || item.thumbnail || item.img || '/banner/ashram_rishikesh.png';
             const name = item.name;
-            const subtitle = item.originCity ? `${item.originCity}, ${item.originState}` : 'Sacred Prashad';
+            const subtitle = isProduct
+              ? item.templeSource || 'Sanctified Product'
+              : item.originCity
+              ? `${item.originCity}, ${item.originState}`
+              : 'Sacred Prashad';
+            const priceDisplay = isProduct ? (item.salePrice ? `₹${item.salePrice}` : `₹${item.price}`) : null;
 
             return (
               <div
                 key={item._id || idx}
-                onClick={() => navigate(`/marketplace/category/${categorySlug}`)}
+                onClick={() => navigate('/marketplace')}
                 className="flex-shrink-0 relative group cursor-pointer"
                 style={{ width: 'clamp(210px, 48vw, 230px)' }}
               >
@@ -1151,23 +1173,33 @@ export const HomePage: React.FC = () => {
                       alt={name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       loading="lazy"
-                      onError={e => { e.currentTarget.onerror = null; e.currentTarget.src = '/prashad/ayodhya_prasad.jpg'; }}
+                      onError={e => { e.currentTarget.onerror = null; e.currentTarget.src = 'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?auto=format&fit=crop&w=500&q=80'; }}
                     />
-                    {item.trendingBadge && (
-                      <span className="absolute top-3 left-3 bg-[#0A4DA6] text-white text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-sm">
-                        {item.trendingBadge}
+                    {isProduct && item.salePrice && item.price > item.salePrice && (
+                      <span className="absolute top-3 left-3 bg-rose-600 text-white text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-sm">
+                        {Math.round(((item.price - item.salePrice) / item.price) * 100)}% OFF
+                      </span>
+                    )}
+                    {isProduct && item.rating && (
+                      <span className="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-amber-400 text-[10px] font-black uppercase px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1">
+                        <Star size={10} className="fill-amber-400" /> {item.rating}
                       </span>
                     )}
                   </div>
 
-                  {/* Centered Bottom Title Area */}
-                  <div className="p-4 text-center flex flex-col items-center justify-center min-h-[76px]">
+                  {/* Centered Bottom Title & Price Area */}
+                  <div className="p-4 text-center flex flex-col items-center justify-center min-h-[84px]">
                     <h4 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight line-clamp-1 text-center group-hover:text-[#0A4DA6] transition-colors">
                       {name}
                     </h4>
-                    <p className="text-[11px] text-gray-400 font-bold mt-1 text-center line-clamp-1">
+                    <p className="text-[11px] text-gray-400 font-bold mt-0.5 text-center line-clamp-1">
                       {subtitle}
                     </p>
+                    {priceDisplay && (
+                      <span className="mt-1 font-black text-xs text-[#0A4DA6] dark:text-blue-400">
+                        {priceDisplay}
+                      </span>
+                    )}
                   </div>
 
                 </div>

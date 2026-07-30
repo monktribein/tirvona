@@ -45,6 +45,43 @@ interface NavGroup {
   links: { label: string; path: string }[];
 }
 
+const getFormattedRole = (role?: string): string => {
+  if (!role) return 'User';
+  switch (role) {
+    case 'super_admin':
+      return 'Super Admin';
+    case 'owner':
+    case 'stay_admin':
+      return 'Stay Admin';
+    case 'banner_manager':
+      return 'BannerBoy';
+    case 'support':
+      return 'Support';
+    case 'reception':
+      return 'Reception';
+    case 'district_officer':
+    case 'district_admin':
+      return 'District Admin';
+    case 'govt_admin':
+    case 'government_admin':
+      return 'Government Admin';
+    case 'customer':
+    case 'pilgrim':
+      return 'Customer';
+    case 'volunteer':
+      return 'Volunteer';
+    case 'manager':
+      return 'Manager';
+    case 'housekeeping':
+      return 'Housekeeping';
+    default:
+      return role
+        .split('_')
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join(' ');
+  }
+};
+
 export const DashboardLayout: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -286,127 +323,171 @@ export const DashboardLayout: React.FC = () => {
     ? ownerLinks
     : standardLinks;
 
-  return (
-    <div className="min-h-screen bg-gray-50/70 dark:bg-[#070F1B] flex flex-row font-sans text-left">
-      {/* ── Left Sidebar (Dark Navy Backdrop Matching Landing Page Footer & Dark Sections) ── */}
-      <aside className="hidden lg:flex flex-col w-72 bg-[#0B192C] text-white border-r border-slate-800 shadow-2xl shrink-0 h-screen sticky top-0 z-30">
-        {/* Brand Header */}
-        <div className="p-6 border-b border-slate-800 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img src="/logo/logo.png" alt="Tirvona" className="w-9 h-9 object-contain" />
-            <div className="flex flex-col">
-              <span className="font-black text-base tracking-tight text-white flex items-center gap-1.5">
-                Tirvona <span className="text-[#E58C28] text-[9px] px-2 py-0.5 bg-[#E58C28]/15 border border-[#E58C28]/35 rounded-full font-black uppercase">ERP</span>
-              </span>
-              <span className="text-[10px] text-gray-400 font-bold tracking-wider uppercase">Govt Spiritual Console</span>
-            </div>
+  const renderSidebarContent = (isMobile = false) => (
+    <>
+      {/* Brand Header */}
+      <div className="p-6 border-b border-slate-800/80 flex flex-col items-center text-center space-y-3">
+        <Link
+          to="/"
+          className="group flex flex-col items-center space-y-2.5 cursor-pointer"
+          onClick={isMobile ? () => setSidebarOpen(false) : undefined}
+        >
+          {/* White Logo Container */}
+          <div className="flex items-center justify-center p-3.5 bg-white rounded-[18px] border border-gray-200/80 shadow-none group-hover:border-[#E58C28]/60 transition-all duration-300">
+            <img
+              src="/logo/logo.png"
+              alt="Tirvona"
+              className="w-14 h-14 object-contain group-hover:scale-105 transition-transform duration-300"
+            />
           </div>
-        </div>
+          <div className="flex flex-col items-center">
+            <span className="font-black text-xl tracking-tight text-white group-hover:text-[#E58C28] transition-colors">
+              Tirvona
+            </span>
+            <span className="text-xs font-semibold text-[#E58C28] tracking-wide mt-0.5">
+              {getFormattedRole(user?.role)}
+            </span>
+          </div>
+        </Link>
+      </div>
 
-        {/* Links Navigation */}
-        <nav className="flex-grow p-4 space-y-3 overflow-y-auto max-h-[calc(100vh-160px)]">
-          {isSuperAdmin ? (
-            <div className="space-y-3">
-              {/* Executive Dashboard Link */}
-              <Link
-                to="/admin/dashboard"
-                className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-black transition-all ${
-                  location.pathname === '/admin/dashboard'
-                    ? 'bg-[#0A4DA6] text-white shadow-lg shadow-[#0A4DA6]/30 border-l-4 border-[#E58C28]'
-                    : 'text-gray-300 hover:bg-slate-850 hover:text-white'
-                }`}
-              >
-                <LayoutDashboard size={16} className="text-[#E58C28]" />
-                <span>Executive Dashboard</span>
-              </Link>
+      {/* Links Navigation */}
+      <nav className="flex-grow p-4 space-y-3 overflow-y-auto max-h-[calc(100vh-210px)] scrollbar-thin">
+        {isSuperAdmin ? (
+          <div className="space-y-3">
+            {/* Executive Dashboard Link */}
+            <Link
+              to="/admin/dashboard"
+              onClick={isMobile ? () => setSidebarOpen(false) : undefined}
+              className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-black transition-all ${
+                location.pathname === '/admin/dashboard'
+                  ? 'bg-[#0A4DA6] text-white shadow-lg shadow-[#0A4DA6]/30 border-l-4 border-[#E58C28]'
+                  : 'text-gray-300 hover:bg-slate-850 hover:text-white'
+              }`}
+            >
+              <LayoutDashboard size={16} className="text-[#E58C28]" />
+              <span>Executive Dashboard</span>
+            </Link>
 
-              {/* Categorized Super Admin Groups */}
-              {superAdminGroups.map((group) => {
-                const isOpen = openGroups[group.groupName] ?? false;
-                const hasActiveLink = group.links.some((l) => location.pathname === l.path);
+            {/* Categorized Super Admin Groups */}
+            {superAdminGroups.map((group) => {
+              const isOpen = openGroups[group.groupName] ?? false;
+              const hasActiveLink = group.links.some((l) => location.pathname === l.path);
 
-                return (
-                  <div key={group.groupName} className="space-y-1">
-                    <button
-                      onClick={() => toggleGroup(group.groupName)}
-                      className={`w-full flex items-center justify-between px-3.5 py-2 text-[10px] font-black uppercase tracking-wider transition-colors text-left rounded-xl ${
-                        hasActiveLink ? 'text-[#E58C28] bg-white/5' : 'text-gray-400 hover:text-gray-200'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        {group.icon}
-                        <span>{group.groupName}</span>
-                      </div>
-                      {isOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-                    </button>
-
-                    {isOpen && (
-                      <div className="pl-4 space-y-1 border-l border-slate-800 ml-3">
-                        {group.links.map((link) => {
-                          const isActive = location.pathname === link.path;
-                          return (
-                            <Link
-                              key={link.path}
-                              to={link.path}
-                              className={`flex items-center justify-between px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all ${
-                                isActive
-                                  ? 'bg-[#0A4DA6] text-white shadow-md border-l-2 border-[#E58C28]'
-                                  : 'text-gray-400 hover:text-white hover:bg-slate-850'
-                              }`}
-                            >
-                              <span className="truncate">{link.label}</span>
-                            </Link>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="space-y-1.5">
-              {activeRoleLinks.map((link) => {
-                const isActive = location.pathname === link.path;
-                return (
-                  <Link
-                    key={link.path}
-                    to={link.path}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-extrabold tracking-wide transition-all ${
-                      isActive
-                        ? 'bg-[#0A4DA6] text-white shadow-md border-l-4 border-[#E58C28]'
-                        : 'text-gray-400 hover:bg-slate-850 hover:text-white'
+              return (
+                <div key={group.groupName} className="space-y-1">
+                  <button
+                    onClick={() => toggleGroup(group.groupName)}
+                    className={`w-full flex items-center justify-between px-3.5 py-2 text-[10px] font-black uppercase tracking-wider transition-colors text-left rounded-xl ${
+                      hasActiveLink ? 'text-[#E58C28] bg-white/5' : 'text-gray-400 hover:text-gray-200'
                     }`}
                   >
-                    {link.icon}
-                    <span>{link.label}</span>
-                  </Link>
-                );
-              })}
-            </div>
-          )}
-        </nav>
+                    <div className="flex items-center gap-2">
+                      {group.icon}
+                      <span>{group.groupName}</span>
+                    </div>
+                    {isOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                  </button>
 
-        {/* User Profile Bottom Bar */}
-        <div className="p-4 border-t border-slate-800 space-y-3 shrink-0">
-          <div className="flex items-center gap-3 px-2">
-            <div className="w-9 h-9 rounded-full bg-[#E58C28]/20 border border-[#E58C28]/50 flex items-center justify-center font-black text-[#E58C28] text-xs">
-              {user.name.charAt(0).toUpperCase()}
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xs font-extrabold truncate max-w-[140px] text-white">{user.name}</span>
-              <span className="text-[10px] text-[#E58C28] font-black uppercase tracking-wider">{user.role.replace('_', ' ')}</span>
-            </div>
+                  {isOpen && (
+                    <div className="pl-4 space-y-1 border-l border-slate-800 ml-3">
+                      {group.links.map((link) => {
+                        const isActive = location.pathname === link.path;
+                        return (
+                          <Link
+                            key={link.path}
+                            to={link.path}
+                            onClick={isMobile ? () => setSidebarOpen(false) : undefined}
+                            className={`flex items-center justify-between px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all ${
+                              isActive
+                                ? 'bg-[#0A4DA6] text-white shadow-md border-l-2 border-[#E58C28]'
+                                : 'text-gray-400 hover:text-white hover:bg-slate-850'
+                            }`}
+                          >
+                            <span className="truncate">{link.label}</span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 py-2.5 bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 transition-all rounded-full text-xs font-black cursor-pointer"
-          >
-            <LogOut size={14} />
-            <span>Sign Out</span>
-          </button>
+        ) : (
+          <div className="space-y-1.5">
+            {activeRoleLinks.map((link) => {
+              const isActive = location.pathname === link.path;
+              return (
+                <Link
+                  key={link.path}
+                  to={link.path}
+                  onClick={isMobile ? () => setSidebarOpen(false) : undefined}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-extrabold tracking-wide transition-all ${
+                    isActive
+                      ? 'bg-[#0A4DA6] text-white shadow-md border-l-4 border-[#E58C28]'
+                      : 'text-gray-400 hover:bg-slate-850 hover:text-white'
+                  }`}
+                >
+                  {link.icon}
+                  <span>{link.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </nav>
+
+      {/* User Profile Bottom Bar */}
+      <div className="p-4 border-t border-slate-800 space-y-3 shrink-0">
+        <div className="flex items-center gap-3 px-2">
+          <div className="w-9 h-9 rounded-full bg-[#E58C28]/20 border border-[#E58C28]/50 flex items-center justify-center font-black text-[#E58C28] text-xs">
+            {user.name.charAt(0).toUpperCase()}
+          </div>
+          <div className="flex flex-col">
+            <span className="text-xs font-extrabold truncate max-w-[140px] text-white">{user.name}</span>
+            <span className="text-[10px] text-[#E58C28] font-black tracking-wider">{getFormattedRole(user.role)}</span>
+          </div>
         </div>
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center justify-center gap-2 py-2.5 bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 transition-all rounded-full text-xs font-black cursor-pointer"
+        >
+          <LogOut size={14} />
+          <span>Sign Out</span>
+        </button>
+      </div>
+    </>
+  );
+
+  return (
+    <div className="min-h-screen bg-gray-50/70 dark:bg-[#070F1B] flex flex-row font-sans text-left">
+      {/* ── Desktop Left Sidebar (Dark Navy Backdrop Matching Landing Page Footer & Dark Sections) ── */}
+      <aside className="hidden lg:flex flex-col w-72 bg-[#0B192C] text-white border-r border-slate-800 shadow-2xl shrink-0 h-screen sticky top-0 z-30">
+        {renderSidebarContent(false)}
       </aside>
+
+      {/* ── Mobile & Tablet Overlay Drawer ── */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden flex">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm transition-opacity"
+            onClick={() => setSidebarOpen(false)}
+          />
+          {/* Mobile Sidebar */}
+          <aside className="relative flex flex-col w-72 max-w-[85vw] bg-[#0B192C] text-white border-r border-slate-800 shadow-2xl h-full z-10">
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="absolute top-4 right-4 p-2 text-gray-400 hover:text-white rounded-full hover:bg-white/10 transition-colors z-20"
+              aria-label="Close menu"
+            >
+              <X size={20} />
+            </button>
+            {renderSidebarContent(true)}
+          </aside>
+        </div>
+      )}
 
       {/* ── Right Workspace ── */}
       <div className="flex-grow flex flex-col min-w-0">
