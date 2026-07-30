@@ -2,12 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
-<<<<<<< Updated upstream
 import { ashramService, reviewService, marketplaceService } from '../services';
-=======
-import { ashramService, reviewService } from '../services';
 import { visitorArticleService } from '../services/visitorArticleService';
->>>>>>> Stashed changes
 import { Reveal } from '../components/Reveal';
 import { DatePicker } from '../components/DatePicker';
 import { GuestRoomSelector } from '../components/shared/GuestRoomSelector';
@@ -253,8 +249,8 @@ export const HomePage: React.FC = () => {
     fetchStays();
     fetchOffers();
     fetchMarketplaceCategories();
-<<<<<<< Updated upstream
     fetchMarketplaceProducts();
+    fetchHomePosts();
 
     const handleMarketplaceSync = () => {
       fetchMarketplaceProducts();
@@ -275,9 +271,8 @@ export const HomePage: React.FC = () => {
       }
     } catch (err) {
       console.error('Fetch marketplace products error:', err);
-=======
-    fetchHomePosts();
-  }, []);
+    }
+  };
 
   const fetchHomePosts = async () => {
     try {
@@ -324,7 +319,6 @@ export const HomePage: React.FC = () => {
       }
     } catch (err) {
       console.error('Error fetching home posts:', err);
->>>>>>> Stashed changes
     }
   };
 
@@ -760,12 +754,8 @@ export const HomePage: React.FC = () => {
                       navigate(`${item.target}?category=${item.category}`);
                     }
                   }}
-<<<<<<< Updated upstream
                   className={`flex-1 min-w-[78px] sm:min-w-[88px] lg:min-w-0 flex flex-col items-center justify-center gap-1.5 py-2.5 sm:py-3 px-1 text-center rounded-2xl transition-all cursor-pointer group shrink-0 lg:shrink ${
                     isActive
-=======
-                  className={`flex flex-col items-center gap-1.5 py-2.5 sm:py-3 px-1 text-center rounded-2xl transition-all cursor-pointer group ${isActive
->>>>>>> Stashed changes
                       ? 'bg-[#0A4DA6] text-white shadow-md shadow-[#0A4DA6]/25 scale-[1.02]'
                       : 'hover:bg-blue-50/80 dark:hover:bg-slate-800 text-slate-700 dark:text-gray-200'
                     }`}

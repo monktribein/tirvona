@@ -605,13 +605,13 @@ export const ProfileMainPage: React.FC = () => {
                               </p>
 
                               <p className="text-[11px] text-gray-500 dark:text-gray-400 font-semibold pt-0.5">
-                                {b.startDate ? `${formatDate(b.startDate)} → ${formatDate(b.endDate)}` : formatDate(b.createdAt)}
+                                {b.start ? `${formatDate(b.start)} → ${formatDate(b.end)}` : formatDate(b.createdAt)}
                               </p>
                             </div>
                           </div>
 
                           <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center w-full sm:w-auto gap-2 border-t sm:border-t-0 border-gray-100 dark:border-slate-800 pt-3 sm:pt-0 shrink-0">
-                            <span className="text-base font-black text-[#0A4DA6] dark:text-white">₹{b.totalAmount}</span>
+                            <span className="text-base font-black text-[#0A4DA6] dark:text-white">₹{b.amount}</span>
 
                             <div className="flex items-center gap-2">
                               {b.category === 'upcoming' && (

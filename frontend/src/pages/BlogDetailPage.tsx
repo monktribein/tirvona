@@ -357,9 +357,8 @@ export const BlogDetailPage: React.FC = () => {
           {/* Left Main Content Area (2 Cols - All inside ONE single container card) */}
           <div className="lg:col-span-2">
 
-<<<<<<< Updated upstream
-            {/* Main Article Container */}
-            <div className="bg-white dark:bg-[#0B192C] rounded-[32px] p-6 sm:p-10 border border-gray-100 dark:border-slate-800 shadow-sm space-y-6">
+            {/* ONE Single Main Container Card */}
+            <div className="bg-white dark:bg-[#0B192C] rounded-[32px] p-6 sm:p-10 border border-gray-100 dark:border-slate-800 shadow-sm space-y-8">
 
               {/* Embedded Video Player if post is video or has youtube URL */}
               {(post.contentType === 'video' || post.youtubeUrl || post.youtubeVideoId) && (
@@ -381,18 +380,10 @@ export const BlogDetailPage: React.FC = () => {
                   />
                 </div>
               )}
-              
-              {/* Formatted Text Content */}
-              <div className="prose dark:prose-invert max-w-none text-sm sm:text-base leading-relaxed text-slate-700 dark:text-gray-200 space-y-4 whitespace-pre-line font-medium">
-                {post.content}
-=======
-            {/* ONE Single Main Container Card */}
-            <div className="bg-white dark:bg-[#0B192C] rounded-[32px] p-6 sm:p-10 border border-gray-100 dark:border-slate-800 shadow-sm space-y-8">
 
               {/* Formatted Article Text Content */}
               <div className="space-y-4">
                 {renderFormattedContent(post.content)}
->>>>>>> Stashed changes
               </div>
 
               {/* Sample Pull Quote */}

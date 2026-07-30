@@ -58,7 +58,7 @@ export const visitorArticleService = {
   // Visitor APIs
   getEligibleBookings: () => api.get<{ success: boolean; count: number; data: EligibleBooking[] }>('/visitor-articles/visitor/eligible-bookings'),
   getMyArticles: (status?: string) => api.get<{ success: boolean; counts: Record<string, number>; data: VisitorArticle[] }>(`/visitor-articles/visitor/my-articles${status ? `?status=${status}` : ''}`),
-  createArticle: (data: Partial<VisitorArticle> & { bookingId: string }) => api.post<{ success: boolean; message: string; data: VisitorArticle }>('/visitor-articles', data),
+  createArticle: (data: Omit<Partial<VisitorArticle>, 'bookingId'> & { bookingId: string }) => api.post<{ success: boolean; message: string; data: VisitorArticle }>('/visitor-articles', data),
   updateArticle: (id: string, data: Partial<VisitorArticle>) => api.put<{ success: boolean; message: string; data: VisitorArticle }>(`/visitor-articles/${id}`, data),
 
   // Owner APIs
