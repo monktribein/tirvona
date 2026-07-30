@@ -123,14 +123,16 @@ export const getCrudList = async (req, res) => {
     const { moduleKey } = req.params;
     const { subKey, search, status } = req.query;
 
-    const targetKey = subKey || moduleKey;
+    const targetKey = moduleKey === 'local' ? 'local' : (subKey || moduleKey);
     const TargetModel = MODEL_MAP[targetKey] || MODEL_MAP[moduleKey];
 
     if (TargetModel) {
       const filter = {};
 
-      // Sub-key filtering logic (e.g. ashrams/approved, ashrams/rejected, bookings/pending, offers/featured)
-      if (subKey) {
+      if (moduleKey === 'local' && subKey) {
+        const catMap = { restaurants: 'food' };
+        filter.category = catMap[subKey.toLowerCase()] || subKey.toLowerCase();
+      } else if (subKey) {
         const lowerSubKey = subKey.toLowerCase();
         if (['approved', 'verified'].includes(lowerSubKey)) {
           if (TargetModel.schema.paths.isVerified) filter.isVerified = true;
@@ -208,8 +210,13 @@ export const saveCrudRecord = async (req, res) => {
     const data = req.body;
     const subKey = req.query.subKey;
 
-    const targetKey = subKey || moduleKey;
+    const targetKey = moduleKey === 'local' ? 'local' : (subKey || moduleKey);
     const TargetModel = MODEL_MAP[targetKey] || MODEL_MAP[moduleKey];
+
+    if (moduleKey === 'local' && subKey && !data.category) {
+      const catMap = { restaurants: 'food' };
+      data.category = catMap[subKey.toLowerCase()] || subKey.toLowerCase();
+    }
 
     if (TargetModel && data._id && !data._id.startsWith('sys_') && !data._id.startsWith('rec_')) {
       const updates = filterWritableFields(data, TargetModel, req.user);

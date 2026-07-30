@@ -19,7 +19,8 @@ import {
   History,
   Tag,
   ToggleLeft,
-  ToggleRight
+  ToggleRight,
+  Sparkles
 } from 'lucide-react';
 
 export interface TableColumn {
@@ -36,6 +37,7 @@ export interface EnterpriseDataTableProps {
   isLoading?: boolean;
   loading?: boolean;
   onSave?: (item: any) => void;
+  onManage?: (item: any) => void;
   onDelete?: (id: string) => void;
   onBulkDelete?: (ids: string[]) => void;
   onBulkApprove?: (ids: string[]) => void;
@@ -49,6 +51,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
   columns,
   data,
   onSave,
+  onManage,
   onDelete,
   onBulkDelete,
   onBulkApprove,
@@ -383,21 +386,33 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                         </td>
                         <td className="py-3.5 px-4 text-right">
                           <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              onClick={() => setDetailItem(item)}
-                              className="p-1.5 text-gray-400 hover:text-[#0A4DA6] hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer"
-                              title="View Details"
-                            >
-                              <Eye size={14} />
-                            </button>
-                            {onSave && (
+                            {onManage ? (
                               <button
-                                onClick={() => openEditModal(item)}
-                                className="p-1.5 text-gray-400 hover:text-amber-500 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer"
-                                title="Edit Record"
+                                onClick={() => onManage(item)}
+                                className="px-3 py-1 bg-[#0A4DA6] hover:bg-blue-900 text-white rounded-full text-[11px] font-black shadow-sm transition-all cursor-pointer flex items-center gap-1"
+                                title="Open 7-Section Enterprise Manager"
                               >
-                                <Edit size={14} />
+                                <Sparkles size={12} /> Manage
                               </button>
+                            ) : (
+                              <>
+                                <button
+                                  onClick={() => setDetailItem(item)}
+                                  className="p-1.5 text-gray-400 hover:text-[#0A4DA6] hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer"
+                                  title="View Details"
+                                >
+                                  <Eye size={14} />
+                                </button>
+                                {onSave && (
+                                  <button
+                                    onClick={() => openEditModal(item)}
+                                    className="p-1.5 text-gray-400 hover:text-amber-500 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer"
+                                    title="Edit Record"
+                                  >
+                                    <Edit size={14} />
+                                  </button>
+                                )}
+                              </>
                             )}
                             {onToggleStatus && (
                               <button
