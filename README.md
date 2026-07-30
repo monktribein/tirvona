@@ -105,18 +105,3 @@ cd tirvona
     npm run dev
     ```
 4.  Open [http://localhost:5173](http://localhost:5173) in your browser.
-
----
-
-## 📋 Default Seeding Credentials
-All accounts are configured with the password `admin123` by default:
-
-| Role | Email | Description |
-|---|---|---|
-| **Pilgrim / Customer** | `pilgrim@tirvona.com` | Guest booking portal testing. |
-| **Ashram Stay Admin** | `stayadmin@tirvona.com` | Ashram Trust management dashboard. |
-| **District Officer** | `officer@tirvona.com` | Local magistrate inspection & verification. |
-| **Super Admin** | `admin@tirvona.com` | Global platform configuration and audit logs. |
-| **Ashram Manager** | `manager@tirvona.com` | On-site operations manager. |
-| **Front Desk Reception**| `reception@tirvona.com`| Receptionist room allocator. |
-| **Housekeeping Head** | `housekeeping@tirvona.com`| Rooms status board. |
