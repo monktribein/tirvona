@@ -298,6 +298,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = () => {
     localStorage.removeItem(TOKEN_KEY);
+    sessionStorage.removeItem('sidebar_open_group');
     setToken(null);
     setUser(null);
   };

@@ -87,18 +87,47 @@ export const DashboardLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
-    'APPROVAL CENTER': true,
-    'USER MANAGEMENT': true,
-    'INSTITUTION MASTER DATA': true,
-    'ASHRAM MANAGEMENT': true,
-  });
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
 
+  // Auto-expand ONLY the single parent group that contains the current active route
+  React.useEffect(() => {
+    const activeGroup = superAdminGroups.find((group) =>
+      group.links.some(
+        (l) =>
+          location.pathname === l.path ||
+          (l.path !== '/admin/dashboard' && location.pathname.startsWith(l.path))
+      )
+    );
+
+    if (activeGroup) {
+      setOpenGroups({ [activeGroup.groupName]: true });
+      sessionStorage.setItem('sidebar_open_group', activeGroup.groupName);
+    } else {
+      const savedGroup = sessionStorage.getItem('sidebar_open_group');
+      if (savedGroup) {
+        setOpenGroups({ [savedGroup]: true });
+      } else {
+        setOpenGroups({});
+      }
+    }
+  }, [location.pathname]);
+
+  // Single Accordion Expansion: Clicking a group expands ONLY that group and collapses all others
   const toggleGroup = (groupName: string) => {
-    setOpenGroups((prev) => ({ ...prev, [groupName]: !prev[groupName] }));
+    setOpenGroups((prev) => {
+      const isCurrentlyOpen = !!prev[groupName];
+      if (isCurrentlyOpen) {
+        sessionStorage.removeItem('sidebar_open_group');
+        return {};
+      } else {
+        sessionStorage.setItem('sidebar_open_group', groupName);
+        return { [groupName]: true };
+      }
+    });
   };
 
   const handleLogout = () => {
+    sessionStorage.removeItem('sidebar_open_group');
     logout();
     navigate('/');
   };
@@ -283,45 +312,156 @@ export const DashboardLayout: React.FC = () => {
     },
   ];
 
-  const bannerBoyLinks = [
-    { label: 'CMS Dashboard', path: '/bannerboy/dashboard', icon: <LayoutDashboard size={16} /> },
-    { label: 'Banner Management', path: '/bannerboy/dashboard', icon: <Image size={16} /> },
-    { label: 'Homepage CMS', path: '/bannerboy/dashboard', icon: <ClipboardList size={16} /> },
-    { label: 'Media Library', path: '/bannerboy/dashboard', icon: <Sparkles size={16} /> },
-    { label: 'Announcements', path: '/bannerboy/dashboard', icon: <Bell size={16} /> },
-    { label: 'Pending Approvals', path: '/bannerboy/dashboard', icon: <FileCheck size={16} /> },
-    { label: 'My Activity', path: '/bannerboy/dashboard', icon: <History size={16} /> },
-    { label: 'CMS Profile', path: '/bannerboy/dashboard', icon: <User size={16} /> },
+  const ownerGroups: NavGroup[] = [
+    {
+      groupName: 'ASHRAM MANAGEMENT',
+      icon: <Building size={15} />,
+      links: [
+        { label: 'Manage Ashrams', path: '/owner/ashrams' },
+        { label: 'Add-On Services', path: '/owner/add-ons' },
+      ],
+    },
+    {
+      groupName: 'ROOM MANAGEMENT',
+      icon: <Bed size={15} />,
+      links: [
+        { label: 'Manage Rooms', path: '/owner/rooms' },
+        { label: 'Inventory Calendar', path: '/owner/calendar' },
+      ],
+    },
+    {
+      groupName: 'OFFERS & DEALS',
+      icon: <Tag size={15} />,
+      links: [
+        { label: 'Offers & Deals', path: '/owner/offers' },
+      ],
+    },
+    {
+      groupName: 'VOLUNTEER & CAREERS',
+      icon: <Heart size={15} />,
+      links: [
+        { label: 'Volunteer & Careers', path: '/owner/volunteer' },
+      ],
+    },
+    {
+      groupName: 'STAFF & USERS',
+      icon: <Users size={15} />,
+      links: [
+        { label: 'Users & Guests', path: '/owner/users' },
+        { label: 'Staff Management', path: '/owner/staff' },
+      ],
+    },
   ];
 
-  const ownerLinks = [
-    { label: 'Overview Dashboard', path: '/owner/dashboard', icon: <LayoutDashboard size={16} /> },
-    { label: 'Manage Ashrams', path: '/owner/ashrams', icon: <Building size={16} /> },
-    { label: 'Add-On Services', path: '/owner/add-ons', icon: <Sparkles size={16} /> },
-    { label: 'Manage Rooms', path: '/owner/rooms', icon: <Bed size={16} /> },
-    { label: 'Inventory Calendar', path: '/owner/calendar', icon: <CalendarDays size={16} /> },
-    { label: 'Offers & Deals', path: '/owner/offers', icon: <Tag size={16} /> },
-    { label: 'Volunteer & Careers', path: '/owner/volunteer', icon: <Heart size={16} /> },
-    { label: 'Users & Guests', path: '/owner/users', icon: <Users size={16} /> },
-    { label: 'Staff Management', path: '/owner/staff', icon: <ShieldCheck size={16} /> },
+  const bannerBoyGroups: NavGroup[] = [
+    {
+      groupName: 'BANNER MANAGEMENT',
+      icon: <Image size={15} />,
+      links: [
+        { label: 'Banner Management', path: '/bannerboy/dashboard' },
+        { label: 'Homepage CMS', path: '/bannerboy/dashboard' },
+        { label: 'Media Library', path: '/bannerboy/dashboard' },
+      ],
+    },
+    {
+      groupName: 'COMMUNICATIONS & APPROVALS',
+      icon: <Bell size={15} />,
+      links: [
+        { label: 'Announcements', path: '/bannerboy/dashboard' },
+        { label: 'Pending Approvals', path: '/bannerboy/dashboard' },
+        { label: 'My Activity', path: '/bannerboy/dashboard' },
+        { label: 'CMS Profile', path: '/bannerboy/dashboard' },
+      ],
+    },
   ];
 
-  const standardLinks = [
-    { label: 'Executive Dashboard', path: '/admin/dashboard', icon: <LayoutDashboard size={16} /> },
-    { label: 'Verification Queue', path: '/admin/verifications', icon: <FileCheck size={16} /> },
-    { label: 'Audit Logs', path: '/admin/audit-logs', icon: <History size={16} /> },
-    { label: 'Staff Management', path: '/admin/users', icon: <Users size={16} /> },
+  const districtAdminGroups: NavGroup[] = [
+    {
+      groupName: 'VERIFICATIONS & ASHRAMS',
+      icon: <FileCheck size={15} />,
+      links: [
+        { label: 'Verification Queue', path: '/admin/verifications' },
+        { label: 'Approved Ashrams', path: '/admin/manage/ashrams/approved' },
+      ],
+    },
+    {
+      groupName: 'REPORTS & AUDIT',
+      icon: <BarChart3 size={15} />,
+      links: [
+        { label: 'Audit Logs', path: '/admin/audit-logs' },
+        { label: 'Staff Management', path: '/admin/users' },
+      ],
+    },
   ];
 
-  const isSuperAdmin = user.role === 'super_admin';
-  const isBannerBoy = user.role === 'banner_manager';
-  const isOwnerOrStaff = ['owner', 'manager', 'reception', 'housekeeping'].includes(user.role);
+  const standardGroups: NavGroup[] = [
+    {
+      groupName: 'SYSTEM & AUDIT',
+      icon: <FileCheck size={15} />,
+      links: [
+        { label: 'Verification Queue', path: '/admin/verifications' },
+        { label: 'Audit Logs', path: '/admin/audit-logs' },
+        { label: 'Staff Management', path: '/admin/users' },
+      ],
+    },
+  ];
 
-  const activeRoleLinks = isBannerBoy
-    ? bannerBoyLinks
-    : isOwnerOrStaff
-    ? ownerLinks
-    : standardLinks;
+  // Helper to resolve active role's navigation structure
+  const getRoleNavData = () => {
+    if (user?.role === 'super_admin') {
+      return {
+        topLink: { label: 'Executive Dashboard', path: '/admin/dashboard', icon: <LayoutDashboard size={16} className="text-[#E58C28]" /> },
+        groups: superAdminGroups,
+      };
+    }
+    if (['owner', 'stay_admin', 'manager', 'reception', 'housekeeping'].includes(user?.role || '')) {
+      return {
+        topLink: { label: 'Overview Dashboard', path: '/owner/dashboard', icon: <LayoutDashboard size={16} className="text-[#E58C28]" /> },
+        groups: ownerGroups,
+      };
+    }
+    if (user?.role === 'banner_manager') {
+      return {
+        topLink: { label: 'CMS Dashboard', path: '/bannerboy/dashboard', icon: <LayoutDashboard size={16} className="text-[#E58C28]" /> },
+        groups: bannerBoyGroups,
+      };
+    }
+    if (['district_officer', 'district_admin', 'govt_admin', 'government_admin'].includes(user?.role || '')) {
+      return {
+        topLink: { label: 'District Dashboard', path: '/admin/dashboard', icon: <LayoutDashboard size={16} className="text-[#E58C28]" /> },
+        groups: districtAdminGroups,
+      };
+    }
+    return {
+      topLink: { label: 'Executive Dashboard', path: '/admin/dashboard', icon: <LayoutDashboard size={16} className="text-[#E58C28]" /> },
+      groups: standardGroups,
+    };
+  };
+
+  const navData = getRoleNavData();
+
+  // Auto-expand ONLY the single parent group that contains the current active route
+  React.useEffect(() => {
+    const activeGroup = navData.groups.find((group) =>
+      group.links.some(
+        (l) =>
+          location.pathname === l.path ||
+          (l.path !== navData.topLink.path && location.pathname.startsWith(l.path))
+      )
+    );
+
+    if (activeGroup) {
+      setOpenGroups({ [activeGroup.groupName]: true });
+      sessionStorage.setItem('sidebar_open_group', activeGroup.groupName);
+    } else {
+      const savedGroup = sessionStorage.getItem('sidebar_open_group');
+      if (savedGroup) {
+        setOpenGroups({ [savedGroup]: true });
+      } else {
+        setOpenGroups({});
+      }
+    }
+  }, [location.pathname, user?.role]);
 
   const renderSidebarContent = (isMobile = false) => (
     <>
@@ -353,89 +493,68 @@ export const DashboardLayout: React.FC = () => {
 
       {/* Links Navigation */}
       <nav className="flex-grow p-4 space-y-3 overflow-y-auto max-h-[calc(100vh-210px)] scrollbar-thin">
-        {isSuperAdmin ? (
-          <div className="space-y-3">
-            {/* Executive Dashboard Link */}
+        <div className="space-y-3">
+          {/* Main Role Overview Link */}
+          {navData.topLink && (
             <Link
-              to="/admin/dashboard"
+              to={navData.topLink.path}
               onClick={isMobile ? () => setSidebarOpen(false) : undefined}
               className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-black transition-all ${
-                location.pathname === '/admin/dashboard'
+                location.pathname === navData.topLink.path
                   ? 'bg-[#0A4DA6] text-white shadow-lg shadow-[#0A4DA6]/30 border-l-4 border-[#E58C28]'
                   : 'text-gray-300 hover:bg-slate-850 hover:text-white'
               }`}
             >
-              <LayoutDashboard size={16} className="text-[#E58C28]" />
-              <span>Executive Dashboard</span>
+              {navData.topLink.icon}
+              <span>{navData.topLink.label}</span>
             </Link>
+          )}
 
-            {/* Categorized Super Admin Groups */}
-            {superAdminGroups.map((group) => {
-              const isOpen = openGroups[group.groupName] ?? false;
-              const hasActiveLink = group.links.some((l) => location.pathname === l.path);
+          {/* Categorized Dropdown Groups (All Collapsed By Default) */}
+          {navData.groups.map((group) => {
+            const isOpen = openGroups[group.groupName] ?? false;
+            const hasActiveLink = group.links.some((l) => location.pathname === l.path);
 
-              return (
-                <div key={group.groupName} className="space-y-1">
-                  <button
-                    onClick={() => toggleGroup(group.groupName)}
-                    className={`w-full flex items-center justify-between px-3.5 py-2 text-[10px] font-black uppercase tracking-wider transition-colors text-left rounded-xl ${
-                      hasActiveLink ? 'text-[#E58C28] bg-white/5' : 'text-gray-400 hover:text-gray-200'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      {group.icon}
-                      <span>{group.groupName}</span>
-                    </div>
-                    {isOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-                  </button>
-
-                  {isOpen && (
-                    <div className="pl-4 space-y-1 border-l border-slate-800 ml-3">
-                      {group.links.map((link) => {
-                        const isActive = location.pathname === link.path;
-                        return (
-                          <Link
-                            key={link.path}
-                            to={link.path}
-                            onClick={isMobile ? () => setSidebarOpen(false) : undefined}
-                            className={`flex items-center justify-between px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all ${
-                              isActive
-                                ? 'bg-[#0A4DA6] text-white shadow-md border-l-2 border-[#E58C28]'
-                                : 'text-gray-400 hover:text-white hover:bg-slate-850'
-                            }`}
-                          >
-                            <span className="truncate">{link.label}</span>
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="space-y-1.5">
-            {activeRoleLinks.map((link) => {
-              const isActive = location.pathname === link.path;
-              return (
-                <Link
-                  key={link.path}
-                  to={link.path}
-                  onClick={isMobile ? () => setSidebarOpen(false) : undefined}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-extrabold tracking-wide transition-all ${
-                    isActive
-                      ? 'bg-[#0A4DA6] text-white shadow-md border-l-4 border-[#E58C28]'
-                      : 'text-gray-400 hover:bg-slate-850 hover:text-white'
+            return (
+              <div key={group.groupName} className="space-y-1">
+                <button
+                  onClick={() => toggleGroup(group.groupName)}
+                  className={`w-full flex items-center justify-between px-3.5 py-2 text-[10px] font-black uppercase tracking-wider transition-colors text-left rounded-xl ${
+                    hasActiveLink ? 'text-[#E58C28] bg-white/5' : 'text-gray-400 hover:text-gray-200'
                   }`}
                 >
-                  {link.icon}
-                  <span>{link.label}</span>
-                </Link>
-              );
-            })}
-          </div>
-        )}
+                  <div className="flex items-center gap-2">
+                    {group.icon}
+                    <span>{group.groupName}</span>
+                  </div>
+                  {isOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                </button>
+
+                {isOpen && (
+                  <div className="pl-4 space-y-1 border-l border-slate-800 ml-3">
+                    {group.links.map((link) => {
+                      const isActive = location.pathname === link.path;
+                      return (
+                        <Link
+                          key={link.path}
+                          to={link.path}
+                          onClick={isMobile ? () => setSidebarOpen(false) : undefined}
+                          className={`flex items-center justify-between px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all ${
+                            isActive
+                              ? 'bg-[#0A4DA6] text-white shadow-md border-l-2 border-[#E58C28]'
+                              : 'text-gray-400 hover:text-white hover:bg-slate-850'
+                          }`}
+                        >
+                          <span className="truncate">{link.label}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </nav>
 
       {/* User Profile Bottom Bar */}
