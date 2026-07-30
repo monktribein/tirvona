@@ -23,7 +23,15 @@ import { useNotifications } from '../contexts/NotificationContext';
 import { useMemory } from '../contexts/UserMemoryContext';
 import { EnterpriseModal, EnterpriseButton, EnterpriseStatusBadge, EnterpriseSortDropdown, EnterpriseResetButton } from '../admin/shared';
 
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { setGuestPendingIntent } from '../utils/guestGate';
+import { useProfileAutoFill } from '../hooks/useProfileAutoFill';
+
 export const VolunteerHubPage: React.FC = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const autoFill = useProfileAutoFill();
   const [searchParams, setSearchParams] = useSearchParams();
   const { addNotification } = useNotifications();
   const { updateMemoryCategory } = useMemory();
@@ -39,6 +47,30 @@ export const VolunteerHubPage: React.FC = () => {
 
   // Application Modal State
   const [selectedJob, setSelectedJob] = useState<VolunteerJobItem | null>(null);
+
+  // Auto-open job modal if returning from login with jobId query param
+  useEffect(() => {
+    const jobIdParam = searchParams.get('jobId');
+    if (jobIdParam && jobs.length > 0) {
+      const match = jobs.find((j) => j._id === jobIdParam);
+      if (match) setSelectedJob(match);
+    }
+  }, [searchParams, jobs]);
+
+  const handleApplyClick = (job: VolunteerJobItem) => {
+    if (!user) {
+      const targetUrl = `/volunteer?jobId=${job._id}`;
+      setGuestPendingIntent({
+        type: 'volunteer_apply',
+        returnUrl: targetUrl,
+        data: { jobId: job._id },
+      });
+      navigate(`/login?redirect=${encodeURIComponent(targetUrl)}`);
+      return;
+    }
+    setSelectedJob(job);
+  };
+
   const [applicantName, setApplicantName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -49,6 +81,18 @@ export const VolunteerHubPage: React.FC = () => {
   const [availability, setAvailability] = useState('Immediate (Next 7 Days)');
   const [motivation, setMotivation] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Smart Auto-Fill profile effect
+  useEffect(() => {
+    if (autoFill.isLoggedIn) {
+      if (autoFill.name && !applicantName) setApplicantName(autoFill.name);
+      if (autoFill.email && !email) setEmail(autoFill.email);
+      if (autoFill.phone && !phone) setPhone(autoFill.phone);
+      if (autoFill.city && !city) setCity(autoFill.city);
+      if (autoFill.education) setEducation(autoFill.education);
+      if (autoFill.skills && !skills) setSkills(autoFill.skills);
+    }
+  }, [autoFill]);
 
   const cities = ['all', 'Rishikesh', 'Haridwar', 'Varanasi', 'Vrindavan', 'Ayodhya'];
 
@@ -370,7 +414,7 @@ export const VolunteerHubPage: React.FC = () => {
                   <span className="text-[10px] font-bold text-gray-400">
                     {job.openingsCount} Openings Available
                   </span>
-                  <EnterpriseButton variant="primary" size="sm" onClick={() => setSelectedJob(job)}>
+                  <EnterpriseButton variant="primary" size="sm" onClick={() => handleApplyClick(job)}>
                     Apply Now
                   </EnterpriseButton>
                 </div>

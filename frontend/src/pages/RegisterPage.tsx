@@ -20,6 +20,8 @@ import {
   BadgeCheck, Headphones, ArrowRight, Landmark, Zap
 } from 'lucide-react';
 
+import { getRoleDefaultDashboard, getPostLoginRedirect } from '../utils/roleRedirect';
+
 export const RegisterPage: React.FC = () => {
   const { registerUser, verifyRegistrationOtp, resendOtp } = useAuth();
   const navigate = useNavigate();
@@ -40,7 +42,7 @@ export const RegisterPage: React.FC = () => {
   // session. While it is set, the card shows the OTP step in place of the form.
   const [challenge, setChallenge] = useState<OtpChallenge | null>(null);
 
-  const google = useGoogleAuth(() => goAfterSignup());
+  const google = useGoogleAuth((userArg) => goAfterSignup(userArg?.role));
 
   const handleGoogle = async () => {
     setError('');
@@ -48,12 +50,9 @@ export const RegisterPage: React.FC = () => {
     if (message) setError(message);
   };
 
-  const goAfterSignup = () => {
-    if (redirect) {
-      navigate(redirect);
-    } else {
-      navigate('/');
-    }
+  const goAfterSignup = (userRole?: string) => {
+    const target = getPostLoginRedirect(userRole || role);
+    navigate(target.url, { replace: true });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -77,7 +76,7 @@ export const RegisterPage: React.FC = () => {
         setChallenge(res.challenge);
         return;
       }
-      goAfterSignup();
+      goAfterSignup(res.user?.role);
     } else {
       setError(res.message || 'Registration failed');
     }

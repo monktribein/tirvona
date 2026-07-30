@@ -15,7 +15,7 @@ type Stage = 'idle' | 'otp' | 'profile';
  * Nothing is written to the database until step 3 succeeds, so an abandoned
  * sign-up leaves no partial user behind.
  */
-export const useGoogleAuth = (onAuthenticated: () => void) => {
+export const useGoogleAuth = (onAuthenticated: (user?: any) => void) => {
   const { loginWithGoogle, verifyGoogleOtp, resendGoogleOtp, completeGoogleProfile } = useAuth();
 
   const [stage, setStage] = useState<Stage>('idle');
@@ -43,7 +43,7 @@ export const useGoogleAuth = (onAuthenticated: () => void) => {
       return null;
     }
     if (res.success) {
-      onAuthenticated();
+      onAuthenticated(res.user);
       return null;
     }
     return res.message || 'Google sign-in failed';

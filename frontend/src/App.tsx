@@ -106,19 +106,25 @@ import ProfilePaymentsPage from './pages/profile/ProfilePaymentsPage';
 import ProfileSettingsPage from './pages/profile/ProfileSettingsPage';
 import ProfileNotificationsPage from './pages/profile/ProfileNotificationsPage';
 
+import { hasRoleAccess } from './utils/roleRedirect';
+import { setGuestPendingIntent } from './utils/guestGate';
+
 // Protected Route Wrapper Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode; allowedRoles?: string[] }> = ({ children, allowedRoles }) => {
   const { user, loading } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return <PageLoader />;
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    const attemptedUrl = location.pathname + location.search;
+    setGuestPendingIntent({ type: 'generic', returnUrl: attemptedUrl });
+    return <Navigate to={`/login?redirect=${encodeURIComponent(attemptedUrl)}`} replace />;
   }
 
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
+  if (allowedRoles && !hasRoleAccess(user.role, allowedRoles)) {
     return <Navigate to="/" replace />;
   }
 

@@ -21,9 +21,16 @@ import {
 import { marketplaceService, type MarketplaceProductItem } from '../services/marketplace.service';
 import { useNotifications } from '../contexts/NotificationContext';
 import { useMemory } from '../contexts/UserMemoryContext';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { setGuestPendingIntent } from '../utils/guestGate';
 import { EnterpriseModal, EnterpriseButton, EnterpriseStatusBadge, EnterpriseSortDropdown, EnterpriseResetButton } from '../admin/shared';
+import { useProfileAutoFill } from '../hooks/useProfileAutoFill';
 
 export const MarketplaceHubPage: React.FC = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const autoFill = useProfileAutoFill();
   const [searchParams, setSearchParams] = useSearchParams();
   const { addNotification } = useNotifications();
   const { updateMemoryCategory } = useMemory();
@@ -50,6 +57,18 @@ export const MarketplaceHubPage: React.FC = () => {
   const [pincode, setPincode] = useState('221001');
   const [paymentMethod, setPaymentMethod] = useState<'upi' | 'cod' | 'card'>('upi');
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+
+  // Smart Auto-Fill profile effect
+  useEffect(() => {
+    if (autoFill.isLoggedIn) {
+      if (autoFill.name && !customerName) setCustomerName(autoFill.name);
+      if (autoFill.phone && !customerPhone) setCustomerPhone(autoFill.phone);
+      if (autoFill.address && !streetAddress) setStreetAddress(autoFill.address);
+      if (autoFill.city && city === 'Varanasi') setCity(autoFill.city);
+      if (autoFill.state && state === 'Uttar Pradesh') setState(autoFill.state);
+      if (autoFill.pincode && pincode === '221001') setPincode(autoFill.pincode);
+    }
+  }, [autoFill]);
 
   const categories = [
     { id: 'all', label: 'All Products' },
@@ -163,6 +182,17 @@ export const MarketplaceHubPage: React.FC = () => {
   const handleOrderSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (cart.length === 0) return;
+
+    if (!user) {
+      const currentUrl = window.location.pathname + window.location.search;
+      setGuestPendingIntent({
+        type: 'marketplace_cart',
+        returnUrl: currentUrl,
+        data: { cart },
+      });
+      navigate(`/login?redirect=${encodeURIComponent(currentUrl)}`);
+      return;
+    }
 
     setIsPlacingOrder(true);
     try {

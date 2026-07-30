@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { authService } from '../services';
 import { getErrorMessage } from '../lib/api';
-import { getBookingDraft } from '../utils/bookingDraft';
+import { getRoleDefaultDashboard, getPostLoginRedirect } from '../utils/roleRedirect';
 
 // Small multicolor Google mark (lucide has no brand logos).
 const GoogleIcon: React.FC = () => (
@@ -24,7 +24,7 @@ const GoogleIcon: React.FC = () => (
 );
 
 export const LoginPage: React.FC = () => {
-  const { login, loginOTP, verifyLoginOtp, resendOtp } = useAuth();
+  const { user, login, loginOTP, verifyLoginOtp, resendOtp } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirect = searchParams.get('redirect');
@@ -45,22 +45,16 @@ export const LoginPage: React.FC = () => {
   // Set when a Guest Visitor's password is accepted and an OTP is issued.
   const [loginChallenge, setLoginChallenge] = useState<OtpChallenge | null>(null);
 
-  const google = useGoogleAuth(() => navigate(getRedirectTarget()));
+  const google = useGoogleAuth((userArg) => {
+    const target = getPostLoginRedirect(userArg?.role);
+    navigate(target.url, { replace: true });
+  });
 
   const handleGoogle = async () => {
     setError('');
     setNotice('');
     const message = await google.start();
     if (message) setError(message);
-  };
-
-  const getRedirectTarget = (role?: string) => {
-    if (redirect) return redirect;
-    if (role === 'super_admin' || role === 'govt_admin' || role === 'district_officer') return '/admin/dashboard';
-    if (role === 'owner' || role === 'stay_admin') return '/owner/dashboard';
-    if (role === 'banner_manager') return '/bannerboy/dashboard';
-    if (role === 'support') return '/support-tickets';
-    return '/';
   };
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
@@ -76,7 +70,8 @@ export const LoginPage: React.FC = () => {
         setLoginChallenge(res.challenge);
         return;
       }
-      navigate(getRedirectTarget(res.user?.role));
+      const target = getPostLoginRedirect(res.user?.role);
+      navigate(target.url, { replace: true });
     } else {
       if (res.isSuspended && res.suspensionData) {
         setSuspensionInfo(res.suspensionData);
@@ -137,7 +132,8 @@ export const LoginPage: React.FC = () => {
     const res = await loginOTP(phone, otpCode);
     setLoading(false);
     if (res.success) {
-      navigate(getRedirectTarget());
+      const target = getPostLoginRedirect(user?.role);
+      navigate(target.url, { replace: true });
     } else {
       setError(res.message || 'Invalid OTP');
     }
@@ -266,7 +262,7 @@ export const LoginPage: React.FC = () => {
                   return res;
                 }}
                 onCancel={() => setLoginChallenge(null)}
-                onVerified={() => navigate(getRedirectTarget())}
+                onVerified={() => navigate(getPostLoginRedirect(user?.role).url, { replace: true })}
               />
             ) : (
             <>
@@ -559,7 +555,7 @@ export const LoginPage: React.FC = () => {
           email={google.email}
           suggestedName={google.suggestedName}
           onSubmit={google.completeProfile}
-          onDone={() => navigate(getRedirectTarget())}
+          onDone={() => navigate(getPostLoginRedirect(user?.role).url, { replace: true })}
           onCancel={google.reset}
         />
       )}

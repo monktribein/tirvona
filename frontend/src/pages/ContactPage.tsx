@@ -1,9 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MapPin, Phone, Mail, Clock, CheckCircle, ArrowRight } from 'lucide-react';
+import { useProfileAutoFill } from '../hooks/useProfileAutoFill';
 
 const ContactPage: React.FC = () => {
+  const autoFill = useProfileAutoFill();
   const [form, setForm] = useState({ name: '', email: '', phone: '', subject: '', message: '' });
   const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => {
+    if (autoFill.isLoggedIn) {
+      setForm((prev) => ({
+        ...prev,
+        name: prev.name || autoFill.name,
+        email: prev.email || autoFill.email,
+        phone: prev.phone || autoFill.phone,
+      }));
+    }
+  }, [autoFill]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

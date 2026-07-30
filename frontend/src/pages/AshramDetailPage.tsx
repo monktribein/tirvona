@@ -43,11 +43,13 @@ import {
 } from 'lucide-react';
 
 import { volunteerService, type VolunteerJobItem } from '../services/volunteer.service';
+import { useProfileAutoFill } from '../hooks/useProfileAutoFill';
 
 export const AshramDetailPage: React.FC = () => {
   const { id } = useParams();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
+  const autoFill = useProfileAutoFill();
   const navigate = useNavigate();
 
   const { searchState, updateBookingSearch, totalGuests: searchTotalGuests } = useBookingSearch();
