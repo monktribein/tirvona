@@ -193,7 +193,6 @@ export const EnterpriseModulePage: React.FC<{ moduleName?: string; defaultColumn
               type: 'select',
               options: ['homepage', 'hero_slider', 'offers', 'blog', 'marketplace', 'destination', 'festival', 'mobile', 'desktop'],
             },
-            { name: 'imageUrl', label: 'Banner Image URL / Cloudinary', type: 'text', required: true },
             { name: 'targetUrl', label: 'Target Action Link', type: 'text' },
             { name: 'priorityOrder', label: 'Display Order Priority', type: 'number' },
             { name: 'status', label: 'Status', type: 'select', options: ['active', 'pending', 'approved', 'rejected', 'scheduled'] },
@@ -275,6 +274,9 @@ export const EnterpriseModulePage: React.FC<{ moduleName?: string; defaultColumn
                   <img
                     src={val || 'https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=600&q=80'}
                     alt="Service Thumbnail"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=600&q=80';
+                    }}
                     className="w-full h-full object-cover"
                   />
                 </div>
@@ -302,7 +304,6 @@ export const EnterpriseModulePage: React.FC<{ moduleName?: string; defaultColumn
               type: 'select',
               options: ['transport', 'guides', 'food', 'medical', 'emergency', 'shops', 'photography', 'stays', 'events'],
             },
-            { name: 'image', label: 'Image URL (Cloudinary / Web Image Link)', type: 'text', required: true },
             { name: 'price', label: 'Price / Fare (e.g. ₹400 / transfer)', type: 'text' },
             { name: 'phone', label: 'Contact Phone Number', type: 'text' },
             { name: 'location', label: 'Specific Location / Landmark', type: 'text', required: true },
@@ -372,8 +373,13 @@ export const EnterpriseModulePage: React.FC<{ moduleName?: string; defaultColumn
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const payload = {
+        ...formData,
+        image: formData.image || formData.coverImage || formData.imageUrl || 'https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=600&q=80',
+        imageUrl: formData.image || formData.coverImage || formData.imageUrl || 'https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=600&q=80',
+      };
       const endpoint = `/admin/crud/${activeModule}${activeSubKey ? `?subKey=${activeSubKey}` : ''}`;
-      await api.post(endpoint, formData);
+      await api.post(endpoint, payload);
       addNotification('Saved Successfully', `Record updated in ${title}.`, 'success');
       setIsModalOpen(false);
       fetchModuleData();

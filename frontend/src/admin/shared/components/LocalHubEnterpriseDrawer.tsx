@@ -108,8 +108,12 @@ export const LocalHubEnterpriseDrawer: React.FC<LocalHubEnterpriseDrawerProps> =
     e.preventDefault();
     setIsSaving(true);
     try {
-      await onSave(formData);
-      addNotification('Enterprise Manager Saved', `All 7 sections updated in MongoDB for ${formData.title || 'Service Item'}.`, 'success');
+      const payload = {
+        ...formData,
+        image: formData.image || (Array.isArray(formData.gallery) && formData.gallery[0]) || 'https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=600&q=80',
+      };
+      await onSave(payload);
+      addNotification('Enterprise Manager Saved', `All 7 sections updated in MongoDB for ${payload.title || 'Service Item'}.`, 'success');
       onClose();
     } catch (err: any) {
       addNotification('Save Failed', err.message || 'Could not update record.', 'error');
