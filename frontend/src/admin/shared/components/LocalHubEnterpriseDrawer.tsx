@@ -108,7 +108,11 @@ export const LocalHubEnterpriseDrawer: React.FC<LocalHubEnterpriseDrawerProps> =
     e.preventDefault();
     setIsSaving(true);
     try {
-      const payload = {
+      // Annotated rather than inferred: spreading a Record<string, any> into an
+      // object literal no longer carries the index signature through, so the
+      // inferred type collapses to just the explicitly-listed keys and any
+      // other access (payload.title) fails to compile.
+      const payload: Record<string, any> = {
         ...formData,
         image: formData.image || (Array.isArray(formData.gallery) && formData.gallery[0]) || 'https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=600&q=80',
       };
