@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Search, Play, BookOpen, Calendar, Clock, Eye, Heart, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Search, Play, BookOpen, Calendar, Clock, Eye, Heart, CheckCircle2, ArrowRight, ShieldCheck } from 'lucide-react';
+import { visitorArticleService } from '../services/visitorArticleService';
 
 export const BlogListPage: React.FC = () => {
   const navigate = useNavigate();
@@ -29,13 +30,36 @@ export const BlogListPage: React.FC = () => {
   const fetchPosts = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/blog/posts`,
-        { params: { category: selectedCategory, contentType: selectedType, search: searchTerm } }
-      );
-      if (res.data.success) {
-        setPosts(res.data.data);
-      }
+      const [blogRes, visitorRes] = await Promise.all([
+        axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/blog/posts`, {
+          params: { category: selectedCategory, contentType: selectedType, search: searchTerm },
+        }).catch(() => ({ data: { success: false, data: [] } })),
+        visitorArticleService.getPublicArticles({
+          category: selectedCategory,
+          search: searchTerm,
+        }).catch(() => ({ data: { success: false, data: [] } })),
+      ]);
+
+      const blogPosts = blogRes.data?.success ? blogRes.data.data : [];
+      const visitorPosts = (visitorRes.data?.success ? visitorRes.data.data : []).map((va: any) => ({
+        _id: va._id,
+        title: va.title,
+        slug: va.slug,
+        excerpt: va.shortDescription,
+        coverImage: va.featuredImage,
+        category: va.category || 'Visitor Story',
+        createdAt: va.createdAt,
+        views: va.viewsCount || 0,
+        readingTime: '5 min read',
+        isVerifiedStay: true,
+        ashramName: va.ashramId?.name,
+        authorId: {
+          name: va.visitorId?.name || 'Verified Visitor',
+          photo: va.visitorId?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&h=100&q=80',
+        },
+      }));
+
+      setPosts([...visitorPosts, ...blogPosts]);
     } catch (err) {
       console.error('Error fetching blog list:', err);
     } finally {
@@ -128,10 +152,16 @@ export const BlogListPage: React.FC = () => {
                         src={item.coverImage}
                         alt={item.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/blogs/rishikesh_ashram_1785404729056.png'; }}
                       />
                       <span className="absolute top-4 left-4 bg-[#0A4DA6] text-white text-[10px] font-black uppercase px-3 py-1 rounded-full shadow-md">
                         {item.category}
                       </span>
+                      {item.isVerifiedStay && (
+                        <span className="absolute top-4 right-4 bg-emerald-600 text-white text-[9px] font-black uppercase px-2.5 py-1 rounded-full shadow-md flex items-center gap-1">
+                          <ShieldCheck size={11} /> Verified Stay
+                        </span>
+                      )}
 
                       {/* Dynamic Video Overlay Detection */}
                       {isVideo ? (

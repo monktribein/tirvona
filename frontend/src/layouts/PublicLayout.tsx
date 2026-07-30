@@ -18,6 +18,7 @@ import {
   Grid,
   ArrowRight,
   Headphones,
+  Mail,
   User,
   Heart,
   ShoppingCart,
@@ -282,63 +283,75 @@ export const PublicLayout: React.FC = () => {
                         aria-haspopup="menu"
                         aria-expanded={profileDropdownOpen}
                         title={user.name}
-                        className={`w-9 h-9 shrink-0 rounded-full bg-[#0A4DA6] text-white font-black text-xs flex items-center justify-center uppercase cursor-pointer transition-all hover:bg-[#083D85] ring-2 ring-offset-2 ring-offset-white dark:ring-offset-[#0B192C] ${
+                        className={`w-9 h-9 shrink-0 rounded-full bg-[#0A4DA6] text-white flex items-center justify-center cursor-pointer transition-all hover:bg-[#083D85] ring-2 ring-offset-2 ring-offset-white dark:ring-offset-[#0B192C] ${
                           profileDropdownOpen ? 'ring-[#0A4DA6]/40' : 'ring-transparent'
                         }`}
                       >
-                        {user.name?.[0] || 'U'}
+                        <User size={18} />
                       </button>
 
                       {/* Profile Dropdown Menu */}
                       {profileDropdownOpen && (
-                        <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl shadow-2xl py-2 text-xs font-bold text-gray-700 dark:text-gray-200 z-50 divide-y divide-gray-100 dark:divide-slate-800">
-                          <div className="px-4 py-2.5">
-                            <span className="block font-black text-[#0B192C] dark:text-white text-sm">{user.name}</span>
-                            <span className="text-[10px] text-[#E58C28] font-black uppercase tracking-wider block mt-0.5">
-                              {getRoleBadgeLabel()} • {user.email}
-                            </span>
+                        <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden z-50 text-xs font-bold text-gray-700 dark:text-gray-200">
+                          {/* User Info Header */}
+                          <div className="px-3.5 py-2.5 bg-gradient-to-r from-blue-50/80 to-indigo-50/40 dark:from-slate-800/90 dark:to-slate-900/60 border-b border-gray-100 dark:border-slate-800 flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-full bg-[#0A4DA6] text-white flex items-center justify-center shrink-0 shadow-sm ring-1 ring-white dark:ring-slate-700">
+                              <User size={16} />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <span className="font-extrabold text-[#0B192C] dark:text-white text-xs truncate block leading-tight">{user.name}</span>
+                              <span className="text-[10px] text-gray-500 dark:text-gray-400 font-medium truncate block leading-tight lowercase">
+                                {user.email}
+                              </span>
+                            </div>
                           </div>
 
-                          <div className="py-1">
-                            <Link
-                              to={getDashboardPath()}
-                              onClick={() => setProfileDropdownOpen(false)}
-                              className="px-4 py-2 flex items-center gap-2.5 text-[#0A4DA6] font-extrabold hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
-                            >
-                              <LayoutDashboard size={14} /> {getDashboardLabel()}
-                            </Link>
-
+                          {/* Navigation Links */}
+                          <div className="p-1.5 space-y-0.5">
                             <Link
                               to="/profile"
                               onClick={() => setProfileDropdownOpen(false)}
-                              className="px-4 py-2 flex items-center gap-2.5 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+                              className="px-2.5 py-1.5 rounded-lg flex items-center gap-2.5 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
                             >
-                              <User size={14} className="text-[#0A4DA6]" /> My Profile
+                              <div className="w-6 h-6 rounded-md bg-emerald-100/60 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                                <User size={13} />
+                              </div>
+                              <span className="text-xs font-bold">My Profile</span>
                             </Link>
 
                             <Link
                               to="/profile/bookings"
                               onClick={() => setProfileDropdownOpen(false)}
-                              className="px-4 py-2 flex items-center gap-2.5 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+                              className="px-2.5 py-1.5 rounded-lg flex items-center gap-2.5 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
                             >
-                              <Calendar size={14} className="text-blue-500" /> My Bookings & Stays
+                              <div className="w-6 h-6 rounded-md bg-amber-100/60 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                                <Calendar size={13} />
+                              </div>
+                              <span className="text-xs font-bold">My Bookings &amp; Stays</span>
                             </Link>
 
                             <Link
                               to="/profile/wishlist"
                               onClick={() => setProfileDropdownOpen(false)}
-                              className="px-4 py-2 flex items-center gap-2.5 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+                              className="px-2.5 py-1.5 rounded-lg flex items-center gap-2.5 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
                             >
-                              <Heart size={14} className="text-rose-500" /> Wishlist & Saved
+                              <div className="w-6 h-6 rounded-md bg-rose-100/60 dark:bg-rose-950/60 text-rose-500 dark:text-rose-400 flex items-center justify-center shrink-0">
+                                <Heart size={13} />
+                              </div>
+                              <span className="text-xs font-bold">Wishlist &amp; Saved</span>
                             </Link>
                           </div>
 
-                          <div className="py-1">
+                          {/* Sign Out */}
+                          <div className="p-1.5 border-t border-gray-100 dark:border-slate-800">
                             <button
                               onClick={handleLogout}
-                              className="w-full text-left px-4 py-2 flex items-center gap-2.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors cursor-pointer"
+                              className="w-full text-left px-2.5 py-1.5 rounded-lg flex items-center gap-2.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer font-bold"
                             >
-                              <LogOut size={14} /> Sign Out
+                              <div className="w-6 h-6 rounded-md bg-red-100/60 dark:bg-red-950/60 text-red-600 dark:text-red-400 flex items-center justify-center shrink-0">
+                                <LogOut size={13} />
+                              </div>
+                              <span className="text-xs font-bold">Sign Out</span>
                             </button>
                           </div>
                         </div>
@@ -538,9 +551,13 @@ export const PublicLayout: React.FC = () => {
                   <Headphones size={20} />
                 </div>
                 <div>
-                  <span className="block text-[10px] text-gray-400 dark:text-gray-400 font-bold uppercase tracking-wider">Need help? Call us</span>
-                  <a href="tel:+917836055511" className="text-sm sm:text-base font-black text-white hover:text-[#E58C28] transition-colors">
+                  <span className="block text-[10px] text-gray-400 dark:text-gray-400 font-bold uppercase tracking-wider">Need help? Call or Email us</span>
+                  <a href="tel:+917836055511" className="text-sm sm:text-base font-black text-white hover:text-[#E58C28] transition-colors block">
                     +91 78360 55511
+                  </a>
+                  <a href="mailto:support@tirvona.com" className="text-xs font-bold text-gray-300 hover:text-[#E58C28] transition-colors flex items-center gap-1.5 mt-1">
+                    <Mail size={13} className="text-[#E58C28]" />
+                    <span>support@tirvona.com</span>
                   </a>
                 </div>
               </div>

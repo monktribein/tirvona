@@ -36,7 +36,8 @@ import {
   Sun,
   Globe,
   ArrowRight,
-  Landmark
+  Landmark,
+  FileText,
 } from 'lucide-react';
 
 interface NavGroup {
@@ -353,6 +354,7 @@ export const DashboardLayout: React.FC = () => {
     },
   ];
 
+<<<<<<< Updated upstream
   const bannerBoyGroups: NavGroup[] = [
     {
       groupName: 'BANNER MANAGEMENT',
@@ -373,6 +375,19 @@ export const DashboardLayout: React.FC = () => {
         { label: 'CMS Profile', path: '/bannerboy/dashboard' },
       ],
     },
+=======
+  const ownerLinks = [
+    { label: 'Overview Dashboard', path: '/owner/dashboard', icon: <LayoutDashboard size={16} /> },
+    { label: 'Manage Ashrams', path: '/owner/ashrams', icon: <Building size={16} /> },
+    { label: 'Add-On Services', path: '/owner/add-ons', icon: <Sparkles size={16} /> },
+    { label: 'Manage Rooms', path: '/owner/rooms', icon: <Bed size={16} /> },
+    { label: 'Inventory Calendar', path: '/owner/calendar', icon: <CalendarDays size={16} /> },
+    { label: 'Offers & Deals', path: '/owner/offers', icon: <Tag size={16} /> },
+    { label: 'Volunteer & Careers', path: '/owner/volunteer', icon: <Heart size={16} /> },
+    { label: 'Users & Guests', path: '/owner/users', icon: <Users size={16} /> },
+    { label: 'Visitor Articles', path: '/owner/articles', icon: <FileText size={16} /> },
+    { label: 'Staff Management', path: '/owner/staff', icon: <ShieldCheck size={16} /> },
+>>>>>>> Stashed changes
   ];
 
   const districtAdminGroups: NavGroup[] = [

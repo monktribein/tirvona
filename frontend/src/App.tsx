@@ -46,6 +46,7 @@ import AddAshramWizardPage from './pages/AddAshramWizardPage';
 import ManageRoomsPage from './pages/ManageRoomsPage';
 import InventoryCalendarPage from './pages/InventoryCalendarPage';
 import OwnerUsersPage from './pages/OwnerUsersPage';
+import OwnerVisitorArticlesPage from './admin/content/OwnerVisitorArticlesPage';
 import OwnerOffersPage from './pages/OwnerOffersPage';
 import OwnerAddOnsPage from './pages/owner/OwnerAddOnsPage';
 import OffersPage from './pages/OffersPage';
@@ -224,13 +225,15 @@ const AppContent: React.FC = () => {
 
           {/* Customer Profile Ecosystem Routes */}
           <Route path="/profile" element={<ProfileMainPage />} />
-          <Route path="/profile/bookings" element={<ProfileBookingsPage />} />
-          <Route path="/profile/history" element={<ProfileBookingsPage />} />
-          <Route path="/profile/wishlist" element={<ProfileWishlistPage />} />
-          <Route path="/profile/coupons" element={<ProfileCouponsPage />} />
-          <Route path="/profile/payments" element={<ProfilePaymentsPage />} />
-          <Route path="/profile/settings" element={<ProfileSettingsPage />} />
-          <Route path="/profile/notifications" element={<ProfileNotificationsPage />} />
+          <Route path="/profile/bookings" element={<ProfileMainPage />} />
+          <Route path="/profile/history" element={<ProfileMainPage />} />
+          <Route path="/profile/articles" element={<ProfileMainPage />} />
+          <Route path="/profile/blogs" element={<ProfileMainPage />} />
+          <Route path="/profile/wishlist" element={<ProfileMainPage />} />
+          <Route path="/profile/coupons" element={<ProfileMainPage />} />
+          <Route path="/profile/payments" element={<ProfileMainPage />} />
+          <Route path="/profile/settings" element={<ProfileMainPage />} />
+          <Route path="/profile/notifications" element={<ProfileMainPage />} />
           <Route path="/dashboard" element={<Navigate to="/profile" replace />} />
         </Route>
 
@@ -276,6 +279,7 @@ const AppContent: React.FC = () => {
           <Route path="/owner/offers" element={<OwnerOffersPage />} />
           <Route path="/owner/volunteer" element={<OwnerVolunteerPage />} />
           <Route path="/owner/users" element={<OwnerUsersPage />} />
+          <Route path="/owner/articles" element={<OwnerVisitorArticlesPage />} />
           <Route path="/owner/staff" element={<StaffManagementPage />} />
           <Route path="/staff/reception" element={<ReceptionCheckinPage />} />
           <Route path="/staff/housekeeping" element={<HousekeepingPage />} />

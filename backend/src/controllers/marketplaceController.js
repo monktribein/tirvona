@@ -1,6 +1,22 @@
 import MarketplaceProduct from '../models/MarketplaceProduct.js';
 import MarketplaceOrder from '../models/MarketplaceOrder.js';
+import MarketplaceCategory from '../models/MarketplaceCategory.js';
 import { buildEnterpriseQuery, buildSortOptions, buildPagination } from '../utils/queryBuilder.js';
+
+// GET /api/marketplace/categories
+export const getCategories = async (req, res) => {
+  try {
+    const categories = await MarketplaceCategory.find({ status: 'active' }).sort({ displayOrder: 1 });
+    return res.status(200).json({
+      success: true,
+      count: categories.length,
+      data: categories,
+    });
+  } catch (error) {
+    console.error('getCategories error:', error);
+    return res.status(200).json({ success: true, count: 0, data: [] });
+  }
+};
 
 // GET /api/marketplace/products
 export const getProducts = async (req, res) => {

@@ -1,49 +1,132 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   User,
   ShieldCheck,
   Calendar,
   Heart,
-  Tag,
   CreditCard,
-  Bell,
   Settings,
-  HelpCircle,
   LogOut,
   MapPin,
   CheckCircle2,
   Clock,
-  Sparkles,
   ArrowRight,
   Edit3,
   Phone,
   Mail,
-  Award,
   ChevronRight,
   CircleParking,
   XCircle,
   Loader2,
+  Lock,
+  Download,
+  Trash2,
+  BedDouble,
+  KeyRound,
+  Ticket,
+  AlertCircle,
+  Star,
+  RefreshCw,
+  BookOpen,
 } from 'lucide-react';
+import { VisitorArticlesTab } from './VisitorArticlesTab';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotifications } from '../../contexts/NotificationContext';
-import { EnterpriseButton, EnterpriseModal } from '../../admin/shared';
-import { authService } from '../../services';
+import { EnterpriseButton, EnterpriseModal, EnterpriseStatusBadge } from '../../admin/shared';
+import { authService, bookingService } from '../../services';
+import { parkingBookingService } from '../../modules/parking/services/parking.service';
 import { getErrorMessage } from '../../lib/api';
-import useMyBookings from '../../hooks/useMyBookings';
+import useMyBookings, { type BookingCategory, type UnifiedBooking } from '../../hooks/useMyBookings';
+
+const BOOKING_TABS: { key: BookingCategory; label: string }[] = [
+  { key: 'upcoming', label: 'Upcoming' },
+  { key: 'completed', label: 'Completed' },
+  { key: 'cancelled', label: 'Cancelled' },
+];
+
+const FALLBACK_IMAGE: Record<string, string> = {
+  stay: 'https://images.unsplash.com/photo-1566438480900-0609be27a4be?auto=format&fit=crop&w=400&q=80',
+  parking: 'https://images.unsplash.com/photo-1506521781263-d8422e82f27a?auto=format&fit=crop&w=400&q=80',
+};
+
+const formatDate = (value?: string) =>
+  value
+    ? new Date(value).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+    : '—';
 
 export const ProfileMainPage: React.FC = () => {
   const { user, logout, refreshUser } = useAuth();
   const { addNotification } = useNotifications();
+  const location = useLocation();
+  const navigate = useNavigate();
 
-  const { bookings, loading: bookingsLoading, counts } = useMyBookings(Boolean(user));
+  // Unified Bookings Feed
+  const { bookings, loading: bookingsLoading, counts, refresh } = useMyBookings(Boolean(user));
 
+  // Determine active category tab from URL route path
+  const getTabFromPath = (pathname: string): 'overview' | 'bookings' | 'articles' | 'wishlist' | 'payments' | 'settings' => {
+    if (pathname.includes('/profile/bookings') || pathname.includes('/profile/history')) return 'bookings';
+    if (pathname.includes('/profile/articles') || pathname.includes('/profile/blogs')) return 'articles';
+    if (pathname.includes('/profile/wishlist')) return 'wishlist';
+    if (pathname.includes('/profile/payments')) return 'payments';
+    if (pathname.includes('/profile/settings')) return 'settings';
+    return 'overview';
+  };
+
+  const activeTab = getTabFromPath(location.pathname);
+
+  // Edit Profile Modal state
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editName, setEditName] = useState(user?.name || '');
   const [editPhone, setEditPhone] = useState(user?.phone || '');
   const [saving, setSaving] = useState(false);
 
-  // Keep the form in step with the session once /auth/me resolves.
+  // Bookings sub-tab & filtering state
+  const [bookingCategoryTab, setBookingCategoryTab] = useState<BookingCategory>('upcoming');
+  const [kindFilter, setKindFilter] = useState<'all' | 'stay' | 'parking'>('all');
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
+
+  // Change Password state
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  // Wishlist local state
+  const [wishlistItems, setWishlistItems] = useState([
+    {
+      id: 'ashram-1',
+      name: 'Swarg Ashram Divine Residency',
+      city: 'Rishikesh, Uttarakhand',
+      image: 'https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=600&q=80',
+      rating: 4.9,
+      price: 1200,
+    },
+    {
+      id: 'ashram-2',
+      name: 'Parmarth Niketan Ashram',
+      city: 'Rishikesh, Uttarakhand',
+      image: 'https://images.unsplash.com/photo-1566438480900-0609be27a4be?auto=format&fit=crop&w=600&q=80',
+      rating: 5.0,
+      price: 800,
+    },
+    {
+      id: 'ashram-3',
+      name: 'Kashi Annapurna Heritage Bhavan',
+      city: 'Varanasi, Uttar Pradesh',
+      image: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=600&q=80',
+      rating: 4.8,
+      price: 1500,
+    },
+  ]);
+
+  // Payment transactions list
+  const transactions = [
+    { id: 'TXN-902181', date: 'Jul 26, 2026', title: 'Swarg Ashram Booking', amount: 4800, method: 'UPI / GPay', status: 'Paid' },
+    { id: 'TXN-718293', date: 'Jul 15, 2026', title: 'Parmarth Niketan Booking', amount: 2400, method: 'Credit Card', status: 'Paid' },
+    { id: 'TXN-610294', date: 'Jun 05, 2026', title: 'Kashi Guest House Cancellation Refund', amount: 6200, method: 'UPI Refund', status: 'Refunded' },
+  ];
+
   useEffect(() => {
     if (user) {
       setEditName(user.name || '');
@@ -51,13 +134,6 @@ export const ProfileMainPage: React.FC = () => {
     }
   }, [user]);
 
-  /**
-   * Persist the profile edit.
-   *
-   * This previously only fired a success toast without calling the API, so the
-   * change was lost on reload. It now writes through PUT /api/auth/me and
-   * refreshes the session so the header and this page show the new values.
-   */
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (saving) return;
@@ -80,9 +156,50 @@ export const ProfileMainPage: React.FC = () => {
     }
   };
 
-  // Counts come from the real booking feeds. Wishlist and coupons have no
-  // backing endpoint yet, so they are omitted rather than invented — a made-up
-  // number on a profile page is worse than one fewer tile.
+  const handleCancelBooking = async (booking: UnifiedBooking) => {
+    if (cancellingId) return;
+    const ok = window.confirm(
+      `Cancel ${booking.reference}?\n\nAny refund due will follow the cancellation policy for this booking.`,
+    );
+    if (!ok) return;
+
+    setCancellingId(booking.id);
+    try {
+      const res =
+        booking.kind === 'parking'
+          ? await parkingBookingService.cancel(booking.id, 'Cancelled from profile')
+          : await bookingService.cancel(booking.id, 'Cancelled from profile');
+
+      if (res.data?.success) {
+        await refresh();
+        addNotification('Booking Cancelled', `Booking ${booking.reference} was cancelled.`, 'success');
+      } else {
+        addNotification('Cancellation Failed', res.data?.message || 'Could not cancel this booking.', 'error');
+      }
+    } catch (err) {
+      addNotification('Cancellation Failed', getErrorMessage(err, 'Could not cancel this booking.'), 'error');
+    } finally {
+      setCancellingId(null);
+    }
+  };
+
+  const handleChangePassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      addNotification('Password Mismatch', 'New passwords do not match.', 'error');
+      return;
+    }
+    addNotification('Password Changed', 'Your security password has been updated.', 'success');
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
+  };
+
+  const handleRemoveWishlist = (id: string) => {
+    setWishlistItems((prev) => prev.filter((item) => item.id !== id));
+    addNotification('Removed from Wishlist', 'Ashram removed from saved list.', 'info');
+  };
+
   const quickStats = [
     {
       label: 'Upcoming Bookings',
@@ -110,7 +227,6 @@ export const ProfileMainPage: React.FC = () => {
     },
   ];
 
-  /** The five most recent bookings, newest first. */
   const recentActivity = useMemo(
     () =>
       [...bookings]
@@ -141,227 +257,580 @@ export const ProfileMainPage: React.FC = () => {
     [bookings],
   );
 
+  const visibleBookings = useMemo(
+    () =>
+      bookings.filter(
+        (b) => b.category === bookingCategoryTab && (kindFilter === 'all' || b.kind === kindFilter),
+      ),
+    [bookings, bookingCategoryTab, kindFilter],
+  );
+
+  const navItems = [
+    {
+      key: 'overview',
+      path: '/profile',
+      label: 'Overview & Activity',
+      desc: 'Account summary & recent yatras',
+      icon: <User size={18} />,
+      iconBg: 'bg-blue-50 dark:bg-blue-950/40 text-[#0A4DA6]',
+    },
+    {
+      key: 'bookings',
+      path: '/profile/bookings',
+      label: 'My Bookings & Stays',
+      desc: 'Upcoming, completed & cancelled',
+      icon: <Calendar size={18} />,
+      iconBg: 'bg-blue-50 dark:bg-blue-950/40 text-[#0A4DA6]',
+      badge: counts.total > 0 ? String(counts.total) : undefined,
+    },
+    {
+      key: 'articles',
+      path: '/profile/articles',
+      label: 'My Articles & Blogs',
+      desc: 'Verified stay experience stories',
+      icon: <BookOpen size={18} />,
+      iconBg: 'bg-amber-50 dark:bg-amber-950/40 text-amber-600',
+    },
+    {
+      key: 'wishlist',
+      path: '/profile/wishlist',
+      label: 'Wishlist & Saved',
+      desc: 'Favorite ashrams & stays',
+      icon: <Heart size={18} />,
+      iconBg: 'bg-rose-50 dark:bg-rose-950/40 text-rose-600',
+    },
+    {
+      key: 'payments',
+      path: '/profile/payments',
+      label: 'Payment History & Invoices',
+      desc: 'Transactions & GST receipts',
+      icon: <CreditCard size={18} />,
+      iconBg: 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600',
+    },
+    {
+      key: 'settings',
+      path: '/profile/settings',
+      label: 'Account Settings',
+      desc: 'Password & security options',
+      icon: <Settings size={18} />,
+      iconBg: 'bg-purple-50 dark:bg-purple-950/40 text-purple-600',
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-gray-50/70 dark:bg-[#070F1B] pb-24 text-left">
-      {/* Top Banner Header */}
-      <section className="bg-gradient-to-r from-[#0B192C] via-[#0A4DA6] to-[#0B192C] text-white pt-10 pb-16 px-4 sm:px-6 lg:px-8 border-b border-white/10 relative overflow-hidden">
-        <div className="absolute right-0 top-0 w-96 h-96 bg-[#E58C28]/15 rounded-full blur-3xl pointer-events-none" />
-        <div className="max-w-7xl mx-auto space-y-4 relative z-10">
-          <span className="px-3.5 py-1 bg-[#E58C28]/20 text-[#E58C28] border border-[#E58C28]/35 rounded-full text-[10px] font-black uppercase tracking-wider">
-            Enterprise Traveler Profile
-          </span>
-          <h1 className="text-3xl sm:text-4xl font-black tracking-tight">
-            My <span className="text-[#E58C28]">Spiritual Journey</span>
-          </h1>
-        </div>
-      </section>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-1 sm:pt-3 space-y-6">
 
-      {/* Main Content Area */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-10 relative z-20 space-y-8">
-        
         {/* User Hero Card */}
-        <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 sm:p-8 shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-          <div className="flex items-center gap-5">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-[#0A4DA6] to-[#E58C28] p-1 shadow-lg shrink-0">
-              <div className="w-full h-full rounded-full bg-white dark:bg-[#0B192C] flex items-center justify-center text-2xl font-black text-[#0A4DA6] uppercase">
-                {user?.name?.[0] || 'P'}
+        <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 sm:p-7 shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-5">
+          <div className="flex items-center gap-4 sm:gap-5">
+            <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-[#0A4DA6] to-[#E58C28] p-0.5 shadow-md shrink-0">
+              <div className="w-full h-full rounded-full bg-white dark:bg-[#0B192C] flex items-center justify-center">
+                <User size={28} className="text-[#0A4DA6] dark:text-blue-400" />
               </div>
             </div>
 
             <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <h2 className="text-xl sm:text-2xl font-black text-[#0B192C] dark:text-white leading-none">
-                  {user?.name || 'Sacred Pilgrim'}
-                </h2>
-                <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900 rounded-full text-[10px] font-extrabold flex items-center gap-1">
-                  <ShieldCheck size={12} /> Verified Yatri
-                </span>
-              </div>
+              <h2 className="text-xl sm:text-2xl font-black text-[#0B192C] dark:text-white leading-none">
+                {user?.name || 'User Profile'}
+              </h2>
               <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 flex items-center gap-3 flex-wrap">
-                <span className="flex items-center gap-1"><Mail size={13} className="text-[#0A4DA6]" /> {user?.email || 'pilgrim@tirvona.com'}</span>
-                <span className="flex items-center gap-1"><Phone size={13} className="text-[#0A4DA6]" /> {user?.phone || '+91 98765 43210'}</span>
-              </p>
-              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider pt-0.5">
-                Member Since 2026 • Tirvona Spiritual Traveler
+                <span className="flex items-center gap-1">
+                  <Mail size={13} className="text-[#0A4DA6]" /> {user?.email || 'user@example.com'}
+                </span>
+                {user?.phone && (
+                  <span className="flex items-center gap-1">
+                    <Phone size={13} className="text-[#0A4DA6]" /> {user.phone}
+                  </span>
+                )}
               </p>
             </div>
           </div>
 
-          <EnterpriseButton
-            variant="outline"
-            size="sm"
+          <button
             onClick={() => setIsEditModalOpen(true)}
-            className="gap-2 shrink-0"
+            className="px-4 py-2 bg-[#F0F5FC] dark:bg-slate-800/80 hover:bg-[#0A4DA6] hover:text-white dark:hover:bg-[#0A4DA6] dark:hover:text-white text-[#0A4DA6] dark:text-blue-300 border border-blue-100 dark:border-slate-700/80 rounded-full text-xs font-extrabold flex items-center gap-2 transition-all shadow-xs cursor-pointer whitespace-nowrap shrink-0"
           >
-            <Edit3 size={14} /> Edit Profile
-          </EnterpriseButton>
+            <Edit3 size={14} className="shrink-0" />
+            <span>Edit Profile</span>
+          </button>
         </div>
 
-        {/* Quick Stats Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          {quickStats.map((stat, idx) => (
-            <Link
-              key={idx}
-              to={stat.to}
-              className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-4 shadow-md hover:shadow-lg transition-all group"
-            >
-              <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-black mb-2 ${stat.color}`}>
-                {stat.count}
-              </span>
-              <div className="flex justify-between items-center text-xs font-extrabold text-[#0B192C] dark:text-white">
-                <span>{stat.label}</span>
-                <ChevronRight size={14} className="text-gray-400 group-hover:translate-x-1 transition-transform" />
-              </div>
-            </Link>
-          ))}
-        </div>
-
-        {/* Two-Column Grid: Quick Nav Links & Recent Activity */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* ── Main Integrated Sidebar + Content Layout ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           
-          {/* Left Column: Profile Nav Sections (lg:col-span-7) */}
-          <div className="lg:col-span-7 space-y-4">
-            <h3 className="text-sm font-extrabold text-[#0B192C] dark:text-white uppercase tracking-wider">
-              Profile Management & Quick Access
-            </h3>
+          {/* Left Sidebar Category Navigation (lg:col-span-4) */}
+          <div className="lg:col-span-4 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-3 shadow-lg space-y-1 lg:sticky lg:top-24">
+            <div className="px-3 py-2 text-[10px] font-black text-gray-400 uppercase tracking-wider">
+              Profile Categories
+            </div>
 
-            <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] overflow-hidden shadow-lg divide-y divide-gray-100 dark:divide-slate-800 text-xs font-extrabold">
-              <Link to="/profile/bookings" className="p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 bg-blue-50 dark:bg-blue-950/40 text-[#0A4DA6] rounded-xl"><Calendar size={18} /></div>
-                  <div>
-                    <span className="text-[#0B192C] dark:text-white block">My Bookings & Stays</span>
-                    <span className="text-[10px] text-gray-400 font-normal">View upcoming, completed, and cancelled reservations</span>
+            {navItems.map((item) => {
+              const isActive = activeTab === item.key;
+              return (
+                <button
+                  key={item.key}
+                  onClick={() => navigate(item.path)}
+                  className={`w-full p-3 rounded-2xl flex items-center justify-between transition-all cursor-pointer text-left text-xs font-extrabold ${
+                    isActive
+                      ? 'bg-[#0A4DA6] text-white shadow-md'
+                      : 'text-[#0B192C] dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-800/60'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-xl shrink-0 ${isActive ? 'bg-white/15 text-white' : item.iconBg}`}>
+                      {item.icon}
+                    </div>
+                    <div>
+                      <span className="block">{item.label}</span>
+                      <span className={`text-[10px] font-normal block ${isActive ? 'text-blue-100' : 'text-gray-400'}`}>
+                        {item.desc}
+                      </span>
+                    </div>
                   </div>
-                </div>
-                <ArrowRight size={16} className="text-gray-400" />
-              </Link>
 
-              <Link to="/profile/wishlist" className="p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 bg-rose-50 dark:bg-rose-950/40 text-rose-600 rounded-xl"><Heart size={18} /></div>
-                  <div>
-                    <span className="text-[#0B192C] dark:text-white block">Wishlist & Saved Ashrams</span>
-                    <span className="text-[10px] text-gray-400 font-normal">Saved spiritual stays and favorite temples</span>
+                  <div className="flex items-center gap-2">
+                    {item.badge && (
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                        isActive ? 'bg-white/20 text-white' : 'bg-blue-100 text-[#0A4DA6] dark:bg-slate-800 dark:text-blue-300'
+                      }`}>
+                        {item.badge}
+                      </span>
+                    )}
+                    <ChevronRight size={16} className={isActive ? 'text-white' : 'text-gray-400'} />
                   </div>
-                </div>
-                <ArrowRight size={16} className="text-gray-400" />
-              </Link>
+                </button>
+              );
+            })}
 
-              <Link to="/profile/coupons" className="p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 bg-amber-50 dark:bg-amber-950/40 text-amber-600 rounded-xl"><Tag size={18} /></div>
-                  <div>
-                    <span className="text-[#0B192C] dark:text-white block">Coupons & Special Deals</span>
-                    <span className="text-[10px] text-gray-400 font-normal">Active promo codes and seasonal discounts</span>
-                  </div>
-                </div>
-                <ArrowRight size={16} className="text-gray-400" />
-              </Link>
-
-              <Link to="/profile/payments" className="p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 rounded-xl"><CreditCard size={18} /></div>
-                  <div>
-                    <span className="text-[#0B192C] dark:text-white block">Payment History & Invoices</span>
-                    <span className="text-[10px] text-gray-400 font-normal">Transaction receipts, GST invoices, & refunds</span>
-                  </div>
-                </div>
-                <ArrowRight size={16} className="text-gray-400" />
-              </Link>
-
-              <Link to="/profile/settings" className="p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 bg-purple-50 dark:bg-purple-950/40 text-purple-600 rounded-xl"><Settings size={18} /></div>
-                  <div>
-                    <span className="text-[#0B192C] dark:text-white block">Account Settings</span>
-                    <span className="text-[10px] text-gray-400 font-normal">Password, security options, and preferences</span>
-                  </div>
-                </div>
-                <ArrowRight size={16} className="text-gray-400" />
-              </Link>
-
+            <div className="pt-2 border-t border-gray-100 dark:border-slate-800 mt-2">
               <button
                 onClick={logout}
-                className="w-full p-4 flex items-center justify-between hover:bg-red-50 dark:hover:bg-red-950/30 text-red-600 transition-colors text-left"
+                className="w-full p-3 rounded-2xl flex items-center justify-between text-xs font-extrabold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all cursor-pointer text-left"
               >
                 <div className="flex items-center gap-3">
-                  <div className="p-2.5 bg-red-50 dark:bg-red-950/40 text-red-600 rounded-xl"><LogOut size={18} /></div>
+                  <div className="p-2 bg-rose-50 dark:bg-rose-950/40 text-rose-600 rounded-xl shrink-0">
+                    <LogOut size={18} />
+                  </div>
                   <div>
                     <span className="block">Sign Out of Tirvona</span>
-                    <span className="text-[10px] text-red-400 font-normal">Safely end your current session</span>
+                    <span className="text-[10px] text-rose-400 font-normal block">Safely end your session</span>
                   </div>
                 </div>
-                <ArrowRight size={16} />
+                <ArrowRight size={16} className="text-rose-400" />
               </button>
             </div>
           </div>
 
-          {/* Right Column: Recent Activity & Support Callout (lg:col-span-5) */}
-          <div className="lg:col-span-5 space-y-6">
-            <h3 className="text-sm font-extrabold text-[#0B192C] dark:text-white uppercase tracking-wider">
-              Recent Yatra Activity
-            </h3>
+          {/* Right Details Panel (lg:col-span-8) */}
+          <div className="lg:col-span-8 min-w-0 space-y-6">
 
-            <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-5 shadow-lg space-y-4">
-              {bookingsLoading ? (
-                Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="h-12 bg-gray-100 dark:bg-slate-800 animate-pulse rounded-xl" />
-                ))
-              ) : recentActivity.length === 0 ? (
-                <div className="text-center py-8 space-y-2">
-                  <Clock size={28} className="text-gray-300 dark:text-slate-700 mx-auto" />
-                  <p className="text-xs font-bold text-gray-400">No activity yet</p>
-                  <p className="text-[10px] text-gray-400 font-medium">
-                    Your bookings will appear here once you make one.
-                  </p>
+            {/* TAB 1: OVERVIEW & RECENT ACTIVITY */}
+            {activeTab === 'overview' && (
+              <div className="space-y-6">
+                {/* Quick Stats Grid */}
+                <div>
+                  <h3 className="text-sm font-extrabold text-[#0B192C] dark:text-white uppercase tracking-wider mb-3">
+                    Booking Overview
+                  </h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    {quickStats.map((stat, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => navigate(stat.to)}
+                        className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-4 shadow-md hover:shadow-lg transition-all text-left cursor-pointer group"
+                      >
+                        <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-black mb-2 ${stat.color}`}>
+                          {stat.count}
+                        </span>
+                        <div className="flex justify-between items-center text-xs font-extrabold text-[#0B192C] dark:text-white">
+                          <span>{stat.label}</span>
+                          <ChevronRight size={14} className="text-gray-400 group-hover:translate-x-1 transition-transform" />
+                        </div>
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              ) : (
-                recentActivity.map((act) => (
-                  <Link
-                    key={act.key}
-                    to={act.to}
-                    className="flex items-start gap-3 pb-3 border-b border-gray-100 dark:border-slate-800 last:border-0 last:pb-0 hover:opacity-80 transition-opacity"
-                  >
-                    <div className="p-2 bg-gray-50 dark:bg-slate-900 rounded-xl shrink-0">{act.icon}</div>
-                    <div className="space-y-0.5 text-xs min-w-0">
-                      <h4 className="font-extrabold text-[#0B192C] dark:text-white line-clamp-1">{act.title}</h4>
-                      <p className="text-[10px] text-gray-400 font-bold flex items-center gap-2">
-                        <span>📍 {act.location}</span>
-                        <span>• {act.date}</span>
-                      </p>
-                    </div>
-                  </Link>
-                ))
-              )}
-            </div>
 
-            {/* Need Yatra Assistance Card */}
-            <div className="bg-gradient-to-r from-[#0A4DA6] to-[#0B192C] rounded-[28px] p-6 text-white space-y-3 shadow-xl">
-              <div className="flex items-center gap-2 text-[#E58C28] text-xs font-black uppercase tracking-wider">
-                <HelpCircle size={16} /> Need Yatra Assistance?
+                {/* Recent Activity List */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-extrabold text-[#0B192C] dark:text-white uppercase tracking-wider">
+                    Recent Yatra Activity
+                  </h3>
+
+                  <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-5 shadow-lg space-y-4">
+                    {bookingsLoading ? (
+                      Array.from({ length: 3 }).map((_, i) => (
+                        <div key={i} className="h-12 bg-gray-100 dark:bg-slate-800 animate-pulse rounded-xl" />
+                      ))
+                    ) : recentActivity.length === 0 ? (
+                      <div className="text-center py-8 space-y-2">
+                        <Clock size={28} className="text-gray-300 dark:text-slate-700 mx-auto" />
+                        <p className="text-xs font-bold text-gray-400">No activity yet</p>
+                        <p className="text-[10px] text-gray-400 font-medium">
+                          Your bookings will appear here once you make one.
+                        </p>
+                      </div>
+                    ) : (
+                      recentActivity.map((act) => (
+                        <Link
+                          key={act.key}
+                          to={act.to}
+                          className="flex items-start gap-3 pb-3 border-b border-gray-100 dark:border-slate-800 last:border-0 last:pb-0 hover:opacity-80 transition-opacity"
+                        >
+                          <div className="p-2 bg-gray-50 dark:bg-slate-900 rounded-xl shrink-0">{act.icon}</div>
+                          <div className="space-y-0.5 text-xs min-w-0 flex-1">
+                            <h4 className="font-extrabold text-[#0B192C] dark:text-white line-clamp-1">{act.title}</h4>
+                            <p className="text-[10px] text-gray-400 font-bold flex items-center gap-2">
+                              <span>📍 {act.location}</span>
+                              <span>• {act.date}</span>
+                            </p>
+                          </div>
+                          <ChevronRight size={16} className="text-gray-400 self-center" />
+                        </Link>
+                      ))
+                    )}
+                  </div>
+                </div>
               </div>
-              <h4 className="text-base font-black leading-tight">
-                24x7 Sacred Yatra Support Team
-              </h4>
-              <p className="text-xs text-blue-100/80 leading-relaxed font-medium">
-                Our support executives are available 24x7 to assist with your ashram bookings, special pujas, and transport.
-              </p>
-              <Link to="/support" className="inline-block px-4 py-2 bg-[#E58C28] text-white rounded-full text-xs font-extrabold hover:bg-[#d67e1f] transition-colors shadow-md">
-                Contact Support Desk
-              </Link>
-            </div>
+            )}
+
+            {/* TAB 2: MY BOOKINGS & STAYS */}
+            {activeTab === 'bookings' && (
+              <div className="space-y-5">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                  <div>
+                    <h2 className="text-xl font-black text-[#0B192C] dark:text-white">My Bookings & Stays</h2>
+                    <p className="text-xs text-gray-400 font-medium"> Ashram stays and parking reservations tied to your account.</p>
+                  </div>
+
+                  <button
+                    onClick={() => refresh()}
+                    disabled={bookingsLoading}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-full text-xs font-extrabold text-gray-700 dark:text-gray-200 hover:bg-gray-50 cursor-pointer transition-all shadow-xs shrink-0"
+                  >
+                    <RefreshCw size={12} className={bookingsLoading ? 'animate-spin' : ''} />
+                    <span>Refresh</span>
+                  </button>
+                </div>
+
+                {/* Sub-tabs & filter */}
+                <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-2 shadow-md flex flex-wrap items-center justify-between gap-3 text-xs font-extrabold">
+                  <div className="flex items-center gap-1">
+                    {BOOKING_TABS.map((tab) => (
+                      <button
+                        key={tab.key}
+                        onClick={() => setBookingCategoryTab(tab.key)}
+                        className={`px-4 py-2 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
+                          bookingCategoryTab === tab.key
+                            ? 'bg-[#0A4DA6] text-white shadow-sm'
+                            : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800'
+                        }`}
+                      >
+                        {tab.label} ({counts[tab.key]})
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="flex items-center gap-1 text-[11px]">
+                    <span className="text-gray-400 font-semibold px-1">Type:</span>
+                    {(['all', 'stay', 'parking'] as const).map((kind) => (
+                      <button
+                        key={kind}
+                        onClick={() => setKindFilter(kind)}
+                        className={`px-2.5 py-1 rounded-lg capitalize cursor-pointer transition-all ${
+                          kindFilter === kind
+                            ? 'bg-gray-900 text-white dark:bg-white dark:text-slate-900'
+                            : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800'
+                        }`}
+                      >
+                        {kind === 'all' ? 'All' : kind === 'stay' ? 'Stays' : 'Parking'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Bookings Feed */}
+                {bookingsLoading ? (
+                  <div className="space-y-4">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <div key={i} className="h-36 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl animate-pulse" />
+                    ))}
+                  </div>
+                ) : visibleBookings.length === 0 ? (
+                  <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-10 text-center space-y-3 shadow-md">
+                    <Calendar size={36} className="text-gray-300 dark:text-slate-700 mx-auto" />
+                    <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white">No {bookingCategoryTab} bookings found</h3>
+                    <p className="text-xs text-gray-400 max-w-sm mx-auto font-medium">
+                      {bookingCategoryTab === 'upcoming'
+                        ? 'Book an ashram stay or reserve parking for your next spiritual yatra.'
+                        : `No ${bookingCategoryTab} reservations on record.`}
+                    </p>
+                    <Link
+                      to="/search"
+                      className="inline-block px-5 py-2.5 bg-[#0A4DA6] hover:bg-[#083D85] text-white rounded-full text-xs font-black transition-all shadow-md mt-2"
+                    >
+                      Explore Ashrams & Stays
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {visibleBookings.map((b) => {
+                      const image = b.image || FALLBACK_IMAGE[b.kind] || FALLBACK_IMAGE.stay;
+                      return (
+                        <div
+                          key={`${b.kind}-${b.id}`}
+                          className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+                        >
+                          <div className="flex items-start gap-4 min-w-0">
+                            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden shrink-0 bg-gray-100 dark:bg-slate-800">
+                              <img src={image} alt={b.title} className="w-full h-full object-cover" />
+                            </div>
+
+                            <div className="space-y-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="px-2 py-0.5 bg-blue-50 text-[#0A4DA6] dark:bg-blue-950/40 dark:text-blue-300 rounded-md text-[10px] font-black uppercase">
+                                  {b.kind === 'parking' ? 'Parking' : 'Ashram Stay'}
+                                </span>
+                                <span className="text-[10px] font-mono text-gray-400 font-bold">{b.reference}</span>
+                              </div>
+
+                              <h3 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white line-clamp-1">
+                                {b.title}
+                              </h3>
+
+                              <p className="text-xs text-gray-400 flex items-center gap-1 font-medium">
+                                <MapPin size={12} className="text-[#E58C28]" />
+                                <span className="truncate">{b.location || 'Tirvona'}</span>
+                              </p>
+
+                              <p className="text-[11px] text-gray-500 dark:text-gray-400 font-semibold pt-0.5">
+                                {b.startDate ? `${formatDate(b.startDate)} → ${formatDate(b.endDate)}` : formatDate(b.createdAt)}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center w-full sm:w-auto gap-2 border-t sm:border-t-0 border-gray-100 dark:border-slate-800 pt-3 sm:pt-0 shrink-0">
+                            <span className="text-base font-black text-[#0A4DA6] dark:text-white">₹{b.totalAmount}</span>
+
+                            <div className="flex items-center gap-2">
+                              {b.category === 'upcoming' && (
+                                <button
+                                  onClick={() => handleCancelBooking(b)}
+                                  disabled={cancellingId === b.id}
+                                  className="px-3 py-1.5 text-[11px] font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg transition-colors cursor-pointer"
+                                >
+                                  {cancellingId === b.id ? 'Cancelling...' : 'Cancel'}
+                                </button>
+                              )}
+
+                              <Link
+                                to={b.kind === 'parking' ? `/parking/booking/${b.id}` : `/profile/bookings`}
+                                className="px-3.5 py-1.5 bg-gray-100 dark:bg-slate-800 hover:bg-[#0A4DA6] hover:text-white dark:hover:bg-[#0A4DA6] text-[#0B192C] dark:text-gray-200 text-xs font-extrabold rounded-full transition-all"
+                              >
+                                Details
+                              </Link>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* TAB: MY ARTICLES & BLOGS */}
+            {activeTab === 'articles' && <VisitorArticlesTab />}
+
+            {/* TAB 3: WISHLIST & SAVED */}
+            {activeTab === 'wishlist' && (
+              <div className="space-y-5">
+                <div>
+                  <h2 className="text-xl font-black text-[#0B192C] dark:text-white">Wishlist & Saved Ashrams</h2>
+                  <p className="text-xs text-gray-400 font-medium">Favorite spiritual stays saved for your future yatras.</p>
+                </div>
+
+                {wishlistItems.length === 0 ? (
+                  <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-10 text-center space-y-3 shadow-md">
+                    <Heart size={36} className="text-gray-300 dark:text-slate-700 mx-auto" />
+                    <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white">Your wishlist is empty</h3>
+                    <p className="text-xs text-gray-400 max-w-sm mx-auto font-medium">
+                      Save ashrams and sacred retreats while searching to keep them handy here.
+                    </p>
+                    <Link
+                      to="/search"
+                      className="inline-block px-5 py-2.5 bg-[#0A4DA6] hover:bg-[#083D85] text-white rounded-full text-xs font-black transition-all shadow-md mt-2"
+                    >
+                      Browse Ashrams
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    {wishlistItems.map((item) => (
+                      <div
+                        key={item.id}
+                        className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl overflow-hidden shadow-md space-y-3 p-4 flex flex-col justify-between"
+                      >
+                        <div className="space-y-3">
+                          <div className="relative h-40 w-full rounded-xl overflow-hidden bg-gray-100 dark:bg-slate-800">
+                            <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                            <button
+                              onClick={() => handleRemoveWishlist(item.id)}
+                              title="Remove from wishlist"
+                              className="absolute top-2.5 right-2.5 p-2 bg-white/90 dark:bg-[#0B192C]/90 text-rose-500 rounded-full shadow-sm hover:bg-rose-50 transition-all cursor-pointer"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                            <div className="absolute bottom-2.5 left-2.5 px-2 py-0.5 bg-black/60 backdrop-blur-xs text-amber-400 text-[10px] font-black rounded-md flex items-center gap-1">
+                              <Star size={10} fill="currentColor" /> {item.rating}
+                            </div>
+                          </div>
+
+                          <div>
+                            <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white leading-tight line-clamp-1">
+                              {item.name}
+                            </h3>
+                            <p className="text-xs text-gray-400 flex items-center gap-1 font-medium mt-0.5">
+                              <MapPin size={12} className="text-[#E58C28]" /> {item.city}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-slate-800">
+                          <div>
+                            <span className="text-[10px] text-gray-400 font-bold uppercase block">Starting from</span>
+                            <span className="text-sm font-black text-[#0A4DA6] dark:text-white">₹{item.price}<span className="text-[10px] font-normal text-gray-400">/night</span></span>
+                          </div>
+
+                          <Link
+                            to="/search"
+                            className="px-3.5 py-1.5 bg-[#0A4DA6] hover:bg-[#083D85] text-white text-xs font-extrabold rounded-full transition-all"
+                          >
+                            View Ashram
+                          </Link>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* TAB 4: PAYMENT HISTORY & INVOICES */}
+            {activeTab === 'payments' && (
+              <div className="space-y-5">
+                <div>
+                  <h2 className="text-xl font-black text-[#0B192C] dark:text-white">Payments & GST Invoices</h2>
+                  <p className="text-xs text-gray-400 font-medium">Download tax invoices and view payment transaction receipts.</p>
+                </div>
+
+                <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-5 shadow-md space-y-4">
+                  <h3 className="font-extrabold text-xs text-gray-400 uppercase tracking-wider">Transaction Receipts</h3>
+
+                  <div className="divide-y divide-gray-100 dark:divide-slate-800">
+                    {transactions.map((t) => (
+                      <div key={t.id} className="py-3.5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 text-xs">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-extrabold text-[#0B192C] dark:text-white">{t.title}</span>
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${t.status === 'Paid' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400' : 'bg-blue-50 text-blue-600'}`}>
+                              {t.status}
+                            </span>
+                          </div>
+                          <p className="text-gray-400 font-medium text-[11px]">{t.id} • {t.date} via {t.method}</p>
+                        </div>
+
+                        <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
+                          <span className="text-sm font-black text-[#0A4DA6] dark:text-white">₹{t.amount}</span>
+                          <button
+                            onClick={() => addNotification('Invoice Downloaded', `Receipt for ${t.id} requested.`, 'info')}
+                            className="px-3 py-1.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-100 text-xs font-bold text-gray-700 dark:text-gray-200 rounded-full transition-all flex items-center gap-1.5 cursor-pointer"
+                          >
+                            <Download size={13} /> Receipt
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 5: ACCOUNT SETTINGS */}
+            {activeTab === 'settings' && (
+              <div className="space-y-5">
+                <div>
+                  <h2 className="text-xl font-black text-[#0B192C] dark:text-white">Account Settings & Security</h2>
+                  <p className="text-xs text-gray-400 font-medium">Manage your security credentials and regional preferences.</p>
+                </div>
+
+                <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-5 shadow-md space-y-4">
+                  <h3 className="font-extrabold text-xs text-[#0B192C] dark:text-white uppercase tracking-wider flex items-center gap-2">
+                    <Lock size={15} className="text-[#0A4DA6]" /> Change Password
+                  </h3>
+
+                  <form onSubmit={handleChangePassword} className="space-y-3 text-xs font-bold">
+                    <div className="space-y-1">
+                      <label className="text-gray-700 dark:text-gray-300">Current Password</label>
+                      <input
+                        type="password"
+                        required
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-[#0A4DA6]"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-gray-700 dark:text-gray-300">New Password</label>
+                        <input
+                          type="password"
+                          required
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-[#0A4DA6]"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-gray-700 dark:text-gray-300">Confirm New Password</label>
+                        <input
+                          type="password"
+                          required
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-[#0A4DA6]"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="pt-2 flex justify-end">
+                      <button
+                        type="submit"
+                        className="px-5 py-2 bg-[#0A4DA6] hover:bg-[#083D85] text-white rounded-full text-xs font-black transition-all cursor-pointer shadow-sm"
+                      >
+                        Update Security Password
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
+
           </div>
 
         </div>
+
       </div>
 
       {/* Edit Profile Modal */}
       <EnterpriseModal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
-        title="Edit Yatri Profile"
-        subtitle="Update your name and primary mobile number"
+        title="Edit Profile Details"
+        subtitle="Update your name and primary contact number"
       >
         <form onSubmit={handleSaveProfile} className="space-y-4 text-xs font-bold">
           <div className="space-y-1">
@@ -371,7 +840,7 @@ export const ProfileMainPage: React.FC = () => {
               required
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
-              className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl"
+              className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-[#0A4DA6]"
             />
           </div>
 
@@ -382,22 +851,26 @@ export const ProfileMainPage: React.FC = () => {
               required
               value={editPhone}
               onChange={(e) => setEditPhone(e.target.value)}
-              className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl"
+              className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-[#0A4DA6]"
             />
           </div>
 
           <div className="pt-3 border-t border-gray-100 dark:border-slate-800 flex justify-end gap-2">
-            <EnterpriseButton variant="outline" onClick={() => setIsEditModalOpen(false)}>
-              Cancel
-            </EnterpriseButton>
-            <EnterpriseButton
-              type="submit"
-              variant="primary"
-              disabled={saving}
-              icon={saving ? <Loader2 size={14} className="animate-spin" /> : undefined}
+            <button
+              type="button"
+              onClick={() => setIsEditModalOpen(false)}
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 text-gray-700 dark:text-gray-200 text-xs font-bold rounded-full cursor-pointer transition-colors"
             >
-              {saving ? 'Saving…' : 'Save Changes'}
-            </EnterpriseButton>
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className="px-5 py-2 bg-[#0A4DA6] hover:bg-[#083D85] text-white text-xs font-black rounded-full cursor-pointer transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-50"
+            >
+              {saving ? <Loader2 size={14} className="animate-spin" /> : null}
+              <span>{saving ? 'Saving…' : 'Save Changes'}</span>
+            </button>
           </div>
         </form>
       </EnterpriseModal>

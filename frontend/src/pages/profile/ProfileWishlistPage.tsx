@@ -33,19 +33,7 @@ export const ProfileWishlistPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50/70 dark:bg-[#070F1B] pb-24 text-left">
-      <section className="bg-gradient-to-r from-[#0B192C] via-[#0A4DA6] to-[#0B192C] text-white pt-10 pb-16 px-4 sm:px-6 lg:px-8 border-b border-white/10 relative overflow-hidden">
-        <div className="max-w-7xl mx-auto space-y-3 relative z-10">
-          <Link to="/profile" className="inline-flex items-center gap-1.5 text-xs text-blue-200 hover:text-white font-bold mb-2">
-            <ArrowLeft size={14} /> Back to Profile
-          </Link>
-          <h1 className="text-3xl font-black tracking-tight">
-            Saved <span className="text-[#E58C28]">Wishlist Ashrams</span>
-          </h1>
-          <p className="text-xs text-blue-100/80 font-medium">Favorite spiritual stays saved for your future yatras.</p>
-        </div>
-      </section>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-1 sm:pt-3">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {wishlistItems.map((item) => (
             <div key={item.id} className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] overflow-hidden shadow-lg space-y-3 p-4 flex flex-col justify-between">
