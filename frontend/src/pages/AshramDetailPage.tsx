@@ -1048,11 +1048,13 @@ export const AshramDetailPage: React.FC = () => {
                       <span className="text-[10px] font-bold text-gray-400">{j.openingsCount} Openings</span>
                     </div>
 
-                    <h4 className="text-xs font-black text-[#0B192C] dark:text-white">{j.title}</h4>
+                    <Link to={`/volunteer/${j._id}`} className="block hover:underline">
+                      <h4 className="text-xs font-black text-[#0B192C] dark:text-white">{j.title}</h4>
+                    </Link>
                     <p className="text-[11px] font-extrabold text-[#E58C28]">{j.stipend}</p>
 
                     <Link
-                      to="/volunteer"
+                      to={`/volunteer/${j._id}`}
                       className="inline-block mt-2 px-3 py-1 bg-[#0A4DA6] hover:bg-[#083b80] text-white text-[10px] font-extrabold rounded-full transition-colors"
                     >
                       Apply for Seva

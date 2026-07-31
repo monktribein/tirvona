@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import {
   Heart,
   Briefcase,
@@ -374,7 +374,9 @@ export const VolunteerHubPage: React.FC = () => {
 
                   {/* Title & Department */}
                   <div>
-                    <h3 className="text-base font-black text-[#0B192C] dark:text-white leading-snug">{job.title}</h3>
+                    <Link to={`/volunteer/${job._id}`} className="block group-hover:text-[#0A4DA6] transition-colors">
+                      <h3 className="text-base font-black text-[#0B192C] dark:text-white leading-snug hover:underline">{job.title}</h3>
+                    </Link>
                     <span className="inline-block mt-1 px-2.5 py-0.5 bg-blue-50 dark:bg-slate-900 text-[#0A4DA6] border border-blue-100 dark:border-slate-800 rounded-full text-[10px] font-black uppercase tracking-wider">
                       {job.department}
                     </span>
@@ -410,10 +412,10 @@ export const VolunteerHubPage: React.FC = () => {
                 </div>
 
                 {/* Footer Action */}
-                <div className="pt-2 border-t border-gray-100 dark:border-slate-800 flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-gray-400">
-                    {job.openingsCount} Openings Available
-                  </span>
+                <div className="pt-2 border-t border-gray-100 dark:border-slate-800 flex items-center justify-between gap-2">
+                  <Link to={`/volunteer/${job._id}`} className="text-[11px] font-extrabold text-[#0A4DA6] hover:underline">
+                    View Details →
+                  </Link>
                   <EnterpriseButton variant="primary" size="sm" onClick={() => handleApplyClick(job)}>
                     Apply Now
                   </EnterpriseButton>

@@ -96,6 +96,7 @@ import { ServicesHubPage } from './pages/ServicesHubPage';
 import { MarketplaceHubPage } from './pages/MarketplaceHubPage';
 import { MarketplaceComingSoonPage } from './pages/MarketplaceComingSoonPage';
 import { VolunteerHubPage } from './pages/VolunteerHubPage';
+import { VolunteerJobDetailPage } from './pages/VolunteerJobDetailPage';
 import OwnerVolunteerPage from './pages/owner/OwnerVolunteerPage';
 
 // Customer Profile Pages
@@ -215,6 +216,8 @@ const AppContent: React.FC = () => {
           <Route path="/services" element={<ServicesHubPage />} />
           <Route path="/marketplace" element={<MarketplaceHubPage />} />
           <Route path="/volunteer" element={<VolunteerHubPage />} />
+          <Route path="/volunteer/:jobId" element={<VolunteerJobDetailPage />} />
+          <Route path="/volunteer/job/:jobId" element={<VolunteerJobDetailPage />} />
           <Route path="/careers" element={<VolunteerHubPage />} />
 
           {/* ── Parking System (public discovery) ──
