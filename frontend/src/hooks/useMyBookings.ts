@@ -115,7 +115,7 @@ const fromStay = (b: any): UnifiedBooking => {
     status,
     paymentStatus: b.paymentStatus,
     category: STAY_CATEGORY[status] || 'upcoming',
-    detailHref: ashram?._id ? `/ashram/${ashram._id}` : undefined,
+    detailHref: `/booking/${b._id}`,
     // Only worth showing while it can still be used at the desk.
     checkInCode: status === 'confirmed' ? b.checkInCode : undefined,
     cancellationReason: b.cancellation?.reason,

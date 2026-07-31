@@ -226,16 +226,18 @@ export const ProfileBookingsPage: React.FC = () => {
                 className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-5 sm:p-6 shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-5"
               >
                 <div className="flex items-start gap-4 min-w-0">
-                  <img
-                    src={b.image || FALLBACK_IMAGE[b.kind]}
-                    alt={b.title}
-                    loading="lazy"
-                    onError={(e) => {
-                      e.currentTarget.onerror = null;
-                      e.currentTarget.src = FALLBACK_IMAGE[b.kind];
-                    }}
-                    className="w-24 h-24 rounded-2xl object-cover shrink-0 border border-gray-100 dark:border-slate-800"
-                  />
+                  <Link to={b.detailHref || (b.kind === 'parking' ? `/parking/booking/${b.id}` : `/booking/${b.id}`)} className="shrink-0 hover:opacity-90 transition-opacity">
+                    <img
+                      src={b.image || FALLBACK_IMAGE[b.kind]}
+                      alt={b.title}
+                      loading="lazy"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = FALLBACK_IMAGE[b.kind];
+                      }}
+                      className="w-24 h-24 rounded-2xl object-cover shrink-0 border border-gray-100 dark:border-slate-800"
+                    />
+                  </Link>
 
                   <div className="space-y-1 text-xs min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
@@ -253,7 +255,9 @@ export const ProfileBookingsPage: React.FC = () => {
                       </span>
                     </div>
 
-                    <h3 className="font-black text-base text-[#0B192C] dark:text-white leading-tight">{b.title}</h3>
+                    <Link to={b.detailHref || (b.kind === 'parking' ? `/parking/booking/${b.id}` : `/booking/${b.id}`)} className="hover:text-[#0A4DA6] transition-colors block">
+                      <h3 className="font-black text-base text-[#0B192C] dark:text-white leading-tight">{b.title}</h3>
+                    </Link>
 
                     {b.location && (
                       <p className="text-gray-500 font-medium flex items-center gap-1">
