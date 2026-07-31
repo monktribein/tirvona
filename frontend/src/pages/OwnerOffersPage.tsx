@@ -291,8 +291,8 @@ export const OwnerOffersPage: React.FC = () => {
       {/* Header Banner */}
       <div className="bg-gradient-to-r from-[#0B192C] via-[#0A4DA6] to-[#0B192C] rounded-[28px] p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-black border border-amber-500/30 backdrop-blur-md">
-            <Sparkles size={14} /> Enterprise Offer & Promotion Hub
+          <div className="inline-flex items-center px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-black border border-amber-500/30 backdrop-blur-md">
+            Enterprise Offer & Promotion Hub
           </div>
           <h1 className="text-2xl sm:text-3xl font-black">Offer & Promotion Management</h1>
           <p className="text-xs sm:text-sm text-gray-200 max-w-2xl font-medium">
@@ -460,16 +460,11 @@ export const OwnerOffersPage: React.FC = () => {
             
             {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-gray-100 dark:border-slate-800 pb-4">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold">
-                  <Sparkles size={18} />
-                </div>
-                <div>
-                  <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white">
-                    {editOfferId ? 'Edit Offer Details' : 'Create New Promotional Offer'}
-                  </h3>
-                  <p className="text-xs text-gray-400">Step {currentStep} of 8: Multi-Step Enterprise Offer Configuration</p>
-                </div>
+              <div>
+                <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white">
+                  {editOfferId ? 'Edit Offer Details' : 'Create New Promotional Offer'}
+                </h3>
+                <p className="text-xs text-gray-400">Step {currentStep} of 8: Multi-Step Enterprise Offer Configuration</p>
               </div>
               <button onClick={() => setShowWizard(false)} className="text-gray-400 hover:text-gray-600 p-1 cursor-pointer">
                 <X size={18} />

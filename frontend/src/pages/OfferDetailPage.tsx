@@ -192,8 +192,8 @@ export const OfferDetailPage: React.FC = () => {
         <div className="lg:col-span-2 space-y-8">
           {/* Highlights & Included Benefits */}
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-sm">
-            <h2 className="text-xl font-black text-[#0B192C] dark:text-white flex items-center gap-2">
-              <Sparkles size={20} className="text-amber-500" /> Offer Highlights & Included Perks
+            <h2 className="text-xl font-black text-[#0B192C] dark:text-white">
+              Offer Highlights & Included Perks
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

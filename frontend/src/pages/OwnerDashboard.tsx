@@ -287,16 +287,11 @@ export const OwnerDashboard: React.FC = () => {
       {/* ── Pending Content Approvals (BannerBoy Workflow Console) ── */}
       <div className="bg-white dark:bg-[#0B192C] border border-amber-200 dark:border-amber-900/50 p-6 rounded-[24px] shadow-sm space-y-4">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center">
-              <Sparkles size={20} />
-            </div>
-            <div>
-              <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white flex items-center gap-2">
-                Pending Content Approvals (CMS Workflow)
-              </h3>
-              <p className="text-xs text-gray-400">Review proposed banner & homepage changes submitted by BannerBoy.</p>
-            </div>
+          <div>
+            <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white">
+              Pending Content Approvals (CMS Workflow)
+            </h3>
+            <p className="text-xs text-gray-400">Review proposed banner & homepage changes submitted by BannerBoy.</p>
           </div>
 
           <span className="px-3 py-1 bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 rounded-full text-xs font-black">
