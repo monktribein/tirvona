@@ -32,11 +32,33 @@ See [`README.md`](./README.md) for the views themselves and the rules.
 
 ---
 
+## `userController` — migrated (PR-2c)
+
+| Endpoint | Handler | View | Why this view |
+|---|---|---|---|
+| `GET /api/users` | `listUsers` | `admin` (list) | `UserManagementPage` renders permissions and the full suspension block. |
+| `GET /api/users/staff` | `listStaff` | `staff` (list) | `StaffManagementPage` reads only name/email/phone/role/status and the populated `employerAshramId`. Narrowest view that covers it. |
+| `POST /api/users/staff` | `createStaff` | `staff` | Echoes the record just created; same audience as the list. `employerAshramId` is preserved because the document carries the value the handler wrote. |
+| `PATCH /api/users/:id/status` | `updateUserStatus` | `admin` | Account management. |
+| `PATCH /api/users/:id/suspend` | `suspendUser` | `admin` | Returns the suspension block the admin UI reads back. |
+| `PATCH /api/users/:id/reactivate` | `reactivateUser` | `admin` | Same. |
+| `POST /api/users/create-account` | `createAccount` | `admin` | **`tempPassword` remains a sibling of `data`** — the admin UI reads `res.data.tempPassword`. Unchanged by this migration. |
+| `PATCH /api/users/:id/role` | `changeRole` | `admin` | Account management. |
+| `PATCH /api/users/:id/permissions` | `updatePermissions` | `admin` | Returns `permissions`. |
+| `DELETE /api/users/:id/soft-delete` | `softDeleteUser` | `admin` | Returns `isDeleted`/`deletedAt`. |
+| `PATCH /api/users/:id/restore` | `restoreUser` | `admin` | Same. |
+
+### Not serialized (no user document in the response)
+
+`removeStaff`, `resetUserPassword` (returns `tempPassword` only) and
+`permanentDeleteUser` return a message, not a user.
+
+---
+
 ## Pending migration
 
 | Controller | Sites | Status |
 |---|---|---|
-| `userController` | 8 raw-document returns, 2 partial projections | **PR-2c** |
 | `admin/shared/genericCrudController` | `users`, `pilgrims`, `owners`, `staff` module keys | **PR-2d**, after a frontend compatibility review. Denylist-based (`HIDDEN_ON_READ`) and not currently leaking, so it carries UI risk without security gain — deliberately excluded from the security PRs. |
 
 Until a controller appears above as migrated it still returns its previous

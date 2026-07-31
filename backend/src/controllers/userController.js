@@ -3,6 +3,9 @@ import User from '../models/User.js';
 import Ashram from '../models/Ashram.js';
 import AuditLog from '../models/AuditLog.js';
 import { escapeRegex } from '../utils/sanitize.js';
+// Dispatcher form, matching authController: several handlers here bind locals
+// named `user` / `staff` that would shadow same-named view imports.
+import { serializeUser, serializeUsers } from '../serializers/userSerializer.js';
 
 const STAFF_ROLES = ['manager', 'reception', 'housekeeping'];
 
@@ -24,12 +27,13 @@ export const listUsers = async (req, res) => {
       ];
     }
 
+    // No projection: the serializer is the boundary. `-passwordHash
+    // -deviceSessions` still emitted aadhaarId, govtId and tokenVersion.
     const users = await User.find(filter)
-      .select('-passwordHash -deviceSessions')
       .sort({ createdAt: -1 })
       .limit(500);
 
-    res.json({ success: true, count: users.length, data: users });
+    res.json({ success: true, count: users.length, data: serializeUsers(users, 'admin') });
   } catch (error) {
     console.error('List users error:', error);
     res.status(500).json({ success: false, message: 'Server error retrieving users' });
@@ -56,11 +60,12 @@ export const listStaff = async (req, res) => {
       role: { $in: STAFF_ROLES },
       employerAshramId: { $in: ashramIds },
     })
-      .select('-passwordHash -deviceSessions')
       .populate('employerAshramId', 'name')
       .sort({ createdAt: -1 });
 
-    res.json({ success: true, count: staff.length, data: staff });
+    // `staff`, not `admin`: this table renders name/email/phone/role/status and
+    // the populated employerAshramId only.
+    res.json({ success: true, count: staff.length, data: serializeUsers(staff, 'staff') });
   } catch (error) {
     console.error('List staff error:', error);
     res.status(500).json({ success: false, message: 'Server error retrieving staff' });
@@ -112,7 +117,9 @@ export const createStaff = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      data: { id: staff._id, name: staff.name, email: staff.email, phone: staff.phone, role: staff.role, status: staff.status, employerAshramId: ashramId },
+      // `staff.employerAshramId` holds the same `ashramId` this handler just
+      // wrote, so the previously hand-picked key is preserved by the view.
+      data: serializeUser(staff, 'staff'),
     });
   } catch (error) {
     console.error('Create staff error:', error);
@@ -189,7 +196,7 @@ export const updateUserStatus = async (req, res) => {
     res.json({
       success: true,
       message: `User status updated to ${status}`,
-      data: { id: user._id, name: user.name, email: user.email, role: user.role, status: user.status },
+      data: serializeUser(user, 'admin'),
     });
   } catch (error) {
     console.error('Update user status error:', error);
@@ -259,7 +266,7 @@ export const suspendUser = async (req, res) => {
     return res.json({
       success: true,
       message: `Account successfully suspended (${suspensionType})`,
-      data: user,
+      data: serializeUser(user, 'admin'),
     });
   } catch (error) {
     console.error('Suspend user error:', error);
@@ -297,7 +304,7 @@ export const reactivateUser = async (req, res) => {
     return res.json({
       success: true,
       message: 'Account successfully reactivated',
-      data: user,
+      data: serializeUser(user, 'admin'),
     });
   } catch (error) {
     console.error('Reactivate user error:', error);
@@ -376,8 +383,15 @@ export const createAccount = async (req, res) => {
     return res.status(201).json({
       success: true,
       message: 'Account created successfully',
+      // TODO(security): `tempPassword` is a plaintext credential in a response
+      // body — it lands in proxy logs, browser history and any client-side error
+      // reporting. Preserved verbatim here because the admin UI reads
+      // `res.data.tempPassword` to relay it, and changing that contract is out of
+      // scope for a serialization PR. Replace with a one-time activation link or
+      // forced reset-on-first-login. Tracked as a follow-up security task; the
+      // same pattern exists in `resetUserPassword` below.
       tempPassword,
-      data: newUser,
+      data: serializeUser(newUser, 'admin'),
     });
   } catch (error) {
     console.error('Create account error:', error);
@@ -416,7 +430,7 @@ export const changeRole = async (req, res) => {
       userAgent: req.headers['user-agent'],
     });
 
-    return res.json({ success: true, message: `Role changed to ${role}`, data: user });
+    return res.json({ success: true, message: `Role changed to ${role}`, data: serializeUser(user, 'admin') });
   } catch (error) {
     console.error('Change role error:', error);
     return res.status(500).json({ success: false, message: 'Server error changing user role' });
@@ -446,7 +460,7 @@ export const updatePermissions = async (req, res) => {
       userAgent: req.headers['user-agent'],
     });
 
-    return res.json({ success: true, message: 'Permissions updated successfully', data: user });
+    return res.json({ success: true, message: 'Permissions updated successfully', data: serializeUser(user, 'admin') });
   } catch (error) {
     console.error('Update permissions error:', error);
     return res.status(500).json({ success: false, message: 'Server error updating permissions' });
@@ -513,7 +527,7 @@ export const softDeleteUser = async (req, res) => {
       userAgent: req.headers['user-agent'],
     });
 
-    return res.json({ success: true, message: 'Account soft deleted. Moved to Deleted Accounts queue.', data: user });
+    return res.json({ success: true, message: 'Account soft deleted. Moved to Deleted Accounts queue.', data: serializeUser(user, 'admin') });
   } catch (error) {
     console.error('Soft delete error:', error);
     return res.status(500).json({ success: false, message: 'Server error performing soft delete' });
@@ -591,7 +605,7 @@ export const restoreUser = async (req, res) => {
       userAgent: req.headers['user-agent'],
     });
 
-    return res.json({ success: true, message: 'Account restored to Active status.', data: user });
+    return res.json({ success: true, message: 'Account restored to Active status.', data: serializeUser(user, 'admin') });
   } catch (error) {
     console.error('Restore user error:', error);
     return res.status(500).json({ success: false, message: 'Server error restoring user account' });
