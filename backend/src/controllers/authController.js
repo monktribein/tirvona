@@ -6,6 +6,10 @@ import config from '../config/env.js';
 import { sendPasswordResetEmail } from '../services/emailService.js';
 import { validateEmail, validatePassword, normalizeEmail } from '../utils/validators.js';
 import { maskEmail } from '../utils/otpLogger.js';
+// Dispatcher form (`serializeUser(doc, 'view')`) rather than the named views:
+// two handlers below declare a local `const staffUser`, which would shadow a
+// same-named import. An unknown view name throws, so this loses no safety.
+import { serializeUser, serializeUsers } from '../serializers/userSerializer.js';
 
 // Helper to sign JWT token. `tv` (token version) is embedded so a password
 // reset can invalidate previously-issued tokens (see authMiddleware.protect).
@@ -236,10 +240,13 @@ export const verifyOTP = async (req, res) => {
 // @access  Private
 export const getMe = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select('-passwordHash');
+    // No projection: the serializer is the boundary. A partial `-passwordHash`
+    // beside it would imply the projection is what protects the response, which
+    // is the confusion that let aadhaarId and tokenVersion ship from here.
+    const user = await User.findById(req.user.id);
     res.json({
       success: true,
-      data: user,
+      data: serializeUser(user, 'self'),
     });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error' });
@@ -271,10 +278,7 @@ export const updateMe = async (req, res) => {
     res.json({
       success: true,
       message: 'Profile updated',
-      data: {
-        id: user._id, name: user.name, email: user.email,
-        phone: user.phone, role: user.role, status: user.status,
-      },
+      data: serializeUser(user, 'self'),
     });
   } catch (error) {
     console.error('Update profile error:', error);
@@ -445,11 +449,13 @@ export const getOwnerStaff = async (req, res) => {
 
     const staff = await User.find({
       role: { $in: ['owner', 'manager', 'reception', 'housekeeping'] }
-    }).select('-passwordHash');
+    });
 
     res.json({
       success: true,
-      data: staff,
+      // `staff`, not `admin`: this list only ever renders name/email/phone/role/
+      // status, so the narrower view is sufficient.
+      data: serializeUsers(staff, 'staff'),
     });
   } catch (error) {
     console.error('Get owner staff error:', error);
@@ -526,14 +532,7 @@ export const createOwnerStaff = async (req, res) => {
     res.status(201).json({
       success: true,
       message: 'Staff member created successfully',
-      data: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        role: user.role,
-        status: user.status,
-      },
+      data: serializeUser(user, 'staff'),
     });
   } catch (error) {
     console.error('Create staff error:', error);
@@ -634,7 +633,7 @@ export const toggleStaffStatus = async (req, res) => {
     res.json({
       success: true,
       message: `Status updated to ${staffUser.status} for ${staffUser.email}`,
-      data: staffUser,
+      data: serializeUser(staffUser, 'admin'),
     });
   } catch (error) {
     console.error('Toggle staff status error:', error);
