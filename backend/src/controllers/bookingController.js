@@ -8,6 +8,7 @@ import Offer from '../models/Offer.js';
 import PlatformSettings from '../models/PlatformSettings.js';
 import { scopedAshramIds } from '../utils/ashramAccess.js';
 import { isRazorpayConfigured, createRazorpayOrder, verifyRazorpaySignature } from '../utils/razorpay.js';
+import { generateBookingId, generateCheckInCode } from '../utils/bookingIds.js';
 import config from '../config/env.js';
 
 // Emit a real-time booking update to the customer and the ashram owner rooms.
@@ -267,6 +268,8 @@ export const createBooking = async (req, res) => {
     const calculatedFinalAmount = Math.max(0, Math.round(originalAmount - discountAmount - loyaltyDiscount + gstAmount + platformFee));
     const rewardPointsEarned = Math.round(calculatedFinalAmount * 0.05);
     const reservationExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
+    const bookingId = generateBookingId();
+    const checkInCode = generateCheckInCode();
 
     const paymentSummary = {
       originalStayCost: calculatedBasePrice,
@@ -291,7 +294,7 @@ export const createBooking = async (req, res) => {
       checkInDate: startDate,
       checkOutDate: endDate,
       guestsCount,
-      roomsBookedCount: roomsCount,
+      roomsBookedCount: roomsWanted,
       services: bookingServices,
       offerId: validOffer ? validOffer._id : undefined,
       appliedOfferId: validOffer ? validOffer._id : undefined,
