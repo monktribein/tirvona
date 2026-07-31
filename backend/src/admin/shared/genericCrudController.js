@@ -29,6 +29,7 @@ import Payment from '../../models/Payment.js';
 import ServiceBooking from '../../models/ServiceBooking.js';
 import ServiceProvider from '../../models/ServiceProvider.js';
 import { escapeRegex } from '../../utils/sanitize.js';
+import { serializeUser } from '../../serializers/userSerializer.js';
 
 // Comprehensive Mongoose Model Registry mapping every enterprise module key
 const MODEL_MAP = {
@@ -102,9 +103,34 @@ const PRIVILEGED_FIELDS = {
   Ashram: ['status', 'isVerified', 'ownerId'],
 };
 
-// Secrets and PII that must never leave the server through a generic list.
-const HIDDEN_ON_READ = {
-  User: '-passwordHash -tokenVersion -aadhaarId -govtId',
+// Response shaping for models that carry fields which must never leave the
+// server. Keyed by Mongoose model name; a model with no entry is returned
+// unchanged, which keeps this controller generic for the 28 other models in
+// MODEL_MAP — none of which has a credential-class field.
+//
+// This replaces a `HIDDEN_ON_READ` denylist (`'-passwordHash -tokenVersion
+// -aadhaarId -govtId'`). The denylist was written before `deviceSessions` and
+// `googleId` existed on the User schema and was never updated, so both shipped
+// through every list, create and update on the four User-backed module keys.
+// That is the failure mode a denylist has and an allowlist does not: a field
+// added to a schema tomorrow is excluded by default rather than exposed.
+const RESPONSE_VIEWS = {
+  // `admin`, not `staff`: the caller is a Super Admin / Govt Admin / District
+  // Officer managing accounts, and the admin console renders permissions and
+  // the full suspension block.
+  User: (doc) => serializeUser(doc, 'admin'),
+};
+
+/** Shape one document for the response, or pass it through untouched. */
+const shapeOne = (doc, TargetModel) => {
+  const view = RESPONSE_VIEWS[TargetModel.modelName];
+  return view ? view(doc) : doc;
+};
+
+/** Shape a list of documents for the response, or pass them through untouched. */
+const shapeMany = (docs, TargetModel) => {
+  const view = RESPONSE_VIEWS[TargetModel.modelName];
+  return view ? docs.map(view) : docs;
 };
 
 // Strip everything the caller is not allowed to write for this model.
@@ -170,11 +196,12 @@ export const getCrudList = async (req, res) => {
         }
       }
 
+      // No projection: the serializer is the boundary. A partial `.select()`
+      // beside it would imply the projection is what protects the response.
       const docs = await TargetModel.find(filter)
-        .select(HIDDEN_ON_READ[TargetModel.modelName] || '')
         .limit(100)
         .sort({ createdAt: -1 });
-      return res.json({ success: true, count: docs.length, data: docs });
+      return res.json({ success: true, count: docs.length, data: shapeMany(docs, TargetModel) });
     }
 
     // Fallback dataset generator for specific sub-categories
@@ -238,25 +265,18 @@ export const saveCrudRecord = async (req, res) => {
     if (TargetModel && hasValidId) {
       const updates = filterWritableFields(data, TargetModel, req.user);
       delete updates._id;
-      let updated = await TargetModel.findByIdAndUpdate(data._id, updates, { new: true }).select(
-        HIDDEN_ON_READ[TargetModel.modelName] || ''
-      );
+      let updated = await TargetModel.findByIdAndUpdate(data._id, updates, { new: true });
       if (!updated) {
         const payload = filterWritableFields(data, TargetModel, req.user);
         delete payload._id;
         updated = await TargetModel.create(payload);
       }
-      return res.json({ success: true, message: 'Record saved successfully', data: updated });
+      return res.json({ success: true, message: 'Record saved successfully', data: shapeOne(updated, TargetModel) });
     } else if (TargetModel) {
       const payload = filterWritableFields(data, TargetModel, req.user);
       delete payload._id;
       const created = await TargetModel.create(payload);
-      const safe = created.toObject();
-      (HIDDEN_ON_READ[TargetModel.modelName] || '')
-        .split(' ')
-        .filter(Boolean)
-        .forEach((f) => delete safe[f.replace('-', '')]);
-      return res.json({ success: true, message: 'Record created successfully', data: safe });
+      return res.json({ success: true, message: 'Record created successfully', data: shapeOne(created, TargetModel) });
     }
 
     return res.json({

@@ -7,8 +7,10 @@ areas that have been remediated or explicitly triaged.
 
 ## Sensitive-field disclosure in user responses
 
-**Status:** closed for `authController` (PR-2b) and `userController` (PR-2c).
-Open for `admin/shared/genericCrudController` (PR-2d).
+**Status:** closed. `authController` (PR-2b), `userController` (PR-2c) and
+`admin/shared/genericCrudController` (PR-2d) all return user data through an
+explicit serializer view. A repository-wide audit at PR-2d confirms no endpoint
+bypasses the layer.
 
 ### What was exposed
 
@@ -41,6 +43,15 @@ Integration tests assert that no `INTERNAL_ONLY_FIELDS` **key** and no secret
 **value** appears anywhere in a response, at any depth, including every element
 of a list — plus a check that no bcrypt-shaped string (`/\$2[aby]\$\d{2}\$/`)
 reaches the wire.
+
+### Denylist vs allowlist
+
+`genericCrudController` demonstrated the failure mode directly. Its
+`HIDDEN_ON_READ` denylist named four fields and was correct when written — but
+`deviceSessions` and `googleId` were added to the User schema afterwards and
+nobody updated the list, so both shipped to three admin roles through every
+list, create and update. An allowlist fails the other way: a field added to a
+schema is invisible until someone names it.
 
 ### Note on rollback
 

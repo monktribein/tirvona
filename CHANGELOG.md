@@ -9,6 +9,14 @@ git history only.
 
 ### Fixed
 
+- **`genericCrudController` leaked `deviceSessions` and `googleId`** (PR-2d).
+  Its `HIDDEN_ON_READ` denylist covered `passwordHash`, `tokenVersion`,
+  `aadhaarId` and `govtId` but predated `deviceSessions` and `googleId`, so both
+  shipped through every list, create and update on the four User-backed module
+  keys. Replaced with a model-keyed serializer registry; the other 28 models
+  pass through unchanged. **No serializer bypass remains anywhere in the
+  backend.**
+
 - **`userController` returned password hashes on seven endpoints** (PR-2c).
   `suspendUser`, `reactivateUser`, `createAccount`, `changeRole`,
   `updatePermissions`, `softDeleteUser` and `restoreUser` each returned the raw

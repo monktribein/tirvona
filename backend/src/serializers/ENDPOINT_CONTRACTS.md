@@ -55,11 +55,29 @@ See [`README.md`](./README.md) for the views themselves and the rules.
 
 ---
 
-## Pending migration
+## `genericCrudController` — migrated (PR-2d)
 
-| Controller | Sites | Status |
-|---|---|---|
-| `admin/shared/genericCrudController` | `users`, `pilgrims`, `owners`, `staff` module keys | **PR-2d**, after a frontend compatibility review. Denylist-based (`HIDDEN_ON_READ`) and not currently leaking, so it carries UI risk without security gain — deliberately excluded from the security PRs. |
+This controller is model-agnostic: 43 module keys resolve to 29 models at
+runtime. Rather than a per-endpoint view, it carries a **`RESPONSE_VIEWS`
+registry** keyed by Mongoose model name. A model with no entry is returned
+unchanged.
+
+| Module keys | Model | View | Why |
+|---|---|---|---|
+| `users`, `pilgrims`, `owners`, `staff` | `User` | `admin` | The caller is a Super Admin / Govt Admin / District Officer managing accounts; the console renders permissions and the full suspension block. |
+| The other 39 keys | 28 other models | **none — pass through** | Audited: none carries a credential-class field. What they hold is PII (`email`, `phone`, `address`) which is the legitimate content of an admin CRUD screen. |
+
+Applies at all three response sites — list, update and create. Replaced the
+`HIDDEN_ON_READ` denylist, which omitted `deviceSessions` and `googleId`
+because it predated both fields.
+
+### Adjacent, not addressed here
+
+`Payment.gatewayResponse` (reachable via the `payments` key) stores
+`{ razorpay_order_id, razorpay_payment_id, razorpay_signature }`. The signature
+cannot be forged without the key secret, but it is gateway internal state with
+no UI use. A narrow projection is warranted as its own change — it is not a user
+serialization concern.
 
 Until a controller appears above as migrated it still returns its previous
 shape. The integration suite carries a regression marker asserting the raw
