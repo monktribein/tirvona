@@ -321,14 +321,25 @@ export const ProfileBookingsPage: React.FC = () => {
 
                   <div className="flex items-center gap-2 flex-wrap justify-end">
                     {b.kind === 'stay' && (
-                      <EnterpriseButton
-                        variant="outline"
-                        size="sm"
-                        className="gap-1.5 text-xs"
-                        onClick={() => setSelectedReceipt(b)}
-                      >
-                        <Ticket size={14} /> Receipt
-                      </EnterpriseButton>
+                      <>
+                        <Link to={`/booking/${b.id}`}>
+                          <EnterpriseButton
+                            variant="primary"
+                            size="sm"
+                            className="gap-1.5 text-xs"
+                          >
+                            <ArrowRight size={14} /> Details
+                          </EnterpriseButton>
+                        </Link>
+                        <EnterpriseButton
+                          variant="outline"
+                          size="sm"
+                          className="gap-1.5 text-xs"
+                          onClick={() => setSelectedReceipt(b)}
+                        >
+                          <Ticket size={14} /> Receipt
+                        </EnterpriseButton>
+                      </>
                     )}
 
                     {b.kind === 'parking' && b.category !== 'cancelled' && (

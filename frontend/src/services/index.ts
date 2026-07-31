@@ -54,6 +54,7 @@ export const roomService = {
 // ── Bookings ─────────────────────────────────────────────────────────────────
 export const bookingService = {
   create: (data: unknown) => api.post('/bookings/create', data),
+  getById: (id: string) => api.get(`/bookings/${id}`),
   createPaymentOrder: (id: string) => api.post(`/bookings/${id}/payment/order`, {}),
   pay: (id: string, data: unknown) => api.post(`/bookings/${id}/payment`, data),
   history: () => api.get('/bookings/history'),
