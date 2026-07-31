@@ -289,7 +289,7 @@ export const createBooking = async (req, res) => {
     };
 
     // 3. Atomically lock room inventory immediately for Reservation Mode
-    const lock = await lockInventory(room, startDate, endDate, roomsCount);
+    const lock = await lockInventory(room, startDate, endDate, roomsWanted);
     if (!lock.ok) {
       return res.status(409).json({
         success: false,
@@ -310,7 +310,7 @@ export const createBooking = async (req, res) => {
       checkInDate: startDate,
       checkOutDate: endDate,
       guestsCount,
-      roomsBookedCount: roomsCount,
+      roomsBookedCount: roomsWanted,
       services: bookingServices,
       offerId: validOffer ? validOffer._id : undefined,
       appliedOfferId: validOffer ? validOffer._id : undefined,
