@@ -61,6 +61,8 @@ export const bookingService = {
   checkin: (id: string, checkInCode: string) => api.post(`/bookings/${id}/checkin`, { checkInCode }),
   checkout: (id: string) => api.post(`/bookings/${id}/checkout`, {}),
   cancel: (id: string, reason: string) => api.post(`/bookings/${id}/cancel`, { reason }),
+  assignRoomNumber: (id: string, roomNumber: string) => api.put(`/bookings/${id}/room-number`, { roomNumber }),
+  updateStatus: (id: string, status: string) => api.put(`/bookings/${id}/status`, { status }),
 };
 
 // ── Reviews ──────────────────────────────────────────────────────────────────

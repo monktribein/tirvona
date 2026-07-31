@@ -8,6 +8,11 @@ import Offer from '../models/Offer.js';
 import PlatformSettings from '../models/PlatformSettings.js';
 import { scopedAshramIds } from '../utils/ashramAccess.js';
 import { isRazorpayConfigured, createRazorpayOrder, verifyRazorpaySignature } from '../utils/razorpay.js';
+import {
+  dispatchBookingNotifications,
+  sendBookingConfirmationEmail,
+  sendBookingConfirmationSMS,
+} from '../utils/bookingNotification.js';
 import config from '../config/env.js';
 
 // Emit a real-time booking update to the customer and the ashram owner rooms.
@@ -283,8 +288,22 @@ export const createBooking = async (req, res) => {
       finalPayableAmount: calculatedFinalAmount,
     };
 
+    // 3. Atomically lock room inventory immediately for Reservation Mode
+    const lock = await lockInventory(room, startDate, endDate, roomsCount);
+    if (!lock.ok) {
+      return res.status(409).json({
+        success: false,
+        message: `Rooms are no longer available on ${lock.failedDate}. Please choose alternate dates.`,
+      });
+    }
+
+    const generatedBookingId = `TBK-${Math.floor(100000 + Math.random() * 900000)}`;
+    const reservationNumber = `RES-${Math.floor(10000000 + Math.random() * 90000000)}`;
+    const checkInCode = `CHK-${Math.floor(1000 + Math.random() * 9000)}`;
+
     const booking = await Booking.create({
-      bookingId,
+      bookingId: generatedBookingId,
+      reservationNumber,
       customerId: req.user.id,
       ashramId,
       roomId,
@@ -304,6 +323,7 @@ export const createBooking = async (req, res) => {
       rewardPointsEarned,
       reservationExpiresAt,
       paymentSummary,
+      specialRequests: req.body.specialRequests || '',
       pricing: {
         basePrice: calculatedBasePrice,
         servicesPrice,
@@ -322,7 +342,9 @@ export const createBooking = async (req, res) => {
         amountPaid: 0,
       },
       paymentStatus: 'pending',
-      status: 'pending',
+      paymentMode: 'pay_at_ashram',
+      gatewayStatus: 'not_initiated',
+      status: 'confirmed', // Reservation Confirmed Mode!
       checkInCode,
     });
 
@@ -334,13 +356,51 @@ export const createBooking = async (req, res) => {
       await validOffer.save();
     }
 
+    // Fetch ashram info for notifications
+    const ashramDoc = await Ashram.findById(ashramId).select('name ownerId contact');
+
+    const notificationPayload = {
+      bookingId: booking.bookingId,
+      reservationNumber: booking.reservationNumber,
+      ashramId,
+      ashramName: ashramDoc?.name || 'Sacred Ashram',
+      ownerId: ashramDoc?.ownerId,
+      roomName: room.name,
+      guestName: req.user?.name || 'Valued Guest',
+      guestPhone: req.user?.phone || 'Not provided',
+      guestEmail: req.user?.email || 'guest@tirvona.com',
+      checkInDate: startDate,
+      checkOutDate: endDate,
+      guestsCount,
+      totalAmount: calculatedFinalAmount,
+      specialRequests: req.body.specialRequests || 'None',
+      checkInCode: booking.checkInCode,
+    };
+
+    // Dispatch Enterprise Notifications, Confirmation Email, and SMS Placeholder
+    await dispatchBookingNotifications(notificationPayload);
+    await sendBookingConfirmationEmail(notificationPayload);
+    await sendBookingConfirmationSMS(notificationPayload);
+
+    await emitBookingUpdate(req, booking, 'booking_confirmed');
+
+    await AuditLog.create({
+      userId: req.user.id,
+      action: 'RESERVATION_MODE_BOOKING_CREATE',
+      module: 'BOOKING_ENGINE',
+      details: { bookingId: booking.bookingId, reservationNumber: booking.reservationNumber },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+
     res.status(201).json({
       success: true,
+      message: 'Reservation confirmed successfully! Pay upon check-in at Ashram.',
       data: booking,
     });
   } catch (error) {
     console.error('Create booking error:', error);
-    res.status(500).json({ success: false, message: 'Server error instantiating booking' });
+    res.status(500).json({ success: false, message: 'Server error instantiating reservation booking' });
   }
 };
 
@@ -790,7 +850,76 @@ export const cancelBooking = async (req, res) => {
     });
   } catch (error) {
     console.error('Cancel booking error:', error);
-    res.status(500).json({ success: false, message: 'Error cancelling booking' });
+    res.status(500).json({ success: false, message: 'Server error cancelling booking' });
   }
 };
 
+// @desc    Assign room number to a booking (e.g. Room 102)
+// @route   PUT /api/bookings/:id/room-number
+// @access  Private (Owner / Manager / Reception / Super Admin)
+export const assignRoomNumber = async (req, res) => {
+  try {
+    const { roomNumber } = req.body;
+    const booking = await Booking.findById(req.params.id);
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Booking not found' });
+    }
+
+    booking.assignedRoomNumber = roomNumber || '';
+    await booking.save();
+
+    await AuditLog.create({
+      userId: req.user.id,
+      action: 'BOOKING_ASSIGN_ROOM_NUMBER',
+      module: 'BOOKING_ENGINE',
+      details: { bookingId: booking.bookingId, roomNumber },
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+
+    res.json({
+      success: true,
+      message: `Room number ${roomNumber} assigned successfully.`,
+      data: booking,
+    });
+  } catch (error) {
+    console.error('Assign room number error:', error);
+    res.status(500).json({ success: false, message: 'Error assigning room number' });
+  }
+};
+
+// @desc    Update status of a booking (Stay Admin action)
+// @route   PUT /api/bookings/:id/status
+// @access  Private (Owner / Manager / Reception / Super Admin)
+export const updateBookingStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+    const booking = await Booking.findById(req.params.id);
+    if (!booking) {
+      return res.status(404).json({ success: false, message: 'Booking not found' });
+    }
+
+    const validStatuses = ['pending', 'confirmed', 'checked_in', 'checked_out', 'completed', 'cancelled', 'no_show'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ success: false, message: 'Invalid booking status value' });
+    }
+
+    booking.status = status;
+    booking.history.push({
+      status,
+      updatedBy: req.user.id,
+    });
+    await booking.save();
+
+    await emitBookingUpdate(req, booking, `status_${status}`);
+
+    res.json({
+      success: true,
+      message: `Booking status updated to ${status}.`,
+      data: booking,
+    });
+  } catch (error) {
+    console.error('Update booking status error:', error);
+    res.status(500).json({ success: false, message: 'Error updating booking status' });
+  }
+};

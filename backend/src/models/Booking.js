@@ -123,6 +123,27 @@ const bookingSchema = new mongoose.Schema(
     rewardPointsEarned: { type: Number, default: 0 },
     reservationExpiresAt: { type: Date },
     paymentSummary: { type: Object },
+    reservationNumber: {
+      type: String,
+    },
+    assignedRoomNumber: {
+      type: String,
+      default: '',
+    },
+    paymentMode: {
+      type: String,
+      enum: ['pay_at_ashram', 'online', 'offline'],
+      default: 'pay_at_ashram',
+    },
+    gatewayStatus: {
+      type: String,
+      enum: ['not_initiated', 'pending', 'success', 'failed'],
+      default: 'not_initiated',
+    },
+    specialRequests: {
+      type: String,
+      default: '',
+    },
     paymentStatus: {
       type: String,
       enum: ['pending', 'partially_paid', 'fully_paid', 'refunded'],

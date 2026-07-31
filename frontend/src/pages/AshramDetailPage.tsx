@@ -1465,40 +1465,65 @@ export const AshramDetailPage: React.FC = () => {
                 </button>
               </form>
             ) : (
-              /* Invoice Break & Mock Payment */
-              <div className="space-y-5 animate-in fade-in duration-200">
-                <div className="p-3.5 bg-success/10 border border-success/20 rounded-xl text-success text-center">
-                  <span className="text-xs font-bold block">Booking Locked Successfully!</span>
-                  <span className="text-[10px]">Reference: {bookingSuccess.bookingId}</span>
+              /* Instant Reservation Confirmed Card */
+              <div className="space-y-5 animate-in fade-in duration-200 text-left">
+                <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl text-emerald-800 dark:text-emerald-300 space-y-1">
+                  <div className="flex items-center gap-2 font-black text-sm text-emerald-700 dark:text-emerald-400">
+                    <span className="text-lg">🎉</span>
+                    <span>Reservation Confirmed Successfully!</span>
+                  </div>
+                  <p className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                    Your room inventory has been locked. Payment is payable upon check-in at Ashram.
+                  </p>
                 </div>
 
-                <div className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-[20px] p-4.5 space-y-3">
-                  <span className="text-[10px] uppercase font-bold text-gray-400 block border-b border-gray-150 dark:border-slate-800 pb-1.5">Billing Summary</span>
-                  <div className="flex justify-between text-xs font-semibold text-gray-500">
-                    <span>Base Room Stay:</span>
-                    <span>₹{bookingSuccess.pricing?.basePrice}</span>
+                <div className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-[22px] p-4.5 space-y-2.5 text-xs font-semibold">
+                  <div className="flex justify-between items-center pb-2 border-b border-gray-200 dark:border-slate-800">
+                    <span className="text-gray-400 uppercase text-[10px] font-extrabold">Booking ID:</span>
+                    <span className="font-mono font-extrabold text-[#0B192C] dark:text-white">{bookingSuccess.bookingId}</span>
                   </div>
-                  <div className="flex justify-between text-xs font-semibold text-gray-500">
-                    <span>Add-on Services:</span>
-                    <span>₹{bookingSuccess.pricing?.servicesPrice}</span>
+
+                  {bookingSuccess.reservationNumber && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">Reservation No:</span>
+                      <span className="font-mono font-bold text-[#0A4DA6]">{bookingSuccess.reservationNumber}</span>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-400">Counter Check-In Code:</span>
+                    <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">{bookingSuccess.checkInCode}</span>
                   </div>
-                  <div className="flex justify-between text-xs font-semibold text-gray-500">
-                    <span>Donation:</span>
-                    <span>₹{bookingSuccess.pricing?.donationAmount}</span>
+
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-400">Payment Status:</span>
+                    <span className="px-2 py-0.5 bg-amber-500/10 text-amber-700 dark:text-amber-300 rounded text-[10px] font-bold">
+                      Pending (Pay at Ashram)
+                    </span>
                   </div>
-                  <div className="flex justify-between text-xs font-bold text-[#0B192C] dark:text-white pt-2.5 border-t border-dashed border-gray-200 dark:border-slate-800">
-                    <span>Total Bill:</span>
-                    <span>₹{bookingSuccess.pricing?.totalAmount}</span>
+
+                  <div className="flex justify-between items-center pt-2 border-t border-dashed border-gray-200 dark:border-slate-800 font-extrabold text-sm text-[#0B192C] dark:text-white">
+                    <span>Total Amount Payable:</span>
+                    <span className="text-[#0A4DA6]">₹{bookingSuccess.pricing?.totalAmount}</span>
                   </div>
                 </div>
 
-                <button
-                  onClick={handleConfirmPayment}
-                  disabled={paying}
-                  className="w-full py-3 bg-[#0A4DA6] hover:bg-opacity-95 text-white font-bold rounded-full text-xs shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  {paying ? 'Processing…' : `Pay ₹${bookingSuccess.pricing?.totalAmount}`}
-                </button>
+                <div className="space-y-2 pt-1">
+                  <Link
+                    to="/profile/bookings"
+                    className="w-full py-3 bg-[#0A4DA6] hover:bg-[#083b80] text-white font-extrabold rounded-full text-xs shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all"
+                  >
+                    Go to My Bookings <ArrowRight size={14} />
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={() => setBookingSuccess(null)}
+                    className="w-full py-2 bg-gray-100 dark:bg-slate-850 hover:bg-gray-200 text-gray-600 dark:text-gray-300 font-bold rounded-full text-xs transition-all cursor-pointer"
+                  >
+                    Make Another Booking
+                  </button>
+                </div>
               </div>
             )}
           </div>

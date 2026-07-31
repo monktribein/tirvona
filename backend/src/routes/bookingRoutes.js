@@ -9,6 +9,8 @@ import {
   verifyCheckin,
   verifyCheckout,
   cancelBooking,
+  assignRoomNumber,
+  updateBookingStatus,
 } from '../controllers/bookingController.js';
 import { protect, restrictTo } from '../middlewares/authMiddleware.js';
 import rateLimit from 'express-rate-limit';
@@ -32,6 +34,8 @@ router.post('/:id/payment', protect, restrictTo('customer'), processBookingPayme
 router.get('/history', protect, restrictTo('customer'), getBookingHistory);
 router.get('/dashboard', protect, restrictTo('owner', 'manager', 'reception', 'super_admin'), getDashboardBookings);
 router.get('/:id', protect, getBookingById);
+router.put('/:id/room-number', protect, restrictTo('owner', 'manager', 'reception', 'super_admin'), assignRoomNumber);
+router.put('/:id/status', protect, restrictTo('owner', 'manager', 'reception', 'super_admin'), updateBookingStatus);
 router.post('/:id/checkin', checkinLimiter, protect, restrictTo('owner', 'manager', 'reception'), verifyCheckin);
 router.post('/:id/checkout', protect, restrictTo('owner', 'manager', 'reception'), verifyCheckout);
 router.post('/:id/cancel', protect, cancelBooking);
