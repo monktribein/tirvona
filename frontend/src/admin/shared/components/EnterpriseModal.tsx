@@ -17,7 +17,7 @@ export const EnterpriseModal: React.FC<EnterpriseModalProps> = ({
   onClose,
   title,
   subtitle,
-  icon = <Sparkles size={18} className="text-[#0A4DA6]" />,
+  icon,
   children,
   footer,
   maxWidth = 'md',

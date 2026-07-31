@@ -885,8 +885,8 @@ export const AshramDetailPage: React.FC = () => {
           {/* About description & History */}
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-5 shadow-sm">
             <div className="flex items-center justify-between gap-3 border-b border-gray-50 dark:border-slate-850 pb-3">
-              <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white flex items-center gap-1.5">
-                <Compass size={18} className="text-[#0A4DA6]" /> About the Retreat
+              <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white border-b border-gray-50 dark:border-slate-850 pb-3">
+                About the Retreat
               </h3>
               <div className="flex items-center gap-1 bg-gray-50 dark:bg-slate-900 px-3 py-1 border border-gray-150 dark:border-slate-800 rounded-full shrink-0">
                 <Star className="text-[#D4AF37] fill-[#D4AF37]" size={12} />
@@ -897,8 +897,8 @@ export const AshramDetailPage: React.FC = () => {
             
             {ashram.history && (
               <div className="pt-4 border-t border-gray-100 dark:border-slate-800 space-y-2">
-                <h4 className="text-xs font-bold text-[#0A4DA6] flex items-center gap-1.5 uppercase tracking-wider">
-                  <Sparkles size={14} /> Historical Significance
+                <h4 className="text-xs font-bold text-[#0A4DA6] uppercase tracking-wider">
+                  Historical Significance
                 </h4>
                 <p className="text-xs text-gray-500 leading-relaxed italic bg-gray-50/50 dark:bg-slate-900/10 p-4 rounded-2xl border border-dashed border-gray-100 dark:border-slate-850">
                   "{ashram.history}"
@@ -909,8 +909,8 @@ export const AshramDetailPage: React.FC = () => {
 
           {/* Amenities & Facilities */}
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-5 shadow-sm">
-            <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white flex items-center gap-1.5 border-b border-gray-50 dark:border-slate-850 pb-3">
-              <Award size={18} className="text-[#0A4DA6]" /> Facilities & Spiritual Activities
+            <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white border-b border-gray-50 dark:border-slate-850 pb-3">
+              Facilities & Spiritual Activities
             </h3>
             <div className="flex flex-wrap gap-2.5">
               {ashram.amenities?.map((am: string, i: number) => (
@@ -923,8 +923,8 @@ export const AshramDetailPage: React.FC = () => {
 
           {/* Rooms Categories List */}
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-5 shadow-sm">
-            <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white flex items-center gap-1.5 border-b border-gray-50 dark:border-slate-850 pb-3">
-              <Bed size={18} className="text-[#0A4DA6]" /> Available Room Categories
+            <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white border-b border-gray-50 dark:border-slate-850 pb-3">
+              Available Room Categories
             </h3>
             <div className="space-y-4">
               {rooms.map((r) => (
@@ -949,8 +949,8 @@ export const AshramDetailPage: React.FC = () => {
 
           {/* Room Availability Grid */}
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-5 shadow-sm">
-            <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white flex items-center gap-1.5 border-b border-gray-50 dark:border-slate-850 pb-3">
-              <CalendarIcon size={18} className="text-[#0A4DA6]" /> 30-Day Room Availability Grid
+            <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white border-b border-gray-50 dark:border-slate-850 pb-3">
+              30-Day Room Availability Grid
             </h3>
             
             <p className="text-[10px] text-gray-400 font-bold uppercase">
@@ -969,7 +969,7 @@ export const AshramDetailPage: React.FC = () => {
                     
                     const dateObj = new Date(day.date);
                     const formattedDay = dateObj.getDate();
-                    const formattedMonth = dateObj.toLocaleString('en-US', { month: 'short' });
+                    const formattedMonth = dateObj.toLocaleString('en-IN', { month: 'short' });
 
                     return (
                       <div 
@@ -1003,8 +1003,8 @@ export const AshramDetailPage: React.FC = () => {
 
           {/* Rules & Policies */}
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-5 shadow-sm">
-            <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white flex items-center gap-1.5 border-b border-gray-50 dark:border-slate-850 pb-3">
-              <Info size={18} className="text-[#0A4DA6]" /> Rules & Policies
+            <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white border-b border-gray-50 dark:border-slate-850 pb-3">
+              Rules & Policies
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
               <div className="space-y-3">
@@ -1030,8 +1030,8 @@ export const AshramDetailPage: React.FC = () => {
           {volunteerJobs.length > 0 && (
             <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-4 shadow-sm">
               <div className="flex items-center justify-between border-b border-gray-50 dark:border-slate-850 pb-3">
-                <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white flex items-center gap-2">
-                  <Sparkles size={18} className="text-[#E58C28]" /> Current Volunteer & Career Opportunities ({volunteerJobs.length})
+                <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white">
+                  Current Volunteer & Career Opportunities ({volunteerJobs.length})
                 </h3>
                 <Link to="/volunteer" className="text-xs font-black text-[#0A4DA6] hover:underline">
                   View All Directory →
@@ -1074,8 +1074,8 @@ export const AshramDetailPage: React.FC = () => {
         <div className="space-y-6">
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 shadow-sm space-y-6 relative overflow-hidden">
             <div className="absolute top-0 inset-x-0 h-1 bg-[#0A4DA6]" />
-            <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white flex items-center gap-2">
-              <CalendarIcon size={16} className="text-[#0A4DA6]" /> Stay Booking Engine
+            <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white">
+              Stay Booking Engine
             </h3>
 
             {restoredNotice && (

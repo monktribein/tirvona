@@ -99,7 +99,7 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({ revi
     if (!dateStr) return 'Stayed in July 2026';
     const date = new Date(dateStr);
     if (isNaN(date.getTime())) return 'Stayed recently';
-    return `Stayed in ${date.toLocaleString('en-US', { month: 'long', year: 'numeric' })}`;
+    return `Stayed in ${date.toLocaleString('en-IN', { month: 'long', year: 'numeric' })}`;
   };
 
   // Compute slice of reviews to display in current window

@@ -294,8 +294,8 @@ export const VolunteerJobDetailPage: React.FC = () => {
 
             {/* Overview / About Section */}
             <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-4 shadow-sm">
-              <h3 className="text-sm font-extrabold uppercase tracking-wider text-[#0A4DA6] flex items-center gap-2">
-                <Sparkles size={16} /> About This Seva Opportunity
+              <h3 className="text-sm font-extrabold uppercase tracking-wider text-[#0A4DA6]">
+                About This Seva Opportunity
               </h3>
               <p className="text-xs font-medium text-gray-600 dark:text-gray-300 leading-relaxed">
                 Join {job.ashramName} in {job.city} for dedicated service as a <strong>{job.title}</strong>. This opportunity allows pilgrims and spiritual seekers to contribute to ashram operations, event management, and guest welfare while experiencing authentic spiritual ashram living with full accommodation and Satvik meals.
@@ -346,8 +346,7 @@ export const VolunteerJobDetailPage: React.FC = () => {
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-medium text-gray-600 dark:text-gray-300">
                   {job.benefits.map((ben, idx) => (
-                    <div key={idx} className="p-3 bg-emerald-50/50 dark:bg-emerald-950/20 rounded-xl border border-emerald-100 dark:border-emerald-900/40 flex items-center gap-2 text-emerald-800 dark:text-emerald-300">
-                      <Sparkles size={14} className="text-emerald-500 shrink-0" />
+                    <div key={idx} className="p-3 bg-emerald-50/50 dark:bg-emerald-950/20 rounded-xl border border-emerald-100 dark:border-emerald-900/40 flex items-center text-emerald-800 dark:text-emerald-300">
                       <span className="font-bold">{ben}</span>
                     </div>
                   ))}

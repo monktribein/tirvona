@@ -1523,13 +1523,13 @@ const AddAshramWizardPage: React.FC = () => {
             {/* ── Preview: About & History ── */}
             {(formData.description || formData.history) && (
               <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-5 shadow-sm">
-                <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white flex items-center gap-1.5 border-b border-gray-50 dark:border-slate-850 pb-3">
-                  <Compass size={18} className="text-[#0A4DA6]" /> About the Retreat
+                <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white border-b border-gray-50 dark:border-slate-850 pb-3">
+                  About the Retreat
                 </h3>
                 <p className="text-xs text-gray-500 leading-relaxed font-medium">{formData.description}</p>
                 {formData.history && (
                   <div className="pt-4 border-t border-gray-100 dark:border-slate-800 space-y-2">
-                    <h4 className="text-xs font-bold text-[#0A4DA6] flex items-center gap-1.5 uppercase tracking-wider"><Sparkles size={14} /> Historical Significance</h4>
+                    <h4 className="text-xs font-bold text-[#0A4DA6] uppercase tracking-wider">Historical Significance</h4>
                     <p className="text-xs text-gray-500 leading-relaxed italic bg-gray-50/50 dark:bg-slate-900/10 p-4 rounded-2xl border border-dashed border-gray-100 dark:border-slate-850">"{formData.history}"</p>
                   </div>
                 )}
@@ -1539,8 +1539,8 @@ const AddAshramWizardPage: React.FC = () => {
             {/* ── Preview: Amenities ── */}
             {formData.amenities.length > 0 && (
               <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-5 shadow-sm">
-                <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white flex items-center gap-1.5 border-b border-gray-50 dark:border-slate-850 pb-3">
-                  <Award size={18} className="text-[#0A4DA6]" /> Facilities & Spiritual Activities
+                <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white border-b border-gray-50 dark:border-slate-850 pb-3">
+                  Facilities & Spiritual Activities
                 </h3>
                 <div className="flex flex-wrap gap-2.5">
                   {formData.amenities.map((am, i) => (
@@ -1553,8 +1553,8 @@ const AddAshramWizardPage: React.FC = () => {
             {/* ── Preview: Rooms ── */}
             {formData.rooms.length > 0 && (
               <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-5 shadow-sm">
-                <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white flex items-center gap-1.5 border-b border-gray-50 dark:border-slate-850 pb-3">
-                  <Bed size={18} className="text-[#0A4DA6]" /> Available Room Categories
+                <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white border-b border-gray-50 dark:border-slate-850 pb-3">
+                  Available Room Categories
                 </h3>
                 <div className="space-y-4">
                   {formData.rooms.map((r) => (

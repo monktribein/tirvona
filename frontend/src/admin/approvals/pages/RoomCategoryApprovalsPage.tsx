@@ -193,7 +193,7 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
                       <span className="text-gray-400 block text-[10px]">₹{req.categoryData?.suggestedBasePrice} / night</span>
                     </td>
                     <td className="py-3.5 px-4 text-gray-500 font-semibold">
-                      {new Date(req.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      {new Date(req.createdAt).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </td>
                     <td className="py-3.5 px-4">
                       <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase border ${

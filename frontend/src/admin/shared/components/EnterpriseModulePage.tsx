@@ -766,8 +766,8 @@ export const EnterpriseModulePage: React.FC<{ moduleName?: string; defaultColumn
             className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-lg w-full rounded-[28px] p-6 space-y-5 text-left shadow-2xl animate-in zoom-in-95 duration-150"
           >
             <div className="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-3">
-              <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white flex items-center gap-2">
-                <Sparkles size={18} className="text-[#0A4DA6]" /> {editingItem ? `Edit ${title}` : `Create ${title}`}
+              <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white">
+                {editingItem ? `Edit ${title}` : `Create ${title}`}
               </h3>
               <button type="button" onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600">
                 <X size={18} />
