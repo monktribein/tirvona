@@ -63,6 +63,7 @@ export const ProfileBookingsPage: React.FC = () => {
   const [kindFilter, setKindFilter] = useState<'all' | 'stay' | 'parking'>('all');
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [actionError, setActionError] = useState('');
+  const [selectedReceipt, setSelectedReceipt] = useState<UnifiedBooking | null>(null);
 
   const visible = useMemo(
     () =>
@@ -225,16 +226,18 @@ export const ProfileBookingsPage: React.FC = () => {
                 className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-5 sm:p-6 shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-5"
               >
                 <div className="flex items-start gap-4 min-w-0">
-                  <img
-                    src={b.image || FALLBACK_IMAGE[b.kind]}
-                    alt={b.title}
-                    loading="lazy"
-                    onError={(e) => {
-                      e.currentTarget.onerror = null;
-                      e.currentTarget.src = FALLBACK_IMAGE[b.kind];
-                    }}
-                    className="w-24 h-24 rounded-2xl object-cover shrink-0 border border-gray-100 dark:border-slate-800"
-                  />
+                  <Link to={b.detailHref || (b.kind === 'parking' ? `/parking/booking/${b.id}` : `/booking/${b.id}`)} className="shrink-0 hover:opacity-90 transition-opacity">
+                    <img
+                      src={b.image || FALLBACK_IMAGE[b.kind]}
+                      alt={b.title}
+                      loading="lazy"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = FALLBACK_IMAGE[b.kind];
+                      }}
+                      className="w-24 h-24 rounded-2xl object-cover shrink-0 border border-gray-100 dark:border-slate-800"
+                    />
+                  </Link>
 
                   <div className="space-y-1 text-xs min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
@@ -252,7 +255,9 @@ export const ProfileBookingsPage: React.FC = () => {
                       </span>
                     </div>
 
-                    <h3 className="font-black text-base text-[#0B192C] dark:text-white leading-tight">{b.title}</h3>
+                    <Link to={b.detailHref || (b.kind === 'parking' ? `/parking/booking/${b.id}` : `/booking/${b.id}`)} className="hover:text-[#0A4DA6] transition-colors block">
+                      <h3 className="font-black text-base text-[#0B192C] dark:text-white leading-tight">{b.title}</h3>
+                    </Link>
 
                     {b.location && (
                       <p className="text-gray-500 font-medium flex items-center gap-1">
@@ -267,16 +272,36 @@ export const ProfileBookingsPage: React.FC = () => {
                       {b.meta ? ` • ${b.meta}` : ''}
                     </p>
 
-                    {/* The desk code the pilgrim actually needs on arrival. */}
-                    {b.checkInCode && (
-                      <p className="inline-flex items-center gap-1.5 mt-1.5 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 px-2.5 py-1 rounded-full text-[10px] font-black">
-                        <KeyRound size={11} /> Check-in code: {b.checkInCode}
-                      </p>
-                    )}
+                    {/* The desk code & assigned room number */}
+                    <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                      {b.checkInCode && (
+                        <p className="inline-flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 px-2.5 py-1 rounded-full text-[10px] font-black">
+                          <KeyRound size={11} /> Check-in code: {b.checkInCode}
+                        </p>
+                      )}
+
+                      {b.assignedRoomNumber && (
+                        <p className="inline-flex items-center gap-1.5 bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 px-2.5 py-1 rounded-full text-[10px] font-black">
+                          <BedDouble size={11} /> Assigned: {b.assignedRoomNumber}
+                        </p>
+                      )}
+
+                      {b.kind === 'stay' && (
+                        <span className="inline-flex items-center gap-1 bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 px-2.5 py-1 rounded-full text-[10px] font-bold">
+                          Pay at Ashram ({b.paymentStatus || 'Pending'})
+                        </span>
+                      )}
+                    </div>
 
                     {b.slotNumber && (
                       <p className="inline-flex items-center gap-1.5 mt-1.5 bg-blue-50 dark:bg-blue-950/50 text-[#0A4DA6] dark:text-blue-300 px-2.5 py-1 rounded-full text-[10px] font-black">
                         <CircleParking size={11} /> Bay {b.slotNumber}
+                      </p>
+                    )}
+
+                    {b.specialRequests && (
+                      <p className="text-[11px] text-gray-500 italic mt-1">
+                        Note: {b.specialRequests}
                       </p>
                     )}
 
@@ -291,7 +316,7 @@ export const ProfileBookingsPage: React.FC = () => {
                 <div className="flex md:flex-col justify-between items-end gap-3 w-full md:w-auto pt-3 md:pt-0 shrink-0">
                   <div className="text-right">
                     <span className="text-[10px] text-gray-400 block font-bold uppercase">
-                      {b.amountPaid > 0 ? 'Paid' : 'Amount'}
+                      {b.amountPaid > 0 ? 'Paid' : 'Payable at Ashram'}
                     </span>
                     <span className="text-lg font-black text-[#0A4DA6] dark:text-white">
                       ₹{(b.amountPaid > 0 ? b.amountPaid : b.amount).toLocaleString('en-IN')}
@@ -299,6 +324,28 @@ export const ProfileBookingsPage: React.FC = () => {
                   </div>
 
                   <div className="flex items-center gap-2 flex-wrap justify-end">
+                    {b.kind === 'stay' && (
+                      <>
+                        <Link to={`/booking/${b.id}`}>
+                          <EnterpriseButton
+                            variant="primary"
+                            size="sm"
+                            className="gap-1.5 text-xs"
+                          >
+                            <ArrowRight size={14} /> Details
+                          </EnterpriseButton>
+                        </Link>
+                        <EnterpriseButton
+                          variant="outline"
+                          size="sm"
+                          className="gap-1.5 text-xs"
+                          onClick={() => setSelectedReceipt(b)}
+                        >
+                          <Ticket size={14} /> Receipt
+                        </EnterpriseButton>
+                      </>
+                    )}
+
                     {b.kind === 'parking' && b.category !== 'cancelled' && (
                       <Link to={`/parking/booking/${b.id}`}>
                         <EnterpriseButton variant="outline" size="sm" className="gap-1.5 text-xs">
@@ -343,6 +390,89 @@ export const ProfileBookingsPage: React.FC = () => {
                 </div>
               </article>
             ))}
+          </div>
+        )}
+
+        {/* Printable Booking Receipt Modal */}
+        {selectedReceipt && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+            <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] max-w-md w-full p-6 space-y-4 shadow-2xl relative text-left">
+              <button
+                onClick={() => setSelectedReceipt(null)}
+                className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-400 cursor-pointer"
+              >
+                ✕
+              </button>
+
+              <div className="text-center pb-3 border-b border-gray-100 dark:border-slate-800 space-y-1">
+                <span className="text-xs font-black uppercase tracking-wider text-[#0A4DA6]">Tirvona Sacred Stays</span>
+                <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white">Reservation Summary & Receipt</h3>
+                <p className="text-[10px] text-gray-400 font-bold">Payable upon arrival at Ashram</p>
+              </div>
+
+              <div className="space-y-2.5 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-gray-400 font-bold">Booking ID:</span>
+                  <span className="font-mono font-extrabold text-[#0B192C] dark:text-white">{selectedReceipt.reference}</span>
+                </div>
+
+                {selectedReceipt.reservationNumber && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-400 font-bold">Reservation No:</span>
+                    <span className="font-mono font-bold text-[#0A4DA6]">{selectedReceipt.reservationNumber}</span>
+                  </div>
+                )}
+
+                <div className="flex justify-between">
+                  <span className="text-gray-400 font-bold">Ashram:</span>
+                  <span className="font-extrabold text-[#0B192C] dark:text-white">{selectedReceipt.title}</span>
+                </div>
+
+                {selectedReceipt.assignedRoomNumber && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-400 font-bold">Assigned Room:</span>
+                    <span className="font-bold text-purple-600 dark:text-purple-400">{selectedReceipt.assignedRoomNumber}</span>
+                  </div>
+                )}
+
+                <div className="flex justify-between">
+                  <span className="text-gray-400 font-bold">Check-In / Out:</span>
+                  <span className="font-semibold">{formatDate(selectedReceipt.start)} → {formatDate(selectedReceipt.end)}</span>
+                </div>
+
+                {selectedReceipt.checkInCode && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-400 font-bold">Check-In Code:</span>
+                    <span className="font-mono font-extrabold text-emerald-600 dark:text-emerald-400">{selectedReceipt.checkInCode}</span>
+                  </div>
+                )}
+
+                <div className="flex justify-between">
+                  <span className="text-gray-400 font-bold">Payment Status:</span>
+                  <span className="font-bold text-amber-600">Pending (Pay at Ashram)</span>
+                </div>
+
+                <div className="flex justify-between pt-2 border-t border-dashed border-gray-200 dark:border-slate-800 text-sm font-black">
+                  <span>Total Amount:</span>
+                  <span className="text-[#0A4DA6]">₹{selectedReceipt.amount?.toLocaleString('en-IN')}</span>
+                </div>
+              </div>
+
+              <div className="pt-2 flex gap-2">
+                <button
+                  onClick={() => window.print()}
+                  className="flex-1 py-2.5 bg-[#0A4DA6] hover:bg-[#083b80] text-white font-extrabold text-xs rounded-full cursor-pointer transition-all"
+                >
+                  Print Receipt
+                </button>
+                <button
+                  onClick={() => setSelectedReceipt(null)}
+                  className="px-4 py-2.5 bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 font-bold text-xs rounded-full cursor-pointer hover:bg-gray-200"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>

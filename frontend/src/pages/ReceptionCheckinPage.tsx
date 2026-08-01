@@ -65,12 +65,26 @@ export const ReceptionCheckinPage: React.FC = () => {
     }
   };
 
+  const handleAssignRoomNumber = async (bookingId: string) => {
+    const roomNo = window.prompt('Enter Room Number to assign (e.g. Room 102):');
+    if (roomNo === null) return;
+    try {
+      const res = await bookingService.assignRoomNumber(bookingId, roomNo);
+      if (res.data.success) {
+        addNotification('Room Assigned', `Assigned room "${roomNo}" to reservation.`, 'success');
+        fetchActiveBookings();
+      }
+    } catch (err) {
+      addNotification('Assignment Failed', getErrorMessage(err, 'Could not assign room.'), 'error');
+    }
+  };
+
   return (
     <div className="space-y-6 text-left">
       <div className="flex justify-between items-center bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[24px] shadow-sm">
         <div>
           <h2 className="text-base font-extrabold text-[#0B192C] dark:text-white">Counter Check-In & Check-Out Desk</h2>
-          <p className="text-xs text-gray-400 font-semibold mt-1">Authorize active bookings via digital safety codes or perform check-outs.</p>
+          <p className="text-xs text-gray-400 font-semibold mt-1">Authorize active bookings via digital safety codes, assign room numbers, or perform check-outs.</p>
         </div>
         <button
           onClick={fetchActiveBookings}
@@ -89,23 +103,44 @@ export const ReceptionCheckinPage: React.FC = () => {
               <thead>
                 <tr className="border-b border-gray-50 dark:border-slate-850 bg-gray-50 dark:bg-slate-900 text-gray-450 font-bold uppercase text-[10px] tracking-wider">
                   <th className="py-4 px-6">Booking Ref</th>
-                  <th className="py-4 px-6">Guest Name</th>
-                  <th className="py-4 px-6">Room Type</th>
+                  <th className="py-4 px-6">Guest Contact</th>
+                  <th className="py-4 px-6">Room / Assigned</th>
                   <th className="py-4 px-6">Current Status</th>
-                  <th className="py-4 px-6 text-right">Counter Actions</th>
+                  <th className="py-4 px-6 text-right">Stay Admin Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {activeBookings.map((bk) => (
                   <tr key={bk._id} className="border-b border-gray-50 dark:border-slate-850 hover:bg-gray-50/20">
-                    <td className="py-4.5 px-6 font-bold text-[#0B192C] dark:text-white">{bk.bookingId}</td>
+                    <td className="py-4.5 px-6 font-bold text-[#0B192C] dark:text-white">
+                      <div>{bk.bookingId}</div>
+                      {bk.reservationNumber && (
+                        <div className="text-[10px] font-mono text-[#0A4DA6]">{bk.reservationNumber}</div>
+                      )}
+                    </td>
                     <td className="py-4.5 px-6">
                       <div className="flex flex-col">
                         <span className="font-semibold text-secondary dark:text-white">{bk.customerId?.name}</span>
-                        <span className="text-[10px] text-gray-400">{bk.customerId?.phone}</span>
+                        <a href={`tel:${bk.customerId?.phone}`} className="text-[10px] text-blue-600 hover:underline">
+                          {bk.customerId?.phone || 'No phone'}
+                        </a>
                       </div>
                     </td>
-                    <td className="py-4.5 px-6 text-gray-500">{bk.roomId?.name}</td>
+                    <td className="py-4.5 px-6 text-gray-500">
+                      <div className="font-medium">{bk.roomId?.name}</div>
+                      {bk.assignedRoomNumber ? (
+                        <span className="inline-block mt-0.5 px-2 py-0.5 bg-purple-50 text-purple-700 text-[10px] font-bold rounded">
+                          {bk.assignedRoomNumber}
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => handleAssignRoomNumber(bk._id)}
+                          className="mt-0.5 text-[10px] font-bold text-[#0A4DA6] hover:underline cursor-pointer"
+                        >
+                          + Assign Room No
+                        </button>
+                      )}
+                    </td>
                     <td className="py-4.5 px-6">
                       <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold capitalize border ${
                         bk.status === 'confirmed' ? 'bg-[#0A4DA6]/10 text-[#0A4DA6] border-[#0A4DA6]/20' :
@@ -122,7 +157,7 @@ export const ReceptionCheckinPage: React.FC = () => {
                             setVerifyingId(bk._id);
                             setErrorMsg('');
                           }}
-                          className="px-4 py-2 bg-[#0A4DA6] text-white rounded-full text-[10px] font-bold cursor-pointer"
+                          className="px-4 py-2 bg-[#0A4DA6] text-white rounded-full text-[10px] font-bold cursor-pointer hover:bg-[#083b80]"
                         >
                           Verify Check-In
                         </button>

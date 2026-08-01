@@ -24,6 +24,11 @@ export interface UnifiedBooking {
   id: string;
   /** Human reference, e.g. TVN-BK-88219 or TVN-PKG-7H2K9QD4. */
   reference: string;
+  reservationNumber?: string;
+  assignedRoomNumber?: string;
+  paymentMode?: string;
+  specialRequests?: string;
+  addOnsList?: any[];
   title: string;
   location: string;
   image?: string;
@@ -49,6 +54,7 @@ export interface UnifiedBooking {
   createdAt: string;
   /** Whether the visitor may still cancel it themselves. */
   cancellable: boolean;
+  rawBooking?: any;
 }
 
 /** Ashram booking lifecycle → the three tabs. */
@@ -87,6 +93,11 @@ const fromStay = (b: any): UnifiedBooking => {
     kind: 'stay',
     id: b._id,
     reference: b.bookingId || b._id,
+    reservationNumber: b.reservationNumber,
+    assignedRoomNumber: b.assignedRoomNumber,
+    paymentMode: b.paymentMode || 'pay_at_ashram',
+    specialRequests: b.specialRequests,
+    addOnsList: b.services?.selectedAddOns || [],
     title: ashram?.name || 'Ashram stay',
     location: joinAddress(ashram?.address),
     image: ashram?.images?.[0],
@@ -104,13 +115,14 @@ const fromStay = (b: any): UnifiedBooking => {
     status,
     paymentStatus: b.paymentStatus,
     category: STAY_CATEGORY[status] || 'upcoming',
-    detailHref: ashram?._id ? `/ashram/${ashram._id}` : undefined,
+    detailHref: `/booking/${b._id}`,
     // Only worth showing while it can still be used at the desk.
     checkInCode: status === 'confirmed' ? b.checkInCode : undefined,
     cancellationReason: b.cancellation?.reason,
     refundAmount: b.cancellation?.refundAmount,
     createdAt: b.createdAt,
     cancellable: ['pending', 'confirmed'].includes(status),
+    rawBooking: b,
   };
 };
 

@@ -175,8 +175,8 @@ export const OwnerAddOnsPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-[#0B192C] p-6 rounded-[28px] border border-gray-100 dark:border-slate-800 shadow-sm">
         <div>
-          <h1 className="text-xl font-black text-[#0B192C] dark:text-white flex items-center gap-2">
-            <Sparkles className="text-[#0A4DA6]" size={22} /> Add-On Services Management
+          <h1 className="text-xl font-black text-[#0B192C] dark:text-white">
+            Add-On Services Management
           </h1>
           <p className="text-xs text-gray-400 mt-1 font-semibold">
             Manage custom services, pricing units, and daily limits for your ashram guests.
@@ -292,8 +292,7 @@ export const OwnerAddOnsPage: React.FC = () => {
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] max-w-md w-full p-6 shadow-2xl space-y-5 text-left">
             <div className="flex justify-between items-center border-b border-gray-50 dark:border-slate-850 pb-3">
-              <h3 className="font-black text-sm text-[#0B192C] dark:text-white flex items-center gap-2">
-                <Sparkles size={16} className="text-[#0A4DA6]" />
+              <h3 className="font-black text-sm text-[#0B192C] dark:text-white">
                 {editingItem ? 'Edit Add-On Service' : 'New Add-On Service'}
               </h3>
               <button

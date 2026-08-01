@@ -885,8 +885,8 @@ export const AshramDetailPage: React.FC = () => {
           {/* About description & History */}
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-5 shadow-sm">
             <div className="flex items-center justify-between gap-3 border-b border-gray-50 dark:border-slate-850 pb-3">
-              <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white flex items-center gap-1.5">
-                <Compass size={18} className="text-[#0A4DA6]" /> About the Retreat
+              <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white border-b border-gray-50 dark:border-slate-850 pb-3">
+                About the Retreat
               </h3>
               <div className="flex items-center gap-1 bg-gray-50 dark:bg-slate-900 px-3 py-1 border border-gray-150 dark:border-slate-800 rounded-full shrink-0">
                 <Star className="text-[#D4AF37] fill-[#D4AF37]" size={12} />
@@ -897,8 +897,8 @@ export const AshramDetailPage: React.FC = () => {
             
             {ashram.history && (
               <div className="pt-4 border-t border-gray-100 dark:border-slate-800 space-y-2">
-                <h4 className="text-xs font-bold text-[#0A4DA6] flex items-center gap-1.5 uppercase tracking-wider">
-                  <Sparkles size={14} /> Historical Significance
+                <h4 className="text-xs font-bold text-[#0A4DA6] uppercase tracking-wider">
+                  Historical Significance
                 </h4>
                 <p className="text-xs text-gray-500 leading-relaxed italic bg-gray-50/50 dark:bg-slate-900/10 p-4 rounded-2xl border border-dashed border-gray-100 dark:border-slate-850">
                   "{ashram.history}"
@@ -909,8 +909,8 @@ export const AshramDetailPage: React.FC = () => {
 
           {/* Amenities & Facilities */}
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-5 shadow-sm">
-            <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white flex items-center gap-1.5 border-b border-gray-50 dark:border-slate-850 pb-3">
-              <Award size={18} className="text-[#0A4DA6]" /> Facilities & Spiritual Activities
+            <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white border-b border-gray-50 dark:border-slate-850 pb-3">
+              Facilities & Spiritual Activities
             </h3>
             <div className="flex flex-wrap gap-2.5">
               {ashram.amenities?.map((am: string, i: number) => (
@@ -923,8 +923,8 @@ export const AshramDetailPage: React.FC = () => {
 
           {/* Rooms Categories List */}
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-5 shadow-sm">
-            <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white flex items-center gap-1.5 border-b border-gray-50 dark:border-slate-850 pb-3">
-              <Bed size={18} className="text-[#0A4DA6]" /> Available Room Categories
+            <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white border-b border-gray-50 dark:border-slate-850 pb-3">
+              Available Room Categories
             </h3>
             <div className="space-y-4">
               {rooms.map((r) => (
@@ -949,8 +949,8 @@ export const AshramDetailPage: React.FC = () => {
 
           {/* Room Availability Grid */}
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-5 shadow-sm">
-            <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white flex items-center gap-1.5 border-b border-gray-50 dark:border-slate-850 pb-3">
-              <CalendarIcon size={18} className="text-[#0A4DA6]" /> 30-Day Room Availability Grid
+            <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white border-b border-gray-50 dark:border-slate-850 pb-3">
+              30-Day Room Availability Grid
             </h3>
             
             <p className="text-[10px] text-gray-400 font-bold uppercase">
@@ -969,7 +969,7 @@ export const AshramDetailPage: React.FC = () => {
                     
                     const dateObj = new Date(day.date);
                     const formattedDay = dateObj.getDate();
-                    const formattedMonth = dateObj.toLocaleString('en-US', { month: 'short' });
+                    const formattedMonth = dateObj.toLocaleString('en-IN', { month: 'short' });
 
                     return (
                       <div 
@@ -1003,8 +1003,8 @@ export const AshramDetailPage: React.FC = () => {
 
           {/* Rules & Policies */}
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-5 shadow-sm">
-            <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white flex items-center gap-1.5 border-b border-gray-50 dark:border-slate-850 pb-3">
-              <Info size={18} className="text-[#0A4DA6]" /> Rules & Policies
+            <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white border-b border-gray-50 dark:border-slate-850 pb-3">
+              Rules & Policies
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
               <div className="space-y-3">
@@ -1030,8 +1030,8 @@ export const AshramDetailPage: React.FC = () => {
           {volunteerJobs.length > 0 && (
             <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-4 shadow-sm">
               <div className="flex items-center justify-between border-b border-gray-50 dark:border-slate-850 pb-3">
-                <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white flex items-center gap-2">
-                  <Sparkles size={18} className="text-[#E58C28]" /> Current Volunteer & Career Opportunities ({volunteerJobs.length})
+                <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white">
+                  Current Volunteer & Career Opportunities ({volunteerJobs.length})
                 </h3>
                 <Link to="/volunteer" className="text-xs font-black text-[#0A4DA6] hover:underline">
                   View All Directory →
@@ -1048,11 +1048,13 @@ export const AshramDetailPage: React.FC = () => {
                       <span className="text-[10px] font-bold text-gray-400">{j.openingsCount} Openings</span>
                     </div>
 
-                    <h4 className="text-xs font-black text-[#0B192C] dark:text-white">{j.title}</h4>
+                    <Link to={`/volunteer/${j._id}`} className="block hover:underline">
+                      <h4 className="text-xs font-black text-[#0B192C] dark:text-white">{j.title}</h4>
+                    </Link>
                     <p className="text-[11px] font-extrabold text-[#E58C28]">{j.stipend}</p>
 
                     <Link
-                      to="/volunteer"
+                      to={`/volunteer/${j._id}`}
                       className="inline-block mt-2 px-3 py-1 bg-[#0A4DA6] hover:bg-[#083b80] text-white text-[10px] font-extrabold rounded-full transition-colors"
                     >
                       Apply for Seva
@@ -1072,8 +1074,8 @@ export const AshramDetailPage: React.FC = () => {
         <div className="space-y-6">
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 shadow-sm space-y-6 relative overflow-hidden">
             <div className="absolute top-0 inset-x-0 h-1 bg-[#0A4DA6]" />
-            <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white flex items-center gap-2">
-              <CalendarIcon size={16} className="text-[#0A4DA6]" /> Stay Booking Engine
+            <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white">
+              Stay Booking Engine
             </h3>
 
             {restoredNotice && (
@@ -1463,40 +1465,65 @@ export const AshramDetailPage: React.FC = () => {
                 </button>
               </form>
             ) : (
-              /* Invoice Break & Mock Payment */
-              <div className="space-y-5 animate-in fade-in duration-200">
-                <div className="p-3.5 bg-success/10 border border-success/20 rounded-xl text-success text-center">
-                  <span className="text-xs font-bold block">Booking Locked Successfully!</span>
-                  <span className="text-[10px]">Reference: {bookingSuccess.bookingId}</span>
+              /* Instant Reservation Confirmed Card */
+              <div className="space-y-5 animate-in fade-in duration-200 text-left">
+                <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl text-emerald-800 dark:text-emerald-300 space-y-1">
+                  <div className="flex items-center gap-2 font-black text-sm text-emerald-700 dark:text-emerald-400">
+                    <span className="text-lg">🎉</span>
+                    <span>Reservation Confirmed Successfully!</span>
+                  </div>
+                  <p className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                    Your room inventory has been locked. Payment is payable upon check-in at Ashram.
+                  </p>
                 </div>
 
-                <div className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-[20px] p-4.5 space-y-3">
-                  <span className="text-[10px] uppercase font-bold text-gray-400 block border-b border-gray-150 dark:border-slate-800 pb-1.5">Billing Summary</span>
-                  <div className="flex justify-between text-xs font-semibold text-gray-500">
-                    <span>Base Room Stay:</span>
-                    <span>₹{bookingSuccess.pricing?.basePrice}</span>
+                <div className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-[22px] p-4.5 space-y-2.5 text-xs font-semibold">
+                  <div className="flex justify-between items-center pb-2 border-b border-gray-200 dark:border-slate-800">
+                    <span className="text-gray-400 uppercase text-[10px] font-extrabold">Booking ID:</span>
+                    <span className="font-mono font-extrabold text-[#0B192C] dark:text-white">{bookingSuccess.bookingId}</span>
                   </div>
-                  <div className="flex justify-between text-xs font-semibold text-gray-500">
-                    <span>Add-on Services:</span>
-                    <span>₹{bookingSuccess.pricing?.servicesPrice}</span>
+
+                  {bookingSuccess.reservationNumber && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">Reservation No:</span>
+                      <span className="font-mono font-bold text-[#0A4DA6]">{bookingSuccess.reservationNumber}</span>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-400">Counter Check-In Code:</span>
+                    <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">{bookingSuccess.checkInCode}</span>
                   </div>
-                  <div className="flex justify-between text-xs font-semibold text-gray-500">
-                    <span>Donation:</span>
-                    <span>₹{bookingSuccess.pricing?.donationAmount}</span>
+
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-400">Payment Status:</span>
+                    <span className="px-2 py-0.5 bg-amber-500/10 text-amber-700 dark:text-amber-300 rounded text-[10px] font-bold">
+                      Pending (Pay at Ashram)
+                    </span>
                   </div>
-                  <div className="flex justify-between text-xs font-bold text-[#0B192C] dark:text-white pt-2.5 border-t border-dashed border-gray-200 dark:border-slate-800">
-                    <span>Total Bill:</span>
-                    <span>₹{bookingSuccess.pricing?.totalAmount}</span>
+
+                  <div className="flex justify-between items-center pt-2 border-t border-dashed border-gray-200 dark:border-slate-800 font-extrabold text-sm text-[#0B192C] dark:text-white">
+                    <span>Total Amount Payable:</span>
+                    <span className="text-[#0A4DA6]">₹{bookingSuccess.pricing?.totalAmount}</span>
                   </div>
                 </div>
 
-                <button
-                  onClick={handleConfirmPayment}
-                  disabled={paying}
-                  className="w-full py-3 bg-[#0A4DA6] hover:bg-opacity-95 text-white font-bold rounded-full text-xs shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  {paying ? 'Processing…' : `Pay ₹${bookingSuccess.pricing?.totalAmount}`}
-                </button>
+                <div className="space-y-2 pt-1">
+                  <Link
+                    to="/profile/bookings"
+                    className="w-full py-3 bg-[#0A4DA6] hover:bg-[#083b80] text-white font-extrabold rounded-full text-xs shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all"
+                  >
+                    Go to My Bookings <ArrowRight size={14} />
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={() => setBookingSuccess(null)}
+                    className="w-full py-2 bg-gray-100 dark:bg-slate-850 hover:bg-gray-200 text-gray-600 dark:text-gray-300 font-bold rounded-full text-xs transition-all cursor-pointer"
+                  >
+                    Make Another Booking
+                  </button>
+                </div>
               </div>
             )}
           </div>

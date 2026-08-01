@@ -96,6 +96,8 @@ import { ServicesHubPage } from './pages/ServicesHubPage';
 import { MarketplaceHubPage } from './pages/MarketplaceHubPage';
 import { MarketplaceComingSoonPage } from './pages/MarketplaceComingSoonPage';
 import { VolunteerHubPage } from './pages/VolunteerHubPage';
+import { VolunteerJobDetailPage } from './pages/VolunteerJobDetailPage';
+import { BookingDetailPage } from './pages/profile/BookingDetailPage';
 import OwnerVolunteerPage from './pages/owner/OwnerVolunteerPage';
 
 // Customer Profile Pages
@@ -215,6 +217,8 @@ const AppContent: React.FC = () => {
           <Route path="/services" element={<ServicesHubPage />} />
           <Route path="/marketplace" element={<MarketplaceHubPage />} />
           <Route path="/volunteer" element={<VolunteerHubPage />} />
+          <Route path="/volunteer/:jobId" element={<VolunteerJobDetailPage />} />
+          <Route path="/volunteer/job/:jobId" element={<VolunteerJobDetailPage />} />
           <Route path="/careers" element={<VolunteerHubPage />} />
 
           {/* ── Parking System (public discovery) ──
@@ -224,6 +228,8 @@ const AppContent: React.FC = () => {
           <Route path="/parking/:slug" element={<ParkingDetailPage />} />
 
           {/* Customer Profile Ecosystem Routes */}
+          <Route path="/booking/:id" element={<BookingDetailPage />} />
+          <Route path="/profile/bookings/:id" element={<BookingDetailPage />} />
           <Route path="/profile" element={<ProfileMainPage />} />
           <Route path="/profile/bookings" element={<ProfileMainPage />} />
           <Route path="/profile/history" element={<ProfileMainPage />} />

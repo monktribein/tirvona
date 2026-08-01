@@ -173,8 +173,8 @@ export const MarketplaceCategoryDetailPage: React.FC = () => {
       <div className="max-w-6xl mx-auto px-4 sm:px-8 space-y-12">
         {/* About & Spiritual Significance Section */}
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-sm">
-          <h2 className="text-xl font-black text-[#0B192C] dark:text-white flex items-center gap-2">
-            <Sparkles size={20} className="text-amber-500" /> Sacred History & Religious Significance
+          <h2 className="text-xl font-black text-[#0B192C] dark:text-white">
+            Sacred History & Religious Significance
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs text-gray-600 dark:text-gray-300 font-semibold leading-relaxed">

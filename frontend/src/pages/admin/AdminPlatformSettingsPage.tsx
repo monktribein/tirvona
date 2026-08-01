@@ -102,8 +102,8 @@ export const AdminPlatformSettingsPage: React.FC = () => {
           {/* Main Form */}
           <form onSubmit={handleSave} className="lg:col-span-2 bg-white dark:bg-[#0B192C] p-6 rounded-[28px] border border-gray-100 dark:border-slate-800 shadow-sm space-y-6">
             <div className="flex justify-between items-center border-b border-gray-50 dark:border-slate-850 pb-4">
-              <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white flex items-center gap-2">
-                <Sparkles size={16} className="text-[#0A4DA6]" /> Fee Engine Configuration
+              <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white">
+                Fee Engine Configuration
               </h3>
               
               <button

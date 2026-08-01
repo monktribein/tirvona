@@ -367,8 +367,8 @@ export const BannerBoyDashboard: React.FC = () => {
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[24px] shadow-sm space-y-6">
             <div className="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-4">
               <div>
-                <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white flex items-center gap-2">
-                  <Sparkles size={18} className="text-amber-500" /> Banner Upload & CMS Specification Studio
+                <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white">
+                  Banner Upload & CMS Specification Studio
                 </h3>
                 <p className="text-xs text-gray-400">Upload banner files directly from your device and set target pixel dimensions.</p>
               </div>
