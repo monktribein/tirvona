@@ -241,11 +241,6 @@ export function validateEnvironment(
       throw new Error("MONGODB_URI is required in production");
     if (!input.REDIS_URL)
       throw new Error("REDIS_URL is required in production");
-    const mongoUrl = new URL(String(input.MONGODB_URI));
-    if (!input.MONGODB_DB_NAME && !mongoUrl.pathname.slice(1))
-      throw new Error(
-        "MONGODB_DB_NAME or a database name in MONGODB_URI is required in production",
-      );
     if (!String(input.CORS_ORIGINS ?? "").trim())
       throw new Error("CORS_ORIGINS is required in production");
     if (String(input.CORS_ORIGINS).includes("*"))
