@@ -5,6 +5,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { useNotifications } from "../contexts/NotificationContext";
 import NotificationDropdown from "../components/shared/NotificationDropdown";
 import { setGuestPendingIntent } from "../utils/guestGate";
+import { getRoleDefaultDashboard } from "../utils/roleRedirect";
 import {
   LogOut,
   Menu,
@@ -150,30 +151,7 @@ export const PublicLayout: React.FC = () => {
 
   const getDashboardPath = () => {
     if (!user) return "/login";
-    if (
-      [
-        "district_officer",
-        "state_admin",
-        "govt_admin",
-        "government_admin",
-        "national_admin",
-        "super_admin",
-      ].includes(user.role)
-    )
-      return "/admin/dashboard";
-    if (user.role === "inspector") return "/admin/verifications";
-    if (user.role === "banner_manager") return "/bannerboy/dashboard";
-    if (["owner", "stay_admin", "manager"].includes(user.role))
-      return "/owner/dashboard";
-    if (user.role === "reception") return "/staff/reception";
-    if (user.role === "housekeeping") return "/staff/housekeeping";
-    if (["banner_manager", "content_manager"].includes(user.role))
-      return "/bannerboy/dashboard";
-    if (user.role === "offer_manager") return "/owner/offers";
-    if (user.role === "marketplace_manager")
-      return "/admin/manage/marketplace/products";
-    if (user.role === "support") return "/support-tickets";
-    return "/profile";
+    return getRoleDefaultDashboard(user.role);
   };
 
   const getDashboardLabel = () => {

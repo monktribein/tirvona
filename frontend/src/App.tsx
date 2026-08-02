@@ -349,7 +349,16 @@ const AppContent: React.FC = () => {
             <Route path="/parking" element={<ParkingHubPage />} />
             <Route path="/parking/:slug" element={<ParkingDetailPage />} />
 
-            {/* Customer Profile Ecosystem Routes */}
+          </Route>
+
+          {/* Customer account and booking data always require a live session. */}
+          <Route
+            element={
+              <ProtectedRoute>
+                <PublicLayout />
+              </ProtectedRoute>
+            }
+          >
             <Route path="/booking/:id" element={<BookingDetailPage />} />
             <Route
               path="/profile/bookings/:id"
