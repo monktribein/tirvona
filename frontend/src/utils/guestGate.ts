@@ -5,19 +5,28 @@
  */
 
 export interface GuestPendingIntent {
-  type: 'ashram_booking' | 'volunteer_apply' | 'marketplace_cart' | 'wishlist_add' | 'review_submit' | 'generic';
+  type:
+    | "ashram_booking"
+    | "volunteer_apply"
+    | "marketplace_cart"
+    | "wishlist_add"
+    | "review_submit"
+    | "generic";
   returnUrl: string;
   data?: Record<string, any>;
   timestamp?: number;
 }
 
-const GUEST_INTENT_KEY = 'tirvona_guest_pending_intent';
+const GUEST_INTENT_KEY = "tirvona_guest_pending_intent";
 
 export const setGuestPendingIntent = (intent: GuestPendingIntent): void => {
   try {
-    sessionStorage.setItem(GUEST_INTENT_KEY, JSON.stringify({ ...intent, timestamp: Date.now() }));
+    sessionStorage.setItem(
+      GUEST_INTENT_KEY,
+      JSON.stringify({ ...intent, timestamp: Date.now() }),
+    );
   } catch (err) {
-    console.error('Error saving guest pending intent:', err);
+    console.error("Error saving guest pending intent:", err);
   }
 };
 
@@ -41,6 +50,6 @@ export const clearGuestPendingIntent = (): void => {
   try {
     sessionStorage.removeItem(GUEST_INTENT_KEY);
   } catch (err) {
-    console.error('Error clearing guest pending intent:', err);
+    console.error("Error clearing guest pending intent:", err);
   }
 };

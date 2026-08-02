@@ -1,1 +1,4 @@
-export { DashboardLayout, default } from '../admin/shared/layouts/DashboardLayout';
+export {
+  DashboardLayout,
+  default,
+} from "../admin/shared/layouts/DashboardLayout";

@@ -1,13 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { Compass, Clock, MapPin, Search, ArrowRight, ShieldCheck, Sparkles, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import api from "../lib/api";
+import {
+  Compass,
+  Clock,
+  MapPin,
+  Search,
+  ArrowRight,
+  ShieldCheck,
+  Sparkles,
+} from "lucide-react";
 
 export const TemplesPage: React.FC = () => {
   const navigate = useNavigate();
   const [temples, setTemples] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     fetchTemples();
@@ -16,15 +24,14 @@ export const TemplesPage: React.FC = () => {
   const fetchTemples = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/services/temples`,
-        { params: { search: searchTerm } }
-      );
+      const res = await api.get("/services/temples", {
+        params: { search: searchTerm },
+      });
       if (res.data.success) {
         setTemples(res.data.data);
       }
     } catch (err) {
-      console.error('Error fetching temples:', err);
+      console.error("Error fetching temples:", err);
     } finally {
       setLoading(false);
     }
@@ -37,44 +44,46 @@ export const TemplesPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-[#070F1B] pb-16">
-      {/* Hero Banner Header Container matching Navbar Layout Width */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-1 sm:pt-3">
-        <div className="relative text-white rounded-3xl p-6 sm:p-8 lg:p-10 shadow-xl overflow-hidden min-h-[340px] sm:min-h-[380px] flex flex-col justify-between items-center text-center border border-white/10">
-          {/* Background Banner Image */}
-          <img
-            src="/banner/popular.png"
-            alt="Holy Temples of India Banner"
-            className="absolute inset-0 w-full h-full object-cover"
-          />
-          {/* Overlay gradient for text contrast */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/55 to-black/40" />
-
-          {/* Banner Content */}
-          <div className="max-w-3xl space-y-2.5 relative z-10 mx-auto text-center my-auto pt-2 pb-4">
-            <span className="px-4 py-1 rounded-full bg-white/15 backdrop-blur-md text-blue-200 text-xs font-bold uppercase tracking-wider border border-white/20">
-              Sacred Shrines &amp; Mandir Directory
-            </span>
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white drop-shadow-lg" style={{ fontFamily: "Satoshi, 'General Sans', Manrope, Inter, sans-serif", letterSpacing: '-0.03em' }}>
-              Holy Temples of India
-            </h1>
-            <p className="text-sm sm:text-base text-gray-100 max-w-2xl mx-auto font-medium drop-shadow">
-              Explore authentic Darshan timings, Aarti schedules, temple rules, history, dress code, and official trust details.
-            </p>
-          </div>
-
-          {/* Search Bar Container inside Banner */}
-          <form onSubmit={handleSearch} className="w-full max-w-xl mx-auto relative z-10 bg-white/95 dark:bg-[#0B192C]/95 backdrop-blur-md rounded-full p-2 shadow-2xl border border-white/20 flex items-center">
-            <Search size={18} className="text-gray-400 ml-4 shrink-0" />
-            <input
-              type="text"
-              placeholder="Search temple name, deity, or city (e.g. Kashi, Mahakal)..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-transparent px-3 text-sm font-semibold text-[#0B192C] dark:text-white focus:outline-none"
+      {/* Clean Text Header (Matching all other section headers on the site) */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6">
+        <div className="text-center space-y-2.5 max-w-3xl mx-auto py-2">
+          <p className="font-['Kalam'] text-2xl sm:text-4xl lg:text-5xl font-bold text-[#E58C28]">
+            Holy Temples of India
+          </p>
+          {/* Decorative Saffron Underline Divider */}
+          <div className="flex items-center justify-center gap-2.5 my-1.5">
+            <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
+            <Sparkles
+              size={14}
+              className="text-[#E58C28] fill-[#E58C28] shrink-0"
             />
-            <button type="submit" className="px-6 py-2.5 rounded-full bg-[#E58C28] hover:bg-amber-600 text-white font-black text-xs transition-colors shrink-0">
-              Search
-            </button>
+            <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
+          </div>
+          <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-xl mx-auto leading-relaxed">
+            Explore authentic Darshan timings, Aarti schedules, temple rules,
+            history, dress code, and official trust details.
+          </p>
+          {/* Centered Search Bar */}
+          <form
+            onSubmit={handleSearch}
+            className="w-full max-w-xl mx-auto pt-3 relative z-10"
+          >
+            <div className="bg-white dark:bg-[#0B192C] rounded-full p-2 shadow-lg border border-gray-200 dark:border-slate-800 flex items-center">
+              <Search size={18} className="text-gray-400 ml-4 shrink-0" />
+              <input
+                type="text"
+                placeholder="Search temple name, deity, or city (e.g. Kashi, Mahakal)..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full bg-transparent px-3 text-sm font-semibold text-[#0B192C] dark:text-white focus:outline-none"
+              />
+              <button
+                type="submit"
+                className="px-6 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-blue-900 text-white font-black text-xs transition-colors shrink-0 shadow-sm cursor-pointer"
+              >
+                Search
+              </button>
+            </div>
           </form>
         </div>
       </div>
@@ -83,84 +92,235 @@ export const TemplesPage: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-10">
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-96 bg-gray-200 dark:bg-slate-800 animate-pulse rounded-3xl" />
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div
+                key={i}
+                className="h-96 bg-gray-200 dark:bg-slate-800 animate-pulse rounded-3xl"
+              />
             ))}
-          </div>
-        ) : temples.length === 0 ? (
-          <div className="text-center py-16 bg-white dark:bg-[#0B192C] rounded-3xl border border-gray-200 dark:border-slate-800">
-            <Compass size={48} className="text-gray-400 mx-auto mb-3" />
-            <h3 className="font-black text-lg text-gray-700 dark:text-gray-200">No Temples Found</h3>
-            <p className="text-xs text-gray-400">Try searching for a different temple name or location.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {temples.map((item) => (
-              <div
-                key={item._id}
-                onClick={() => navigate(`/temples/${item.slug}`)}
-                className="bg-white dark:bg-[#0B192C] rounded-3xl border border-gray-100 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between cursor-pointer group"
-              >
-                <div>
-                  <div className="relative h-56 overflow-hidden">
-                    <img
-                      src={item.coverImage}
-                      alt={item.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                    <span className="absolute top-4 left-4 bg-[#0A4DA6] text-white text-[10px] font-black uppercase px-3 py-1 rounded-full shadow-md">
-                      {item.city}, {item.state}
-                    </span>
-                    <span className="absolute top-4 right-4 bg-black/60 backdrop-blur-md text-white text-[10px] font-extrabold px-3 py-1 rounded-full border border-white/20">
-                      ★ {item.rating} ({item.reviewsCount})
-                    </span>
-                  </div>
+          (() => {
+            const defaultTemplesList = [
+              {
+                _id: "def-1",
+                name: "Shri Ram Janmabhoomi Mandir",
+                slug: "ram-janmabhoomi-ayodhya",
+                deity: "Bhagwan Shri Ram Lalla",
+                city: "Ayodhya",
+                state: "Uttar Pradesh",
+                history:
+                  "The sacred birthplace of Lord Ram, newly consecrated grand pink sandstone mandir designed by Sompura family.",
+                darshanTimings: "06:30 AM - 12:00 PM & 02:00 PM - 10:00 PM",
+                coverImage:
+                  "https://images.unsplash.com/photo-1627894483216-2138af692e32?auto=format&fit=crop&w=1200&q=80",
+                rating: 5.0,
+                reviewsCount: 2400,
+              },
+              {
+                _id: "def-2",
+                name: "Shri Mahakaleshwar Temple Ujjain",
+                slug: "mahakaleshwar-ujjain",
+                deity: "Lord Shiva (Mahakal)",
+                city: "Ujjain",
+                state: "Madhya Pradesh",
+                history:
+                  "One of the twelve Jyotirlingas, famous for its unique south-facing idol (Dakshinamurti) and world-renowned Bhasma Aarti.",
+                darshanTimings: "04:00 AM - 11:00 PM",
+                coverImage:
+                  "https://images.unsplash.com/photo-1608958416801-9c60e3a6a908?auto=format&fit=crop&w=1200&q=80",
+                rating: 4.9,
+                reviewsCount: 980,
+              },
+              {
+                _id: "def-3",
+                name: "Shri Kashi Vishwanath Temple",
+                slug: "kashi-vishwanath-varanasi",
+                deity: "Lord Shiva (Kashi Vishwanath)",
+                city: "Varanasi",
+                state: "Uttar Pradesh",
+                history:
+                  "One of the most famous Hindu temples dedicated to Lord Shiva, located on the western bank of holy River Ganga.",
+                darshanTimings: "03:00 AM - 11:00 PM",
+                coverImage:
+                  "https://images.unsplash.com/photo-1561361058-c24e36e56336?auto=format&fit=crop&w=1200&q=80",
+                rating: 4.9,
+                reviewsCount: 1250,
+              },
+              {
+                _id: "def-4",
+                name: "Kedarnath Dham Jyotirlinga Temple",
+                slug: "kedarnath-dham",
+                deity: "Lord Shiva (Kedarnath)",
+                city: "Kedarnath",
+                state: "Uttarakhand",
+                history:
+                  "Ancient Himalayan shrine of Lord Shiva located near Mandakini river amidst snow-capped peaks.",
+                darshanTimings: "05:00 AM - 09:00 PM",
+                coverImage:
+                  "https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=1200&q=80",
+                rating: 5.0,
+                reviewsCount: 3100,
+              },
+              {
+                _id: "def-5",
+                name: "Shri Badrinath Dham Temple",
+                slug: "badrinath-dham",
+                deity: "Lord Vishnu (Badri Narayan)",
+                city: "Badrinath",
+                state: "Uttarakhand",
+                history:
+                  "Sacred Char Dham shrine dedicated to Lord Vishnu, situated along the Alaknanda river in Chamoli district.",
+                darshanTimings: "04:30 AM - 09:00 PM",
+                coverImage:
+                  "https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=1200&q=80",
+                rating: 4.9,
+                reviewsCount: 1850,
+              },
+              {
+                _id: "def-6",
+                name: "Shri Bankey Bihari Mandir",
+                slug: "bankey-bihari-vrindavan",
+                deity: "Lord Krishna (Bankey Bihari)",
+                city: "Vrindavan",
+                state: "Uttar Pradesh",
+                history:
+                  "Holy Krishna temple in Vrindavan established by Swami Haridas, famous for its divine curtain darshan (Parda Seva).",
+                darshanTimings: "07:45 AM - 12:00 PM & 05:30 PM - 09:30 PM",
+                coverImage:
+                  "https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?auto=format&fit=crop&w=1200&q=80",
+                rating: 4.9,
+                reviewsCount: 1620,
+              },
+            ];
 
-                  <div className="p-6 space-y-3">
-                    <span className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider block">
-                      Deity: {item.deity}
-                    </span>
-                    <h3 className="font-black text-xl text-[#0B192C] dark:text-white leading-tight group-hover:text-[#0A4DA6] transition-colors">
-                      {item.name}
-                    </h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">
-                      {item.history}
-                    </p>
+            const getTempleCoverImage = (item: any, idx: number) => {
+              const name = item?.name || "";
+              if (name.includes("Mahakal") || name.includes("Ujjain")) {
+                return "/banner/ashram_himalayas.png";
+              }
+              if (
+                name.includes("Kashi") ||
+                name.includes("Vishwanath") ||
+                name.includes("Varanasi")
+              ) {
+                return "/banner/ashram_varanasi.png";
+              }
+              if (name.includes("Ram") || name.includes("Ayodhya")) {
+                return "/banner/ashram_vrindavan.png";
+              }
+              if (name.includes("Kedar")) {
+                return "/banner/ashram_himalayas.png";
+              }
+              if (name.includes("Badri")) {
+                return "/banner/ashram_rishikesh.png";
+              }
+              if (name.includes("Bankey") || name.includes("Vrindavan")) {
+                return "/banner/ashram_vrindavan.png";
+              }
+              const defaultBanners = [
+                "/banner/ashram_vrindavan.png",
+                "/banner/ashram_himalayas.png",
+                "/banner/ashram_varanasi.png",
+                "/banner/ashram_rishikesh.png",
+              ];
+              return defaultBanners[idx % defaultBanners.length];
+            };
 
-                    <div className="space-y-1.5 pt-2 text-xs font-semibold text-gray-600 dark:text-gray-300">
-                      <div className="flex items-center gap-1.5 bg-gray-50 dark:bg-slate-900 p-2 rounded-xl">
-                        <Clock size={14} className="text-[#0A4DA6]" />
-                        <span>Darshan: {item.darshanTimings}</span>
+            const listToRender =
+              temples.length > 0 ? temples : defaultTemplesList;
+
+            return listToRender.length === 0 ? (
+              <div className="text-center py-16 bg-white dark:bg-[#0B192C] rounded-3xl border border-gray-200 dark:border-slate-800">
+                <Compass size={48} className="text-gray-400 mx-auto mb-3" />
+                <h3 className="font-black text-lg text-gray-700 dark:text-gray-200">
+                  No Temples Found
+                </h3>
+                <p className="text-xs text-gray-400">
+                  Try searching for a different temple name or location.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {listToRender.map((item, idx) => {
+                  const validImg = getTempleCoverImage(item, idx);
+
+                  return (
+                    <div
+                      key={item._id || idx}
+                      onClick={() => navigate(`/temples/${item.slug}`)}
+                      className="bg-white dark:bg-[#0B192C] rounded-[28px] border border-gray-100 dark:border-slate-800 overflow-hidden shadow-md hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between cursor-pointer group"
+                    >
+                      <div>
+                        {/* Image Header with location & rating badges */}
+                        <div className="relative h-60 overflow-hidden bg-slate-900">
+                          <img
+                            src={validImg}
+                            alt={item.name}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            onError={(e) => {
+                              e.currentTarget.onerror = null;
+                              e.currentTarget.src =
+                                "/banner/ashram_varanasi.png";
+                            }}
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20 pointer-events-none" />
+                          <span className="absolute top-4 left-4 bg-[#0A4DA6]/90 backdrop-blur-md text-white text-[11px] font-black uppercase px-3.5 py-1 rounded-full shadow-md border border-white/10 flex items-center gap-1">
+                            <MapPin size={11} className="text-amber-400" />
+                            {item.city}, {item.state}
+                          </span>
+                          <span className="absolute top-4 right-4 bg-black/75 backdrop-blur-md text-amber-300 text-[11px] font-black px-3 py-1 rounded-full border border-amber-400/30 flex items-center gap-1 shadow-md">
+                            ★ {item.rating || 4.9}{" "}
+                            <span className="text-gray-300 font-bold">
+                              ({item.reviewsCount || 1000})
+                            </span>
+                          </span>
+                        </div>
+
+                        {/* Card Content Details */}
+                        <div className="p-6 space-y-3.5">
+                          {/* Title */}
+                          <h3 className="font-black text-xl text-[#0B192C] dark:text-white leading-snug group-hover:text-[#0A4DA6] transition-colors">
+                            {item.name}
+                          </h3>
+
+                          {/* Description */}
+                          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 line-clamp-2 leading-relaxed font-medium">
+                            {item.history}
+                          </p>
+
+                          {/* Darshan Timings Pill Container */}
+                          <div className="pt-1">
+                            <div className="flex items-center gap-2.5 bg-[#F0F5FC] dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/40 p-3 rounded-2xl text-xs font-bold text-[#0B192C] dark:text-blue-200">
+                              <Clock
+                                size={15}
+                                className="text-[#0A4DA6] dark:text-blue-400 shrink-0"
+                              />
+                              <span className="truncate">
+                                <strong>Darshan:</strong> {item.darshanTimings}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Card Footer Toolbar */}
+                      <div className="px-6 py-4 bg-gray-50/80 dark:bg-slate-900/60 border-t border-gray-100 dark:border-slate-800/60 flex items-center justify-between mt-auto">
+                        <span className="text-[11px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-3 py-1 rounded-full border border-emerald-200/60 dark:border-emerald-900/40 flex items-center gap-1">
+                          <ShieldCheck size={13} /> Official Info
+                        </span>
+                        <button className="px-5 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-blue-900 text-white font-black text-xs flex items-center gap-1.5 shadow-md transition-all group-hover:translate-x-0.5">
+                          <span>View Temple Details</span>
+                          <ArrowRight size={13} />
+                        </button>
                       </div>
                     </div>
-                  </div>
-                </div>
-
-                <div className="p-6 pt-0 flex items-center justify-between border-t border-gray-50 dark:border-slate-800/50 mt-4">
-                  <span className="text-[11px] font-extrabold text-emerald-600 flex items-center gap-1">
-                    <ShieldCheck size={14} /> Official Info
-                  </span>
-                  <button className="px-5 py-2.5 rounded-full bg-[#0A4DA6] text-white font-black text-xs flex items-center gap-1.5 shadow-md">
-                    <span>View Temple Details</span>
-                    <ArrowRight size={13} />
-                  </button>
-                </div>
+                  );
+                })}
               </div>
-            ))}
-          </div>
+            );
+          })()
         )}
-
-        {/* Coming Soon Features Banner */}
-        <div className="mt-12 bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white rounded-3xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4 border border-blue-500/20 shadow-xl">
-          <div className="space-y-1 text-center sm:text-left">
-            <span className="px-3 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-[10px] font-black uppercase">In Future</span>
-            <h4 className="font-black text-lg">Live Darshan Streaming & Real-Time Queue Status</h4>
-            <p className="text-xs text-gray-300">Direct integration with temple trust cameras and live crowd density tracker.</p>
-          </div>
-          <span className="px-5 py-2 rounded-full bg-white/10 text-amber-300 font-black text-xs border border-amber-400/30 shrink-0">
-            Coming Soon 🚀
-          </span>
-        </div>
       </div>
     </div>
   );

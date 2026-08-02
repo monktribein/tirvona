@@ -1,17 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Users, 
-  UserPlus, 
-  Key, 
-  ShieldCheck, 
-  ShieldAlert, 
-  Search, 
-  Mail, 
-  Phone, 
-  CheckCircle, 
-  XCircle, 
+import React, { useState, useEffect } from "react";
+import api from "../lib/api";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Users,
+  UserPlus,
+  Key,
+  ShieldAlert,
+  Search,
+  Mail,
+  Phone,
+  CheckCircle,
+  XCircle,
   RefreshCw,
   Eye,
   EyeOff,
@@ -20,24 +19,26 @@ import {
   Lock,
   User,
   Shield,
-  Copy
-} from 'lucide-react';
+  Copy,
+} from "lucide-react";
 
 export const OwnerUsersPage: React.FC = () => {
   const [staff, setStaff] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [roleFilter, setRoleFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
 
   const [copiedUserId, setCopiedUserId] = useState<string | null>(null);
-  const [showPasswords, setShowPasswords] = useState<{ [key: string]: boolean }>({});
+  const [showPasswords, setShowPasswords] = useState<{
+    [key: string]: boolean;
+  }>({});
 
   const togglePasswordVisibility = (userId: string) => {
-    setShowPasswords(prev => ({ ...prev, [userId]: !prev[userId] }));
+    setShowPasswords((prev) => ({ ...prev, [userId]: !prev[userId] }));
   };
 
-  const handleCopyCredentials = (email: string, pass: string = 'admin123', userId: string) => {
-    const text = `User ID / Email: ${email}\nPassword: ${pass}`;
+  const handleCopyCredentials = (email: string, userId: string) => {
+    const text = `User ID / Email: ${email}`;
     navigator.clipboard.writeText(text);
     setCopiedUserId(userId);
     setTimeout(() => setCopiedUserId(null), 2000);
@@ -46,23 +47,29 @@ export const OwnerUsersPage: React.FC = () => {
   // Add User Modal State
   const [showAddModal, setShowAddModal] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    password: '',
-    role: 'manager',
+    name: "",
+    email: "",
+    phone: "",
+    password: "",
+    role: "manager",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [createLoading, setCreateLoading] = useState(false);
-  const [createMsg, setCreateMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [createMsg, setCreateMsg] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
   // Password Reset Modal State
   const [showResetModal, setShowResetModal] = useState(false);
   const [targetUser, setTargetUser] = useState<any>(null);
-  const [newPassword, setNewPassword] = useState('');
+  const [newPassword, setNewPassword] = useState("");
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
-  const [resetMsg, setResetMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [resetMsg, setResetMsg] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
   useEffect(() => {
     fetchStaff();
@@ -71,16 +78,12 @@ export const OwnerUsersPage: React.FC = () => {
   const fetchStaff = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('ab_token') || localStorage.getItem('token');
-      const res = await axios.get(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/owner-staff`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await api.get("/auth/owner-staff");
       if (res.data.success) {
         setStaff(res.data.data);
       }
     } catch (err: any) {
-      console.error('Fetch staff error:', err);
+      console.error("Fetch staff error:", err);
     } finally {
       setLoading(false);
     }
@@ -91,15 +94,19 @@ export const OwnerUsersPage: React.FC = () => {
     setCreateLoading(true);
     setCreateMsg(null);
     try {
-      const token = localStorage.getItem('ab_token') || localStorage.getItem('token');
-      const res = await axios.post(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/owner-staff`,
-        formData,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await api.post("/auth/owner-staff", formData);
       if (res.data.success) {
-        setCreateMsg({ type: 'success', text: 'Staff account created successfully!' });
-        setFormData({ name: '', email: '', phone: '', password: '', role: 'manager' });
+        setCreateMsg({
+          type: "success",
+          text: "Staff account created successfully!",
+        });
+        setFormData({
+          name: "",
+          email: "",
+          phone: "",
+          password: "",
+          role: "manager",
+        });
         fetchStaff();
         setTimeout(() => {
           setShowAddModal(false);
@@ -108,8 +115,8 @@ export const OwnerUsersPage: React.FC = () => {
       }
     } catch (err: any) {
       setCreateMsg({
-        type: 'error',
-        text: err.response?.data?.message || 'Failed to create staff account.',
+        type: "error",
+        text: err.response?.data?.message || "Failed to create staff account.",
       });
     } finally {
       setCreateLoading(false);
@@ -122,15 +129,18 @@ export const OwnerUsersPage: React.FC = () => {
     setResetLoading(true);
     setResetMsg(null);
     try {
-      const token = localStorage.getItem('ab_token') || localStorage.getItem('token');
-      const res = await axios.put(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/owner-staff/${targetUser._id}/password`,
-        { password: newPassword },
-        { headers: { Authorization: `Bearer ${token}` } }
+      const res = await api.put(
+        `/auth/owner-staff/${targetUser._id}/password`,
+        {
+          password: newPassword,
+        },
       );
       if (res.data.success) {
-        setResetMsg({ type: 'success', text: `Password reset successfully for ${targetUser.name}!` });
-        setNewPassword('');
+        setResetMsg({
+          type: "success",
+          text: `Password reset successfully for ${targetUser.name}!`,
+        });
+        setNewPassword("");
         setTimeout(() => {
           setShowResetModal(false);
           setResetMsg(null);
@@ -139,8 +149,8 @@ export const OwnerUsersPage: React.FC = () => {
       }
     } catch (err: any) {
       setResetMsg({
-        type: 'error',
-        text: err.response?.data?.message || 'Failed to reset password.',
+        type: "error",
+        text: err.response?.data?.message || "Failed to reset password.",
       });
     } finally {
       setResetLoading(false);
@@ -149,24 +159,21 @@ export const OwnerUsersPage: React.FC = () => {
 
   const handleToggleStatus = async (userId: string, currentStatus: string) => {
     try {
-      const token = localStorage.getItem('ab_token') || localStorage.getItem('token');
-      const newStatus = currentStatus === 'active' ? 'suspended' : 'active';
-      const res = await axios.put(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/owner-staff/${userId}/status`,
-        { status: newStatus },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const newStatus = currentStatus === "active" ? "suspended" : "active";
+      const res = await api.put(`/auth/owner-staff/${userId}/status`, {
+        status: newStatus,
+      });
       if (res.data.success) {
         fetchStaff();
       }
     } catch (err: any) {
-      console.error('Toggle status error:', err);
+      console.error("Toggle status error:", err);
     }
   };
 
   const generateRandomPassword = (setter: (val: string) => void) => {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789@#$';
-    let pwd = '';
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789@#$";
+    let pwd = "";
     for (let i = 0; i < 10; i++) {
       pwd += chars.charAt(Math.floor(Math.random() * chars.length));
     }
@@ -178,22 +185,42 @@ export const OwnerUsersPage: React.FC = () => {
       u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       u.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
       u.phone.includes(searchQuery);
-    const matchesRole = roleFilter === 'all' || u.role === roleFilter;
+    const matchesRole = roleFilter === "all" || u.role === roleFilter;
     return matchesSearch && matchesRole;
   });
 
   const getRoleBadge = (role: string) => {
     switch (role) {
-      case 'owner':
-        return <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-600 border border-amber-500/20 flex items-center gap-1 w-fit"><Shield size={12} /> Ashram Admin</span>;
-      case 'manager':
-        return <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-500/10 text-blue-600 border border-blue-500/20 flex items-center gap-1 w-fit"><User size={12} /> Manager</span>;
-      case 'reception':
-        return <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 flex items-center gap-1 w-fit"><CheckCircle size={12} /> Receptionist</span>;
-      case 'housekeeping':
-        return <span className="px-3 py-1 rounded-full text-xs font-bold bg-slate-500/10 text-slate-600 border border-slate-500/20 flex items-center gap-1 w-fit"><RefreshCw size={12} /> Housekeeping</span>;
+      case "owner":
+        return (
+          <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-600 border border-amber-500/20 flex items-center gap-1 w-fit">
+            <Shield size={12} /> Ashram Admin
+          </span>
+        );
+      case "manager":
+        return (
+          <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-500/10 text-blue-600 border border-blue-500/20 flex items-center gap-1 w-fit">
+            <User size={12} /> Manager
+          </span>
+        );
+      case "reception":
+        return (
+          <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 flex items-center gap-1 w-fit">
+            <CheckCircle size={12} /> Receptionist
+          </span>
+        );
+      case "housekeeping":
+        return (
+          <span className="px-3 py-1 rounded-full text-xs font-bold bg-slate-500/10 text-slate-600 border border-slate-500/20 flex items-center gap-1 w-fit">
+            <RefreshCw size={12} /> Housekeeping
+          </span>
+        );
       default:
-        return <span className="px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-700 capitalize">{role}</span>;
+        return (
+          <span className="px-3 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-700 capitalize">
+            {role}
+          </span>
+        );
     }
   };
 
@@ -205,9 +232,12 @@ export const OwnerUsersPage: React.FC = () => {
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-amber-300 text-xs font-bold backdrop-blur-md">
             <Users size={14} /> User & Staff Administration
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black">Ashram Users & Admin Credentials</h1>
+          <h1 className="text-2xl sm:text-3xl font-black">
+            Ashram Users & Admin Credentials
+          </h1>
           <p className="text-xs sm:text-sm text-gray-200 max-w-2xl font-medium">
-            Create, manage, and assign login IDs and passwords for your Ashram Managers, Receptionists, Housekeeping staff, and Co-Admins.
+            Create, manage, and assign login IDs and passwords for your Ashram
+            Managers, Receptionists, Housekeeping staff, and Co-Admins.
           </p>
         </div>
 
@@ -223,20 +253,39 @@ export const OwnerUsersPage: React.FC = () => {
       {/* Stats Overview Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-5 rounded-2xl shadow-sm space-y-2">
-          <span className="text-xs font-extrabold uppercase tracking-wider text-gray-400">Total Staff</span>
-          <div className="text-2xl font-black text-[#0B192C] dark:text-white">{staff.length}</div>
+          <span className="text-xs font-extrabold uppercase tracking-wider text-gray-400">
+            Total Staff
+          </span>
+          <div className="text-2xl font-black text-[#0B192C] dark:text-white">
+            {staff.length}
+          </div>
         </div>
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-5 rounded-2xl shadow-sm space-y-2">
-          <span className="text-xs font-extrabold uppercase tracking-wider text-gray-400">Ashram Admins</span>
-          <div className="text-2xl font-black text-amber-600">{staff.filter(s => s.role === 'owner').length}</div>
+          <span className="text-xs font-extrabold uppercase tracking-wider text-gray-400">
+            Ashram Admins
+          </span>
+          <div className="text-2xl font-black text-amber-600">
+            {staff.filter((s) => s.role === "owner").length}
+          </div>
         </div>
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-5 rounded-2xl shadow-sm space-y-2">
-          <span className="text-xs font-extrabold uppercase tracking-wider text-gray-400">Managers & Desk</span>
-          <div className="text-2xl font-black text-[#0A4DA6]">{staff.filter(s => ['manager', 'reception'].includes(s.role)).length}</div>
+          <span className="text-xs font-extrabold uppercase tracking-wider text-gray-400">
+            Managers & Desk
+          </span>
+          <div className="text-2xl font-black text-[#0A4DA6]">
+            {
+              staff.filter((s) => ["manager", "reception"].includes(s.role))
+                .length
+            }
+          </div>
         </div>
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-5 rounded-2xl shadow-sm space-y-2">
-          <span className="text-xs font-extrabold uppercase tracking-wider text-gray-400">Active Accounts</span>
-          <div className="text-2xl font-black text-emerald-600">{staff.filter(s => s.status === 'active').length}</div>
+          <span className="text-xs font-extrabold uppercase tracking-wider text-gray-400">
+            Active Accounts
+          </span>
+          <div className="text-2xl font-black text-emerald-600">
+            {staff.filter((s) => s.status === "active").length}
+          </div>
         </div>
       </div>
 
@@ -257,19 +306,19 @@ export const OwnerUsersPage: React.FC = () => {
         {/* Role Filter Tabs */}
         <div className="flex items-center gap-1 overflow-x-auto w-full sm:w-auto">
           {[
-            { id: 'all', label: 'All Users' },
-            { id: 'owner', label: 'Admins' },
-            { id: 'manager', label: 'Managers' },
-            { id: 'reception', label: 'Reception' },
-            { id: 'housekeeping', label: 'Housekeeping' },
+            { id: "all", label: "All Users" },
+            { id: "owner", label: "Admins" },
+            { id: "manager", label: "Managers" },
+            { id: "reception", label: "Reception" },
+            { id: "housekeeping", label: "Housekeeping" },
           ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => setRoleFilter(tab.id)}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                 roleFilter === tab.id
-                  ? 'bg-[#0A4DA6] text-white shadow-sm'
-                  : 'text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'
+                  ? "bg-[#0A4DA6] text-white shadow-sm"
+                  : "text-gray-500 hover:text-gray-800 dark:hover:text-gray-200"
               }`}
             >
               {tab.label}
@@ -281,11 +330,15 @@ export const OwnerUsersPage: React.FC = () => {
       {/* Staff Users Table */}
       <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm">
         {loading ? (
-          <div className="p-12 text-center text-xs font-bold text-gray-400">Loading staff accounts...</div>
+          <div className="p-12 text-center text-xs font-bold text-gray-400">
+            Loading staff accounts...
+          </div>
         ) : filteredStaff.length === 0 ? (
           <div className="p-12 text-center space-y-3">
             <Users size={32} className="mx-auto text-gray-300" />
-            <p className="text-sm font-extrabold text-gray-500">No staff members found</p>
+            <p className="text-sm font-extrabold text-gray-500">
+              No staff members found
+            </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -302,15 +355,22 @@ export const OwnerUsersPage: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-slate-800 text-xs font-semibold text-[#0B192C] dark:text-gray-200">
                 {filteredStaff.map((u) => (
-                  <tr key={u._id} className="hover:bg-gray-50/60 dark:hover:bg-slate-900/60 transition-colors">
+                  <tr
+                    key={u._id}
+                    className="hover:bg-gray-50/60 dark:hover:bg-slate-900/60 transition-colors"
+                  >
                     <td className="py-4 px-6">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-full bg-[#0A4DA6]/10 text-[#0A4DA6] border border-[#0A4DA6]/20 flex items-center justify-center font-black text-xs shrink-0">
                           {u.name.charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <div className="font-extrabold text-sm text-[#0B192C] dark:text-white">{u.name}</div>
-                          <div className="text-[10px] text-gray-400">ID: {u._id.slice(-6)}</div>
+                          <div className="font-extrabold text-sm text-[#0B192C] dark:text-white">
+                            {u.name}
+                          </div>
+                          <div className="text-[10px] text-gray-400">
+                            ID: {u._id.slice(-6)}
+                          </div>
                         </div>
                       </div>
                     </td>
@@ -328,35 +388,47 @@ export const OwnerUsersPage: React.FC = () => {
                       <div className="flex items-center gap-2">
                         <div className="bg-gray-100 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 px-2.5 py-1 rounded-xl text-xs font-mono font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                           <Lock size={12} className="text-amber-500" />
-                          <span>{showPasswords[u._id] ? 'admin123' : '••••••••'}</span>
+                          <span>
+                            {showPasswords[u._id] ? "Protected" : "••••••••"}
+                          </span>
                           <button
                             onClick={() => togglePasswordVisibility(u._id)}
                             className="text-gray-400 hover:text-gray-600 ml-1 p-0.5 cursor-pointer"
                             title="Toggle Show/Hide Password"
                           >
-                            {showPasswords[u._id] ? <EyeOff size={12} /> : <Eye size={12} />}
+                            {showPasswords[u._id] ? (
+                              <EyeOff size={12} />
+                            ) : (
+                              <Eye size={12} />
+                            )}
                           </button>
                         </div>
 
                         <button
-                          onClick={() => handleCopyCredentials(u.email, 'admin123', u._id)}
+                          onClick={() => handleCopyCredentials(u.email, u._id)}
                           className="px-2.5 py-1 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-[#0A4DA6] dark:text-amber-400 hover:bg-blue-100 transition-all cursor-pointer flex items-center gap-1 text-[10px] font-bold"
                           title="Copy Login Credentials"
                         >
                           <Copy size={12} />
-                          {copiedUserId === u._id ? <span className="text-emerald-600 font-black">Copied!</span> : <span>Copy</span>}
+                          {copiedUserId === u._id ? (
+                            <span className="text-emerald-600 font-black">
+                              Copied!
+                            </span>
+                          ) : (
+                            <span>Copy</span>
+                          )}
                         </button>
                       </div>
                     </td>
+                    <td className="py-4 px-6">{getRoleBadge(u.role)}</td>
                     <td className="py-4 px-6">
-                      {getRoleBadge(u.role)}
-                    </td>
-                    <td className="py-4 px-6">
-                      <span className={`px-3 py-1 rounded-full text-xs font-extrabold capitalize ${
-                        u.status === 'active'
-                          ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
-                          : 'bg-rose-500/10 text-rose-600 border border-rose-500/20'
-                      }`}>
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-extrabold capitalize ${
+                          u.status === "active"
+                            ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
+                            : "bg-rose-500/10 text-rose-600 border border-rose-500/20"
+                        }`}
+                      >
                         {u.status}
                       </span>
                     </td>
@@ -379,12 +451,12 @@ export const OwnerUsersPage: React.FC = () => {
                         <button
                           onClick={() => handleToggleStatus(u._id, u.status)}
                           className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
-                            u.status === 'active'
-                              ? 'bg-gray-100 hover:bg-gray-200 text-gray-600 border-gray-200'
-                              : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 border-emerald-500/20'
+                            u.status === "active"
+                              ? "bg-gray-100 hover:bg-gray-200 text-gray-600 border-gray-200"
+                              : "bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 border-emerald-500/20"
                           }`}
                         >
-                          {u.status === 'active' ? 'Suspend' : 'Activate'}
+                          {u.status === "active" ? "Suspend" : "Activate"}
                         </button>
                       </div>
                     </td>
@@ -420,21 +492,36 @@ export const OwnerUsersPage: React.FC = () => {
                     <UserPlus size={18} />
                   </div>
                   <div>
-                    <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white">Create Staff Account / Admin</h3>
-                    <p className="text-xs text-gray-400">Assign login ID and password for ashram staff.</p>
+                    <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white">
+                      Create Staff Account / Admin
+                    </h3>
+                    <p className="text-xs text-gray-400">
+                      Assign login ID and password for ashram staff.
+                    </p>
                   </div>
                 </div>
-                <button onClick={() => setShowAddModal(false)} className="text-gray-400 hover:text-gray-600 p-1 cursor-pointer">
+                <button
+                  onClick={() => setShowAddModal(false)}
+                  className="text-gray-400 hover:text-gray-600 p-1 cursor-pointer"
+                >
                   <X size={18} />
                 </button>
               </div>
 
               {/* Message Banner */}
               {createMsg && (
-                <div className={`p-3 rounded-2xl text-xs font-bold flex items-center gap-2 ${
-                  createMsg.type === 'success' ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-600 border border-rose-500/20'
-                }`}>
-                  {createMsg.type === 'success' ? <CheckCircle size={14} /> : <XCircle size={14} />}
+                <div
+                  className={`p-3 rounded-2xl text-xs font-bold flex items-center gap-2 ${
+                    createMsg.type === "success"
+                      ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
+                      : "bg-rose-500/10 text-rose-600 border border-rose-500/20"
+                  }`}
+                >
+                  {createMsg.type === "success" ? (
+                    <CheckCircle size={14} />
+                  ) : (
+                    <XCircle size={14} />
+                  )}
                   <span>{createMsg.text}</span>
                 </div>
               )}
@@ -442,38 +529,50 @@ export const OwnerUsersPage: React.FC = () => {
               {/* Form */}
               <form onSubmit={handleCreateStaff} className="space-y-4">
                 <div>
-                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">Full Name</label>
+                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                    Full Name
+                  </label>
                   <input
                     type="text"
                     required
                     placeholder="e.g. Rajesh Kumar"
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
                     className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
                   />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">Login Email / Username</label>
+                    <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                      Login Email / Username
+                    </label>
                     <input
                       type="email"
                       required
                       placeholder="e.g. manager@ashram.com"
                       value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, email: e.target.value })
+                      }
                       className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">Phone Number</label>
+                    <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                      Phone Number
+                    </label>
                     <input
                       type="text"
                       required
                       placeholder="+91 98765 43210"
                       value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, phone: e.target.value })
+                      }
                       className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
                     />
                   </div>
@@ -481,10 +580,16 @@ export const OwnerUsersPage: React.FC = () => {
 
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="block text-[10px] font-black uppercase text-gray-400">Login Password</label>
+                    <label className="block text-[10px] font-black uppercase text-gray-400">
+                      Login Password
+                    </label>
                     <button
                       type="button"
-                      onClick={() => generateRandomPassword((val) => setFormData({ ...formData, password: val }))}
+                      onClick={() =>
+                        generateRandomPassword((val) =>
+                          setFormData({ ...formData, password: val }),
+                        )
+                      }
                       className="text-[10px] font-extrabold text-[#0A4DA6] hover:underline flex items-center gap-1 cursor-pointer"
                     >
                       <Sparkles size={11} /> Auto Generate
@@ -492,11 +597,13 @@ export const OwnerUsersPage: React.FC = () => {
                   </div>
                   <div className="relative">
                     <input
-                      type={showPassword ? 'text' : 'password'}
+                      type={showPassword ? "text" : "password"}
                       required
                       placeholder="Enter password..."
                       value={formData.password}
-                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, password: e.target.value })
+                      }
                       className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl pl-4 pr-10 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
                     />
                     <button
@@ -510,14 +617,20 @@ export const OwnerUsersPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">Assigned Role</label>
+                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                    Assigned Role
+                  </label>
                   <select
                     value={formData.role}
-                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, role: e.target.value })
+                    }
                     className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6] cursor-pointer"
                   >
                     <option value="manager">👔 Ashram Manager</option>
-                    <option value="reception">🛎️ Front Desk / Receptionist</option>
+                    <option value="reception">
+                      🛎️ Front Desk / Receptionist
+                    </option>
                     <option value="housekeeping">🧹 Housekeeping Staff</option>
                     <option value="owner">🛡️ Ashram Admin / Co-Owner</option>
                   </select>
@@ -536,7 +649,9 @@ export const OwnerUsersPage: React.FC = () => {
                     disabled={createLoading}
                     className="flex-1 py-3 bg-[#0A4DA6] hover:bg-[#083b80] text-white font-extrabold rounded-2xl text-xs shadow-md shadow-[#0A4DA6]/20 cursor-pointer flex items-center justify-center gap-2"
                   >
-                    {createLoading ? 'Creating Account...' : 'Create Staff Account'}
+                    {createLoading
+                      ? "Creating Account..."
+                      : "Create Staff Account"}
                   </button>
                 </div>
               </form>
@@ -569,21 +684,36 @@ export const OwnerUsersPage: React.FC = () => {
                     <Key size={18} />
                   </div>
                   <div>
-                    <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white">Reset Password</h3>
-                    <p className="text-xs text-gray-400">User: {targetUser.name} ({targetUser.email})</p>
+                    <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white">
+                      Reset Password
+                    </h3>
+                    <p className="text-xs text-gray-400">
+                      User: {targetUser.name} ({targetUser.email})
+                    </p>
                   </div>
                 </div>
-                <button onClick={() => setShowResetModal(false)} className="text-gray-400 hover:text-gray-600 p-1 cursor-pointer">
+                <button
+                  onClick={() => setShowResetModal(false)}
+                  className="text-gray-400 hover:text-gray-600 p-1 cursor-pointer"
+                >
                   <X size={18} />
                 </button>
               </div>
 
               {/* Message */}
               {resetMsg && (
-                <div className={`p-3 rounded-2xl text-xs font-bold flex items-center gap-2 ${
-                  resetMsg.type === 'success' ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-600 border border-rose-500/20'
-                }`}>
-                  {resetMsg.type === 'success' ? <CheckCircle size={14} /> : <XCircle size={14} />}
+                <div
+                  className={`p-3 rounded-2xl text-xs font-bold flex items-center gap-2 ${
+                    resetMsg.type === "success"
+                      ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
+                      : "bg-rose-500/10 text-rose-600 border border-rose-500/20"
+                  }`}
+                >
+                  {resetMsg.type === "success" ? (
+                    <CheckCircle size={14} />
+                  ) : (
+                    <XCircle size={14} />
+                  )}
                   <span>{resetMsg.text}</span>
                 </div>
               )}
@@ -592,7 +722,9 @@ export const OwnerUsersPage: React.FC = () => {
               <form onSubmit={handleResetPassword} className="space-y-4">
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="block text-[10px] font-black uppercase text-gray-400">New Password</label>
+                    <label className="block text-[10px] font-black uppercase text-gray-400">
+                      New Password
+                    </label>
                     <button
                       type="button"
                       onClick={() => generateRandomPassword(setNewPassword)}
@@ -603,7 +735,7 @@ export const OwnerUsersPage: React.FC = () => {
                   </div>
                   <div className="relative">
                     <input
-                      type={showNewPassword ? 'text' : 'password'}
+                      type={showNewPassword ? "text" : "password"}
                       required
                       placeholder="Enter new password..."
                       value={newPassword}
@@ -615,7 +747,11 @@ export const OwnerUsersPage: React.FC = () => {
                       onClick={() => setShowNewPassword(!showNewPassword)}
                       className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
                     >
-                      {showNewPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                      {showNewPassword ? (
+                        <EyeOff size={14} />
+                      ) : (
+                        <Eye size={14} />
+                      )}
                     </button>
                   </div>
                 </div>
@@ -633,7 +769,7 @@ export const OwnerUsersPage: React.FC = () => {
                     disabled={resetLoading}
                     className="flex-1 py-3 bg-amber-500 hover:bg-amber-600 text-white font-extrabold rounded-2xl text-xs shadow-md shadow-amber-500/20 cursor-pointer flex items-center justify-center gap-2"
                   >
-                    {resetLoading ? 'Updating...' : 'Update Password'}
+                    {resetLoading ? "Updating..." : "Update Password"}
                   </button>
                 </div>
               </form>

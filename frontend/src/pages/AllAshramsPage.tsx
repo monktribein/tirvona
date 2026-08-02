@@ -1,31 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { useNavigate, Link } from 'react-router-dom';
-import { 
-  Building, 
-  MapPin, 
-  ShieldCheck, 
-  Search, 
-  Edit3, 
-  Bed, 
-  Calendar, 
-  ExternalLink, 
-  Filter, 
-  CheckCircle2, 
-  AlertCircle, 
-  Users, 
-  Sparkles, 
-  BookOpen, 
-  Sun, 
+import React, { useState, useEffect } from "react";
+import api from "../lib/api";
+import { useNavigate, Link } from "react-router-dom";
+import {
+  Building,
+  MapPin,
+  ShieldCheck,
+  Search,
+  Edit3,
+  Bed,
+  ExternalLink,
+  CheckCircle2,
+  Users,
+  Sparkles,
+  Sun,
   X,
-  FileCheck,
   Check,
   Plus,
-  Trash2,
-  Image as ImageIcon
-} from 'lucide-react';
-import { useNotifications } from '../contexts/NotificationContext';
-import FileUploader from '../components/FileUploader';
+  Image as ImageIcon,
+} from "lucide-react";
+import { useNotifications } from "../contexts/NotificationContext";
+import FileUploader from "../components/FileUploader";
 
 export const AllAshramsPage: React.FC = () => {
   const { addNotification } = useNotifications();
@@ -36,27 +30,27 @@ export const AllAshramsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   // Search & Filter
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCity, setSelectedCity] = useState('All');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCity, setSelectedCity] = useState("All");
 
   // Edit Modal State
   const [selectedAshram, setSelectedAshram] = useState<any | null>(null);
   const [editFormData, setEditFormData] = useState<any>({
-    name: '',
-    description: '',
-    history: '',
-    street: '',
-    city: '',
-    district: '',
-    state: '',
-    pincode: '',
-    status: 'approved',
-    ownerId: '',
-    amenities: '',
-    rules: '',
+    name: "",
+    description: "",
+    history: "",
+    street: "",
+    city: "",
+    district: "",
+    state: "",
+    pincode: "",
+    status: "approved",
+    ownerId: "",
+    amenities: "",
+    rules: "",
     images: [],
   });
-  const [newImageUrl, setNewImageUrl] = useState('');
+  const [newImageUrl, setNewImageUrl] = useState("");
   const [submitLoading, setSubmitLoading] = useState(false);
 
   useEffect(() => {
@@ -66,28 +60,21 @@ export const AllAshramsPage: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('ab_token') || localStorage.getItem('token');
-      const headers = { Authorization: `Bearer ${token}` };
-
       // Fetch all ashrams (Master Owner / Super Admin gets all)
-      const ashramRes = await axios.get(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ashrams/my-listings/all`,
-        { headers }
-      );
+      const ashramRes = await api.get("/ashrams/my-listings/all");
       if (ashramRes.data.success) {
         setAshrams(ashramRes.data.data);
       }
 
       // Fetch all staff / owner users for reassignment dropdown
-      const usersRes = await axios.get(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/owner-staff`,
-        { headers }
-      );
+      const usersRes = await api.get("/auth/owner-staff");
       if (usersRes.data.success) {
-        setOwnerUsers(usersRes.data.data.filter((u: any) => u.role === 'owner'));
+        setOwnerUsers(
+          usersRes.data.data.filter((u: any) => u.role === "owner"),
+        );
       }
     } catch (err) {
-      console.error('Fetch all ashrams error:', err);
+      console.error("Fetch all ashrams error:", err);
     } finally {
       setLoading(false);
     }
@@ -96,21 +83,25 @@ export const AllAshramsPage: React.FC = () => {
   const handleOpenEditModal = (ashram: any) => {
     setSelectedAshram(ashram);
     setEditFormData({
-      name: ashram.name || '',
-      description: ashram.description || '',
-      history: ashram.history || '',
-      street: ashram.address?.street || '',
-      city: ashram.address?.city || '',
-      district: ashram.address?.district || '',
-      state: ashram.address?.state || 'Uttarakhand',
-      pincode: ashram.address?.pincode || '',
-      status: ashram.status || 'approved',
-      ownerId: ashram.ownerId?._id || ashram.ownerId || '',
-      amenities: Array.isArray(ashram.amenities) ? ashram.amenities.join(', ') : ashram.amenities || '',
-      rules: Array.isArray(ashram.rules) ? ashram.rules.join(', ') : ashram.rules || '',
+      name: ashram.name || "",
+      description: ashram.description || "",
+      history: ashram.history || "",
+      street: ashram.address?.street || "",
+      city: ashram.address?.city || "",
+      district: ashram.address?.district || "",
+      state: ashram.address?.state || "Uttarakhand",
+      pincode: ashram.address?.pincode || "",
+      status: ashram.status || "approved",
+      ownerId: ashram.ownerId?._id || ashram.ownerId || "",
+      amenities: Array.isArray(ashram.amenities)
+        ? ashram.amenities.join(", ")
+        : ashram.amenities || "",
+      rules: Array.isArray(ashram.rules)
+        ? ashram.rules.join(", ")
+        : ashram.rules || "",
       images: Array.isArray(ashram.images) ? [...ashram.images] : [],
     });
-    setNewImageUrl('');
+    setNewImageUrl("");
   };
 
   const handleAddImage = (urlToAdd?: string) => {
@@ -120,13 +111,15 @@ export const AllAshramsPage: React.FC = () => {
       ...prev,
       images: [...(prev.images || []), url],
     }));
-    if (!urlToAdd) setNewImageUrl('');
+    if (!urlToAdd) setNewImageUrl("");
   };
 
   const handleRemoveImage = (indexToRemove: number) => {
     setEditFormData((prev: any) => ({
       ...prev,
-      images: (prev.images || []).filter((_: any, idx: number) => idx !== indexToRemove),
+      images: (prev.images || []).filter(
+        (_: any, idx: number) => idx !== indexToRemove,
+      ),
     }));
   };
 
@@ -136,7 +129,6 @@ export const AllAshramsPage: React.FC = () => {
 
     setSubmitLoading(true);
     try {
-      const token = localStorage.getItem('ab_token') || localStorage.getItem('token');
       const payload = {
         name: editFormData.name,
         description: editFormData.description,
@@ -150,88 +142,123 @@ export const AllAshramsPage: React.FC = () => {
         },
         status: editFormData.status,
         ownerId: editFormData.ownerId,
-        amenities: editFormData.amenities.split(',').map((s: string) => s.trim()).filter(Boolean),
-        rules: editFormData.rules.split(',').map((s: string) => s.trim()).filter(Boolean),
+        amenities: editFormData.amenities
+          .split(",")
+          .map((s: string) => s.trim())
+          .filter(Boolean),
+        rules: editFormData.rules
+          .split(",")
+          .map((s: string) => s.trim())
+          .filter(Boolean),
         images: editFormData.images || [],
       };
 
-      const res = await axios.put(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ashrams/${selectedAshram._id}`,
-        payload,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await api.put(`/ashrams/${selectedAshram._id}`, payload);
 
       if (res.data.success) {
-        addNotification('Ashram Saved Successfully!', 'Ashram details and assigned owner updated live.', 'success');
+        addNotification(
+          "Ashram Saved Successfully!",
+          "Ashram details and assigned owner updated live.",
+          "success",
+        );
         setSelectedAshram(null);
         fetchData();
       }
     } catch (err) {
-      console.error('Update ashram error:', err);
-      addNotification('Error', 'Failed to update ashram details.', 'error');
+      console.error("Update ashram error:", err);
+      addNotification("Error", "Failed to update ashram details.", "error");
     } finally {
       setSubmitLoading(false);
     }
   };
 
   // Filter logic
-  const cities = ['All', 'Rishikesh', 'Haridwar', 'Vrindavan', 'Varanasi', 'Kedarnath'];
+  const cities = [
+    "All",
+    "Rishikesh",
+    "Haridwar",
+    "Vrindavan",
+    "Varanasi",
+    "Kedarnath",
+  ];
   const filteredAshrams = ashrams.filter((a) => {
     const matchesSearch =
       a.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       a.address?.city?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       a.address?.state?.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesCity = selectedCity === 'All' || a.address?.city?.toLowerCase() === selectedCity.toLowerCase();
+
+    const matchesCity =
+      selectedCity === "All" ||
+      a.address?.city?.toLowerCase() === selectedCity.toLowerCase();
 
     return matchesSearch && matchesCity;
   });
 
   return (
     <div className="space-y-8">
-      {/* Top Banner Header */}
-      <div className="bg-gradient-to-r from-[#0B192C] via-[#0A4DA6] to-[#0B192C] rounded-[28px] p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-xs font-bold border border-blue-500/30 backdrop-blur-md">
-            <Building size={14} /> Platform Master Directory
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-black">All Platform Registered Ashrams</h1>
-          <p className="text-xs sm:text-sm text-gray-200 max-w-2xl font-medium">
-            Inspect, manage, and edit details for all {ashrams.length} registered ashram accommodations across India.
-          </p>
+      {/* Clean Text Header */}
+      <div className="text-center space-y-2.5 max-w-3xl mx-auto py-2">
+        <p className="font-['Kalam'] text-2xl sm:text-4xl lg:text-5xl font-bold text-[#E58C28]">
+          Registered Ashrams &amp; Dharamshalas
+        </p>
+        {/* Decorative Saffron Underline Divider */}
+        <div className="flex items-center justify-center gap-2.5 my-1.5">
+          <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
+          <Sparkles
+            size={14}
+            className="text-[#E58C28] fill-[#E58C28] shrink-0"
+          />
+          <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
         </div>
-
-        <button
-          onClick={() => navigate('/owner/ashrams/add')}
-          className="bg-[#E58C28] hover:bg-[#d47d1f] text-white font-extrabold text-xs sm:text-sm px-6 py-3.5 rounded-full flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer shrink-0 active:scale-95"
-        >
-          <Building size={16} /> Register New Ashram
-        </button>
+        <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-xl mx-auto leading-relaxed">
+          Inspect, manage, and edit details for all {ashrams.length} registered
+          ashram accommodations across India.
+        </p>
       </div>
 
       {/* Stats Summary Bar */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-1">
-          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Ashrams</div>
-          <div className="text-2xl font-black text-[#0B192C] dark:text-white">{ashrams.length}</div>
+          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+            Total Ashrams
+          </div>
+          <div className="text-2xl font-black text-[#0B192C] dark:text-white">
+            {ashrams.length}
+          </div>
         </div>
 
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-1">
-          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">Government Verified</div>
+          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+            Government Verified
+          </div>
           <div className="text-2xl font-black text-emerald-600 flex items-center gap-1.5">
-            <span>{ashrams.filter(a => a.status === 'approved' || a.status === 'active').length}</span>
+            <span>
+              {
+                ashrams.filter(
+                  (a) => a.status === "approved" || a.status === "active",
+                ).length
+              }
+            </span>
             <ShieldCheck size={18} />
           </div>
         </div>
 
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-1">
-          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">Pilgrimage Cities</div>
-          <div className="text-2xl font-black text-[#0A4DA6] dark:text-amber-400">5</div>
+          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+            Pilgrimage Cities
+          </div>
+          <div className="text-2xl font-black text-[#0A4DA6] dark:text-amber-400">
+            5
+          </div>
         </div>
 
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-1">
-          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">Assigned Owner Accounts</div>
-          <div className="text-2xl font-black text-amber-500">{ownerUsers.length}</div>
+          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+            Assigned Owner Accounts
+          </div>
+          <div className="text-2xl font-black text-amber-500">
+            {ownerUsers.length}
+          </div>
         </div>
       </div>
 
@@ -245,8 +272,8 @@ export const AllAshramsPage: React.FC = () => {
               onClick={() => setSelectedCity(c)}
               className={`px-3.5 py-1.5 rounded-full text-xs font-extrabold whitespace-nowrap transition-all cursor-pointer ${
                 selectedCity === c
-                  ? 'bg-[#0A4DA6] text-white shadow-sm'
-                  : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200'
+                  ? "bg-[#0A4DA6] text-white shadow-sm"
+                  : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200"
               }`}
             >
               {c}
@@ -256,7 +283,10 @@ export const AllAshramsPage: React.FC = () => {
 
         {/* Search Input */}
         <div className="relative w-full sm:w-72">
-          <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search
+            size={14}
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
+          />
           <input
             type="text"
             placeholder="Search ashram name or location..."
@@ -274,15 +304,22 @@ export const AllAshramsPage: React.FC = () => {
         </div>
       ) : filteredAshrams.length === 0 ? (
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-12 text-center space-y-4 shadow-sm">
-          <Building size={48} className="mx-auto text-gray-300 dark:text-gray-600" />
-          <h3 className="text-lg font-black text-[#0B192C] dark:text-white">No Ashrams Found</h3>
-          <p className="text-xs text-gray-400">Try adjusting your city filter or search term.</p>
+          <Building
+            size={48}
+            className="mx-auto text-gray-300 dark:text-gray-600"
+          />
+          <h3 className="text-lg font-black text-[#0B192C] dark:text-white">
+            No Ashrams Found
+          </h3>
+          <p className="text-xs text-gray-400">
+            Try adjusting your city filter or search term.
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {filteredAshrams.map((ashram) => {
             const assignedOwner = ownerUsers.find(
-              (u) => u._id === (ashram.ownerId?._id || ashram.ownerId)
+              (u) => u._id === (ashram.ownerId?._id || ashram.ownerId),
             );
 
             return (
@@ -300,43 +337,60 @@ export const AllAshramsPage: React.FC = () => {
                       <div className="flex items-center gap-1.5 text-xs font-bold text-gray-500 dark:text-gray-400 mt-1">
                         <MapPin size={13} className="text-[#0A4DA6]" />
                         <span>
-                          {ashram.address?.street ? `${ashram.address.street}, ` : ''}
-                          {ashram.address?.city || 'Rishikesh'}, {ashram.address?.state || 'Uttarakhand'}
+                          {ashram.address?.street
+                            ? `${ashram.address.street}, `
+                            : ""}
+                          {ashram.address?.city || "Rishikesh"},{" "}
+                          {ashram.address?.state || "Uttarakhand"}
                         </span>
                       </div>
                     </div>
 
-                    <span className={`px-3 py-1 rounded-full text-xs font-extrabold capitalize shrink-0 flex items-center gap-1 ${
-                      ashram.status === 'approved' || ashram.status === 'active'
-                        ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
-                        : 'bg-amber-500/10 text-amber-600 border border-amber-500/20'
-                    }`}>
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-extrabold capitalize shrink-0 flex items-center gap-1 ${
+                        ashram.status === "approved" ||
+                        ashram.status === "active"
+                          ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
+                          : "bg-amber-500/10 text-amber-600 border border-amber-500/20"
+                      }`}
+                    >
                       <ShieldCheck size={13} />
-                      {ashram.status === 'approved' ? 'Verified' : ashram.status.replace(/_/g, ' ')}
+                      {ashram.status === "approved"
+                        ? "Verified"
+                        : ashram.status.replace(/_/g, " ")}
                     </span>
                   </div>
 
                   {/* Assigned Owner User Info */}
                   <div className="bg-blue-50/60 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/40 rounded-2xl p-3 flex items-center justify-between text-xs">
                     <div className="flex items-center gap-2">
-                      <Users size={14} className="text-[#0A4DA6] dark:text-amber-400" />
-                      <span className="font-bold text-gray-700 dark:text-gray-300">Assigned Owner:</span>
+                      <Users
+                        size={14}
+                        className="text-[#0A4DA6] dark:text-amber-400"
+                      />
+                      <span className="font-bold text-gray-700 dark:text-gray-300">
+                        Assigned Owner:
+                      </span>
                     </div>
                     <span className="font-mono font-bold text-[#0A4DA6] dark:text-amber-400">
-                      {assignedOwner?.email || ashram.ownerId?.email || 'sapt@tirvona.com'}
+                      {assignedOwner?.email ||
+                        ashram.ownerId?.email ||
+                        "sapt@tirvona.com"}
                     </span>
                   </div>
 
                   {/* Description Snippet */}
                   <p className="text-xs text-gray-600 dark:text-gray-300 line-clamp-2 leading-relaxed font-semibold">
-                    {ashram.description || 'Spiritual Ashram lodging & accommodation.'}
+                    {ashram.description ||
+                      "Spiritual Ashram lodging & accommodation."}
                   </p>
 
                   {/* Amenities */}
                   <div className="flex flex-wrap gap-1.5">
-                    {(Array.isArray(ashram.amenities) && ashram.amenities.length > 0
+                    {(Array.isArray(ashram.amenities) &&
+                    ashram.amenities.length > 0
                       ? ashram.amenities.slice(0, 4)
-                      : ['Meditation Hall', 'Satvik Meals', 'Ganga Ghat']
+                      : ["Meditation Hall", "Satvik Meals", "Ganga Ghat"]
                     ).map((item: string, i: number) => (
                       <span
                         key={i}
@@ -359,7 +413,7 @@ export const AllAshramsPage: React.FC = () => {
 
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => navigate('/owner/rooms')}
+                      onClick={() => navigate("/owner/rooms")}
                       className="p-2 rounded-full bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 text-gray-700 dark:text-gray-300 cursor-pointer"
                       title="Manage Rooms"
                     >
@@ -385,20 +439,30 @@ export const AllAshramsPage: React.FC = () => {
       {/* ══════════════════════ MASTER EDIT ASHRAM MODAL ══════════════════════ */}
       {selectedAshram && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedAshram(null)} />
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setSelectedAshram(null)}
+          />
           <div className="relative w-full max-w-3xl bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl z-10 space-y-6 max-h-[90vh] overflow-y-auto">
-            
             <div className="flex items-center justify-between border-b border-gray-100 dark:border-slate-800 pb-4">
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-full bg-[#0A4DA6]/10 text-[#0A4DA6] flex items-center justify-center font-bold">
                   <Edit3 size={18} />
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white">Master Edit: {selectedAshram.name}</h3>
-                  <p className="text-xs text-gray-400">Update Ashram profile, address, assigned owner, and verification status.</p>
+                  <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white">
+                    Master Edit: {selectedAshram.name}
+                  </h3>
+                  <p className="text-xs text-gray-400">
+                    Update Ashram profile, address, assigned owner, and
+                    verification status.
+                  </p>
                 </div>
               </div>
-              <button onClick={() => setSelectedAshram(null)} className="text-gray-400 hover:text-gray-600 p-1 cursor-pointer">
+              <button
+                onClick={() => setSelectedAshram(null)}
+                className="text-gray-400 hover:text-gray-600 p-1 cursor-pointer"
+              >
                 <X size={18} />
               </button>
             </div>
@@ -406,21 +470,32 @@ export const AllAshramsPage: React.FC = () => {
             <form onSubmit={handleSaveEdit} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">Ashram Name</label>
+                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                    Ashram Name
+                  </label>
                   <input
                     type="text"
                     required
                     value={editFormData.name}
-                    onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                    onChange={(e) =>
+                      setEditFormData({ ...editFormData, name: e.target.value })
+                    }
                     className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">Reassign Owner Account</label>
+                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                    Reassign Owner Account
+                  </label>
                   <select
                     value={editFormData.ownerId}
-                    onChange={(e) => setEditFormData({ ...editFormData, ownerId: e.target.value })}
+                    onChange={(e) =>
+                      setEditFormData({
+                        ...editFormData,
+                        ownerId: e.target.value,
+                      })
+                    }
                     className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-mono font-bold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
                   >
                     {ownerUsers.map((u) => (
@@ -433,21 +508,35 @@ export const AllAshramsPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">Description / Bio</label>
+                <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                  Description / Bio
+                </label>
                 <textarea
                   rows={2}
                   value={editFormData.description}
-                  onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
+                  onChange={(e) =>
+                    setEditFormData({
+                      ...editFormData,
+                      description: e.target.value,
+                    })
+                  }
                   className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">Spiritual Heritage & History</label>
+                <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                  Spiritual Heritage & History
+                </label>
                 <textarea
                   rows={2}
                   value={editFormData.history}
-                  onChange={(e) => setEditFormData({ ...editFormData, history: e.target.value })}
+                  onChange={(e) =>
+                    setEditFormData({
+                      ...editFormData,
+                      history: e.target.value,
+                    })
+                  }
                   className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
                 />
               </div>
@@ -455,41 +544,66 @@ export const AllAshramsPage: React.FC = () => {
               {/* Address Fields */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div>
-                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">Street Address</label>
+                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                    Street Address
+                  </label>
                   <input
                     type="text"
                     value={editFormData.street}
-                    onChange={(e) => setEditFormData({ ...editFormData, street: e.target.value })}
+                    onChange={(e) =>
+                      setEditFormData({
+                        ...editFormData,
+                        street: e.target.value,
+                      })
+                    }
                     className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold"
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">City</label>
+                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                    City
+                  </label>
                   <input
                     type="text"
                     required
                     value={editFormData.city}
-                    onChange={(e) => setEditFormData({ ...editFormData, city: e.target.value })}
+                    onChange={(e) =>
+                      setEditFormData({ ...editFormData, city: e.target.value })
+                    }
                     className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold"
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">State</label>
+                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                    State
+                  </label>
                   <input
                     type="text"
                     required
                     value={editFormData.state}
-                    onChange={(e) => setEditFormData({ ...editFormData, state: e.target.value })}
+                    onChange={(e) =>
+                      setEditFormData({
+                        ...editFormData,
+                        state: e.target.value,
+                      })
+                    }
                     className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold"
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">Pincode</label>
+                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                    Pincode
+                  </label>
                   <input
                     type="text"
                     required
                     value={editFormData.pincode}
-                    onChange={(e) => setEditFormData({ ...editFormData, pincode: e.target.value })}
+                    onChange={(e) =>
+                      setEditFormData({
+                        ...editFormData,
+                        pincode: e.target.value,
+                      })
+                    }
                     className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold"
                   />
                 </div>
@@ -497,24 +611,40 @@ export const AllAshramsPage: React.FC = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">Facilities & Amenities (comma separated)</label>
+                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                    Facilities & Amenities (comma separated)
+                  </label>
                   <input
                     type="text"
                     value={editFormData.amenities}
-                    onChange={(e) => setEditFormData({ ...editFormData, amenities: e.target.value })}
+                    onChange={(e) =>
+                      setEditFormData({
+                        ...editFormData,
+                        amenities: e.target.value,
+                      })
+                    }
                     className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-semibold"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">Government Verification Status</label>
+                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                    Government Verification Status
+                  </label>
                   <select
                     value={editFormData.status}
-                    onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value })}
+                    onChange={(e) =>
+                      setEditFormData({
+                        ...editFormData,
+                        status: e.target.value,
+                      })
+                    }
                     className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-bold text-emerald-600 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
                   >
                     <option value="approved">Approved & Verified</option>
-                    <option value="pending_inspection">Pending Inspection</option>
+                    <option value="pending_inspection">
+                      Pending Inspection
+                    </option>
                     <option value="pending_docs">Pending Documents</option>
                     <option value="suspended">Suspended</option>
                   </select>
@@ -525,21 +655,29 @@ export const AllAshramsPage: React.FC = () => {
               <div className="bg-gray-50/80 dark:bg-slate-900/80 border border-gray-100 dark:border-slate-800 rounded-2xl p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <label className="text-[10px] font-black uppercase text-gray-400 flex items-center gap-1.5">
-                    <ImageIcon size={14} className="text-[#0A4DA6]" /> Ashram Photo Gallery ({editFormData.images?.length || 0} Photos)
+                    <ImageIcon size={14} className="text-[#0A4DA6]" /> Ashram
+                    Photo Gallery ({editFormData.images?.length || 0} Photos)
                   </label>
-                  <span className="text-[10px] text-gray-400 font-bold">Click 🗑️ to remove any image</span>
+                  <span className="text-[10px] text-gray-400 font-bold">
+                    Click 🗑️ to remove any image
+                  </span>
                 </div>
 
                 {/* Thumbnails Grid */}
                 {editFormData.images && editFormData.images.length > 0 ? (
                   <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
                     {editFormData.images.map((imgUrl: string, idx: number) => (
-                      <div key={idx} className="relative group aspect-video rounded-xl overflow-hidden border border-gray-200 dark:border-slate-800 bg-black">
+                      <div
+                        key={idx}
+                        className="relative group aspect-video rounded-xl overflow-hidden border border-gray-200 dark:border-slate-800 bg-black"
+                      >
                         <img
                           src={imgUrl}
                           alt={`Ashram photo ${idx + 1}`}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                          onError={(e: any) => { e.target.src = '/banner/ashram_rishikesh.png'; }}
+                          onError={(e: any) => {
+                            e.target.src = "/banner/ashram_rishikesh.png";
+                          }}
                         />
                         <button
                           type="button"
@@ -553,7 +691,10 @@ export const AllAshramsPage: React.FC = () => {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-xs text-gray-400 italic">No photos added yet. Paste a photo URL below to add to gallery.</p>
+                  <p className="text-xs text-gray-400 italic">
+                    No photos added yet. Paste a photo URL below to add to
+                    gallery.
+                  </p>
                 )}
 
                 {/* Direct Upload from Device & URL Input */}
@@ -597,7 +738,7 @@ export const AllAshramsPage: React.FC = () => {
                   disabled={submitLoading}
                   className="flex-1 py-3 bg-[#0A4DA6] hover:bg-[#083b80] text-white font-extrabold rounded-2xl text-xs shadow-md shadow-[#0A4DA6]/20 cursor-pointer flex items-center justify-center gap-2"
                 >
-                  {submitLoading ? 'Saving Edits...' : 'Save All Changes'}
+                  {submitLoading ? "Saving Edits..." : "Save All Changes"}
                 </button>
               </div>
             </form>

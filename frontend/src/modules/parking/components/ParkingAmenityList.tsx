@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   Umbrella,
   Video,
@@ -11,8 +11,8 @@ import {
   GlassWater,
   Sofa,
   Check,
-} from 'lucide-react';
-import { amenityLabel } from '../utils/parkingFormat';
+} from "lucide-react";
+import { amenityLabel } from "../utils/parkingFormat";
 
 // Amenity chips for a parking facility.
 
@@ -31,17 +31,21 @@ const ICONS: Record<string, React.ReactNode> = {
 
 interface ParkingAmenityListProps {
   amenities: string[];
-  variant?: 'chips' | 'grid';
+  variant?: "chips" | "grid";
   limit?: number;
 }
 
-export const ParkingAmenityList: React.FC<ParkingAmenityListProps> = ({ amenities, variant = 'chips', limit }) => {
+export const ParkingAmenityList: React.FC<ParkingAmenityListProps> = ({
+  amenities,
+  variant = "chips",
+  limit,
+}) => {
   if (!amenities?.length) return null;
 
   const shown = limit ? amenities.slice(0, limit) : amenities;
   const remaining = limit ? Math.max(0, amenities.length - limit) : 0;
 
-  if (variant === 'grid') {
+  if (variant === "grid") {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
         {amenities.map((key) => (
@@ -52,7 +56,9 @@ export const ParkingAmenityList: React.FC<ParkingAmenityListProps> = ({ amenitie
             <span className="w-7 h-7 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-[#0A4DA6] dark:text-blue-300 flex items-center justify-center shrink-0">
               {ICONS[key] || <Check size={14} className="stroke-[2.5]" />}
             </span>
-            <span className="text-xs font-bold text-slate-700 dark:text-gray-200">{amenityLabel(key)}</span>
+            <span className="text-xs font-bold text-slate-700 dark:text-gray-200">
+              {amenityLabel(key)}
+            </span>
           </div>
         ))}
       </div>

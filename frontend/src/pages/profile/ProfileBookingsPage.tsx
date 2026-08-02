@@ -1,9 +1,8 @@
-import React, { useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Calendar,
   MapPin,
-  ArrowLeft,
   AlertCircle,
   Loader2,
   CircleParking,
@@ -13,38 +12,46 @@ import {
   XCircle,
   ArrowRight,
   Ticket,
-} from 'lucide-react';
-import { EnterpriseButton, EnterpriseStatusBadge } from '../../admin/shared';
-import { useAuth } from '../../contexts/AuthContext';
-import { bookingService } from '../../services';
-import { parkingBookingService } from '../../modules/parking/services/parking.service';
-import { getErrorMessage } from '../../lib/api';
-import useMyBookings, { type BookingCategory, type UnifiedBooking } from '../../hooks/useMyBookings';
+} from "lucide-react";
+import { EnterpriseButton, EnterpriseStatusBadge } from "../../admin/shared";
+import { useAuth } from "../../contexts/AuthContext";
+import { bookingService } from "../../services";
+import { parkingBookingService } from "../../modules/parking/services/parking.service";
+import { getErrorMessage } from "../../lib/api";
+import useMyBookings, {
+  type BookingCategory,
+  type UnifiedBooking,
+} from "../../hooks/useMyBookings";
 
 const TABS: { key: BookingCategory; label: string }[] = [
-  { key: 'upcoming', label: 'Upcoming' },
-  { key: 'completed', label: 'Completed' },
-  { key: 'cancelled', label: 'Cancelled' },
+  { key: "upcoming", label: "Upcoming" },
+  { key: "completed", label: "Completed" },
+  { key: "cancelled", label: "Cancelled" },
 ];
 
 const formatDate = (value?: string) =>
   value
-    ? new Date(value).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
-    : '—';
+    ? new Date(value).toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      })
+    : "—";
 
 const formatDateTime = (value?: string) =>
   value
-    ? new Date(value).toLocaleString('en-IN', {
-        day: '2-digit',
-        month: 'short',
-        hour: '2-digit',
-        minute: '2-digit',
+    ? new Date(value).toLocaleString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
       })
-    : '—';
+    : "—";
 
 const FALLBACK_IMAGE: Record<string, string> = {
-  stay: 'https://images.unsplash.com/photo-1566438480900-0609be27a4be?auto=format&fit=crop&w=400&q=80',
-  parking: 'https://images.unsplash.com/photo-1506521781263-d8422e82f27a?auto=format&fit=crop&w=400&q=80',
+  stay: "https://images.unsplash.com/photo-1566438480900-0609be27a4be?auto=format&fit=crop&w=400&q=80",
+  parking:
+    "https://images.unsplash.com/photo-1506521781263-d8422e82f27a?auto=format&fit=crop&w=400&q=80",
 };
 
 /**
@@ -57,18 +64,25 @@ export const ProfileBookingsPage: React.FC = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
-  const { bookings, loading, error, partialFailures, counts, refresh } = useMyBookings(Boolean(user));
+  const { bookings, loading, error, partialFailures, counts, refresh } =
+    useMyBookings(Boolean(user));
 
-  const [activeTab, setActiveTab] = useState<BookingCategory>('upcoming');
-  const [kindFilter, setKindFilter] = useState<'all' | 'stay' | 'parking'>('all');
+  const [activeTab, setActiveTab] = useState<BookingCategory>("upcoming");
+  const [kindFilter, setKindFilter] = useState<"all" | "stay" | "parking">(
+    "all",
+  );
   const [cancellingId, setCancellingId] = useState<string | null>(null);
-  const [actionError, setActionError] = useState('');
-  const [selectedReceipt, setSelectedReceipt] = useState<UnifiedBooking | null>(null);
+  const [actionError, setActionError] = useState("");
+  const [selectedReceipt, setSelectedReceipt] = useState<UnifiedBooking | null>(
+    null,
+  );
 
   const visible = useMemo(
     () =>
       bookings.filter(
-        (b) => b.category === activeTab && (kindFilter === 'all' || b.kind === kindFilter),
+        (b) =>
+          b.category === activeTab &&
+          (kindFilter === "all" || b.kind === kindFilter),
       ),
     [bookings, activeTab, kindFilter],
   );
@@ -82,17 +96,21 @@ export const ProfileBookingsPage: React.FC = () => {
     if (!ok) return;
 
     setCancellingId(booking.id);
-    setActionError('');
+    setActionError("");
     try {
       const res =
-        booking.kind === 'parking'
-          ? await parkingBookingService.cancel(booking.id, 'Cancelled from profile')
-          : await bookingService.cancel(booking.id, 'Cancelled from profile');
+        booking.kind === "parking"
+          ? await parkingBookingService.cancel(
+              booking.id,
+              "Cancelled from profile",
+            )
+          : await bookingService.cancel(booking.id, "Cancelled from profile");
 
       if (res.data?.success) await refresh();
-      else setActionError(res.data?.message || 'Could not cancel this booking.');
+      else
+        setActionError(res.data?.message || "Could not cancel this booking.");
     } catch (err) {
-      setActionError(getErrorMessage(err, 'Could not cancel this booking.'));
+      setActionError(getErrorMessage(err, "Could not cancel this booking."));
     } finally {
       setCancellingId(null);
     }
@@ -103,13 +121,19 @@ export const ProfileBookingsPage: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-50/70 dark:bg-[#070F1B] flex items-center justify-center px-4">
         <div className="text-center space-y-4 max-w-sm">
-          <Calendar size={40} className="text-gray-300 dark:text-slate-700 mx-auto" />
-          <h1 className="font-extrabold text-lg text-[#0B192C] dark:text-white">Sign in to see your bookings</h1>
+          <Calendar
+            size={40}
+            className="text-gray-300 dark:text-slate-700 mx-auto"
+          />
+          <h1 className="font-extrabold text-lg text-[#0B192C] dark:text-white">
+            Sign in to see your bookings
+          </h1>
           <p className="text-xs text-gray-400 font-medium">
-            Your stays and parking reservations are tied to your Tirvona account.
+            Your stays and parking reservations are tied to your Tirvona
+            account.
           </p>
           <button
-            onClick={() => navigate('/login?redirect=/profile/bookings')}
+            onClick={() => navigate("/login?redirect=/profile/bookings")}
             className="bg-[#0A4DA6] hover:bg-[#083D85] text-white text-xs font-extrabold px-6 py-2.5 rounded-full transition-all active:scale-95 cursor-pointer"
           >
             Sign In
@@ -130,8 +154,8 @@ export const ProfileBookingsPage: React.FC = () => {
               onClick={() => setActiveTab(tab.key)}
               className={`px-4 sm:px-5 py-2 rounded-full transition-all cursor-pointer whitespace-nowrap ${
                 activeTab === tab.key
-                  ? 'bg-[#0A4DA6] text-white shadow-md'
-                  : 'text-gray-500 hover:text-[#0B192C] dark:hover:text-white'
+                  ? "bg-[#0A4DA6] text-white shadow-md"
+                  : "text-gray-500 hover:text-[#0B192C] dark:hover:text-white"
               }`}
             >
               {tab.label} ({counts[tab.key]})
@@ -144,9 +168,17 @@ export const ProfileBookingsPage: React.FC = () => {
           <div className="flex items-center justify-center gap-1.5">
             {(
               [
-                { key: 'all', label: `All (${counts.total})`, icon: Ticket },
-                { key: 'stay', label: `Stays (${counts.stays})`, icon: BedDouble },
-                { key: 'parking', label: `Parking (${counts.parking})`, icon: CircleParking },
+                { key: "all", label: `All (${counts.total})`, icon: Ticket },
+                {
+                  key: "stay",
+                  label: `Stays (${counts.stays})`,
+                  icon: BedDouble,
+                },
+                {
+                  key: "parking",
+                  label: `Parking (${counts.parking})`,
+                  icon: CircleParking,
+                },
               ] as const
             ).map(({ key, label, icon: Icon }) => (
               <button
@@ -154,8 +186,8 @@ export const ProfileBookingsPage: React.FC = () => {
                 onClick={() => setKindFilter(key)}
                 className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-3 py-1.5 rounded-full border transition-all cursor-pointer ${
                   kindFilter === key
-                    ? 'bg-[#0A4DA6] border-[#0A4DA6] text-white'
-                    : 'bg-white dark:bg-[#0B192C] border-gray-200 dark:border-slate-700 text-slate-600 dark:text-gray-300 hover:border-[#0A4DA6]'
+                    ? "bg-[#0A4DA6] border-[#0A4DA6] text-white"
+                    : "bg-white dark:bg-[#0B192C] border-gray-200 dark:border-slate-700 text-slate-600 dark:text-gray-300 hover:border-[#0A4DA6]"
                 }`}
               >
                 <Icon size={12} className="stroke-[2.5]" />
@@ -177,8 +209,12 @@ export const ProfileBookingsPage: React.FC = () => {
           <div className="flex items-start gap-2.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/40 text-amber-800 dark:text-amber-300 rounded-2xl px-4 py-3">
             <AlertCircle size={15} className="shrink-0 mt-0.5" />
             <p className="text-xs font-semibold">
-              Your {partialFailures.join(' and ')} bookings could not be loaded, so this list may be incomplete.{' '}
-              <button onClick={refresh} className="underline font-extrabold cursor-pointer">
+              Your {partialFailures.join(" and ")} bookings could not be loaded,
+              so this list may be incomplete.{" "}
+              <button
+                onClick={refresh}
+                className="underline font-extrabold cursor-pointer"
+              >
                 Retry
               </button>
             </p>
@@ -189,18 +225,24 @@ export const ProfileBookingsPage: React.FC = () => {
         {loading ? (
           <div className="space-y-4">
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="h-36 bg-gray-100 dark:bg-slate-800 animate-pulse rounded-[28px]" />
+              <div
+                key={i}
+                className="h-36 bg-gray-100 dark:bg-slate-800 animate-pulse rounded-[28px]"
+              />
             ))}
           </div>
         ) : visible.length === 0 ? (
           <div className="text-center py-16 px-6 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] space-y-3">
-            <Calendar className="mx-auto text-gray-300 dark:text-slate-700" size={40} />
+            <Calendar
+              className="mx-auto text-gray-300 dark:text-slate-700"
+              size={40}
+            />
             <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white">
               No {activeTab} bookings
             </h3>
             <p className="text-xs text-gray-400 font-medium max-w-md mx-auto leading-relaxed">
-              {activeTab === 'upcoming'
-                ? 'When you book an ashram stay or reserve parking, it will appear here.'
+              {activeTab === "upcoming"
+                ? "When you book an ashram stay or reserve parking, it will appear here."
                 : `You have no ${activeTab} bookings yet.`}
             </p>
             <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
@@ -226,7 +268,15 @@ export const ProfileBookingsPage: React.FC = () => {
                 className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-5 sm:p-6 shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-5"
               >
                 <div className="flex items-start gap-4 min-w-0">
-                  <Link to={b.detailHref || (b.kind === 'parking' ? `/parking/booking/${b.id}` : `/booking/${b.id}`)} className="shrink-0 hover:opacity-90 transition-opacity">
+                  <Link
+                    to={
+                      b.detailHref ||
+                      (b.kind === "parking"
+                        ? `/parking/booking/${b.id}`
+                        : `/booking/${b.id}`)
+                    }
+                    className="shrink-0 hover:opacity-90 transition-opacity"
+                  >
                     <img
                       src={b.image || FALLBACK_IMAGE[b.kind]}
                       alt={b.title}
@@ -241,35 +291,52 @@ export const ProfileBookingsPage: React.FC = () => {
 
                   <div className="space-y-1 text-xs min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-[10px] text-gray-400 font-bold uppercase">{b.reference}</span>
+                      <span className="text-[10px] text-gray-400 font-bold uppercase">
+                        {b.reference}
+                      </span>
                       <EnterpriseStatusBadge status={b.status} />
                       <span
                         className={`inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
-                          b.kind === 'parking'
-                            ? 'bg-blue-50 dark:bg-blue-950/50 text-[#0A4DA6] dark:text-blue-300'
-                            : 'bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300'
+                          b.kind === "parking"
+                            ? "bg-blue-50 dark:bg-blue-950/50 text-[#0A4DA6] dark:text-blue-300"
+                            : "bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300"
                         }`}
                       >
-                        {b.kind === 'parking' ? <CircleParking size={10} /> : <BedDouble size={10} />}
-                        {b.kind === 'parking' ? 'Parking' : 'Stay'}
+                        {b.kind === "parking" ? (
+                          <CircleParking size={10} />
+                        ) : (
+                          <BedDouble size={10} />
+                        )}
+                        {b.kind === "parking" ? "Parking" : "Stay"}
                       </span>
                     </div>
 
-                    <Link to={b.detailHref || (b.kind === 'parking' ? `/parking/booking/${b.id}` : `/booking/${b.id}`)} className="hover:text-[#0A4DA6] transition-colors block">
-                      <h3 className="font-black text-base text-[#0B192C] dark:text-white leading-tight">{b.title}</h3>
+                    <Link
+                      to={
+                        b.detailHref ||
+                        (b.kind === "parking"
+                          ? `/parking/booking/${b.id}`
+                          : `/booking/${b.id}`)
+                      }
+                      className="hover:text-[#0A4DA6] transition-colors block"
+                    >
+                      <h3 className="font-black text-base text-[#0B192C] dark:text-white leading-tight">
+                        {b.title}
+                      </h3>
                     </Link>
 
                     {b.location && (
                       <p className="text-gray-500 font-medium flex items-center gap-1">
-                        <MapPin size={12} className="text-[#E58C28] shrink-0" /> {b.location}
+                        <MapPin size={12} className="text-[#E58C28] shrink-0" />{" "}
+                        {b.location}
                       </p>
                     )}
 
                     <p className="text-gray-400 font-bold pt-1">
-                      {b.kind === 'parking'
+                      {b.kind === "parking"
                         ? `${formatDateTime(b.start)} → ${formatDateTime(b.end)}`
                         : `${formatDate(b.start)} → ${formatDate(b.end)}`}
-                      {b.meta ? ` • ${b.meta}` : ''}
+                      {b.meta ? ` • ${b.meta}` : ""}
                     </p>
 
                     {/* The desk code & assigned room number */}
@@ -282,13 +349,14 @@ export const ProfileBookingsPage: React.FC = () => {
 
                       {b.assignedRoomNumber && (
                         <p className="inline-flex items-center gap-1.5 bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 px-2.5 py-1 rounded-full text-[10px] font-black">
-                          <BedDouble size={11} /> Assigned: {b.assignedRoomNumber}
+                          <BedDouble size={11} /> Assigned:{" "}
+                          {b.assignedRoomNumber}
                         </p>
                       )}
 
-                      {b.kind === 'stay' && (
+                      {b.kind === "stay" && (
                         <span className="inline-flex items-center gap-1 bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 px-2.5 py-1 rounded-full text-[10px] font-bold">
-                          Pay at Ashram ({b.paymentStatus || 'Pending'})
+                          Pay at Ashram ({b.paymentStatus || "Pending"})
                         </span>
                       )}
                     </div>
@@ -305,26 +373,31 @@ export const ProfileBookingsPage: React.FC = () => {
                       </p>
                     )}
 
-                    {b.category === 'cancelled' && (b.refundAmount ?? 0) > 0 && (
-                      <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 pt-1">
-                        ₹{b.refundAmount?.toLocaleString('en-IN')} refunded
-                      </p>
-                    )}
+                    {b.category === "cancelled" &&
+                      (b.refundAmount ?? 0) > 0 && (
+                        <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 pt-1">
+                          ₹{b.refundAmount?.toLocaleString("en-IN")} refunded
+                        </p>
+                      )}
                   </div>
                 </div>
 
                 <div className="flex md:flex-col justify-between items-end gap-3 w-full md:w-auto pt-3 md:pt-0 shrink-0">
                   <div className="text-right">
                     <span className="text-[10px] text-gray-400 block font-bold uppercase">
-                      {b.amountPaid > 0 ? 'Paid' : 'Payable at Ashram'}
+                      {b.amountPaid > 0 ? "Paid" : "Payable at Ashram"}
                     </span>
                     <span className="text-lg font-black text-[#0A4DA6] dark:text-white">
-                      ₹{(b.amountPaid > 0 ? b.amountPaid : b.amount).toLocaleString('en-IN')}
+                      ₹
+                      {(b.amountPaid > 0
+                        ? b.amountPaid
+                        : b.amount
+                      ).toLocaleString("en-IN")}
                     </span>
                   </div>
 
                   <div className="flex items-center gap-2 flex-wrap justify-end">
-                    {b.kind === 'stay' && (
+                    {b.kind === "stay" && (
                       <>
                         <Link to={`/booking/${b.id}`}>
                           <EnterpriseButton
@@ -346,9 +419,13 @@ export const ProfileBookingsPage: React.FC = () => {
                       </>
                     )}
 
-                    {b.kind === 'parking' && b.category !== 'cancelled' && (
+                    {b.kind === "parking" && b.category !== "cancelled" && (
                       <Link to={`/parking/booking/${b.id}`}>
-                        <EnterpriseButton variant="outline" size="sm" className="gap-1.5 text-xs">
+                        <EnterpriseButton
+                          variant="outline"
+                          size="sm"
+                          className="gap-1.5 text-xs"
+                        >
                           <Ticket size={14} /> QR Pass
                         </EnterpriseButton>
                       </Link>
@@ -371,21 +448,31 @@ export const ProfileBookingsPage: React.FC = () => {
                       </EnterpriseButton>
                     )}
 
-                    {b.category === 'completed' && b.detailHref && (
+                    {b.category === "completed" && b.detailHref && (
                       <Link to={b.detailHref}>
-                        <EnterpriseButton variant="primary" size="sm" className="gap-1.5 text-xs">
+                        <EnterpriseButton
+                          variant="primary"
+                          size="sm"
+                          className="gap-1.5 text-xs"
+                        >
                           <RefreshCw size={14} /> Book Again
                         </EnterpriseButton>
                       </Link>
                     )}
 
-                    {b.category !== 'completed' && b.detailHref && b.kind === 'stay' && (
-                      <Link to={b.detailHref}>
-                        <EnterpriseButton variant="primary" size="sm" className="gap-1.5 text-xs">
-                          View <ArrowRight size={13} />
-                        </EnterpriseButton>
-                      </Link>
-                    )}
+                    {b.category !== "completed" &&
+                      b.detailHref &&
+                      b.kind === "stay" && (
+                        <Link to={b.detailHref}>
+                          <EnterpriseButton
+                            variant="primary"
+                            size="sm"
+                            className="gap-1.5 text-xs"
+                          >
+                            View <ArrowRight size={13} />
+                          </EnterpriseButton>
+                        </Link>
+                      )}
                   </div>
                 </div>
               </article>
@@ -405,56 +492,89 @@ export const ProfileBookingsPage: React.FC = () => {
               </button>
 
               <div className="text-center pb-3 border-b border-gray-100 dark:border-slate-800 space-y-1">
-                <span className="text-xs font-black uppercase tracking-wider text-[#0A4DA6]">Tirvona Sacred Stays</span>
-                <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white">Reservation Summary & Receipt</h3>
-                <p className="text-[10px] text-gray-400 font-bold">Payable upon arrival at Ashram</p>
+                <span className="text-xs font-black uppercase tracking-wider text-[#0A4DA6]">
+                  Tirvona Sacred Stays
+                </span>
+                <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white">
+                  Reservation Summary & Receipt
+                </h3>
+                <p className="text-[10px] text-gray-400 font-bold">
+                  Payable upon arrival at Ashram
+                </p>
               </div>
 
               <div className="space-y-2.5 text-xs">
                 <div className="flex justify-between">
                   <span className="text-gray-400 font-bold">Booking ID:</span>
-                  <span className="font-mono font-extrabold text-[#0B192C] dark:text-white">{selectedReceipt.reference}</span>
+                  <span className="font-mono font-extrabold text-[#0B192C] dark:text-white">
+                    {selectedReceipt.reference}
+                  </span>
                 </div>
 
                 {selectedReceipt.reservationNumber && (
                   <div className="flex justify-between">
-                    <span className="text-gray-400 font-bold">Reservation No:</span>
-                    <span className="font-mono font-bold text-[#0A4DA6]">{selectedReceipt.reservationNumber}</span>
+                    <span className="text-gray-400 font-bold">
+                      Reservation No:
+                    </span>
+                    <span className="font-mono font-bold text-[#0A4DA6]">
+                      {selectedReceipt.reservationNumber}
+                    </span>
                   </div>
                 )}
 
                 <div className="flex justify-between">
                   <span className="text-gray-400 font-bold">Ashram:</span>
-                  <span className="font-extrabold text-[#0B192C] dark:text-white">{selectedReceipt.title}</span>
+                  <span className="font-extrabold text-[#0B192C] dark:text-white">
+                    {selectedReceipt.title}
+                  </span>
                 </div>
 
                 {selectedReceipt.assignedRoomNumber && (
                   <div className="flex justify-between">
-                    <span className="text-gray-400 font-bold">Assigned Room:</span>
-                    <span className="font-bold text-purple-600 dark:text-purple-400">{selectedReceipt.assignedRoomNumber}</span>
+                    <span className="text-gray-400 font-bold">
+                      Assigned Room:
+                    </span>
+                    <span className="font-bold text-purple-600 dark:text-purple-400">
+                      {selectedReceipt.assignedRoomNumber}
+                    </span>
                   </div>
                 )}
 
                 <div className="flex justify-between">
-                  <span className="text-gray-400 font-bold">Check-In / Out:</span>
-                  <span className="font-semibold">{formatDate(selectedReceipt.start)} → {formatDate(selectedReceipt.end)}</span>
+                  <span className="text-gray-400 font-bold">
+                    Check-In / Out:
+                  </span>
+                  <span className="font-semibold">
+                    {formatDate(selectedReceipt.start)} →{" "}
+                    {formatDate(selectedReceipt.end)}
+                  </span>
                 </div>
 
                 {selectedReceipt.checkInCode && (
                   <div className="flex justify-between">
-                    <span className="text-gray-400 font-bold">Check-In Code:</span>
-                    <span className="font-mono font-extrabold text-emerald-600 dark:text-emerald-400">{selectedReceipt.checkInCode}</span>
+                    <span className="text-gray-400 font-bold">
+                      Check-In Code:
+                    </span>
+                    <span className="font-mono font-extrabold text-emerald-600 dark:text-emerald-400">
+                      {selectedReceipt.checkInCode}
+                    </span>
                   </div>
                 )}
 
                 <div className="flex justify-between">
-                  <span className="text-gray-400 font-bold">Payment Status:</span>
-                  <span className="font-bold text-amber-600">Pending (Pay at Ashram)</span>
+                  <span className="text-gray-400 font-bold">
+                    Payment Status:
+                  </span>
+                  <span className="font-bold text-amber-600">
+                    Pending (Pay at Ashram)
+                  </span>
                 </div>
 
                 <div className="flex justify-between pt-2 border-t border-dashed border-gray-200 dark:border-slate-800 text-sm font-black">
                   <span>Total Amount:</span>
-                  <span className="text-[#0A4DA6]">₹{selectedReceipt.amount?.toLocaleString('en-IN')}</span>
+                  <span className="text-[#0A4DA6]">
+                    ₹{selectedReceipt.amount?.toLocaleString("en-IN")}
+                  </span>
                 </div>
               </div>
 

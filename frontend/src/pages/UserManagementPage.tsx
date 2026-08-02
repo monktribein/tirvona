@@ -1,1 +1,4 @@
-export { UserManagementPage, default } from '../admin/users/pages/UserManagementPage';
+export {
+  UserManagementPage,
+  default,
+} from "../admin/users/pages/UserManagementPage";

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   Car,
   Users,
@@ -12,62 +12,79 @@ import {
   Search,
   MapPin,
   Phone,
-  MessageSquare,
   ShieldCheck,
-  CheckCircle,
   Star,
   Sparkles,
-  ArrowRight,
   Filter,
-  RefreshCw,
   Clock,
-  ExternalLink,
-} from 'lucide-react';
-import { serviceEcosystemService, type ServiceProviderItem } from '../services/service.service';
-import { useNotifications } from '../contexts/NotificationContext';
-import { useMemory } from '../contexts/UserMemoryContext';
-import { EnterpriseModal, EnterpriseButton, EnterpriseStatusBadge, EnterpriseSortDropdown, EnterpriseResetButton } from '../admin/shared';
+} from "lucide-react";
+import {
+  serviceEcosystemService,
+  type ServiceProviderItem,
+} from "../services/service.service";
+import { useNotifications } from "../contexts/NotificationContext";
+import { useMemory } from "../contexts/UserMemoryContext";
+import {
+  EnterpriseModal,
+  EnterpriseButton,
+  EnterpriseSortDropdown,
+  EnterpriseResetButton,
+} from "../admin/shared";
 
 export const ServicesHubPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { addNotification } = useNotifications();
   const { updateMemoryCategory } = useMemory();
 
-  const activeCategoryParam = searchParams.get('category') || 'all';
-  const activeCityParam = searchParams.get('city') || 'all';
+  const activeCategoryParam = searchParams.get("category") || "all";
+  const activeCityParam = searchParams.get("city") || "all";
 
   const [services, setServices] = useState<ServiceProviderItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
+  const [searchTerm, setSearchTerm] = useState(
+    searchParams.get("search") || "",
+  );
   const [selectedCity, setSelectedCity] = useState(activeCityParam);
   const [selectedCategory, setSelectedCategory] = useState(activeCategoryParam);
-  const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'rating');
+  const [sortBy, setSortBy] = useState(searchParams.get("sort") || "rating");
 
   // Filters
-  const [pureVegOnly, setPureVegOnly] = useState(searchParams.get('pureVeg') === 'true');
-  const [govtVerifiedOnly, setGovtVerifiedOnly] = useState(searchParams.get('govtVerified') === 'true');
+  const [pureVegOnly, setPureVegOnly] = useState(
+    searchParams.get("pureVeg") === "true",
+  );
+  const [govtVerifiedOnly, setGovtVerifiedOnly] = useState(
+    searchParams.get("govtVerified") === "true",
+  );
 
   // Booking Modal State
-  const [selectedService, setSelectedService] = useState<ServiceProviderItem | null>(null);
-  const [bookingDate, setBookingDate] = useState('');
-  const [bookingTime, setBookingTime] = useState('10:00 AM');
+  const [selectedService, setSelectedService] =
+    useState<ServiceProviderItem | null>(null);
+  const [bookingDate, setBookingDate] = useState("");
+  const [bookingTime, setBookingTime] = useState("10:00 AM");
   const [guestsCount, setGuestsCount] = useState(1);
-  const [specialNotes, setSpecialNotes] = useState('');
+  const [specialNotes, setSpecialNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const categories = [
-    { id: 'all', label: 'All Services', icon: <Sparkles size={14} /> },
-    { id: 'transport', label: 'Transport Cabs', icon: <Car size={14} /> },
-    { id: 'guides', label: 'Temple Guides', icon: <Users size={14} /> },
-    { id: 'food', label: 'Satvik Food', icon: <Utensils size={14} /> },
-    { id: 'medical', label: 'Medical 24x7', icon: <HeartPulse size={14} /> },
-    { id: 'shops', label: 'Puja Shops', icon: <ShoppingBag size={14} /> },
-    { id: 'photography', label: 'Photography', icon: <Camera size={14} /> },
-    { id: 'events', label: 'Events & Aarti', icon: <Calendar size={14} /> },
-    { id: 'emergency', label: 'Emergency', icon: <AlertTriangle size={14} /> },
+    { id: "all", label: "All Services", icon: <Sparkles size={14} /> },
+    { id: "transport", label: "Transport Cabs", icon: <Car size={14} /> },
+    { id: "guides", label: "Temple Guides", icon: <Users size={14} /> },
+    { id: "food", label: "Satvik Food", icon: <Utensils size={14} /> },
+    { id: "medical", label: "Medical 24x7", icon: <HeartPulse size={14} /> },
+    { id: "shops", label: "Puja Shops", icon: <ShoppingBag size={14} /> },
+    { id: "photography", label: "Photography", icon: <Camera size={14} /> },
+    { id: "events", label: "Events & Aarti", icon: <Calendar size={14} /> },
+    { id: "emergency", label: "Emergency", icon: <AlertTriangle size={14} /> },
   ];
 
-  const cities = ['all', 'Rishikesh', 'Haridwar', 'Vrindavan', 'Varanasi', 'Ayodhya'];
+  const cities = [
+    "all",
+    "Rishikesh",
+    "Haridwar",
+    "Vrindavan",
+    "Varanasi",
+    "Ayodhya",
+  ];
 
   useEffect(() => {
     fetchServices();
@@ -78,16 +95,16 @@ export const ServicesHubPage: React.FC = () => {
     try {
       // Sync URL Search Parameters
       const paramsObj: Record<string, string> = {};
-      if (selectedCategory !== 'all') paramsObj.category = selectedCategory;
-      if (selectedCity !== 'all') paramsObj.city = selectedCity;
+      if (selectedCategory !== "all") paramsObj.category = selectedCategory;
+      if (selectedCity !== "all") paramsObj.city = selectedCity;
       if (searchTerm) paramsObj.search = searchTerm;
       if (sortBy) paramsObj.sort = sortBy;
-      if (pureVegOnly) paramsObj.pureVeg = 'true';
-      if (govtVerifiedOnly) paramsObj.govtVerified = 'true';
+      if (pureVegOnly) paramsObj.pureVeg = "true";
+      if (govtVerifiedOnly) paramsObj.govtVerified = "true";
       setSearchParams(paramsObj);
 
       // Memory engine auto-save
-      updateMemoryCategory('filters', {
+      updateMemoryCategory("filters", {
         serviceCategory: selectedCategory,
         serviceCity: selectedCity,
         serviceSearch: searchTerm,
@@ -107,18 +124,22 @@ export const ServicesHubPage: React.FC = () => {
         setServices(res.data.data);
       }
     } catch (err) {
-      console.error('Fetch services error:', err);
-      addNotification('Load Failed', 'Could not fetch service providers from MongoDB.', 'error');
+      console.error("Fetch services error:", err);
+      addNotification(
+        "Load Failed",
+        "Could not fetch service providers from MongoDB.",
+        "error",
+      );
     } finally {
       setLoading(false);
     }
   };
 
   const handleResetFilters = () => {
-    setSelectedCategory('all');
-    setSelectedCity('all');
-    setSearchTerm('');
-    setSortBy('rating');
+    setSelectedCategory("all");
+    setSelectedCity("all");
+    setSearchTerm("");
+    setSortBy("rating");
     setPureVegOnly(false);
     setGovtVerifiedOnly(false);
     setSearchParams({});
@@ -143,8 +164,8 @@ export const ServicesHubPage: React.FC = () => {
       const totalAmt = (selectedService.pricing.amount || 500) * guestsCount;
       const res = await serviceEcosystemService.book({
         serviceId: selectedService._id,
-        customerName: 'Sacred Pilgrim',
-        customerPhone: '9876543210',
+        customerName: "Sacred Pilgrim",
+        customerPhone: "9876543210",
         bookingDate: bookingDate || new Date().toISOString(),
         bookingTime,
         guestsCount,
@@ -153,12 +174,20 @@ export const ServicesHubPage: React.FC = () => {
       });
 
       if (res.data?.success) {
-        addNotification('Booking Confirmed', `Successfully reserved ${selectedService.name}!`, 'success');
+        addNotification(
+          "Booking Confirmed",
+          `Successfully reserved ${selectedService.name}!`,
+          "success",
+        );
         setSelectedService(null);
       }
     } catch (err) {
-      console.error('Booking submit error:', err);
-      addNotification('Booking Failed', 'Unable to confirm service booking.', 'error');
+      console.error("Booking submit error:", err);
+      addNotification(
+        "Booking Failed",
+        "Unable to confirm service booking.",
+        "error",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -167,45 +196,34 @@ export const ServicesHubPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50/70 dark:bg-[#070F1B] pb-20 text-left">
       {/* ── 1. Page Header Banner ── */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-1 sm:pt-3">
-        <section className="relative text-white rounded-3xl p-6 sm:p-8 lg:p-10 shadow-xl overflow-hidden min-h-[300px] flex flex-col justify-between items-center text-center border border-white/10">
-          {/* Background Banner Image */}
-          <img
-            src="/banner/popular.png"
-            alt="Enterprise Local Services Directory Banner"
-            className="absolute inset-0 w-full h-full object-cover"
-          />
-          {/* Overlay gradient */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/55 to-black/40" />
-
-          <div className="max-w-3xl space-y-3 relative z-10 mx-auto text-center my-auto pt-2 pb-4">
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              <span className="px-3.5 py-1 bg-[#E58C28]/20 text-[#E58C28] border border-[#E58C28]/35 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow-sm">
-                <ShieldCheck size={12} /> National Spiritual Ecosystem
-              </span>
-              <span className="px-3.5 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 rounded-full text-[10px] font-black uppercase tracking-wider">
-                100% Government Verified
-              </span>
-            </div>
-
-            <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight">
-              Enterprise Local Services <span className="text-[#E58C28]">Directory</span>
-            </h1>
-            <p className="text-xs sm:text-sm text-blue-100/90 font-medium max-w-2xl mx-auto leading-relaxed">
-              Verified transport cabs, certified temple guides, pure Satvik bhojnalayas, 24x7 emergency medical assistance, and sacred puja vendors across India's holy circuits.
-            </p>
-          </div>
-        </section>
+      {/* Clean Text Header (Matching all other section headers on the site) */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6">
+        <div className="text-center space-y-2.5 max-w-3xl mx-auto py-2">
+          <p className="font-['Kalam'] text-2xl sm:text-4xl lg:text-5xl font-bold text-[#E58C28]">
+            Local Services Directory
+          </p>
+          <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-xl mx-auto leading-relaxed">
+            Verified transport cabs, certified temple guides, pure Satvik
+            bhojnalayas, 24x7 emergency medical assistance, and sacred puja
+            vendors across India's holy circuits.
+          </p>
+        </div>
       </div>
 
       {/* ── 2. Search & Category Bar ── */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 relative z-20 space-y-6">
         {/* Search Bar Container */}
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-4 sm:p-5 shadow-xl space-y-4">
-          <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+          <form
+            onSubmit={handleSearchSubmit}
+            className="grid grid-cols-1 sm:grid-cols-12 gap-3"
+          >
             {/* Search input */}
             <div className="sm:col-span-6 relative">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+              <Search
+                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
+                size={16}
+              />
               <input
                 type="text"
                 value={searchTerm}
@@ -217,22 +235,33 @@ export const ServicesHubPage: React.FC = () => {
 
             {/* City Selector */}
             <div className="sm:col-span-4 relative">
-              <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#0A4DA6]" size={16} />
+              <MapPin
+                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#0A4DA6]"
+                size={16}
+              />
               <select
                 value={selectedCity}
                 onChange={(e) => setSelectedCity(e.target.value)}
                 className="w-full pl-10 pr-8 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-full text-xs font-bold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6] cursor-pointer capitalize"
               >
                 <option value="all">All Holy Cities</option>
-                {cities.filter((c) => c !== 'all').map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
+                {cities
+                  .filter((c) => c !== "all")
+                  .map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
               </select>
             </div>
 
             {/* Submit Button */}
             <div className="sm:col-span-2">
-              <EnterpriseButton type="submit" variant="primary" className="w-full py-2.5 text-xs">
+              <EnterpriseButton
+                type="submit"
+                variant="primary"
+                className="w-full py-2.5 text-xs"
+              >
                 Filter Services
               </EnterpriseButton>
             </div>
@@ -248,8 +277,8 @@ export const ServicesHubPage: React.FC = () => {
                   onClick={() => handleCategorySelect(cat.id)}
                   className={`px-4 py-2 rounded-full text-xs font-extrabold flex items-center gap-2 shrink-0 transition-all cursor-pointer ${
                     isActive
-                      ? 'bg-[#0A4DA6] text-white shadow-md shadow-[#0A4DA6]/25'
-                      : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200'
+                      ? "bg-[#0A4DA6] text-white shadow-md shadow-[#0A4DA6]/25"
+                      : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200"
                   }`}
                 >
                   {cat.icon}
@@ -284,7 +313,10 @@ export const ServicesHubPage: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-3">
-              <EnterpriseSortDropdown value={sortBy} onChange={(val) => setSortBy(val)} />
+              <EnterpriseSortDropdown
+                value={sortBy}
+                onChange={(val) => setSortBy(val)}
+              />
               <EnterpriseResetButton onReset={handleResetFilters} />
             </div>
           </div>
@@ -294,18 +326,28 @@ export const ServicesHubPage: React.FC = () => {
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
             {[1, 2, 3, 4, 5, 6].map((n) => (
-              <div key={n} className="h-64 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] animate-pulse" />
+              <div
+                key={n}
+                className="h-64 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] animate-pulse"
+              />
             ))}
           </div>
         ) : services.length === 0 ? (
           <div className="text-center py-20 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] space-y-4">
             <Sparkles className="mx-auto text-gray-300" size={48} />
-            <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white">No service providers found</h3>
+            <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white">
+              No service providers found
+            </h3>
             <p className="text-xs text-gray-400 max-w-sm mx-auto">
-              No active service providers matched your category filter or search keywords. Try selecting "All Services".
+              No active service providers matched your category filter or search
+              keywords. Try selecting "All Services".
             </p>
             <button
-              onClick={() => { setSelectedCategory('all'); setSelectedCity('all'); setSearchTerm(''); }}
+              onClick={() => {
+                setSelectedCategory("all");
+                setSelectedCity("all");
+                setSearchTerm("");
+              }}
               className="px-5 py-2.5 bg-[#0A4DA6] text-white rounded-full text-xs font-bold shadow-md hover:bg-[#083b80]"
             >
               Reset Filters
@@ -321,12 +363,15 @@ export const ServicesHubPage: React.FC = () => {
                 {/* Top Image Banner */}
                 <div className="relative h-44 w-full bg-slate-900 overflow-hidden">
                   <img
-                    src={item.images?.[0] || 'https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=600&q=80'}
+                    src={
+                      item.images?.[0] ||
+                      "https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=600&q=80"
+                    }
                     alt={item.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-                  
+
                   {/* Category Pill Tag */}
                   <span className="absolute top-3 left-3 px-3 py-1 bg-[#0A4DA6] text-white rounded-full text-[10px] font-black uppercase tracking-wider shadow-md">
                     {item.subcategory}
@@ -341,7 +386,9 @@ export const ServicesHubPage: React.FC = () => {
                   {/* Location Label */}
                   <div className="absolute bottom-3 left-3 text-white text-xs font-extrabold flex items-center gap-1">
                     <MapPin size={12} className="text-[#E58C28]" />
-                    <span>{item.city}, {item.state}</span>
+                    <span>
+                      {item.city}, {item.state}
+                    </span>
                   </div>
                 </div>
 
@@ -378,9 +425,14 @@ export const ServicesHubPage: React.FC = () => {
                   {/* Pricing & CTA */}
                   <div className="pt-3 border-t border-gray-100 dark:border-slate-800 flex justify-between items-center">
                     <div>
-                      <span className="text-[10px] text-gray-400 block font-bold uppercase">Estimated Fare</span>
+                      <span className="text-[10px] text-gray-400 block font-bold uppercase">
+                        Estimated Fare
+                      </span>
                       <span className="text-base font-black text-[#0A4DA6] dark:text-white">
-                        ₹{item.pricing?.amount} <span className="text-[10px] text-gray-400 font-normal">/{item.pricing?.unit}</span>
+                        ₹{item.pricing?.amount}{" "}
+                        <span className="text-[10px] text-gray-400 font-normal">
+                          /{item.pricing?.unit}
+                        </span>
                       </span>
                     </div>
 
@@ -416,17 +468,28 @@ export const ServicesHubPage: React.FC = () => {
         subtitle="Confirm reservation details & customer details"
       >
         {selectedService && (
-          <form onSubmit={handleBookingSubmit} className="space-y-4 text-xs font-bold">
+          <form
+            onSubmit={handleBookingSubmit}
+            className="space-y-4 text-xs font-bold"
+          >
             <div className="p-3 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 rounded-2xl flex justify-between items-center">
               <div>
-                <span className="text-[10px] text-[#0A4DA6] block uppercase font-bold">Provider</span>
-                <span className="text-sm font-extrabold text-[#0B192C] dark:text-white">{selectedService.name}</span>
+                <span className="text-[10px] text-[#0A4DA6] block uppercase font-bold">
+                  Provider
+                </span>
+                <span className="text-sm font-extrabold text-[#0B192C] dark:text-white">
+                  {selectedService.name}
+                </span>
               </div>
-              <span className="text-sm font-black text-[#0A4DA6]">₹{selectedService.pricing.amount}</span>
+              <span className="text-sm font-black text-[#0A4DA6]">
+                ₹{selectedService.pricing.amount}
+              </span>
             </div>
 
             <div className="space-y-1">
-              <label className="text-gray-700 dark:text-gray-300">Reservation Date *</label>
+              <label className="text-gray-700 dark:text-gray-300">
+                Reservation Date *
+              </label>
               <input
                 type="date"
                 required
@@ -438,7 +501,9 @@ export const ServicesHubPage: React.FC = () => {
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-gray-700 dark:text-gray-300">Preferred Time *</label>
+                <label className="text-gray-700 dark:text-gray-300">
+                  Preferred Time *
+                </label>
                 <input
                   type="text"
                   value={bookingTime}
@@ -449,7 +514,9 @@ export const ServicesHubPage: React.FC = () => {
               </div>
 
               <div className="space-y-1">
-                <label className="text-gray-700 dark:text-gray-300">Guests / Quantity *</label>
+                <label className="text-gray-700 dark:text-gray-300">
+                  Guests / Quantity *
+                </label>
                 <input
                   type="number"
                   min={1}
@@ -462,7 +529,9 @@ export const ServicesHubPage: React.FC = () => {
             </div>
 
             <div className="space-y-1">
-              <label className="text-gray-700 dark:text-gray-300">Special Notes / Address Pickup</label>
+              <label className="text-gray-700 dark:text-gray-300">
+                Special Notes / Address Pickup
+              </label>
               <textarea
                 rows={2}
                 value={specialNotes}
@@ -485,7 +554,8 @@ export const ServicesHubPage: React.FC = () => {
                 variant="primary"
                 loading={isSubmitting}
               >
-                Confirm & Pay ₹{(selectedService.pricing.amount || 500) * guestsCount}
+                Confirm & Pay ₹
+                {(selectedService.pricing.amount || 500) * guestsCount}
               </EnterpriseButton>
             </div>
           </form>

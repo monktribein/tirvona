@@ -1,7 +1,7 @@
-import React, { useRef, useState } from 'react';
-import { UploadCloud, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
-import { uploadService } from '../services';
-import { getErrorMessage } from '../lib/api';
+import React, { useRef, useState } from "react";
+import { UploadCloud, Loader2, CheckCircle, AlertCircle } from "lucide-react";
+import { uploadService } from "../services";
+import { getErrorMessage } from "../lib/api";
 
 interface FileUploaderProps {
   folder: string;
@@ -17,30 +17,30 @@ interface FileUploaderProps {
 export const FileUploader: React.FC<FileUploaderProps> = ({
   folder,
   onUploaded,
-  accept = 'image/*',
-  label = 'Upload file',
+  accept = "image/*",
+  label = "Upload file",
   currentUrl,
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [status, setStatus] = useState<'idle' | 'uploading' | 'done' | 'error'>(
-    currentUrl ? 'done' : 'idle'
+  const [status, setStatus] = useState<"idle" | "uploading" | "done" | "error">(
+    currentUrl ? "done" : "idle",
   );
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const handleSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setStatus('uploading');
-    setError('');
+    setStatus("uploading");
+    setError("");
     try {
       const url = await uploadService.file(file, folder);
       onUploaded(url);
-      setStatus('done');
+      setStatus("done");
     } catch (err) {
-      setError(getErrorMessage(err, 'Upload failed'));
-      setStatus('error');
+      setError(getErrorMessage(err, "Upload failed"));
+      setStatus("error");
     } finally {
-      if (inputRef.current) inputRef.current.value = '';
+      if (inputRef.current) inputRef.current.value = "";
     }
   };
 
@@ -49,15 +49,22 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
       <button
         type="button"
         onClick={() => inputRef.current?.click()}
-        disabled={status === 'uploading'}
+        disabled={status === "uploading"}
         className="w-full flex items-center justify-center gap-2 py-2.5 px-4 border border-dashed border-[#0A4DA6]/40 bg-[#0A4DA6]/5 hover:bg-[#0A4DA6]/10 text-[#0A4DA6] rounded-xl text-xs font-bold cursor-pointer transition-all disabled:opacity-60 disabled:cursor-not-allowed"
       >
-        {status === 'uploading' ? (
-          <><Loader2 size={14} className="animate-spin" /> Uploading…</>
-        ) : status === 'done' ? (
-          <><CheckCircle size={14} className="text-success" /> Uploaded — replace</>
+        {status === "uploading" ? (
+          <>
+            <Loader2 size={14} className="animate-spin" /> Uploading…
+          </>
+        ) : status === "done" ? (
+          <>
+            <CheckCircle size={14} className="text-success" /> Uploaded —
+            replace
+          </>
         ) : (
-          <><UploadCloud size={14} /> {label}</>
+          <>
+            <UploadCloud size={14} /> {label}
+          </>
         )}
       </button>
       <input
@@ -67,12 +74,12 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
         onChange={handleSelect}
         className="hidden"
       />
-      {status === 'error' && (
+      {status === "error" && (
         <p className="text-[10px] text-danger font-semibold flex items-center gap-1">
           <AlertCircle size={11} /> {error}
         </p>
       )}
-      {currentUrl && status !== 'uploading' && (
+      {currentUrl && status !== "uploading" && (
         <p className="text-[10px] text-gray-400 truncate">{currentUrl}</p>
       )}
     </div>

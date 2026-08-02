@@ -1,2 +1,5 @@
-export { useBookingSearch, BookingSearchProvider } from '../../contexts/BookingSearchContext';
-export { bookingService } from '../../services';
+export {
+  useBookingSearch,
+  BookingSearchProvider,
+} from "../../contexts/BookingSearchContext";
+export { bookingService } from "../../services";

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Heart,
   Plus,
@@ -6,21 +6,26 @@ import {
   Users,
   CheckCircle2,
   Clock,
-  XCircle,
   Edit,
   Trash2,
-  Eye,
   Send,
   MapPin,
   Utensils,
   Home as HomeIcon,
-  Award,
   Sparkles,
-} from 'lucide-react';
-import { volunteerService, type VolunteerJobItem } from '../../services/volunteer.service';
-import { useNotifications } from '../../contexts/NotificationContext';
-import { useAuth } from '../../contexts/AuthContext';
-import { EnterpriseModal, EnterpriseButton, EnterpriseStatusBadge, EnterpriseStatsCard } from '../../admin/shared';
+} from "lucide-react";
+import {
+  volunteerService,
+  type VolunteerJobItem,
+} from "../../services/volunteer.service";
+import { useNotifications } from "../../contexts/NotificationContext";
+import { useAuth } from "../../contexts/AuthContext";
+import {
+  EnterpriseModal,
+  EnterpriseButton,
+  EnterpriseStatusBadge,
+  EnterpriseStatsCard,
+} from "../../admin/shared";
 
 export const OwnerVolunteerPage: React.FC = () => {
   const { user } = useAuth();
@@ -28,26 +33,33 @@ export const OwnerVolunteerPage: React.FC = () => {
 
   const [jobs, setJobs] = useState<VolunteerJobItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'openings' | 'applications'>('openings');
+  const [activeTab, setActiveTab] = useState<"openings" | "applications">(
+    "openings",
+  );
 
   // Modal State for Create Opening
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [title, setTitle] = useState('');
-  const [department, setDepartment] = useState('Event Management');
-  const [type, setType] = useState('volunteer');
-  const [city, setCity] = useState('Rishikesh');
+  const [title, setTitle] = useState("");
+  const [department, setDepartment] = useState("Event Management");
+  const [type, setType] = useState("volunteer");
+  const [city, setCity] = useState("Rishikesh");
   const [openingsCount, setOpeningsCount] = useState(5);
-  const [duration, setDuration] = useState('1 Month');
-  const [stipend, setStipend] = useState('Free Ashram Stay + Satvik Meals');
-  const [accommodation, setAccommodation] = useState<'free_ashram_stay' | 'paid' | 'none'>('free_ashram_stay');
-  const [food, setFood] = useState<'satvik_free_3_meals' | 'paid' | 'none'>('satvik_free_3_meals');
-  const [responsibilities, setResponsibilities] = useState('');
-  const [requirements, setRequirements] = useState('');
+  const [duration, setDuration] = useState("1 Month");
+  const [stipend, setStipend] = useState("Free Ashram Stay + Satvik Meals");
+  const [accommodation, setAccommodation] = useState<
+    "free_ashram_stay" | "paid" | "none"
+  >("free_ashram_stay");
+  const [food, setFood] = useState<"satvik_free_3_meals" | "paid" | "none">(
+    "satvik_free_3_meals",
+  );
+  const [responsibilities, setResponsibilities] = useState("");
+  const [requirements, setRequirements] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
   // Applications Drawer State
   const [applications, setApplications] = useState<any[]>([]);
-  const [selectedJobForApps, setSelectedJobForApps] = useState<VolunteerJobItem | null>(null);
+  const [selectedJobForApps, setSelectedJobForApps] =
+    useState<VolunteerJobItem | null>(null);
 
   useEffect(() => {
     fetchOwnerJobs();
@@ -62,7 +74,7 @@ export const OwnerVolunteerPage: React.FC = () => {
         setJobs(res.data.data);
       }
     } catch (err) {
-      console.error('Fetch owner jobs error:', err);
+      console.error("Fetch owner jobs error:", err);
     } finally {
       setLoading(false);
     }
@@ -75,7 +87,7 @@ export const OwnerVolunteerPage: React.FC = () => {
         setApplications(res.data.data);
       }
     } catch (err) {
-      console.error('Fetch applications error:', err);
+      console.error("Fetch applications error:", err);
     }
   };
 
@@ -84,7 +96,7 @@ export const OwnerVolunteerPage: React.FC = () => {
     setIsSaving(true);
     try {
       const resp = await volunteerService.createJob({
-        ashramName: user?.name || 'Parmarth Niketan Ashram',
+        ashramName: user?.name || "Parmarth Niketan Ashram",
         city,
         title,
         department,
@@ -94,22 +106,26 @@ export const OwnerVolunteerPage: React.FC = () => {
         stipend,
         accommodation,
         food,
-        responsibilities: responsibilities.split('\n').filter((r) => r.trim()),
-        requirements: requirements.split('\n').filter((r) => r.trim()),
-        status: 'open',
+        responsibilities: responsibilities.split("\n").filter((r) => r.trim()),
+        requirements: requirements.split("\n").filter((r) => r.trim()),
+        status: "open",
         isGovtVerified: true,
       });
 
       if (resp.data?.success) {
-        addNotification('Opening Published!', `${title} is now live on the public Volunteer & Careers page.`, 'success');
+        addNotification(
+          "Opening Published!",
+          `${title} is now live on the public Volunteer & Careers page.`,
+          "success",
+        );
         setIsCreateOpen(false);
-        setTitle('');
-        setResponsibilities('');
-        setRequirements('');
+        setTitle("");
+        setResponsibilities("");
+        setRequirements("");
         fetchOwnerJobs();
       }
-    } catch (err) {
-      addNotification('Error', 'Failed to publish opening.', 'error');
+    } catch  {
+      addNotification("Error", "Failed to publish opening.", "error");
     } finally {
       setIsSaving(false);
     }
@@ -119,31 +135,42 @@ export const OwnerVolunteerPage: React.FC = () => {
     try {
       await volunteerService.updateApplicationStatus(appId, status);
       setApplications((prev) =>
-        prev.map((app) => (app._id === appId ? { ...app, status } : app))
+        prev.map((app) => (app._id === appId ? { ...app, status } : app)),
       );
-      addNotification('Applicant Status Updated', `Application marked as ${status.toUpperCase()}.`, 'success');
+      addNotification(
+        "Applicant Status Updated",
+        `Application marked as ${status.toUpperCase()}.`,
+        "success",
+      );
     } catch (err) {
-      console.error('Update status error:', err);
-      addNotification('Error', 'Failed to update application status.', 'error');
+      console.error("Update status error:", err);
+      addNotification("Error", "Failed to update application status.", "error");
     }
   };
 
   const handleDeleteJob = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this volunteer opening?')) return;
+    if (
+      !window.confirm("Are you sure you want to delete this volunteer opening?")
+    )
+      return;
     try {
       await volunteerService.deleteJob(id);
-      addNotification('Opening Deleted', 'The job opening has been removed.', 'info');
+      addNotification(
+        "Opening Deleted",
+        "The job opening has been removed.",
+        "info",
+      );
       fetchOwnerJobs();
     } catch (err) {
-      console.error('Delete job error:', err);
+      console.error("Delete job error:", err);
     }
   };
 
   const stats = {
-    activeOpenings: jobs.filter((j) => j.status === 'open').length,
+    activeOpenings: jobs.filter((j) => j.status === "open").length,
     totalApplicants: applications.length,
-    shortlisted: applications.filter((a) => a.status === 'shortlisted').length,
-    accepted: applications.filter((a) => a.status === 'accepted').length,
+    shortlisted: applications.filter((a) => a.status === "shortlisted").length,
+    accepted: applications.filter((a) => a.status === "accepted").length,
   };
 
   return (
@@ -160,42 +187,62 @@ export const OwnerVolunteerPage: React.FC = () => {
             Volunteer & Careers Management
           </h1>
           <p className="text-xs font-semibold text-gray-400">
-            Publish openings, manage applications, and hire devoted volunteers for your ashram.
+            Publish openings, manage applications, and hire devoted volunteers
+            for your ashram.
           </p>
         </div>
 
-        <EnterpriseButton variant="primary" onClick={() => setIsCreateOpen(true)}>
+        <EnterpriseButton
+          variant="primary"
+          onClick={() => setIsCreateOpen(true)}
+        >
           <Plus size={16} /> Create New Opportunity
         </EnterpriseButton>
       </div>
 
       {/* Top Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <EnterpriseStatsCard title="Active Openings" value={stats.activeOpenings} icon={<Building2 size={20} className="text-[#0A4DA6]" />} />
-        <EnterpriseStatsCard title="Total Applications" value={stats.totalApplicants} icon={<Users size={20} className="text-[#E58C28]" />} />
-        <EnterpriseStatsCard title="Shortlisted" value={stats.shortlisted} icon={<Clock size={20} className="text-amber-500" />} />
-        <EnterpriseStatsCard title="Accepted Seva Yatri" value={stats.accepted} icon={<CheckCircle2 size={20} className="text-emerald-500" />} />
+        <EnterpriseStatsCard
+          title="Active Openings"
+          value={stats.activeOpenings}
+          icon={<Building2 size={20} className="text-[#0A4DA6]" />}
+        />
+        <EnterpriseStatsCard
+          title="Total Applications"
+          value={stats.totalApplicants}
+          icon={<Users size={20} className="text-[#E58C28]" />}
+        />
+        <EnterpriseStatsCard
+          title="Shortlisted"
+          value={stats.shortlisted}
+          icon={<Clock size={20} className="text-amber-500" />}
+        />
+        <EnterpriseStatsCard
+          title="Accepted Seva Yatri"
+          value={stats.accepted}
+          icon={<CheckCircle2 size={20} className="text-emerald-500" />}
+        />
       </div>
 
       {/* Tab Controls */}
       <div className="flex items-center gap-3 border-b border-gray-200 dark:border-slate-800">
         <button
-          onClick={() => setActiveTab('openings')}
+          onClick={() => setActiveTab("openings")}
           className={`pb-3 text-xs font-black uppercase tracking-wider transition-all border-b-2 cursor-pointer ${
-            activeTab === 'openings'
-              ? 'border-[#0A4DA6] text-[#0A4DA6] dark:text-[#E58C28]'
-              : 'border-transparent text-gray-400 hover:text-gray-600'
+            activeTab === "openings"
+              ? "border-[#0A4DA6] text-[#0A4DA6] dark:text-[#E58C28]"
+              : "border-transparent text-gray-400 hover:text-gray-600"
           }`}
         >
           My Published Openings ({jobs.length})
         </button>
 
         <button
-          onClick={() => setActiveTab('applications')}
+          onClick={() => setActiveTab("applications")}
           className={`pb-3 text-xs font-black uppercase tracking-wider transition-all border-b-2 cursor-pointer ${
-            activeTab === 'applications'
-              ? 'border-[#0A4DA6] text-[#0A4DA6] dark:text-[#E58C28]'
-              : 'border-transparent text-gray-400 hover:text-gray-600'
+            activeTab === "applications"
+              ? "border-[#0A4DA6] text-[#0A4DA6] dark:text-[#E58C28]"
+              : "border-transparent text-gray-400 hover:text-gray-600"
           }`}
         >
           Received Applications ({applications.length})
@@ -203,9 +250,11 @@ export const OwnerVolunteerPage: React.FC = () => {
       </div>
 
       {/* Content Area */}
-      {activeTab === 'openings' ? (
+      {activeTab === "openings" ? (
         loading ? (
-          <div className="py-20 text-center text-xs font-black text-gray-400">Loading ashram openings...</div>
+          <div className="py-20 text-center text-xs font-black text-gray-400">
+            Loading ashram openings...
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {jobs.map((job) => (
@@ -219,30 +268,45 @@ export const OwnerVolunteerPage: React.FC = () => {
                       <span className="text-[10px] font-black uppercase tracking-wider text-[#E58C28] bg-[#E58C28]/10 px-2.5 py-0.5 rounded-full border border-[#E58C28]/20">
                         {job.department}
                       </span>
-                      <h3 className="text-base font-black text-[#0B192C] dark:text-white mt-1.5">{job.title}</h3>
+                      <h3 className="text-base font-black text-[#0B192C] dark:text-white mt-1.5">
+                        {job.title}
+                      </h3>
                     </div>
-                    <EnterpriseStatusBadge status={job.status === 'open' ? 'active' : 'pending'} />
+                    <EnterpriseStatusBadge
+                      status={job.status === "open" ? "active" : "pending"}
+                    />
                   </div>
 
                   <div className="text-xs font-extrabold text-gray-500 space-y-1.5">
                     <p className="flex items-center gap-1.5">
-                      <MapPin size={13} className="text-[#0A4DA6]" /> {job.city}, {job.state}
+                      <MapPin size={13} className="text-[#0A4DA6]" /> {job.city}
+                      , {job.state}
                     </p>
                     <p className="flex items-center gap-1.5">
-                      <HomeIcon size={13} className="text-emerald-500" /> {job.accommodation === 'free_ashram_stay' ? 'Free Ashram Stay' : 'Paid Stay'}
+                      <HomeIcon size={13} className="text-emerald-500" />{" "}
+                      {job.accommodation === "free_ashram_stay"
+                        ? "Free Ashram Stay"
+                        : "Paid Stay"}
                     </p>
                     <p className="flex items-center gap-1.5">
-                      <Utensils size={13} className="text-[#E58C28]" /> {job.food === 'satvik_free_3_meals' ? 'Free 3 Satvik Meals' : 'Meals Provided'}
+                      <Utensils size={13} className="text-[#E58C28]" />{" "}
+                      {job.food === "satvik_free_3_meals"
+                        ? "Free 3 Satvik Meals"
+                        : "Meals Provided"}
                     </p>
                   </div>
 
                   <div className="bg-gray-50 dark:bg-slate-900 rounded-2xl p-2.5 text-center">
-                    <span className="text-xs font-black text-[#0A4DA6] dark:text-blue-300">{job.stipend}</span>
+                    <span className="text-xs font-black text-[#0A4DA6] dark:text-blue-300">
+                      {job.stipend}
+                    </span>
                   </div>
                 </div>
 
                 <div className="pt-3 border-t border-gray-100 dark:border-slate-800 flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-gray-400">{job.openingsCount} Openings</span>
+                  <span className="text-[10px] font-bold text-gray-400">
+                    {job.openingsCount} Openings
+                  </span>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => handleDeleteJob(job._id)}
@@ -279,36 +343,55 @@ export const OwnerVolunteerPage: React.FC = () => {
                 </tr>
               ) : (
                 applications.map((app) => (
-                  <tr key={app._id} className="hover:bg-gray-50/50 dark:hover:bg-slate-900/50">
+                  <tr
+                    key={app._id}
+                    className="hover:bg-gray-50/50 dark:hover:bg-slate-900/50"
+                  >
                     <td className="py-3 px-4">
-                      <div className="font-extrabold text-[#0B192C] dark:text-white">{app.applicantName}</div>
-                      <div className="text-[10px] text-gray-400">{app.education}</div>
+                      <div className="font-extrabold text-[#0B192C] dark:text-white">
+                        {app.applicantName}
+                      </div>
+                      <div className="text-[10px] text-gray-400">
+                        {app.education}
+                      </div>
                     </td>
                     <td className="py-3 px-4">
                       <div>{app.email}</div>
-                      <div className="text-[10px] text-gray-400">{app.phone}</div>
+                      <div className="text-[10px] text-gray-400">
+                        {app.phone}
+                      </div>
                     </td>
                     <td className="py-3 px-4">
                       <div>{app.city}</div>
-                      <div className="text-[10px] text-emerald-500">{app.availability}</div>
+                      <div className="text-[10px] text-emerald-500">
+                        {app.availability}
+                      </div>
                     </td>
                     <td className="py-3 px-4">
                       <EnterpriseStatusBadge
                         status={
-                          app.status === 'accepted' ? 'active' : app.status === 'rejected' ? 'rejected' : 'pending'
+                          app.status === "accepted"
+                            ? "active"
+                            : app.status === "rejected"
+                              ? "rejected"
+                              : "pending"
                         }
                       />
                     </td>
                     <td className="py-3 px-4 text-right">
                       <div className="flex items-center justify-end gap-1.5">
                         <button
-                          onClick={() => handleStatusUpdate(app._id, 'shortlisted')}
+                          onClick={() =>
+                            handleStatusUpdate(app._id, "shortlisted")
+                          }
                           className="px-2.5 py-1 bg-amber-50 text-amber-600 hover:bg-amber-100 rounded-full text-[10px] font-black cursor-pointer"
                         >
                           Shortlist
                         </button>
                         <button
-                          onClick={() => handleStatusUpdate(app._id, 'accepted')}
+                          onClick={() =>
+                            handleStatusUpdate(app._id, "accepted")
+                          }
                           className="px-2.5 py-1 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-full text-[10px] font-black cursor-pointer"
                         >
                           Accept
@@ -335,7 +418,9 @@ export const OwnerVolunteerPage: React.FC = () => {
           <form onSubmit={handleCreateSubmit} className="space-y-4 text-left">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-extrabold text-gray-700 dark:text-gray-300 mb-1">Position Title</label>
+                <label className="block text-xs font-extrabold text-gray-700 dark:text-gray-300 mb-1">
+                  Position Title
+                </label>
                 <input
                   type="text"
                   required
@@ -347,7 +432,9 @@ export const OwnerVolunteerPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-extrabold text-gray-700 dark:text-gray-300 mb-1">Department</label>
+                <label className="block text-xs font-extrabold text-gray-700 dark:text-gray-300 mb-1">
+                  Department
+                </label>
                 <input
                   type="text"
                   required
@@ -359,7 +446,9 @@ export const OwnerVolunteerPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-extrabold text-gray-700 dark:text-gray-300 mb-1">City</label>
+                <label className="block text-xs font-extrabold text-gray-700 dark:text-gray-300 mb-1">
+                  City
+                </label>
                 <select
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
@@ -374,7 +463,9 @@ export const OwnerVolunteerPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-extrabold text-gray-700 dark:text-gray-300 mb-1">Opportunity Type</label>
+                <label className="block text-xs font-extrabold text-gray-700 dark:text-gray-300 mb-1">
+                  Opportunity Type
+                </label>
                 <select
                   value={type}
                   onChange={(e) => setType(e.target.value)}
@@ -383,7 +474,9 @@ export const OwnerVolunteerPage: React.FC = () => {
                   <option value="volunteer">Volunteer Seva</option>
                   <option value="internship">Internship / Fellowship</option>
                   <option value="kitchen_seva">Kitchen Seva</option>
-                  <option value="event_coordinator">Ganga Aarti & Events</option>
+                  <option value="event_coordinator">
+                    Ganga Aarti & Events
+                  </option>
                   <option value="digital_marketing">Digital Marketing</option>
                   <option value="temple_guide">Pilgrim Guide</option>
                 </select>
@@ -392,7 +485,9 @@ export const OwnerVolunteerPage: React.FC = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-extrabold text-gray-700 dark:text-gray-300 mb-1">Openings Count</label>
+                <label className="block text-xs font-extrabold text-gray-700 dark:text-gray-300 mb-1">
+                  Openings Count
+                </label>
                 <input
                   type="number"
                   min={1}
@@ -403,7 +498,9 @@ export const OwnerVolunteerPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-extrabold text-gray-700 dark:text-gray-300 mb-1">Stipend / Honorarium</label>
+                <label className="block text-xs font-extrabold text-gray-700 dark:text-gray-300 mb-1">
+                  Stipend / Honorarium
+                </label>
                 <input
                   type="text"
                   value={stipend}
@@ -415,7 +512,9 @@ export const OwnerVolunteerPage: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-extrabold text-gray-700 dark:text-gray-300 mb-1">Responsibilities (One per line)</label>
+              <label className="block text-xs font-extrabold text-gray-700 dark:text-gray-300 mb-1">
+                Responsibilities (One per line)
+              </label>
               <textarea
                 rows={3}
                 value={responsibilities}
@@ -426,10 +525,17 @@ export const OwnerVolunteerPage: React.FC = () => {
             </div>
 
             <div className="pt-3 border-t border-gray-100 dark:border-slate-800 flex justify-end gap-3">
-              <EnterpriseButton variant="outline" onClick={() => setIsCreateOpen(false)}>
+              <EnterpriseButton
+                variant="outline"
+                onClick={() => setIsCreateOpen(false)}
+              >
                 Cancel
               </EnterpriseButton>
-              <EnterpriseButton type="submit" variant="primary" loading={isSaving}>
+              <EnterpriseButton
+                type="submit"
+                variant="primary"
+                loading={isSaving}
+              >
                 <Send size={14} /> Publish Opportunity
               </EnterpriseButton>
             </div>

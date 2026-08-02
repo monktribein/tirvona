@@ -1,33 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect } from "react";
+import api from "../lib/api";
 import {
   Tag,
   Plus,
   Search,
-  Filter,
   Calendar,
-  Percent,
   Copy,
   Edit3,
   Trash2,
   Copy as DuplicateIcon,
-  Eye,
   CheckCircle2,
-  XCircle,
   TrendingUp,
-  DollarSign,
   Building,
-  Sparkles,
   ArrowRight,
   ArrowLeft,
   X,
-  ShieldCheck,
   Award,
-  Layers,
-  Clock
-} from 'lucide-react';
-import { useNotifications } from '../contexts/NotificationContext';
-import FileUploader from '../components/FileUploader';
+  Clock,
+} from "lucide-react";
+import { useNotifications } from "../contexts/NotificationContext";
+import FileUploader from "../components/FileUploader";
 
 export const OwnerOffersPage: React.FC = () => {
   const { addNotification } = useNotifications();
@@ -45,9 +37,9 @@ export const OwnerOffersPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   // Filters & Search
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState('All');
-  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('All');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("All");
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState("All");
 
   // Wizard Modal State
   const [showWizard, setShowWizard] = useState(false);
@@ -57,55 +49,55 @@ export const OwnerOffersPage: React.FC = () => {
 
   // 8-Step Wizard Form Data
   const [formData, setFormData] = useState<any>({
-    offerTitle: '',
-    shortTitle: '',
-    subtitle: '',
-    offerType: 'Festival Offer',
-    ashramId: '',
+    offerTitle: "",
+    shortTitle: "",
+    subtitle: "",
+    offerType: "Festival Offer",
+    ashramId: "",
     applicableAshrams: [],
-    description: '',
-    fullHtmlDescription: '',
-    highlights: '',
-    termsAndConditions: '',
-    promoCode: '',
-    discountType: 'Percentage',
+    description: "",
+    fullHtmlDescription: "",
+    highlights: "",
+    termsAndConditions: "",
+    promoCode: "",
+    discountType: "Percentage",
     discountValue: 20,
     maximumDiscount: 500,
     minimumBookingAmount: 1000,
-    bannerImage: '/banner/ashram_rishikesh.png',
-    thumbnailImage: '/banner/ashram_rishikesh.png',
-    desktopBanner: '/banner/ashram_rishikesh.png',
-    mobileBanner: '/banner/ashram_rishikesh.png',
+    bannerImage: "/banner/ashram_rishikesh.png",
+    thumbnailImage: "/banner/ashram_rishikesh.png",
+    desktopBanner: "/banner/ashram_rishikesh.png",
+    mobileBanner: "/banner/ashram_rishikesh.png",
     galleryImages: [],
-    validFrom: new Date().toISOString().split('T')[0],
-    validTill: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
+    validFrom: new Date().toISOString().split("T")[0],
+    validTill: new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0],
     maximumRedemptions: 100,
     perUserLimit: 1,
     priority: 1,
     featured: false,
-    status: 'active',
+    status: "active",
   });
 
   const offerCategories = [
-    'Weekend Offer',
-    'Festival Offer',
-    'Mahakumbh Offer',
-    'Seasonal Offer',
-    'Summer Offer',
-    'Winter Offer',
-    'New Ashram Launch',
-    'Donation Campaign',
-    'Room Upgrade',
-    'Food Offer',
-    'Family Package',
-    'Senior Citizen Offer',
-    'Student Offer',
-    'Long Stay Offer',
-    'Corporate Retreat',
-    'Yoga Camp',
-    'Meditation Camp',
-    'Special Darshan',
-    'Custom',
+    "Weekend Offer",
+    "Festival Offer",
+    "Mahakumbh Offer",
+    "Seasonal Offer",
+    "Summer Offer",
+    "Winter Offer",
+    "New Ashram Launch",
+    "Donation Campaign",
+    "Room Upgrade",
+    "Food Offer",
+    "Family Package",
+    "Senior Citizen Offer",
+    "Student Offer",
+    "Long Stay Offer",
+    "Corporate Retreat",
+    "Yoga Camp",
+    "Meditation Camp",
+    "Special Darshan",
+    "Custom",
   ];
 
   useEffect(() => {
@@ -115,29 +107,20 @@ export const OwnerOffersPage: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('ab_token') || localStorage.getItem('token');
-      const headers = { Authorization: `Bearer ${token}` };
-
       // Fetch offers
-      const res = await axios.get(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/offers/my-offers`,
-        { headers }
-      );
+      const res = await api.get("/offers/my-offers");
       if (res.data.success) {
         setOffers(res.data.data);
         setStats(res.data.stats);
       }
 
       // Fetch ashrams owned
-      const ashramRes = await axios.get(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/ashrams/my-listings/all`,
-        { headers }
-      );
+      const ashramRes = await api.get("/ashrams/my-listings/all");
       if (ashramRes.data.success) {
         setAshrams(ashramRes.data.data);
       }
     } catch (err) {
-      console.error('Fetch owner offers error:', err);
+      console.error("Fetch owner offers error:", err);
     } finally {
       setLoading(false);
     }
@@ -147,64 +130,78 @@ export const OwnerOffersPage: React.FC = () => {
     if (offerToEdit) {
       setEditOfferId(offerToEdit._id);
       setFormData({
-        offerTitle: offerToEdit.offerTitle || '',
-        shortTitle: offerToEdit.shortTitle || '',
-        subtitle: offerToEdit.subtitle || '',
-        offerType: offerToEdit.offerType || 'Festival Offer',
-        ashramId: offerToEdit.ashramId?._id || offerToEdit.ashramId || '',
+        offerTitle: offerToEdit.offerTitle || "",
+        shortTitle: offerToEdit.shortTitle || "",
+        subtitle: offerToEdit.subtitle || "",
+        offerType: offerToEdit.offerType || "Festival Offer",
+        ashramId: offerToEdit.ashramId?._id || offerToEdit.ashramId || "",
         applicableAshrams: offerToEdit.applicableAshrams || [],
-        description: offerToEdit.description || '',
-        fullHtmlDescription: offerToEdit.fullHtmlDescription || '',
-        highlights: Array.isArray(offerToEdit.highlights) ? offerToEdit.highlights.join(', ') : offerToEdit.highlights || '',
-        termsAndConditions: Array.isArray(offerToEdit.termsAndConditions) ? offerToEdit.termsAndConditions.join(', ') : offerToEdit.termsAndConditions || '',
-        promoCode: offerToEdit.promoCode || '',
-        discountType: offerToEdit.discountType || 'Percentage',
+        description: offerToEdit.description || "",
+        fullHtmlDescription: offerToEdit.fullHtmlDescription || "",
+        highlights: Array.isArray(offerToEdit.highlights)
+          ? offerToEdit.highlights.join(", ")
+          : offerToEdit.highlights || "",
+        termsAndConditions: Array.isArray(offerToEdit.termsAndConditions)
+          ? offerToEdit.termsAndConditions.join(", ")
+          : offerToEdit.termsAndConditions || "",
+        promoCode: offerToEdit.promoCode || "",
+        discountType: offerToEdit.discountType || "Percentage",
         discountValue: offerToEdit.discountValue || 20,
         maximumDiscount: offerToEdit.maximumDiscount || 0,
         minimumBookingAmount: offerToEdit.minimumBookingAmount || 0,
-        bannerImage: offerToEdit.bannerImage || '/banner/ashram_rishikesh.png',
-        thumbnailImage: offerToEdit.thumbnailImage || '/banner/ashram_rishikesh.png',
-        desktopBanner: offerToEdit.desktopBanner || '/banner/ashram_rishikesh.png',
-        mobileBanner: offerToEdit.mobileBanner || '/banner/ashram_rishikesh.png',
+        bannerImage: offerToEdit.bannerImage || "/banner/ashram_rishikesh.png",
+        thumbnailImage:
+          offerToEdit.thumbnailImage || "/banner/ashram_rishikesh.png",
+        desktopBanner:
+          offerToEdit.desktopBanner || "/banner/ashram_rishikesh.png",
+        mobileBanner:
+          offerToEdit.mobileBanner || "/banner/ashram_rishikesh.png",
         galleryImages: offerToEdit.galleryImages || [],
-        validFrom: offerToEdit.validFrom ? new Date(offerToEdit.validFrom).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-        validTill: offerToEdit.validTill ? new Date(offerToEdit.validTill).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        validFrom: offerToEdit.validFrom
+          ? new Date(offerToEdit.validFrom).toISOString().split("T")[0]
+          : new Date().toISOString().split("T")[0],
+        validTill: offerToEdit.validTill
+          ? new Date(offerToEdit.validTill).toISOString().split("T")[0]
+          : new Date().toISOString().split("T")[0],
         maximumRedemptions: offerToEdit.maximumRedemptions || 100,
         perUserLimit: offerToEdit.perUserLimit || 1,
         priority: offerToEdit.priority || 1,
         featured: offerToEdit.featured || false,
-        status: offerToEdit.status || 'active',
+        status: offerToEdit.status || "active",
       });
     } else {
       setEditOfferId(null);
       setFormData({
-        offerTitle: '',
-        shortTitle: '',
-        subtitle: '',
-        offerType: 'Festival Offer',
-        ashramId: ashrams[0]?._id || '',
+        offerTitle: "",
+        shortTitle: "",
+        subtitle: "",
+        offerType: "Festival Offer",
+        ashramId: ashrams[0]?._id || "",
         applicableAshrams: ashrams.map((a) => a._id),
-        description: '',
-        fullHtmlDescription: '',
-        highlights: 'Free Satvik Meal, Direct Ganga View, Room Upgrade',
-        termsAndConditions: 'Valid for online bookings, Cannot be combined with other coupons',
+        description: "",
+        fullHtmlDescription: "",
+        highlights: "Free Satvik Meal, Direct Ganga View, Room Upgrade",
+        termsAndConditions:
+          "Valid for online bookings, Cannot be combined with other coupons",
         promoCode: `FESTIVAL_${Math.floor(100 + Math.random() * 900)}`,
-        discountType: 'Percentage',
+        discountType: "Percentage",
         discountValue: 20,
         maximumDiscount: 500,
         minimumBookingAmount: 1000,
-        bannerImage: '/banner/ashram_rishikesh.png',
-        thumbnailImage: '/banner/ashram_rishikesh.png',
-        desktopBanner: '/banner/ashram_rishikesh.png',
-        mobileBanner: '/banner/ashram_rishikesh.png',
+        bannerImage: "/banner/ashram_rishikesh.png",
+        thumbnailImage: "/banner/ashram_rishikesh.png",
+        desktopBanner: "/banner/ashram_rishikesh.png",
+        mobileBanner: "/banner/ashram_rishikesh.png",
         galleryImages: [],
-        validFrom: new Date().toISOString().split('T')[0],
-        validTill: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
+        validFrom: new Date().toISOString().split("T")[0],
+        validTill: new Date(Date.now() + 30 * 86400000)
+          .toISOString()
+          .split("T")[0],
         maximumRedemptions: 100,
         perUserLimit: 1,
         priority: 1,
         featured: true,
-        status: 'active',
+        status: "active",
       });
     }
     setCurrentStep(1);
@@ -215,30 +212,47 @@ export const OwnerOffersPage: React.FC = () => {
     if (e) e.preventDefault();
     setSubmitting(true);
     try {
-      const token = localStorage.getItem('ab_token') || localStorage.getItem('token');
-      const headers = { Authorization: `Bearer ${token}` };
-
       const payload = {
         ...formData,
-        highlights: typeof formData.highlights === 'string' ? formData.highlights.split(',').map((s: string) => s.trim()).filter(Boolean) : formData.highlights,
-        termsAndConditions: typeof formData.termsAndConditions === 'string' ? formData.termsAndConditions.split(',').map((s: string) => s.trim()).filter(Boolean) : formData.termsAndConditions,
+        highlights:
+          typeof formData.highlights === "string"
+            ? formData.highlights
+                .split(",")
+                .map((s: string) => s.trim())
+                .filter(Boolean)
+            : formData.highlights,
+        termsAndConditions:
+          typeof formData.termsAndConditions === "string"
+            ? formData.termsAndConditions
+                .split(",")
+                .map((s: string) => s.trim())
+                .filter(Boolean)
+            : formData.termsAndConditions,
       };
 
       let res;
       if (editOfferId) {
-        res = await axios.put(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/offers/${editOfferId}`, payload, { headers });
+        res = await api.put(`/offers/${editOfferId}`, payload);
       } else {
-        res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/offers`, payload, { headers });
+        res = await api.post("/offers", payload);
       }
 
       if (res.data.success) {
-        addNotification('Offer Saved Successfully!', `Promotional offer "${formData.offerTitle}" is active.`, 'success');
+        addNotification(
+          "Offer Saved Successfully!",
+          `Promotional offer "${formData.offerTitle}" is active.`,
+          "success",
+        );
         setShowWizard(false);
         fetchData();
       }
     } catch (err: any) {
-      console.error('Save offer error:', err);
-      addNotification('Error', err.response?.data?.message || 'Failed to save offer.', 'error');
+      console.error("Save offer error:", err);
+      addNotification(
+        "Error",
+        err.response?.data?.message || "Failed to save offer.",
+        "error",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -246,32 +260,31 @@ export const OwnerOffersPage: React.FC = () => {
 
   const handleDuplicate = async (offerId: string) => {
     try {
-      const token = localStorage.getItem('ab_token') || localStorage.getItem('token');
-      const res = await axios.post(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/offers/${offerId}/duplicate`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await api.post(`/offers/${offerId}/duplicate`, {});
       if (res.data.success) {
-        addNotification('Offer Duplicated!', 'New draft offer created.', 'success');
+        addNotification(
+          "Offer Duplicated!",
+          "New draft offer created.",
+          "success",
+        );
         fetchData();
       }
     } catch (err) {
-      console.error('Duplicate offer error:', err);
+      console.error("Duplicate offer error:", err);
     }
   };
 
   const handleDelete = async (offerId: string) => {
-    if (!window.confirm('Are you sure you want to delete this promotional offer?')) return;
+    if (
+      !window.confirm("Are you sure you want to delete this promotional offer?")
+    )
+      return;
     try {
-      const token = localStorage.getItem('ab_token') || localStorage.getItem('token');
-      await axios.delete(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/offers/${offerId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      addNotification('Offer Deleted', 'The offer has been removed.', 'info');
+      await api.delete(`/offers/${offerId}`);
+      addNotification("Offer Deleted", "The offer has been removed.", "info");
       fetchData();
     } catch (err) {
-      console.error('Delete offer error:', err);
+      console.error("Delete offer error:", err);
     }
   };
 
@@ -280,8 +293,12 @@ export const OwnerOffersPage: React.FC = () => {
       o.offerTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
       o.promoCode.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesStatus = selectedStatus === 'All' || o.status.toLowerCase() === selectedStatus.toLowerCase();
-    const matchesCat = selectedCategoryFilter === 'All' || o.offerType === selectedCategoryFilter;
+    const matchesStatus =
+      selectedStatus === "All" ||
+      o.status.toLowerCase() === selectedStatus.toLowerCase();
+    const matchesCat =
+      selectedCategoryFilter === "All" ||
+      o.offerType === selectedCategoryFilter;
 
     return matchesSearch && matchesStatus && matchesCat;
   });
@@ -294,9 +311,12 @@ export const OwnerOffersPage: React.FC = () => {
           <div className="inline-flex items-center px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-black border border-amber-500/30 backdrop-blur-md">
             Enterprise Offer & Promotion Hub
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black">Offer & Promotion Management</h1>
+          <h1 className="text-2xl sm:text-3xl font-black">
+            Offer & Promotion Management
+          </h1>
           <p className="text-xs sm:text-sm text-gray-200 max-w-2xl font-medium">
-            Create, schedule, and manage promotional offers, rate upgrades, and festival discounts across all your ashrams.
+            Create, schedule, and manage promotional offers, rate upgrades, and
+            festival discounts across all your ashrams.
           </p>
         </div>
 
@@ -311,33 +331,57 @@ export const OwnerOffersPage: React.FC = () => {
       {/* Statistics Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-4 shadow-sm space-y-1">
-          <div className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Total Offers</div>
-          <div className="text-xl font-black text-[#0B192C] dark:text-white">{stats.totalOffers}</div>
+          <div className="text-[10px] font-black text-gray-400 uppercase tracking-wider">
+            Total Offers
+          </div>
+          <div className="text-xl font-black text-[#0B192C] dark:text-white">
+            {stats.totalOffers}
+          </div>
         </div>
 
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-4 shadow-sm space-y-1">
-          <div className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Active Deals</div>
-          <div className="text-xl font-black text-emerald-600">{stats.activeOffers}</div>
+          <div className="text-[10px] font-black text-gray-400 uppercase tracking-wider">
+            Active Deals
+          </div>
+          <div className="text-xl font-black text-emerald-600">
+            {stats.activeOffers}
+          </div>
         </div>
 
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-4 shadow-sm space-y-1">
-          <div className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Scheduled</div>
-          <div className="text-xl font-black text-[#0A4DA6] dark:text-amber-400">{stats.scheduledOffers}</div>
+          <div className="text-[10px] font-black text-gray-400 uppercase tracking-wider">
+            Scheduled
+          </div>
+          <div className="text-xl font-black text-[#0A4DA6] dark:text-amber-400">
+            {stats.scheduledOffers}
+          </div>
         </div>
 
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-4 shadow-sm space-y-1">
-          <div className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Expired</div>
-          <div className="text-xl font-black text-rose-500">{stats.expiredOffers}</div>
+          <div className="text-[10px] font-black text-gray-400 uppercase tracking-wider">
+            Expired
+          </div>
+          <div className="text-xl font-black text-rose-500">
+            {stats.expiredOffers}
+          </div>
         </div>
 
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-4 shadow-sm space-y-1">
-          <div className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Redemptions</div>
-          <div className="text-xl font-black text-purple-600">{stats.redeemedOffers}</div>
+          <div className="text-[10px] font-black text-gray-400 uppercase tracking-wider">
+            Redemptions
+          </div>
+          <div className="text-xl font-black text-purple-600">
+            {stats.redeemedOffers}
+          </div>
         </div>
 
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-4 shadow-sm space-y-1">
-          <div className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Revenue</div>
-          <div className="text-xl font-black text-amber-500">₹{stats.revenueGenerated}</div>
+          <div className="text-[10px] font-black text-gray-400 uppercase tracking-wider">
+            Revenue
+          </div>
+          <div className="text-xl font-black text-amber-500">
+            ₹{stats.revenueGenerated}
+          </div>
         </div>
       </div>
 
@@ -345,14 +389,14 @@ export const OwnerOffersPage: React.FC = () => {
       <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
         {/* Status Pills */}
         <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
-          {['All', 'Active', 'Scheduled', 'Draft', 'Expired'].map((st) => (
+          {["All", "Active", "Scheduled", "Draft", "Expired"].map((st) => (
             <button
               key={st}
               onClick={() => setSelectedStatus(st)}
               className={`px-3.5 py-1.5 rounded-full text-xs font-black cursor-pointer whitespace-nowrap transition-all ${
                 selectedStatus === st
-                  ? 'bg-[#0A4DA6] text-white shadow-sm'
-                  : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200'
+                  ? "bg-[#0A4DA6] text-white shadow-sm"
+                  : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200"
               }`}
             >
               {st}
@@ -362,7 +406,10 @@ export const OwnerOffersPage: React.FC = () => {
 
         {/* Search */}
         <div className="relative w-full sm:w-72">
-          <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search
+            size={14}
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
+          />
           <input
             type="text"
             placeholder="Search offer or promo code..."
@@ -379,8 +426,13 @@ export const OwnerOffersPage: React.FC = () => {
       ) : filteredOffers.length === 0 ? (
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-12 text-center space-y-4 shadow-sm">
           <Tag size={48} className="mx-auto text-gray-300 dark:text-gray-600" />
-          <h3 className="text-lg font-black text-[#0B192C] dark:text-white">No Promotional Offers Found</h3>
-          <p className="text-xs text-gray-400">Click "Launch Create Offer Wizard" to create your first promotion deal.</p>
+          <h3 className="text-lg font-black text-[#0B192C] dark:text-white">
+            No Promotional Offers Found
+          </h3>
+          <p className="text-xs text-gray-400">
+            Click "Launch Create Offer Wizard" to create your first promotion
+            deal.
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -392,33 +444,47 @@ export const OwnerOffersPage: React.FC = () => {
               <div>
                 <div className="relative aspect-video bg-black">
                   <img
-                    src={offer.bannerImage || '/banner/ashram_rishikesh.png'}
+                    src={offer.bannerImage || "/banner/ashram_rishikesh.png"}
                     alt={offer.offerTitle}
                     className="w-full h-full object-cover opacity-90"
-                    onError={(e: any) => { e.target.src = '/banner/ashram_rishikesh.png'; }}
+                    onError={(e: any) => {
+                      e.target.src = "/banner/ashram_rishikesh.png";
+                    }}
                   />
                   <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-[#0A4DA6] text-white text-[10px] font-black uppercase">
                     {offer.offerType}
                   </span>
                   <span className="absolute top-3 right-3 px-3 py-1 rounded-full bg-amber-500 text-white text-xs font-black">
-                    {offer.discountType === 'Percentage' ? `${offer.discountValue}% OFF` : `₹${offer.discountValue} OFF`}
+                    {offer.discountType === "Percentage"
+                      ? `${offer.discountValue}% OFF`
+                      : `₹${offer.discountValue} OFF`}
                   </span>
                 </div>
 
                 <div className="p-6 space-y-4">
                   <div>
-                    <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white">{offer.offerTitle}</h3>
-                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 line-clamp-2 mt-1">{offer.description}</p>
+                    <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white">
+                      {offer.offerTitle}
+                    </h3>
+                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 line-clamp-2 mt-1">
+                      {offer.description}
+                    </p>
                   </div>
 
                   <div className="bg-blue-50/60 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/30 rounded-2xl p-3 flex items-center justify-between">
-                    <span className="text-[10px] font-black uppercase text-gray-400">PROMO</span>
-                    <span className="font-mono font-black text-sm text-[#0A4DA6] dark:text-amber-400">{offer.promoCode}</span>
+                    <span className="text-[10px] font-black uppercase text-gray-400">
+                      PROMO
+                    </span>
+                    <span className="font-mono font-black text-sm text-[#0A4DA6] dark:text-amber-400">
+                      {offer.promoCode}
+                    </span>
                   </div>
 
                   <div className="text-xs text-gray-400 font-bold flex items-center justify-between">
                     <span>Valid Till:</span>
-                    <span>{new Date(offer.validTill).toLocaleDateString()}</span>
+                    <span>
+                      {new Date(offer.validTill).toLocaleDateString()}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -455,18 +521,28 @@ export const OwnerOffersPage: React.FC = () => {
       {/* ════════════ 8-STEP CREATE OFFER WIZARD MODAL ════════════ */}
       {showWizard && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setShowWizard(false)} />
+          <div
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm"
+            onClick={() => setShowWizard(false)}
+          />
           <div className="relative w-full max-w-4xl bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl z-10 space-y-6 max-h-[90vh] overflow-y-auto">
-            
             {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-gray-100 dark:border-slate-800 pb-4">
               <div>
                 <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white">
-                  {editOfferId ? 'Edit Offer Details' : 'Create New Promotional Offer'}
+                  {editOfferId
+                    ? "Edit Offer Details"
+                    : "Create New Promotional Offer"}
                 </h3>
-                <p className="text-xs text-gray-400">Step {currentStep} of 8: Multi-Step Enterprise Offer Configuration</p>
+                <p className="text-xs text-gray-400">
+                  Step {currentStep} of 8: Multi-Step Enterprise Offer
+                  Configuration
+                </p>
               </div>
-              <button onClick={() => setShowWizard(false)} className="text-gray-400 hover:text-gray-600 p-1 cursor-pointer">
+              <button
+                onClick={() => setShowWizard(false)}
+                className="text-gray-400 hover:text-gray-600 p-1 cursor-pointer"
+              >
                 <X size={18} />
               </button>
             </div>
@@ -474,14 +550,14 @@ export const OwnerOffersPage: React.FC = () => {
             {/* Step Stepper Header */}
             <div className="flex items-center justify-between gap-1 overflow-x-auto pb-2 border-b border-gray-100 dark:border-slate-800">
               {[
-                '1. Basic Info',
-                '2. Ashram',
-                '3. Details',
-                '4. Discount',
-                '5. Images',
-                '6. Validity',
-                '7. Terms',
-                '8. Preview',
+                "1. Basic Info",
+                "2. Ashram",
+                "3. Details",
+                "4. Discount",
+                "5. Images",
+                "6. Validity",
+                "7. Terms",
+                "8. Preview",
               ].map((stName, idx) => {
                 const stepNum = idx + 1;
                 return (
@@ -490,10 +566,10 @@ export const OwnerOffersPage: React.FC = () => {
                     onClick={() => setCurrentStep(stepNum)}
                     className={`px-3 py-1.5 rounded-full text-[10px] font-extrabold whitespace-nowrap cursor-pointer transition-all ${
                       currentStep === stepNum
-                        ? 'bg-[#0A4DA6] text-white'
+                        ? "bg-[#0A4DA6] text-white"
                         : currentStep > stepNum
-                        ? 'bg-emerald-500/10 text-emerald-600'
-                        : 'bg-gray-100 dark:bg-slate-800 text-gray-400'
+                          ? "bg-emerald-500/10 text-emerald-600"
+                          : "bg-gray-100 dark:bg-slate-800 text-gray-400"
                     }`}
                   >
                     {stName}
@@ -508,38 +584,55 @@ export const OwnerOffersPage: React.FC = () => {
               {currentStep === 1 && (
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">Offer Title</label>
+                    <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                      Offer Title
+                    </label>
                     <input
                       type="text"
                       required
                       placeholder="e.g. Kumbh Mela Special Pilgrimage Offer 30% OFF"
                       value={formData.offerTitle}
-                      onChange={(e) => setFormData({ ...formData, offerTitle: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, offerTitle: e.target.value })
+                      }
                       className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
                     />
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">Offer Category</label>
+                      <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                        Offer Category
+                      </label>
                       <select
                         value={formData.offerType}
-                        onChange={(e) => setFormData({ ...formData, offerType: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            offerType: e.target.value,
+                          })
+                        }
                         className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
                       >
                         {offerCategories.map((c) => (
-                          <option key={c} value={c}>{c}</option>
+                          <option key={c} value={c}>
+                            {c}
+                          </option>
                         ))}
                       </select>
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">Short Subtitle</label>
+                      <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                        Short Subtitle
+                      </label>
                       <input
                         type="text"
                         placeholder="e.g. Includes Satvik meals & Ganga view room"
                         value={formData.subtitle}
-                        onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, subtitle: e.target.value })
+                        }
                         className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-semibold"
                       />
                     </div>
@@ -550,15 +643,21 @@ export const OwnerOffersPage: React.FC = () => {
               {/* STEP 2: Ashram Selection */}
               {currentStep === 2 && (
                 <div className="space-y-4">
-                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">Select Primary Ashram</label>
+                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                    Select Primary Ashram
+                  </label>
                   <select
                     value={formData.ashramId}
-                    onChange={(e) => setFormData({ ...formData, ashramId: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, ashramId: e.target.value })
+                    }
                     className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
                   >
                     <option value="">All My Owned Ashrams</option>
                     {ashrams.map((a) => (
-                      <option key={a._id} value={a._id}>{a.name} ({a.address?.city})</option>
+                      <option key={a._id} value={a._id}>
+                        {a.name} ({a.address?.city})
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -568,22 +667,33 @@ export const OwnerOffersPage: React.FC = () => {
               {currentStep === 3 && (
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">Offer Description</label>
+                    <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                      Offer Description
+                    </label>
                     <textarea
                       rows={3}
                       required
                       value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          description: e.target.value,
+                        })
+                      }
                       className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-semibold"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">Offer Highlights (comma separated)</label>
+                    <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                      Offer Highlights (comma separated)
+                    </label>
                     <input
                       type="text"
                       value={formData.highlights}
-                      onChange={(e) => setFormData({ ...formData, highlights: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, highlights: e.target.value })
+                      }
                       className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-semibold"
                     />
                   </div>
@@ -595,21 +705,35 @@ export const OwnerOffersPage: React.FC = () => {
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">Promo Code</label>
+                      <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                        Promo Code
+                      </label>
                       <input
                         type="text"
                         required
                         value={formData.promoCode}
-                        onChange={(e) => setFormData({ ...formData, promoCode: e.target.value.toUpperCase() })}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            promoCode: e.target.value.toUpperCase(),
+                          })
+                        }
                         className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-mono font-black uppercase focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">Discount Type</label>
+                      <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                        Discount Type
+                      </label>
                       <select
                         value={formData.discountType}
-                        onChange={(e) => setFormData({ ...formData, discountType: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            discountType: e.target.value,
+                          })
+                        }
                         className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-bold"
                       >
                         <option value="Percentage">Percentage (%)</option>
@@ -623,32 +747,53 @@ export const OwnerOffersPage: React.FC = () => {
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">Discount Value</label>
+                      <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                        Discount Value
+                      </label>
                       <input
                         type="number"
                         required
                         value={formData.discountValue}
-                        onChange={(e) => setFormData({ ...formData, discountValue: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            discountValue: e.target.value,
+                          })
+                        }
                         className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-black"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">Max Discount (₹)</label>
+                      <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                        Max Discount (₹)
+                      </label>
                       <input
                         type="number"
                         value={formData.maximumDiscount}
-                        onChange={(e) => setFormData({ ...formData, maximumDiscount: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            maximumDiscount: e.target.value,
+                          })
+                        }
                         className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-semibold"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">Min Booking Amount (₹)</label>
+                      <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                        Min Booking Amount (₹)
+                      </label>
                       <input
                         type="number"
                         value={formData.minimumBookingAmount}
-                        onChange={(e) => setFormData({ ...formData, minimumBookingAmount: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            minimumBookingAmount: e.target.value,
+                          })
+                        }
                         className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-semibold"
                       />
                     </div>
@@ -659,13 +804,21 @@ export const OwnerOffersPage: React.FC = () => {
               {/* STEP 5: Banner Images */}
               {currentStep === 5 && (
                 <div className="space-y-4">
-                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">Offer Banner Image</label>
+                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                    Offer Banner Image
+                  </label>
                   <FileUploader
                     folder="offers"
                     accept="image/*"
                     label="Upload Banner Photo"
                     currentUrl={formData.bannerImage}
-                    onUploaded={(url) => setFormData({ ...formData, bannerImage: url, thumbnailImage: url })}
+                    onUploaded={(url) =>
+                      setFormData({
+                        ...formData,
+                        bannerImage: url,
+                        thumbnailImage: url,
+                      })
+                    }
                   />
                 </div>
               )}
@@ -674,23 +827,31 @@ export const OwnerOffersPage: React.FC = () => {
               {currentStep === 6 && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">Valid From</label>
+                    <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                      Valid From
+                    </label>
                     <input
                       type="date"
                       required
                       value={formData.validFrom}
-                      onChange={(e) => setFormData({ ...formData, validFrom: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, validFrom: e.target.value })
+                      }
                       className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-semibold"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">Valid Till</label>
+                    <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                      Valid Till
+                    </label>
                     <input
                       type="date"
                       required
                       value={formData.validTill}
-                      onChange={(e) => setFormData({ ...formData, validTill: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, validTill: e.target.value })
+                      }
                       className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-semibold"
                     />
                   </div>
@@ -700,11 +861,18 @@ export const OwnerOffersPage: React.FC = () => {
               {/* STEP 7: Terms */}
               {currentStep === 7 && (
                 <div>
-                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">Terms & Conditions (comma separated)</label>
+                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                    Terms & Conditions (comma separated)
+                  </label>
                   <textarea
                     rows={3}
                     value={formData.termsAndConditions}
-                    onChange={(e) => setFormData({ ...formData, termsAndConditions: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        termsAndConditions: e.target.value,
+                      })
+                    }
                     className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-semibold"
                   />
                 </div>
@@ -713,11 +881,19 @@ export const OwnerOffersPage: React.FC = () => {
               {/* STEP 8: Live Interactive Preview */}
               {currentStep === 8 && (
                 <div className="bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-3xl p-6 space-y-4">
-                  <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest">LIVE CUSTOMER PREVIEW</span>
+                  <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest">
+                    LIVE CUSTOMER PREVIEW
+                  </span>
                   <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-4 space-y-3">
-                    <h4 className="font-extrabold text-base text-[#0B192C] dark:text-white">{formData.offerTitle || 'Untitled Offer'}</h4>
-                    <p className="text-xs text-gray-500">{formData.description}</p>
-                    <div className="font-mono font-black text-sm text-[#0A4DA6]">{formData.promoCode}</div>
+                    <h4 className="font-extrabold text-base text-[#0B192C] dark:text-white">
+                      {formData.offerTitle || "Untitled Offer"}
+                    </h4>
+                    <p className="text-xs text-gray-500">
+                      {formData.description}
+                    </p>
+                    <div className="font-mono font-black text-sm text-[#0A4DA6]">
+                      {formData.promoCode}
+                    </div>
                   </div>
                 </div>
               )}
@@ -732,7 +908,9 @@ export const OwnerOffersPage: React.FC = () => {
                   >
                     <ArrowLeft size={14} /> Back
                   </button>
-                ) : <div />}
+                ) : (
+                  <div />
+                )}
 
                 {currentStep < 8 ? (
                   <button
@@ -749,7 +927,7 @@ export const OwnerOffersPage: React.FC = () => {
                     disabled={submitting}
                     className="px-8 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-full text-xs font-black cursor-pointer shadow-lg"
                   >
-                    {submitting ? 'Publishing...' : 'Publish Offer Live'}
+                    {submitting ? "Publishing..." : "Publish Offer Live"}
                   </button>
                 )}
               </div>

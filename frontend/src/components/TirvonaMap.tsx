@@ -1,5 +1,5 @@
-import React, { Suspense, lazy } from 'react';
-import type { TirvonaMapProps } from './TirvonaMapView';
+import React, { Suspense, lazy } from "react";
+import type { TirvonaMapProps } from "./TirvonaMapView";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Lazy boundary for the map.
@@ -15,10 +15,13 @@ import type { TirvonaMapProps } from './TirvonaMapView';
 // '../components/TirvonaMap'`.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const TirvonaMapView = lazy(() => import('./TirvonaMapView'));
+const TirvonaMapView = lazy(() => import("./TirvonaMapView"));
 
 /** Matches the map's own container so the layout does not shift when it loads. */
-const MapSkeleton: React.FC<{ height: string; className: string }> = ({ height, className }) => (
+const MapSkeleton: React.FC<{ height: string; className: string }> = ({
+  height,
+  className,
+}) => (
   <div
     aria-hidden="true"
     className={`w-full rounded-[24px] border border-gray-100 dark:border-slate-800 bg-gray-100 dark:bg-slate-900 animate-pulse ${className}`}
@@ -27,10 +30,17 @@ const MapSkeleton: React.FC<{ height: string; className: string }> = ({ height, 
 );
 
 export const TirvonaMap: React.FC<TirvonaMapProps> = (props) => (
-  <Suspense fallback={<MapSkeleton height={props.height ?? '320px'} className={props.className ?? ''} />}>
+  <Suspense
+    fallback={
+      <MapSkeleton
+        height={props.height ?? "320px"}
+        className={props.className ?? ""}
+      />
+    }
+  >
     <TirvonaMapView {...props} />
   </Suspense>
 );
 
-export type { TirvonaMapProps, MapMarker } from './TirvonaMapView';
+export type { TirvonaMapProps, MapMarker } from "./TirvonaMapView";
 export default TirvonaMap;

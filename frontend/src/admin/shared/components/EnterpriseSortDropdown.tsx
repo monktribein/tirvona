@@ -1,5 +1,5 @@
-import React from 'react';
-import { ArrowUpDown } from 'lucide-react';
+import React from "react";
+import { ArrowUpDown } from "lucide-react";
 
 export interface EnterpriseSortOption {
   label: string;
@@ -14,22 +14,27 @@ interface EnterpriseSortDropdownProps {
 }
 
 const defaultOptions: EnterpriseSortOption[] = [
-  { label: 'Top Rated', value: 'rating' },
-  { label: 'Most Popular', value: 'popularity' },
-  { label: 'Newest First', value: 'newest' },
-  { label: 'Price: Low → High', value: 'price_low' },
-  { label: 'Price: High → Low', value: 'price_high' },
+  { label: "Top Rated", value: "rating" },
+  { label: "Most Popular", value: "popularity" },
+  { label: "Newest First", value: "newest" },
+  { label: "Price: Low → High", value: "price_low" },
+  { label: "Price: High → Low", value: "price_high" },
 ];
 
 export const EnterpriseSortDropdown: React.FC<EnterpriseSortDropdownProps> = ({
   value,
   onChange,
   options = defaultOptions,
-  className = '',
+  className = "",
 }) => {
   return (
-    <div className={`relative inline-flex items-center text-xs font-bold ${className}`}>
-      <ArrowUpDown className="absolute left-3 text-[#0A4DA6] pointer-events-none" size={14} />
+    <div
+      className={`relative inline-flex items-center text-xs font-bold ${className}`}
+    >
+      <ArrowUpDown
+        className="absolute left-3 text-[#0A4DA6] pointer-events-none"
+        size={14}
+      />
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}

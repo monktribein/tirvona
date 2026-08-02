@@ -1,1 +1,1 @@
-export { AuditLogsPage, default } from '../admin/reports/pages/AuditLogsPage';
+export { AuditLogsPage, default } from "../admin/reports/pages/AuditLogsPage";

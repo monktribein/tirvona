@@ -1,12 +1,12 @@
-import React from 'react';
+import React from "react";
 
 interface SkeletonLoaderProps {
-  variant?: 'card' | 'table' | 'header';
+  variant?: "card" | "table" | "header";
   count?: number;
 }
 
 export const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({
-  variant = 'card',
+  variant = "card",
   count = 3,
 }) => {
   return (
@@ -15,11 +15,11 @@ export const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({
         <div
           key={i}
           className={`bg-gray-100 dark:bg-slate-800 animate-pulse rounded-[24px] ${
-            variant === 'header'
-              ? 'h-24 w-full'
-              : variant === 'table'
-              ? 'h-16 w-full'
-              : 'h-44 w-full'
+            variant === "header"
+              ? "h-24 w-full"
+              : variant === "table"
+                ? "h-16 w-full"
+                : "h-44 w-full"
           }`}
         />
       ))}

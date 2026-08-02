@@ -1,61 +1,74 @@
-name: CI
+name: Tirvona CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, master, develop]
   pull_request:
+
+permissions:
+  contents: read
 
 jobs:
   backend:
-    name: Backend checks
     runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:8
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.runCommand({ ping: 1 })'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    defaults:
+      run:
+        working-directory: Newbackend
+    env:
+      NODE_ENV: test
+      MONGODB_URI: mongodb://127.0.0.1:27017/tirvona_test
+      REDIS_URL: redis://127.0.0.1:6379
+      JWT_SECRET: ci-only-jwt-secret-with-at-least-32-characters
+      PARKING_QR_SECRET: ci-only-parking-secret-with-at-least-32-chars
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: 22
           cache: npm
-          cache-dependency-path: backend/package-lock.json
-
-      - name: Install dependencies
-        working-directory: backend
-        run: npm ci
-
-      # Fails the build if any schema.index() names a field that does not exist
-      # on its schema — the mistake that left a dead { isVerified, status }
-      # index on Ashram. Runs fully offline: no database, no secrets.
-      - name: Validate index field paths
-        working-directory: backend
-        run: npm run check:indexes
-
-      # Catches syntax errors without needing to boot the server (which would
-      # require MONGODB_URI and JWT_SECRET).
-      - name: Syntax check
-        working-directory: backend
-        run: |
-          find src -name '*.js' -print0 | xargs -0 -n1 node --check
+          cache-dependency-path: Newbackend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test -- --runInBand
+      - run: npm run test:e2e -- --runInBand
+      - run: npm run build
+      - run: npm audit --omit=dev --audit-level=critical
 
   frontend:
-    name: Frontend checks
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      VITE_API_URL: https://api.example.test
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: 22
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-
-      - name: Install dependencies
-        working-directory: frontend
-        run: npm ci
-
-      - name: Lint
-        working-directory: frontend
-        run: npm run lint
-
-      - name: Typecheck and build
-        working-directory: frontend
-        run: npm run build
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+      - run: npm audit --omit=dev --audit-level=critical

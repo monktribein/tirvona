@@ -1,21 +1,35 @@
-import axios from 'axios';
+import axios from "axios";
 
 // Single source of truth for the API base URL.
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+export const API_BASE_URL = (
+  import.meta.env.VITE_API_URL || "http://localhost:5000"
+)
+  .trim()
+  .replace(/\/+$/, "")
+  .replace(/\/api$/, "");
 
-export const TOKEN_KEY = 'ab_token';
+export const TOKEN_KEY = "ab_token";
 
 // Shared axios instance. All app requests go through this so auth headers,
 // base URL, and error handling live in one place.
 const api = axios.create({
   baseURL: `${API_BASE_URL}/api`,
+  timeout: 20_000,
+  headers: { Accept: "application/json" },
 });
 
 // Attach the bearer token (if present) to every request.
 api.interceptors.request.use((config) => {
+  const sessionKey = "tirvona_session_id";
+  let sessionId = localStorage.getItem(sessionKey);
+  if (!sessionId) {
+    sessionId = crypto.randomUUID();
+    localStorage.setItem(sessionKey, sessionId);
+  }
+  config.headers = config.headers || {};
+  config.headers["X-Session-Id"] = sessionId;
   const token = localStorage.getItem(TOKEN_KEY);
   if (token) {
-    config.headers = config.headers || {};
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
@@ -25,16 +39,20 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error?.response?.status === 401) {
+    if (error?.response?.status === 401 && localStorage.getItem(TOKEN_KEY)) {
       localStorage.removeItem(TOKEN_KEY);
       delete api.defaults.headers.common.Authorization;
+      window.dispatchEvent(new Event("tirvona:unauthorized"));
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 // Normalise an axios error into a human-readable message.
-export const getErrorMessage = (err: unknown, fallback = 'Something went wrong. Please try again.') => {
+export const getErrorMessage = (
+  err: unknown,
+  fallback = "Something went wrong. Please try again.",
+) => {
   if (axios.isAxiosError(err)) {
     return err.response?.data?.message || err.message || fallback;
   }

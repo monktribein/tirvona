@@ -93,6 +93,30 @@ body {
   -webkit-overflow-scrolling: touch;
 }
 
+/* Sideways-scroll safety net.
+ *
+ * `overflow-x: clip` — NOT `hidden`. `hidden` turns the element into a scroll
+ * container, which silently disables `position: sticky` for every descendant
+ * (this app has sticky headers and sidebars in six layouts). `clip` suppresses
+ * the same horizontal overflow without creating a scroll container, so sticky
+ * keeps working.
+ *
+ * This is a backstop, not a fix: an element that genuinely overflows is still
+ * a bug worth tracking down, because clipping hides content rather than
+ * reflowing it. Anything that must scroll sideways (wide tables, code blocks)
+ * should own an `overflow-x-auto` wrapper so it scrolls independently. */
+html,
+body {
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+/* Long unbreakable strings — emails, URLs, booking IDs, Cloudinary links —
+ * are the other common cause of a phone-width page scrolling sideways. */
+body {
+  overflow-wrap: break-word;
+}
+
 *, *::before, *::after {
   scroll-behavior: smooth;
 }

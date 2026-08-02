@@ -1,6 +1,12 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { useParams, useSearchParams, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   MapPin,
   Star,
@@ -17,16 +23,16 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
-} from 'lucide-react';
-import { getErrorMessage } from '../../../lib/api';
-import { useAuth } from '../../../contexts/AuthContext';
-import { parkingDiscoveryService } from '../services/parking.service';
+} from "lucide-react";
+import { getErrorMessage } from "../../../lib/api";
+import { useAuth } from "../../../contexts/AuthContext";
+import { parkingDiscoveryService } from "../services/parking.service";
 import type {
   ParkingLocationDetail,
   ParkingSlotTypeAvailability,
   ParkingVehicleType,
   ParkingVehicleTypeCode,
-} from '../types/parking.types';
+} from "../types/parking.types";
 import {
   formatCurrency,
   formatDateTime,
@@ -34,11 +40,11 @@ import {
   toLocalInputValue,
   availabilityTone,
   vehicleLabel,
-} from '../utils/parkingFormat';
-import ParkingAmenityList from '../components/ParkingAmenityList';
-import VehicleTypePicker from '../components/VehicleTypePicker';
-import TirvonaMap from '../../../components/TirvonaMap';
-import { hasValidCoordinates } from '../../../utils/geo';
+} from "../utils/parkingFormat";
+import ParkingAmenityList from "../components/ParkingAmenityList";
+import VehicleTypePicker from "../components/VehicleTypePicker";
+import TirvonaMap from "../../../components/TirvonaMap";
+import { hasValidCoordinates } from "../../../utils/geo";
 
 /**
  * Parking detail & area selection.
@@ -61,15 +67,19 @@ export const ParkingDetailPage: React.FC = () => {
     };
   }, []);
 
-  const [entryAt, setEntryAt] = useState(searchParams.get('entryAt') || defaults.entry);
-  const [exitAt, setExitAt] = useState(searchParams.get('exitAt') || defaults.exit);
+  const [entryAt, setEntryAt] = useState(
+    searchParams.get("entryAt") || defaults.entry,
+  );
+  const [exitAt, setExitAt] = useState(
+    searchParams.get("exitAt") || defaults.exit,
+  );
   const [vehicleType, setVehicleType] = useState<ParkingVehicleTypeCode>(
-    (searchParams.get('vehicleType') as ParkingVehicleTypeCode) || 'car',
+    (searchParams.get("vehicleType") as ParkingVehicleTypeCode) || "car",
   );
 
   const [parking, setParking] = useState<ParkingLocationDetail | null>(null);
   const [slotTypes, setSlotTypes] = useState<ParkingSlotTypeAvailability[]>([]);
-  const [selectedSlotType, setSelectedSlotType] = useState<string>('');
+  const [selectedSlotType, setSelectedSlotType] = useState<string>("");
   const [vehicleTypes, setVehicleTypes] = useState<ParkingVehicleType[]>([]);
 
   // Gallery. Mirrors the ashram detail page so both listing types behave
@@ -81,7 +91,7 @@ export const ParkingDetailPage: React.FC = () => {
 
   const [loading, setLoading] = useState(true);
   const [checkingAvailability, setCheckingAvailability] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -100,7 +110,7 @@ export const ParkingDetailPage: React.FC = () => {
     (async () => {
       if (!slug) return;
       setLoading(true);
-      setError('');
+      setError("");
       try {
         const res = await parkingDiscoveryService.getDetail(slug, {
           entryAt: entryAt ? new Date(entryAt).toISOString() : undefined,
@@ -116,7 +126,8 @@ export const ParkingDetailPage: React.FC = () => {
           setActiveImage(0);
         }
       } catch (err) {
-        if (!cancelled) setError(getErrorMessage(err, 'Could not load this parking.'));
+        if (!cancelled)
+          setError(getErrorMessage(err, "Could not load this parking."));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -133,7 +144,7 @@ export const ParkingDetailPage: React.FC = () => {
   const refreshAvailability = useCallback(async () => {
     if (!parking) return;
     setCheckingAvailability(true);
-    setError('');
+    setError("");
     try {
       const res = await parkingDiscoveryService.getAvailability(parking._id, {
         entryAt: new Date(entryAt).toISOString(),
@@ -142,10 +153,12 @@ export const ParkingDetailPage: React.FC = () => {
       });
       if (res.data?.success) {
         setSlotTypes(res.data.data.slotTypes || []);
-        setSelectedSlotType('');
+        setSelectedSlotType("");
       }
     } catch (err) {
-      setError(getErrorMessage(err, 'Could not check availability for those times.'));
+      setError(
+        getErrorMessage(err, "Could not check availability for those times."),
+      );
     } finally {
       setCheckingAvailability(false);
     }
@@ -164,11 +177,17 @@ export const ParkingDetailPage: React.FC = () => {
   }, [parking]);
 
   const nextImage = useCallback(() => {
-    setActiveImage((i) => (galleryImages.length ? (i + 1) % galleryImages.length : 0));
+    setActiveImage((i) =>
+      galleryImages.length ? (i + 1) % galleryImages.length : 0,
+    );
   }, [galleryImages.length]);
 
   const prevImage = useCallback(() => {
-    setActiveImage((i) => (galleryImages.length ? (i - 1 + galleryImages.length) % galleryImages.length : 0));
+    setActiveImage((i) =>
+      galleryImages.length
+        ? (i - 1 + galleryImages.length) % galleryImages.length
+        : 0,
+    );
   }, [galleryImages.length]);
 
   const onHeroTouchEnd = (e: React.TouchEvent) => {
@@ -183,12 +202,12 @@ export const ParkingDetailPage: React.FC = () => {
   useEffect(() => {
     if (!lightboxOpen) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setLightboxOpen(false);
-      else if (e.key === 'ArrowRight') nextImage();
-      else if (e.key === 'ArrowLeft') prevImage();
+      if (e.key === "Escape") setLightboxOpen(false);
+      else if (e.key === "ArrowRight") nextImage();
+      else if (e.key === "ArrowLeft") prevImage();
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, [lightboxOpen, nextImage, prevImage]);
 
   const selected = slotTypes.find((s) => s.slotTypeId === selectedSlotType);
@@ -207,7 +226,9 @@ export const ParkingDetailPage: React.FC = () => {
     // Send an unauthenticated visitor to log in first, then straight back here —
     // the same pattern the stay booking flow uses.
     if (!user) {
-      navigate(`/login?redirect=${encodeURIComponent(`/parking/checkout?${params.toString()}`)}`);
+      navigate(
+        `/login?redirect=${encodeURIComponent(`/parking/checkout?${params.toString()}`)}`,
+      );
       return;
     }
     navigate(`/parking/checkout?${params.toString()}`);
@@ -245,11 +266,18 @@ export const ParkingDetailPage: React.FC = () => {
   if (!parking) {
     return (
       <div className="max-w-3xl mx-auto px-4 pt-16 pb-20 text-center space-y-4">
-        <CircleParking size={40} className="text-gray-300 dark:text-slate-700 mx-auto" />
-        <h1 className="font-extrabold text-lg text-[#0B192C] dark:text-white">Parking not found</h1>
-        <p className="text-xs text-gray-400 font-medium">{error || 'This listing is no longer available.'}</p>
+        <CircleParking
+          size={40}
+          className="text-gray-300 dark:text-slate-700 mx-auto"
+        />
+        <h1 className="font-extrabold text-lg text-[#0B192C] dark:text-white">
+          Parking not found
+        </h1>
+        <p className="text-xs text-gray-400 font-medium">
+          {error || "This listing is no longer available."}
+        </p>
         <button
-          onClick={() => navigate('/parking')}
+          onClick={() => navigate("/parking")}
           className="bg-[#0A4DA6] hover:bg-[#083D85] text-white text-xs font-extrabold px-5 py-2.5 rounded-full transition-all active:scale-95 cursor-pointer"
         >
           Browse all parking
@@ -259,7 +287,7 @@ export const ParkingDetailPage: React.FC = () => {
   }
 
   const FALLBACK_IMAGE =
-    'https://images.unsplash.com/photo-1506521781263-d8422e82f27a?auto=format&fit=crop&w=1200&q=80';
+    "https://images.unsplash.com/photo-1506521781263-d8422e82f27a?auto=format&fit=crop&w=1200&q=80";
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2 pb-16 space-y-10">
@@ -269,16 +297,21 @@ export const ParkingDetailPage: React.FC = () => {
       <div className="flex flex-col items-center text-center gap-3 pb-4">
         <div className="flex flex-wrap items-center justify-center gap-2">
           <span className="px-3 py-1 bg-[#0A4DA6] text-white text-[9px] font-extrabold rounded-full flex items-center gap-1 shadow-sm uppercase tracking-wider">
-            <ShieldCheck size={12} /> {parking.isVerified ? 'Verified Parking' : 'Parking'}
+            <ShieldCheck size={12} />{" "}
+            {parking.isVerified ? "Verified Parking" : "Parking"}
           </span>
           <span className="text-xs text-gray-400 font-extrabold tracking-wider uppercase">
-            {[parking.address?.city, parking.address?.state].filter(Boolean).join(', ')}
+            {[parking.address?.city, parking.address?.state]
+              .filter(Boolean)
+              .join(", ")}
           </span>
           {parking.rating?.count > 0 && (
             <span className="inline-flex items-center gap-1 text-xs font-extrabold text-[#0B192C] dark:text-white">
               <Star size={12} className="fill-[#D4AF37] text-[#D4AF37]" />
               {parking.rating.average.toFixed(1)}
-              <span className="text-gray-400 font-bold">({parking.rating.count})</span>
+              <span className="text-gray-400 font-bold">
+                ({parking.rating.count})
+              </span>
             </span>
           )}
         </div>
@@ -289,8 +322,10 @@ export const ParkingDetailPage: React.FC = () => {
 
         <p className="text-xs text-gray-500 flex items-center justify-center gap-1">
           <MapPin size={12} className="text-[#0A4DA6]" />
-          {[parking.address?.line1, parking.address?.landmark].filter(Boolean).join(', ')}
-          {parking.address?.pincode ? `, Pin: ${parking.address.pincode}` : ''}
+          {[parking.address?.line1, parking.address?.landmark]
+            .filter(Boolean)
+            .join(", ")}
+          {parking.address?.pincode ? `, Pin: ${parking.address.pincode}` : ""}
         </p>
       </div>
 
@@ -307,12 +342,14 @@ export const ParkingDetailPage: React.FC = () => {
           <AnimatePresence mode="wait">
             <motion.img
               key={activeImage}
-              src={galleryImages[activeImage] || galleryImages[0] || FALLBACK_IMAGE}
+              src={
+                galleryImages[activeImage] || galleryImages[0] || FALLBACK_IMAGE
+              }
               alt={parking.name}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.35, ease: 'easeInOut' }}
+              transition={{ duration: 0.35, ease: "easeInOut" }}
               className="absolute inset-0 w-full h-full object-cover"
               onError={(e) => {
                 e.currentTarget.onerror = null;
@@ -333,7 +370,10 @@ export const ParkingDetailPage: React.FC = () => {
         </div>
 
         {galleryImages.length > 1 && (
-          <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-none snap-x" style={{ scrollbarWidth: 'none' }}>
+          <div
+            className="flex gap-3 overflow-x-auto pb-1 scrollbar-none snap-x"
+            style={{ scrollbarWidth: "none" }}
+          >
             {galleryImages.map((img, idx) => (
               <button
                 key={img + idx}
@@ -341,8 +381,8 @@ export const ParkingDetailPage: React.FC = () => {
                 aria-label={`Show image ${idx + 1}`}
                 className={`relative shrink-0 w-24 h-16 sm:w-28 sm:h-20 rounded-2xl overflow-hidden cursor-pointer border-2 transition-all snap-start group ${
                   idx === activeImage
-                    ? 'border-[#0A4DA6] ring-2 ring-[#0A4DA6]/20'
-                    : 'border-transparent opacity-70 hover:opacity-100'
+                    ? "border-[#0A4DA6] ring-2 ring-[#0A4DA6]/20"
+                    : "border-transparent opacity-70 hover:opacity-100"
                 }`}
               >
                 <img
@@ -427,14 +467,26 @@ export const ParkingDetailPage: React.FC = () => {
             {[
               {
                 icon: Clock,
-                label: 'Hours',
+                label: "Hours",
                 value: parking.openingHours?.is24x7
-                  ? '24×7'
+                  ? "24×7"
                   : `${parking.openingHours?.opensAt}–${parking.openingHours?.closesAt}`,
               },
-              { icon: CircleParking, label: 'Capacity', value: `${parking.totalCapacity} bays` },
-              { icon: Navigation, label: 'Nearest', value: parking.nearbyDestinations?.[0]?.name || '—' },
-              { icon: Phone, label: 'Contact', value: parking.contactPhone || '—' },
+              {
+                icon: CircleParking,
+                label: "Capacity",
+                value: `${parking.totalCapacity} bays`,
+              },
+              {
+                icon: Navigation,
+                label: "Nearest",
+                value: parking.nearbyDestinations?.[0]?.name || "—",
+              },
+              {
+                icon: Phone,
+                label: "Contact",
+                value: parking.contactPhone || "—",
+              },
             ].map(({ icon: Icon, label, value }) => (
               <div
                 key={label}
@@ -443,14 +495,18 @@ export const ParkingDetailPage: React.FC = () => {
                 <span className="inline-flex items-center gap-1 text-[9px] uppercase tracking-wider font-bold text-gray-400">
                   <Icon size={11} className="stroke-[2.5]" /> {label}
                 </span>
-                <p className="text-[11px] font-black text-[#0B192C] dark:text-white line-clamp-1">{value}</p>
+                <p className="text-[11px] font-black text-[#0B192C] dark:text-white line-clamp-1">
+                  {value}
+                </p>
               </div>
             ))}
           </section>
 
           {parking.description && (
             <section className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 space-y-2 shadow-sm">
-              <h2 className="font-extrabold text-sm text-[#0B192C] dark:text-white">About this parking</h2>
+              <h2 className="font-extrabold text-sm text-[#0B192C] dark:text-white">
+                About this parking
+              </h2>
               <p className="text-xs text-gray-500 dark:text-gray-400 font-medium leading-relaxed">
                 {parking.description}
               </p>
@@ -460,15 +516,22 @@ export const ParkingDetailPage: React.FC = () => {
           {/* Amenities */}
           {parking.amenities?.length > 0 && (
             <section className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 space-y-3 shadow-sm">
-              <h2 className="font-extrabold text-sm text-[#0B192C] dark:text-white">Amenities &amp; Facilities</h2>
-              <ParkingAmenityList amenities={parking.amenities} variant="grid" />
+              <h2 className="font-extrabold text-sm text-[#0B192C] dark:text-white">
+                Amenities &amp; Facilities
+              </h2>
+              <ParkingAmenityList
+                amenities={parking.amenities}
+                variant="grid"
+              />
             </section>
           )}
 
           {/* Nearby */}
           {parking.nearbyDestinations?.length > 0 && (
             <section className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 space-y-3 shadow-sm">
-              <h2 className="font-extrabold text-sm text-[#0B192C] dark:text-white">Nearby Destinations</h2>
+              <h2 className="font-extrabold text-sm text-[#0B192C] dark:text-white">
+                Nearby Destinations
+              </h2>
               <ul className="space-y-2">
                 {parking.nearbyDestinations.map((d, i) => (
                   <li
@@ -476,11 +539,16 @@ export const ParkingDetailPage: React.FC = () => {
                     className="flex items-center justify-between gap-3 bg-gray-50 dark:bg-slate-900/60 rounded-2xl px-3.5 py-2.5"
                   >
                     <span className="inline-flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-gray-200">
-                      <Navigation size={13} className="text-[#0A4DA6] stroke-[2.5] shrink-0" />
+                      <Navigation
+                        size={13}
+                        className="text-[#0A4DA6] stroke-[2.5] shrink-0"
+                      />
                       {d.name}
                     </span>
                     <span className="text-[10px] font-bold text-gray-400 shrink-0">
-                      {d.walkingMinutes ? `${d.walkingMinutes} min walk` : `${d.distanceKm ?? 0} km`}
+                      {d.walkingMinutes
+                        ? `${d.walkingMinutes} min walk`
+                        : `${d.distanceKm ?? 0} km`}
                     </span>
                   </li>
                 ))}
@@ -520,7 +588,9 @@ export const ParkingDetailPage: React.FC = () => {
                     latitude: parking.latitude,
                     longitude: parking.longitude,
                     title: parking.name,
-                    subtitle: [parking.address?.landmark, parking.address?.city].filter(Boolean).join(', '),
+                    subtitle: [parking.address?.landmark, parking.address?.city]
+                      .filter(Boolean)
+                      .join(", "),
                     badge: parking.availability?.availableCount
                       ? `${parking.availability.availableCount} free`
                       : undefined,
@@ -541,8 +611,12 @@ export const ParkingDetailPage: React.FC = () => {
           {/* Reviews */}
           <section className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 space-y-3 shadow-sm">
             <h2 className="font-extrabold text-sm text-[#0B192C] dark:text-white">
-              Reviews{' '}
-              {parking.reviewCount > 0 && <span className="text-gray-400 font-bold">({parking.reviewCount})</span>}
+              Reviews{" "}
+              {parking.reviewCount > 0 && (
+                <span className="text-gray-400 font-bold">
+                  ({parking.reviewCount})
+                </span>
+              )}
             </h2>
 
             {parking.reviews?.length ? (
@@ -551,10 +625,13 @@ export const ParkingDetailPage: React.FC = () => {
                   <li key={r._id} className="pb-3 last:pb-0 space-y-1.5">
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-xs font-extrabold text-[#0B192C] dark:text-white">
-                        {r.customerId?.name || 'Verified Visitor'}
+                        {r.customerId?.name || "Verified Visitor"}
                       </span>
                       <span className="inline-flex items-center gap-1 text-[10px] font-black text-[#0B192C] dark:text-white">
-                        <Star size={11} className="fill-[#D4AF37] text-[#D4AF37]" />
+                        <Star
+                          size={11}
+                          className="fill-[#D4AF37] text-[#D4AF37]"
+                        />
                         {r.rating.overall.toFixed(1)}
                       </span>
                     </div>
@@ -567,7 +644,9 @@ export const ParkingDetailPage: React.FC = () => {
                 ))}
               </ul>
             ) : (
-              <p className="text-xs text-gray-400 font-medium py-2">No reviews yet. Be the first to park and review.</p>
+              <p className="text-xs text-gray-400 font-medium py-2">
+                No reviews yet. Be the first to park and review.
+              </p>
             )}
           </section>
 
@@ -575,7 +654,8 @@ export const ParkingDetailPage: React.FC = () => {
           {parking.termsAndConditions && (
             <section className="bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 rounded-[24px] p-5 space-y-2">
               <h2 className="inline-flex items-center gap-2 font-extrabold text-sm text-amber-900 dark:text-amber-200">
-                <Info size={14} className="stroke-[2.5]" /> Terms &amp; Conditions
+                <Info size={14} className="stroke-[2.5]" /> Terms &amp;
+                Conditions
               </h2>
               <p className="text-[11px] text-amber-800 dark:text-amber-300/90 font-medium leading-relaxed whitespace-pre-line">
                 {parking.termsAndConditions}
@@ -588,7 +668,9 @@ export const ParkingDetailPage: React.FC = () => {
         <div className="lg:col-span-1">
           <div className="space-y-4">
             <section className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 space-y-4 shadow-lg">
-              <h2 className="font-extrabold text-sm text-[#0B192C] dark:text-white">Book your bay</h2>
+              <h2 className="font-extrabold text-sm text-[#0B192C] dark:text-white">
+                Book your bay
+              </h2>
 
               {/* Window */}
               <div className="space-y-2.5">
@@ -627,7 +709,9 @@ export const ParkingDetailPage: React.FC = () => {
 
               {/* Vehicle */}
               <div>
-                <span className="block text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-2">Vehicle</span>
+                <span className="block text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-2">
+                  Vehicle
+                </span>
                 <VehicleTypePicker
                   options={vehicleTypes}
                   value={vehicleType}
@@ -639,7 +723,10 @@ export const ParkingDetailPage: React.FC = () => {
 
               {error && (
                 <p className="flex items-start gap-2 text-[11px] font-semibold text-rose-600 dark:text-rose-400">
-                  <AlertCircle size={13} className="shrink-0 mt-0.5 stroke-[2.5]" />
+                  <AlertCircle
+                    size={13}
+                    className="shrink-0 mt-0.5 stroke-[2.5]"
+                  />
                   {error}
                 </p>
               )}
@@ -648,12 +735,18 @@ export const ParkingDetailPage: React.FC = () => {
               <div className="space-y-2">
                 <span className="flex items-center justify-between text-[10px] uppercase tracking-wider font-bold text-gray-400">
                   Select an area
-                  {checkingAvailability && <Loader2 size={12} className="animate-spin text-[#0A4DA6]" />}
+                  {checkingAvailability && (
+                    <Loader2
+                      size={12}
+                      className="animate-spin text-[#0A4DA6]"
+                    />
+                  )}
                 </span>
 
                 {slotTypes.length === 0 ? (
                   <p className="text-[11px] text-gray-400 font-medium py-2">
-                    No area at this parking accepts a {vehicleLabel(vehicleType)}.
+                    No area at this parking accepts a{" "}
+                    {vehicleLabel(vehicleType)}.
                   </p>
                 ) : (
                   <ul className="space-y-2">
@@ -669,30 +762,38 @@ export const ParkingDetailPage: React.FC = () => {
                             onClick={() => setSelectedSlotType(slot.slotTypeId)}
                             className={`w-full text-left rounded-2xl border p-3 transition-all cursor-pointer ${
                               isSelected
-                                ? 'border-[#0A4DA6] bg-blue-50/70 dark:bg-slate-800 ring-2 ring-[#0A4DA6]/20'
+                                ? "border-[#0A4DA6] bg-blue-50/70 dark:bg-slate-800 ring-2 ring-[#0A4DA6]/20"
                                 : disabled
-                                  ? 'border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900 opacity-60 cursor-not-allowed'
-                                  : 'border-gray-200 dark:border-slate-700 bg-white dark:bg-[#0B192C] hover:border-[#0A4DA6]'
+                                  ? "border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900 opacity-60 cursor-not-allowed"
+                                  : "border-gray-200 dark:border-slate-700 bg-white dark:bg-[#0B192C] hover:border-[#0A4DA6]"
                             }`}
                           >
                             <div className="flex items-start justify-between gap-2">
                               <div className="min-w-0 space-y-0.5">
                                 <p className="text-xs font-extrabold text-[#0B192C] dark:text-white flex items-center gap-1.5">
                                   {isSelected && (
-                                    <CheckCircle2 size={13} className="text-[#0A4DA6] shrink-0 stroke-[2.5]" />
+                                    <CheckCircle2
+                                      size={13}
+                                      className="text-[#0A4DA6] shrink-0 stroke-[2.5]"
+                                    />
                                   )}
                                   {slot.name}
                                 </p>
                                 <p
                                   className={`text-[10px] font-bold ${availabilityTone(slot.availableCount, slot.totalCapacity)}`}
                                 >
-                                  {slot.availableCount > 0 ? `${slot.availableCount} available` : 'Full'}
+                                  {slot.availableCount > 0
+                                    ? `${slot.availableCount} available`
+                                    : "Full"}
                                 </p>
                                 {(slot.isCovered || slot.hasEvCharging) && (
                                   <p className="text-[9px] font-bold text-gray-400">
-                                    {[slot.isCovered && 'Covered', slot.hasEvCharging && 'EV charging']
+                                    {[
+                                      slot.isCovered && "Covered",
+                                      slot.hasEvCharging && "EV charging",
+                                    ]
                                       .filter(Boolean)
-                                      .join(' · ')}
+                                      .join(" · ")}
                                   </p>
                                 )}
                               </div>
@@ -720,7 +821,7 @@ export const ParkingDetailPage: React.FC = () => {
               {selected?.pricing && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
+                  animate={{ opacity: 1, height: "auto" }}
                   className="pt-3 space-y-1.5 overflow-hidden"
                 >
                   {selected.pricing.isPeak && (
@@ -730,17 +831,32 @@ export const ParkingDetailPage: React.FC = () => {
                     </p>
                   )}
                   {[
-                    ['Base fee', selected.pricing.baseFee],
-                    [`Parking (${selected.pricing.durationHours} hr)`, selected.pricing.durationAmount],
-                    [`GST (${selected.pricing.taxPercent}%)`, selected.pricing.taxAmount],
+                    ["Base fee", selected.pricing.baseFee],
+                    [
+                      `Parking (${selected.pricing.durationHours} hr)`,
+                      selected.pricing.durationAmount,
+                    ],
+                    [
+                      `GST (${selected.pricing.taxPercent}%)`,
+                      selected.pricing.taxAmount,
+                    ],
                   ].map(([label, value]) => (
-                    <div key={label as string} className="flex justify-between text-[11px] font-semibold">
-                      <span className="text-gray-500 dark:text-gray-400">{label}</span>
-                      <span className="text-slate-700 dark:text-gray-200">{formatCurrency(value as number)}</span>
+                    <div
+                      key={label as string}
+                      className="flex justify-between text-[11px] font-semibold"
+                    >
+                      <span className="text-gray-500 dark:text-gray-400">
+                        {label}
+                      </span>
+                      <span className="text-slate-700 dark:text-gray-200">
+                        {formatCurrency(value as number)}
+                      </span>
                     </div>
                   ))}
                   <div className="flex justify-between pt-1.5">
-                    <span className="text-xs font-black text-[#0B192C] dark:text-white">Total</span>
+                    <span className="text-xs font-black text-[#0B192C] dark:text-white">
+                      Total
+                    </span>
                     <span className="text-base font-black text-[#0A4DA6] dark:text-blue-300">
                       {formatCurrency(selected.pricing.totalAmount)}
                     </span>
@@ -754,7 +870,7 @@ export const ParkingDetailPage: React.FC = () => {
                 disabled={!selected}
                 className="w-full bg-[#0A4DA6] hover:bg-[#083D85] disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-extrabold px-5 py-3 rounded-full shadow-md transition-all active:scale-95 cursor-pointer"
               >
-                {selected ? 'Continue to Booking' : 'Select a parking area'}
+                {selected ? "Continue to Booking" : "Select a parking area"}
               </button>
 
               <p className="text-[10px] text-gray-400 font-medium text-center leading-relaxed">

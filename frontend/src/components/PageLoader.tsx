@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 // Branded full-screen loader shown while a page's chunk / data loads.
 // Used as the router Suspense fallback so it appears on every page.
@@ -20,7 +20,9 @@ export const PageLoader: React.FC = () => (
       <div className="skeleton h-3 w-1/2 mx-auto rounded-full" />
     </div>
 
-    <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Loading</p>
+    <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400">
+      Loading
+    </p>
   </div>
 );
 

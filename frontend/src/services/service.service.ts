@@ -1,4 +1,4 @@
-import api from '../lib/api';
+import api from "../lib/api";
 
 export interface ServiceProviderItem {
   _id: string;
@@ -36,7 +36,7 @@ export interface ServiceProviderItem {
 
 export const serviceEcosystemService = {
   getAll: async (params?: Record<string, any>) => {
-    return api.get('/enterprise-services', { params });
+    return api.get("/enterprise-services", { params });
   },
 
   getById: async (id: string) => {
@@ -44,11 +44,11 @@ export const serviceEcosystemService = {
   },
 
   book: async (bookingData: Record<string, any>) => {
-    return api.post('/enterprise-services/book', bookingData);
+    return api.post("/enterprise-services/book", bookingData);
   },
 
   create: async (data: Record<string, any>) => {
-    return api.post('/enterprise-services', data);
+    return api.post("/enterprise-services", data);
   },
 
   update: async (id: string, data: Record<string, any>) => {

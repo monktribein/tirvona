@@ -1,4 +1,4 @@
-import api from '../lib/api';
+import api from "../lib/api";
 
 export interface MarketplaceProductItem {
   _id: string;
@@ -28,7 +28,7 @@ export interface MarketplaceProductItem {
 
 export const marketplaceService = {
   getProducts: async (params?: Record<string, any>) => {
-    return api.get('/marketplace/products', { params });
+    return api.get("/marketplace/products", { params });
   },
 
   getBySlug: async (idOrSlug: string) => {
@@ -36,11 +36,11 @@ export const marketplaceService = {
   },
 
   createOrder: async (orderData: Record<string, any>) => {
-    return api.post('/marketplace/order', orderData);
+    return api.post("/marketplace/order", orderData);
   },
 
   createProduct: async (data: Record<string, any>) => {
-    return api.post('/marketplace/products', data);
+    return api.post("/marketplace/products", data);
   },
 
   updateProduct: async (id: string, data: Record<string, any>) => {

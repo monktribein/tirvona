@@ -1,1 +1,1 @@
-export { VerificationQueuePage } from './pages/VerificationQueuePage';
+export { VerificationQueuePage } from "./pages/VerificationQueuePage";

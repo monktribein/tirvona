@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ScanLine,
   LogIn,
@@ -12,14 +12,22 @@ import {
   ShieldCheck,
   Loader2,
   RotateCcw,
-} from 'lucide-react';
-import { getErrorMessage } from '../../../lib/api';
-import { parkingScanService } from '../services/parking.service';
-import type { ParkingGuardContext, ParkingScanResult } from '../types/parking.types';
-import { formatCurrency, formatDateTime, formatDuration, vehicleLabel } from '../utils/parkingFormat';
-import ParkingStatusBadge from '../components/ParkingStatusBadge';
+} from "lucide-react";
+import { getErrorMessage } from "../../../lib/api";
+import { parkingScanService } from "../services/parking.service";
+import type {
+  ParkingGuardContext,
+  ParkingScanResult,
+} from "../types/parking.types";
+import {
+  formatCurrency,
+  formatDateTime,
+  formatDuration,
+  vehicleLabel,
+} from "../utils/parkingFormat";
+import ParkingStatusBadge from "../components/ParkingStatusBadge";
 
-type Mode = 'verify' | 'check-in' | 'check-out';
+type Mode = "verify" | "check-in" | "check-out";
 
 /**
  * Security Guard panel.
@@ -35,16 +43,16 @@ type Mode = 'verify' | 'check-in' | 'check-out';
  */
 export const ParkingGuardPanelPage: React.FC = () => {
   const [context, setContext] = useState<ParkingGuardContext | null>(null);
-  const [locationId, setLocationId] = useState('');
-  const [mode, setMode] = useState<Mode>('check-in');
+  const [locationId, setLocationId] = useState("");
+  const [mode, setMode] = useState<Mode>("check-in");
 
-  const [token, setToken] = useState('');
-  const [plate, setPlate] = useState('');
+  const [token, setToken] = useState("");
+  const [plate, setPlate] = useState("");
   const [manualMode, setManualMode] = useState(false);
 
   const [result, setResult] = useState<ParkingScanResult | null>(null);
-  const [resultTone, setResultTone] = useState<'success' | 'error'>('success');
-  const [message, setMessage] = useState('');
+  const [resultTone, setResultTone] = useState<"success" | "error">("success");
+  const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -66,8 +74,13 @@ export const ParkingGuardPanelPage: React.FC = () => {
           if (ctx.locations.length === 1) setLocationId(ctx.locations[0]._id);
         }
       } catch (err) {
-        setMessage(getErrorMessage(err, 'Could not load your assigned parking locations.'));
-        setResultTone('error');
+        setMessage(
+          getErrorMessage(
+            err,
+            "Could not load your assigned parking locations.",
+          ),
+        );
+        setResultTone("error");
       } finally {
         setLoading(false);
       }
@@ -85,10 +98,10 @@ export const ParkingGuardPanelPage: React.FC = () => {
   }, [locationId, manualMode, mode, refocus]);
 
   const reset = () => {
-    setToken('');
-    setPlate('');
+    setToken("");
+    setPlate("");
     setResult(null);
-    setMessage('');
+    setMessage("");
     refocus();
   };
 
@@ -97,14 +110,14 @@ export const ParkingGuardPanelPage: React.FC = () => {
     if (!token.trim() || !locationId || busy) return;
 
     setBusy(true);
-    setMessage('');
+    setMessage("");
     setResult(null);
 
     try {
       const call =
-        mode === 'check-in'
+        mode === "check-in"
           ? parkingScanService.checkIn(token.trim(), locationId)
-          : mode === 'check-out'
+          : mode === "check-out"
             ? parkingScanService.checkOut(token.trim(), locationId)
             : parkingScanService.verify(token.trim(), locationId);
 
@@ -112,18 +125,18 @@ export const ParkingGuardPanelPage: React.FC = () => {
 
       if (res.data?.success) {
         setResult(res.data.data);
-        setResultTone('success');
-        setMessage(res.data.message || 'Verified.');
+        setResultTone("success");
+        setMessage(res.data.message || "Verified.");
       } else {
-        setResultTone('error');
-        setMessage(res.data?.message || 'This pass could not be accepted.');
+        setResultTone("error");
+        setMessage(res.data?.message || "This pass could not be accepted.");
       }
     } catch (err) {
-      setResultTone('error');
-      setMessage(getErrorMessage(err, 'This pass could not be accepted.'));
+      setResultTone("error");
+      setMessage(getErrorMessage(err, "This pass could not be accepted."));
     } finally {
       setBusy(false);
-      setToken('');
+      setToken("");
       refocus();
     }
   };
@@ -133,22 +146,25 @@ export const ParkingGuardPanelPage: React.FC = () => {
     if (!plate.trim() || !locationId || busy) return;
 
     setBusy(true);
-    setMessage('');
+    setMessage("");
     setResult(null);
 
     try {
-      const res = await parkingScanService.lookupVehicle(plate.trim(), locationId);
+      const res = await parkingScanService.lookupVehicle(
+        plate.trim(),
+        locationId,
+      );
       if (res.data?.success) {
         setResult(res.data.data);
-        setResultTone('success');
-        setMessage('Booking found.');
+        setResultTone("success");
+        setMessage("Booking found.");
       } else {
-        setResultTone('error');
-        setMessage(res.data?.message || 'No active booking for this vehicle.');
+        setResultTone("error");
+        setMessage(res.data?.message || "No active booking for this vehicle.");
       }
     } catch (err) {
-      setResultTone('error');
-      setMessage(getErrorMessage(err, 'No active booking for this vehicle.'));
+      setResultTone("error");
+      setMessage(getErrorMessage(err, "No active booking for this vehicle."));
     } finally {
       setBusy(false);
     }
@@ -166,10 +182,16 @@ export const ParkingGuardPanelPage: React.FC = () => {
   if (!context?.locations.length) {
     return (
       <div className="max-w-2xl mx-auto px-4 pt-16 pb-20 text-center space-y-3">
-        <ShieldCheck size={40} className="text-gray-300 dark:text-slate-700 mx-auto" />
-        <h1 className="font-extrabold text-lg text-[#0B192C] dark:text-white">No parking post assigned</h1>
+        <ShieldCheck
+          size={40}
+          className="text-gray-300 dark:text-slate-700 mx-auto"
+        />
+        <h1 className="font-extrabold text-lg text-[#0B192C] dark:text-white">
+          No parking post assigned
+        </h1>
         <p className="text-xs text-gray-400 font-medium max-w-md mx-auto leading-relaxed">
-          You are not currently assigned to a parking location. Ask your parking manager to add you to a post.
+          You are not currently assigned to a parking location. Ask your parking
+          manager to add you to a post.
         </p>
       </div>
     );
@@ -212,7 +234,7 @@ export const ParkingGuardPanelPage: React.FC = () => {
               {context.locations.map((loc) => (
                 <option key={loc._id} value={loc._id}>
                   {loc.name}
-                  {loc.address?.city ? ` — ${loc.address.city}` : ''}
+                  {loc.address?.city ? ` — ${loc.address.city}` : ""}
                 </option>
               ))}
             </select>
@@ -225,9 +247,9 @@ export const ParkingGuardPanelPage: React.FC = () => {
             <div className="grid grid-cols-3 gap-2">
               {(
                 [
-                  { key: 'check-in', label: 'Entry', icon: LogIn },
-                  { key: 'check-out', label: 'Exit', icon: LogOut },
-                  { key: 'verify', label: 'Verify', icon: ShieldCheck },
+                  { key: "check-in", label: "Entry", icon: LogIn },
+                  { key: "check-out", label: "Exit", icon: LogOut },
+                  { key: "verify", label: "Verify", icon: ShieldCheck },
                 ] as { key: Mode; label: string; icon: typeof LogIn }[]
               ).map(({ key, label, icon: Icon }) => (
                 <button
@@ -239,8 +261,8 @@ export const ParkingGuardPanelPage: React.FC = () => {
                   }}
                   className={`flex flex-col items-center gap-1.5 py-3.5 rounded-2xl border transition-all cursor-pointer ${
                     mode === key
-                      ? 'bg-[#0A4DA6] border-[#0A4DA6] text-white shadow-md shadow-[#0A4DA6]/25'
-                      : 'bg-white dark:bg-[#0B192C] border-gray-200 dark:border-slate-700 text-slate-600 dark:text-gray-300 hover:border-[#0A4DA6]'
+                      ? "bg-[#0A4DA6] border-[#0A4DA6] text-white shadow-md shadow-[#0A4DA6]/25"
+                      : "bg-white dark:bg-[#0B192C] border-gray-200 dark:border-slate-700 text-slate-600 dark:text-gray-300 hover:border-[#0A4DA6]"
                   }`}
                 >
                   <Icon size={20} className="stroke-[2.5]" />
@@ -277,11 +299,18 @@ export const ParkingGuardPanelPage: React.FC = () => {
                     className="w-full bg-[#0A4DA6] hover:bg-[#083D85] disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-extrabold px-6 py-3.5 rounded-full shadow-lg shadow-[#0A4DA6]/20 transition-all active:scale-95 cursor-pointer inline-flex items-center justify-center gap-2"
                   >
                     {busy ? (
-                      <Loader2 size={16} className="animate-spin stroke-[2.5]" />
+                      <Loader2
+                        size={16}
+                        className="animate-spin stroke-[2.5]"
+                      />
                     ) : (
                       <ScanLine size={16} className="stroke-[2.5]" />
                     )}
-                    {mode === 'check-in' ? 'Grant Entry' : mode === 'check-out' ? 'Process Exit' : 'Verify Pass'}
+                    {mode === "check-in"
+                      ? "Grant Entry"
+                      : mode === "check-out"
+                        ? "Process Exit"
+                        : "Verify Pass"}
                   </button>
                 </form>
               ) : (
@@ -308,7 +337,10 @@ export const ParkingGuardPanelPage: React.FC = () => {
                     className="w-full bg-[#0A4DA6] hover:bg-[#083D85] disabled:opacity-50 text-white text-sm font-extrabold px-6 py-3.5 rounded-full shadow-lg transition-all active:scale-95 cursor-pointer inline-flex items-center justify-center gap-2"
                   >
                     {busy ? (
-                      <Loader2 size={16} className="animate-spin stroke-[2.5]" />
+                      <Loader2
+                        size={16}
+                        className="animate-spin stroke-[2.5]"
+                      />
                     ) : (
                       <Search size={16} className="stroke-[2.5]" />
                     )}
@@ -325,7 +357,9 @@ export const ParkingGuardPanelPage: React.FC = () => {
                 }}
                 className="w-full text-[11px] font-bold text-gray-500 dark:text-gray-400 hover:text-[#0A4DA6] transition-colors cursor-pointer py-1"
               >
-                {manualMode ? '← Back to QR scanning' : "QR won't scan? Look up by vehicle number"}
+                {manualMode
+                  ? "← Back to QR scanning"
+                  : "QR won't scan? Look up by vehicle number"}
               </button>
             </section>
 
@@ -333,28 +367,35 @@ export const ParkingGuardPanelPage: React.FC = () => {
             <AnimatePresence mode="wait">
               {message && (
                 <motion.section
-                  key={message + (result?.bookingReference || '')}
+                  key={message + (result?.bookingReference || "")}
                   initial={{ opacity: 0, y: 12, scale: 0.98 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -8 }}
                   className={`rounded-[24px] border-2 overflow-hidden shadow-lg ${
-                    resultTone === 'success'
-                      ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800'
-                      : 'bg-rose-50 dark:bg-rose-950/30 border-rose-300 dark:border-rose-800'
+                    resultTone === "success"
+                      ? "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800"
+                      : "bg-rose-50 dark:bg-rose-950/30 border-rose-300 dark:border-rose-800"
                   }`}
                 >
                   {/* Verdict banner — readable at arm's length */}
                   <div
                     className={`px-5 py-4 flex items-center gap-3 ${
-                      resultTone === 'success' ? 'bg-emerald-600' : 'bg-rose-600'
+                      resultTone === "success"
+                        ? "bg-emerald-600"
+                        : "bg-rose-600"
                     } text-white`}
                   >
-                    {resultTone === 'success' ? (
-                      <CheckCircle2 size={26} className="shrink-0 stroke-[2.5]" />
+                    {resultTone === "success" ? (
+                      <CheckCircle2
+                        size={26}
+                        className="shrink-0 stroke-[2.5]"
+                      />
                     ) : (
                       <XCircle size={26} className="shrink-0 stroke-[2.5]" />
                     )}
-                    <p className="font-extrabold text-sm leading-snug">{message}</p>
+                    <p className="font-extrabold text-sm leading-snug">
+                      {message}
+                    </p>
                   </div>
 
                   {result && (
@@ -376,8 +417,12 @@ export const ParkingGuardPanelPage: React.FC = () => {
 
                       {result.assignedSlotNumber && (
                         <div className="bg-[#0B192C] dark:bg-slate-900 text-white rounded-2xl px-5 py-4 text-center space-y-0.5">
-                          <p className="text-[9px] uppercase tracking-[0.2em] font-bold text-blue-200">Direct to bay</p>
-                          <p className="text-2xl font-black tracking-wider">{result.assignedSlotNumber}</p>
+                          <p className="text-[9px] uppercase tracking-[0.2em] font-bold text-blue-200">
+                            Direct to bay
+                          </p>
+                          <p className="text-2xl font-black tracking-wider">
+                            {result.assignedSlotNumber}
+                          </p>
                         </div>
                       )}
 
@@ -390,27 +435,43 @@ export const ParkingGuardPanelPage: React.FC = () => {
                             {formatCurrency(result.overstay.amount)}
                           </p>
                           <p className="text-[10px] font-bold text-amber-700 dark:text-amber-400">
-                            {formatDuration(result.overstay.minutes)} over the booked window
+                            {formatDuration(result.overstay.minutes)} over the
+                            booked window
                           </p>
                         </div>
                       )}
 
                       <dl className="grid grid-cols-2 gap-x-4 gap-y-3 pt-1">
                         {[
-                          ['Booking', result.bookingReference],
-                          ['Type', vehicleLabel(result.vehicleType)],
-                          ['Driver', result.driverName || '—'],
-                          ['Contact', result.driverPhone || '—'],
-                          ['Booked entry', formatDateTime(result.entryAt)],
-                          ['Booked exit', formatDateTime(result.exitAt)],
+                          ["Booking", result.bookingReference],
+                          ["Type", vehicleLabel(result.vehicleType)],
+                          ["Driver", result.driverName || "—"],
+                          ["Contact", result.driverPhone || "—"],
+                          ["Booked entry", formatDateTime(result.entryAt)],
+                          ["Booked exit", formatDateTime(result.exitAt)],
                           ...(result.checkedInAt
-                            ? [['Checked in', formatDateTime(result.checkedInAt)] as [string, string]]
+                            ? [
+                                [
+                                  "Checked in",
+                                  formatDateTime(result.checkedInAt),
+                                ] as [string, string],
+                              ]
                             : []),
                           ...(result.checkedOutAt
-                            ? [['Checked out', formatDateTime(result.checkedOutAt)] as [string, string]]
+                            ? [
+                                [
+                                  "Checked out",
+                                  formatDateTime(result.checkedOutAt),
+                                ] as [string, string],
+                              ]
                             : []),
                           ...(result.actualDurationMinutes
-                            ? [['Actual stay', formatDuration(result.actualDurationMinutes)] as [string, string]]
+                            ? [
+                                [
+                                  "Actual stay",
+                                  formatDuration(result.actualDurationMinutes),
+                                ] as [string, string],
+                              ]
                             : []),
                         ].map(([label, value]) => (
                           <div key={label} className="pt-2 space-y-0.5 min-w-0">
@@ -425,7 +486,9 @@ export const ParkingGuardPanelPage: React.FC = () => {
                       </dl>
 
                       <div className="flex items-center justify-between gap-2 pt-2">
-                        {result.status && <ParkingStatusBadge status={result.status} />}
+                        {result.status && (
+                          <ParkingStatusBadge status={result.status} />
+                        )}
                         {result.location && (
                           <span className="inline-flex items-center gap-1 text-[10px] font-bold text-gray-500 dark:text-gray-400">
                             <MapPin size={10} className="stroke-[2.5]" />
@@ -453,7 +516,8 @@ export const ParkingGuardPanelPage: React.FC = () => {
             {/* Scope reminder */}
             <p className="flex items-start gap-1.5 text-[10px] text-gray-400 font-medium leading-relaxed px-1">
               <AlertCircle size={11} className="shrink-0 mt-0.5 stroke-[2.5]" />
-              You can only scan passes issued for your assigned parking location. Every scan is logged.
+              You can only scan passes issued for your assigned parking
+              location. Every scan is logged.
             </p>
           </>
         )}

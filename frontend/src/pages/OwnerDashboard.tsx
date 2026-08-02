@@ -1,29 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { analyticsService, bookingService, approvalService } from '../services';
-import api, { getErrorMessage } from '../lib/api';
-import { useNotifications } from '../contexts/NotificationContext';
+import React, { useState, useEffect } from "react";
+import { analyticsService, bookingService, approvalService } from "../services";
+import api, { getErrorMessage } from "../lib/api";
+import { useNotifications } from "../contexts/NotificationContext";
 import {
   TrendingUp,
   Bed,
-  Calendar,
   Users,
-  CheckCircle,
   Clock,
   DollarSign,
-  AlertTriangle,
   Star,
   Check,
-  Sparkles,
   XCircle,
-  Eye,
   MessageSquare,
-  ArrowRight,
   ShieldCheck,
   Plus,
-  Send,
   FileText,
-  HelpCircle,
-} from 'lucide-react';
+} from "lucide-react";
 
 interface CmsRequest {
   _id: string;
@@ -32,7 +24,7 @@ interface CmsRequest {
   title: string;
   oldValue: any;
   newValue: any;
-  status: 'pending' | 'approved' | 'rejected';
+  status: "pending" | "approved" | "rejected";
   createdAt: string;
   userId?: { name: string; email: string; phone: string; role: string };
 }
@@ -42,24 +34,26 @@ export const OwnerDashboard: React.FC = () => {
 
   const [analytics, setAnalytics] = useState<any>(null);
   const [recentBookings, setRecentBookings] = useState<any[]>([]);
-  const [pendingCmsRequests, setPendingCmsRequests] = useState<CmsRequest[]>([]);
+  const [pendingCmsRequests, setPendingCmsRequests] = useState<CmsRequest[]>(
+    [],
+  );
   const [rejectionModalId, setRejectionModalId] = useState<string | null>(null);
-  const [rejectionReason, setRejectionReason] = useState('');
+  const [rejectionReason, setRejectionReason] = useState("");
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   // ── Approval Workflow State ──
   const [categoryRequests, setCategoryRequests] = useState<any[]>([]);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [submittingCategory, setSubmittingCategory] = useState(false);
   const [categoryForm, setCategoryForm] = useState({
-    name: '',
-    description: '',
+    name: "",
+    description: "",
     maxGuests: 2,
-    defaultAmenities: 'WiFi, Hot Water, Daily Prayers',
+    defaultAmenities: "WiFi, Hot Water, Daily Prayers",
     suggestedBasePrice: 800,
-    reasonForRequest: '',
-    notes: '',
+    reasonForRequest: "",
+    notes: "",
   });
 
   useEffect(() => {
@@ -75,7 +69,7 @@ export const OwnerDashboard: React.FC = () => {
         setCategoryRequests(res.data);
       }
     } catch (err) {
-      console.error('Error loading category requests:', err);
+      console.error("Error loading category requests:", err);
     }
   };
 
@@ -89,7 +83,10 @@ export const OwnerDashboard: React.FC = () => {
         name: categoryForm.name.trim(),
         description: categoryForm.description,
         maxGuests: Number(categoryForm.maxGuests),
-        defaultAmenities: categoryForm.defaultAmenities.split(',').map((s) => s.trim()).filter(Boolean),
+        defaultAmenities: categoryForm.defaultAmenities
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
         suggestedBasePrice: Number(categoryForm.suggestedBasePrice),
         reasonForRequest: categoryForm.reasonForRequest,
         notes: categoryForm.notes,
@@ -97,28 +94,28 @@ export const OwnerDashboard: React.FC = () => {
 
       if (res.success) {
         addNotification(
-          'Approval Request Submitted',
+          "Approval Request Submitted",
           `Request for room category "${categoryForm.name}" has been sent to Super Admin for approval.`,
-          'success'
+          "success",
         );
         setIsCategoryModalOpen(false);
         setCategoryForm({
-          name: '',
-          description: '',
+          name: "",
+          description: "",
           maxGuests: 2,
-          defaultAmenities: 'WiFi, Hot Water, Daily Prayers',
+          defaultAmenities: "WiFi, Hot Water, Daily Prayers",
           suggestedBasePrice: 800,
-          reasonForRequest: '',
-          notes: '',
+          reasonForRequest: "",
+          notes: "",
         });
         fetchCategoryRequests();
       }
     } catch (err) {
-      console.error('Error submitting category request:', err);
+      console.error("Error submitting category request:", err);
       addNotification(
-        'Submission Failed',
-        getErrorMessage(err, 'Failed to submit room category request.'),
-        'error'
+        "Submission Failed",
+        getErrorMessage(err, "Failed to submit room category request."),
+        "error",
       );
     } finally {
       setSubmittingCategory(false);
@@ -127,7 +124,7 @@ export const OwnerDashboard: React.FC = () => {
 
   const fetchDashboardData = async () => {
     setLoading(true);
-    setError('');
+    setError("");
     try {
       const res = await analyticsService.dashboard();
       if (res.data.success) {
@@ -139,8 +136,8 @@ export const OwnerDashboard: React.FC = () => {
         setRecentBookings(bookingsRes.data.data.slice(0, 8));
       }
     } catch (err) {
-      console.error('Owner dashboard load error:', err);
-      setError('Unable to load dashboard data. Please try again.');
+      console.error("Owner dashboard load error:", err);
+      setError("Unable to load dashboard data. Please try again.");
       setAnalytics(null);
       setRecentBookings([]);
     } finally {
@@ -150,12 +147,12 @@ export const OwnerDashboard: React.FC = () => {
 
   const fetchPendingCmsRequests = async () => {
     try {
-      const res = await api.get('/cms/pending-approvals');
+      const res = await api.get("/cms/pending-approvals");
       if (res.data?.success) {
         setPendingCmsRequests(res.data.data);
       }
     } catch (err) {
-      console.error('Fetch CMS pending error:', err);
+      console.error("Fetch CMS pending error:", err);
     }
   };
 
@@ -163,11 +160,19 @@ export const OwnerDashboard: React.FC = () => {
     try {
       const res = await api.post(`/cms/approve/${id}`, {});
       if (res.data?.success) {
-        addNotification('CMS Content Approved', 'The proposed banner/content is now published live!', 'success');
+        addNotification(
+          "CMS Content Approved",
+          "The proposed banner/content is now published live!",
+          "success",
+        );
         fetchPendingCmsRequests();
       }
     } catch (err) {
-      addNotification('Action Failed', getErrorMessage(err, 'Could not approve CMS content edit.'), 'error');
+      addNotification(
+        "Action Failed",
+        getErrorMessage(err, "Could not approve CMS content edit."),
+        "error",
+      );
     }
   };
 
@@ -176,15 +181,25 @@ export const OwnerDashboard: React.FC = () => {
     if (!rejectionModalId) return;
 
     try {
-      const res = await api.post(`/cms/reject/${rejectionModalId}`, { reason: rejectionReason });
+      const res = await api.post(`/cms/reject/${rejectionModalId}`, {
+        reason: rejectionReason,
+      });
       if (res.data?.success) {
-        addNotification('Request Rejected', 'Feedback has been sent back to BannerBoy.', 'warning');
+        addNotification(
+          "Request Rejected",
+          "Feedback has been sent back to BannerBoy.",
+          "warning",
+        );
         setRejectionModalId(null);
-        setRejectionReason('');
+        setRejectionReason("");
         fetchPendingCmsRequests();
       }
     } catch (err) {
-      addNotification('Action Failed', getErrorMessage(err, 'Could not reject CMS request.'), 'error');
+      addNotification(
+        "Action Failed",
+        getErrorMessage(err, "Could not reject CMS request."),
+        "error",
+      );
     }
   };
 
@@ -201,7 +216,8 @@ export const OwnerDashboard: React.FC = () => {
               Ashram Stay Admin Portal
             </h2>
             <p className="text-xs text-gray-400 font-semibold mt-0.5">
-              Live telemetry, room occupancy, guest reservations, and pending CMS change approvals.
+              Live telemetry, room occupancy, guest reservations, and pending
+              CMS change approvals.
             </p>
           </div>
         </div>
@@ -230,8 +246,12 @@ export const OwnerDashboard: React.FC = () => {
             </span>
           </div>
           <div>
-            <span className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider block">Gross Revenue</span>
-            <h3 className="text-2xl font-black text-[#0B192C] dark:text-white mt-0.5">₹{analytics?.revenue || '0'}</h3>
+            <span className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider block">
+              Gross Revenue
+            </span>
+            <h3 className="text-2xl font-black text-[#0B192C] dark:text-white mt-0.5">
+              ₹{analytics?.revenue || "0"}
+            </h3>
           </div>
         </div>
 
@@ -246,8 +266,12 @@ export const OwnerDashboard: React.FC = () => {
             </span>
           </div>
           <div>
-            <span className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider block">Today's Revenue</span>
-            <h3 className="text-2xl font-black text-[#0A4DA6] mt-0.5">₹{analytics?.todayRevenue || '0'}</h3>
+            <span className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider block">
+              Today's Revenue
+            </span>
+            <h3 className="text-2xl font-black text-[#0A4DA6] mt-0.5">
+              ₹{analytics?.todayRevenue || "0"}
+            </h3>
           </div>
         </div>
 
@@ -262,8 +286,12 @@ export const OwnerDashboard: React.FC = () => {
             </span>
           </div>
           <div>
-            <span className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider block">Bed Occupancy Rate</span>
-            <h3 className="text-2xl font-black text-[#0B192C] dark:text-white mt-0.5">{analytics?.occupancyRate || '0'}%</h3>
+            <span className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider block">
+              Bed Occupancy Rate
+            </span>
+            <h3 className="text-2xl font-black text-[#0B192C] dark:text-white mt-0.5">
+              {analytics?.occupancyRate || "0"}%
+            </h3>
           </div>
         </div>
 
@@ -278,8 +306,12 @@ export const OwnerDashboard: React.FC = () => {
             </span>
           </div>
           <div>
-            <span className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider block">Available Rooms</span>
-            <h3 className="text-2xl font-black text-emerald-600 mt-0.5">{analytics?.availableRooms || '0'} Rooms</h3>
+            <span className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider block">
+              Available Rooms
+            </span>
+            <h3 className="text-2xl font-black text-emerald-600 mt-0.5">
+              {analytics?.availableRooms || "0"} Rooms
+            </h3>
           </div>
         </div>
       </div>
@@ -291,11 +323,14 @@ export const OwnerDashboard: React.FC = () => {
             <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white">
               Pending Content Approvals (CMS Workflow)
             </h3>
-            <p className="text-xs text-gray-400">Review proposed banner & homepage changes submitted by BannerBoy.</p>
+            <p className="text-xs text-gray-400">
+              Review proposed banner & homepage changes submitted by BannerBoy.
+            </p>
           </div>
 
           <span className="px-3 py-1 bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 rounded-full text-xs font-black">
-            {pendingCmsRequests.length} Pending Approval{pendingCmsRequests.length === 1 ? '' : 's'}
+            {pendingCmsRequests.length} Pending Approval
+            {pendingCmsRequests.length === 1 ? "" : "s"}
           </span>
         </div>
 
@@ -312,11 +347,22 @@ export const OwnerDashboard: React.FC = () => {
               >
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-xs">
                   <div className="space-y-0.5">
-                    <span className="font-extrabold text-sm text-[#0B192C] dark:text-white">{req.title}</span>
+                    <span className="font-extrabold text-sm text-[#0B192C] dark:text-white">
+                      {req.title}
+                    </span>
                     <div className="text-[11px] text-gray-500 flex items-center gap-2">
-                      <span>Submitted by: <strong>{req.userId?.name || 'BannerBoy'}</strong> ({req.userId?.email})</span>
+                      <span>
+                        Submitted by:{" "}
+                        <strong>{req.userId?.name || "BannerBoy"}</strong> (
+                        {req.userId?.email})
+                      </span>
                       <span>•</span>
-                      <span>Section: <code className="font-bold text-amber-700 dark:text-amber-300">{req.section}</code></span>
+                      <span>
+                        Section:{" "}
+                        <code className="font-bold text-amber-700 dark:text-amber-300">
+                          {req.section}
+                        </code>
+                      </span>
                     </div>
                   </div>
 
@@ -333,7 +379,11 @@ export const OwnerDashboard: React.FC = () => {
                       Current Live Version (Old)
                     </span>
                     <pre className="text-[11px] text-gray-600 dark:text-gray-400 font-mono whitespace-pre-wrap overflow-x-auto max-h-24">
-                      {JSON.stringify(req.oldValue || { note: 'Default system content' }, null, 2)}
+                      {JSON.stringify(
+                        req.oldValue || { note: "Default system content" },
+                        null,
+                        2,
+                      )}
                     </pre>
                   </div>
 
@@ -345,7 +395,9 @@ export const OwnerDashboard: React.FC = () => {
                       </span>
                       {req.newValue?.bannerWidth && (
                         <span className="px-2 py-0.5 bg-emerald-200 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-100 rounded text-[9px] font-mono font-bold">
-                          {req.newValue.bannerWidth} × {req.newValue.bannerHeight} px ({req.newValue.bannerSizePreset || 'Custom'})
+                          {req.newValue.bannerWidth} ×{" "}
+                          {req.newValue.bannerHeight} px (
+                          {req.newValue.bannerSizePreset || "Custom"})
                         </span>
                       )}
                     </div>
@@ -371,7 +423,7 @@ export const OwnerDashboard: React.FC = () => {
                   <button
                     onClick={() => {
                       setRejectionModalId(req._id);
-                      setRejectionReason('');
+                      setRejectionReason("");
                     }}
                     className="px-4 py-2 bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 hover:bg-rose-200 rounded-full text-xs font-bold transition-colors cursor-pointer flex items-center gap-1"
                   >
@@ -402,7 +454,9 @@ export const OwnerDashboard: React.FC = () => {
               <XCircle size={18} /> Reject Proposed Content Change
             </h3>
             <div className="space-y-1 text-xs">
-              <label className="font-bold text-gray-700 dark:text-gray-300">Feedback / Reason for Rejection *</label>
+              <label className="font-bold text-gray-700 dark:text-gray-300">
+                Feedback / Reason for Rejection *
+              </label>
               <textarea
                 required
                 rows={3}
@@ -442,7 +496,10 @@ export const OwnerDashboard: React.FC = () => {
               <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white flex items-center gap-2">
                 Room Category Approval Workflow
               </h3>
-              <p className="text-xs text-gray-400">Request additional custom room categories for Super Admin review & approval.</p>
+              <p className="text-xs text-gray-400">
+                Request additional custom room categories for Super Admin review
+                & approval.
+              </p>
             </div>
           </div>
           <button
@@ -457,7 +514,8 @@ export const OwnerDashboard: React.FC = () => {
         {/* Requests History List */}
         {categoryRequests.length === 0 ? (
           <div className="p-6 text-center text-xs text-gray-400 font-semibold bg-gray-50/50 dark:bg-slate-900/40 rounded-2xl border border-dashed border-gray-200 dark:border-slate-800">
-            No room category requests submitted yet. Click "+ Request New Room Category" to initiate a request.
+            No room category requests submitted yet. Click "+ Request New Room
+            Category" to initiate a request.
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -474,22 +532,40 @@ export const OwnerDashboard: React.FC = () => {
               </thead>
               <tbody>
                 {categoryRequests.map((req) => (
-                  <tr key={req._id} className="border-b border-gray-100 dark:border-slate-800 hover:bg-gray-50/50 dark:hover:bg-slate-900/40">
-                    <td className="py-3 px-3 font-bold text-[#0A4DA6]">{req.requestId}</td>
-                    <td className="py-3 px-3 font-bold text-[#0B192C] dark:text-white">{req.categoryData?.name}</td>
-                    <td className="py-3 px-3 font-semibold">{req.categoryData?.maxGuests} Guests</td>
-                    <td className="py-3 px-3 font-bold">₹{req.categoryData?.suggestedBasePrice}</td>
+                  <tr
+                    key={req._id}
+                    className="border-b border-gray-100 dark:border-slate-800 hover:bg-gray-50/50 dark:hover:bg-slate-900/40"
+                  >
+                    <td className="py-3 px-3 font-bold text-[#0A4DA6]">
+                      {req.requestId}
+                    </td>
+                    <td className="py-3 px-3 font-bold text-[#0B192C] dark:text-white">
+                      {req.categoryData?.name}
+                    </td>
+                    <td className="py-3 px-3 font-semibold">
+                      {req.categoryData?.maxGuests} Guests
+                    </td>
+                    <td className="py-3 px-3 font-bold">
+                      ₹{req.categoryData?.suggestedBasePrice}
+                    </td>
                     <td className="py-3 px-3">
-                      <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase border ${
-                        req.status === 'approved' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' :
-                        req.status === 'rejected' ? 'bg-rose-500/10 text-rose-600 border-rose-500/20' :
-                        req.status === 'needs_modification' ? 'bg-amber-500/10 text-amber-600 border-amber-500/20' :
-                        'bg-blue-500/10 text-blue-600 border-blue-500/20'
-                      }`}>
-                        {req.status?.replace('_', ' ')}
+                      <span
+                        className={`px-2.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase border ${
+                          req.status === "approved"
+                            ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+                            : req.status === "rejected"
+                              ? "bg-rose-500/10 text-rose-600 border-rose-500/20"
+                              : req.status === "needs_modification"
+                                ? "bg-amber-500/10 text-amber-600 border-amber-500/20"
+                                : "bg-blue-500/10 text-blue-600 border-blue-500/20"
+                        }`}
+                      >
+                        {req.status?.replace("_", " ")}
                       </span>
                     </td>
-                    <td className="py-3 px-3 text-gray-400 max-w-xs truncate">{req.reviewComment || '—'}</td>
+                    <td className="py-3 px-3 text-gray-400 max-w-xs truncate">
+                      {req.reviewComment || "—"}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -504,7 +580,8 @@ export const OwnerDashboard: React.FC = () => {
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 max-w-lg w-full space-y-4 shadow-2xl animate-in fade-in zoom-in duration-200">
             <div className="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-3">
               <h3 className="font-extrabold text-lg text-[#0B192C] dark:text-white flex items-center gap-2">
-                <Bed size={20} className="text-[#0A4DA6]" /> Request New Room Category
+                <Bed size={20} className="text-[#0A4DA6]" /> Request New Room
+                Category
               </h3>
               <button
                 onClick={() => setIsCategoryModalOpen(false)}
@@ -514,7 +591,10 @@ export const OwnerDashboard: React.FC = () => {
               </button>
             </div>
 
-            <form onSubmit={handleCategorySubmit} className="space-y-3.5 text-left">
+            <form
+              onSubmit={handleCategorySubmit}
+              className="space-y-3.5 text-left"
+            >
               <div>
                 <label className="block text-[11px] font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-1">
                   Category Name *
@@ -524,7 +604,9 @@ export const OwnerDashboard: React.FC = () => {
                   required
                   placeholder="e.g. Deluxe VIP Suite, Satsang Family Hall"
                   value={categoryForm.name}
-                  onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })}
+                  onChange={(e) =>
+                    setCategoryForm({ ...categoryForm, name: e.target.value })
+                  }
                   className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#0A4DA6]"
                 />
               </div>
@@ -540,7 +622,12 @@ export const OwnerDashboard: React.FC = () => {
                     max="50"
                     required
                     value={categoryForm.maxGuests}
-                    onChange={(e) => setCategoryForm({ ...categoryForm, maxGuests: Number(e.target.value) })}
+                    onChange={(e) =>
+                      setCategoryForm({
+                        ...categoryForm,
+                        maxGuests: Number(e.target.value),
+                      })
+                    }
                     className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#0A4DA6]"
                   />
                 </div>
@@ -552,7 +639,12 @@ export const OwnerDashboard: React.FC = () => {
                     type="number"
                     min="0"
                     value={categoryForm.suggestedBasePrice}
-                    onChange={(e) => setCategoryForm({ ...categoryForm, suggestedBasePrice: Number(e.target.value) })}
+                    onChange={(e) =>
+                      setCategoryForm({
+                        ...categoryForm,
+                        suggestedBasePrice: Number(e.target.value),
+                      })
+                    }
                     className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#0A4DA6]"
                   />
                 </div>
@@ -565,7 +657,12 @@ export const OwnerDashboard: React.FC = () => {
                 <input
                   type="text"
                   value={categoryForm.defaultAmenities}
-                  onChange={(e) => setCategoryForm({ ...categoryForm, defaultAmenities: e.target.value })}
+                  onChange={(e) =>
+                    setCategoryForm({
+                      ...categoryForm,
+                      defaultAmenities: e.target.value,
+                    })
+                  }
                   className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#0A4DA6]"
                 />
               </div>
@@ -579,7 +676,12 @@ export const OwnerDashboard: React.FC = () => {
                   required
                   placeholder="Explain why this category is required for pilgrim lodging..."
                   value={categoryForm.reasonForRequest}
-                  onChange={(e) => setCategoryForm({ ...categoryForm, reasonForRequest: e.target.value })}
+                  onChange={(e) =>
+                    setCategoryForm({
+                      ...categoryForm,
+                      reasonForRequest: e.target.value,
+                    })
+                  }
                   className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#0A4DA6]"
                 />
               </div>
@@ -597,7 +699,9 @@ export const OwnerDashboard: React.FC = () => {
                   disabled={submittingCategory}
                   className="px-5 py-2 bg-[#0A4DA6] text-white rounded-full font-extrabold text-xs shadow-md hover:bg-opacity-95 disabled:opacity-50"
                 >
-                  {submittingCategory ? 'Submitting...' : 'Submit Request for Approval'}
+                  {submittingCategory
+                    ? "Submitting..."
+                    : "Submit Request for Approval"}
                 </button>
               </div>
             </form>
@@ -609,8 +713,12 @@ export const OwnerDashboard: React.FC = () => {
       <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[24px] shadow-sm space-y-4">
         <div className="flex justify-between items-center">
           <div className="space-y-0.5">
-            <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white">Recent Ashram Stay Bookings</h3>
-            <p className="text-xs text-gray-400">Live reservation traffic from pilgrims across ashrams.</p>
+            <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white">
+              Recent Ashram Stay Bookings
+            </h3>
+            <p className="text-xs text-gray-400">
+              Live reservation traffic from pilgrims across ashrams.
+            </p>
           </div>
         </div>
 
@@ -629,33 +737,56 @@ export const OwnerDashboard: React.FC = () => {
             </thead>
             <tbody>
               {recentBookings.map((bk) => (
-                <tr key={bk._id} className="border-b border-gray-100 dark:border-slate-800 hover:bg-gray-50/50 dark:hover:bg-slate-900/40">
-                  <td className="py-3.5 px-4 font-bold text-[#0B192C] dark:text-white">{bk.bookingId}</td>
+                <tr
+                  key={bk._id}
+                  className="border-b border-gray-100 dark:border-slate-800 hover:bg-gray-50/50 dark:hover:bg-slate-900/40"
+                >
+                  <td className="py-3.5 px-4 font-bold text-[#0B192C] dark:text-white">
+                    {bk.bookingId}
+                  </td>
                   <td className="py-3.5 px-4">
                     <div className="flex flex-col">
-                      <span className="font-semibold">{bk.customerId?.name}</span>
-                      <span className="text-[10px] text-gray-400">{bk.customerId?.phone}</span>
+                      <span className="font-semibold">
+                        {bk.customerId?.name}
+                      </span>
+                      <span className="text-[10px] text-gray-400">
+                        {bk.customerId?.phone}
+                      </span>
                     </div>
                   </td>
-                  <td className="py-3.5 px-4 text-gray-500">{bk.roomId?.name}</td>
-                  <td className="py-3.5 px-4 font-extrabold text-[#0B192C] dark:text-white">₹{bk.pricing?.totalAmount}</td>
+                  <td className="py-3.5 px-4 text-gray-500">
+                    {bk.roomId?.name}
+                  </td>
+                  <td className="py-3.5 px-4 font-extrabold text-[#0B192C] dark:text-white">
+                    ₹{bk.pricing?.totalAmount}
+                  </td>
                   <td className="py-3.5 px-4">
-                    <span className={`px-2.5 py-1 rounded-full text-[9px] font-bold capitalize ${
-                      bk.paymentStatus === 'fully_paid' ? 'bg-success/10 text-success' : 
-                      bk.paymentStatus === 'refunded' ? 'bg-danger/10 text-danger' : 
-                      'bg-yellow-50 text-yellow-750'
-                    }`}>
-                      {bk.paymentStatus?.replace('_', ' ')}
+                    <span
+                      className={`px-2.5 py-1 rounded-full text-[9px] font-bold capitalize ${
+                        bk.paymentStatus === "fully_paid"
+                          ? "bg-success/10 text-success"
+                          : bk.paymentStatus === "refunded"
+                            ? "bg-danger/10 text-danger"
+                            : "bg-yellow-50 text-yellow-750"
+                      }`}
+                    >
+                      {bk.paymentStatus?.replace("_", " ")}
                     </span>
                   </td>
                   <td className="py-3.5 px-4">
-                    <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-extrabold capitalize border ${
-                      bk.status === 'confirmed' ? 'bg-primary/10 text-primary border-primary/20' : 
-                      bk.status === 'checked_in' ? 'bg-success/10 text-success border-success/20' : 
-                      bk.status === 'checked_out' ? 'bg-blue-500/10 text-blue-500 border-blue-500/20' : 
-                      bk.status === 'cancelled' ? 'bg-danger/10 text-danger border-danger/20' : 
-                      'bg-gray-100 text-gray-505 border-gray-200'
-                    }`}>
+                    <span
+                      className={`px-2.5 py-0.5 rounded-full text-[9px] font-extrabold capitalize border ${
+                        bk.status === "confirmed"
+                          ? "bg-primary/10 text-primary border-primary/20"
+                          : bk.status === "checked_in"
+                            ? "bg-success/10 text-success border-success/20"
+                            : bk.status === "checked_out"
+                              ? "bg-blue-500/10 text-blue-500 border-blue-500/20"
+                              : bk.status === "cancelled"
+                                ? "bg-danger/10 text-danger border-danger/20"
+                                : "bg-gray-100 text-gray-505 border-gray-200"
+                      }`}
+                    >
                       {bk.status}
                     </span>
                   </td>
@@ -668,39 +799,59 @@ export const OwnerDashboard: React.FC = () => {
         {/* Mobile Cards View */}
         <div className="block md:hidden divide-y divide-gray-100 dark:divide-slate-800">
           {recentBookings.length === 0 ? (
-            <div className="text-center py-6 text-xs text-gray-400">No recent bookings.</div>
+            <div className="text-center py-6 text-xs text-gray-400">
+              No recent bookings.
+            </div>
           ) : (
             recentBookings.map((bk) => (
               <div key={bk._id} className="py-4.5 space-y-3">
                 <div className="flex justify-between items-center text-xs">
-                  <span className="font-extrabold text-[#0B192C] dark:text-white">{bk.bookingId}</span>
-                  <span className={`px-2 py-0.5 rounded text-[9px] font-extrabold capitalize border ${
-                    bk.status === 'confirmed' ? 'bg-primary/10 text-primary border-primary/20' : 
-                    bk.status === 'checked_in' ? 'bg-success/10 text-success border-success/20' : 
-                    bk.status === 'checked_out' ? 'bg-blue-500/10 text-blue-500 border-blue-500/20' : 
-                    bk.status === 'cancelled' ? 'bg-danger/10 text-danger border-danger/20' : 
-                    'bg-gray-100 text-gray-550 border-gray-200'
-                  }`}>
+                  <span className="font-extrabold text-[#0B192C] dark:text-white">
+                    {bk.bookingId}
+                  </span>
+                  <span
+                    className={`px-2 py-0.5 rounded text-[9px] font-extrabold capitalize border ${
+                      bk.status === "confirmed"
+                        ? "bg-primary/10 text-primary border-primary/20"
+                        : bk.status === "checked_in"
+                          ? "bg-success/10 text-success border-success/20"
+                          : bk.status === "checked_out"
+                            ? "bg-blue-500/10 text-blue-500 border-blue-500/20"
+                            : bk.status === "cancelled"
+                              ? "bg-danger/10 text-danger border-danger/20"
+                              : "bg-gray-100 text-gray-550 border-gray-200"
+                    }`}
+                  >
                     {bk.status}
                   </span>
                 </div>
                 <div className="text-xs space-y-1">
                   <div className="flex justify-between">
                     <span className="text-gray-400">Guest:</span>
-                    <span className="font-semibold text-secondary dark:text-white">{bk.customerId?.name} ({bk.customerId?.phone})</span>
+                    <span className="font-semibold text-secondary dark:text-white">
+                      {bk.customerId?.name} ({bk.customerId?.phone})
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">Room:</span>
-                    <span className="text-gray-500 truncate max-w-[200px]">{bk.roomId?.name}</span>
+                    <span className="text-gray-500 truncate max-w-[200px]">
+                      {bk.roomId?.name}
+                    </span>
                   </div>
                   <div className="flex justify-between pt-1 border-t border-gray-50 dark:border-slate-850 items-center">
-                    <span className="font-bold text-[#0B192C] dark:text-white">₹{bk.pricing?.totalAmount}</span>
-                    <span className={`px-2 py-0.5 rounded text-[8.5px] font-bold capitalize ${
-                      bk.paymentStatus === 'fully_paid' ? 'bg-success/10 text-success' : 
-                      bk.paymentStatus === 'refunded' ? 'bg-danger/10 text-danger' : 
-                      'bg-yellow-50 text-yellow-750'
-                    }`}>
-                      {bk.paymentStatus?.replace('_', ' ')}
+                    <span className="font-bold text-[#0B192C] dark:text-white">
+                      ₹{bk.pricing?.totalAmount}
+                    </span>
+                    <span
+                      className={`px-2 py-0.5 rounded text-[8.5px] font-bold capitalize ${
+                        bk.paymentStatus === "fully_paid"
+                          ? "bg-success/10 text-success"
+                          : bk.paymentStatus === "refunded"
+                            ? "bg-danger/10 text-danger"
+                            : "bg-yellow-50 text-yellow-750"
+                      }`}
+                    >
+                      {bk.paymentStatus?.replace("_", " ")}
                     </span>
                   </div>
                 </div>

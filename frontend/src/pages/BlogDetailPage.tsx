@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
-import { visitorArticleService } from '../services/visitorArticleService';
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import api from "../lib/api";
+import { visitorArticleService } from "../services/visitorArticleService";
 import {
   Calendar,
   Clock,
@@ -10,19 +10,13 @@ import {
   Share2,
   Bookmark,
   Printer,
-  ArrowLeft,
   ShieldCheck,
   MessageSquare,
-  CheckCircle2,
   ChevronRight,
-  Play,
   BookOpen,
-  MapPin,
   Sparkles,
-  ArrowUpRight,
   ThumbsUp,
-  User,
-} from 'lucide-react';
+} from "lucide-react";
 
 export const BlogDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -35,8 +29,8 @@ export const BlogDetailPage: React.FC = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   // New comment state
-  const [userName, setUserName] = useState('');
-  const [commentText, setCommentText] = useState('');
+  const [userName, setUserName] = useState("");
+  const [commentText, setCommentText] = useState("");
   const [submittingComment, setSubmittingComment] = useState(false);
 
   useEffect(() => {
@@ -47,9 +41,7 @@ export const BlogDetailPage: React.FC = () => {
   const fetchPostDetail = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/blog/posts/${slug}`
-      ).catch(() => null);
+      const res = await api.get(`/blog/posts/${slug}`).catch(() => null);
 
       if (res?.data?.success) {
         setData(res.data.data);
@@ -68,7 +60,7 @@ export const BlogDetailPage: React.FC = () => {
               subtitle: va.shortDescription,
               coverImage: va.featuredImage,
               createdAt: va.createdAt,
-              readingTime: '5 min read',
+              readingTime: "5 min read",
               views: va.viewsCount || 1,
               likes: va.likesCount || 0,
               gallery: va.galleryImages || [],
@@ -76,11 +68,13 @@ export const BlogDetailPage: React.FC = () => {
               isVerifiedStay: true,
               ashramName: va.ashramId?.name,
               authorId: {
-                name: va.visitorId?.name || 'Verified Pilgrim',
-                photo: va.visitorId?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&h=300&q=80',
+                name: va.visitorId?.name || "Verified Pilgrim",
+                photo:
+                  va.visitorId?.avatar ||
+                  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&h=300&q=80",
                 verified: true,
-                designation: 'Verified Stay Traveler',
-                bio: `Completed stay at ${va.ashramId?.name || 'Ashram'}. Shared authentic pilgrim experience.`,
+                designation: "Verified Stay Traveler",
+                bio: `Completed stay at ${va.ashramId?.name || "Ashram"}. Shared authentic pilgrim experience.`,
               },
             },
             comments: vRes.data.data.comments || [],
@@ -90,7 +84,7 @@ export const BlogDetailPage: React.FC = () => {
         }
       }
     } catch (err) {
-      console.error('Error fetching blog detail:', err);
+      console.error("Error fetching blog detail:", err);
     } finally {
       setLoading(false);
     }
@@ -99,15 +93,13 @@ export const BlogDetailPage: React.FC = () => {
   const handleLike = async () => {
     if (hasLiked) return;
     try {
-      const res = await axios.post(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/blog/posts/${slug}/like`
-      );
+      const res = await api.post(`/blog/posts/${slug}/like`);
       if (res.data.success) {
         setLikes(res.data.likes);
         setHasLiked(true);
       }
     } catch (err) {
-      console.error('Like error:', err);
+      console.error("Like error:", err);
     }
   };
 
@@ -119,7 +111,7 @@ export const BlogDetailPage: React.FC = () => {
       });
     } else {
       navigator.clipboard.writeText(window.location.href);
-      alert('Article link copied to clipboard!');
+      alert("Article link copied to clipboard!");
     }
   };
 
@@ -132,16 +124,16 @@ export const BlogDetailPage: React.FC = () => {
     if (!commentText.trim()) return;
     setSubmittingComment(true);
     try {
-      const res = await axios.post(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/blog/posts/${slug}/comments`,
-        { userName: userName || 'Devotee Pilgrim', comment: commentText }
-      );
+      const res = await api.post(`/blog/posts/${slug}/comments`, {
+        userName: userName || "Devotee Pilgrim",
+        comment: commentText,
+      });
       if (res.data.success) {
-        setCommentText('');
+        setCommentText("");
         fetchPostDetail();
       }
     } catch (err) {
-      console.error('Add comment error:', err);
+      console.error("Add comment error:", err);
     } finally {
       setSubmittingComment(false);
     }
@@ -151,7 +143,9 @@ export const BlogDetailPage: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-[#070F1B] pt-32 text-center">
         <div className="w-12 h-12 border-4 border-[#0A4DA6] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-        <p className="text-xs font-bold text-gray-500">Loading Sacred Article...</p>
+        <p className="text-xs font-bold text-gray-500">
+          Loading Sacred Article...
+        </p>
       </div>
     );
   }
@@ -159,9 +153,11 @@ export const BlogDetailPage: React.FC = () => {
   if (!data?.post) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-[#070F1B] pt-32 text-center">
-        <h2 className="text-xl font-black text-gray-700 dark:text-gray-200 mb-4">Article Not Found</h2>
+        <h2 className="text-xl font-black text-gray-700 dark:text-gray-200 mb-4">
+          Article Not Found
+        </h2>
         <button
-          onClick={() => navigate('/blog')}
+          onClick={() => navigate("/blog")}
           className="px-6 py-2.5 rounded-full bg-[#0A4DA6] text-white font-bold text-xs shadow-md hover:bg-blue-900 transition-colors"
         >
           Back to Spiritual Knowledge Hub
@@ -175,37 +171,53 @@ export const BlogDetailPage: React.FC = () => {
 
   const renderFormattedContent = (text: string) => {
     if (!text) return null;
-    const blocks = text.split('\n\n');
+    const blocks = text.split("\n\n");
     return blocks.map((block, idx) => {
       const trimmed = block.trim();
-      if (trimmed.startsWith('### ')) {
+      if (trimmed.startsWith("### ")) {
         return (
-          <h3 key={idx} className="text-lg sm:text-xl font-extrabold text-[#0B192C] dark:text-white pt-2 pb-1 border-b border-gray-100 dark:border-slate-800">
-            {trimmed.replace('### ', '')}
+          <h3
+            key={idx}
+            className="text-lg sm:text-xl font-extrabold text-[#0B192C] dark:text-white pt-2 pb-1 border-b border-gray-100 dark:border-slate-800"
+          >
+            {trimmed.replace("### ", "")}
           </h3>
         );
       }
-      if (trimmed.startsWith('## ')) {
+      if (trimmed.startsWith("## ")) {
         return (
-          <h2 key={idx} className="text-xl sm:text-2xl font-black text-[#0B192C] dark:text-white pt-3 pb-1">
-            {trimmed.replace('## ', '')}
+          <h2
+            key={idx}
+            className="text-xl sm:text-2xl font-black text-[#0B192C] dark:text-white pt-3 pb-1"
+          >
+            {trimmed.replace("## ", "")}
           </h2>
         );
       }
-      if (trimmed.startsWith('- ')) {
-        const lines = trimmed.split('\n');
+      if (trimmed.startsWith("- ")) {
+        const lines = trimmed.split("\n");
         return (
           <ul key={idx} className="space-y-2 py-1 pl-1">
             {lines.map((line, lIdx) => {
-              const cleanLine = line.replace(/^- /, '');
+              const cleanLine = line.replace(/^- /, "");
               const parts = cleanLine.split(/(\*\*.*?\*\*)/g);
               return (
-                <li key={lIdx} className="flex items-start gap-2 text-slate-700 dark:text-gray-200 text-sm sm:text-base">
+                <li
+                  key={lIdx}
+                  className="flex items-start gap-2 text-slate-700 dark:text-gray-200 text-sm sm:text-base"
+                >
                   <span className="w-2 h-2 rounded-full bg-[#0A4DA6] mt-2 shrink-0" />
                   <span>
                     {parts.map((p, pIdx) => {
-                      if (p.startsWith('**') && p.endsWith('**')) {
-                        return <strong key={pIdx} className="font-extrabold text-[#0B192C] dark:text-white">{p.slice(2, -2)}</strong>;
+                      if (p.startsWith("**") && p.endsWith("**")) {
+                        return (
+                          <strong
+                            key={pIdx}
+                            className="font-extrabold text-[#0B192C] dark:text-white"
+                          >
+                            {p.slice(2, -2)}
+                          </strong>
+                        );
                       }
                       return p;
                     })}
@@ -218,10 +230,20 @@ export const BlogDetailPage: React.FC = () => {
       }
       const parts = trimmed.split(/(\*\*.*?\*\*)/g);
       return (
-        <p key={idx} className="leading-relaxed text-slate-700 dark:text-gray-200 text-sm sm:text-base font-medium">
+        <p
+          key={idx}
+          className="leading-relaxed text-slate-700 dark:text-gray-200 text-sm sm:text-base font-medium"
+        >
           {parts.map((p, pIdx) => {
-            if (p.startsWith('**') && p.endsWith('**')) {
-              return <strong key={pIdx} className="font-extrabold text-[#0B192C] dark:text-white">{p.slice(2, -2)}</strong>;
+            if (p.startsWith("**") && p.endsWith("**")) {
+              return (
+                <strong
+                  key={pIdx}
+                  className="font-extrabold text-[#0B192C] dark:text-white"
+                >
+                  {p.slice(2, -2)}
+                </strong>
+              );
             }
             return p;
           })}
@@ -233,13 +255,12 @@ export const BlogDetailPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-[#070F1B] pb-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-1 sm:pt-3 space-y-8">
-
         {/* 1. Centered Header Section (Matching 2nd image UI) */}
         <div className="text-center space-y-3 max-w-4xl mx-auto py-2">
           <div className="flex items-center justify-center gap-2 flex-wrap">
             <span className="px-3.5 py-1 rounded-full bg-blue-50 dark:bg-blue-950/40 text-[#0A4DA6] dark:text-blue-300 border border-blue-100 dark:border-slate-800 text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow-xs">
               <ShieldCheck size={12} className="text-emerald-500" />
-              {post.category || 'TRAVEL GUIDE'} • RISHIKESH, UTTARAKHAND
+              {post.category || "TRAVEL GUIDE"} • RISHIKESH, UTTARAKHAND
             </span>
           </div>
 
@@ -250,16 +271,28 @@ export const BlogDetailPage: React.FC = () => {
           <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-semibold flex items-center justify-center gap-3 flex-wrap pt-1">
             <span className="flex items-center gap-2 text-[#0B192C] dark:text-gray-200 font-extrabold">
               <img
-                src={author.photo || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&h=300&q=80'}
+                src={
+                  author.photo ||
+                  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&h=300&q=80"
+                }
                 alt={author.name}
                 className="w-6 h-7 rounded-md object-cover border border-[#0A4DA6] shrink-0 shadow-xs"
-                onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&h=300&q=80'; }}
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src =
+                    "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&h=300&q=80";
+                }}
               />
-              <span>{author.name || 'Gordon V. Shastri'}</span>
+              <span>{author.name || "Gordon V. Shastri"}</span>
             </span>
             <span>•</span>
             <span className="flex items-center gap-1">
-              <Calendar size={13} className="text-[#E58C28]" /> {new Date(post.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+              <Calendar size={13} className="text-[#E58C28]" />{" "}
+              {new Date(post.createdAt).toLocaleDateString("en-IN", {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              })}
             </span>
             <span>•</span>
             <span className="flex items-center gap-1">
@@ -267,7 +300,8 @@ export const BlogDetailPage: React.FC = () => {
             </span>
             <span>•</span>
             <span className="flex items-center gap-1">
-              <Eye size={13} className="text-emerald-600" /> {post.views || 3840} Views
+              <Eye size={13} className="text-emerald-600" />{" "}
+              {post.views || 3840} Views
             </span>
           </p>
 
@@ -275,12 +309,16 @@ export const BlogDetailPage: React.FC = () => {
           <div className="flex items-center justify-center gap-2 pt-2">
             <button
               onClick={handleLike}
-              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-black transition-all cursor-pointer shadow-xs border ${hasLiked
-                ? 'bg-rose-600 text-white border-rose-600'
-                : 'bg-white dark:bg-slate-800 text-[#0B192C] dark:text-gray-200 border-gray-200 dark:border-slate-700 hover:bg-rose-50'
-                }`}
+              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-black transition-all cursor-pointer shadow-xs border ${
+                hasLiked
+                  ? "bg-rose-600 text-white border-rose-600"
+                  : "bg-white dark:bg-slate-800 text-[#0B192C] dark:text-gray-200 border-gray-200 dark:border-slate-700 hover:bg-rose-50"
+              }`}
             >
-              <Heart size={14} className={hasLiked ? 'fill-white text-white' : 'text-rose-500'} />
+              <Heart
+                size={14}
+                className={hasLiked ? "fill-white text-white" : "text-rose-500"}
+              />
               <span>{likes} Likes</span>
             </button>
 
@@ -295,14 +333,18 @@ export const BlogDetailPage: React.FC = () => {
 
             <button
               onClick={() => setIsBookmarked(!isBookmarked)}
-              className={`px-3.5 py-1.5 rounded-full border text-xs font-extrabold flex items-center gap-1.5 cursor-pointer shadow-xs transition-all ${isBookmarked
-                ? 'bg-amber-500 text-white border-amber-500'
-                : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-slate-700 hover:bg-amber-50'
-                }`}
+              className={`px-3.5 py-1.5 rounded-full border text-xs font-extrabold flex items-center gap-1.5 cursor-pointer shadow-xs transition-all ${
+                isBookmarked
+                  ? "bg-amber-500 text-white border-amber-500"
+                  : "bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-slate-700 hover:bg-amber-50"
+              }`}
               title="Bookmark"
             >
-              <Bookmark size={14} className={isBookmarked ? 'fill-white' : 'text-amber-500'} />
-              <span>{isBookmarked ? 'Saved' : 'Save'}</span>
+              <Bookmark
+                size={14}
+                className={isBookmarked ? "fill-white" : "text-amber-500"}
+              />
+              <span>{isBookmarked ? "Saved" : "Save"}</span>
             </button>
 
             <button
@@ -319,59 +361,84 @@ export const BlogDetailPage: React.FC = () => {
         <div className="space-y-4">
           <div className="relative rounded-[28px] overflow-hidden shadow-xl h-[380px] sm:h-[480px] w-full border border-gray-100 dark:border-slate-800 bg-gray-100 dark:bg-slate-800 group">
             <img
-              src={selectedImage || post.coverImage || '/blogs/rishikesh_ashram_1785404729056.png'}
+              src={
+                selectedImage ||
+                post.coverImage ||
+                "/blogs/rishikesh_ashram_1785404729056.png"
+              }
               alt={post.title}
               className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-500"
-              onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/blogs/rishikesh_ashram_1785404729056.png'; }}
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src =
+                  "/blogs/rishikesh_ashram_1785404729056.png";
+              }}
             />
           </div>
 
           {/* Photo Gallery Thumbnails Strip */}
           {post.gallery?.length > 0 && (
             <div className="flex items-center gap-3 overflow-x-auto pb-1">
-              {[post.coverImage, ...post.gallery].filter(Boolean).slice(0, 5).map((imgUrl: string, idx: number) => {
-                const active = (selectedImage || post.coverImage) === imgUrl;
-                return (
-                  <div
-                    key={idx}
-                    onClick={() => setSelectedImage(imgUrl)}
-                    className={`w-24 h-16 sm:w-28 sm:h-20 rounded-2xl overflow-hidden border-2 ${active ? 'border-[#0A4DA6] shadow-lg scale-105' : 'border-white dark:border-slate-800'
+              {[post.coverImage, ...post.gallery]
+                .filter(Boolean)
+                .slice(0, 5)
+                .map((imgUrl: string, idx: number) => {
+                  const active = (selectedImage || post.coverImage) === imgUrl;
+                  return (
+                    <div
+                      key={idx}
+                      onClick={() => setSelectedImage(imgUrl)}
+                      className={`w-24 h-16 sm:w-28 sm:h-20 rounded-2xl overflow-hidden border-2 ${
+                        active
+                          ? "border-[#0A4DA6] shadow-lg scale-105"
+                          : "border-white dark:border-slate-800"
                       } shrink-0 cursor-pointer hover:opacity-90 transition-all`}
-                  >
-                    <img
-                      src={imgUrl}
-                      alt={`Thumbnail ${idx}`}
-                      className="w-full h-full object-cover"
-                      onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/blogs/rishikesh_ashram_1785404729056.png'; }}
-                    />
-                  </div>
-                );
-              })}
+                    >
+                      <img
+                        src={imgUrl}
+                        alt={`Thumbnail ${idx}`}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src =
+                            "/blogs/rishikesh_ashram_1785404729056.png";
+                        }}
+                      />
+                    </div>
+                  );
+                })}
             </div>
           )}
         </div>
 
         {/* 3. Main 2-Column Desktop Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
           {/* Left Main Content Area (2 Cols - All inside ONE single container card) */}
           <div className="lg:col-span-2">
-
             {/* ONE Single Main Container Card */}
             <div className="bg-white dark:bg-[#0B192C] rounded-[32px] p-6 sm:p-10 border border-gray-100 dark:border-slate-800 shadow-sm space-y-8">
-
               {/* Embedded Video Player if post is video or has youtube URL */}
-              {(post.contentType === 'video' || post.youtubeUrl || post.youtubeVideoId) && (
+              {(post.contentType === "video" ||
+                post.youtubeUrl ||
+                post.youtubeVideoId) && (
                 <div className="relative rounded-2xl overflow-hidden shadow-xl bg-black aspect-video w-full mb-6 border border-gray-800">
                   <iframe
                     src={`https://www.youtube.com/embed/${(() => {
-                      const input = post.youtubeVideoId || post.youtubeUrl || post.videoUrl || post.content;
-                      if (!input) return '50HnOmsPpxI';
-                      const str = typeof input === 'string' ? input.trim() : String(input);
+                      const input =
+                        post.youtubeVideoId ||
+                        post.youtubeUrl ||
+                        post.videoUrl ||
+                        post.content;
+                      if (!input) return "50HnOmsPpxI";
+                      const str =
+                        typeof input === "string"
+                          ? input.trim()
+                          : String(input);
                       if (/^[a-zA-Z0-9_-]{11}$/.test(str)) return str;
-                      const regExp = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+                      const regExp =
+                        /(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/;
                       const match = str.match(regExp);
-                      return match && match[1] ? match[1] : '50HnOmsPpxI';
+                      return match && match[1] ? match[1] : "50HnOmsPpxI";
                     })()}?autoplay=1&enablejsapi=1&rel=0`}
                     title={post.title}
                     className="w-full h-full border-0"
@@ -389,63 +456,54 @@ export const BlogDetailPage: React.FC = () => {
               {/* Sample Pull Quote */}
               <div className="my-6 p-6 rounded-2xl bg-blue-50/70 dark:bg-slate-900/80 border-l-4 border-[#0A4DA6] space-y-2">
                 <p className="font-['Kalam'] text-base sm:text-lg font-bold text-[#0A4DA6] dark:text-amber-400">
-                  "Every pilgrimage is a sacred inward journey towards peace, self-realization, and divine grace."
+                  "Every pilgrimage is a sacred inward journey towards peace,
+                  self-realization, and divine grace."
                 </p>
-                <span className="text-xs font-extrabold text-gray-500 uppercase block">— Tirvona Spiritual Guidelines</span>
+                <span className="text-xs font-extrabold text-gray-500 uppercase block">
+                  — Tirvona Spiritual Guidelines
+                </span>
               </div>
 
               {/* Image Gallery */}
               {post.gallery?.length > 0 && (
                 <div className="space-y-3 pt-2">
-                  <h4 className="font-black text-base text-[#0B192C] dark:text-white">Sacred Photo Gallery</h4>
+                  <h4 className="font-black text-base text-[#0B192C] dark:text-white">
+                    Sacred Photo Gallery
+                  </h4>
                   <div className="grid grid-cols-2 gap-4">
                     {post.gallery.map((img: string, i: number) => (
-                      <div key={i} className="rounded-2xl overflow-hidden h-44 shadow-sm border border-gray-100 dark:border-slate-800">
-                        <img src={img} alt={`Gallery ${i}`} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
+                      <div
+                        key={i}
+                        className="rounded-2xl overflow-hidden h-44 shadow-sm border border-gray-100 dark:border-slate-800"
+                      >
+                        <img
+                          src={img}
+                          alt={`Gallery ${i}`}
+                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                        />
                       </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* Integrated Publisher / Author Profile Section (Left side Passport Size Photo) */}
-              <div className="pt-6 border-t border-gray-100 dark:border-slate-800 flex flex-col sm:flex-row items-center sm:items-start gap-5 bg-gray-50/80 dark:bg-slate-900/60 p-6 rounded-2xl">
-                <img
-                  src={author.photo || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&h=300&q=80'}
-                  alt={author.name}
-                  className="w-20 h-24 rounded-xl object-cover border-2 border-[#0A4DA6] shadow-md shrink-0"
-                  onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&h=300&q=80'; }}
-                />
-                <div className="space-y-1.5 text-center sm:text-left">
-                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                    <h4 className="font-black text-base text-[#0B192C] dark:text-white">{author.name}</h4>
-                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 text-[10px] font-black uppercase flex items-center gap-1">
-                      <CheckCircle2 size={11} /> VERIFIED AUTHOR
-                    </span>
-                  </div>
-                  <p className="text-xs font-bold text-[#0A4DA6] dark:text-amber-400">
-                    {author.designation} • {author.organization}
-                  </p>
-                  <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed font-medium">
-                    {author.bio}
-                  </p>
-                  <div className="pt-1 flex flex-wrap items-center justify-center sm:justify-start gap-4 text-xs font-bold text-gray-500">
-                    <span>Experience: <strong className="text-gray-800 dark:text-gray-200">{author.experience || '10+ Years'}</strong></span>
-                    <span>Articles: <strong className="text-gray-800 dark:text-gray-200">{author.articlesCount || 12} Published</strong></span>
-                  </div>
-                </div>
-              </div>
-
               {/* Integrated Comments Section */}
               <div className="pt-6 border-t border-gray-100 dark:border-slate-800 space-y-6">
                 <h3 className="font-black text-xl text-[#0B192C] dark:text-white flex items-center gap-2">
                   <MessageSquare size={20} className="text-[#0A4DA6]" />
-                  <span>Pilgrim Discussion & Comments ({comments?.length || 0})</span>
+                  <span>
+                    Pilgrim Discussion & Comments ({comments?.length || 0})
+                  </span>
                 </h3>
 
                 {/* Add Comment Form */}
-                <form onSubmit={handleAddComment} className="space-y-3 p-5 rounded-2xl bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800">
-                  <h5 className="font-bold text-xs text-[#0B192C] dark:text-white">Leave a Devotional Comment</h5>
+                <form
+                  onSubmit={handleAddComment}
+                  className="space-y-3 p-5 rounded-2xl bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800"
+                >
+                  <h5 className="font-bold text-xs text-[#0B192C] dark:text-white">
+                    Leave a Devotional Comment
+                  </h5>
                   <input
                     type="text"
                     placeholder="Your Name (e.g. Ramesh Devotee)..."
@@ -472,51 +530,44 @@ export const BlogDetailPage: React.FC = () => {
                 {/* Comments List */}
                 <div className="space-y-4">
                   {comments?.map((c: any) => (
-                    <div key={c._id} className="p-4 rounded-2xl bg-gray-50/80 dark:bg-slate-900/80 border border-gray-100 dark:border-slate-800 space-y-2">
+                    <div
+                      key={c._id}
+                      className="p-4 rounded-2xl bg-gray-50/80 dark:bg-slate-900/80 border border-gray-100 dark:border-slate-800 space-y-2"
+                    >
                       <div className="flex justify-between items-center">
                         <div className="flex items-center gap-2">
                           <div className="w-7 h-7 rounded-full bg-[#0A4DA6] text-white font-extrabold text-xs flex items-center justify-center">
                             {c.userName.charAt(0)}
                           </div>
-                          <h5 className="font-bold text-xs text-[#0B192C] dark:text-white">{c.userName}</h5>
+                          <h5 className="font-bold text-xs text-[#0B192C] dark:text-white">
+                            {c.userName}
+                          </h5>
                           <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-600 text-[9px] font-black">
                             VERIFIED PILGRIM
                           </span>
                         </div>
-                        <span className="text-[10px] text-gray-400">{new Date(c.createdAt).toLocaleDateString('en-IN')}</span>
+                        <span className="text-[10px] text-gray-400">
+                          {new Date(c.createdAt).toLocaleDateString("en-IN")}
+                        </span>
                       </div>
-                      <p className="text-xs text-gray-600 dark:text-gray-300 font-medium pl-9">{c.comment}</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-300 font-medium pl-9">
+                        {c.comment}
+                      </p>
                     </div>
                   ))}
                 </div>
               </div>
-
             </div>
-
           </div>
 
           {/* Right Static Sidebar (Desktop Only - 1 Col) */}
           <div className="space-y-6">
-
             {/* Sidebar Author Card with Passport Size Image */}
             <div className="bg-white dark:bg-[#0B192C] rounded-[32px] p-6 border border-gray-100 dark:border-slate-800 shadow-sm space-y-4">
-              <div className="text-center space-y-2">
-                <img
-                  src={author.photo || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&h=300&q=80'}
-                  alt={author.name}
-                  className="w-20 h-24 rounded-xl object-cover border-2 border-[#0A4DA6] shadow-md mx-auto"
-                  onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&h=300&q=80'; }}
-                />
-                <h4 className="font-black text-base text-[#0B192C] dark:text-white flex items-center justify-center gap-1">
-                  <span>{author.name}</span>
-                  <CheckCircle2 size={14} className="text-emerald-500" />
-                </h4>
-                <p className="text-xs font-bold text-[#0A4DA6] dark:text-amber-400">{author.designation}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-3 font-medium">{author.bio}</p>
-              </div>
-
               <div className="pt-2 border-t border-gray-100 dark:border-slate-800 space-y-3">
-                <h5 className="font-black text-xs text-gray-400 uppercase tracking-wider">Related Articles</h5>
+                <h5 className="font-black text-xs text-gray-400 uppercase tracking-wider">
+                  Related Articles
+                </h5>
                 <div className="space-y-3">
                   {relatedPosts?.map((item: any) => (
                     <div
@@ -525,16 +576,26 @@ export const BlogDetailPage: React.FC = () => {
                       className="flex gap-3 items-center group cursor-pointer"
                     >
                       <img
-                        src={item.coverImage || item.featuredImage || '/blogs/rishikesh_ashram_1785404729056.png'}
+                        src={
+                          item.coverImage ||
+                          item.featuredImage ||
+                          "/blogs/rishikesh_ashram_1785404729056.png"
+                        }
                         alt={item.title}
                         className="w-14 h-14 rounded-xl object-cover shrink-0 group-hover:scale-105 transition-transform"
-                        onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/blogs/rishikesh_ashram_1785404729056.png'; }}
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src =
+                            "/blogs/rishikesh_ashram_1785404729056.png";
+                        }}
                       />
                       <div className="space-y-0.5">
                         <h6 className="font-extrabold text-xs text-[#0B192C] dark:text-white line-clamp-2 group-hover:text-[#0A4DA6] transition-colors">
                           {item.title}
                         </h6>
-                        <span className="text-[10px] text-gray-400 font-bold">{item.readingTime || '5 min read'}</span>
+                        <span className="text-[10px] text-gray-400 font-bold">
+                          {item.readingTime || "5 min read"}
+                        </span>
                       </div>
                     </div>
                   ))}
@@ -545,19 +606,19 @@ export const BlogDetailPage: React.FC = () => {
               <div className="bg-gradient-to-br from-[#0B192C] to-[#0A4DA6] text-white p-6 rounded-2xl space-y-3 text-center shadow-lg">
                 <Sparkles size={24} className="text-amber-400 mx-auto" />
                 <h5 className="font-black text-sm">Planning a Pilgrimage?</h5>
-                <p className="text-xs text-blue-100 font-medium">Book verified ashram stays, satvik rooms & temple darshan online.</p>
+                <p className="text-xs text-blue-100 font-medium">
+                  Book verified ashram stays, satvik rooms & temple darshan
+                  online.
+                </p>
                 <button
-                  onClick={() => navigate('/search')}
+                  onClick={() => navigate("/search")}
                   className="w-full py-2.5 rounded-full bg-[#E58C28] hover:bg-amber-600 text-white font-black text-xs shadow-md transition-colors cursor-pointer"
                 >
                   Explore Ashram Stays →
                 </button>
               </div>
-
             </div>
-
           </div>
-
         </div>
       </div>
     </div>

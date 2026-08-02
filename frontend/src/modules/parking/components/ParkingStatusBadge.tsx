@@ -1,7 +1,15 @@
-import React from 'react';
-import { CheckCircle, Clock, XCircle, ShieldCheck, RefreshCw, AlertCircle, CarFront } from 'lucide-react';
-import type { ParkingBookingStatus } from '../types/parking.types';
-import { STATUS_STYLES, statusLabel } from '../utils/parkingFormat';
+import React from "react";
+import {
+  CheckCircle,
+  Clock,
+  XCircle,
+  ShieldCheck,
+  RefreshCw,
+  AlertCircle,
+  CarFront,
+} from "lucide-react";
+import type { ParkingBookingStatus } from "../types/parking.types";
+import { STATUS_STYLES, statusLabel } from "../utils/parkingFormat";
 
 // Status pill for parking bookings.
 //
@@ -22,12 +30,19 @@ const ICONS: Record<ParkingBookingStatus, React.ReactNode> = {
 
 interface ParkingStatusBadgeProps {
   status: ParkingBookingStatus;
-  size?: 'sm' | 'md' | 'lg';
+  size?: "sm" | "md" | "lg";
 }
 
-export const ParkingStatusBadge: React.FC<ParkingStatusBadgeProps> = ({ status, size = 'md' }) => {
+export const ParkingStatusBadge: React.FC<ParkingStatusBadgeProps> = ({
+  status,
+  size = "md",
+}) => {
   const sizeClasses =
-    size === 'sm' ? 'px-2 py-0.5 text-[9px]' : size === 'lg' ? 'px-3.5 py-1 text-xs' : 'px-2.5 py-0.5 text-[10px]';
+    size === "sm"
+      ? "px-2 py-0.5 text-[9px]"
+      : size === "lg"
+        ? "px-3.5 py-1 text-xs"
+        : "px-2.5 py-0.5 text-[10px]";
 
   return (
     <span

@@ -1,36 +1,50 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { CircleParking, Car, Clock, MapPin, ArrowRight, AlertCircle } from 'lucide-react';
-import { getErrorMessage } from '../../../lib/api';
-import { parkingBookingService } from '../services/parking.service';
-import type { ParkingBooking, ParkingLocation } from '../types/parking.types';
-import { formatCurrency, formatDateTime, vehicleLabel } from '../utils/parkingFormat';
-import ParkingStatusBadge from '../components/ParkingStatusBadge';
+import React, { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
+import {
+  CircleParking,
+  Car,
+  Clock,
+  MapPin,
+  ArrowRight,
+  AlertCircle,
+} from "lucide-react";
+import { getErrorMessage } from "../../../lib/api";
+import { parkingBookingService } from "../services/parking.service";
+import type { ParkingBooking, ParkingLocation } from "../types/parking.types";
+import {
+  formatCurrency,
+  formatDateTime,
+  vehicleLabel,
+} from "../utils/parkingFormat";
+import ParkingStatusBadge from "../components/ParkingStatusBadge";
 
 const FILTERS = [
-  { value: '', label: 'All' },
-  { value: 'upcoming', label: 'Upcoming' },
-  { value: 'checked_in', label: 'Parked' },
-  { value: 'checked_out', label: 'Completed' },
-  { value: 'cancelled', label: 'Cancelled' },
+  { value: "", label: "All" },
+  { value: "upcoming", label: "Upcoming" },
+  { value: "checked_in", label: "Parked" },
+  { value: "checked_out", label: "Completed" },
+  { value: "cancelled", label: "Cancelled" },
 ];
 
 /** The visitor's parking booking history. */
 export const ParkingMyBookingsPage: React.FC = () => {
   const [bookings, setBookings] = useState<ParkingBooking[]>([]);
-  const [status, setStatus] = useState('');
+  const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
-    setError('');
+    setError("");
     try {
-      const res = await parkingBookingService.list({ status: status || undefined, limit: 50 });
+      const res = await parkingBookingService.list({
+        status: status || undefined,
+        limit: 50,
+      });
       if (res.data?.success) setBookings(res.data.data || []);
     } catch (err) {
-      setError(getErrorMessage(err, 'Could not load your parking bookings.'));
+      setError(getErrorMessage(err, "Could not load your parking bookings."));
     } finally {
       setLoading(false);
     }
@@ -64,8 +78,8 @@ export const ParkingMyBookingsPage: React.FC = () => {
               onClick={() => setStatus(f.value)}
               className={`shrink-0 text-[11px] font-bold px-4 py-2 rounded-full border transition-all cursor-pointer ${
                 status === f.value
-                  ? 'bg-[#0A4DA6] border-[#0A4DA6] text-white shadow-sm'
-                  : 'bg-white dark:bg-[#0B192C] border-gray-200 dark:border-slate-700 text-slate-600 dark:text-gray-300 hover:border-[#0A4DA6]'
+                  ? "bg-[#0A4DA6] border-[#0A4DA6] text-white shadow-sm"
+                  : "bg-white dark:bg-[#0B192C] border-gray-200 dark:border-slate-700 text-slate-600 dark:text-gray-300 hover:border-[#0A4DA6]"
               }`}
             >
               {f.label}
@@ -83,15 +97,24 @@ export const ParkingMyBookingsPage: React.FC = () => {
         {loading ? (
           <div className="space-y-3">
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="h-32 bg-gray-100 dark:bg-slate-800 animate-pulse rounded-[24px]" />
+              <div
+                key={i}
+                className="h-32 bg-gray-100 dark:bg-slate-800 animate-pulse rounded-[24px]"
+              />
             ))}
           </div>
         ) : bookings.length === 0 ? (
           <div className="text-center py-16 px-6 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] space-y-3 shadow-sm">
-            <CircleParking size={36} className="text-gray-300 dark:text-slate-700 mx-auto" />
-            <h4 className="font-extrabold text-base text-[#0B192C] dark:text-white">No parking bookings yet</h4>
+            <CircleParking
+              size={36}
+              className="text-gray-300 dark:text-slate-700 mx-auto"
+            />
+            <h4 className="font-extrabold text-base text-[#0B192C] dark:text-white">
+              No parking bookings yet
+            </h4>
             <p className="text-xs text-gray-400 font-medium max-w-md mx-auto leading-relaxed">
-              Reserve a secure bay near your destination and get an instant QR pass.
+              Reserve a secure bay near your destination and get an instant QR
+              pass.
             </p>
             <Link
               to="/parking"
@@ -104,14 +127,20 @@ export const ParkingMyBookingsPage: React.FC = () => {
         ) : (
           <ul className="space-y-3">
             {bookings.map((booking, index) => {
-              const location = typeof booking.locationId === 'object' ? (booking.locationId as ParkingLocation) : null;
+              const location =
+                typeof booking.locationId === "object"
+                  ? (booking.locationId as ParkingLocation)
+                  : null;
 
               return (
                 <motion.li
                   key={booking._id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.25, delay: Math.min(index * 0.05, 0.3) }}
+                  transition={{
+                    duration: 0.25,
+                    delay: Math.min(index * 0.05, 0.3),
+                  }}
                 >
                   <Link
                     to={`/parking/booking/${booking._id}`}
@@ -120,12 +149,17 @@ export const ParkingMyBookingsPage: React.FC = () => {
                     <div className="flex items-start justify-between gap-3 mb-3">
                       <div className="min-w-0 space-y-1">
                         <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white line-clamp-1">
-                          {location?.name || 'Parking booking'}
+                          {location?.name || "Parking booking"}
                         </h3>
                         {location?.address && (
                           <p className="inline-flex items-center gap-1 text-[11px] text-gray-500 dark:text-gray-400 font-medium line-clamp-1">
-                            <MapPin size={11} className="shrink-0 stroke-[2.5]" />
-                            {[location.address.landmark, location.address.city].filter(Boolean).join(', ')}
+                            <MapPin
+                              size={11}
+                              className="shrink-0 stroke-[2.5]"
+                            />
+                            {[location.address.landmark, location.address.city]
+                              .filter(Boolean)
+                              .join(", ")}
                           </p>
                         )}
                       </div>
@@ -136,29 +170,52 @@ export const ParkingMyBookingsPage: React.FC = () => {
                       {[
                         {
                           icon: Car,
-                          label: 'Vehicle',
+                          label: "Vehicle",
                           value: `${booking.vehicleNumber}`,
                           sub: vehicleLabel(booking.vehicleType),
                         },
-                        { icon: Clock, label: 'Entry', value: formatDateTime(booking.entryAt) },
-                        { icon: Clock, label: 'Exit', value: formatDateTime(booking.exitAt) },
-                        { icon: CircleParking, label: 'Paid', value: formatCurrency(booking.pricing.amountPaid) },
+                        {
+                          icon: Clock,
+                          label: "Entry",
+                          value: formatDateTime(booking.entryAt),
+                        },
+                        {
+                          icon: Clock,
+                          label: "Exit",
+                          value: formatDateTime(booking.exitAt),
+                        },
+                        {
+                          icon: CircleParking,
+                          label: "Paid",
+                          value: formatCurrency(booking.pricing.amountPaid),
+                        },
                       ].map(({ icon: Icon, label, value, sub }) => (
                         <div key={label} className="space-y-0.5 min-w-0">
                           <span className="inline-flex items-center gap-1 text-[9px] uppercase tracking-wider font-bold text-gray-400">
                             <Icon size={10} className="stroke-[2.5]" /> {label}
                           </span>
-                          <p className="text-[11px] font-bold text-slate-700 dark:text-gray-200 truncate">{value}</p>
-                          {sub && <p className="text-[9px] font-semibold text-gray-400">{sub}</p>}
+                          <p className="text-[11px] font-bold text-slate-700 dark:text-gray-200 truncate">
+                            {value}
+                          </p>
+                          {sub && (
+                            <p className="text-[9px] font-semibold text-gray-400">
+                              {sub}
+                            </p>
+                          )}
                         </div>
                       ))}
                     </div>
 
                     <div className="flex items-center justify-between gap-2 pt-3 mt-3">
-                      <span className="text-[10px] font-bold text-gray-400">{booking.bookingReference}</span>
+                      <span className="text-[10px] font-bold text-gray-400">
+                        {booking.bookingReference}
+                      </span>
                       <span className="inline-flex items-center gap-1.5 text-[11px] font-extrabold text-[#0A4DA6] dark:text-blue-300">
                         View pass
-                        <ArrowRight size={12} className="stroke-[3] transition-transform group-hover:translate-x-0.5" />
+                        <ArrowRight
+                          size={12}
+                          className="stroke-[3] transition-transform group-hover:translate-x-0.5"
+                        />
                       </span>
                     </div>
                   </Link>

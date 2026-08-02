@@ -1,26 +1,35 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { Search, Play, BookOpen, Calendar, Clock, Eye, Heart, CheckCircle2, ArrowRight, ShieldCheck } from 'lucide-react';
-import { visitorArticleService } from '../services/visitorArticleService';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import api from "../lib/api";
+import {
+  Search,
+  Play,
+  BookOpen,
+  Calendar,
+  Eye,
+  CheckCircle2,
+  ArrowRight,
+  Sparkles,
+} from "lucide-react";
+import { visitorArticleService } from "../services/visitorArticleService";
 
 export const BlogListPage: React.FC = () => {
   const navigate = useNavigate();
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState('All');
-  const [selectedType, setSelectedType] = useState('All'); // All, article, video
-  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedType, setSelectedType] = useState("All"); // All, article, video
+  const [searchTerm, setSearchTerm] = useState("");
 
   const categories = [
-    'All',
-    'Temple History',
-    'Travel Guide',
-    'Festival',
-    'Ashram News',
-    'Pilgrim Story',
-    'Prasad',
-    'Videos',
+    "All",
+    "Temple History",
+    "Travel Guide",
+    "Festival",
+    "Ashram News",
+    "Pilgrim Story",
+    "Prasad",
+    "Videos",
   ];
 
   useEffect(() => {
@@ -31,37 +40,49 @@ export const BlogListPage: React.FC = () => {
     setLoading(true);
     try {
       const [blogRes, visitorRes] = await Promise.all([
-        axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/blog/posts`, {
-          params: { category: selectedCategory, contentType: selectedType, search: searchTerm },
-        }).catch(() => ({ data: { success: false, data: [] } })),
-        visitorArticleService.getPublicArticles({
-          category: selectedCategory,
-          search: searchTerm,
-        }).catch(() => ({ data: { success: false, data: [] } })),
+        api
+          .get("/blog/posts", {
+            params: {
+              category: selectedCategory,
+              contentType: selectedType,
+              search: searchTerm,
+            },
+          })
+          .catch(() => ({ data: { success: false, data: [] } })),
+        visitorArticleService
+          .getPublicArticles({
+            category: selectedCategory,
+            search: searchTerm,
+          })
+          .catch(() => ({ data: { success: false, data: [] } })),
       ]);
 
       const blogPosts = blogRes.data?.success ? blogRes.data.data : [];
-      const visitorPosts = (visitorRes.data?.success ? visitorRes.data.data : []).map((va: any) => ({
+      const visitorPosts = (
+        visitorRes.data?.success ? visitorRes.data.data : []
+      ).map((va: any) => ({
         _id: va._id,
         title: va.title,
         slug: va.slug,
         excerpt: va.shortDescription,
         coverImage: va.featuredImage,
-        category: va.category || 'Visitor Story',
+        category: va.category || "Visitor Story",
         createdAt: va.createdAt,
         views: va.viewsCount || 0,
-        readingTime: '5 min read',
+        readingTime: "5 min read",
         isVerifiedStay: true,
         ashramName: va.ashramId?.name,
         authorId: {
-          name: va.visitorId?.name || 'Verified Visitor',
-          photo: va.visitorId?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&h=100&q=80',
+          name: va.visitorId?.name || "Verified Visitor",
+          photo:
+            va.visitorId?.avatar ||
+            "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&h=100&q=80",
         },
       }));
 
       setPosts([...visitorPosts, ...blogPosts]);
     } catch (err) {
-      console.error('Error fetching blog list:', err);
+      console.error("Error fetching blog list:", err);
     } finally {
       setLoading(false);
     }
@@ -74,33 +95,32 @@ export const BlogListPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-[#070F1B] pb-16">
-      {/* Primary Hero Banner Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-1 sm:pt-3 mb-8 sm:mb-12">
-        <div className="relative rounded-3xl sm:rounded-[32px] overflow-hidden shadow-2xl border border-white/10 bg-[#0B192C] min-h-[220px] sm:min-h-[300px] md:min-h-[360px] flex flex-col justify-center items-center text-center p-6 sm:p-10">
-          <img
-            src="/banner/popular.png"
-            alt="Spiritual Media & Knowledge Hub Banner"
-            className="absolute inset-0 w-full h-full object-cover object-center"
-            loading="lazy"
-          />
-          {/* Subtle gradient overlay to ensure text contrast */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/20" />
-
-          {/* Banner Content Overlay */}
-          <div className="relative z-10 space-y-4 max-w-3xl mx-auto">
-            <span className="px-4 py-1.5 rounded-full bg-white/10 text-amber-300 text-xs font-black uppercase tracking-wider border border-white/20 backdrop-blur-md inline-block shadow-md">
-              Spiritual Media & Knowledge Hub
-            </span>
-            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white leading-tight drop-shadow-lg">
-              Sacred Articles & Spiritual Media
-            </h1>
-            <p className="text-xs sm:text-base text-gray-200 font-medium max-w-2xl mx-auto leading-relaxed drop-shadow-md">
-              Explore authentic temple history, travel guides, live video documentaries, ashram experiences, and mahaprasad stories.
-            </p>
-
-            {/* Integrated Search Bar */}
-            <form onSubmit={handleSearch} className="max-w-xl mx-auto mt-6 flex items-center bg-white dark:bg-[#0B192C] rounded-full p-2 shadow-2xl border border-white/20">
-              <Search size={18} className="text-[#0A4DA6] ml-4 shrink-0" />
+      {/* Primary Clean Text Header (Matching all other section headers on the site) */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 mb-6">
+        <div className="text-center space-y-2.5 max-w-3xl mx-auto py-2">
+          <p className="font-['Kalam'] text-2xl sm:text-4xl lg:text-5xl font-bold text-[#E58C28]">
+            Sacred Articles &amp; Knowledge Hub
+          </p>
+          {/* Decorative Saffron Underline Divider */}
+          <div className="flex items-center justify-center gap-2.5 my-1.5">
+            <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
+            <Sparkles
+              size={14}
+              className="text-[#E58C28] fill-[#E58C28] shrink-0"
+            />
+            <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
+          </div>
+          <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-xl mx-auto leading-relaxed">
+            Explore authentic temple history, travel guides, live video
+            documentaries, ashram experiences, and mahaprasad stories.
+          </p>
+          {/* Integrated Search Bar */}
+          <form
+            onSubmit={handleSearch}
+            className="max-w-xl mx-auto pt-3 flex items-center relative z-10"
+          >
+            <div className="w-full bg-white dark:bg-[#0B192C] rounded-full p-2 shadow-lg border border-gray-200 dark:border-slate-800 flex items-center">
+              <Search size={18} className="text-gray-400 ml-4 shrink-0" />
               <input
                 type="text"
                 placeholder="Search articles, videos, temples, or authors..."
@@ -108,35 +128,45 @@ export const BlogListPage: React.FC = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full bg-transparent px-3 text-xs sm:text-sm font-semibold text-[#0B192C] dark:text-white focus:outline-none"
               />
-              <button type="submit" className="px-6 py-2.5 rounded-full bg-[#E58C28] hover:bg-amber-600 text-white font-black text-xs transition-colors shrink-0 shadow-md">
+              <button
+                type="submit"
+                className="px-6 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-blue-900 text-white font-black text-xs transition-colors shrink-0 shadow-sm cursor-pointer"
+              >
                 Search
               </button>
-            </form>
-          </div>
+            </div>
+          </form>
         </div>
       </div>
-
-
 
       {/* Post Grid */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-8">
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-80 bg-gray-200 dark:bg-slate-800 animate-pulse rounded-3xl" />
+              <div
+                key={i}
+                className="h-80 bg-gray-200 dark:bg-slate-800 animate-pulse rounded-3xl"
+              />
             ))}
           </div>
         ) : posts.length === 0 ? (
           <div className="text-center py-16 bg-white dark:bg-[#0B192C] rounded-3xl border border-gray-200 dark:border-slate-800">
             <BookOpen size={48} className="text-gray-400 mx-auto mb-3" />
-            <h3 className="font-black text-lg text-gray-700 dark:text-gray-200">No Posts Found</h3>
-            <p className="text-xs text-gray-400">Try adjusting your filters or search term.</p>
+            <h3 className="font-black text-lg text-gray-700 dark:text-gray-200">
+              No Posts Found
+            </h3>
+            <p className="text-xs text-gray-400">
+              Try adjusting your filters or search term.
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {posts.map((item) => {
-              const isVideo = item.youtubeUrl || item.contentType === 'video';
-              const targetUrl = isVideo ? `/video/${item.slug}` : `/blog/${item.slug}`;
+              const isVideo = item.youtubeUrl || item.contentType === "video";
+              const targetUrl = isVideo
+                ? `/video/${item.slug}`
+                : `/blog/${item.slug}`;
               const author = item.authorId || {};
 
               return (
@@ -152,16 +182,12 @@ export const BlogListPage: React.FC = () => {
                         src={item.coverImage}
                         alt={item.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/blogs/rishikesh_ashram_1785404729056.png'; }}
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src =
+                            "/blogs/rishikesh_ashram_1785404729056.png";
+                        }}
                       />
-                      <span className="absolute top-4 left-4 bg-[#0A4DA6] text-white text-[10px] font-black uppercase px-3 py-1 rounded-full shadow-md">
-                        {item.category}
-                      </span>
-                      {item.isVerifiedStay && (
-                        <span className="absolute top-4 right-4 bg-emerald-600 text-white text-[9px] font-black uppercase px-2.5 py-1 rounded-full shadow-md flex items-center gap-1">
-                          <ShieldCheck size={11} /> Verified Stay
-                        </span>
-                      )}
 
                       {/* Dynamic Video Overlay Detection */}
                       {isVideo ? (
@@ -170,20 +196,29 @@ export const BlogListPage: React.FC = () => {
                             <Play size={20} className="fill-white ml-1" />
                           </div>
                           <span className="absolute bottom-3 right-3 bg-black/80 backdrop-blur-md text-white text-[10px] font-extrabold px-2.5 py-1 rounded-md">
-                            {item.youtubeDuration || 'Video'}
+                            {item.youtubeDuration || "Video"}
                           </span>
                         </div>
                       ) : (
                         <span className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-md text-white text-[10px] font-extrabold px-2.5 py-1 rounded-md">
-                          {item.readingTime || '5 min read'}
+                          {item.readingTime || "5 min read"}
                         </span>
                       )}
                     </div>
 
                     <div className="p-6 space-y-3 flex-1 flex flex-col justify-between">
                       <div className="flex items-center gap-3 text-[11px] font-bold text-gray-400">
-                        <span className="flex items-center gap-1"><Calendar size={12} className="text-[#0A4DA6]" /> {new Date(item.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-                        <span className="flex items-center gap-1"><Eye size={12} className="text-[#0A4DA6]" /> {item.views} Views</span>
+                        <span className="flex items-center gap-1">
+                          <Calendar size={12} className="text-[#0A4DA6]" />{" "}
+                          {new Date(item.createdAt).toLocaleDateString(
+                            "en-IN",
+                            { day: "numeric", month: "short", year: "numeric" },
+                          )}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Eye size={12} className="text-[#0A4DA6]" />{" "}
+                          {item.views} Views
+                        </span>
                       </div>
 
                       <h3 className="font-black text-lg text-[#0B192C] dark:text-white leading-tight group-hover:text-[#0A4DA6] transition-colors line-clamp-2 h-12 flex items-start">
@@ -200,18 +235,26 @@ export const BlogListPage: React.FC = () => {
                   <div className="px-6 py-4 flex items-center justify-between border-t border-gray-50 dark:border-slate-800/50 mt-auto shrink-0 h-16">
                     <div className="flex items-center gap-2 min-w-0 flex-1 pr-2">
                       <img
-                        src={author.photo || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&h=100&q=80'}
+                        src={
+                          author.photo ||
+                          "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&h=100&q=80"
+                        }
                         alt={author.name}
                         className="w-7 h-7 rounded-full object-cover border border-[#0A4DA6] shrink-0"
                       />
                       <span className="text-xs font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1 truncate">
-                        <span className="truncate">{author.name || 'Verified Author'}</span>
-                        <CheckCircle2 size={12} className="text-emerald-500 shrink-0" />
+                        <span className="truncate">
+                          {author.name || "Verified Author"}
+                        </span>
+                        <CheckCircle2
+                          size={12}
+                          className="text-emerald-500 shrink-0"
+                        />
                       </span>
                     </div>
 
                     <button className="px-3.5 py-1.5 rounded-full bg-gray-100 dark:bg-slate-800 group-hover:bg-[#0A4DA6] group-hover:text-white text-gray-700 dark:text-gray-200 text-xs font-bold transition-all flex items-center gap-1 whitespace-nowrap shrink-0">
-                      <span>{isVideo ? 'Watch' : 'Read'}</span>
+                      <span>{isVideo ? "Watch" : "Read"}</span>
                       <ArrowRight size={12} />
                     </button>
                   </div>

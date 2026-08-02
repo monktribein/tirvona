@@ -1,6 +1,6 @@
 // Tirvona Enterprise Design System 2.0 - Layout Aliases
 // Every portal layout delegates to the single unified DashboardLayout frame.
-import DashboardLayout from '../../admin/shared/layouts/DashboardLayout';
+import DashboardLayout from "../../admin/shared/layouts/DashboardLayout";
 
 export { DashboardLayout };
 export const AdminLayout = DashboardLayout;

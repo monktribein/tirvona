@@ -1,1 +1,4 @@
-export { VerificationQueuePage, default } from '../admin/ashrams/pages/VerificationQueuePage';
+export {
+  VerificationQueuePage,
+  default,
+} from "../admin/ashrams/pages/VerificationQueuePage";

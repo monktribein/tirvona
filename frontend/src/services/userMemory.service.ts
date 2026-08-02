@@ -1,4 +1,4 @@
-import api from '../lib/api';
+import api from "../lib/api";
 
 export interface UserMemoryProfile {
   bookingDraft?: Record<string, any>;
@@ -18,11 +18,11 @@ export interface UserMemoryProfile {
 
 export const userMemoryService = {
   getMemory: async () => {
-    return api.get('/user-memory');
+    return api.get("/user-memory");
   },
 
   saveMemory: async (memoryData: Partial<UserMemoryProfile>) => {
-    return api.post('/user-memory', memoryData);
+    return api.post("/user-memory", memoryData);
   },
 
   clearCategory: async (category: string) => {

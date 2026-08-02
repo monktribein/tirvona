@@ -1,7 +1,7 @@
-import React, { useRef } from 'react';
-import { Download, CircleParking, ShieldCheck, Clock, Car } from 'lucide-react';
-import type { ParkingBooking, ParkingPass } from '../types/parking.types';
-import { formatDateTime, vehicleLabel } from '../utils/parkingFormat';
+import React, { useRef } from "react";
+import { Download, CircleParking, ShieldCheck, Clock, Car } from "lucide-react";
+import type { ParkingBooking, ParkingPass } from "../types/parking.types";
+import { formatDateTime, vehicleLabel } from "../utils/parkingFormat";
 
 interface ParkingQrTicketProps {
   booking: ParkingBooking;
@@ -16,7 +16,11 @@ interface ParkingQrTicketProps {
  * as a pass rather than a card, which matters when a guard is looking at it on
  * a phone screen at a gate.
  */
-export const ParkingQrTicket: React.FC<ParkingQrTicketProps> = ({ booking, pass, locationName }) => {
+export const ParkingQrTicket: React.FC<ParkingQrTicketProps> = ({
+  booking,
+  pass,
+  locationName,
+}) => {
   const linkRef = useRef<HTMLAnchorElement>(null);
 
   // The QR arrives as a data URL, so the download needs no network round-trip
@@ -41,7 +45,9 @@ export const ParkingQrTicket: React.FC<ParkingQrTicketProps> = ({ booking, pass,
             <CircleParking size={12} className="stroke-[2.5]" />
             Tirvona Parking Pass
           </p>
-          <h3 className="font-extrabold text-sm mt-1 line-clamp-1">{locationName || 'Parking'}</h3>
+          <h3 className="font-extrabold text-sm mt-1 line-clamp-1">
+            {locationName || "Parking"}
+          </h3>
         </div>
       </div>
 
@@ -60,8 +66,12 @@ export const ParkingQrTicket: React.FC<ParkingQrTicketProps> = ({ booking, pass,
         )}
 
         <div className="text-center space-y-0.5">
-          <p className="text-[9px] uppercase tracking-wider font-bold text-gray-400">Gate Code</p>
-          <p className="font-black text-lg tracking-[0.15em] text-[#0B192C] dark:text-white">{pass.displayCode}</p>
+          <p className="text-[9px] uppercase tracking-wider font-bold text-gray-400">
+            Gate Code
+          </p>
+          <p className="font-black text-lg tracking-[0.15em] text-[#0B192C] dark:text-white">
+            {pass.displayCode}
+          </p>
         </div>
 
         <p className="inline-flex items-center gap-1.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-3 py-1 rounded-full border border-emerald-200 dark:border-emerald-900/50">
@@ -81,38 +91,50 @@ export const ParkingQrTicket: React.FC<ParkingQrTicketProps> = ({ booking, pass,
       <div className="p-5 space-y-3">
         <dl className="grid grid-cols-2 gap-x-3 gap-y-3 text-left">
           <div>
-            <dt className="text-[9px] uppercase tracking-wider font-bold text-gray-400">Booking</dt>
+            <dt className="text-[9px] uppercase tracking-wider font-bold text-gray-400">
+              Booking
+            </dt>
             <dd className="text-[11px] font-black text-[#0B192C] dark:text-white break-all">
               {booking.bookingReference}
             </dd>
           </div>
           <div>
-            <dt className="text-[9px] uppercase tracking-wider font-bold text-gray-400">Vehicle</dt>
+            <dt className="text-[9px] uppercase tracking-wider font-bold text-gray-400">
+              Vehicle
+            </dt>
             <dd className="text-[11px] font-black text-[#0B192C] dark:text-white inline-flex items-center gap-1">
               <Car size={11} className="stroke-[2.5] shrink-0" />
               {booking.vehicleNumber}
             </dd>
           </div>
           <div>
-            <dt className="text-[9px] uppercase tracking-wider font-bold text-gray-400">Type</dt>
+            <dt className="text-[9px] uppercase tracking-wider font-bold text-gray-400">
+              Type
+            </dt>
             <dd className="text-[11px] font-bold text-slate-700 dark:text-gray-200">
               {vehicleLabel(booking.vehicleType)}
             </dd>
           </div>
           <div>
-            <dt className="text-[9px] uppercase tracking-wider font-bold text-gray-400">Bay</dt>
+            <dt className="text-[9px] uppercase tracking-wider font-bold text-gray-400">
+              Bay
+            </dt>
             <dd className="text-[11px] font-bold text-slate-700 dark:text-gray-200">
-              {booking.assignedSlotNumber || 'On arrival'}
+              {booking.assignedSlotNumber || "On arrival"}
             </dd>
           </div>
           <div className="col-span-2">
-            <dt className="text-[9px] uppercase tracking-wider font-bold text-gray-400">Entry</dt>
+            <dt className="text-[9px] uppercase tracking-wider font-bold text-gray-400">
+              Entry
+            </dt>
             <dd className="text-[11px] font-bold text-slate-700 dark:text-gray-200">
               {formatDateTime(booking.entryAt)}
             </dd>
           </div>
           <div className="col-span-2">
-            <dt className="text-[9px] uppercase tracking-wider font-bold text-gray-400">Exit</dt>
+            <dt className="text-[9px] uppercase tracking-wider font-bold text-gray-400">
+              Exit
+            </dt>
             <dd className="text-[11px] font-bold text-slate-700 dark:text-gray-200">
               {formatDateTime(booking.exitAt)}
             </dd>
@@ -121,7 +143,10 @@ export const ParkingQrTicket: React.FC<ParkingQrTicketProps> = ({ booking, pass,
 
         <p className="flex items-start gap-1.5 text-[10px] text-gray-400 font-medium leading-relaxed pt-1">
           <Clock size={11} className="shrink-0 mt-0.5 stroke-[2.5]" />
-          <span>Valid until {formatDateTime(pass.validUntil)}. Show this at the gate for entry and exit.</span>
+          <span>
+            Valid until {formatDateTime(pass.validUntil)}. Show this at the gate
+            for entry and exit.
+          </span>
         </p>
 
         <button

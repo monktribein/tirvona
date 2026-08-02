@@ -1,26 +1,26 @@
-import React from 'react';
+import React from "react";
 
 interface AvatarProps {
   name: string;
   role?: string;
-  size?: 'sm' | 'md' | 'lg';
+  size?: "sm" | "md" | "lg";
   src?: string;
 }
 
 export const Avatar: React.FC<AvatarProps> = ({
   name,
   role,
-  size = 'md',
+  size = "md",
   src,
 }) => {
-  const initial = name ? name.charAt(0).toUpperCase() : 'U';
+  const initial = name ? name.charAt(0).toUpperCase() : "U";
 
   const sizeClasses =
-    size === 'sm'
-      ? 'w-8 h-8 text-xs'
-      : size === 'lg'
-      ? 'w-12 h-12 text-base'
-      : 'w-10 h-10 text-sm';
+    size === "sm"
+      ? "w-8 h-8 text-xs"
+      : size === "lg"
+        ? "w-12 h-12 text-base"
+        : "w-10 h-10 text-sm";
 
   return (
     <div className="flex items-center gap-2.5">
@@ -39,10 +39,14 @@ export const Avatar: React.FC<AvatarProps> = ({
       </div>
       {(name || role) && (
         <div className="flex flex-col text-left">
-          {name && <span className="text-xs font-black text-[#0B192C] dark:text-white truncate max-w-[120px]">{name}</span>}
+          {name && (
+            <span className="text-xs font-black text-[#0B192C] dark:text-white truncate max-w-[120px]">
+              {name}
+            </span>
+          )}
           {role && (
             <span className="text-[9px] font-black text-[#E58C28] uppercase tracking-wider">
-              {role.replace(/_/g, ' ')}
+              {role.replace(/_/g, " ")}
             </span>
           )}
         </div>

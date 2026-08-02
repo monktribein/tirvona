@@ -1,31 +1,33 @@
 // Parking System — shared types.
 //
-// Mirrors the API contract exposed by backend/src/modules/parking. Kept in the
+// Mirrors the API contract exposed by Newbackend/src/modules/parking. Kept in the
 // module so no existing type file has to change.
 
 export type ParkingVehicleTypeCode =
-  | 'bike'
-  | 'scooter'
-  | 'car'
-  | 'suv'
-  | 'luxury_car'
-  | 'tempo'
-  | 'mini_bus'
-  | 'bus'
-  | 'ev';
+  | "bike"
+  | "scooter"
+  | "car"
+  | "suv"
+  | "luxury_car"
+  | "tempo"
+  | "mini_bus"
+  | "bus"
+  | "ev";
 
 export type ParkingBookingStatus =
-  | 'pending'
-  | 'upcoming'
-  | 'checked_in'
-  | 'checked_out'
-  | 'cancelled'
-  | 'expired'
-  | 'no_show';
+  | "pending"
+  | "upcoming"
+  | "checked_in"
+  | "checked_out"
+  | "cancelled"
+  | "expired"
+  | "no_show";
 
-export type ParkingPaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded' | 'partially_refunded';
+export type ParkingPaymentStatus =
+  "pending" | "paid" | "failed" | "refunded" | "partially_refunded";
 
-export type ParkingRole = 'parking_partner' | 'parking_manager' | 'security_guard';
+export type ParkingRole =
+  "parking_partner" | "parking_manager" | "security_guard";
 
 export interface ParkingVehicleType {
   code: ParkingVehicleTypeCode;
@@ -138,7 +140,13 @@ export interface ParkingLocationDetail extends ParkingLocation {
 
 export interface ParkingReview {
   _id: string;
-  rating: { overall: number; safety?: number; cleanliness?: number; staff?: number; valueForMoney?: number };
+  rating: {
+    overall: number;
+    safety?: number;
+    cleanliness?: number;
+    staff?: number;
+    valueForMoney?: number;
+  };
   comment: string;
   createdAt: string;
   customerId?: { name?: string; avatarUrl?: string };
@@ -181,7 +189,11 @@ export interface ParkingBooking {
   status: ParkingBookingStatus;
   paymentStatus: ParkingPaymentStatus;
   reservationExpiresAt?: string | null;
-  cancellation?: { reason?: string; cancelledAt?: string; refundAmount?: number };
+  cancellation?: {
+    reason?: string;
+    cancelledAt?: string;
+    refundAmount?: number;
+  };
   createdAt: string;
 }
 
@@ -209,7 +221,7 @@ export interface ParkingSearchFilters {
   destination?: string;
   city?: string;
   templeSlug?: string;
-  vehicleType?: ParkingVehicleTypeCode | '';
+  vehicleType?: ParkingVehicleTypeCode | "";
   amenities?: string[];
   covered?: boolean;
   evCharging?: boolean;
@@ -262,7 +274,12 @@ export interface ParkingScanResult {
 }
 
 export interface ParkingGuardContext {
-  locations: { _id: string; name: string; slug: string; address?: ParkingAddress }[];
+  locations: {
+    _id: string;
+    name: string;
+    slug: string;
+    address?: ParkingAddress;
+  }[];
   roles: ParkingRole[];
   capabilities: string[];
 }

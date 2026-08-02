@@ -1,8 +1,8 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-import './TirvonaMapView.css';
-import { hasValidCoordinates } from '../utils/geo';
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import "./TirvonaMapView.css";
+import { hasValidCoordinates } from "../utils/geo";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared OpenStreetMap / Leaflet map.
@@ -60,7 +60,7 @@ const DEFAULT_CENTER: [number, number] = [25.3176, 82.9739]; // Varanasi
 
 // OSM's current official endpoint. The old a/b/c subdomain form is deprecated —
 // HTTP/2 makes it pointless and OSM asks clients not to use it.
-const TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+const TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
 
 // The OpenStreetMap credit is not passed to the tile layer — it is rendered as
 // a caption under the map instead, so the tiles stay uncluttered. See the
@@ -68,19 +68,23 @@ const TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 
 /** Escape values before they go into marker/popup HTML strings. */
 const esc = (value: string) =>
-  String(value).replace(/[&<>"']/g, (c) =>
-    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string,
+  String(value).replace(
+    /[&<>"']/g,
+    (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
+        c
+      ] as string,
   );
 
 /** On-brand pin, built as HTML so no image asset has to resolve. */
 const buildIcon = (marker: MapMarker) => {
-  const colour = marker.active ? '#E58C28' : '#0A4DA6';
+  const colour = marker.active ? "#E58C28" : "#0A4DA6";
   const badge = marker.badge
     ? `<span style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);white-space:nowrap;background:#0B192C;color:#fff;font-size:9px;font-weight:800;padding:2px 6px;border-radius:9999px;">${esc(marker.badge)}</span>`
-    : '';
+    : "";
 
   return L.divIcon({
-    className: 'tirvona-map-pin',
+    className: "tirvona-map-pin",
     html: `
       <div style="position:relative;display:flex;align-items:center;justify-content:center;">
         ${badge}
@@ -98,10 +102,10 @@ const buildIcon = (marker: MapMarker) => {
 const buildPopup = (marker: MapMarker) => {
   const subtitle = marker.subtitle
     ? `<p style="margin:2px 0 0;font-size:11px;color:#64748b;font-weight:500;">${esc(marker.subtitle)}</p>`
-    : '';
+    : "";
   const link = marker.href
     ? `<a href="${esc(marker.href)}" style="display:inline-block;margin-top:6px;font-size:11px;font-weight:800;color:#0A4DA6;text-decoration:none;">View details →</a>`
-    : '';
+    : "";
 
   return `<div style="min-width:150px;font-family:Inter,system-ui,sans-serif;">
       <p style="margin:0;font-size:12px;font-weight:800;color:#0B192C;">${esc(marker.title)}</p>
@@ -113,15 +117,15 @@ export const TirvonaMapView: React.FC<TirvonaMapProps> = ({
   markers = [],
   center,
   zoom = 14,
-  height = '320px',
-  className = '',
+  height = "320px",
+  className = "",
   interactive = true,
   fitToMarkers = false,
   onMarkerClick,
   onMapClick,
   draggableMarker = false,
   onMarkerDrag,
-  ariaLabel = 'Map',
+  ariaLabel = "Map",
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -185,10 +189,11 @@ export const TirvonaMapView: React.FC<TirvonaMapProps> = ({
     const map = mapRef.current;
     if (!map || !onMapClick) return;
 
-    const handler = (e: L.LeafletMouseEvent) => onMapClick(e.latlng.lat, e.latlng.lng);
-    map.on('click', handler);
+    const handler = (e: L.LeafletMouseEvent) =>
+      onMapClick(e.latlng.lat, e.latlng.lng);
+    map.on("click", handler);
     return () => {
-      map.off('click', handler);
+      map.off("click", handler);
     };
   }, [ready, onMapClick]);
 
@@ -210,9 +215,9 @@ export const TirvonaMapView: React.FC<TirvonaMapProps> = ({
       });
 
       if (m.title || m.subtitle) pin.bindPopup(buildPopup(m));
-      if (onMarkerClick) pin.on('click', () => onMarkerClick(m.id));
+      if (onMarkerClick) pin.on("click", () => onMarkerClick(m.id));
       if (draggableMarker && onMarkerDrag) {
-        pin.on('dragend', () => {
+        pin.on("dragend", () => {
           const { lat, lng } = pin.getLatLng();
           onMarkerDrag(lat, lng);
         });
@@ -222,12 +227,24 @@ export const TirvonaMapView: React.FC<TirvonaMapProps> = ({
     });
 
     if (fitToMarkers && validMarkers.length > 0) {
-      const bounds = L.latLngBounds(validMarkers.map((m) => [m.latitude, m.longitude] as [number, number]));
+      const bounds = L.latLngBounds(
+        validMarkers.map((m) => [m.latitude, m.longitude] as [number, number]),
+      );
       // A single marker has zero-area bounds, which fitBounds would zoom to the
       // maximum on — pad it so one pin still shows useful surrounding context.
-      map.fitBounds(bounds, { padding: [40, 40], maxZoom: validMarkers.length === 1 ? 15 : 16 });
+      map.fitBounds(bounds, {
+        padding: [40, 40],
+        maxZoom: validMarkers.length === 1 ? 15 : 16,
+      });
     }
-  }, [ready, validMarkers, fitToMarkers, draggableMarker, onMarkerClick, onMarkerDrag]);
+  }, [
+    ready,
+    validMarkers,
+    fitToMarkers,
+    draggableMarker,
+    onMarkerClick,
+    onMarkerDrag,
+  ]);
 
   // Recentre when the caller moves the view (e.g. wizard coordinates typed in).
   // Split into primitives so the effect re-runs on a coordinate change rather
@@ -237,7 +254,13 @@ export const TirvonaMapView: React.FC<TirvonaMapProps> = ({
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || centerLat === undefined || centerLng === undefined || fitToMarkers) return;
+    if (
+      !map ||
+      centerLat === undefined ||
+      centerLng === undefined ||
+      fitToMarkers
+    )
+      return;
     map.setView([centerLat, centerLng], zoom);
   }, [ready, centerLat, centerLng, zoom, fitToMarkers]);
 
@@ -250,17 +273,18 @@ export const TirvonaMapView: React.FC<TirvonaMapProps> = ({
 
     const invalidate = () => map.invalidateSize();
     const timer = window.setTimeout(invalidate, 120);
-    window.addEventListener('resize', invalidate);
+    window.addEventListener("resize", invalidate);
 
     const observer =
-      typeof ResizeObserver !== 'undefined' && containerRef.current
+      typeof ResizeObserver !== "undefined" && containerRef.current
         ? new ResizeObserver(invalidate)
         : null;
-    if (observer && containerRef.current) observer.observe(containerRef.current);
+    if (observer && containerRef.current)
+      observer.observe(containerRef.current);
 
     return () => {
       window.clearTimeout(timer);
-      window.removeEventListener('resize', invalidate);
+      window.removeEventListener("resize", invalidate);
       observer?.disconnect();
     };
   }, [ready]);

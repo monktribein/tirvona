@@ -1,49 +1,66 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import axios from 'axios';
-import { useAuth } from '../contexts/AuthContext';
-import { useNotifications } from '../contexts/NotificationContext';
-import { ashramService, reviewService, roomService, bookingService, offerService, platformSettingsService } from '../services';
-import { getErrorMessage } from '../lib/api';
-import { openRazorpayCheckout } from '../lib/razorpay';
-import { saveBookingDraft, getBookingDraft, clearBookingDraft, type BookingDraftPayload } from '../utils/bookingDraft';
-import { GuestRoomSelector } from '../components/shared/GuestRoomSelector';
-import { GuestReviewsCarousel } from '../components/shared/GuestReviewsCarousel';
-import { VerifiedBadge } from '../components/shared/VerifiedBadge';
-import { useBookingSearch } from '../contexts/BookingSearchContext';
-import TirvonaMap from '../components/TirvonaMap';
-import { hasValidCoordinates } from '../utils/geo';
-import { 
-  ShieldCheck, 
-  MapPin, 
-  Star, 
-  Calendar as CalendarIcon, 
-  Coffee, 
-  ParkingCircle, 
-  Lock, 
+import React, { useState, useEffect, useRef } from "react";
+import {
+  useParams,
+  useNavigate,
+  Link,
+  useSearchParams,
+} from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "../contexts/AuthContext";
+import { useNotifications } from "../contexts/NotificationContext";
+import {
+  ashramService,
+  reviewService,
+  roomService,
+  bookingService,
+  offerService,
+  platformSettingsService,
+} from "../services";
+import { getErrorMessage } from "../lib/api";
+import { openRazorpayCheckout } from "../lib/razorpay";
+import {
+  saveBookingDraft,
+  getBookingDraft,
+  clearBookingDraft,
+  type BookingDraftPayload,
+} from "../utils/bookingDraft";
+import { GuestRoomSelector } from "../components/shared/GuestRoomSelector";
+import { GuestReviewsCarousel } from "../components/shared/GuestReviewsCarousel";
+import { VerifiedBadge } from "../components/shared/VerifiedBadge";
+import { useBookingSearch } from "../contexts/BookingSearchContext";
+import TirvonaMap from "../components/TirvonaMap";
+import { hasValidCoordinates } from "../utils/geo";
+import { useAutoScroll } from "../hooks/useAutoScroll";
+import {
+  ShieldCheck,
+  MapPin,
+  Star,
+  Calendar as CalendarIcon,
+  ParkingCircle,
+  Lock,
   Heart,
   ChevronRight,
   ChevronLeft,
   ArrowRight,
-  Info,
   Map,
   Sparkles,
   Phone,
   Mail,
   Globe,
-  Compass,
   Bed,
   CheckCircle,
   Award,
   X,
   Maximize2,
   Trash2,
-  Edit3
-} from 'lucide-react';
+  Edit3,
+} from "lucide-react";
 
-import { volunteerService, type VolunteerJobItem } from '../services/volunteer.service';
-import { useProfileAutoFill } from '../hooks/useProfileAutoFill';
+import {
+  volunteerService,
+  type VolunteerJobItem,
+} from "../services/volunteer.service";
+import { useProfileAutoFill } from "../hooks/useProfileAutoFill";
 
 export const AshramDetailPage: React.FC = () => {
   const { id } = useParams();
@@ -52,24 +69,32 @@ export const AshramDetailPage: React.FC = () => {
   const autoFill = useProfileAutoFill();
   const navigate = useNavigate();
 
-  const { searchState, updateBookingSearch, totalGuests: searchTotalGuests } = useBookingSearch();
+  const {
+    searchState,
+    updateBookingSearch,
+    totalGuests: searchTotalGuests,
+  } = useBookingSearch();
 
-  const qCheckIn = searchParams.get('checkIn');
-  const qCheckOut = searchParams.get('checkOut');
-  const qRooms = searchParams.get('rooms');
-  const qAdults = searchParams.get('adults');
-  const qChildren = searchParams.get('children');
+  const qCheckIn = searchParams.get("checkIn");
+  const qCheckOut = searchParams.get("checkOut");
+  const qRooms = searchParams.get("rooms");
+  const qAdults = searchParams.get("adults");
+  const qChildren = searchParams.get("children");
 
-  const initialCheckIn = qCheckIn || searchState.checkIn || '';
-  const initialCheckOut = qCheckOut || searchState.checkOut || '';
+  const initialCheckIn = qCheckIn || searchState.checkIn || "";
+  const initialCheckOut = qCheckOut || searchState.checkOut || "";
   const initialRooms = qRooms ? parseInt(qRooms) : searchState.rooms || 1;
   const initialAdults = qAdults ? parseInt(qAdults) : searchState.adults || 2;
-  const initialChildren = qChildren !== null && qChildren !== undefined ? parseInt(qChildren) : searchState.children || 0;
+  const initialChildren =
+    qChildren !== null && qChildren !== undefined
+      ? parseInt(qChildren)
+      : searchState.children || 0;
 
   const [ashram, setAshram] = useState<any>(null);
   const [rooms, setRooms] = useState<any[]>([]);
   const [volunteerJobs, setVolunteerJobs] = useState<VolunteerJobItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [detailError, setDetailError] = useState("");
 
   // Booking Flow parameters
   const [checkIn, setCheckIn] = useState(initialCheckIn);
@@ -78,15 +103,15 @@ export const AshramDetailPage: React.FC = () => {
   const [roomsCount, setRoomsCount] = useState(initialRooms);
 
   useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior });
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
   }, [id]);
 
   useEffect(() => {
-    const qCheckIn = searchParams.get('checkIn');
-    const qCheckOut = searchParams.get('checkOut');
-    const qPromo = searchParams.get('promoCode');
+    const qCheckIn = searchParams.get("checkIn");
+    const qCheckOut = searchParams.get("checkOut");
+    const qPromo = searchParams.get("promoCode");
     if (qCheckIn) setCheckIn(qCheckIn);
     if (qCheckOut) setCheckOut(qCheckOut);
     if (qPromo) {
@@ -101,7 +126,10 @@ export const AshramDetailPage: React.FC = () => {
     const code = (codeToTest || couponCode).trim().toUpperCase();
     if (!code) return;
     try {
-      const currentBookingAmount = (selectedRoom?.basePrice || 350) * Math.max(1, roomsCount) * calculateDays();
+      const currentBookingAmount =
+        (selectedRoom?.basePrice || 350) *
+        Math.max(1, roomsCount) *
+        calculateDays();
       const res = await offerService.validatePromo({
         promoCode: code,
         bookingAmount: currentBookingAmount,
@@ -111,17 +139,22 @@ export const AshramDetailPage: React.FC = () => {
         const offerData = res.data.data;
         setAppliedOfferData(offerData);
         setAppliedDiscount(offerData.discountAmount);
-        setCouponMsg(res.data.message || `Promo code ${code} applied! Saved ₹${offerData.discountAmount}`);
+        setCouponMsg(
+          res.data.message ||
+            `Promo code ${code} applied! Saved ₹${offerData.discountAmount}`,
+        );
       } else {
         setAppliedOfferData(null);
         setAppliedDiscount(0);
-        setCouponMsg(res.data?.message || 'Invalid promo code');
+        setCouponMsg(res.data?.message || "Invalid promo code");
       }
     } catch (err: any) {
-      console.error('Validate promo error:', err);
+      console.error("Validate promo error:", err);
       setAppliedOfferData(null);
       setAppliedDiscount(0);
-      setCouponMsg(err.response?.data?.message || 'Invalid or expired promo code');
+      setCouponMsg(
+        err.response?.data?.message || "Invalid or expired promo code",
+      );
     }
   };
 
@@ -130,7 +163,7 @@ export const AshramDetailPage: React.FC = () => {
   const [meals, setMeals] = useState(false);
   const [parking, setParking] = useState(false);
   const [locker, setLocker] = useState(false);
-  const [donation, setDonation] = useState('');
+  const [donation, setDonation] = useState("");
 
   // Extended Booking Fields
   const [adults, setAdults] = useState(initialAdults);
@@ -152,10 +185,10 @@ export const AshramDetailPage: React.FC = () => {
       children,
     });
   }, [checkIn, checkOut]);
-  const [couponCode, setCouponCode] = useState('');
+  const [couponCode, setCouponCode] = useState("");
   const [appliedDiscount, setAppliedDiscount] = useState(0);
-  const [couponMsg, setCouponMsg] = useState('');
-  const [specialRequests, setSpecialRequests] = useState('');
+  const [couponMsg, setCouponMsg] = useState("");
+  const [specialRequests, setSpecialRequests] = useState("");
   const [restoredNotice, setRestoredNotice] = useState(false);
 
   // Live Availability Calendar
@@ -165,11 +198,17 @@ export const AshramDetailPage: React.FC = () => {
   // Reviews
   const [reviews, setReviews] = useState<any[]>([]);
 
-
   // Related stays
   const [relatedStays, setRelatedStays] = useState<any[]>([]);
 
-  const [bookingError, setBookingError] = useState('');
+  // Gentle horizontal drift for the related-stays row. A callback ref, not a
+  // RefObject: the row only renders once relatedStays has loaded, so a
+  // RefObject would be null on the effect's single run and never animate.
+  // Ping-pong scrolling means the items do NOT need duplicating, so each card
+  // keeps its unique `key={rel._id}`.
+  const setRelatedRow = useAutoScroll<HTMLDivElement>({ speed: 30 });
+
+  const [bookingError, setBookingError] = useState("");
   const [bookingSuccess, setBookingSuccess] = useState<any>(null);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -187,16 +226,20 @@ export const AshramDetailPage: React.FC = () => {
 
   useEffect(() => {
     const draft = getBookingDraft();
-    const pendingRaw = localStorage.getItem('pending_booking');
+    const pendingRaw = localStorage.getItem("pending_booking");
     let pb: any = draft;
     if (!pb && pendingRaw) {
-      try { pb = JSON.parse(pendingRaw); } catch (e) {}
+      try {
+        pb = JSON.parse(pendingRaw);
+      } catch {}
     }
 
     if (pb && id && (pb.ashramId === id || !pb.ashramId)) {
       try {
-        if (pb.checkIn || pb.checkInDate) setCheckIn(pb.checkIn || pb.checkInDate);
-        if (pb.checkOut || pb.checkOutDate) setCheckOut(pb.checkOut || pb.checkOutDate);
+        if (pb.checkIn || pb.checkInDate)
+          setCheckIn(pb.checkIn || pb.checkInDate);
+        if (pb.checkOut || pb.checkOutDate)
+          setCheckOut(pb.checkOut || pb.checkOutDate);
         if (pb.adults !== undefined) setAdults(pb.adults);
         if (pb.children !== undefined) setChildren(pb.children);
         if (pb.roomsBookedCount) setRoomsCount(pb.roomsBookedCount);
@@ -207,8 +250,9 @@ export const AshramDetailPage: React.FC = () => {
         if (s.parking || s.parking?.ordered) setParking(true);
         if (s.locker || s.locker?.ordered) setLocker(true);
         if (s.donation) {
-          const donVal = typeof s.donation === 'object' ? s.donation.amount : s.donation;
-          setDonation(donVal ? donVal.toString() : '');
+          const donVal =
+            typeof s.donation === "object" ? s.donation.amount : s.donation;
+          setDonation(donVal ? donVal.toString() : "");
         }
 
         if (pb.couponCode) {
@@ -225,22 +269,22 @@ export const AshramDetailPage: React.FC = () => {
 
         setRestoredNotice(true);
       } catch (e) {
-        console.error('Error restoring pending booking:', e);
+        console.error("Error restoring pending booking:", e);
       }
     }
   }, [id, rooms]);
 
   const handleClearDraft = () => {
-    localStorage.removeItem('pending_booking');
+    localStorage.removeItem("pending_booking");
     setRestoredNotice(false);
     setPrasad(false);
     setMeals(false);
     setParking(false);
     setLocker(false);
-    setDonation('');
-    setCouponCode('');
+    setDonation("");
+    setCouponCode("");
     setAppliedDiscount(0);
-    setSpecialRequests('');
+    setSpecialRequests("");
   };
 
   const handleAdultsChange = (val: number) => {
@@ -265,17 +309,21 @@ export const AshramDetailPage: React.FC = () => {
   const handleRemoveCoupon = () => {
     setAppliedOfferData(null);
     setAppliedDiscount(0);
-    setCouponCode('');
-    setCouponMsg('');
+    setCouponCode("");
+    setCouponMsg("");
     setTimerActive(false);
     setReservationSeconds(600);
-    addNotification('Coupon Removed', 'Coupon removed successfully. Original stay amount restored.', 'info');
+    addNotification(
+      "Coupon Removed",
+      "Coupon removed successfully. Original stay amount restored.",
+      "info",
+    );
   };
 
   const handleChangeCoupon = () => {
     setAppliedOfferData(null);
     setAppliedDiscount(0);
-    setCouponMsg('');
+    setCouponMsg("");
     setTimerActive(false);
   };
 
@@ -289,29 +337,38 @@ export const AshramDetailPage: React.FC = () => {
   };
   const onHeroTouchEnd = (e: React.TouchEvent) => {
     const dx = e.changedTouches[0].clientX - touchStartX.current;
-    if (Math.abs(dx) > 40) (dx < 0 ? nextImage() : prevImage());
+    if (Math.abs(dx) > 40) {
+      if (dx < 0) nextImage();
+      else prevImage();
+    }
   };
 
   // Keyboard navigation while the lightbox is open.
   useEffect(() => {
     if (!lightboxOpen) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setLightboxOpen(false);
-      else if (e.key === 'ArrowRight') nextImage();
-      else if (e.key === 'ArrowLeft') prevImage();
+      if (e.key === "Escape") setLightboxOpen(false);
+      else if (e.key === "ArrowRight") nextImage();
+      else if (e.key === "ArrowLeft") prevImage();
     };
-    document.body.style.overflow = 'hidden';
-    window.addEventListener('keydown', onKey);
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKey);
     return () => {
-      document.body.style.overflow = '';
-      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", onKey);
     };
   }, [lightboxOpen, ashram]);
 
   // Add-On Services Dynamic Pricing State
-  const [addOnQuantities, setAddOnQuantities] = useState<Record<string, number>>({});
+  const [addOnQuantities, setAddOnQuantities] = useState<
+    Record<string, number>
+  >({});
 
-  const handleUpdateAddOnQty = (serviceId: string, delta: number, maxQty: number = 10) => {
+  const handleUpdateAddOnQty = (
+    serviceId: string,
+    delta: number,
+    maxQty: number = 10,
+  ) => {
     setAddOnQuantities((prev) => {
       const current = prev[serviceId] || 0;
       const next = Math.max(0, Math.min(maxQty, current + delta));
@@ -340,9 +397,9 @@ export const AshramDetailPage: React.FC = () => {
     const qty = addOnQuantities[item._id] || 0;
     if (qty > 0) {
       let itemTotal = item.price * qty;
-      if (item.unit === 'per_day') {
+      if (item.unit === "per_day") {
         itemTotal = item.price * qty * daysCount;
-      } else if (item.unit === 'per_person') {
+      } else if (item.unit === "per_person") {
         itemTotal = item.price * qty * (adults + children);
       }
       dynamicAddOnsCalc += itemTotal;
@@ -366,7 +423,12 @@ export const AshramDetailPage: React.FC = () => {
   const servicesCalc = dynamicAddOnsCalc + legacyServicesCalc;
   const donationCalc = parseFloat(donation) || 0;
   const subtotalCalc = basePriceCalc + servicesCalc + donationCalc;
-  const discountCalc = appliedDiscount > 0 ? (appliedDiscount <= 100 ? (subtotalCalc * appliedDiscount) / 100 : appliedDiscount) : 0;
+  const discountCalc =
+    appliedDiscount > 0
+      ? appliedDiscount <= 100
+        ? (subtotalCalc * appliedDiscount) / 100
+        : appliedDiscount
+      : 0;
   const totalCalc = Math.max(0, subtotalCalc - discountCalc);
 
   // Reservation Timer (10 Minutes) & Loyalty Rewards State
@@ -392,7 +454,9 @@ export const AshramDetailPage: React.FC = () => {
           setTimerActive(false);
           setAppliedDiscount(0);
           setAppliedOfferData(null);
-          setCouponMsg('Reservation Expired. Your offer has expired. Please reapply the coupon.');
+          setCouponMsg(
+            "Reservation Expired. Your offer has expired. Please reapply the coupon.",
+          );
           return 0;
         }
         return prev - 1;
@@ -404,28 +468,31 @@ export const AshramDetailPage: React.FC = () => {
   const formatTimer = (secs: number) => {
     const m = Math.floor(secs / 60);
     const s = secs % 60;
-    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   };
 
   // Platform Fee Settings State
   const [platformSettings, setPlatformSettings] = useState<{
     enabled: boolean;
-    type: 'flat' | 'percentage';
+    type: "flat" | "percentage";
     value: number;
     label: string;
   }>({
     enabled: true,
-    type: 'flat',
+    type: "flat",
     value: 49,
-    label: 'Tirvona Platform Fee',
+    label: "Tirvona Platform Fee",
   });
 
   useEffect(() => {
-    platformSettingsService.getSettings().then((res) => {
-      if (res.data?.success && res.data.data?.platformFee) {
-        setPlatformSettings(res.data.data.platformFee);
-      }
-    }).catch(() => {});
+    platformSettingsService
+      .getSettings()
+      .then((res) => {
+        if (res.data?.success && res.data.data?.platformFee) {
+          setPlatformSettings(res.data.data.platformFee);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const extraGuestCalc = adults > 2 ? (adults - 2) * 200 * daysCount : 0;
@@ -433,32 +500,46 @@ export const AshramDetailPage: React.FC = () => {
   const gstCalc = Math.round(subtotalCalc * 0.05);
   const platformFeeCalc = !platformSettings.enabled
     ? 0
-    : platformSettings.type === 'percentage'
-    ? Math.round((subtotalCalc * platformSettings.value) / 100)
-    : Math.round(platformSettings.value || 49);
+    : platformSettings.type === "percentage"
+      ? Math.round((subtotalCalc * platformSettings.value) / 100)
+      : Math.round(platformSettings.value || 49);
 
   const totalSavingsCalc = Math.round(discountCalc + loyaltyCalc);
-  const finalPayableCalc = Math.max(0, Math.round(subtotalCalc - discountCalc - loyaltyCalc + gstCalc + platformFeeCalc));
+  const finalPayableCalc = Math.max(
+    0,
+    Math.round(
+      subtotalCalc - discountCalc - loyaltyCalc + gstCalc + platformFeeCalc,
+    ),
+  );
 
   const fetchDetails = async () => {
     setLoading(true);
+    setDetailError("");
     try {
       const res = await ashramService.getById(id!);
       if (res.data.success) {
-        setAshram(res.data.data.ashram);
-        setRooms(res.data.data.rooms);
-        if (res.data.data.rooms.length > 0) {
-          setSelectedRoom(res.data.data.rooms[0]);
+        const payload = res.data.data;
+        const detailAshram = payload?.ashram ?? payload;
+        const detailRooms = Array.isArray(payload?.rooms) ? payload.rooms : [];
+        if (!detailAshram?._id)
+          throw new Error("Ashram details are unavailable.");
+
+        setAshram(detailAshram);
+        setRooms(detailRooms);
+        if (detailRooms.length > 0) {
+          setSelectedRoom(detailRooms[0]);
         }
-        
+
         if (id) {
           fetchReviews(id);
-          fetchRelated(res.data.data.ashram.address?.city, id);
-          fetchVolunteerJobs(res.data.data.ashram.address?.city);
+          fetchRelated(detailAshram.address?.city, id);
+          fetchVolunteerJobs(detailAshram.address?.city);
         }
       }
     } catch (err) {
-      console.error('Fetch details error:', err);
+      console.error("Fetch details error:", err);
+      setAshram(null);
+      setDetailError(getErrorMessage(err, "Unable to load this ashram."));
     } finally {
       setLoading(false);
     }
@@ -471,15 +552,20 @@ export const AshramDetailPage: React.FC = () => {
         setReviews(res.data.data);
       }
     } catch (err) {
-      console.error('Reviews load error:', err);
+      console.error("Reviews load error:", err);
     }
   };
 
   const fetchRelated = async (city: string, currentId: string) => {
     try {
-      const res = await ashramService.search({ verified: 'true', destination: city });
+      const res = await ashramService.search({
+        verified: "true",
+        destination: city,
+      });
       if (res.data.success) {
-        setRelatedStays(res.data.data.filter((a: any) => a._id !== currentId).slice(0, 3));
+        setRelatedStays(
+          res.data.data.filter((a: any) => a._id !== currentId).slice(0, 3),
+        );
       }
     } catch (err) {
       console.error(err);
@@ -493,26 +579,28 @@ export const AshramDetailPage: React.FC = () => {
         setVolunteerJobs(res.data.data);
       }
     } catch (err) {
-      console.error('Volunteer jobs load error:', err);
+      console.error("Volunteer jobs load error:", err);
     }
   };
 
   const fetchAvailability = async () => {
-    if (!selectedRoom || !localStorage.getItem('ab_token')) {
+    if (!selectedRoom || !localStorage.getItem("ab_token")) {
       generateSimulatedCalendar();
       return;
     }
     setLoadingCalendar(true);
     try {
-      const today = new Date().toISOString().split('T')[0];
-      const end = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-      
+      const today = new Date().toISOString().split("T")[0];
+      const end = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split("T")[0];
+
       const res = await roomService.calendar(selectedRoom._id, today, end);
       if (res.data.success) {
         setAvailabilityCalendar(res.data.data);
       }
     } catch (err) {
-      console.error('Error fetching calendar overrides:', err);
+      console.error("Error fetching calendar overrides:", err);
       generateSimulatedCalendar();
     } finally {
       setLoadingCalendar(false);
@@ -526,13 +614,15 @@ export const AshramDetailPage: React.FC = () => {
       const d = new Date(today);
       d.setDate(today.getDate() + i);
       const rand = Math.random();
-      let available = selectedRoom ? Math.floor(selectedRoom.totalInventory * 0.4) : 10;
+      let available = selectedRoom
+        ? Math.floor(selectedRoom.totalInventory * 0.4)
+        : 10;
       if (rand > 0.8) available = 0;
       else if (rand > 0.6) available = 2;
       simulated.push({
-        date: d.toISOString().split('T')[0],
+        date: d.toISOString().split("T")[0],
         price: selectedRoom?.basePrice || 150,
-        available
+        available,
       });
     }
     setAvailabilityCalendar(simulated);
@@ -540,7 +630,7 @@ export const AshramDetailPage: React.FC = () => {
 
   const handleBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setBookingError('');
+    setBookingError("");
     setBookingSuccess(null);
 
     if (!user) {
@@ -572,13 +662,15 @@ export const AshramDetailPage: React.FC = () => {
       return;
     }
 
-    if (user.role !== 'customer') {
-      setBookingError('Only registered Guests can book rooms. Please log in with a Customer profile.');
+    if (user.role !== "customer") {
+      setBookingError(
+        "Only registered Guests can book rooms. Please log in with a Customer profile.",
+      );
       return;
     }
 
     if (!checkIn || !checkOut) {
-      setBookingError('Please choose check-in and check-out dates.');
+      setBookingError("Please choose check-in and check-out dates.");
       return;
     }
 
@@ -608,7 +700,9 @@ export const AshramDetailPage: React.FC = () => {
         setBookingSuccess(res.data.data);
       }
     } catch (err) {
-      setBookingError(getErrorMessage(err, 'Error occurred completing booking lock'));
+      setBookingError(
+        getErrorMessage(err, "Error occurred completing booking lock"),
+      );
     }
   };
 
@@ -616,16 +710,21 @@ export const AshramDetailPage: React.FC = () => {
 
   const handleConfirmPayment = async () => {
     if (!bookingSuccess) return;
-    setBookingError('');
+    setBookingError("");
     setPaying(true);
     try {
       // 1. Ask the backend to create a payment order (or signal demo mode).
-      const orderRes = await bookingService.createPaymentOrder(bookingSuccess._id);
+      const orderRes = await bookingService.createPaymentOrder(
+        bookingSuccess._id,
+      );
 
       if (orderRes.data.demo) {
         // No gateway configured → demo confirmation path.
-        await bookingService.pay(bookingSuccess._id, { method: 'upi', transactionId: `TXN-DEMO-${Date.now()}` });
-        navigate('/dashboard');
+        await bookingService.pay(bookingSuccess._id, {
+          method: "upi",
+          transactionId: `TXN-DEMO-${Date.now()}`,
+        });
+        navigate("/dashboard");
         return;
       }
 
@@ -638,9 +737,14 @@ export const AshramDetailPage: React.FC = () => {
 
       // 3. Verify the signature server-side and confirm the booking.
       await bookingService.pay(bookingSuccess._id, result);
-      navigate('/dashboard');
+      navigate("/dashboard");
     } catch (err) {
-      setBookingError(getErrorMessage(err, 'Payment could not be completed. Please try again.'));
+      setBookingError(
+        getErrorMessage(
+          err,
+          "Payment could not be completed. Please try again.",
+        ),
+      );
     } finally {
       setPaying(false);
     }
@@ -648,17 +752,72 @@ export const AshramDetailPage: React.FC = () => {
 
   const getAmenityIcon = (amName: string) => {
     const name = amName.toLowerCase();
-    if (name.includes('wifi')) return <span className="font-bold text-[9px] bg-primary/10 text-primary px-2.5 py-1 rounded-full">WiFi</span>;
-    if (name.includes('food') || name.includes('meal')) return <span className="font-bold text-[9px] bg-success/10 text-success px-2.5 py-1 rounded-full">Satvik Food</span>;
-    if (name.includes('meditation')) return <span className="font-bold text-[9px] bg-amber-500/10 text-amber-700 px-2.5 py-1 rounded-full">Dhyan Hall</span>;
-    if (name.includes('yoga')) return <span className="font-bold text-[9px] bg-purple-500/10 text-purple-600 px-2.5 py-1 rounded-full">Yoga</span>;
-    if (name.includes('cow') || name.includes('shelter')) return <span className="font-bold text-[9px] bg-yellow-500/10 text-yellow-700 px-2.5 py-1 rounded-full">Goshala</span>;
-    if (name.includes('river') || name.includes('view')) return <span className="font-bold text-[9px] bg-blue-500/10 text-blue-600 px-2.5 py-1 rounded-full">Ganga View</span>;
-    return <span className="font-bold text-[9px] bg-gray-50 text-gray-500 px-2.5 py-1 rounded-full">{amName}</span>;
+    if (name.includes("wifi"))
+      return (
+        <span className="font-bold text-[9px] bg-primary/10 text-primary px-2.5 py-1 rounded-full">
+          WiFi
+        </span>
+      );
+    if (name.includes("food") || name.includes("meal"))
+      return (
+        <span className="font-bold text-[9px] bg-success/10 text-success px-2.5 py-1 rounded-full">
+          Satvik Food
+        </span>
+      );
+    if (name.includes("meditation"))
+      return (
+        <span className="font-bold text-[9px] bg-amber-500/10 text-amber-700 px-2.5 py-1 rounded-full">
+          Dhyan Hall
+        </span>
+      );
+    if (name.includes("yoga"))
+      return (
+        <span className="font-bold text-[9px] bg-purple-500/10 text-purple-600 px-2.5 py-1 rounded-full">
+          Yoga
+        </span>
+      );
+    if (name.includes("cow") || name.includes("shelter"))
+      return (
+        <span className="font-bold text-[9px] bg-yellow-500/10 text-yellow-700 px-2.5 py-1 rounded-full">
+          Goshala
+        </span>
+      );
+    if (name.includes("river") || name.includes("view"))
+      return (
+        <span className="font-bold text-[9px] bg-blue-500/10 text-blue-600 px-2.5 py-1 rounded-full">
+          Ganga View
+        </span>
+      );
+    return (
+      <span className="font-bold text-[9px] bg-gray-50 text-gray-500 px-2.5 py-1 rounded-full">
+        {amName}
+      </span>
+    );
   };
 
   if (loading) {
-    return <div className="max-w-7xl mx-auto px-6 py-20 animate-pulse bg-white rounded-[28px] h-80 border border-gray-100" />;
+    return (
+      <div className="max-w-7xl mx-auto px-6 py-20 animate-pulse bg-white rounded-[28px] h-80 border border-gray-100" />
+    );
+  }
+
+  if (!ashram) {
+    return (
+      <div className="max-w-3xl mx-auto px-6 py-20 text-center space-y-4">
+        <h2 className="text-2xl font-extrabold text-[#0B192C] dark:text-white">
+          Ashram unavailable
+        </h2>
+        <p className="text-sm text-gray-500">
+          {detailError || "The requested ashram could not be found."}
+        </p>
+        <Link
+          to="/search"
+          className="inline-flex px-5 py-2.5 rounded-full bg-[#0A4DA6] text-white text-xs font-bold"
+        >
+          Browse available stays
+        </Link>
+      </div>
+    );
   }
 
   const galleryImages = ashram?.images || [];
@@ -679,7 +838,8 @@ export const AshramDetailPage: React.FC = () => {
 
     const [lng, lat] = pair.map(Number);
     if (!hasValidCoordinates(lat, lng)) return null;
-    if (lng === SCHEMA_DEFAULT_LNG_LAT[0] && lat === SCHEMA_DEFAULT_LNG_LAT[1]) return null;
+    if (lng === SCHEMA_DEFAULT_LNG_LAT[0] && lat === SCHEMA_DEFAULT_LNG_LAT[1])
+      return null;
 
     return [lat, lng];
   })();
@@ -691,9 +851,15 @@ export const AshramDetailPage: React.FC = () => {
         <div className="max-w-3xl md:max-w-4xl mx-auto flex flex-col items-center text-center space-y-3.5 px-2">
           {/* Badge & City/State */}
           <div className="flex items-center justify-center gap-2">
-            <VerifiedBadge isVerified={ashram.isVerified ?? (ashram.status === 'approved')} text="Verified Stay" size="md" />
+            <VerifiedBadge
+              isVerified={ashram.isVerified ?? ashram.status === "approved"}
+              text="Verified Stay"
+              size="md"
+            />
             <span className="text-xs text-gray-400 font-extrabold tracking-wider uppercase">
-              {[ashram.address?.city, ashram.address?.state].filter(Boolean).join(', ')}
+              {[ashram.address?.city, ashram.address?.state]
+                .filter(Boolean)
+                .join(", ")}
             </span>
           </div>
 
@@ -703,27 +869,44 @@ export const AshramDetailPage: React.FC = () => {
           </h2>
 
           {/* Row 2: Address • PIN Code • Phone • Email (Visually Equalized Width) */}
-          <div className="text-xs font-bold text-gray-600 dark:text-gray-300 flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1.5 leading-relaxed">
-            <span className="flex items-center gap-1.5">
-              <MapPin size={14} className="text-[#0A4DA6] shrink-0" />
+          {/* Stacks on phones. Inline-with-bullets only works once everything
+              fits on one line — as soon as the address wraps, a separator gets
+              pushed to the start of the next line and reads as a stray bullet
+              in front of the phone number. */}
+          <div className="text-xs font-bold text-gray-600 dark:text-gray-300 flex flex-col sm:flex-row sm:flex-wrap items-center justify-center gap-y-2 sm:gap-x-2.5 leading-relaxed">
+            {/* items-start + a nudge, so the pin sits on the FIRST line of a
+                wrapped address rather than centred against the whole block. */}
+            <span className="flex items-start gap-1.5">
+              <MapPin size={14} className="text-[#0A4DA6] shrink-0 mt-[3px]" />
               <span>
                 {[
                   ashram.address?.street,
                   ashram.address?.city,
                   ashram.address?.state,
-                  ashram.address?.pincode ? `PIN Code: ${ashram.address.pincode}` : null,
+                  ashram.address?.pincode
+                    ? `PIN Code: ${ashram.address.pincode}`
+                    : null,
                 ]
                   .filter(Boolean)
-                  .join(', ')}
+                  .join(", ")}
               </span>
             </span>
 
-            <span className="text-gray-300 dark:text-slate-700 font-black">•</span>
+            <span className="hidden sm:inline text-gray-300 dark:text-slate-700 font-black">
+              •
+            </span>
 
             {(() => {
-              const rawPhone = ashram.contact?.phone || ashram.phone || ashram.ownerId?.phone || '+91 135 244 0001';
-              const digits = rawPhone.replace(/\D/g, '');
-              const formatted = digits.length === 10 ? `+91 ${digits.slice(0, 5)} ${digits.slice(5)}` : rawPhone;
+              const rawPhone =
+                ashram.contact?.phone ||
+                ashram.phone ||
+                ashram.ownerId?.phone ||
+                "+91 135 244 0001";
+              const digits = rawPhone.replace(/\D/g, "");
+              const formatted =
+                digits.length === 10
+                  ? `+91 ${digits.slice(0, 5)} ${digits.slice(5)}`
+                  : rawPhone;
               return (
                 <a
                   href={`tel:${rawPhone}`}
@@ -735,21 +918,34 @@ export const AshramDetailPage: React.FC = () => {
               );
             })()}
 
-            <span className="text-gray-300 dark:text-slate-700 font-black">•</span>
+            <span className="hidden sm:inline text-gray-300 dark:text-slate-700 font-black">
+              •
+            </span>
 
             <a
-              href={`mailto:${ashram.contact?.email || ashram.email || ashram.ownerId?.email || 'stay@trust.in'}`}
+              href={`mailto:${ashram.contact?.email || ashram.email || ashram.ownerId?.email || "stay@trust.in"}`}
               className="flex items-center gap-1.5 hover:text-[#0A4DA6] transition-colors shrink-0"
             >
               <Mail size={13} className="text-[#0A4DA6] shrink-0" />
-              <span>{ashram.contact?.email || ashram.email || ashram.ownerId?.email || 'stay@trust.in'}</span>
+              <span>
+                {ashram.contact?.email ||
+                  ashram.email ||
+                  ashram.ownerId?.email ||
+                  "stay@trust.in"}
+              </span>
             </a>
 
             {ashram.website && (
               <>
-                <span className="text-gray-300 dark:text-slate-700 font-black">•</span>
+                <span className="hidden sm:inline text-gray-300 dark:text-slate-700 font-black">
+                  •
+                </span>
                 <a
-                  href={ashram.website.startsWith('http') ? ashram.website : `https://${ashram.website}`}
+                  href={
+                    ashram.website.startsWith("http")
+                      ? ashram.website
+                      : `https://${ashram.website}`
+                  }
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-1.5 hover:text-[#0A4DA6] transition-colors shrink-0"
@@ -769,7 +965,9 @@ export const AshramDetailPage: React.FC = () => {
         <div
           className="relative w-full aspect-video rounded-[24px] overflow-hidden shadow-sm cursor-zoom-in group bg-gray-100 dark:bg-slate-900"
           onClick={() => galleryImages.length > 0 && setLightboxOpen(true)}
-          onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
+          onTouchStart={(e) => {
+            touchStartX.current = e.touches[0].clientX;
+          }}
           onTouchEnd={onHeroTouchEnd}
         >
           <AnimatePresence mode="wait">
@@ -780,9 +978,13 @@ export const AshramDetailPage: React.FC = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.35, ease: 'easeInOut' }}
+              transition={{ duration: 0.35, ease: "easeInOut" }}
               className="absolute inset-0 w-full h-full object-cover"
-              onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = 'https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?auto=format&fit=crop&w=1200&q=80'; }}
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src =
+                  "https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?auto=format&fit=crop&w=1200&q=80";
+              }}
             />
           </AnimatePresence>
 
@@ -798,7 +1000,10 @@ export const AshramDetailPage: React.FC = () => {
 
         {/* Thumbnail carousel — swipeable, hover zoom, active highlight */}
         {galleryImages.length > 1 && (
-          <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-none snap-x" style={{ scrollbarWidth: 'none' }}>
+          <div
+            className="flex gap-3 overflow-x-auto pb-1 scrollbar-none snap-x"
+            style={{ scrollbarWidth: "none" }}
+          >
             {galleryImages.map((img: string, idx: number) => (
               <button
                 key={idx}
@@ -806,15 +1011,19 @@ export const AshramDetailPage: React.FC = () => {
                 aria-label={`Show image ${idx + 1}`}
                 className={`relative shrink-0 w-24 h-16 sm:w-28 sm:h-20 rounded-2xl overflow-hidden cursor-pointer border-2 transition-all snap-start group ${
                   idx === activeImageIndex
-                    ? 'border-[#0A4DA6] ring-2 ring-[#0A4DA6]/20'
-                    : 'border-transparent opacity-70 hover:opacity-100'
+                    ? "border-[#0A4DA6] ring-2 ring-[#0A4DA6]/20"
+                    : "border-transparent opacity-70 hover:opacity-100"
                 }`}
               >
                 <img
                   src={img}
                   alt={`Gallery ${idx + 1}`}
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                  onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = 'https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?auto=format&fit=crop&w=400&q=80'; }}
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src =
+                      "https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?auto=format&fit=crop&w=400&q=80";
+                  }}
                 />
               </button>
             ))}
@@ -839,14 +1048,20 @@ export const AshramDetailPage: React.FC = () => {
           {galleryImages.length > 1 && (
             <>
               <button
-                onClick={(e) => { e.stopPropagation(); prevImage(); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  prevImage();
+                }}
                 className="absolute left-4 sm:left-8 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer"
                 aria-label="Previous image"
               >
                 <ChevronLeft size={22} />
               </button>
               <button
-                onClick={(e) => { e.stopPropagation(); nextImage(); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  nextImage();
+                }}
                 className="absolute right-4 sm:right-8 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer"
                 aria-label="Next image"
               >
@@ -875,13 +1090,10 @@ export const AshramDetailPage: React.FC = () => {
         </div>
       )}
 
-
       {/* Main Layout Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
         {/* Left Column: Ashram Details */}
         <div className="lg:col-span-2 space-y-8">
-          
           {/* About description & History */}
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-5 shadow-sm">
             <div className="flex items-center justify-between gap-3 border-b border-gray-50 dark:border-slate-850 pb-3">
@@ -890,11 +1102,15 @@ export const AshramDetailPage: React.FC = () => {
               </h3>
               <div className="flex items-center gap-1 bg-gray-50 dark:bg-slate-900 px-3 py-1 border border-gray-150 dark:border-slate-800 rounded-full shrink-0">
                 <Star className="text-[#D4AF37] fill-[#D4AF37]" size={12} />
-                <span className="text-[11px] font-extrabold text-[#0B192C] dark:text-white">{ashram.rating?.average} / 5</span>
+                <span className="text-[11px] font-extrabold text-[#0B192C] dark:text-white">
+                  {ashram.rating?.average} / 5
+                </span>
               </div>
             </div>
-            <p className="text-xs text-gray-500 leading-relaxed font-medium">{ashram.description}</p>
-            
+            <p className="text-xs text-gray-500 leading-relaxed font-medium">
+              {ashram.description}
+            </p>
+
             {ashram.history && (
               <div className="pt-4 border-t border-gray-100 dark:border-slate-800 space-y-2">
                 <h4 className="text-xs font-bold text-[#0A4DA6] uppercase tracking-wider">
@@ -928,76 +1144,250 @@ export const AshramDetailPage: React.FC = () => {
             </h3>
             <div className="space-y-4">
               {rooms.map((r) => (
-                <div 
-                  key={r._id} 
+                <div
+                  key={r._id}
                   onClick={() => setSelectedRoom(r)}
-                  className={`p-4 border rounded-[20px] cursor-pointer flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-all ${selectedRoom?._id === r._id ? 'border-[#0A4DA6] bg-[#0A4DA6]/5 shadow-sm' : 'border-gray-100 dark:border-slate-800 hover:bg-gray-50/50 dark:hover:bg-slate-800/10'}`}
+                  className={`p-4 border rounded-[20px] cursor-pointer flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-all ${selectedRoom?._id === r._id ? "border-[#0A4DA6] bg-[#0A4DA6]/5 shadow-sm" : "border-gray-100 dark:border-slate-800 hover:bg-gray-50/50 dark:hover:bg-slate-800/10"}`}
                 >
                   <div className="space-y-1">
-                    <span className="text-xs font-extrabold text-[#0B192C] dark:text-white">{r.name}</span>
-                    <span className="text-[10px] text-gray-400 block font-bold capitalize tracking-wide">{r.type.replace('_', ' ')} • {r.acType} • Capacity: {r.capacity} Guests</span>
-                    <p className="text-[10px] text-gray-500 max-w-md">{r.description || 'Simple clean room with standard Vedic facilities.'}</p>
+                    <span className="text-xs font-extrabold text-[#0B192C] dark:text-white">
+                      {r.name}
+                    </span>
+                    <span className="text-[10px] text-gray-400 block font-bold capitalize tracking-wide">
+                      {r.type.replace("_", " ")} • {r.acType} • Capacity:{" "}
+                      {r.capacity} Guests
+                    </span>
+                    <p className="text-[10px] text-gray-500 max-w-md">
+                      {r.description ||
+                        "Simple clean room with standard Vedic facilities."}
+                    </p>
                   </div>
                   <div className="flex flex-col sm:items-end text-left sm:text-right shrink-0">
-                    <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Bed Rate</span>
-                    <span className="text-sm font-extrabold text-[#0B192C] dark:text-white">₹{r.basePrice} / night</span>
+                    <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">
+                      Bed Rate
+                    </span>
+                    <span className="text-sm font-extrabold text-[#0B192C] dark:text-white">
+                      ₹{r.basePrice} / night
+                    </span>
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Room Availability Grid */}
-          <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-5 shadow-sm">
-            <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white border-b border-gray-50 dark:border-slate-850 pb-3">
-              30-Day Room Availability Grid
-            </h3>
-            
+          {/* Room Availability Calendar — weekday-aligned month view */}
+          <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-4 sm:p-6 space-y-4 sm:space-y-5 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-50 dark:border-slate-850 pb-3">
+              <h3 className="min-w-0 text-base font-extrabold text-[#0B192C] dark:text-white flex items-center gap-1.5">
+                <CalendarIcon size={18} className="text-[#0A4DA6] shrink-0" />{" "}
+                Room Availability
+              </h3>
+              <span className="shrink-0 text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                Next 30 days
+              </span>
+            </div>
             <p className="text-[10px] text-gray-400 font-bold uppercase">
-              Room Category: <span className="text-[#0B192C] dark:text-white font-extrabold">{selectedRoom?.name || 'Selected Room'}</span>
+              Room Category:{" "}
+              <span className="text-[#0B192C] dark:text-white font-extrabold">
+                {selectedRoom?.name || "Selected Room"}
+              </span>
             </p>
 
             {loadingCalendar ? (
-              <div className="h-20 bg-gray-50 dark:bg-slate-900 rounded-2xl animate-pulse" />
+              <div className="h-64 bg-gray-50 dark:bg-slate-900 rounded-2xl animate-pulse" />
             ) : (
-              <div className="space-y-4">
-                <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-10 gap-2">
-                  {availabilityCalendar.map((day, i) => {
-                    const status = day.available <= 0 ? 'sold_out' :
-                                   day.available <= 2 ? 'almost_full' :
-                                   day.available <= 5 ? 'limited' : 'available';
-                    
-                    const dateObj = new Date(day.date);
-                    const formattedDay = dateObj.getDate();
-                    const formattedMonth = dateObj.toLocaleString('en-IN', { month: 'short' });
+              (() => {
+                // Bucket a day by remaining inventory. Thresholds are unchanged
+                // from the previous flat grid, so booking guidance stays the same.
+                const statusOf = (available: number) =>
+                  available <= 0
+                    ? "sold_out"
+                    : available <= 2
+                      ? "almost_full"
+                      : available <= 5
+                        ? "limited"
+                        : "available";
 
-                    return (
-                      <div 
-                        key={i} 
-                        className={`p-2 rounded-xl text-center border text-[9px] flex flex-col justify-between h-14 select-none ${
-                          status === 'sold_out' ? 'bg-danger/10 border-danger/20 text-danger' :
-                          status === 'almost_full' ? 'bg-amber-500/10 border-amber-500/20 text-amber-700' :
-                          status === 'limited' ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-600' :
-                          'bg-success/10 border-success/20 text-success'
-                        }`}
-                      >
-                        <span className="font-extrabold">{formattedDay} {formattedMonth}</span>
-                        <span className="text-[8px] font-semibold block">₹{day.price}</span>
-                        <span className="text-[8px] font-extrabold block">
-                          {status === 'sold_out' ? 'Sold Out' : `${day.available} left`}
-                        </span>
+                const swatch: Record<string, string> = {
+                  sold_out: "bg-danger/10 border-danger/20 text-danger",
+                  almost_full:
+                    "bg-amber-500/10 border-amber-500/20 text-amber-700",
+                  limited:
+                    "bg-yellow-500/10 border-yellow-500/20 text-yellow-600",
+                  available: "bg-success/10 border-success/20 text-success",
+                };
+
+                const days = availabilityCalendar;
+                if (days.length === 0) {
+                  return (
+                    <p className="text-xs text-gray-400 font-semibold py-6 text-center">
+                      Availability for this room category is not published yet.
+                    </p>
+                  );
+                }
+
+                const firstDate = new Date(days[0].date);
+                const lastDate = new Date(days[days.length - 1].date);
+
+                // The weekday of the first day decides how many blank cells the
+                // grid needs before it, so every date lands under its real
+                // weekday column instead of just flowing left-to-right.
+                const leadingBlanks = firstDate.getDay();
+                const trailingBlanks =
+                  (7 - ((leadingBlanks + days.length) % 7)) % 7;
+
+                const monthLabel =
+                  firstDate.getMonth() === lastDate.getMonth()
+                    ? firstDate.toLocaleString("en-US", {
+                        month: "long",
+                        year: "numeric",
+                      })
+                    : firstDate.toLocaleString("en-US", { month: "long" }) +
+                      " – " +
+                      lastDate.toLocaleString("en-US", {
+                        month: "long",
+                        year: "numeric",
+                      });
+
+                const openDays = days.filter(
+                  (d: any) => d.available > 0,
+                ).length;
+
+                return (
+                  <div className="space-y-4">
+                    {/* Legend first, so the colours are decoded before they are read */}
+                    <div className="grid grid-cols-3 gap-2 text-[9px] sm:text-[10px] font-bold">
+                      {[
+                        {
+                          cls: "bg-success/20 border-success/40",
+                          title: "Available",
+                          sub: "6+ left",
+                        },
+                        {
+                          cls: "bg-yellow-500/20 border-yellow-500/40",
+                          title: "Limited",
+                          sub: "1-5 left",
+                        },
+                        {
+                          cls: "bg-danger/20 border-danger/40",
+                          title: "Sold Out",
+                          sub: "Fully booked",
+                        },
+                      ].map((l) => (
+                        <div
+                          key={l.title}
+                          className="flex items-start gap-1.5 min-w-0"
+                        >
+                          <span
+                            className={
+                              "w-3 h-3 rounded border shrink-0 mt-0.5 " + l.cls
+                            }
+                          />
+                          <span className="min-w-0">
+                            <span className="block text-gray-600 dark:text-gray-300 leading-tight">
+                              {l.title}
+                            </span>
+                            <span className="block text-gray-400 font-semibold leading-tight">
+                              {l.sub}
+                            </span>
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <p className="text-center text-sm font-extrabold text-[#0B192C] dark:text-white">
+                      {monthLabel}
+                    </p>
+
+                    {/* Weekday header */}
+                    <div className="grid grid-cols-7 gap-1 sm:gap-1.5 text-center text-[9px] sm:text-[10px] font-extrabold text-gray-400 uppercase tracking-wider">
+                      {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(
+                        (d) => (
+                          <span key={d}>{d}</span>
+                        ),
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-7 gap-1 sm:gap-1.5">
+                      {Array.from({ length: leadingBlanks }).map((_, i) => (
+                        <div
+                          key={"lead-" + i}
+                          aria-hidden
+                          className="h-14 sm:h-16 rounded-xl border border-dashed border-gray-100 dark:border-slate-850"
+                        />
+                      ))}
+
+                      {days.map((day: any, i: number) => {
+                        const status = statusOf(day.available);
+                        const dateObj = new Date(day.date);
+                        const label =
+                          dateObj.toLocaleDateString("en-US", {
+                            weekday: "long",
+                            day: "numeric",
+                            month: "long",
+                          }) +
+                          " - " +
+                          (day.available > 0
+                            ? day.available + " left"
+                            : "sold out");
+                        return (
+                          <div
+                            key={i}
+                            title={label}
+                            className={
+                              "h-14 sm:h-16 px-0.5 rounded-xl border flex flex-col items-center justify-center select-none " +
+                              swatch[status]
+                            }
+                          >
+                            <span className="text-[11px] sm:text-xs font-extrabold leading-none">
+                              {dateObj.getDate()}
+                            </span>
+                            <span className="text-[8px] sm:text-[9px] font-semibold leading-tight mt-0.5">
+                              ₹{day.price}
+                            </span>
+                            <span className="text-[7px] sm:text-[8px] font-extrabold leading-tight">
+                              {status === "sold_out"
+                                ? "Full"
+                                : day.available + " left"}
+                            </span>
+                          </div>
+                        );
+                      })}
+
+                      {Array.from({ length: trailingBlanks }).map((_, i) => (
+                        <div
+                          key={"trail-" + i}
+                          aria-hidden
+                          className="h-14 sm:h-16 rounded-xl border border-dashed border-gray-100 dark:border-slate-850"
+                        />
+                      ))}
+                    </div>
+
+                    {/* Availability overview */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 p-3">
+                      <div className="min-w-0">
+                        <p className="text-xs font-extrabold text-[#0B192C] dark:text-white">
+                          Availability Overview
+                        </p>
+                        <p className="text-[10px] text-gray-400 font-bold">
+                          {firstDate.toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                          })}{" "}
+                          &ndash;{" "}
+                          {lastDate.toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                          })}
+                        </p>
                       </div>
-                    );
-                  })}
-                </div>
-
-                <div className="flex flex-wrap gap-4 pt-2 justify-center border-t border-gray-150 dark:border-slate-800 text-[9px] font-bold text-gray-400 uppercase tracking-wider">
-                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-success/20 border border-success/30 rounded" /> Available</span>
-                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-yellow-500/20 border border-yellow-500/30 rounded" /> Limited</span>
-                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-amber-500/20 border border-amber-500/30 rounded" /> Almost Full</span>
-                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-danger/20 border border-danger/30 rounded" /> Sold Out</span>
-                </div>
-              </div>
+                      <span className="shrink-0 px-3 py-1 rounded-full bg-[#0A4DA6]/10 text-[#0A4DA6] dark:text-amber-400 text-[10px] font-black">
+                        {openDays} Available {openDays === 1 ? "Day" : "Days"}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })()
             )}
           </div>
 
@@ -1008,7 +1398,9 @@ export const AshramDetailPage: React.FC = () => {
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
               <div className="space-y-3">
-                <h4 className="font-bold text-[#0A4DA6] uppercase tracking-wider text-[10px]">Guidelines for Guests</h4>
+                <h4 className="font-bold text-[#0A4DA6] uppercase tracking-wider text-[10px]">
+                  Guidelines for Guests
+                </h4>
                 <ul className="text-gray-500 space-y-2 list-disc pl-5">
                   {ashram.rules?.map((rule: string, i: number) => (
                     <li key={i}>{rule}</li>
@@ -1016,11 +1408,20 @@ export const AshramDetailPage: React.FC = () => {
                 </ul>
               </div>
               <div className="space-y-3">
-                <h4 className="font-bold text-[#0A4DA6] uppercase tracking-wider text-[10px]">Check-in Policies</h4>
+                <h4 className="font-bold text-[#0A4DA6] uppercase tracking-wider text-[10px]">
+                  Check-in Policies
+                </h4>
                 <div className="space-y-1.5 text-gray-500">
-                  <p><strong>Check-in Time:</strong> 12:00 PM</p>
-                  <p><strong>Check-out Time:</strong> 11:00 AM</p>
-                  <p><strong>Nearby Attractions:</strong> {ashram.nearbyAttractions?.join(', ') || 'Temples & Ghats'}</p>
+                  <p>
+                    <strong>Check-in Time:</strong> 12:00 PM
+                  </p>
+                  <p>
+                    <strong>Check-out Time:</strong> 11:00 AM
+                  </p>
+                  <p>
+                    <strong>Nearby Attractions:</strong>{" "}
+                    {ashram.nearbyAttractions?.join(", ") || "Temples & Ghats"}
+                  </p>
                 </div>
               </div>
             </div>
@@ -1031,27 +1432,43 @@ export const AshramDetailPage: React.FC = () => {
             <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-4 shadow-sm">
               <div className="flex items-center justify-between border-b border-gray-50 dark:border-slate-850 pb-3">
                 <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white">
-                  Current Volunteer & Career Opportunities ({volunteerJobs.length})
+                  Current Volunteer & Career Opportunities (
+                  {volunteerJobs.length})
                 </h3>
-                <Link to="/volunteer" className="text-xs font-black text-[#0A4DA6] hover:underline">
+                <Link
+                  to="/volunteer"
+                  className="text-xs font-black text-[#0A4DA6] hover:underline"
+                >
                   View All Directory →
                 </Link>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {volunteerJobs.map((j) => (
-                  <div key={j._id} className="p-4 bg-gray-50/70 dark:bg-slate-900/60 border border-gray-100 dark:border-slate-800 rounded-2xl space-y-2">
+                  <div
+                    key={j._id}
+                    className="p-4 bg-gray-50/70 dark:bg-slate-900/60 border border-gray-100 dark:border-slate-800 rounded-2xl space-y-2"
+                  >
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] font-black uppercase text-[#0A4DA6] bg-blue-50 dark:bg-slate-850 px-2 py-0.5 rounded-full">
                         {j.department}
                       </span>
-                      <span className="text-[10px] font-bold text-gray-400">{j.openingsCount} Openings</span>
+                      <span className="text-[10px] font-bold text-gray-400">
+                        {j.openingsCount} Openings
+                      </span>
                     </div>
 
-                    <Link to={`/volunteer/${j._id}`} className="block hover:underline">
-                      <h4 className="text-xs font-black text-[#0B192C] dark:text-white">{j.title}</h4>
+                    <Link
+                      to={`/volunteer/${j._id}`}
+                      className="block hover:underline"
+                    >
+                      <h4 className="text-xs font-black text-[#0B192C] dark:text-white">
+                        {j.title}
+                      </h4>
                     </Link>
-                    <p className="text-[11px] font-extrabold text-[#E58C28]">{j.stipend}</p>
+                    <p className="text-[11px] font-extrabold text-[#E58C28]">
+                      {j.stipend}
+                    </p>
 
                     <Link
                       to={`/volunteer/${j._id}`}
@@ -1064,10 +1481,6 @@ export const AshramDetailPage: React.FC = () => {
               </div>
             </div>
           )}
-
-          {/* Enterprise Guest Reviews Carousel */}
-          <GuestReviewsCarousel reviews={reviews} ashramName={ashram?.name} />
-
         </div>
 
         {/* Right Column: Booking Sidecard & Contact Trust */}
@@ -1082,7 +1495,9 @@ export const AshramDetailPage: React.FC = () => {
               <div className="p-3 bg-[#0A4DA6]/10 border border-[#0A4DA6]/20 rounded-xl flex items-center justify-between text-xs font-semibold text-[#0A4DA6] space-x-2">
                 <div className="flex items-center gap-1.5">
                   <Sparkles size={14} className="text-[#0A4DA6] shrink-0" />
-                  <span>Your previous booking selections have been restored.</span>
+                  <span>
+                    Your previous booking selections have been restored.
+                  </span>
                 </div>
                 <button
                   type="button"
@@ -1104,7 +1519,9 @@ export const AshramDetailPage: React.FC = () => {
               <form onSubmit={handleBookingSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-gray-400 uppercase">Check In</label>
+                    <label className="text-[10px] font-bold text-gray-400 uppercase">
+                      Check In
+                    </label>
                     <input
                       type="date"
                       required
@@ -1114,7 +1531,9 @@ export const AshramDetailPage: React.FC = () => {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-gray-400 uppercase">Check Out</label>
+                    <label className="text-[10px] font-bold text-gray-400 uppercase">
+                      Check Out
+                    </label>
                     <input
                       type="date"
                       required
@@ -1126,13 +1545,21 @@ export const AshramDetailPage: React.FC = () => {
                 </div>
 
                 <div className="p-3.5 bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-800 rounded-[20px] space-y-1 select-none">
-                  <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Active Category</span>
-                  <span className="text-xs font-extrabold text-secondary dark:text-white block leading-tight">{selectedRoom?.name}</span>
-                  <span className="text-[10px] font-bold text-[#0A4DA6]">₹{selectedRoom?.basePrice} / bed per night</span>
+                  <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">
+                    Active Category
+                  </span>
+                  <span className="text-xs font-extrabold text-secondary dark:text-white block leading-tight">
+                    {selectedRoom?.name}
+                  </span>
+                  <span className="text-[10px] font-bold text-[#0A4DA6]">
+                    ₹{selectedRoom?.basePrice} / bed per night
+                  </span>
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400">Guests & Rooms</label>
+                  <label className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400">
+                    Guests & Rooms
+                  </label>
                   <GuestRoomSelector compact />
                 </div>
 
@@ -1142,9 +1569,12 @@ export const AshramDetailPage: React.FC = () => {
                   <span className="text-[10px] uppercase font-extrabold tracking-wider text-gray-400 block">
                     Add-on Services (Dynamic Pricing)
                   </span>
-                  
-                  {availableAddOns.filter((a: any) => a.enabled !== false).length === 0 ? (
-                    <p className="text-[11px] text-gray-400 italic">No add-on services available for this ashram.</p>
+
+                  {availableAddOns.filter((a: any) => a.enabled !== false)
+                    .length === 0 ? (
+                    <p className="text-[11px] text-gray-400 italic">
+                      No add-on services available for this ashram.
+                    </p>
                   ) : (
                     <div className="space-y-2.5">
                       {availableAddOns
@@ -1156,19 +1586,25 @@ export const AshramDetailPage: React.FC = () => {
                               key={item._id}
                               className={`p-3 rounded-2xl border transition-all text-xs font-semibold flex items-center justify-between gap-2 ${
                                 qty > 0
-                                  ? 'bg-[#0A4DA6]/5 border-[#0A4DA6]/30'
-                                  : 'bg-gray-50/70 dark:bg-slate-900/60 border-gray-100 dark:border-slate-800'
+                                  ? "bg-[#0A4DA6]/5 border-[#0A4DA6]/30"
+                                  : "bg-gray-50/70 dark:bg-slate-900/60 border-gray-100 dark:border-slate-800"
                               }`}
                             >
                               <div className="space-y-0.5 flex-1 min-w-0">
                                 <div className="flex items-center gap-1.5">
-                                  <Sparkles size={13} className="text-[#0A4DA6] shrink-0" />
+                                  <Sparkles
+                                    size={13}
+                                    className="text-[#0A4DA6] shrink-0"
+                                  />
                                   <span className="font-extrabold text-[#0B192C] dark:text-white truncate">
                                     {item.name}
                                   </span>
                                 </div>
                                 <span className="text-[10px] font-bold text-[#0A4DA6] block">
-                                  ₹{item.price} <span className="text-gray-400 font-medium">/ {item.unitLabel || 'Unit'}</span>
+                                  ₹{item.price}{" "}
+                                  <span className="text-gray-400 font-medium">
+                                    / {item.unitLabel || "Unit"}
+                                  </span>
                                 </span>
                               </div>
 
@@ -1176,12 +1612,18 @@ export const AshramDetailPage: React.FC = () => {
                               <div className="flex items-center gap-1.5 shrink-0 select-none">
                                 <button
                                   type="button"
-                                  onClick={() => handleUpdateAddOnQty(item._id, -1, item.maxQuantity)}
+                                  onClick={() =>
+                                    handleUpdateAddOnQty(
+                                      item._id,
+                                      -1,
+                                      item.maxQuantity,
+                                    )
+                                  }
                                   disabled={qty <= 0}
                                   className={`w-6 h-6 rounded-full border flex items-center justify-center text-xs font-bold transition-all ${
                                     qty <= 0
-                                      ? 'border-gray-200 text-gray-300 dark:border-slate-800 dark:text-slate-700 cursor-not-allowed'
-                                      : 'border-[#0A4DA6] text-[#0A4DA6] hover:bg-[#0A4DA6] hover:text-white cursor-pointer'
+                                      ? "border-gray-200 text-gray-300 dark:border-slate-800 dark:text-slate-700 cursor-not-allowed"
+                                      : "border-[#0A4DA6] text-[#0A4DA6] hover:bg-[#0A4DA6] hover:text-white cursor-pointer"
                                   }`}
                                 >
                                   -
@@ -1191,12 +1633,18 @@ export const AshramDetailPage: React.FC = () => {
                                 </span>
                                 <button
                                   type="button"
-                                  onClick={() => handleUpdateAddOnQty(item._id, 1, item.maxQuantity)}
+                                  onClick={() =>
+                                    handleUpdateAddOnQty(
+                                      item._id,
+                                      1,
+                                      item.maxQuantity,
+                                    )
+                                  }
                                   disabled={qty >= (item.maxQuantity || 10)}
                                   className={`w-6 h-6 rounded-full border flex items-center justify-center text-xs font-bold transition-all ${
                                     qty >= (item.maxQuantity || 10)
-                                      ? 'border-gray-200 text-gray-300 dark:border-slate-800 dark:text-slate-700 cursor-not-allowed'
-                                      : 'border-[#0A4DA6] text-[#0A4DA6] hover:bg-[#0A4DA6] hover:text-white cursor-pointer'
+                                      ? "border-gray-200 text-gray-300 dark:border-slate-800 dark:text-slate-700 cursor-not-allowed"
+                                      : "border-[#0A4DA6] text-[#0A4DA6] hover:bg-[#0A4DA6] hover:text-white cursor-pointer"
                                   }`}
                                 >
                                   +
@@ -1212,7 +1660,8 @@ export const AshramDetailPage: React.FC = () => {
                 {/* Donation */}
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1">
-                    Ashram Donation (₹) <Heart size={10} className="text-danger fill-danger" />
+                    Ashram Donation (₹){" "}
+                    <Heart size={10} className="text-danger fill-danger" />
                   </label>
                   <input
                     type="number"
@@ -1233,13 +1682,16 @@ export const AshramDetailPage: React.FC = () => {
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className="p-2 bg-emerald-500 text-white rounded-full shadow-md text-xs">🎉</span>
+                        <span className="p-2 bg-emerald-500 text-white rounded-full shadow-md text-xs">
+                          🎉
+                        </span>
                         <div>
                           <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-black uppercase tracking-wider block">
                             Offer Applied Successfully
                           </span>
                           <h4 className="text-xs font-black text-[#0B192C] dark:text-white">
-                            {appliedOfferData.offerName || 'Exclusive Pilgrim Discount'}
+                            {appliedOfferData.offerName ||
+                              "Exclusive Pilgrim Discount"}
                           </h4>
                         </div>
                       </div>
@@ -1249,7 +1701,9 @@ export const AshramDetailPage: React.FC = () => {
                     </div>
 
                     <div className="flex justify-between items-center pt-2 border-t border-emerald-500/20 text-xs font-bold text-emerald-700 dark:text-emerald-300">
-                      <span>{appliedOfferData.offerCategory || 'Festival Special'}</span>
+                      <span>
+                        {appliedOfferData.offerCategory || "Festival Special"}
+                      </span>
                       <span className="font-extrabold text-sm text-emerald-600 dark:text-emerald-400">
                         You Saved ₹{appliedOfferData.discountAmount}
                       </span>
@@ -1280,7 +1734,9 @@ export const AshramDetailPage: React.FC = () => {
                   <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 rounded-2xl flex items-center justify-between text-xs font-bold text-amber-800 dark:text-amber-300 animate-pulse">
                     <div className="flex items-center gap-2">
                       <span className="text-base">⏳</span>
-                      <span>This discounted price has been reserved for you.</span>
+                      <span>
+                        This discounted price has been reserved for you.
+                      </span>
                     </div>
                     <span className="font-mono font-black text-sm bg-amber-200 dark:bg-amber-900 px-2.5 py-0.5 rounded-lg">
                       {formatTimer(reservationSeconds)}
@@ -1290,7 +1746,9 @@ export const AshramDetailPage: React.FC = () => {
 
                 {/* Promo Coupon Code Entry */}
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase">Promo / Coupon Code</label>
+                  <label className="text-[10px] font-bold text-gray-400 uppercase">
+                    Promo / Coupon Code
+                  </label>
                   <div className="flex gap-2">
                     <input
                       type="text"
@@ -1308,7 +1766,11 @@ export const AshramDetailPage: React.FC = () => {
                     </button>
                   </div>
                   {couponMsg && (
-                    <p className={`text-[10px] font-bold ${appliedDiscount > 0 ? 'text-emerald-600' : 'text-rose-500'}`}>{couponMsg}</p>
+                    <p
+                      className={`text-[10px] font-bold ${appliedDiscount > 0 ? "text-emerald-600" : "text-rose-500"}`}
+                    >
+                      {couponMsg}
+                    </p>
                   )}
                 </div>
 
@@ -1317,9 +1779,13 @@ export const AshramDetailPage: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <Award size={16} className="text-[#E58C28]" />
                     <div>
-                      <span className="font-extrabold text-[#0B192C] dark:text-white block">Tirvona Loyalty Rewards</span>
+                      <span className="font-extrabold text-[#0B192C] dark:text-white block">
+                        Tirvona Loyalty Rewards
+                      </span>
                       <span className="text-[10px] text-gray-500">
-                        {useLoyalty ? 'Applied 100 points (-₹100)' : `Earn ${Math.round(subtotalCalc * 0.05)} reward points after stay`}
+                        {useLoyalty
+                          ? "Applied 100 points (-₹100)"
+                          : `Earn ${Math.round(subtotalCalc * 0.05)} reward points after stay`}
                       </span>
                     </div>
                   </div>
@@ -1336,15 +1802,24 @@ export const AshramDetailPage: React.FC = () => {
                   <div className="p-3 bg-gray-50 dark:bg-slate-900/60 rounded-2xl border border-gray-150 dark:border-slate-800 text-[10px] space-y-1 text-gray-500">
                     <div className="flex justify-between font-bold text-gray-700 dark:text-gray-300">
                       <span>🔥 Scarcity Alert:</span>
-                      <span className="text-rose-600 font-extrabold">Only {appliedOfferData.remainingRedemptions || 12} offers left today</span>
+                      <span className="text-rose-600 font-extrabold">
+                        Only {appliedOfferData.remainingRedemptions || 12}{" "}
+                        offers left today
+                      </span>
                     </div>
-                    <p>• {appliedOfferData.description || 'Valid on direct website bookings only.'}</p>
+                    <p>
+                      •{" "}
+                      {appliedOfferData.description ||
+                        "Valid on direct website bookings only."}
+                    </p>
                   </div>
                 )}
 
                 {/* Special Requests / Notes */}
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase">Special Requests / Notes</label>
+                  <label className="text-[10px] font-bold text-gray-400 uppercase">
+                    Special Requests / Notes
+                  </label>
                   <textarea
                     rows={2}
                     placeholder="e.g. Ground floor room preferred..."
@@ -1358,7 +1833,10 @@ export const AshramDetailPage: React.FC = () => {
                 <div className="p-4 bg-gray-50 dark:bg-slate-900/90 border border-gray-200 dark:border-slate-800 rounded-[24px] space-y-2.5 text-xs font-semibold shadow-inner">
                   {/* 1. Original Stay Cost */}
                   <div className="flex justify-between text-gray-600 dark:text-gray-300">
-                    <span>Original Stay Cost ({daysCount} night{daysCount > 1 ? 's' : ''}):</span>
+                    <span>
+                      Original Stay Cost ({daysCount} night
+                      {daysCount > 1 ? "s" : ""}):
+                    </span>
                     <span>₹{basePriceCalc}</span>
                   </div>
 
@@ -1392,11 +1870,15 @@ export const AshramDetailPage: React.FC = () => {
                   {/* 3. Tirvona Platform Fee */}
                   {platformSettings.enabled && (
                     <div className="flex justify-between text-[#0A4DA6] font-extrabold text-[11px]">
-                      <span>{platformSettings.label || 'Tirvona Platform Fee'}:</span>
+                      <span>
+                        {platformSettings.label || "Tirvona Platform Fee"}:
+                      </span>
                       <span>
                         ₹{platformFeeCalc}
-                        {platformSettings.type === 'percentage' && (
-                          <span className="text-[10px] text-gray-400 font-normal ml-1">({platformSettings.value}%)</span>
+                        {platformSettings.type === "percentage" && (
+                          <span className="text-[10px] text-gray-400 font-normal ml-1">
+                            ({platformSettings.value}%)
+                          </span>
                         )}
                       </span>
                     </div>
@@ -1421,7 +1903,9 @@ export const AshramDetailPage: React.FC = () => {
                   {/* 6. Final Payable Amount */}
                   <div className="pt-2 border-t border-gray-200 dark:border-slate-800 flex justify-between text-base font-black text-[#0B192C] dark:text-white">
                     <span>Final Payable Amount:</span>
-                    <span className="text-[#0A4DA6] dark:text-blue-400">₹{finalPayableCalc}</span>
+                    <span className="text-[#0A4DA6] dark:text-blue-400">
+                      ₹{finalPayableCalc}
+                    </span>
                   </div>
                 </div>
 
@@ -1451,10 +1935,21 @@ export const AshramDetailPage: React.FC = () => {
 
                 {/* SECTION 8: Payment Confidence Badges */}
                 <div className="grid grid-cols-2 gap-2 text-[10px] font-bold text-gray-500 dark:text-gray-400 pt-1">
-                  <span className="flex items-center gap-1"><ShieldCheck size={12} className="text-emerald-500" /> Govt Verified</span>
-                  <span className="flex items-center gap-1"><Lock size={12} className="text-blue-500" /> Secure Payment</span>
-                  <span className="flex items-center gap-1"><CheckCircle size={12} className="text-teal-500" /> Free Cancellation</span>
-                  <span className="flex items-center gap-1"><Sparkles size={12} className="text-purple-500" /> Instant Confirm</span>
+                  <span className="flex items-center gap-1">
+                    <ShieldCheck size={12} className="text-emerald-500" /> Govt
+                    Verified
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Lock size={12} className="text-blue-500" /> Secure Payment
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <CheckCircle size={12} className="text-teal-500" /> Free
+                    Cancellation
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Sparkles size={12} className="text-purple-500" /> Instant
+                    Confirm
+                  </span>
                 </div>
 
                 <button
@@ -1473,26 +1968,37 @@ export const AshramDetailPage: React.FC = () => {
                     <span>Reservation Confirmed Successfully!</span>
                   </div>
                   <p className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
-                    Your room inventory has been locked. Payment is payable upon check-in at Ashram.
+                    Your room inventory has been locked. Payment is payable upon
+                    check-in at Ashram.
                   </p>
                 </div>
 
                 <div className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-[22px] p-4.5 space-y-2.5 text-xs font-semibold">
                   <div className="flex justify-between items-center pb-2 border-b border-gray-200 dark:border-slate-800">
-                    <span className="text-gray-400 uppercase text-[10px] font-extrabold">Booking ID:</span>
-                    <span className="font-mono font-extrabold text-[#0B192C] dark:text-white">{bookingSuccess.bookingId}</span>
+                    <span className="text-gray-400 uppercase text-[10px] font-extrabold">
+                      Booking ID:
+                    </span>
+                    <span className="font-mono font-extrabold text-[#0B192C] dark:text-white">
+                      {bookingSuccess.bookingId}
+                    </span>
                   </div>
 
                   {bookingSuccess.reservationNumber && (
                     <div className="flex justify-between items-center">
                       <span className="text-gray-400">Reservation No:</span>
-                      <span className="font-mono font-bold text-[#0A4DA6]">{bookingSuccess.reservationNumber}</span>
+                      <span className="font-mono font-bold text-[#0A4DA6]">
+                        {bookingSuccess.reservationNumber}
+                      </span>
                     </div>
                   )}
 
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-400">Counter Check-In Code:</span>
-                    <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">{bookingSuccess.checkInCode}</span>
+                    <span className="text-gray-400">
+                      Counter Check-In Code:
+                    </span>
+                    <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                      {bookingSuccess.checkInCode}
+                    </span>
                   </div>
 
                   <div className="flex justify-between items-center">
@@ -1504,7 +2010,9 @@ export const AshramDetailPage: React.FC = () => {
 
                   <div className="flex justify-between items-center pt-2 border-t border-dashed border-gray-200 dark:border-slate-800 font-extrabold text-sm text-[#0B192C] dark:text-white">
                     <span>Total Amount Payable:</span>
-                    <span className="text-[#0A4DA6]">₹{bookingSuccess.pricing?.totalAmount}</span>
+                    <span className="text-[#0A4DA6]">
+                      ₹{bookingSuccess.pricing?.totalAmount}
+                    </span>
                   </div>
                 </div>
 
@@ -1527,8 +2035,6 @@ export const AshramDetailPage: React.FC = () => {
               </div>
             )}
           </div>
-
-
 
           {/* Location map.
               Previously this panel printed the raw "Lat: … , Lon: …" pair as
@@ -1561,16 +2067,19 @@ export const AshramDetailPage: React.FC = () => {
                   ariaLabel={`Map showing ${ashram.name}`}
                   markers={[
                     {
-                      id: ashram._id || 'ashram',
+                      id: ashram._id || "ashram",
                       latitude: ashramLatLng[0],
                       longitude: ashramLatLng[1],
                       title: ashram.name,
-                      subtitle: [ashram.address?.street, ashram.address?.city].filter(Boolean).join(', '),
+                      subtitle: [ashram.address?.street, ashram.address?.city]
+                        .filter(Boolean)
+                        .join(", "),
                     },
                   ]}
                 />
                 <p className="text-[9px] text-gray-400 text-center">
-                  {ashram.address?.street}, {ashram.address?.city} — {ashram.address?.pincode}
+                  {ashram.address?.street}, {ashram.address?.city} —{" "}
+                  {ashram.address?.pincode}
                 </p>
               </>
             ) : (
@@ -1580,41 +2089,78 @@ export const AshramDetailPage: React.FC = () => {
             )}
           </div>
         </div>
+      </div>
 
+      {/* Enterprise Guest Reviews Carousel.
+          Moved out of the left column and promoted to a full-width band here,
+          directly above Related Stays. Inside the column it rendered at
+          two-thirds width on desktop, and on mobile — where the grid collapses
+          to one column — the entire booking sidecard (add-ons, coupons,
+          loyalty, payment badges) plus the location map stacked between the
+          reviews and the related stays, pushing them far apart. */}
+      <div className="pt-10 border-t border-gray-100 dark:border-slate-800">
+        <GuestReviewsCarousel reviews={reviews} ashramName={ashram?.name} />
       </div>
 
       {/* Related stays */}
       {relatedStays.length > 0 && (
         <div className="space-y-6 pt-10 border-t border-gray-100 dark:border-slate-800">
           <div className="space-y-1">
-            <span className="text-xs uppercase font-extrabold text-[#0A4DA6] tracking-widest">More Places</span>
-            <h3 className="text-lg md:text-2xl font-extrabold text-[#0B192C] dark:text-white">Related Stays in {ashram.address?.city}</h3>
+            <span className="text-xs uppercase font-extrabold text-[#0A4DA6] tracking-widest">
+              More Places
+            </span>
+            <h3 className="text-lg md:text-2xl font-extrabold text-[#0B192C] dark:text-white">
+              Related Stays in {ashram.address?.city}
+            </h3>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Horizontal auto-scrolling row. The negative margin + padding lets
+              cards bleed to the screen edge on phones while staying aligned
+              with the page gutter from sm up. */}
+          <div
+            ref={setRelatedRow}
+            className="flex gap-4 sm:gap-6 overflow-x-auto pb-2 scrollbar-none -mx-6 px-6 sm:mx-0 sm:px-0 justify-start"
+            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          >
             {relatedStays.map((rel) => (
-              <Link 
-                key={rel._id} 
+              <Link
+                key={rel._id}
                 to={`/ashram/${rel._id}`}
-                className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] overflow-hidden shadow-sm premium-card-hover flex flex-col justify-between"
+                className="shrink-0 w-[260px] sm:w-[300px] bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] overflow-hidden shadow-sm premium-card-hover flex flex-col justify-between"
               >
                 <div className="h-40 overflow-hidden relative bg-gray-50 dark:bg-slate-900">
-                  <img 
-                    src={rel.images?.[0] || 'https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?auto=format&fit=crop&w=400&q=80'} 
-                    alt={rel.name} 
-                    className="w-full h-full object-cover" 
-                    onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = 'https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?auto=format&fit=crop&w=400&q=80'; }}
+                  <img
+                    src={
+                      rel.images?.[0] ||
+                      "https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?auto=format&fit=crop&w=400&q=80"
+                    }
+                    alt={rel.name}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src =
+                        "https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?auto=format&fit=crop&w=400&q=80";
+                    }}
                   />
                   <span className="absolute bottom-3 right-3 bg-white/95 text-secondary px-2 py-0.5 rounded shadow text-[9px] font-extrabold flex items-center gap-0.5">
-                    <Star className="text-[#D4AF37] fill-[#D4AF37]" size={10} /> {rel.rating?.average}
+                    <Star className="text-[#D4AF37] fill-[#D4AF37]" size={10} />{" "}
+                    {rel.rating?.average}
                   </span>
                 </div>
                 <div className="p-4 flex-grow">
-                  <h4 className="font-extrabold text-xs text-[#0B192C] dark:text-white line-clamp-1">{rel.name}</h4>
-                  <span className="text-[9px] text-[#0A4DA6] font-bold block uppercase">{rel.address?.city}</span>
+                  <h4 className="font-extrabold text-xs text-[#0B192C] dark:text-white line-clamp-1">
+                    {rel.name}
+                  </h4>
+                  <span className="text-[9px] text-[#0A4DA6] font-bold block uppercase">
+                    {rel.address?.city}
+                  </span>
                 </div>
                 <div className="px-4 py-3 border-t border-gray-100 dark:border-slate-800 flex justify-between items-center bg-gray-50/50 dark:bg-slate-900/10">
-                  <span className="text-[10px] font-extrabold text-[#0B192C] dark:text-white">₹{rel.lowestNightPrice ?? 150} / night</span>
-                  <span className="text-[9px] font-bold text-[#0A4DA6] flex items-center gap-0.5">View <ChevronRight size={10} /></span>
+                  <span className="text-[10px] font-extrabold text-[#0B192C] dark:text-white">
+                    ₹{rel.lowestNightPrice ?? 150} / night
+                  </span>
+                  <span className="text-[9px] font-bold text-[#0A4DA6] flex items-center gap-0.5">
+                    View <ChevronRight size={10} />
+                  </span>
                 </div>
               </Link>
             ))}
@@ -1624,4 +2170,5 @@ export const AshramDetailPage: React.FC = () => {
     </div>
   );
 };
+
 export default AshramDetailPage;
