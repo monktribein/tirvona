@@ -19,7 +19,7 @@ npm run start:prod
 
 Development uses `npm run start:dev`. All frontend-compatible routes remain under `/api`. Swagger is available at `/api/docs` in development and is disabled by default in production; set `SWAGGER_ENABLED=true` only for a deliberately protected environment.
 
-Production startup requires an explicit database name (`MONGODB_DB_NAME` or one in `MONGODB_URI`), non-wildcard `CORS_ORIGINS`, Redis, JWT and parking QR secrets, and production upload storage. Use `/api/health/live` for process liveness and `/api/health/ready` for deployment readiness. The readiness endpoint returns 503 until MongoDB and Redis both respond.
+Production startup accepts MongoDB's default database when neither `MONGODB_DB_NAME` nor a URI pathname is supplied, matching the temporary legacy deployment behavior. Set an explicit database name as soon as the existing database is identified. Production still requires non-wildcard `CORS_ORIGINS`, Redis, JWT and parking QR secrets, and production upload storage. Use `/api/health/live` for process liveness and `/api/health/ready` for deployment readiness. The readiness endpoint returns 503 until MongoDB and Redis both respond.
 
 ## Architecture
 

@@ -189,7 +189,7 @@ export class AuthService {
     });
     await this.deliverCode(identifier, code);
     return {
-      otpToken: token,
+      ...(purpose === "google" ? { googleToken: token } : { otpToken: token }),
       channel: identifier.includes("@") ? "email" : "sms",
       expiresIn: expiryMinutes * 60,
       resendAfter: resendCooldownSeconds,
