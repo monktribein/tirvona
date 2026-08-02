@@ -32,7 +32,11 @@ import {
 
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { setGuestPendingIntent } from "../utils/guestGate";
+import {
+  clearGuestPendingIntent,
+  getGuestPendingIntent,
+  setGuestPendingIntent,
+} from "../utils/guestGate";
 import { useProfileAutoFill } from "../hooks/useProfileAutoFill";
 
 export const VolunteerHubPage: React.FC = () => {
@@ -98,6 +102,69 @@ export const VolunteerHubPage: React.FC = () => {
   const [availability, setAvailability] = useState("Immediate (Next 7 Days)");
   const [motivation, setMotivation] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!user || jobs.length === 0) return;
+    const intent = getGuestPendingIntent();
+    if (intent?.type !== "volunteer_apply" || !intent.data) return;
+    const job = jobs.find(
+      (item) => item._id === String(intent.data?.jobId ?? ""),
+    );
+    if (!job) return;
+    setSelectedJob(job);
+    if (intent.data.applicantName)
+      setApplicantName(String(intent.data.applicantName));
+    if (intent.data.email) setEmail(String(intent.data.email));
+    if (intent.data.phone) setPhone(String(intent.data.phone));
+    if (intent.data.city) setCity(String(intent.data.city));
+    if (intent.data.education) setEducation(String(intent.data.education));
+    if (intent.data.skills) setSkills(String(intent.data.skills));
+    if (intent.data.languages) setLanguages(String(intent.data.languages));
+    if (intent.data.availability)
+      setAvailability(String(intent.data.availability));
+    if (intent.data.motivation) setMotivation(String(intent.data.motivation));
+    clearGuestPendingIntent();
+  }, [jobs, user]);
+
+  useEffect(() => {
+    const preserveOpenApplication = () => {
+      if (!selectedJob) return;
+      const returnUrl = `/volunteer?jobId=${selectedJob._id}`;
+      setGuestPendingIntent({
+        type: "volunteer_apply",
+        returnUrl,
+        data: {
+          jobId: selectedJob._id,
+          applicantName,
+          email,
+          phone,
+          city,
+          education,
+          skills,
+          languages,
+          availability,
+          motivation,
+        },
+      });
+    };
+    window.addEventListener("tirvona:unauthorized", preserveOpenApplication);
+    return () =>
+      window.removeEventListener(
+        "tirvona:unauthorized",
+        preserveOpenApplication,
+      );
+  }, [
+    applicantName,
+    availability,
+    city,
+    education,
+    email,
+    languages,
+    motivation,
+    phone,
+    selectedJob,
+    skills,
+  ]);
 
   // Smart Auto-Fill profile effect
   useEffect(() => {
@@ -203,6 +270,27 @@ export const VolunteerHubPage: React.FC = () => {
   const handleApplySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedJob) return;
+    if (!user) {
+      const targetUrl = `/volunteer?jobId=${selectedJob._id}`;
+      setGuestPendingIntent({
+        type: "volunteer_apply",
+        returnUrl: targetUrl,
+        data: {
+          jobId: selectedJob._id,
+          applicantName,
+          email,
+          phone,
+          city,
+          education,
+          skills,
+          languages,
+          availability,
+          motivation,
+        },
+      });
+      navigate(`/login?redirect=${encodeURIComponent(targetUrl)}`);
+      return;
+    }
     setIsSubmitting(true);
     try {
       const res = await volunteerService.applyJob({

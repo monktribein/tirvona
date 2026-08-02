@@ -4,6 +4,8 @@ import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useNotifications } from "../contexts/NotificationContext";
 import NotificationDropdown from "../components/shared/NotificationDropdown";
+import { setGuestPendingIntent } from "../utils/guestGate";
+import { getRoleDefaultDashboard } from "../utils/roleRedirect";
 import {
   LogOut,
   Menu,
@@ -70,6 +72,9 @@ export const PublicLayout: React.FC = () => {
   const notifRef = useRef<HTMLDivElement>(null);
 
   const [showHeader, setShowHeader] = useState(true);
+  const authReturnUrl = `${location.pathname}${location.search}${location.hash}`;
+  const rememberCurrentPage = () =>
+    setGuestPendingIntent({ type: "generic", returnUrl: authReturnUrl });
 
   // Hide header on scroll down, show on scroll up
   useEffect(() => {
@@ -146,30 +151,7 @@ export const PublicLayout: React.FC = () => {
 
   const getDashboardPath = () => {
     if (!user) return "/login";
-    if (
-      [
-        "district_officer",
-        "state_admin",
-        "govt_admin",
-        "government_admin",
-        "national_admin",
-        "super_admin",
-      ].includes(user.role)
-    )
-      return "/admin/dashboard";
-    if (user.role === "inspector") return "/admin/verifications";
-    if (user.role === "banner_manager") return "/bannerboy/dashboard";
-    if (["owner", "stay_admin", "manager"].includes(user.role))
-      return "/owner/dashboard";
-    if (user.role === "reception") return "/staff/reception";
-    if (user.role === "housekeeping") return "/staff/housekeeping";
-    if (["banner_manager", "content_manager"].includes(user.role))
-      return "/bannerboy/dashboard";
-    if (user.role === "offer_manager") return "/owner/offers";
-    if (user.role === "marketplace_manager")
-      return "/admin/manage/marketplace/products";
-    if (user.role === "support") return "/support-tickets";
-    return "/profile";
+    return getRoleDefaultDashboard(user.role);
   };
 
   const getDashboardLabel = () => {
@@ -404,13 +386,15 @@ export const PublicLayout: React.FC = () => {
               ) : (
                 <div className="flex items-center gap-2">
                   <Link
-                    to="/login"
+                    to={`/login?redirect=${encodeURIComponent(authReturnUrl)}`}
+                    onClick={rememberCurrentPage}
                     className="text-xs font-bold text-slate-700 dark:text-white hover:text-[#0A4DA6] transition-colors px-3 py-1.5 rounded-full border border-gray-200 dark:border-slate-700"
                   >
                     Login
                   </Link>
                   <Link
-                    to="/register"
+                    to={`/register?redirect=${encodeURIComponent(authReturnUrl)}`}
+                    onClick={rememberCurrentPage}
                     className="text-xs font-bold text-white bg-[#0A4DA6] hover:bg-[#083b80] transition-colors px-4 py-2 rounded-full shadow-sm"
                   >
                     Sign Up
@@ -561,15 +545,21 @@ export const PublicLayout: React.FC = () => {
           ) : (
             <div className="grid grid-cols-2 gap-3">
               <Link
-                to="/login"
-                onClick={() => setDrawerOpen(false)}
+                to={`/login?redirect=${encodeURIComponent(authReturnUrl)}`}
+                onClick={() => {
+                  rememberCurrentPage();
+                  setDrawerOpen(false);
+                }}
                 className="min-h-[48px] flex items-center justify-center bg-gray-100 dark:bg-slate-800 rounded-full font-bold text-sm text-gray-700 dark:text-gray-200"
               >
                 Login
               </Link>
               <Link
-                to="/register"
-                onClick={() => setDrawerOpen(false)}
+                to={`/register?redirect=${encodeURIComponent(authReturnUrl)}`}
+                onClick={() => {
+                  rememberCurrentPage();
+                  setDrawerOpen(false);
+                }}
                 className="min-h-[48px] flex items-center justify-center bg-primary text-white rounded-full font-bold text-sm shadow-md"
               >
                 Sign Up

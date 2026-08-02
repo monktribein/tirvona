@@ -2,6 +2,7 @@
  * Role → Default Dashboard Landing Page Mapping
  * Centralized enterprise system to redirect users to their role-specific dashboard upon login.
  */
+import { getGuestPendingIntent, safeLocalReturnUrl } from "./guestGate";
 
 export const getRoleDefaultDashboard = (role?: string): string => {
   if (!role) return "/profile";
@@ -120,19 +121,13 @@ export const hasRoleAccess = (
  */
 export const getPostLoginRedirect = (
   userRole?: string,
+  requestedRedirect?: string | null,
 ): { url: string; hasPendingIntent: boolean } => {
-  try {
-    const raw = sessionStorage.getItem("tirvona_guest_pending_intent");
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      sessionStorage.removeItem("tirvona_guest_pending_intent");
-      if (parsed?.returnUrl) {
-        return { url: parsed.returnUrl, hasPendingIntent: true };
-      }
-    }
-  } catch (err) {
-    console.error("Error reading pending guest intent:", err);
-  }
+  const intent = getGuestPendingIntent();
+  const returnUrl =
+    safeLocalReturnUrl(requestedRedirect) ??
+    safeLocalReturnUrl(intent?.returnUrl);
+  if (returnUrl) return { url: returnUrl, hasPendingIntent: true };
 
   return { url: getRoleDefaultDashboard(userRole), hasPendingIntent: false };
 };

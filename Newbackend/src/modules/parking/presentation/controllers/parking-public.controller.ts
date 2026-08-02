@@ -18,6 +18,7 @@ import {
   ParkingQuoteDto,
   ParkingSearchDto,
   ParkingWindowDto,
+  OptionalParkingWindowDto,
 } from "../dtos/parking.dto";
 
 @ApiTags("Parking Discovery")
@@ -89,7 +90,7 @@ export class ParkingPublicController {
   @Get("locations/:idOrSlug")
   async detail(
     @Param("idOrSlug") idOrSlug: string,
-    @Query() query: ParkingWindowDto,
+    @Query() query: OptionalParkingWindowDto,
   ) {
     const data = await this.discovery.detail(idOrSlug, query);
     if (!data) throw new NotFoundException("Parking not found.");

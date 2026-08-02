@@ -70,6 +70,13 @@ export class ParkingWindowDto {
   @IsOptional() @IsIn(PARKING_VEHICLE_TYPES) vehicleType?: string;
 }
 
+/** Optional pricing window used when enriching a parking-location detail. */
+export class OptionalParkingWindowDto {
+  @IsOptional() @IsDateString() entryAt?: string;
+  @IsOptional() @IsDateString() exitAt?: string;
+  @IsOptional() @IsIn(PARKING_VEHICLE_TYPES) vehicleType?: string;
+}
+
 export class ParkingQuoteDto extends ParkingWindowDto {
   @IsMongoId() locationId: string;
   @IsMongoId() slotTypeId: string;

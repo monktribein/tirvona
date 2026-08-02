@@ -1,6 +1,7 @@
 import "reflect-metadata";
 import type { INestApplication } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
+import { setServers } from "node:dns";
 import request from "supertest";
 import { AppModule } from "../src/app.module";
 
@@ -8,6 +9,12 @@ describe("production API smoke checks", () => {
   let app: INestApplication;
 
   beforeAll(async () => {
+    if (process.env.DNS_SERVERS)
+      setServers(
+        process.env.DNS_SERVERS.split(",")
+          .map((server) => server.trim())
+          .filter(Boolean),
+      );
     const module = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();

@@ -41,9 +41,7 @@ import {
   Zap,
 } from "lucide-react";
 
-import {
-  getPostLoginRedirect,
-} from "../utils/roleRedirect";
+import { getPostLoginRedirect } from "../utils/roleRedirect";
 
 export const RegisterPage: React.FC = () => {
   const { registerUser, verifyRegistrationOtp, resendOtp } = useAuth();
@@ -74,7 +72,7 @@ export const RegisterPage: React.FC = () => {
   };
 
   const goAfterSignup = (userRole?: string) => {
-    const target = getPostLoginRedirect(userRole || role);
+    const target = getPostLoginRedirect(userRole || role, redirect);
     navigate(target.url, { replace: true });
   };
 

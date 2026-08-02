@@ -24,6 +24,7 @@ import {
   clearBookingDraft,
   type BookingDraftPayload,
 } from "../utils/bookingDraft";
+import { setGuestPendingIntent } from "../utils/guestGate";
 import { GuestRoomSelector } from "../components/shared/GuestRoomSelector";
 import { GuestReviewsCarousel } from "../components/shared/GuestReviewsCarousel";
 import { VerifiedBadge } from "../components/shared/VerifiedBadge";
@@ -243,6 +244,8 @@ export const AshramDetailPage: React.FC = () => {
         if (pb.adults !== undefined) setAdults(pb.adults);
         if (pb.children !== undefined) setChildren(pb.children);
         if (pb.roomsBookedCount) setRoomsCount(pb.roomsBookedCount);
+        if (pb.addOnQuantities)
+          setAddOnQuantities(pb.addOnQuantities as Record<string, number>);
 
         const s = pb.services || {};
         if (s.prasad || s.prasad?.ordered) setPrasad(true);
@@ -628,6 +631,64 @@ export const AshramDetailPage: React.FC = () => {
     setAvailabilityCalendar(simulated);
   };
 
+  useEffect(() => {
+    const preserveBookingOnSessionExpiry = () => {
+      if (!ashram?._id) return;
+      const returnUrl = window.location.pathname + window.location.search;
+      saveBookingDraft({
+        ashramId: ashram._id,
+        roomId: selectedRoom?._id,
+        roomType: selectedRoom?.name,
+        checkIn,
+        checkOut,
+        guestsCount: adults + children,
+        roomsBookedCount: roomsCount,
+        adults,
+        children,
+        addOnQuantities,
+        services: {
+          prasad,
+          meals,
+          parking,
+          locker,
+          donation: parseFloat(donation) || 0,
+        },
+        couponCode,
+        appliedDiscount,
+        specialRequests,
+        returnUrl,
+        timestamp: Date.now(),
+      });
+      setGuestPendingIntent({ type: "ashram_booking", returnUrl });
+    };
+    window.addEventListener(
+      "tirvona:unauthorized",
+      preserveBookingOnSessionExpiry,
+    );
+    return () =>
+      window.removeEventListener(
+        "tirvona:unauthorized",
+        preserveBookingOnSessionExpiry,
+      );
+  }, [
+    adults,
+    addOnQuantities,
+    appliedDiscount,
+    ashram,
+    checkIn,
+    checkOut,
+    children,
+    couponCode,
+    donation,
+    locker,
+    meals,
+    parking,
+    prasad,
+    roomsCount,
+    selectedRoom,
+    specialRequests,
+  ]);
+
   const handleBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setBookingError("");
@@ -642,8 +703,10 @@ export const AshramDetailPage: React.FC = () => {
         checkIn,
         checkOut,
         guestsCount: adults + children,
+        roomsBookedCount: roomsCount,
         adults,
         children,
+        addOnQuantities,
         services: {
           prasad,
           meals,
@@ -658,6 +721,10 @@ export const AshramDetailPage: React.FC = () => {
         timestamp: Date.now(),
       };
       saveBookingDraft(draftPayload);
+      setGuestPendingIntent({
+        type: "ashram_booking",
+        returnUrl: currentUrl,
+      });
       navigate(`/login?redirect=${encodeURIComponent(currentUrl)}`);
       return;
     }

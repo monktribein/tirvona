@@ -5,8 +5,10 @@ export interface BookingDraftPayload {
   checkIn: string;
   checkOut: string;
   guestsCount: number;
+  roomsBookedCount?: number;
   adults: number;
   children: number;
+  addOnQuantities?: Record<string, number>;
   services: {
     prasad: boolean;
     meals: boolean;
@@ -52,7 +54,7 @@ export const getBookingDraft = (): BookingDraftPayload | null => {
       return null;
     }
     return draft;
-  } catch  {
+  } catch {
     return null;
   }
 };
