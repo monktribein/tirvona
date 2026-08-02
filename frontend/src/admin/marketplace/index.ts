@@ -1,2 +1,2 @@
 // Admin Marketplace Feature Module
-export { AdminMarketplaceProductsPage } from './pages/AdminMarketplaceProductsPage';
+export { AdminMarketplaceProductsPage } from "./pages/AdminMarketplaceProductsPage";

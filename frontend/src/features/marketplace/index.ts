@@ -1,1 +1,1 @@
-export { marketplaceService } from '../../services';
+export { marketplaceService } from "../../services";

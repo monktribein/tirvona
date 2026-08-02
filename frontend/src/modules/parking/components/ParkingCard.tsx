@@ -1,9 +1,21 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { MapPin, Star, Navigation, ShieldCheck, Clock, ArrowRight, CircleParking } from 'lucide-react';
-import type { ParkingLocation } from '../types/parking.types';
-import { formatCurrency, formatDistance, availabilityTone } from '../utils/parkingFormat';
-import ParkingAmenityList from './ParkingAmenityList';
+import React from "react";
+import { Link } from "react-router-dom";
+import {
+  MapPin,
+  Star,
+  Navigation,
+  ShieldCheck,
+  Clock,
+  ArrowRight,
+  CircleParking,
+} from "lucide-react";
+import type { ParkingLocation } from "../types/parking.types";
+import {
+  formatCurrency,
+  formatDistance,
+  availabilityTone,
+} from "../utils/parkingFormat";
+import ParkingAmenityList from "./ParkingAmenityList";
 
 interface ParkingCardProps {
   parking: ParkingLocation;
@@ -18,14 +30,19 @@ interface ParkingCardProps {
  * Matches the premium OTA card language used across the site: 24px radius,
  * white/`#0B192C` surface, hairline border, lift on hover, gold rating chip.
  */
-export const ParkingCard: React.FC<ParkingCardProps> = ({ parking, query = '', fromPrice }) => {
+export const ParkingCard: React.FC<ParkingCardProps> = ({
+  parking,
+  query = "",
+  fromPrice,
+}) => {
   const image =
     parking.coverImage ||
     parking.images?.[0] ||
-    'https://images.unsplash.com/photo-1506521781263-d8422e82f27a?auto=format&fit=crop&w=600&q=80';
+    "https://images.unsplash.com/photo-1506521781263-d8422e82f27a?auto=format&fit=crop&w=600&q=80";
 
   const available = parking.availability?.availableCount ?? 0;
-  const total = parking.availability?.totalCapacity ?? parking.totalCapacity ?? 0;
+  const total =
+    parking.availability?.totalCapacity ?? parking.totalCapacity ?? 0;
   const nearest = parking.nearbyDestinations?.[0];
 
   return (
@@ -72,7 +89,9 @@ export const ParkingCard: React.FC<ParkingCardProps> = ({ parking, query = '', f
             <p className="flex items-center gap-1 text-[11px] text-gray-500 dark:text-gray-400 font-medium truncate">
               <MapPin size={11} className="shrink-0 stroke-[2.5]" />
               <span className="truncate">
-                {[parking.address?.landmark, parking.address?.city].filter(Boolean).join(', ') || 'India'}
+                {[parking.address?.landmark, parking.address?.city]
+                  .filter(Boolean)
+                  .join(", ") || "India"}
               </span>
             </p>
           </div>
@@ -82,8 +101,10 @@ export const ParkingCard: React.FC<ParkingCardProps> = ({ parking, query = '', f
               <p className="text-[10px] font-bold text-[#0A4DA6] dark:text-blue-300 bg-blue-50/70 dark:bg-slate-800 rounded-full px-2.5 py-1 inline-flex items-center gap-1 max-w-full">
                 <Navigation size={10} className="shrink-0 stroke-[2.5]" />
                 <span className="truncate">
-                  {nearest.walkingMinutes ? `${nearest.walkingMinutes} min walk` : `${nearest.distanceKm ?? 0} km`} to{' '}
-                  {nearest.name}
+                  {nearest.walkingMinutes
+                    ? `${nearest.walkingMinutes} min walk`
+                    : `${nearest.distanceKm ?? 0} km`}{" "}
+                  to {nearest.name}
                 </span>
               </p>
             ) : (
@@ -99,14 +120,18 @@ export const ParkingCard: React.FC<ParkingCardProps> = ({ parking, query = '', f
         <div className="space-y-3 pt-1">
           {/* Live availability + opening hours */}
           <div className="flex items-center justify-between gap-2 text-[10px] font-bold">
-            <span className={`inline-flex items-center gap-1 ${availabilityTone(available, total)}`}>
+            <span
+              className={`inline-flex items-center gap-1 ${availabilityTone(available, total)}`}
+            >
               <CircleParking size={12} className="stroke-[2.5]" />
-              {available > 0 ? `${available} of ${total} free` : 'Currently full'}
+              {available > 0
+                ? `${available} of ${total} free`
+                : "Currently full"}
             </span>
             <span className="inline-flex items-center gap-1 text-gray-500 dark:text-gray-400">
               <Clock size={11} className="stroke-[2.5]" />
               {parking.openingHours?.is24x7
-                ? '24×7'
+                ? "24×7"
                 : `${parking.openingHours?.opensAt}–${parking.openingHours?.closesAt}`}
             </span>
           </div>
@@ -116,13 +141,17 @@ export const ParkingCard: React.FC<ParkingCardProps> = ({ parking, query = '', f
             <div className="pt-2.5">
               {fromPrice !== undefined ? (
                 <>
-                  <span className="block text-[9px] uppercase tracking-wider font-bold text-gray-400">From</span>
+                  <span className="block text-[9px] uppercase tracking-wider font-bold text-gray-400">
+                    From
+                  </span>
                   <span className="text-base font-black text-[#0B192C] dark:text-white">
                     {formatCurrency(fromPrice)}
                   </span>
                 </>
               ) : (
-                <span className="text-[10px] font-bold text-gray-400">Tap to see pricing</span>
+                <span className="text-[10px] font-bold text-gray-400">
+                  Tap to see pricing
+                </span>
               )}
             </div>
 

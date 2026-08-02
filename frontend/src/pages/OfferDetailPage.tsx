@@ -1,28 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import api from "../lib/api";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import {
-  Tag,
   Clock,
-  Calendar,
   Sparkles,
   MapPin,
   Building,
   CheckCircle2,
   Copy,
   ArrowRight,
-  ShieldCheck,
   Percent,
   ChevronRight,
   Gift,
-  HelpCircle,
   FileText,
-  Utensils,
   Sun,
-  Bed,
-  HeartHandshake
-} from 'lucide-react';
-import { useNotifications } from '../contexts/NotificationContext';
+  HeartHandshake,
+} from "lucide-react";
+import { useNotifications } from "../contexts/NotificationContext";
 
 export const OfferDetailPage: React.FC = () => {
   const { offerId } = useParams();
@@ -35,7 +29,12 @@ export const OfferDetailPage: React.FC = () => {
   const [copied, setCopied] = useState(false);
 
   // Countdown timer state
-  const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number }>({
+  const [timeLeft, setTimeLeft] = useState<{
+    days: number;
+    hours: number;
+    minutes: number;
+    seconds: number;
+  }>({
     days: 0,
     hours: 0,
     minutes: 0,
@@ -49,14 +48,17 @@ export const OfferDetailPage: React.FC = () => {
   useEffect(() => {
     if (!offer?.validTill) return;
     const interval = setInterval(() => {
-      const distance = new Date(offer.validTill).getTime() - new Date().getTime();
+      const distance =
+        new Date(offer.validTill).getTime() - new Date().getTime();
       if (distance < 0) {
         clearInterval(interval);
         setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
       } else {
         setTimeLeft({
           days: Math.floor(distance / (1000 * 60 * 60 * 24)),
-          hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+          hours: Math.floor(
+            (distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
+          ),
           minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
           seconds: Math.floor((distance % (1000 * 60)) / 1000),
         });
@@ -68,15 +70,13 @@ export const OfferDetailPage: React.FC = () => {
   const fetchOfferDetail = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/offers/${offerId}`
-      );
+      const res = await api.get(`/offers/${offerId}`);
       if (res.data.success) {
         setOffer(res.data.data);
         setRelatedOffers(res.data.relatedOffers || []);
       }
     } catch (err) {
-      console.error('Fetch offer detail error:', err);
+      console.error("Fetch offer detail error:", err);
     } finally {
       setLoading(false);
     }
@@ -86,15 +86,22 @@ export const OfferDetailPage: React.FC = () => {
     if (!offer) return;
     navigator.clipboard.writeText(offer.promoCode);
     setCopied(true);
-    addNotification('Promo Code Copied!', `"${offer.promoCode}" copied to clipboard.`, 'success');
+    addNotification(
+      "Promo Code Copied!",
+      `"${offer.promoCode}" copied to clipboard.`,
+      "success",
+    );
     setTimeout(() => setCopied(false), 2500);
   };
 
   const handleBookNow = () => {
     if (!offer) return;
-    const targetAshram = offer.ashramId || (offer.applicableAshrams && offer.applicableAshrams[0]);
+    const targetAshram =
+      offer.ashramId || (offer.applicableAshrams && offer.applicableAshrams[0]);
     if (targetAshram?._id) {
-      navigate(`/ashram/${targetAshram._id}?promoCode=${encodeURIComponent(offer.promoCode)}`);
+      navigate(
+        `/ashram/${targetAshram._id}?promoCode=${encodeURIComponent(offer.promoCode)}`,
+      );
     } else {
       navigate(`/search?promoCode=${encodeURIComponent(offer.promoCode)}`);
     }
@@ -105,7 +112,9 @@ export const OfferDetailPage: React.FC = () => {
       <div className="min-h-screen bg-gray-50 dark:bg-slate-950 p-8 flex items-center justify-center">
         <div className="space-y-4 text-center">
           <div className="w-12 h-12 border-4 border-[#0A4DA6] border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-xs font-extrabold text-gray-400">Loading Offer Landing Page...</p>
+          <p className="text-xs font-extrabold text-gray-400">
+            Loading Offer Landing Page...
+          </p>
         </div>
       </div>
     );
@@ -115,16 +124,24 @@ export const OfferDetailPage: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-slate-950 p-12 text-center space-y-4">
         <Gift size={48} className="mx-auto text-gray-400" />
-        <h2 className="text-2xl font-black text-[#0B192C] dark:text-white">Offer Not Found</h2>
-        <p className="text-xs text-gray-400">This promotion might have expired or been removed.</p>
-        <Link to="/offers" className="inline-block px-6 py-3 bg-[#0A4DA6] text-white font-bold text-xs rounded-full">
+        <h2 className="text-2xl font-black text-[#0B192C] dark:text-white">
+          Offer Not Found
+        </h2>
+        <p className="text-xs text-gray-400">
+          This promotion might have expired or been removed.
+        </p>
+        <Link
+          to="/offers"
+          className="inline-block px-6 py-3 bg-[#0A4DA6] text-white font-bold text-xs rounded-full"
+        >
           Browse All Offers
         </Link>
       </div>
     );
   }
 
-  const primaryAshram = offer.ashramId || (offer.applicableAshrams && offer.applicableAshrams[0]);
+  const primaryAshram =
+    offer.ashramId || (offer.applicableAshrams && offer.applicableAshrams[0]);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-950 pb-28 space-y-10">
@@ -132,31 +149,41 @@ export const OfferDetailPage: React.FC = () => {
       <div className="relative bg-black text-white min-h-[420px] flex items-center overflow-hidden">
         {/* Background Image with Dark Gradient Overlay */}
         <img
-          src={offer.bannerImage || '/banner/ashram_rishikesh.png'}
+          src={offer.bannerImage || "/banner/ashram_rishikesh.png"}
           alt={offer.offerTitle}
           className="absolute inset-0 w-full h-full object-cover opacity-50 filter brightness-75"
-          onError={(e: any) => { e.target.src = '/banner/ashram_rishikesh.png'; }}
+          onError={(e: any) => {
+            e.target.src = "/banner/ashram_rishikesh.png";
+          }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#0B192C] via-[#0B192C]/60 to-transparent" />
 
         <div className="relative max-w-6xl mx-auto px-4 sm:px-8 py-12 space-y-6 z-10 w-full">
           {/* Breadcrumb */}
           <div className="flex items-center gap-2 text-xs font-semibold text-gray-300">
-            <Link to="/" className="hover:text-white">Home</Link>
+            <Link to="/" className="hover:text-white">
+              Home
+            </Link>
             <ChevronRight size={12} />
-            <Link to="/offers" className="hover:text-white">Offers</Link>
+            <Link to="/offers" className="hover:text-white">
+              Offers
+            </Link>
             <ChevronRight size={12} />
-            <span className="text-amber-400 font-bold">{offer.shortTitle || offer.offerTitle}</span>
+            <span className="text-amber-400 font-bold">
+              {offer.shortTitle || offer.offerTitle}
+            </span>
           </div>
 
           {/* Badges */}
           <div className="flex flex-wrap items-center gap-3">
             <span className="px-4 py-1.5 rounded-full bg-[#0A4DA6] text-white text-xs font-black uppercase tracking-wider shadow-lg">
-              {offer.offerType || 'Special Promotion'}
+              {offer.offerType || "Special Promotion"}
             </span>
             <span className="px-4 py-1.5 rounded-full bg-amber-500 text-white text-xs font-black shadow-lg flex items-center gap-1.5">
               <Percent size={14} />
-              {offer.discountType === 'Percentage' ? `${offer.discountValue}% OFF` : `FLAT ₹${offer.discountValue} OFF`}
+              {offer.discountType === "Percentage"
+                ? `${offer.discountValue}% OFF`
+                : `FLAT ₹${offer.discountValue} OFF`}
             </span>
           </div>
 
@@ -174,13 +201,33 @@ export const OfferDetailPage: React.FC = () => {
               <Clock size={16} /> Offer Ends In:
             </div>
             <div className="flex items-center gap-3 font-mono font-black text-lg">
-              <div><span className="text-amber-400">{timeLeft.days}</span><span className="text-[10px] block font-sans text-gray-300">DAYS</span></div>
+              <div>
+                <span className="text-amber-400">{timeLeft.days}</span>
+                <span className="text-[10px] block font-sans text-gray-300">
+                  DAYS
+                </span>
+              </div>
               <span>:</span>
-              <div><span className="text-amber-400">{timeLeft.hours}</span><span className="text-[10px] block font-sans text-gray-300">HRS</span></div>
+              <div>
+                <span className="text-amber-400">{timeLeft.hours}</span>
+                <span className="text-[10px] block font-sans text-gray-300">
+                  HRS
+                </span>
+              </div>
               <span>:</span>
-              <div><span className="text-amber-400">{timeLeft.minutes}</span><span className="text-[10px] block font-sans text-gray-300">MINS</span></div>
+              <div>
+                <span className="text-amber-400">{timeLeft.minutes}</span>
+                <span className="text-[10px] block font-sans text-gray-300">
+                  MINS
+                </span>
+              </div>
               <span>:</span>
-              <div><span className="text-amber-400">{timeLeft.seconds}</span><span className="text-[10px] block font-sans text-gray-300">SECS</span></div>
+              <div>
+                <span className="text-amber-400">{timeLeft.seconds}</span>
+                <span className="text-[10px] block font-sans text-gray-300">
+                  SECS
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -200,15 +247,23 @@ export const OfferDetailPage: React.FC = () => {
               {(offer.highlights && offer.highlights.length > 0
                 ? offer.highlights
                 : [
-                    'Complimentary pure Satvik breakfast & tea',
-                    'Direct access to sacred Ganga Aarti ghats',
-                    'Free room upgrade subject to availability',
-                    'Special Vedic prasad packet upon check-in',
+                    "Complimentary pure Satvik breakfast & tea",
+                    "Direct access to sacred Ganga Aarti ghats",
+                    "Free room upgrade subject to availability",
+                    "Special Vedic prasad packet upon check-in",
                   ]
               ).map((h: string, i: number) => (
-                <div key={i} className="flex items-start gap-3 bg-blue-50/50 dark:bg-blue-900/10 p-3.5 rounded-2xl border border-blue-100 dark:border-blue-800/30">
-                  <CheckCircle2 size={16} className="text-[#0A4DA6] dark:text-amber-400 shrink-0 mt-0.5" />
-                  <span className="text-xs font-bold text-gray-700 dark:text-gray-200">{h}</span>
+                <div
+                  key={i}
+                  className="flex items-start gap-3 bg-blue-50/50 dark:bg-blue-900/10 p-3.5 rounded-2xl border border-blue-100 dark:border-blue-800/30"
+                >
+                  <CheckCircle2
+                    size={16}
+                    className="text-[#0A4DA6] dark:text-amber-400 shrink-0 mt-0.5"
+                  />
+                  <span className="text-xs font-bold text-gray-700 dark:text-gray-200">
+                    {h}
+                  </span>
                 </div>
               ))}
             </div>
@@ -218,15 +273,21 @@ export const OfferDetailPage: React.FC = () => {
           {primaryAshram && (
             <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 sm:p-8 space-y-4 shadow-sm">
               <h2 className="text-xl font-black text-[#0B192C] dark:text-white flex items-center gap-2">
-                <Building size={20} className="text-[#0A4DA6]" /> Applicable Ashram Accommodation
+                <Building size={20} className="text-[#0A4DA6]" /> Applicable
+                Ashram Accommodation
               </h2>
 
               <div className="bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="space-y-1 text-center sm:text-left">
-                  <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white">{primaryAshram.name}</h3>
+                  <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white">
+                    {primaryAshram.name}
+                  </h3>
                   <div className="flex items-center gap-1.5 text-xs text-gray-500 font-bold">
                     <MapPin size={13} className="text-[#0A4DA6]" />
-                    <span>{primaryAshram.address?.city || 'Haridwar'}, {primaryAshram.address?.state || 'Uttarakhand'}</span>
+                    <span>
+                      {primaryAshram.address?.city || "Haridwar"},{" "}
+                      {primaryAshram.address?.state || "Uttarakhand"}
+                    </span>
                   </div>
                 </div>
 
@@ -243,17 +304,18 @@ export const OfferDetailPage: React.FC = () => {
           {/* Terms & Conditions */}
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 sm:p-8 space-y-4 shadow-sm">
             <h2 className="text-xl font-black text-[#0B192C] dark:text-white flex items-center gap-2">
-              <FileText size={20} className="text-gray-400" /> Terms & Guidelines
+              <FileText size={20} className="text-gray-400" /> Terms &
+              Guidelines
             </h2>
 
             <ul className="space-y-2 text-xs text-gray-600 dark:text-gray-300 font-semibold list-disc list-inside leading-relaxed">
               {(offer.termsAndConditions && offer.termsAndConditions.length > 0
                 ? offer.termsAndConditions
                 : [
-                    'Valid for new bookings made through Tirvona platform.',
-                    'Promo code must be applied prior to payment confirmation.',
-                    'Cannot be combined with any other promotional coupons.',
-                    'Subject to room availability during high festival dates.',
+                    "Valid for new bookings made through Tirvona platform.",
+                    "Promo code must be applied prior to payment confirmation.",
+                    "Cannot be combined with any other promotional coupons.",
+                    "Subject to room availability during high festival dates.",
                   ]
               ).map((t: string, i: number) => (
                 <li key={i}>{t}</li>
@@ -266,14 +328,18 @@ export const OfferDetailPage: React.FC = () => {
         <div className="space-y-6">
           <div className="bg-white dark:bg-[#0B192C] border border-amber-500/30 rounded-3xl p-6 space-y-6 shadow-xl sticky top-24">
             <div className="space-y-2 border-b border-gray-100 dark:border-slate-800 pb-4">
-              <span className="text-[10px] font-black uppercase tracking-widest text-amber-500">EXCLUSIVE PROMO CODE</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-amber-500">
+                EXCLUSIVE PROMO CODE
+              </span>
               <div className="flex items-center justify-between bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4">
-                <span className="font-mono font-black text-xl text-[#0B192C] dark:text-white">{offer.promoCode}</span>
+                <span className="font-mono font-black text-xl text-[#0B192C] dark:text-white">
+                  {offer.promoCode}
+                </span>
                 <button
                   onClick={handleCopyCode}
                   className="px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-xs rounded-xl flex items-center gap-1 cursor-pointer"
                 >
-                  <Copy size={13} /> {copied ? 'Copied!' : 'Copy'}
+                  <Copy size={13} /> {copied ? "Copied!" : "Copy"}
                 </button>
               </div>
             </div>
@@ -282,18 +348,24 @@ export const OfferDetailPage: React.FC = () => {
               <div className="flex justify-between">
                 <span>Discount Offer:</span>
                 <span className="text-emerald-600 font-black">
-                  {offer.discountType === 'Percentage' ? `${offer.discountValue}% OFF` : `FLAT ₹${offer.discountValue} OFF`}
+                  {offer.discountType === "Percentage"
+                    ? `${offer.discountValue}% OFF`
+                    : `FLAT ₹${offer.discountValue} OFF`}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span>Min Booking Amount:</span>
                 <span className="font-black text-[#0B192C] dark:text-white">
-                  {offer.minimumBookingAmount > 0 ? `₹${offer.minimumBookingAmount}` : 'No Minimum'}
+                  {offer.minimumBookingAmount > 0
+                    ? `₹${offer.minimumBookingAmount}`
+                    : "No Minimum"}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span>Remaining Redemptions:</span>
-                <span className="font-black text-[#0A4DA6] dark:text-amber-400">{offer.remainingRedemptions} Left</span>
+                <span className="font-black text-[#0A4DA6] dark:text-amber-400">
+                  {offer.remainingRedemptions} Left
+                </span>
               </div>
             </div>
 
@@ -311,8 +383,12 @@ export const OfferDetailPage: React.FC = () => {
       <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/90 dark:bg-[#0B192C]/90 backdrop-blur-md border-t border-gray-200 dark:border-slate-800 p-4 shadow-2xl">
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
           <div>
-            <div className="text-[10px] font-black uppercase text-amber-500">APPLY CODE AT CHECKOUT</div>
-            <div className="font-mono font-black text-sm text-[#0B192C] dark:text-white">{offer.promoCode}</div>
+            <div className="text-[10px] font-black uppercase text-amber-500">
+              APPLY CODE AT CHECKOUT
+            </div>
+            <div className="font-mono font-black text-sm text-[#0B192C] dark:text-white">
+              {offer.promoCode}
+            </div>
           </div>
 
           <button

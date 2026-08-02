@@ -1,13 +1,19 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { io, type Socket } from 'socket.io-client';
-import { useAuth } from './AuthContext';
-import { API_BASE_URL, TOKEN_KEY } from '../lib/api';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useRef,
+} from "react";
+import { io, type Socket } from "socket.io-client";
+import { useAuth } from "./AuthContext";
+import { API_BASE_URL, TOKEN_KEY } from "../lib/api";
 
 export interface Notification {
   id: string;
   title: string;
   message: string;
-  type: 'info' | 'success' | 'warning' | 'error';
+  type: "info" | "success" | "warning" | "error";
   timestamp: Date;
   read: boolean;
 }
@@ -15,20 +21,32 @@ export interface Notification {
 interface NotificationContextType {
   notifications: Notification[];
   unreadCount: number;
-  addNotification: (title: string, message: string, type?: Notification['type']) => void;
+  addNotification: (
+    title: string,
+    message: string,
+    type?: Notification["type"],
+  ) => void;
   markAllAsRead: () => void;
   removeNotification: (id: string) => void;
   clearNotifications: () => void;
 }
 
-const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
+const NotificationContext = createContext<NotificationContextType | undefined>(
+  undefined,
+);
 
-export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const { user } = useAuth();
   const socketRef = useRef<Socket | null>(null);
 
-  const addNotification = (title: string, message: string, type: Notification['type'] = 'info') => {
+  const addNotification = (
+    title: string,
+    message: string,
+    type: Notification["type"] = "info",
+  ) => {
     const newNotif: Notification = {
       id: Math.random().toString(36).substring(7),
       title,
@@ -45,10 +63,10 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     if (user) {
       setNotifications([
         {
-          id: 'init-1',
-          title: 'Welcome to Tirvona',
-          message: `Namaste ${user.name}, your account is active as an official ${user.role.toUpperCase() === 'CUSTOMER' ? 'Pilgrim' : user.role.toUpperCase()}.`,
-          type: 'success',
+          id: "init-1",
+          title: "Welcome to Tirvona",
+          message: `Namaste ${user.name}, your account is active as an official ${user.role.toUpperCase() === "CUSTOMER" ? "Pilgrim" : user.role.toUpperCase()}.`,
+          type: "success",
           timestamp: new Date(),
           read: false,
         },
@@ -65,26 +83,49 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     // M3: authenticate the socket so the server scopes the private room to this
     // verified user (the server ignores any client-sent id).
     const token = localStorage.getItem(TOKEN_KEY);
-    const socket = io(API_BASE_URL, { transports: ['websocket', 'polling'], auth: { token } });
+    const socket = io(`${API_BASE_URL}/notifications`, {
+      transports: ["websocket", "polling"],
+      auth: { token },
+    });
     socketRef.current = socket;
 
-    socket.on('connect', () => {
-      socket.emit('join_dashboard', user.id);
-    });
-
-    // Live booking lifecycle updates pushed by the server.
-    socket.on('booking_update', (payload: { event: string; bookingId: string; status: string }) => {
-      const labels: Record<string, { title: string; type: Notification['type'] }> = {
-        booking_confirmed: { title: 'Booking Confirmed', type: 'success' },
-        checked_in: { title: 'Guest Checked In', type: 'info' },
-        checked_out: { title: 'Guest Checked Out', type: 'info' },
-        cancelled: { title: 'Booking Cancelled', type: 'warning' },
+    // The NestJS gateway authenticates the handshake and joins the user's
+    // private room; the browser cannot select another user's room.
+    const lifecycleEvents = [
+      "booking_confirmed",
+      "checked_in",
+      "checked_out",
+      "cancelled",
+    ];
+    const onLifecycleEvent = (
+      event: string,
+      payload: { title?: string; message?: string },
+    ) => {
+      const labels: Record<
+        string,
+        { title: string; type: Notification["type"] }
+      > = {
+        booking_confirmed: { title: "Booking Confirmed", type: "success" },
+        checked_in: { title: "Guest Checked In", type: "info" },
+        checked_out: { title: "Guest Checked Out", type: "info" },
+        cancelled: { title: "Booking Cancelled", type: "warning" },
       };
-      const meta = labels[payload.event] || { title: 'Booking Update', type: 'info' as const };
-      addNotification(meta.title, `Booking ${payload.bookingId} is now ${payload.status}.`, meta.type);
-    });
+      const meta = labels[event] || {
+        title: payload.title || "Booking Update",
+        type: "info" as const,
+      };
+      addNotification(
+        payload.title || meta.title,
+        payload.message || "Your booking was updated.",
+        meta.type,
+      );
+    };
+    lifecycleEvents.forEach((event) =>
+      socket.on(event, (payload) => onLifecycleEvent(event, payload)),
+    );
 
     return () => {
+      lifecycleEvents.forEach((event) => socket.off(event));
       socket.disconnect();
       socketRef.current = null;
     };
@@ -106,7 +147,14 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   return (
     <NotificationContext.Provider
-      value={{ notifications, unreadCount, addNotification, markAllAsRead, removeNotification, clearNotifications }}
+      value={{
+        notifications,
+        unreadCount,
+        addNotification,
+        markAllAsRead,
+        removeNotification,
+        clearNotifications,
+      }}
     >
       {children}
     </NotificationContext.Provider>
@@ -116,7 +164,9 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 export const useNotifications = () => {
   const context = useContext(NotificationContext);
   if (context === undefined) {
-    throw new Error('useNotifications must be used within a NotificationProvider');
+    throw new Error(
+      "useNotifications must be used within a NotificationProvider",
+    );
   }
   return context;
 };

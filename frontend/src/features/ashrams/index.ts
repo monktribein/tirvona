@@ -1,1 +1,1 @@
-export { ashramService } from '../../services';
+export { ashramService } from "../../services";

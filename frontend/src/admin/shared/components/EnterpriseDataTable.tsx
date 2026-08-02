@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo } from "react";
 import {
   Search,
   Plus,
@@ -20,8 +20,8 @@ import {
   Tag,
   ToggleLeft,
   ToggleRight,
-  Sparkles
-} from 'lucide-react';
+  Sparkles,
+} from "lucide-react";
 
 export interface TableColumn {
   key: string;
@@ -58,16 +58,20 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
   onBulkReject,
   onToggleStatus,
   isLoading = false,
+  loading = false,
 }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const tableLoading = isLoading || loading;
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // Modal States
   const [detailItem, setDetailItem] = useState<any | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'info' | 'timeline' | 'activity' | 'logs'>('overview');
+  const [activeTab, setActiveTab] = useState<
+    "overview" | "info" | "timeline" | "activity" | "logs"
+  >("overview");
   const [editItem, setEditItem] = useState<any | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
@@ -78,13 +82,18 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
   const filteredData = useMemo(() => {
     return data.filter((item) => {
       // Search check
-      const searchMatch = !searchTerm || Object.values(item).some((val) =>
-        String(val || '').toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      const searchMatch =
+        !searchTerm ||
+        Object.values(item).some((val) =>
+          String(val || "")
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase()),
+        );
       // Status check
       const statusMatch =
-        statusFilter === 'all' ||
-        (item.status && String(item.status).toLowerCase() === statusFilter.toLowerCase());
+        statusFilter === "all" ||
+        (item.status &&
+          String(item.status).toLowerCase() === statusFilter.toLowerCase());
       return searchMatch && statusMatch;
     });
   }, [data, searchTerm, statusFilter]);
@@ -107,7 +116,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
 
   const handleSelectOne = (id: string) => {
     setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
     );
   };
 
@@ -115,15 +124,21 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
   const handleExportCSV = () => {
     if (filteredData.length === 0) return;
     const keys = columns.map((c) => c.key);
-    const headers = columns.map((c) => c.label).join(',');
+    const headers = columns.map((c) => c.label).join(",");
     const rows = filteredData.map((row) =>
-      keys.map((k) => `"${String(row[k] ?? '').replace(/"/g, '""')}"`).join(',')
+      keys
+        .map((k) => `"${String(row[k] ?? "").replace(/"/g, '""')}"`)
+        .join(","),
     );
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers, ...rows].join('\n');
+    const csvContent =
+      "data:text/csv;charset=utf-8," + [headers, ...rows].join("\n");
     const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `${title.toLowerCase().replace(/\s+/g, '_')}_export.csv`);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute(
+      "download",
+      `${title.toLowerCase().replace(/\s+/g, "_")}_export.csv`,
+    );
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -148,9 +163,9 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
   const openCreateModal = () => {
     const initial: Record<string, any> = {};
     columns.forEach((c) => {
-      initial[c.key] = '';
+      initial[c.key] = "";
     });
-    initial.status = 'active';
+    initial.status = "active";
     setFormData(initial);
     setIsCreateOpen(true);
   };
@@ -168,7 +183,11 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
           <h2 className="text-lg font-extrabold text-[#0B192C] dark:text-white flex items-center gap-2">
             <Tag size={20} className="text-[#0A4DA6]" /> {title}
           </h2>
-          {subtitle && <p className="text-xs text-gray-400 font-semibold mt-1">{subtitle}</p>}
+          {subtitle && (
+            <p className="text-xs text-gray-400 font-semibold mt-1">
+              {subtitle}
+            </p>
+          )}
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -205,7 +224,10 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
       <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-4 rounded-[20px] shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
         {/* Search Input */}
         <div className="relative w-full md:w-80">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+          <Search
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
+            size={16}
+          />
           <input
             type="text"
             placeholder="Search records..."
@@ -296,7 +318,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
 
       {/* Enterprise Data Table */}
       <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] shadow-sm overflow-hidden">
-        {isLoading ? (
+        {tableLoading ? (
           <div className="h-64 flex items-center justify-center text-gray-400 text-xs font-bold animate-pulse">
             Loading data records...
           </div>
@@ -312,7 +334,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                       checked={
                         paginatedData.length > 0 &&
                         paginatedData.every((item) =>
-                          selectedIds.includes(item._id || item.id)
+                          selectedIds.includes(item._id || item.id),
                         )
                       }
                       className="rounded border-gray-300 text-[#0A4DA6] focus:ring-0 cursor-pointer"
@@ -342,13 +364,15 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                   paginatedData.map((item) => {
                     const id = item._id || item.id;
                     const isSelected = selectedIds.includes(id);
-                    const statusStr = String(item.status || 'active').toLowerCase();
+                    const statusStr = String(
+                      item.status || "active",
+                    ).toLowerCase();
 
                     return (
                       <tr
                         key={id}
                         className={`border-b border-gray-50 dark:border-slate-850 hover:bg-gray-50/40 dark:hover:bg-slate-800/30 transition-colors ${
-                          isSelected ? 'bg-blue-50/30 dark:bg-slate-800/50' : ''
+                          isSelected ? "bg-blue-50/30 dark:bg-slate-800/50" : ""
                         }`}
                       >
                         <td className="py-3.5 px-4 text-center">
@@ -360,20 +384,23 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                           />
                         </td>
                         {columns.map((col) => (
-                          <td key={col.key} className="py-3.5 px-4 font-medium text-[#0B192C] dark:text-gray-200">
+                          <td
+                            key={col.key}
+                            className="py-3.5 px-4 font-medium text-[#0B192C] dark:text-gray-200"
+                          >
                             {col.render
                               ? col.render(item[col.key], item)
-                              : String(item[col.key] ?? '—')}
+                              : String(item[col.key] ?? "—")}
                           </td>
                         ))}
                         <td className="py-3.5 px-4">
                           <span
                             className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wide ${
-                              ['active', 'approved'].includes(statusStr)
-                                ? 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400'
-                                : ['pending'].includes(statusStr)
-                                ? 'bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400'
-                                : 'bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400'
+                              ["active", "approved"].includes(statusStr)
+                                ? "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400"
+                                : ["pending"].includes(statusStr)
+                                  ? "bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400"
+                                  : "bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400"
                             }`}
                           >
                             {statusStr}
@@ -382,7 +409,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                         <td className="py-3.5 px-4 text-gray-400 text-[11px] font-mono whitespace-nowrap">
                           {item.createdAt
                             ? new Date(item.createdAt).toLocaleDateString()
-                            : '—'}
+                            : "—"}
                         </td>
                         <td className="py-3.5 px-4 text-right">
                           <div className="flex items-center justify-end gap-1.5">
@@ -420,10 +447,16 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                                 className="p-1.5 text-gray-400 hover:text-emerald-500 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer"
                                 title="Toggle Status"
                               >
-                                {['active', 'approved'].includes(statusStr) ? (
-                                  <ToggleRight size={16} className="text-emerald-500" />
+                                {["active", "approved"].includes(statusStr) ? (
+                                  <ToggleRight
+                                    size={16}
+                                    className="text-emerald-500"
+                                  />
                                 ) : (
-                                  <ToggleLeft size={16} className="text-rose-500" />
+                                  <ToggleLeft
+                                    size={16}
+                                    className="text-rose-500"
+                                  />
                                 )}
                               </button>
                             )}
@@ -450,8 +483,12 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
         {/* Pagination Footer */}
         <div className="p-4 border-t border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/30 flex flex-col sm:flex-row items-center justify-between gap-4">
           <span className="text-xs text-gray-400 font-medium">
-            Showing {filteredData.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1} to{' '}
-            {Math.min(currentPage * itemsPerPage, filteredData.length)} of {filteredData.length} records
+            Showing{" "}
+            {filteredData.length === 0
+              ? 0
+              : (currentPage - 1) * itemsPerPage + 1}{" "}
+            to {Math.min(currentPage * itemsPerPage, filteredData.length)} of{" "}
+            {filteredData.length} records
           </span>
 
           <div className="flex items-center gap-2">
@@ -486,7 +523,9 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                 <h3 className="font-extrabold text-lg text-[#0B192C] dark:text-white flex items-center gap-2">
                   <Info size={18} className="text-[#0A4DA6]" /> Record Details
                 </h3>
-                <span className="text-xs text-gray-400 font-mono">ID: {detailItem._id || detailItem.id}</span>
+                <span className="text-xs text-gray-400 font-mono">
+                  ID: {detailItem._id || detailItem.id}
+                </span>
               </div>
               <button
                 onClick={() => setDetailItem(null)}
@@ -499,51 +538,51 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
             {/* Navigation Tabs */}
             <div className="flex border-b border-gray-100 dark:border-slate-800 gap-4 text-xs font-bold text-gray-400">
               <button
-                onClick={() => setActiveTab('overview')}
+                onClick={() => setActiveTab("overview")}
                 className={`pb-2 border-b-2 transition-all cursor-pointer flex items-center gap-1.5 ${
-                  activeTab === 'overview'
-                    ? 'border-[#0A4DA6] text-[#0A4DA6] dark:text-amber-400'
-                    : 'border-transparent'
+                  activeTab === "overview"
+                    ? "border-[#0A4DA6] text-[#0A4DA6] dark:text-amber-400"
+                    : "border-transparent"
                 }`}
               >
                 <Info size={14} /> Overview
               </button>
               <button
-                onClick={() => setActiveTab('info')}
+                onClick={() => setActiveTab("info")}
                 className={`pb-2 border-b-2 transition-all cursor-pointer flex items-center gap-1.5 ${
-                  activeTab === 'info'
-                    ? 'border-[#0A4DA6] text-[#0A4DA6] dark:text-amber-400'
-                    : 'border-transparent'
+                  activeTab === "info"
+                    ? "border-[#0A4DA6] text-[#0A4DA6] dark:text-amber-400"
+                    : "border-transparent"
                 }`}
               >
                 <Tag size={14} /> Information
               </button>
               <button
-                onClick={() => setActiveTab('timeline')}
+                onClick={() => setActiveTab("timeline")}
                 className={`pb-2 border-b-2 transition-all cursor-pointer flex items-center gap-1.5 ${
-                  activeTab === 'timeline'
-                    ? 'border-[#0A4DA6] text-[#0A4DA6] dark:text-amber-400'
-                    : 'border-transparent'
+                  activeTab === "timeline"
+                    ? "border-[#0A4DA6] text-[#0A4DA6] dark:text-amber-400"
+                    : "border-transparent"
                 }`}
               >
                 <Clock size={14} /> Timeline
               </button>
               <button
-                onClick={() => setActiveTab('activity')}
+                onClick={() => setActiveTab("activity")}
                 className={`pb-2 border-b-2 transition-all cursor-pointer flex items-center gap-1.5 ${
-                  activeTab === 'activity'
-                    ? 'border-[#0A4DA6] text-[#0A4DA6] dark:text-amber-400'
-                    : 'border-transparent'
+                  activeTab === "activity"
+                    ? "border-[#0A4DA6] text-[#0A4DA6] dark:text-amber-400"
+                    : "border-transparent"
                 }`}
               >
                 <Activity size={14} /> Activity
               </button>
               <button
-                onClick={() => setActiveTab('logs')}
+                onClick={() => setActiveTab("logs")}
                 className={`pb-2 border-b-2 transition-all cursor-pointer flex items-center gap-1.5 ${
-                  activeTab === 'logs'
-                    ? 'border-[#0A4DA6] text-[#0A4DA6] dark:text-amber-400'
-                    : 'border-transparent'
+                  activeTab === "logs"
+                    ? "border-[#0A4DA6] text-[#0A4DA6] dark:text-amber-400"
+                    : "border-transparent"
                 }`}
               >
                 <History size={14} /> Audit Logs
@@ -552,47 +591,68 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
 
             {/* Tab Content */}
             <div className="space-y-4 max-h-[360px] overflow-y-auto pr-1">
-              {activeTab === 'overview' && (
+              {activeTab === "overview" && (
                 <div className="grid grid-cols-2 gap-4 text-xs">
                   {Object.entries(detailItem).map(([k, v]) => (
-                    <div key={k} className="p-3 bg-gray-50 dark:bg-slate-900 rounded-xl space-y-1">
-                      <span className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">{k}</span>
+                    <div
+                      key={k}
+                      className="p-3 bg-gray-50 dark:bg-slate-900 rounded-xl space-y-1"
+                    >
+                      <span className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">
+                        {k}
+                      </span>
                       <p className="font-semibold text-[#0B192C] dark:text-white break-words">
-                        {typeof v === 'object' ? JSON.stringify(v) : String(v ?? '—')}
+                        {typeof v === "object"
+                          ? JSON.stringify(v)
+                          : String(v ?? "—")}
                       </p>
                     </div>
                   ))}
                 </div>
               )}
 
-              {activeTab === 'info' && (
+              {activeTab === "info" && (
                 <div className="p-4 bg-gray-50 dark:bg-slate-900 rounded-2xl text-xs space-y-2">
-                  <h4 className="font-bold text-[#0B192C] dark:text-white">Record Metadata</h4>
-                  <p className="text-gray-400">Owner Module: Enterprise System Admin Panel</p>
-                  <p className="text-gray-400">Encrypted DB Node: tirvona-primary-cluster</p>
+                  <h4 className="font-bold text-[#0B192C] dark:text-white">
+                    Record Metadata
+                  </h4>
+                  <p className="text-gray-400">
+                    Owner Module: Enterprise System Admin Panel
+                  </p>
+                  <p className="text-gray-400">
+                    Encrypted DB Node: tirvona-primary-cluster
+                  </p>
                 </div>
               )}
 
-              {activeTab === 'timeline' && (
+              {activeTab === "timeline" && (
                 <div className="space-y-3 text-xs">
                   <div className="flex gap-3 items-center text-gray-400">
-                    <Clock size={14} className="text-[#0A4DA6]" /> Created: {detailItem.createdAt ? new Date(detailItem.createdAt).toLocaleString() : 'N/A'}
+                    <Clock size={14} className="text-[#0A4DA6]" /> Created:{" "}
+                    {detailItem.createdAt
+                      ? new Date(detailItem.createdAt).toLocaleString()
+                      : "N/A"}
                   </div>
                   <div className="flex gap-3 items-center text-gray-400">
-                    <Clock size={14} className="text-emerald-500" /> Updated: {detailItem.updatedAt ? new Date(detailItem.updatedAt).toLocaleString() : 'N/A'}
+                    <Clock size={14} className="text-emerald-500" /> Updated:{" "}
+                    {detailItem.updatedAt
+                      ? new Date(detailItem.updatedAt).toLocaleString()
+                      : "N/A"}
                   </div>
                 </div>
               )}
 
-              {activeTab === 'activity' && (
+              {activeTab === "activity" && (
                 <div className="p-4 bg-gray-50 dark:bg-slate-900 rounded-2xl text-xs text-gray-400">
-                  Recent activities and change triggers registered for this record.
+                  Recent activities and change triggers registered for this
+                  record.
                 </div>
               )}
 
-              {activeTab === 'logs' && (
+              {activeTab === "logs" && (
                 <div className="p-4 bg-gray-50 dark:bg-slate-900 rounded-2xl text-xs font-mono text-gray-400">
-                  [AUDIT_LOG]: Action verified by Super Admin at {new Date().toISOString()}
+                  [AUDIT_LOG]: Action verified by Super Admin at{" "}
+                  {new Date().toISOString()}
                 </div>
               )}
             </div>
@@ -618,7 +678,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
           >
             <div className="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-3">
               <h3 className="font-bold text-base text-[#0B192C] dark:text-white">
-                {editItem ? 'Edit Record' : 'Create New Record'}
+                {editItem ? "Edit Record" : "Create New Record"}
               </h3>
               <button
                 type="button"
@@ -635,11 +695,13 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
             <div className="space-y-4 max-h-[360px] overflow-y-auto pr-1">
               {columns.map((col) => (
                 <div key={col.key} className="space-y-1">
-                  <label className="text-xs font-bold text-gray-400">{col.label}</label>
+                  <label className="text-xs font-bold text-gray-400">
+                    {col.label}
+                  </label>
                   <input
                     type="text"
                     required
-                    value={formData[col.key] || ''}
+                    value={formData[col.key] || ""}
                     onChange={(e) =>
                       setFormData({ ...formData, [col.key]: e.target.value })
                     }
@@ -648,9 +710,11 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                 </div>
               ))}
               <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-400">Status</label>
+                <label className="text-xs font-bold text-gray-400">
+                  Status
+                </label>
                 <select
-                  value={formData.status || 'active'}
+                  value={formData.status || "active"}
                   onChange={(e) =>
                     setFormData({ ...formData, status: e.target.value })
                   }
@@ -679,7 +743,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                 type="submit"
                 className="flex-1 py-2.5 bg-[#0A4DA6] text-white rounded-full text-xs font-black shadow-md cursor-pointer hover:bg-[#083b80]"
               >
-                {editItem ? 'Save Changes' : 'Create Record'}
+                {editItem ? "Save Changes" : "Create Record"}
               </button>
             </div>
           </form>

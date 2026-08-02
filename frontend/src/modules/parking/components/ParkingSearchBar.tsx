@@ -1,13 +1,16 @@
-import React from 'react';
-import { Search, MapPin, LogIn, LogOut, Loader2 } from 'lucide-react';
-import type { ParkingVehicleType, ParkingVehicleTypeCode } from '../types/parking.types';
-import VehicleTypePicker from './VehicleTypePicker';
+import React from "react";
+import { Search, MapPin, LogIn, LogOut, Loader2 } from "lucide-react";
+import type {
+  ParkingVehicleType,
+  ParkingVehicleTypeCode,
+} from "../types/parking.types";
+import VehicleTypePicker from "./VehicleTypePicker";
 
 interface ParkingSearchBarProps {
   destination: string;
   entryAt: string;
   exitAt: string;
-  vehicleType: ParkingVehicleTypeCode | '';
+  vehicleType: ParkingVehicleTypeCode | "";
   vehicleTypes: ParkingVehicleType[];
   loading?: boolean;
   onChange: (patch: {
@@ -128,7 +131,7 @@ export const ParkingSearchBar: React.FC<ParkingSearchBarProps> = ({
           ) : (
             <Search size={15} className="stroke-[2.5]" />
           )}
-          <span>{loading ? 'Searching' : 'Search Parking'}</span>
+          <span>{loading ? "Searching" : "Search Parking"}</span>
         </button>
       </div>
 

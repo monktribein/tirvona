@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { Key, RefreshCw, X } from 'lucide-react';
-import { useNotifications } from '../contexts/NotificationContext';
-import { bookingService } from '../services';
-import { getErrorMessage } from '../lib/api';
+import React, { useState, useEffect } from "react";
+import { Key, RefreshCw, X } from "lucide-react";
+import { useNotifications } from "../contexts/NotificationContext";
+import { bookingService } from "../services";
+import { getErrorMessage } from "../lib/api";
 
 export const ReceptionCheckinPage: React.FC = () => {
   const { addNotification } = useNotifications();
@@ -10,9 +10,9 @@ export const ReceptionCheckinPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   // Counter Check-in verification code
-  const [checkInCode, setCheckInCode] = useState('');
+  const [checkInCode, setCheckInCode] = useState("");
   const [verifyingId, setVerifyingId] = useState<string | null>(null);
-  const [errorMsg, setErrorMsg] = useState('');
+  const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
     fetchActiveBookings();
@@ -26,8 +26,12 @@ export const ReceptionCheckinPage: React.FC = () => {
         setActiveBookings(res.data.data);
       }
     } catch (err) {
-      console.error('Fetch active bookings error:', err);
-      addNotification('Load Failed', getErrorMessage(err, 'Unable to load bookings.'), 'error');
+      console.error("Fetch active bookings error:", err);
+      addNotification(
+        "Load Failed",
+        getErrorMessage(err, "Unable to load bookings."),
+        "error",
+      );
       setActiveBookings([]);
     } finally {
       setLoading(false);
@@ -36,19 +40,25 @@ export const ReceptionCheckinPage: React.FC = () => {
 
   const handleCheckInSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMsg('');
+    setErrorMsg("");
     if (!verifyingId || !checkInCode) return;
 
     try {
       const res = await bookingService.checkin(verifyingId, checkInCode);
       if (res.data.success) {
         setVerifyingId(null);
-        setCheckInCode('');
-        addNotification('Check-In Successful', 'Guest check-in has been authorized and status updated.', 'success');
+        setCheckInCode("");
+        addNotification(
+          "Check-In Successful",
+          "Guest check-in has been authorized and status updated.",
+          "success",
+        );
         fetchActiveBookings();
       }
     } catch (err) {
-      setErrorMsg(getErrorMessage(err, 'Incorrect verification code. Please check code.'));
+      setErrorMsg(
+        getErrorMessage(err, "Incorrect verification code. Please check code."),
+      );
     }
   };
 
@@ -56,39 +66,65 @@ export const ReceptionCheckinPage: React.FC = () => {
     try {
       const res = await bookingService.checkout(bookingId);
       if (res.data.success) {
-        addNotification('Check-Out Authorized', 'Rooms released and sent to cleaning status.', 'info');
+        addNotification(
+          "Check-Out Authorized",
+          "Rooms released and sent to cleaning status.",
+          "info",
+        );
         fetchActiveBookings();
       }
     } catch (err) {
-      console.error('Checkout error:', err);
-      addNotification('Checkout Failed', getErrorMessage(err, 'Could not complete checkout.'), 'error');
+      console.error("Checkout error:", err);
+      addNotification(
+        "Checkout Failed",
+        getErrorMessage(err, "Could not complete checkout."),
+        "error",
+      );
     }
   };
 
   const handleAssignRoomNumber = async (bookingId: string) => {
-    const roomNo = window.prompt('Enter Room Number to assign (e.g. Room 102):');
+    const roomNo = window.prompt(
+      "Enter Room Number to assign (e.g. Room 102):",
+    );
     if (roomNo === null) return;
     try {
       const res = await bookingService.assignRoomNumber(bookingId, roomNo);
       if (res.data.success) {
-        addNotification('Room Assigned', `Assigned room "${roomNo}" to reservation.`, 'success');
+        addNotification(
+          "Room Assigned",
+          `Assigned room "${roomNo}" to reservation.`,
+          "success",
+        );
         fetchActiveBookings();
       }
     } catch (err) {
-      addNotification('Assignment Failed', getErrorMessage(err, 'Could not assign room.'), 'error');
+      addNotification(
+        "Assignment Failed",
+        getErrorMessage(err, "Could not assign room."),
+        "error",
+      );
     }
   };
 
   return (
     <div className="space-y-6 text-left">
-      <div className="flex justify-between items-center bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[24px] shadow-sm">
-        <div>
-          <h2 className="text-base font-extrabold text-[#0B192C] dark:text-white">Counter Check-In & Check-Out Desk</h2>
-          <p className="text-xs text-gray-400 font-semibold mt-1">Authorize active bookings via digital safety codes, assign room numbers, or perform check-outs.</p>
+      {/* min-w-0 on the text block lets it actually shrink — a flex child
+          defaults to min-width:auto and refuses to go below its content width,
+          which is what pushes the refresh button off a narrow screen. */}
+      <div className="flex justify-between items-start sm:items-center gap-3 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-4 sm:p-6 rounded-[24px] shadow-sm">
+        <div className="min-w-0">
+          <h2 className="text-base font-extrabold text-[#0B192C] dark:text-white">
+            Counter Check-In &amp; Check-Out Desk
+          </h2>
+          <p className="text-xs text-gray-400 font-semibold mt-1">
+            Authorize active bookings via digital safety codes, assign room
+            numbers, or perform check-outs.
+          </p>
         </div>
         <button
           onClick={fetchActiveBookings}
-          className="p-2.5 bg-gray-50 dark:bg-slate-900 hover:bg-gray-100 border border-gray-100 dark:border-slate-800 rounded-xl text-gray-500 cursor-pointer transition-colors"
+          className="shrink-0 p-2.5 bg-gray-50 dark:bg-slate-900 hover:bg-gray-100 border border-gray-100 dark:border-slate-800 rounded-xl text-gray-500 cursor-pointer transition-colors"
         >
           <RefreshCw size={16} />
         </button>
@@ -111,18 +147,28 @@ export const ReceptionCheckinPage: React.FC = () => {
               </thead>
               <tbody>
                 {activeBookings.map((bk) => (
-                  <tr key={bk._id} className="border-b border-gray-50 dark:border-slate-850 hover:bg-gray-50/20">
+                  <tr
+                    key={bk._id}
+                    className="border-b border-gray-50 dark:border-slate-850 hover:bg-gray-50/20"
+                  >
                     <td className="py-4.5 px-6 font-bold text-[#0B192C] dark:text-white">
                       <div>{bk.bookingId}</div>
                       {bk.reservationNumber && (
-                        <div className="text-[10px] font-mono text-[#0A4DA6]">{bk.reservationNumber}</div>
+                        <div className="text-[10px] font-mono text-[#0A4DA6]">
+                          {bk.reservationNumber}
+                        </div>
                       )}
                     </td>
                     <td className="py-4.5 px-6">
                       <div className="flex flex-col">
-                        <span className="font-semibold text-secondary dark:text-white">{bk.customerId?.name}</span>
-                        <a href={`tel:${bk.customerId?.phone}`} className="text-[10px] text-blue-600 hover:underline">
-                          {bk.customerId?.phone || 'No phone'}
+                        <span className="font-semibold text-secondary dark:text-white">
+                          {bk.customerId?.name}
+                        </span>
+                        <a
+                          href={`tel:${bk.customerId?.phone}`}
+                          className="text-[10px] text-blue-600 hover:underline"
+                        >
+                          {bk.customerId?.phone || "No phone"}
                         </a>
                       </div>
                     </td>
@@ -142,27 +188,31 @@ export const ReceptionCheckinPage: React.FC = () => {
                       )}
                     </td>
                     <td className="py-4.5 px-6">
-                      <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold capitalize border ${
-                        bk.status === 'confirmed' ? 'bg-[#0A4DA6]/10 text-[#0A4DA6] border-[#0A4DA6]/20' :
-                        bk.status === 'checked_in' ? 'bg-success/15 text-success border border-success/30' :
-                        'bg-gray-100 text-gray-500'
-                      }`}>
+                      <span
+                        className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold capitalize border ${
+                          bk.status === "confirmed"
+                            ? "bg-[#0A4DA6]/10 text-[#0A4DA6] border-[#0A4DA6]/20"
+                            : bk.status === "checked_in"
+                              ? "bg-success/15 text-success border border-success/30"
+                              : "bg-gray-100 text-gray-500"
+                        }`}
+                      >
                         {bk.status}
                       </span>
                     </td>
                     <td className="py-4.5 px-6 text-right space-x-2">
-                      {bk.status === 'confirmed' && (
+                      {bk.status === "confirmed" && (
                         <button
                           onClick={() => {
                             setVerifyingId(bk._id);
-                            setErrorMsg('');
+                            setErrorMsg("");
                           }}
                           className="px-4 py-2 bg-[#0A4DA6] text-white rounded-full text-[10px] font-bold cursor-pointer hover:bg-[#083b80]"
                         >
                           Verify Check-In
                         </button>
                       )}
-                      {bk.status === 'checked_in' && (
+                      {bk.status === "checked_in" && (
                         <button
                           onClick={() => handleCheckOut(bk._id)}
                           className="px-4 py-2 bg-danger/10 text-danger border border-danger/20 hover:bg-danger/15 rounded-full text-[10px] font-bold cursor-pointer"
@@ -182,17 +232,28 @@ export const ReceptionCheckinPage: React.FC = () => {
       {/* Check-In Verification Code Modal */}
       {verifyingId && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <form onSubmit={handleCheckInSubmit} className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-md w-full rounded-[28px] p-6 space-y-4">
+          <form
+            onSubmit={handleCheckInSubmit}
+            className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-md w-full rounded-[28px] p-6 space-y-4"
+          >
             <div className="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-3">
               <h3 className="font-bold text-sm text-[#0B192C] dark:text-white flex items-center gap-1.5">
-                <Key size={16} className="text-[#0A4DA6]" /> Authorize Stay Check-In
+                <Key size={16} className="text-[#0A4DA6]" /> Authorize Stay
+                Check-In
               </h3>
-              <button type="button" onClick={() => setVerifyingId(null)} className="text-gray-400 hover:text-gray-655">
+              <button
+                type="button"
+                onClick={() => setVerifyingId(null)}
+                className="text-gray-400 hover:text-gray-655"
+              >
                 <X size={18} />
               </button>
             </div>
-            
-            <p className="text-[10px] text-gray-400">Ask the guest customer to provide the 6-digit confirmation Check-in code sent to their registered phone number.</p>
+
+            <p className="text-[10px] text-gray-400">
+              Ask the guest customer to provide the 6-digit confirmation
+              Check-in code sent to their registered phone number.
+            </p>
 
             {errorMsg && (
               <div className="p-3 bg-danger/10 text-danger border border-danger/20 text-xs rounded-xl">
@@ -201,7 +262,9 @@ export const ReceptionCheckinPage: React.FC = () => {
             )}
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block text-center">Check-In Pass Code</label>
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block text-center">
+                Check-In Pass Code
+              </label>
               <input
                 type="text"
                 required

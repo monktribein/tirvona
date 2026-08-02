@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { RefreshCw, Clock, History } from 'lucide-react';
-import { analyticsService } from '../../../services';
-import { EnterprisePageHeader } from '../../shared';
+import React, { useState, useEffect } from "react";
+import { RefreshCw, Clock, History } from "lucide-react";
+import { analyticsService } from "../../../services";
+import { EnterprisePageHeader } from "../../shared";
 
 export const AuditLogsPage: React.FC = () => {
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   useEffect(() => {
     fetchLogs();
@@ -14,15 +14,15 @@ export const AuditLogsPage: React.FC = () => {
 
   const fetchLogs = async () => {
     setLoading(true);
-    setError('');
+    setError("");
     try {
       const res = await analyticsService.auditLogs();
       if (res.data.success) {
         setLogs(res.data.data);
       }
     } catch (err) {
-      console.error('Audit logs error:', err);
-      setError('Unable to load audit logs. Please try again.');
+      console.error("Audit logs error:", err);
+      setError("Unable to load audit logs. Please try again.");
       setLogs([]);
     } finally {
       setLoading(false);
@@ -41,7 +41,8 @@ export const AuditLogsPage: React.FC = () => {
             onClick={fetchLogs}
             className="px-4 py-2 bg-[#0A4DA6] text-white hover:bg-[#083b80] rounded-full text-xs font-bold flex items-center gap-2 shadow-md cursor-pointer transition-all"
           >
-            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Refresh Logs
+            <RefreshCw size={14} className={loading ? "animate-spin" : ""} />{" "}
+            Refresh Logs
           </button>
         }
       />
@@ -70,21 +71,35 @@ export const AuditLogsPage: React.FC = () => {
               </thead>
               <tbody>
                 {logs.map((log) => (
-                  <tr key={log._id} className="border-b border-gray-50 dark:border-slate-850 hover:bg-gray-50/20">
+                  <tr
+                    key={log._id}
+                    className="border-b border-gray-50 dark:border-slate-850 hover:bg-gray-50/20"
+                  >
                     <td className="py-4 px-6 text-gray-500 font-semibold flex items-center gap-1.5 whitespace-nowrap">
-                      <Clock size={12} className="text-[#0A4DA6]" /> {new Date(log.timestamp).toLocaleString()}
+                      <Clock size={12} className="text-[#0A4DA6]" />{" "}
+                      {new Date(log.timestamp).toLocaleString()}
                     </td>
                     <td className="py-4 px-6">
-                      <span className="px-2.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-[#0B192C] dark:text-accent rounded-full text-[9px] font-bold uppercase">{log.module}</span>
+                      <span className="px-2.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-[#0B192C] dark:text-accent rounded-full text-[9px] font-bold uppercase">
+                        {log.module}
+                      </span>
                     </td>
-                    <td className="py-4 px-6 font-bold text-[#0B192C] dark:text-white">{log.action}</td>
+                    <td className="py-4 px-6 font-bold text-[#0B192C] dark:text-white">
+                      {log.action}
+                    </td>
                     <td className="py-4 px-6">
                       <div className="flex flex-col">
-                        <span className="font-semibold text-secondary dark:text-white">{log.userId?.name || 'Guest / System'}</span>
-                        <span className="text-[10px] text-gray-400">{log.userId?.email}</span>
+                        <span className="font-semibold text-secondary dark:text-white">
+                          {log.userId?.name || "Guest / System"}
+                        </span>
+                        <span className="text-[10px] text-gray-400">
+                          {log.userId?.email}
+                        </span>
                       </div>
                     </td>
-                    <td className="py-4 px-6 text-gray-400 font-mono">{log.ipAddress}</td>
+                    <td className="py-4 px-6 text-gray-400 font-mono">
+                      {log.ipAddress}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -96,22 +111,34 @@ export const AuditLogsPage: React.FC = () => {
             {logs.map((log) => (
               <div key={log._id} className="p-5 space-y-3">
                 <div className="flex justify-between items-center text-[10px]">
-                  <span className="text-gray-400 flex items-center gap-1"><Clock size={10} className="text-[#0A4DA6]" /> {new Date(log.timestamp).toLocaleString()}</span>
-                  <span className="px-2.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-[#0B192C] dark:text-accent rounded-full text-[8.5px] font-bold uppercase">{log.module}</span>
+                  <span className="text-gray-400 flex items-center gap-1">
+                    <Clock size={10} className="text-[#0A4DA6]" />{" "}
+                    {new Date(log.timestamp).toLocaleString()}
+                  </span>
+                  <span className="px-2.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-[#0B192C] dark:text-accent rounded-full text-[8.5px] font-bold uppercase">
+                    {log.module}
+                  </span>
                 </div>
-                <div className="font-extrabold text-xs text-[#0B192C] dark:text-white">{log.action}</div>
+                <div className="font-extrabold text-xs text-[#0B192C] dark:text-white">
+                  {log.action}
+                </div>
                 <div className="flex justify-between items-end pt-1">
                   <div className="flex flex-col">
-                    <span className="text-xs font-semibold text-secondary dark:text-white">{log.userId?.name || 'Guest / System'}</span>
-                    <span className="text-[9px] text-gray-400">{log.userId?.email}</span>
+                    <span className="text-xs font-semibold text-secondary dark:text-white">
+                      {log.userId?.name || "Guest / System"}
+                    </span>
+                    <span className="text-[9px] text-gray-400">
+                      {log.userId?.email}
+                    </span>
                   </div>
-                  <span className="text-[10px] text-gray-400 font-mono">{log.ipAddress}</span>
+                  <span className="text-[10px] text-gray-400 font-mono">
+                    {log.ipAddress}
+                  </span>
                 </div>
               </div>
             ))}
           </div>
         </div>
-
       )}
     </div>
   );

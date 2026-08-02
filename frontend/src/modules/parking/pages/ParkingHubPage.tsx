@@ -1,16 +1,27 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { CircleParking, Navigation, AlertCircle, Loader2, LayoutGrid, Map as MapIcon } from 'lucide-react';
-import { getErrorMessage } from '../../../lib/api';
-import { parkingDiscoveryService } from '../services/parking.service';
-import type { ParkingLocation, ParkingVehicleType, ParkingVehicleTypeCode } from '../types/parking.types';
-import { nextHalfHour, toLocalInputValue } from '../utils/parkingFormat';
-import ParkingSearchBar from '../components/ParkingSearchBar';
-import ParkingFilterPanel from '../components/ParkingFilterPanel';
-import ParkingCard from '../components/ParkingCard';
-import TirvonaMap from '../../../components/TirvonaMap';
-import { hasValidCoordinates } from '../../../utils/geo';
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { motion } from "framer-motion";
+import {
+  CircleParking,
+  Navigation,
+  AlertCircle,
+  Loader2,
+  LayoutGrid,
+  Map as MapIcon,
+} from "lucide-react";
+import { getErrorMessage } from "../../../lib/api";
+import { parkingDiscoveryService } from "../services/parking.service";
+import type {
+  ParkingLocation,
+  ParkingVehicleType,
+  ParkingVehicleTypeCode,
+} from "../types/parking.types";
+import { nextHalfHour, toLocalInputValue } from "../utils/parkingFormat";
+import ParkingSearchBar from "../components/ParkingSearchBar";
+import ParkingFilterPanel from "../components/ParkingFilterPanel";
+import ParkingCard from "../components/ParkingCard";
+import TirvonaMap from "../../../components/TirvonaMap";
+import { hasValidCoordinates } from "../../../utils/geo";
 
 /**
  * Parking discovery.
@@ -29,12 +40,18 @@ export const ParkingHubPage: React.FC = () => {
     return { entry: toLocalInputValue(entry), exit: toLocalInputValue(exit) };
   }, []);
 
-  const [destination, setDestination] = useState(searchParams.get('destination') || '');
-  const [templeSlug] = useState(searchParams.get('temple') || '');
-  const [entryAt, setEntryAt] = useState(searchParams.get('entryAt') || defaults.entry);
-  const [exitAt, setExitAt] = useState(searchParams.get('exitAt') || defaults.exit);
-  const [vehicleType, setVehicleType] = useState<ParkingVehicleTypeCode | ''>(
-    (searchParams.get('vehicleType') as ParkingVehicleTypeCode) || 'car',
+  const [destination, setDestination] = useState(
+    searchParams.get("destination") || "",
+  );
+  const [templeSlug] = useState(searchParams.get("temple") || "");
+  const [entryAt, setEntryAt] = useState(
+    searchParams.get("entryAt") || defaults.entry,
+  );
+  const [exitAt, setExitAt] = useState(
+    searchParams.get("exitAt") || defaults.exit,
+  );
+  const [vehicleType, setVehicleType] = useState<ParkingVehicleTypeCode | "">(
+    (searchParams.get("vehicleType") as ParkingVehicleTypeCode) || "car",
   );
 
   const [amenities, setAmenities] = useState<string[]>([]);
@@ -42,22 +59,27 @@ export const ParkingHubPage: React.FC = () => {
   const [evCharging, setEvCharging] = useState(false);
   const [minRating, setMinRating] = useState(0);
   const [radiusKm, setRadiusKm] = useState(10);
-  const [sortBy, setSortBy] = useState('recommended');
-  const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [sortBy, setSortBy] = useState("recommended");
+  const [coords, setCoords] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
 
   const [vehicleTypes, setVehicleTypes] = useState<ParkingVehicleType[]>([]);
-  const [amenityOptions, setAmenityOptions] = useState<{ key: string; label: string }[]>([]);
-  const [sortOptions, setSortOptions] = useState<{ value: string; label: string }[]>([
-    { value: 'recommended', label: 'Recommended' },
-  ]);
+  const [amenityOptions, setAmenityOptions] = useState<
+    { key: string; label: string }[]
+  >([]);
+  const [sortOptions, setSortOptions] = useState<
+    { value: string; label: string }[]
+  >([{ value: "recommended", label: "Recommended" }]);
 
   const [results, setResults] = useState<ParkingLocation[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [locating, setLocating] = useState(false);
 
-  const [view, setView] = useState<'list' | 'map'>('list');
+  const [view, setView] = useState<"list" | "map">("list");
   const [activeMarker, setActiveMarker] = useState<string | null>(null);
 
   // Only results that actually carry usable coordinates can be mapped; a
@@ -94,7 +116,7 @@ export const ParkingHubPage: React.FC = () => {
 
   const runSearch = useCallback(async () => {
     setLoading(true);
-    setError('');
+    setError("");
     try {
       const res = await parkingDiscoveryService.search({
         destination: destination || undefined,
@@ -116,7 +138,7 @@ export const ParkingHubPage: React.FC = () => {
         setTotal(res.data.total || 0);
       }
     } catch (err) {
-      setError(getErrorMessage(err, 'Could not load parking right now.'));
+      setError(getErrorMessage(err, "Could not load parking right now."));
       setResults([]);
     } finally {
       setLoading(false);
@@ -142,28 +164,33 @@ export const ParkingHubPage: React.FC = () => {
 
   const handleSubmit = () => {
     const next = new URLSearchParams();
-    if (destination) next.set('destination', destination);
-    if (entryAt) next.set('entryAt', entryAt);
-    if (exitAt) next.set('exitAt', exitAt);
-    if (vehicleType) next.set('vehicleType', vehicleType);
+    if (destination) next.set("destination", destination);
+    if (entryAt) next.set("entryAt", entryAt);
+    if (exitAt) next.set("exitAt", exitAt);
+    if (vehicleType) next.set("vehicleType", vehicleType);
     setSearchParams(next, { replace: true });
     runSearch();
   };
 
   const useMyLocation = () => {
     if (!navigator.geolocation) {
-      setError('Your browser cannot share a location.');
+      setError("Your browser cannot share a location.");
       return;
     }
     setLocating(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setCoords({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
+        setCoords({
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+        });
         setLocating(false);
       },
       () => {
         setLocating(false);
-        setError('We could not access your location. Search by destination instead.');
+        setError(
+          "We could not access your location. Search by destination instead.",
+        );
       },
       { timeout: 10000 },
     );
@@ -174,25 +201,25 @@ export const ParkingHubPage: React.FC = () => {
     setCovered(false);
     setEvCharging(false);
     setMinRating(0);
-    setSortBy('recommended');
+    setSortBy("recommended");
   };
 
   const handleFilterChange = (patch: Record<string, unknown>) => {
-    if ('amenities' in patch) setAmenities(patch.amenities as string[]);
-    if ('covered' in patch) setCovered(patch.covered as boolean);
-    if ('evCharging' in patch) setEvCharging(patch.evCharging as boolean);
-    if ('minRating' in patch) setMinRating(patch.minRating as number);
-    if ('radiusKm' in patch) setRadiusKm(patch.radiusKm as number);
-    if ('sortBy' in patch) setSortBy(patch.sortBy as string);
+    if ("amenities" in patch) setAmenities(patch.amenities as string[]);
+    if ("covered" in patch) setCovered(patch.covered as boolean);
+    if ("evCharging" in patch) setEvCharging(patch.evCharging as boolean);
+    if ("minRating" in patch) setMinRating(patch.minRating as number);
+    if ("radiusKm" in patch) setRadiusKm(patch.radiusKm as number);
+    if ("sortBy" in patch) setSortBy(patch.sortBy as string);
   };
 
   // Carried onto each card's link so the visitor's dates survive navigation.
   const detailQuery = useMemo(() => {
     const q = new URLSearchParams();
-    if (entryAt) q.set('entryAt', entryAt);
-    if (exitAt) q.set('exitAt', exitAt);
-    if (vehicleType) q.set('vehicleType', vehicleType);
-    return q.toString() ? `?${q.toString()}` : '';
+    if (entryAt) q.set("entryAt", entryAt);
+    if (exitAt) q.set("exitAt", exitAt);
+    if (vehicleType) q.set("vehicleType", vehicleType);
+    return q.toString() ? `?${q.toString()}` : "";
   }, [entryAt, exitAt, vehicleType]);
 
   return (
@@ -219,10 +246,16 @@ export const ParkingHubPage: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.05 }}
               className="text-2xl sm:text-3xl md:text-4xl lg:text-[44px] font-black text-white drop-shadow-md leading-[1.15]"
-              style={{ fontFamily: "Satoshi, 'General Sans', Manrope, Inter, sans-serif", letterSpacing: '-0.03em' }}
+              style={{
+                fontFamily:
+                  "Satoshi, 'General Sans', Manrope, Inter, sans-serif",
+                letterSpacing: "-0.03em",
+              }}
             >
               Reserve Your Parking,
-              <span className="block text-[#D4AF37] mt-1">Park With Peace of Mind.</span>
+              <span className="block text-[#D4AF37] mt-1">
+                Park With Peace of Mind.
+              </span>
             </motion.h1>
 
             <motion.p
@@ -230,10 +263,14 @@ export const ParkingHubPage: React.FC = () => {
               animate={{ opacity: 1 }}
               transition={{ delay: 0.15, duration: 0.4 }}
               className="text-[#E2E8F0] text-xs sm:text-sm leading-relaxed max-w-2xl mx-auto"
-              style={{ fontFamily: "Satoshi, 'General Sans', Manrope, Inter, sans-serif", fontWeight: 500 }}
+              style={{
+                fontFamily:
+                  "Satoshi, 'General Sans', Manrope, Inter, sans-serif",
+                fontWeight: 500,
+              }}
             >
-              Verified, secure parking near India&rsquo;s holiest destinations. Book ahead, pay online, and enter with a
-              single QR scan.
+              Verified, secure parking near India&rsquo;s holiest destinations.
+              Book ahead, pay online, and enter with a single QR scan.
             </motion.p>
           </div>
         </section>
@@ -249,10 +286,12 @@ export const ParkingHubPage: React.FC = () => {
           vehicleTypes={vehicleTypes}
           loading={loading}
           onChange={(patch) => {
-            if (patch.destination !== undefined) setDestination(patch.destination);
+            if (patch.destination !== undefined)
+              setDestination(patch.destination);
             if (patch.entryAt !== undefined) setEntryAt(patch.entryAt);
             if (patch.exitAt !== undefined) setExitAt(patch.exitAt);
-            if (patch.vehicleType !== undefined) setVehicleType(patch.vehicleType);
+            if (patch.vehicleType !== undefined)
+              setVehicleType(patch.vehicleType);
           }}
           onSubmit={handleSubmit}
         />
@@ -274,7 +313,7 @@ export const ParkingHubPage: React.FC = () => {
               ) : (
                 <Navigation size={14} className="stroke-[2.5]" />
               )}
-              {coords ? 'Using your location' : 'Parking near me'}
+              {coords ? "Using your location" : "Parking near me"}
             </button>
 
             <ParkingFilterPanel
@@ -296,7 +335,9 @@ export const ParkingHubPage: React.FC = () => {
           <div className="flex-1 min-w-0 space-y-4">
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <h2 className="font-extrabold text-base sm:text-lg text-[#0B192C] dark:text-white">
-                {loading ? 'Finding parking…' : `${total} parking ${total === 1 ? 'option' : 'options'}`}
+                {loading
+                  ? "Finding parking…"
+                  : `${total} parking ${total === 1 ? "option" : "options"}`}
               </h2>
 
               {/* List / map toggle. Hidden when nothing has coordinates, so the
@@ -305,8 +346,8 @@ export const ParkingHubPage: React.FC = () => {
                 <div className="inline-flex bg-gray-100 dark:bg-slate-800 rounded-full p-0.5">
                   {(
                     [
-                      { key: 'list', label: 'List', icon: LayoutGrid },
-                      { key: 'map', label: 'Map', icon: MapIcon },
+                      { key: "list", label: "List", icon: LayoutGrid },
+                      { key: "map", label: "Map", icon: MapIcon },
                     ] as const
                   ).map(({ key, label, icon: Icon }) => (
                     <button
@@ -315,8 +356,8 @@ export const ParkingHubPage: React.FC = () => {
                       onClick={() => setView(key)}
                       className={`inline-flex items-center gap-1.5 text-[11px] font-extrabold px-3.5 py-1.5 rounded-full transition-all cursor-pointer ${
                         view === key
-                          ? 'bg-white dark:bg-[#0B192C] text-[#0A4DA6] dark:text-blue-300 shadow-sm'
-                          : 'text-gray-500 dark:text-gray-400 hover:text-[#0A4DA6]'
+                          ? "bg-white dark:bg-[#0B192C] text-[#0A4DA6] dark:text-blue-300 shadow-sm"
+                          : "text-gray-500 dark:text-gray-400 hover:text-[#0A4DA6]"
                       }`}
                     >
                       <Icon size={13} className="stroke-[2.5]" />
@@ -329,7 +370,10 @@ export const ParkingHubPage: React.FC = () => {
 
             {error && (
               <div className="flex items-start gap-2.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-300 rounded-2xl px-4 py-3">
-                <AlertCircle size={15} className="shrink-0 mt-0.5 stroke-[2.5]" />
+                <AlertCircle
+                  size={15}
+                  className="shrink-0 mt-0.5 stroke-[2.5]"
+                />
                 <p className="text-xs font-semibold">{error}</p>
               </div>
             )}
@@ -337,18 +381,27 @@ export const ParkingHubPage: React.FC = () => {
             {loading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                 {Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="h-80 bg-gray-100 dark:bg-slate-800 animate-pulse rounded-[24px]" />
+                  <div
+                    key={i}
+                    className="h-80 bg-gray-100 dark:bg-slate-800 animate-pulse rounded-[24px]"
+                  />
                 ))}
               </div>
             ) : results.length === 0 ? (
               <div className="text-center py-16 px-6 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] space-y-3 shadow-sm">
-                <CircleParking size={36} className="text-gray-300 dark:text-slate-700 mx-auto" />
-                <h4 className="font-extrabold text-base text-[#0B192C] dark:text-white">No parking found</h4>
+                <CircleParking
+                  size={36}
+                  className="text-gray-300 dark:text-slate-700 mx-auto"
+                />
+                <h4 className="font-extrabold text-base text-[#0B192C] dark:text-white">
+                  No parking found
+                </h4>
                 <p className="text-xs text-gray-400 font-medium max-w-md mx-auto leading-relaxed">
-                  Try a different destination, widen your filters, or change your entry and exit times.
+                  Try a different destination, widen your filters, or change
+                  your entry and exit times.
                 </p>
               </div>
-            ) : view === 'map' ? (
+            ) : view === "map" ? (
               <div className="space-y-3">
                 <TirvonaMap
                   height="560px"
@@ -359,8 +412,12 @@ export const ParkingHubPage: React.FC = () => {
                     latitude: p.latitude,
                     longitude: p.longitude,
                     title: p.name,
-                    subtitle: [p.address?.landmark, p.address?.city].filter(Boolean).join(', '),
-                    badge: p.availability?.availableCount ? `${p.availability.availableCount} free` : undefined,
+                    subtitle: [p.address?.landmark, p.address?.city]
+                      .filter(Boolean)
+                      .join(", "),
+                    badge: p.availability?.availableCount
+                      ? `${p.availability.availableCount} free`
+                      : undefined,
                     href: `/parking/${p.slug}${detailQuery}`,
                     active: p._id === activeMarker,
                   }))}
@@ -369,8 +426,8 @@ export const ParkingHubPage: React.FC = () => {
 
                 {mappableResults.length < results.length && (
                   <p className="text-[10px] text-gray-400 font-medium text-center">
-                    {results.length - mappableResults.length} result(s) have no location set and are only visible in
-                    the list.
+                    {results.length - mappableResults.length} result(s) have no
+                    location set and are only visible in the list.
                   </p>
                 )}
               </div>
@@ -381,7 +438,10 @@ export const ParkingHubPage: React.FC = () => {
                     key={parking._id}
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: Math.min(index * 0.04, 0.4) }}
+                    transition={{
+                      duration: 0.3,
+                      delay: Math.min(index * 0.04, 0.4),
+                    }}
                   >
                     <ParkingCard parking={parking} query={detailQuery} />
                   </motion.div>

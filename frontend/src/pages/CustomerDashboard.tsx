@@ -1,21 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { useNotifications } from '../contexts/NotificationContext';
-import { bookingService, reviewService } from '../services';
-import { getErrorMessage } from '../lib/api';
-import { EnterpriseStatusBadge } from '../admin/shared';
-import { 
-  MapPin, 
-  Calendar, 
-  Key, 
-  Compass, 
-  ShieldCheck, 
-  AlertTriangle, 
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import { useNotifications } from "../contexts/NotificationContext";
+import { bookingService, reviewService } from "../services";
+import { getErrorMessage } from "../lib/api";
+import { EnterpriseStatusBadge } from "../admin/shared";
+import {
+  MapPin,
+  Calendar,
+  Key,
+  Compass,
+  AlertTriangle,
   CheckCircle,
-  Clock,
-  Trash2
-} from 'lucide-react';
+  Trash2,
+} from "lucide-react";
 
 export const CustomerDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -25,13 +23,15 @@ export const CustomerDashboard: React.FC = () => {
 
   // Review states
   const [reviewBookingId, setReviewBookingId] = useState<string | null>(null);
-  const [reviewComment, setReviewComment] = useState('');
+  const [reviewComment, setReviewComment] = useState("");
   const [reviewRating, setReviewRating] = useState(5);
-  const [reviewError, setReviewError] = useState('');
+  const [reviewError, setReviewError] = useState("");
 
   // Cancellation states
   const [cancelBookingId, setCancelBookingId] = useState<string | null>(null);
-  const [cancelReason, setCancelReason] = useState('Personal reasons / plan changed');
+  const [cancelReason, setCancelReason] = useState(
+    "Personal reasons / plan changed",
+  );
   const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
@@ -46,7 +46,7 @@ export const CustomerDashboard: React.FC = () => {
         setBookings(res.data.data);
       }
     } catch (err) {
-      console.error('History load error:', err);
+      console.error("History load error:", err);
       setBookings([]);
     } finally {
       setLoading(false);
@@ -55,7 +55,7 @@ export const CustomerDashboard: React.FC = () => {
 
   const handleReviewSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setReviewError('');
+    setReviewError("");
     if (!reviewBookingId) return;
 
     try {
@@ -74,29 +74,41 @@ export const CustomerDashboard: React.FC = () => {
       });
       if (res.data.success) {
         setReviewBookingId(null);
-        setReviewComment('');
-        addNotification('Review Submitted', 'Thank you for reviewing your spiritual stay!', 'success');
+        setReviewComment("");
+        addNotification(
+          "Review Submitted",
+          "Thank you for reviewing your spiritual stay!",
+          "success",
+        );
         fetchHistory();
       }
     } catch (err: any) {
-      setReviewError(getErrorMessage(err, 'Error saving review'));
+      setReviewError(getErrorMessage(err, "Error saving review"));
     }
   };
 
   const handleCancelBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!cancelBookingId) return;
-    
+
     setCancelling(true);
     try {
       const res = await bookingService.cancel(cancelBookingId, cancelReason);
       if (res.data.success) {
         setCancelBookingId(null);
-        addNotification('Stay Cancelled', 'Your reservation was successfully cancelled. Refund initiated.', 'success');
+        addNotification(
+          "Stay Cancelled",
+          "Your reservation was successfully cancelled. Refund initiated.",
+          "success",
+        );
         fetchHistory();
       }
     } catch (err) {
-      addNotification('Cancellation Error', getErrorMessage(err, 'Failed to cancel booking'), 'error');
+      addNotification(
+        "Cancellation Error",
+        getErrorMessage(err, "Failed to cancel booking"),
+        "error",
+      );
     } finally {
       setCancelling(false);
     }
@@ -107,48 +119,72 @@ export const CustomerDashboard: React.FC = () => {
       {/* Header card */}
       <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[24px] shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="space-y-1">
-          <h2 className="text-xl font-extrabold text-[#0B192C] dark:text-white">Welcome back, {user?.name}!</h2>
-          <p className="text-xs text-gray-400 font-semibold">View upcoming stays, present digital check-in passes, and review completed stays.</p>
+          <h2 className="text-xl font-extrabold text-[#0B192C] dark:text-white">
+            Welcome back, {user?.name}!
+          </h2>
+          <p className="text-xs text-gray-400 font-semibold">
+            View upcoming stays, present digital check-in passes, and review
+            completed stays.
+          </p>
         </div>
-        <Link to="/" className="px-5 py-2.5 bg-[#0A4DA6] text-white text-xs font-bold rounded-full hover:bg-opacity-95 transition-all shadow-md shadow-[#0A4DA6]/10 flex items-center gap-1.5 cursor-pointer">
+        <Link
+          to="/"
+          className="px-5 py-2.5 bg-[#0A4DA6] text-white text-xs font-bold rounded-full hover:bg-opacity-95 transition-all shadow-md shadow-[#0A4DA6]/10 flex items-center gap-1.5 cursor-pointer"
+        >
           <Compass size={14} /> Book Another Stay
         </Link>
       </div>
 
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {[1, 2].map(n => (
-            <div key={n} className="h-44 bg-gray-50 border border-gray-100 rounded-[24px] animate-pulse" />
+          {[1, 2].map((n) => (
+            <div
+              key={n}
+              className="h-44 bg-gray-50 border border-gray-100 rounded-[24px] animate-pulse"
+            />
           ))}
         </div>
       ) : bookings.length === 0 ? (
         <div className="text-center py-20 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] space-y-4">
           <Compass className="mx-auto text-gray-300 animate-spin" size={48} />
-          <h4 className="font-extrabold text-base text-[#0B192C] dark:text-white">No bookings yet</h4>
+          <h4 className="font-extrabold text-base text-[#0B192C] dark:text-white">
+            No bookings yet
+          </h4>
           <p className="text-xs text-gray-400 max-w-sm mx-auto leading-relaxed">
-            You do not have any active or past spiritual stays registered on the national database. Visit the search console to book a stay.
+            You do not have any active or past spiritual stays registered on the
+            national database. Visit the search console to book a stay.
           </p>
-          <Link to="/" className="inline-block px-5 py-2.5 bg-[#0A4DA6] text-white text-xs font-bold rounded-full shadow-md hover:bg-opacity-95 transition-all">
+          <Link
+            to="/"
+            className="inline-block px-5 py-2.5 bg-[#0A4DA6] text-white text-xs font-bold rounded-full shadow-md hover:bg-opacity-95 transition-all"
+          >
             Find Stays
           </Link>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {bookings.map((b) => {
-            const isConfirmed = b.status === 'confirmed';
-            const isPending = b.status === 'pending';
-            const isCancelled = b.status === 'cancelled';
-            const isCheckedOut = b.status === 'checked_out';
-            const isRefunded = b.paymentStatus === 'refunded';
+            const isConfirmed = b.status === "confirmed";
+            const isPending = b.status === "pending";
+            const isCancelled = b.status === "cancelled";
+            const isCheckedOut = b.status === "checked_out";
+            const isRefunded = b.paymentStatus === "refunded";
 
             return (
-              <div key={b._id} className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 shadow-sm space-y-4 flex flex-col justify-between transform hover:scale-[1.01] transition-all">
-                
+              <div
+                key={b._id}
+                className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 shadow-sm space-y-4 flex flex-col justify-between transform hover:scale-[1.01] transition-all"
+              >
                 {/* Header */}
                 <div className="flex justify-between items-start border-b border-gray-50 dark:border-slate-850 pb-3">
                   <div className="space-y-1">
-                    <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white leading-snug">{b.ashramId?.name}</h3>
-                    <p className="text-[10px] text-gray-400 font-bold flex items-center gap-0.5 uppercase"><MapPin size={10} className="text-[#0A4DA6]" /> {b.ashramId?.address?.city}</p>
+                    <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white leading-snug">
+                      {b.ashramId?.name}
+                    </h3>
+                    <p className="text-[10px] text-gray-400 font-bold flex items-center gap-0.5 uppercase">
+                      <MapPin size={10} className="text-[#0A4DA6]" />{" "}
+                      {b.ashramId?.address?.city}
+                    </p>
                   </div>
                   <EnterpriseStatusBadge status={b.status} />
                 </div>
@@ -156,12 +192,22 @@ export const CustomerDashboard: React.FC = () => {
                 {/* Dates */}
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div className="space-y-1">
-                    <span className="text-[9px] text-gray-400 font-bold block uppercase">Check In</span>
-                    <span className="font-semibold flex items-center gap-1.5"><Calendar size={13} className="text-[#0A4DA6]" /> {new Date(b.checkInDate).toLocaleDateString()}</span>
+                    <span className="text-[9px] text-gray-400 font-bold block uppercase">
+                      Check In
+                    </span>
+                    <span className="font-semibold flex items-center gap-1.5">
+                      <Calendar size={13} className="text-[#0A4DA6]" />{" "}
+                      {new Date(b.checkInDate).toLocaleDateString()}
+                    </span>
                   </div>
                   <div className="space-y-1">
-                    <span className="text-[9px] text-gray-400 font-bold block uppercase">Check Out</span>
-                    <span className="font-semibold flex items-center gap-1.5"><Calendar size={13} className="text-[#0A4DA6]" /> {new Date(b.checkOutDate).toLocaleDateString()}</span>
+                    <span className="text-[9px] text-gray-400 font-bold block uppercase">
+                      Check Out
+                    </span>
+                    <span className="font-semibold flex items-center gap-1.5">
+                      <Calendar size={13} className="text-[#0A4DA6]" />{" "}
+                      {new Date(b.checkOutDate).toLocaleDateString()}
+                    </span>
                   </div>
                 </div>
 
@@ -169,12 +215,18 @@ export const CustomerDashboard: React.FC = () => {
                 {isConfirmed && (
                   <div className="p-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 rounded-2xl flex items-center justify-between">
                     <div>
-                      <span className="text-[9px] text-[#0A4DA6] font-extrabold block uppercase tracking-wider">Digital Check-in Pass</span>
-                      <span className="text-[10px] text-gray-400 leading-normal">Present to receptionist on arrival</span>
+                      <span className="text-[9px] text-[#0A4DA6] font-extrabold block uppercase tracking-wider">
+                        Digital Check-in Pass
+                      </span>
+                      <span className="text-[10px] text-gray-400 leading-normal">
+                        Present to receptionist on arrival
+                      </span>
                     </div>
                     <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-[#0B192C] border border-gray-150 rounded-xl shadow-sm">
                       <Key size={14} className="text-[#D4AF37]" />
-                      <span className="text-xs font-extrabold tracking-widest text-[#0B192C] dark:text-white">{b.checkInCode}</span>
+                      <span className="text-xs font-extrabold tracking-widest text-[#0B192C] dark:text-white">
+                        {b.checkInCode}
+                      </span>
                     </div>
                   </div>
                 )}
@@ -182,17 +234,22 @@ export const CustomerDashboard: React.FC = () => {
                 {/* Refund message if cancelled */}
                 {isCancelled && isRefunded && (
                   <div className="p-3 bg-danger/5 border border-danger/15 rounded-2xl flex items-center gap-2 text-[10px] text-danger font-semibold">
-                    <CheckCircle size={14} /> Refund of stay total cost processed back to source.
+                    <CheckCircle size={14} /> Refund of stay total cost
+                    processed back to source.
                   </div>
                 )}
 
                 {/* Footer price & actions */}
                 <div className="pt-3 border-t border-gray-150 dark:border-slate-800 flex justify-between items-center bg-gray-50/50 dark:bg-slate-900/10 px-3 py-2.5 rounded-2xl">
                   <div className="flex flex-col">
-                    <span className="text-[9px] text-gray-400 uppercase font-bold tracking-wider">Total Paid</span>
-                    <span className="text-xs font-extrabold text-[#0B192C] dark:text-white">₹{b.pricing?.totalAmount}</span>
+                    <span className="text-[9px] text-gray-400 uppercase font-bold tracking-wider">
+                      Total Paid
+                    </span>
+                    <span className="text-xs font-extrabold text-[#0B192C] dark:text-white">
+                      ₹{b.pricing?.totalAmount}
+                    </span>
                   </div>
-                  
+
                   {isCheckedOut && (
                     <button
                       onClick={() => setReviewBookingId(b._id)}
@@ -220,9 +277,14 @@ export const CustomerDashboard: React.FC = () => {
       {/* Review Dialog modal */}
       {reviewBookingId && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <form onSubmit={handleReviewSubmit} className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-md w-full rounded-[28px] p-6 space-y-4 shadow-2xl">
-            <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white border-b border-gray-100 dark:border-slate-800 pb-2">Review your Ashram stay</h3>
-            
+          <form
+            onSubmit={handleReviewSubmit}
+            className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-md w-full rounded-[28px] p-6 space-y-4 shadow-2xl"
+          >
+            <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white border-b border-gray-100 dark:border-slate-800 pb-2">
+              Review your Ashram stay
+            </h3>
+
             {reviewError && (
               <div className="p-3 bg-danger/10 text-danger border border-danger/20 text-xs rounded-xl font-bold">
                 {reviewError}
@@ -230,7 +292,9 @@ export const CustomerDashboard: React.FC = () => {
             )}
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-gray-400 uppercase">Overall Rating (1 - 5)</label>
+              <label className="text-xs font-bold text-gray-400 uppercase">
+                Overall Rating (1 - 5)
+              </label>
               <select
                 value={reviewRating}
                 onChange={(e) => setReviewRating(parseInt(e.target.value))}
@@ -245,7 +309,9 @@ export const CustomerDashboard: React.FC = () => {
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-gray-400 uppercase">Comments</label>
+              <label className="text-xs font-bold text-gray-400 uppercase">
+                Comments
+              </label>
               <textarea
                 required
                 rows={3}
@@ -278,18 +344,27 @@ export const CustomerDashboard: React.FC = () => {
       {/* Cancellation Dialog modal */}
       {cancelBookingId && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <form onSubmit={handleCancelBookingSubmit} className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-md w-full rounded-[28px] p-6 space-y-4 shadow-2xl">
+          <form
+            onSubmit={handleCancelBookingSubmit}
+            className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-md w-full rounded-[28px] p-6 space-y-4 shadow-2xl"
+          >
             <div className="flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-2 text-danger">
               <AlertTriangle size={20} />
-              <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white">Confirm Booking Cancellation</h3>
+              <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white">
+                Confirm Booking Cancellation
+              </h3>
             </div>
-            
+
             <p className="text-xs text-gray-400 leading-relaxed font-semibold">
-              Are you sure you want to cancel your spiritual stay? A 100% refund of the paid stay total cost will be credited back to your original source account within 3-5 working days.
+              Are you sure you want to cancel your spiritual stay? A 100% refund
+              of the paid stay total cost will be credited back to your original
+              source account within 3-5 working days.
             </p>
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-gray-400 uppercase">Reason for Cancellation</label>
+              <label className="text-xs font-bold text-gray-400 uppercase">
+                Reason for Cancellation
+              </label>
               <textarea
                 required
                 rows={2}
@@ -314,7 +389,7 @@ export const CustomerDashboard: React.FC = () => {
                 className="flex-1 py-2.5 bg-danger text-white hover:bg-danger-hover rounded-full text-xs font-bold cursor-pointer shadow"
                 disabled={cancelling}
               >
-                {cancelling ? 'Cancelling...' : 'Confirm Cancel'}
+                {cancelling ? "Cancelling..." : "Confirm Cancel"}
               </button>
             </div>
           </form>

@@ -1,33 +1,55 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Bell, CheckCheck, Trash2, ShieldCheck, Info, CheckCircle2, AlertTriangle, AlertCircle, X } from 'lucide-react';
-import { useNotifications, type Notification } from '../../contexts/NotificationContext';
-import { Link } from 'react-router-dom';
+import React, { useState, useRef, useEffect } from "react";
+import {
+  Bell,
+  CheckCheck,
+  Trash2,
+  ShieldCheck,
+  Info,
+  CheckCircle2,
+  AlertTriangle,
+  AlertCircle,
+  X,
+} from "lucide-react";
+import {
+  useNotifications,
+  type Notification,
+} from "../../contexts/NotificationContext";
+import { Link } from "react-router-dom";
 
 export const NotificationDropdown: React.FC = () => {
-  const { notifications, unreadCount, markAllAsRead, removeNotification, clearNotifications } = useNotifications();
+  const {
+    notifications,
+    unreadCount,
+    markAllAsRead,
+    removeNotification,
+    clearNotifications,
+  } = useNotifications();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const getIcon = (type: Notification['type']) => {
+  const getIcon = (type: Notification["type"]) => {
     switch (type) {
-      case 'success':
+      case "success":
         return <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />;
-      case 'warning':
+      case "warning":
         return <AlertTriangle size={16} className="text-amber-500 shrink-0" />;
-      case 'error':
+      case "error":
         return <AlertCircle size={16} className="text-rose-500 shrink-0" />;
-      case 'info':
+      case "info":
       default:
         return <Info size={16} className="text-[#0A4DA6] shrink-0" />;
     }
@@ -46,7 +68,7 @@ export const NotificationDropdown: React.FC = () => {
           <>
             <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-rose-500 rounded-full animate-ping" />
             <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-rose-500 rounded-full flex items-center justify-center text-[8px] font-black text-white">
-              {unreadCount > 9 ? '9+' : unreadCount}
+              {unreadCount > 9 ? "9+" : unreadCount}
             </span>
           </>
         )}
@@ -66,7 +88,9 @@ export const NotificationDropdown: React.FC = () => {
                   Notifications
                 </h3>
                 <p className="text-[10px] text-gray-500 font-bold">
-                  {unreadCount > 0 ? `${unreadCount} unread updates` : 'All caught up'}
+                  {unreadCount > 0
+                    ? `${unreadCount} unread updates`
+                    : "All caught up"}
                 </p>
               </div>
             </div>
@@ -106,15 +130,19 @@ export const NotificationDropdown: React.FC = () => {
                 <div className="w-12 h-12 rounded-full bg-blue-50 dark:bg-slate-900 text-[#0A4DA6] mx-auto flex items-center justify-center">
                   <ShieldCheck size={20} />
                 </div>
-                <p className="text-xs font-black text-gray-700 dark:text-gray-300">No new notifications</p>
-                <p className="text-[11px] text-gray-400 font-medium">You will receive real-time booking and system updates here.</p>
+                <p className="text-xs font-black text-gray-700 dark:text-gray-300">
+                  No new notifications
+                </p>
+                <p className="text-[11px] text-gray-400 font-medium">
+                  You will receive real-time booking and system updates here.
+                </p>
               </div>
             ) : (
               notifications.map((notif) => (
                 <div
                   key={notif.id}
                   className={`p-3.5 flex items-start gap-3 transition-colors hover:bg-gray-50/70 dark:hover:bg-slate-900/60 relative group ${
-                    !notif.read ? 'bg-blue-50/30 dark:bg-slate-900/40' : ''
+                    !notif.read ? "bg-blue-50/30 dark:bg-slate-900/40" : ""
                   }`}
                 >
                   <div className="mt-0.5">{getIcon(notif.type)}</div>
@@ -126,7 +154,10 @@ export const NotificationDropdown: React.FC = () => {
                       {notif.message}
                     </p>
                     <span className="text-[9px] font-bold text-gray-400 mt-1 block">
-                      {new Date(notif.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {new Date(notif.timestamp).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     </span>
                   </div>
 

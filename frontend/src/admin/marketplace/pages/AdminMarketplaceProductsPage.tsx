@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   ShoppingBag,
   Plus,
@@ -8,7 +8,6 @@ import {
   Eye,
   Upload,
   Image as ImageIcon,
-  CheckCircle,
   Star,
   Tag,
   RefreshCw,
@@ -18,24 +17,32 @@ import {
   ArrowUp,
   Link as LinkIcon,
   ShieldCheck,
-} from 'lucide-react';
-import { marketplaceService, type MarketplaceProductItem } from '../../../services/marketplace.service';
-import { useNotifications } from '../../../contexts/NotificationContext';
-import api, { getErrorMessage } from '../../../lib/api';
-import { EnterpriseModal, EnterpriseButton, EnterpriseStatusBadge } from '../../shared';
+} from "lucide-react";
+import {
+  marketplaceService,
+  type MarketplaceProductItem,
+} from "../../../services/marketplace.service";
+import { useNotifications } from "../../../contexts/NotificationContext";
+import api, { getErrorMessage } from "../../../lib/api";
+import {
+  EnterpriseModal,
+  EnterpriseButton,
+  EnterpriseStatusBadge,
+} from "../../shared";
 
 export const AdminMarketplaceProductsPage: React.FC = () => {
   const { addNotification } = useNotifications();
 
   const [products, setProducts] = useState<MarketplaceProductItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<MarketplaceProductItem | null>(null);
+  const [editingProduct, setEditingProduct] =
+    useState<MarketplaceProductItem | null>(null);
 
   // Form State
   const [formData, setFormData] = useState<{
@@ -43,54 +50,56 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
     slug: string;
     category: string;
     description: string;
-    price: number | '';
-    salePrice: number | '';
-    stock: number | '';
+    price: number | "";
+    salePrice: number | "";
+    stock: number | "";
     templeSource: string;
     authenticityCertificate: string;
     weight: string;
     isFeatured: boolean;
-    status: 'active' | 'out_of_stock' | 'suspended';
+    status: "active" | "out_of_stock" | "suspended";
     images: string[];
   }>({
-    name: '',
-    slug: '',
-    category: 'prasad',
-    description: '',
-    price: '',
-    salePrice: '',
+    name: "",
+    slug: "",
+    category: "prasad",
+    description: "",
+    price: "",
+    salePrice: "",
     stock: 50,
-    templeSource: 'Kashi Vishwanath Temple Trust',
-    authenticityCertificate: 'Govt Certified & Temple Sanctified',
-    weight: '250g',
+    templeSource: "Kashi Vishwanath Temple Trust",
+    authenticityCertificate: "Govt Certified & Temple Sanctified",
+    weight: "250g",
     isFeatured: false,
-    status: 'active',
+    status: "active",
     images: [],
   });
 
   // Image Upload & URL Toggle State
   const [showUrlInput, setShowUrlInput] = useState(false);
-  const [urlInput, setUrlInput] = useState('');
+  const [urlInput, setUrlInput] = useState("");
   const [isUploading, setIsUploading] = useState(false);
 
   // Image File Metadata Tracker (filename & size)
-  const [imageMeta, setImageMeta] = useState<Record<string, { name: string; size: string }>>({});
+  const [imageMeta, setImageMeta] = useState<
+    Record<string, { name: string; size: string }>
+  >({});
 
   // Lightbox Preview Modal State
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
 
   const categories = [
-    { id: 'all', label: 'All Categories' },
-    { id: 'prasad', label: 'Temple Prasad' },
-    { id: 'rudraksha', label: 'Rudraksha Mala' },
-    { id: 'tulsi_mala', label: 'Tulsi Mala' },
-    { id: 'puja_kits', label: 'Puja Samagri Kits' },
-    { id: 'murti', label: 'Brass & Copper Murti' },
-    { id: 'ayurveda', label: 'Ayurveda & Organic' },
-    { id: 'books', label: 'Sacred Books' },
-    { id: 'temple_clothes', label: 'Temple Clothes' },
-    { id: 'handicrafts', label: 'Handicrafts' },
-    { id: 'incense', label: 'Incense' },
+    { id: "all", label: "All Categories" },
+    { id: "prasad", label: "Temple Prasad" },
+    { id: "rudraksha", label: "Rudraksha Mala" },
+    { id: "tulsi_mala", label: "Tulsi Mala" },
+    { id: "puja_kits", label: "Puja Samagri Kits" },
+    { id: "murti", label: "Brass & Copper Murti" },
+    { id: "ayurveda", label: "Ayurveda & Organic" },
+    { id: "books", label: "Sacred Books" },
+    { id: "temple_clothes", label: "Temple Clothes" },
+    { id: "handicrafts", label: "Handicrafts" },
+    { id: "incense", label: "Incense" },
   ];
 
   useEffect(() => {
@@ -101,8 +110,8 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
     setLoading(true);
     try {
       const res = await marketplaceService.getProducts({
-        category: categoryFilter !== 'all' ? categoryFilter : undefined,
-        status: statusFilter !== 'all' ? statusFilter : 'all',
+        category: categoryFilter !== "all" ? categoryFilter : undefined,
+        status: statusFilter !== "all" ? statusFilter : "all",
         search: searchTerm || undefined,
         limit: 100,
       });
@@ -110,8 +119,12 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
         setProducts(res.data.data);
       }
     } catch (err) {
-      console.error('Fetch products error:', err);
-      addNotification('Load Error', getErrorMessage(err, 'Failed to fetch products from MongoDB.'), 'error');
+      console.error("Fetch products error:", err);
+      addNotification(
+        "Load Error",
+        getErrorMessage(err, "Failed to fetch products from MongoDB."),
+        "error",
+      );
     } finally {
       setLoading(false);
     }
@@ -120,21 +133,21 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
   const handleCreateOpen = () => {
     setEditingProduct(null);
     setFormData({
-      name: '',
-      slug: '',
-      category: 'prasad',
-      description: '',
-      price: '',
-      salePrice: '',
+      name: "",
+      slug: "",
+      category: "prasad",
+      description: "",
+      price: "",
+      salePrice: "",
       stock: 50,
-      templeSource: 'Kashi Vishwanath Temple Trust',
-      authenticityCertificate: 'Govt Certified & Temple Sanctified',
-      weight: '250g',
+      templeSource: "Kashi Vishwanath Temple Trust",
+      authenticityCertificate: "Govt Certified & Temple Sanctified",
+      weight: "250g",
       isFeatured: false,
-      status: 'active',
+      status: "active",
       images: [],
     });
-    setUrlInput('');
+    setUrlInput("");
     setShowUrlInput(false);
     setIsModalOpen(true);
   };
@@ -142,21 +155,26 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
   const handleEditOpen = (product: MarketplaceProductItem) => {
     setEditingProduct(product);
     setFormData({
-      name: product.name || '',
-      slug: product.slug || '',
-      category: product.category || 'prasad',
-      description: product.description || '',
-      price: product.price || '',
-      salePrice: product.salePrice || '',
+      name: product.name || "",
+      slug: product.slug || "",
+      category: product.category || "prasad",
+      description: product.description || "",
+      price: product.price || "",
+      salePrice: product.salePrice || "",
       stock: product.stock ?? 50,
-      templeSource: product.templeSource || 'Kashi Vishwanath Temple Trust',
-      authenticityCertificate: product.authenticityCertificate || 'Govt Certified & Temple Sanctified',
-      weight: product.weight || '250g',
+      templeSource: product.templeSource || "Kashi Vishwanath Temple Trust",
+      authenticityCertificate:
+        product.authenticityCertificate || "Govt Certified & Temple Sanctified",
+      weight: product.weight || "250g",
       isFeatured: !!product.isFeatured,
-      status: (product.status as 'active' | 'out_of_stock' | 'suspended') || 'active',
-      images: Array.isArray(product.images) && product.images.length > 0 ? [...product.images] : [],
+      status:
+        (product.status as "active" | "out_of_stock" | "suspended") || "active",
+      images:
+        Array.isArray(product.images) && product.images.length > 0
+          ? [...product.images]
+          : [],
     });
-    setUrlInput('');
+    setUrlInput("");
     setShowUrlInput(false);
     setIsModalOpen(true);
   };
@@ -165,87 +183,119 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
     if (!window.confirm(`Are you sure you want to delete "${name}"?`)) return;
     try {
       await marketplaceService.deleteProduct(id);
-      addNotification('Deleted', `Product "${name}" deleted.`, 'info');
+      addNotification("Deleted", `Product "${name}" deleted.`, "info");
       setProducts((prev) => prev.filter((p) => p._id !== id));
       // Dispatch real-time auto-sync event
-      window.dispatchEvent(new Event('marketplace_updated'));
+      window.dispatchEvent(new Event("marketplace_updated"));
     } catch (err) {
-      addNotification('Delete Error', getErrorMessage(err, 'Failed to delete product.'), 'error');
+      addNotification(
+        "Delete Error",
+        getErrorMessage(err, "Failed to delete product."),
+        "error",
+      );
     }
   };
 
   // Image Management Handlers
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, replaceIdx: number | null = null) => {
+  const handleFileUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    replaceIdx: number | null = null,
+  ) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const fileSizeStr = (file.size / 1024).toFixed(0) + ' KB';
+    const fileSizeStr = (file.size / 1024).toFixed(0) + " KB";
     const fileNameStr = file.name;
 
     setIsUploading(true);
     try {
       const uploadData = new FormData();
-      uploadData.append('file', file);
-      uploadData.append('folder', 'marketplace');
+      uploadData.append("file", file);
+      uploadData.append("folder", "marketplace");
 
-      const res = await api.post('/uploads', uploadData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+      const res = await api.post("/uploads", uploadData, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
       if (res.data?.success && res.data?.data?.url) {
         const newUrl = res.data.data.url;
-        setImageMeta((prev) => ({ ...prev, [newUrl]: { name: fileNameStr, size: fileSizeStr } }));
+        setImageMeta((prev) => ({
+          ...prev,
+          [newUrl]: { name: fileNameStr, size: fileSizeStr },
+        }));
 
         setFormData((prev) => {
           const updatedImages = [...prev.images];
-          if (replaceIdx !== null && replaceIdx >= 0 && replaceIdx < updatedImages.length) {
+          if (
+            replaceIdx !== null &&
+            replaceIdx >= 0 &&
+            replaceIdx < updatedImages.length
+          ) {
             updatedImages[replaceIdx] = newUrl;
           } else {
             updatedImages.push(newUrl);
           }
           return { ...prev, images: updatedImages };
         });
-        addNotification('Image Uploaded', 'Product image successfully uploaded!', 'success');
+        addNotification(
+          "Image Uploaded",
+          "Product image successfully uploaded!",
+          "success",
+        );
       }
     } catch (err) {
-      console.warn('Backend upload fallback:', err);
+      console.warn("Backend upload fallback:", err);
       const reader = new FileReader();
       reader.onload = () => {
-        if (typeof reader.result === 'string') {
+        if (typeof reader.result === "string") {
           const fallbackUrl = reader.result;
-          setImageMeta((prev) => ({ ...prev, [fallbackUrl]: { name: fileNameStr, size: fileSizeStr } }));
+          setImageMeta((prev) => ({
+            ...prev,
+            [fallbackUrl]: { name: fileNameStr, size: fileSizeStr },
+          }));
           setFormData((prev) => {
             const updatedImages = [...prev.images];
-            if (replaceIdx !== null && replaceIdx >= 0 && replaceIdx < updatedImages.length) {
+            if (
+              replaceIdx !== null &&
+              replaceIdx >= 0 &&
+              replaceIdx < updatedImages.length
+            ) {
               updatedImages[replaceIdx] = fallbackUrl;
             } else {
               updatedImages.push(fallbackUrl);
             }
             return { ...prev, images: updatedImages };
           });
-          addNotification('Image Added', 'Image loaded into product gallery.', 'info');
+          addNotification(
+            "Image Added",
+            "Image loaded into product gallery.",
+            "info",
+          );
         }
       };
       reader.readAsDataURL(file);
     } finally {
       setIsUploading(false);
-      e.target.value = '';
+      e.target.value = "";
     }
   };
 
   const handleAddUrl = () => {
     if (!urlInput.trim()) return;
     const url = urlInput.trim();
-    const urlName = url.split('/').pop()?.substring(0, 18) || 'web_image.jpg';
-    setImageMeta((prev) => ({ ...prev, [url]: { name: urlName, size: 'CDN Web' } }));
+    const urlName = url.split("/").pop()?.substring(0, 18) || "web_image.jpg";
+    setImageMeta((prev) => ({
+      ...prev,
+      [url]: { name: urlName, size: "CDN Web" },
+    }));
 
     setFormData((prev) => ({
       ...prev,
       images: [...prev.images, url],
     }));
-    setUrlInput('');
+    setUrlInput("");
     setShowUrlInput(false);
-    addNotification('URL Added', 'Image URL added to gallery.', 'info');
+    addNotification("URL Added", "Image URL added to gallery.", "info");
   };
 
   const handleRemoveImage = (index: number) => {
@@ -253,7 +303,7 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
       ...prev,
       images: prev.images.filter((_, i) => i !== index),
     }));
-    addNotification('Image Removed', 'Image removed from product.', 'info');
+    addNotification("Image Removed", "Image removed from product.", "info");
   };
 
   const handleSetCover = (index: number) => {
@@ -264,11 +314,15 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
       updated.unshift(selected);
       return { ...prev, images: updated };
     });
-    addNotification('Cover Updated', 'Primary product cover image set to position #1.', 'success');
+    addNotification(
+      "Cover Updated",
+      "Primary product cover image set to position #1.",
+      "success",
+    );
   };
 
-  const handleMoveImage = (index: number, direction: 'left' | 'right') => {
-    const targetIndex = direction === 'left' ? index - 1 : index + 1;
+  const handleMoveImage = (index: number, direction: "left" | "right") => {
+    const targetIndex = direction === "left" ? index - 1 : index + 1;
     if (targetIndex < 0 || targetIndex >= formData.images.length) return;
 
     setFormData((prev) => {
@@ -283,18 +337,28 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.price) {
-      addNotification('Validation Error', 'Product Name and Price are required.', 'error');
+      addNotification(
+        "Validation Error",
+        "Product Name and Price are required.",
+        "error",
+      );
       return;
     }
 
     try {
       const payload = {
         name: formData.name,
-        slug: formData.slug || formData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+        slug:
+          formData.slug ||
+          formData.name
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/(^-|-$)/g, ""),
         category: formData.category,
         description: formData.description,
         price: Number(formData.price),
-        salePrice: formData.salePrice !== '' ? Number(formData.salePrice) : null,
+        salePrice:
+          formData.salePrice !== "" ? Number(formData.salePrice) : null,
         stock: Number(formData.stock),
         templeSource: formData.templeSource,
         authenticityCertificate: formData.authenticityCertificate,
@@ -305,25 +369,40 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
       };
 
       if (editingProduct) {
-        const res = await marketplaceService.updateProduct(editingProduct._id, payload);
+        const res = await marketplaceService.updateProduct(
+          editingProduct._id,
+          payload,
+        );
         if (res.data?.success) {
-          addNotification('Saved', `Product "${formData.name}" updated successfully!`, 'success');
+          addNotification(
+            "Saved",
+            `Product "${formData.name}" updated successfully!`,
+            "success",
+          );
         }
       } else {
         const res = await marketplaceService.createProduct(payload);
         if (res.data?.success) {
-          addNotification('Created', `Product "${formData.name}" created successfully!`, 'success');
+          addNotification(
+            "Created",
+            `Product "${formData.name}" created successfully!`,
+            "success",
+          );
         }
       }
 
       // Dispatch real-time cross-component sync event so Landing Page & Public Marketplace refresh immediately!
-      window.dispatchEvent(new Event('marketplace_updated'));
+      window.dispatchEvent(new Event("marketplace_updated"));
 
       setIsModalOpen(false);
       fetchProducts();
     } catch (err) {
-      console.error('Save product error:', err);
-      addNotification('Save Failed', getErrorMessage(err, 'Failed to save product.'), 'error');
+      console.error("Save product error:", err);
+      addNotification(
+        "Save Failed",
+        getErrorMessage(err, "Failed to save product."),
+        "error",
+      );
     }
   };
 
@@ -331,24 +410,26 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
     const matchesSearch =
       !searchTerm ||
       p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (p.templeSource && p.templeSource.toLowerCase().includes(searchTerm.toLowerCase()));
+      (p.templeSource &&
+        p.templeSource.toLowerCase().includes(searchTerm.toLowerCase()));
 
-    const matchesCategory = categoryFilter === 'all' || p.category === categoryFilter;
-    const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
+    const matchesCategory =
+      categoryFilter === "all" || p.category === categoryFilter;
+    const matchesStatus = statusFilter === "all" || p.status === statusFilter;
 
     return matchesSearch && matchesCategory && matchesStatus;
   });
 
   const getCleanFileName = (url: string) => {
     if (imageMeta[url]?.name) return imageMeta[url].name;
-    const parts = url.split('/');
-    const last = parts[parts.length - 1] || 'image.jpg';
-    return last.split('?')[0].substring(0, 16);
+    const parts = url.split("/");
+    const last = parts[parts.length - 1] || "image.jpg";
+    return last.split("?")[0].substring(0, 16);
   };
 
   const getCleanFileSize = (url: string) => {
     if (imageMeta[url]?.size) return imageMeta[url].size;
-    return '250 KB';
+    return "250 KB";
   };
 
   return (
@@ -365,7 +446,8 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
             </h1>
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-            Super Admin → Marketplace → Products • Manage live products, pricing, inventory & multi-image gallery.
+            Super Admin → Marketplace → Products • Manage live products,
+            pricing, inventory & multi-image gallery.
           </p>
         </div>
 
@@ -375,7 +457,7 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
             className="p-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 text-gray-700 dark:text-gray-300 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
             title="Refresh List"
           >
-            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+            <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
             <span>Refresh</span>
           </button>
 
@@ -434,13 +516,23 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
       <div className="bg-white dark:bg-[#0B192C] rounded-3xl border border-gray-100 dark:border-slate-800 shadow-sm overflow-hidden">
         {loading ? (
           <div className="py-16 text-center space-y-3">
-            <RefreshCw className="animate-spin mx-auto text-[#0A4DA6]" size={28} />
-            <p className="text-xs font-bold text-gray-400">Loading marketplace products from MongoDB...</p>
+            <RefreshCw
+              className="animate-spin mx-auto text-[#0A4DA6]"
+              size={28}
+            />
+            <p className="text-xs font-bold text-gray-400">
+              Loading marketplace products from MongoDB...
+            </p>
           </div>
         ) : filteredProducts.length === 0 ? (
           <div className="py-16 text-center space-y-3">
-            <ShoppingBag className="mx-auto text-gray-300 dark:text-gray-600" size={40} />
-            <p className="text-sm font-bold text-gray-500">No products found matching filters.</p>
+            <ShoppingBag
+              className="mx-auto text-gray-300 dark:text-gray-600"
+              size={40}
+            />
+            <p className="text-sm font-bold text-gray-500">
+              No products found matching filters.
+            </p>
             <button
               onClick={handleCreateOpen}
               className="px-4 py-2 bg-[#0A4DA6] text-white text-xs font-bold rounded-xl cursor-pointer"
@@ -465,11 +557,16 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-slate-800 font-medium">
                 {filteredProducts.map((p) => {
-                  const coverImg = p.images?.[0] || 'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?auto=format&fit=crop&w=300&q=80';
+                  const coverImg =
+                    p.images?.[0] ||
+                    "https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?auto=format&fit=crop&w=300&q=80";
                   const imgCount = p.images?.length || 0;
 
                   return (
-                    <tr key={p._id} className="hover:bg-gray-50/50 dark:hover:bg-slate-800/40 transition-colors">
+                    <tr
+                      key={p._id}
+                      className="hover:bg-gray-50/50 dark:hover:bg-slate-800/40 transition-colors"
+                    >
                       {/* Cover Thumbnail */}
                       <td className="py-3 px-4">
                         <div
@@ -483,7 +580,7 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                             onError={(e) => {
                               (e.target as HTMLImageElement).src =
-                                'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?auto=format&fit=crop&w=300&q=80';
+                                "https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?auto=format&fit=crop&w=300&q=80";
                             }}
                           />
                           <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
@@ -494,16 +591,22 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
 
                       {/* Title & Source */}
                       <td className="py-3 px-4 max-w-xs">
-                        <div className="font-extrabold text-[#0B192C] dark:text-white truncate" title={p.name}>
+                        <div
+                          className="font-extrabold text-[#0B192C] dark:text-white truncate"
+                          title={p.name}
+                        >
                           {p.name}
                         </div>
                         <div className="text-[11px] text-gray-400 flex items-center gap-1 mt-0.5">
                           <ShieldCheck size={12} className="text-[#0A4DA6]" />
-                          <span className="truncate">{p.templeSource || 'Sanctified Vendor'}</span>
+                          <span className="truncate">
+                            {p.templeSource || "Sanctified Vendor"}
+                          </span>
                         </div>
                         {p.isFeatured && (
                           <span className="inline-flex items-center gap-1 text-[10px] font-black text-amber-600 bg-amber-50 dark:bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-900 mt-1">
-                            <Star size={10} className="fill-amber-500" /> Featured
+                            <Star size={10} className="fill-amber-500" />{" "}
+                            Featured
                           </span>
                         )}
                       </td>
@@ -522,16 +625,22 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
                             <span className="font-black text-emerald-600 dark:text-emerald-400 text-sm">
                               ₹{p.salePrice}
                             </span>
-                            <span className="text-[10px] text-gray-400 line-through block">₹{p.price}</span>
+                            <span className="text-[10px] text-gray-400 line-through block">
+                              ₹{p.price}
+                            </span>
                           </div>
                         ) : (
-                          <span className="font-black text-gray-800 dark:text-gray-200 text-sm">₹{p.price}</span>
+                          <span className="font-black text-gray-800 dark:text-gray-200 text-sm">
+                            ₹{p.price}
+                          </span>
                         )}
                       </td>
 
                       {/* Stock */}
                       <td className="py-3 px-4">
-                        <span className={`font-bold ${p.stock < 10 ? 'text-rose-500' : 'text-gray-700 dark:text-gray-300'}`}>
+                        <span
+                          className={`font-bold ${p.stock < 10 ? "text-rose-500" : "text-gray-700 dark:text-gray-300"}`}
+                        >
                           {p.stock} units
                         </span>
                       </td>
@@ -543,13 +652,15 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
                           className="px-2.5 py-1 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 text-gray-700 dark:text-gray-300 rounded-lg text-[11px] font-extrabold flex items-center gap-1 cursor-pointer"
                         >
                           <ImageIcon size={12} />
-                          <span>{imgCount} {imgCount === 1 ? 'Image' : 'Images'}</span>
+                          <span>
+                            {imgCount} {imgCount === 1 ? "Image" : "Images"}
+                          </span>
                         </button>
                       </td>
 
                       {/* Status */}
                       <td className="py-3 px-4">
-                        <EnterpriseStatusBadge status={p.status || 'active'} />
+                        <EnterpriseStatusBadge status={p.status || "active"} />
                       </td>
 
                       {/* Actions */}
@@ -584,10 +695,17 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
       <EnterpriseModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={editingProduct ? `Edit Product: ${editingProduct.name}` : 'Add New Spiritual Product'}
+        title={
+          editingProduct
+            ? `Edit Product: ${editingProduct.name}`
+            : "Add New Spiritual Product"
+        }
         subtitle="Manage product metadata, stock, pricing, and live multi-image gallery"
       >
-        <form onSubmit={handleSaveProduct} className="space-y-5 text-xs font-bold">
+        <form
+          onSubmit={handleSaveProduct}
+          className="space-y-5 text-xs font-bold"
+        >
           {/* Section 1: Basic Info */}
           <div className="space-y-3 p-4 bg-gray-50 dark:bg-slate-900/60 rounded-2xl border border-gray-200/60 dark:border-slate-800">
             <h3 className="text-xs font-black text-[#0A4DA6] uppercase tracking-wider flex items-center gap-1.5">
@@ -596,26 +714,34 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-gray-700 dark:text-gray-300">Product Name *</label>
+                <label className="text-gray-700 dark:text-gray-300">
+                  Product Name *
+                </label>
                 <input
                   type="text"
                   required
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
                   placeholder="e.g. Varanasi Kashi Vishwanath Mahaprasad Box"
                   className="w-full p-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold text-gray-800 dark:text-white"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-gray-700 dark:text-gray-300">Category *</label>
+                <label className="text-gray-700 dark:text-gray-300">
+                  Category *
+                </label>
                 <select
                   value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, category: e.target.value })
+                  }
                   className="w-full p-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold text-gray-800 dark:text-white"
                 >
                   {categories
-                    .filter((c) => c.id !== 'all')
+                    .filter((c) => c.id !== "all")
                     .map((c) => (
                       <option key={c.id} value={c.id}>
                         {c.label}
@@ -627,22 +753,33 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-gray-700 dark:text-gray-300">Temple Source / Vendor</label>
+                <label className="text-gray-700 dark:text-gray-300">
+                  Temple Source / Vendor
+                </label>
                 <input
                   type="text"
                   value={formData.templeSource}
-                  onChange={(e) => setFormData({ ...formData, templeSource: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, templeSource: e.target.value })
+                  }
                   placeholder="e.g. Kashi Vishwanath Temple Trust"
                   className="w-full p-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold text-gray-800 dark:text-white"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-gray-700 dark:text-gray-300">Authenticity Guarantee</label>
+                <label className="text-gray-700 dark:text-gray-300">
+                  Authenticity Guarantee
+                </label>
                 <input
                   type="text"
                   value={formData.authenticityCertificate}
-                  onChange={(e) => setFormData({ ...formData, authenticityCertificate: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      authenticityCertificate: e.target.value,
+                    })
+                  }
                   placeholder="e.g. Govt Certified & Temple Sanctified"
                   className="w-full p-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold text-gray-800 dark:text-white"
                 />
@@ -650,11 +787,15 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
             </div>
 
             <div className="space-y-1">
-              <label className="text-gray-700 dark:text-gray-300">Description</label>
+              <label className="text-gray-700 dark:text-gray-300">
+                Description
+              </label>
               <textarea
                 rows={2}
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
                 placeholder="Write detailed product description..."
                 className="w-full p-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold text-gray-800 dark:text-white"
               />
@@ -669,45 +810,73 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div>
-                <label className="text-gray-700 dark:text-gray-300 block mb-1">Regular Price (₹) *</label>
+                <label className="text-gray-700 dark:text-gray-300 block mb-1">
+                  Regular Price (₹) *
+                </label>
                 <input
                   type="number"
                   required
                   value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: e.target.value === '' ? '' : Number(e.target.value) })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      price:
+                        e.target.value === "" ? "" : Number(e.target.value),
+                    })
+                  }
                   placeholder="499"
                   className="w-full p-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold text-gray-800 dark:text-white"
                 />
               </div>
 
               <div>
-                <label className="text-gray-700 dark:text-gray-300 block mb-1">Sale Price (₹)</label>
+                <label className="text-gray-700 dark:text-gray-300 block mb-1">
+                  Sale Price (₹)
+                </label>
                 <input
                   type="number"
                   value={formData.salePrice}
-                  onChange={(e) => setFormData({ ...formData, salePrice: e.target.value === '' ? '' : Number(e.target.value) })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      salePrice:
+                        e.target.value === "" ? "" : Number(e.target.value),
+                    })
+                  }
                   placeholder="399"
                   className="w-full p-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold text-gray-800 dark:text-white"
                 />
               </div>
 
               <div>
-                <label className="text-gray-700 dark:text-gray-300 block mb-1">Stock Count</label>
+                <label className="text-gray-700 dark:text-gray-300 block mb-1">
+                  Stock Count
+                </label>
                 <input
                   type="number"
                   value={formData.stock}
-                  onChange={(e) => setFormData({ ...formData, stock: e.target.value === '' ? '' : Number(e.target.value) })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      stock:
+                        e.target.value === "" ? "" : Number(e.target.value),
+                    })
+                  }
                   placeholder="50"
                   className="w-full p-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold text-gray-800 dark:text-white"
                 />
               </div>
 
               <div>
-                <label className="text-gray-700 dark:text-gray-300 block mb-1">Weight / Unit</label>
+                <label className="text-gray-700 dark:text-gray-300 block mb-1">
+                  Weight / Unit
+                </label>
                 <input
                   type="text"
                   value={formData.weight}
-                  onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, weight: e.target.value })
+                  }
                   placeholder="250g"
                   className="w-full p-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold text-gray-800 dark:text-white"
                 />
@@ -719,19 +888,26 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
                 <input
                   type="checkbox"
                   checked={formData.isFeatured}
-                  onChange={(e) => setFormData({ ...formData, isFeatured: e.target.checked })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, isFeatured: e.target.checked })
+                  }
                   className="w-4 h-4 rounded text-[#0A4DA6]"
                 />
                 <span className="text-xs text-gray-700 dark:text-gray-300 font-extrabold flex items-center gap-1">
-                  <Star size={12} className="text-amber-500 fill-amber-500" /> Feature product on Marketplace home
+                  <Star size={12} className="text-amber-500 fill-amber-500" />{" "}
+                  Feature product on Marketplace home
                 </span>
               </label>
 
               <div className="flex items-center gap-2">
-                <label className="text-gray-700 dark:text-gray-300">Status:</label>
+                <label className="text-gray-700 dark:text-gray-300">
+                  Status:
+                </label>
                 <select
                   value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, status: e.target.value as any })
+                  }
                   className="p-1.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-lg text-xs font-bold"
                 >
                   <option value="active">Active</option>
@@ -754,11 +930,9 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
 
               {/* Compact Action Buttons Header */}
               <div className="flex items-center gap-2">
-                <label
-                  className="px-3 py-1.5 bg-[#0A4DA6] hover:bg-blue-900 text-white font-extrabold text-xs rounded-xl flex items-center gap-1.5 shadow-sm cursor-pointer transition-colors shrink-0"
-                >
+                <label className="px-3 py-1.5 bg-[#0A4DA6] hover:bg-blue-900 text-white font-extrabold text-xs rounded-xl flex items-center gap-1.5 shadow-sm cursor-pointer transition-colors shrink-0">
                   <Upload size={13} />
-                  <span>{isUploading ? 'Uploading...' : 'Upload Image'}</span>
+                  <span>{isUploading ? "Uploading..." : "Upload Image"}</span>
                   <input
                     type="file"
                     accept="image/*"
@@ -809,9 +983,17 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
             {/* 3-Column Enterprise Image Grid */}
             {formData.images.length === 0 ? (
               <div className="py-6 text-center space-y-1 bg-white/70 dark:bg-slate-900/60 rounded-xl border border-blue-100 dark:border-blue-950">
-                <ImageIcon className="mx-auto text-blue-300 dark:text-blue-700" size={24} />
-                <p className="text-xs font-bold text-gray-500 dark:text-gray-400">No images attached to product.</p>
-                <p className="text-[10px] text-gray-400">Click "Upload Image" or "Add by URL" above to add product photos.</p>
+                <ImageIcon
+                  className="mx-auto text-blue-300 dark:text-blue-700"
+                  size={24}
+                />
+                <p className="text-xs font-bold text-gray-500 dark:text-gray-400">
+                  No images attached to product.
+                </p>
+                <p className="text-[10px] text-gray-400">
+                  Click "Upload Image" or "Add by URL" above to add product
+                  photos.
+                </p>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
@@ -825,8 +1007,8 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
                       key={idx}
                       className={`relative bg-white dark:bg-slate-900 rounded-2xl border ${
                         isCover
-                          ? 'border-2 border-[#0A4DA6] shadow-md shadow-[#0A4DA6]/15'
-                          : 'border-gray-200 dark:border-slate-800'
+                          ? "border-2 border-[#0A4DA6] shadow-md shadow-[#0A4DA6]/15"
+                          : "border-gray-200 dark:border-slate-800"
                       } overflow-hidden flex flex-col justify-between group transition-all`}
                     >
                       {/* Image Thumbnail & Badge Header */}
@@ -837,7 +1019,7 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
                           className="w-full h-full object-cover"
                           onError={(e) => {
                             (e.target as HTMLImageElement).src =
-                              'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?auto=format&fit=crop&w=300&q=80';
+                              "https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?auto=format&fit=crop&w=300&q=80";
                           }}
                         />
 
@@ -890,10 +1072,15 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
                       {/* Card Content & Metadata */}
                       <div className="p-2.5 space-y-1.5 bg-white dark:bg-slate-900 border-t border-gray-100 dark:border-slate-800">
                         <div className="flex items-center justify-between text-[10px]">
-                          <span className="font-extrabold text-gray-800 dark:text-gray-200 truncate max-w-[110px]" title={filename}>
+                          <span
+                            className="font-extrabold text-gray-800 dark:text-gray-200 truncate max-w-[110px]"
+                            title={filename}
+                          >
                             {filename}
                           </span>
-                          <span className="text-gray-400 font-bold shrink-0">{filesize}</span>
+                          <span className="text-gray-400 font-bold shrink-0">
+                            {filesize}
+                          </span>
                         </div>
 
                         {/* Card Reorder & Cover Actions */}
@@ -902,7 +1089,7 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
                             <button
                               type="button"
                               disabled={idx === 0}
-                              onClick={() => handleMoveImage(idx, 'left')}
+                              onClick={() => handleMoveImage(idx, "left")}
                               className="p-1 text-gray-500 hover:text-[#0A4DA6] disabled:opacity-30 cursor-pointer"
                               title="Reorder Left"
                             >
@@ -911,7 +1098,7 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
                             <button
                               type="button"
                               disabled={idx === formData.images.length - 1}
-                              onClick={() => handleMoveImage(idx, 'right')}
+                              onClick={() => handleMoveImage(idx, "right")}
                               className="p-1 text-gray-500 hover:text-[#0A4DA6] disabled:opacity-30 cursor-pointer"
                               title="Reorder Right"
                             >
@@ -928,7 +1115,9 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
                               <ArrowUp size={10} /> Set Cover
                             </button>
                           ) : (
-                            <span className="text-[#0A4DA6] font-extrabold">Cover Photo</span>
+                            <span className="text-[#0A4DA6] font-extrabold">
+                              Cover Photo
+                            </span>
                           )}
                         </div>
                       </div>
@@ -941,11 +1130,14 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
 
           {/* Form Action Controls */}
           <div className="pt-3 border-t border-gray-200 dark:border-slate-800 flex justify-end gap-2">
-            <EnterpriseButton variant="outline" onClick={() => setIsModalOpen(false)}>
+            <EnterpriseButton
+              variant="outline"
+              onClick={() => setIsModalOpen(false)}
+            >
               Cancel
             </EnterpriseButton>
             <EnterpriseButton type="submit" variant="primary">
-              {editingProduct ? 'Save Product Changes' : 'Create Product'}
+              {editingProduct ? "Save Product Changes" : "Create Product"}
             </EnterpriseButton>
           </div>
         </form>

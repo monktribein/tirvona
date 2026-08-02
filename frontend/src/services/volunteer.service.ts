@@ -1,4 +1,4 @@
-import api from '../lib/api';
+import api from "../lib/api";
 
 export interface VolunteerJobItem {
   _id: string;
@@ -11,8 +11,8 @@ export interface VolunteerJobItem {
   type: string;
   openingsCount: number;
   duration: string;
-  accommodation: 'free_ashram_stay' | 'paid' | 'none';
-  food: 'satvik_free_3_meals' | 'paid' | 'none';
+  accommodation: "free_ashram_stay" | "paid" | "none";
+  food: "satvik_free_3_meals" | "paid" | "none";
   stipend: string;
   certificateProvided: boolean;
   responsibilities: string[];
@@ -24,7 +24,7 @@ export interface VolunteerJobItem {
     email: string;
   };
   deadline: string;
-  status: 'open' | 'closing_soon' | 'closed';
+  status: "open" | "closing_soon" | "closed";
   isGovtVerified: boolean;
 }
 
@@ -54,7 +54,7 @@ export const volunteerService = {
     page?: number;
     limit?: number;
   }) => {
-    return api.get('/volunteer/jobs', { params });
+    return api.get("/volunteer/jobs", { params });
   },
 
   getJobById: async (id: string) => {
@@ -62,11 +62,11 @@ export const volunteerService = {
   },
 
   applyJob: async (payload: ApplicationPayload) => {
-    return api.post('/volunteer/apply', payload);
+    return api.post("/volunteer/apply", payload);
   },
 
   createJob: async (data: Partial<VolunteerJobItem>) => {
-    return api.post('/volunteer/jobs', data);
+    return api.post("/volunteer/jobs", data);
   },
 
   updateJob: async (id: string, data: Partial<VolunteerJobItem>) => {
@@ -78,10 +78,14 @@ export const volunteerService = {
   },
 
   getApplications: async (params?: { jobId?: string; status?: string }) => {
-    return api.get('/volunteer/applications', { params });
+    return api.get("/volunteer/applications", { params });
   },
 
-  updateApplicationStatus: async (id: string, status: string, notes?: string) => {
+  updateApplicationStatus: async (
+    id: string,
+    status: string,
+    notes?: string,
+  ) => {
     return api.put(`/volunteer/applications/${id}/status`, { status, notes });
   },
 };

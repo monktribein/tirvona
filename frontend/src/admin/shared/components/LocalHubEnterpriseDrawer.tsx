@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
-  X,
   Sparkles,
   Info,
   Image as ImageIcon,
@@ -10,12 +9,11 @@ import {
   ShieldCheck,
   Globe,
   Save,
-  CheckCircle,
   MapPin,
   Compass,
-} from 'lucide-react';
-import ImageGalleryManager from './ImageGalleryManager';
-import { useNotifications } from '../../../contexts/NotificationContext';
+} from "lucide-react";
+import ImageGalleryManager from "./ImageGalleryManager";
+import { useNotifications } from "../../../contexts/NotificationContext";
 
 interface LocalHubEnterpriseDrawerProps {
   isOpen: boolean;
@@ -25,15 +23,19 @@ interface LocalHubEnterpriseDrawerProps {
   categoryKey?: string;
 }
 
-export const LocalHubEnterpriseDrawer: React.FC<LocalHubEnterpriseDrawerProps> = ({
-  isOpen,
-  onClose,
-  item,
-  onSave,
-  categoryKey = 'transport',
-}) => {
+export const LocalHubEnterpriseDrawer: React.FC<
+  LocalHubEnterpriseDrawerProps
+> = ({ isOpen, onClose, item, onSave, categoryKey = "transport" }) => {
   const { addNotification } = useNotifications();
-  const [activeSection, setActiveSection] = useState<'basic' | 'images' | 'pricing' | 'contact' | 'availability' | 'verification' | 'seo'>('basic');
+  const [activeSection, setActiveSection] = useState<
+    | "basic"
+    | "images"
+    | "pricing"
+    | "contact"
+    | "availability"
+    | "verification"
+    | "seo"
+  >("basic");
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [isSaving, setIsSaving] = useState(false);
 
@@ -41,63 +43,74 @@ export const LocalHubEnterpriseDrawer: React.FC<LocalHubEnterpriseDrawerProps> =
     if (item) {
       setFormData({
         _id: item._id || item.id,
-        title: item.title || '',
-        description: item.description || item.desc || '',
-        category: item.category || categoryKey || 'transport',
-        city: item.city || 'Varanasi',
-        location: item.location || '',
-        address: item.address || item.location || '',
+        title: item.title || "",
+        description: item.description || item.desc || "",
+        category: item.category || categoryKey || "transport",
+        city: item.city || "Varanasi",
+        location: item.location || "",
+        address: item.address || item.location || "",
         latitude: item.latitude || 25.3176,
         longitude: item.longitude || 82.9739,
-        image: item.image || '',
-        gallery: Array.isArray(item.gallery) ? item.gallery : (Array.isArray(item.images) ? item.images : []),
-        price: item.price || 'Contact for Fare',
+        image: item.image || "",
+        gallery: Array.isArray(item.gallery)
+          ? item.gallery
+          : Array.isArray(item.images)
+            ? item.images
+            : [],
+        price: item.price || "Contact for Fare",
         discount: item.discount || 0,
         gst: item.gst || 5,
-        phone: item.phone || '+91 98765 00000',
-        email: item.email || '',
-        website: item.website || '',
-        openingHours: item.openingHours || '06:00 AM',
-        closingHours: item.closingHours || '09:00 PM',
-        weeklyOff: item.weeklyOff || 'None',
-        badge: item.badge || 'VERIFIED OPERATOR',
+        phone: item.phone || "+91 98765 00000",
+        email: item.email || "",
+        website: item.website || "",
+        openingHours: item.openingHours || "06:00 AM",
+        closingHours: item.closingHours || "09:00 PM",
+        weeklyOff: item.weeklyOff || "None",
+        badge: item.badge || "VERIFIED OPERATOR",
         rating: item.rating || 4.9,
         isVerified: item.isVerified !== undefined ? item.isVerified : true,
         isFeatured: item.isFeatured !== undefined ? item.isFeatured : false,
-        status: item.status || 'active',
-        slug: item.slug || (item.title ? item.title.toLowerCase().replace(/\s+/g, '-') : ''),
-        metaTitle: item.metaTitle || (item.title ? `${item.title} | Tirvona Services` : ''),
-        metaDescription: item.metaDescription || (item.description ? item.description.substring(0, 160) : ''),
+        status: item.status || "active",
+        slug:
+          item.slug ||
+          (item.title ? item.title.toLowerCase().replace(/\s+/g, "-") : ""),
+        metaTitle:
+          item.metaTitle ||
+          (item.title ? `${item.title} | Tirvona Services` : ""),
+        metaDescription:
+          item.metaDescription ||
+          (item.description ? item.description.substring(0, 160) : ""),
       });
     } else {
       setFormData({
-        title: '',
-        description: '',
-        category: categoryKey || 'transport',
-        city: 'Varanasi',
-        location: '',
-        address: '',
+        title: "",
+        description: "",
+        category: categoryKey || "transport",
+        city: "Varanasi",
+        location: "",
+        address: "",
         latitude: 25.3176,
         longitude: 82.9739,
-        image: 'https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=600&q=80',
+        image:
+          "https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=600&q=80",
         gallery: [],
-        price: '₹400 / transfer',
+        price: "₹400 / transfer",
         discount: 0,
         gst: 5,
-        phone: '+91 98765 00000',
-        email: 'info@tirvona.com',
-        website: 'https://tirvona.com',
-        openingHours: '06:00 AM',
-        closingHours: '09:00 PM',
-        weeklyOff: 'None',
-        badge: 'VERIFIED OPERATOR',
+        phone: "+91 98765 00000",
+        email: "info@tirvona.com",
+        website: "https://tirvona.com",
+        openingHours: "06:00 AM",
+        closingHours: "09:00 PM",
+        weeklyOff: "None",
+        badge: "VERIFIED OPERATOR",
         rating: 4.9,
         isVerified: true,
         isFeatured: false,
-        status: 'active',
-        slug: '',
-        metaTitle: '',
-        metaDescription: '',
+        status: "active",
+        slug: "",
+        metaTitle: "",
+        metaDescription: "",
       });
     }
   }, [item, categoryKey, isOpen]);
@@ -114,32 +127,42 @@ export const LocalHubEnterpriseDrawer: React.FC<LocalHubEnterpriseDrawerProps> =
       // other access (payload.title) fails to compile.
       const payload: Record<string, any> = {
         ...formData,
-        image: formData.image || (Array.isArray(formData.gallery) && formData.gallery[0]) || 'https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=600&q=80',
+        image:
+          formData.image ||
+          (Array.isArray(formData.gallery) && formData.gallery[0]) ||
+          "https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=600&q=80",
       };
       await onSave(payload);
-      addNotification('Enterprise Manager Saved', `All 7 sections updated in MongoDB for ${payload.title || 'Service Item'}.`, 'success');
+      addNotification(
+        "Enterprise Manager Saved",
+        `All 7 sections updated in MongoDB for ${payload.title || "Service Item"}.`,
+        "success",
+      );
       onClose();
     } catch (err: any) {
-      addNotification('Save Failed', err.message || 'Could not update record.', 'error');
+      addNotification(
+        "Save Failed",
+        err.message || "Could not update record.",
+        "error",
+      );
     } finally {
       setIsSaving(false);
     }
   };
 
   const sections = [
-    { id: 'basic', label: '1. Basic Details', icon: Info },
-    { id: 'images', label: '2. Image Management', icon: ImageIcon },
-    { id: 'pricing', label: '3. Pricing', icon: DollarSign },
-    { id: 'contact', label: '4. Contact', icon: Phone },
-    { id: 'availability', label: '5. Availability', icon: Clock },
-    { id: 'verification', label: '6. Verification', icon: ShieldCheck },
-    { id: 'seo', label: '7. SEO', icon: Globe },
+    { id: "basic", label: "1. Basic Details", icon: Info },
+    { id: "images", label: "2. Image Management", icon: ImageIcon },
+    { id: "pricing", label: "3. Pricing", icon: DollarSign },
+    { id: "contact", label: "4. Contact", icon: Phone },
+    { id: "availability", label: "5. Availability", icon: Clock },
+    { id: "verification", label: "6. Verification", icon: ShieldCheck },
+    { id: "seo", label: "7. SEO", icon: Globe },
   ] as const;
 
   return (
     <div className="fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex justify-end transition-opacity duration-300">
       <div className="bg-white dark:bg-[#0B192C] w-full max-w-4xl h-full flex flex-col shadow-2xl border-l border-gray-100 dark:border-slate-800 text-left animate-in slide-in-from-right duration-300">
-
         {/* Drawer Header */}
         <div className="p-6 bg-gray-50/80 dark:bg-slate-900/80 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center shrink-0">
           <div className="flex items-center gap-3">
@@ -149,14 +172,16 @@ export const LocalHubEnterpriseDrawer: React.FC<LocalHubEnterpriseDrawerProps> =
             <div>
               <div className="flex items-center gap-2">
                 <span className="px-2.5 py-0.5 rounded-full bg-[#0A4DA6] text-white text-[10px] font-black uppercase">
-                  {formData.category || 'Local Hub'}
+                  {formData.category || "Local Hub"}
                 </span>
                 <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 text-[10px] font-bold">
-                  {formData.city || 'Location'}
+                  {formData.city || "Location"}
                 </span>
               </div>
               <h2 className="text-xl font-black text-[#0B192C] dark:text-white mt-1">
-                {formData.title ? `Manage: ${formData.title}` : 'Create Local Service Listing'}
+                {formData.title
+                  ? `Manage: ${formData.title}`
+                  : "Create Local Service Listing"}
               </h2>
             </div>
           </div>
@@ -176,7 +201,9 @@ export const LocalHubEnterpriseDrawer: React.FC<LocalHubEnterpriseDrawerProps> =
               className="px-6 py-2.5 bg-[#0A4DA6] hover:bg-blue-900 text-white rounded-full font-black text-xs shadow-lg transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
             >
               <Save size={15} />
-              <span>{isSaving ? 'Saving to MongoDB...' : 'Save All Changes'}</span>
+              <span>
+                {isSaving ? "Saving to MongoDB..." : "Save All Changes"}
+              </span>
             </button>
           </div>
         </div>
@@ -193,8 +220,8 @@ export const LocalHubEnterpriseDrawer: React.FC<LocalHubEnterpriseDrawerProps> =
                 onClick={() => setActiveSection(sec.id)}
                 className={`py-3.5 px-4 font-black text-xs border-b-2 transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer ${
                   active
-                    ? 'border-[#0A4DA6] text-[#0A4DA6] dark:text-blue-400'
-                    : 'border-transparent text-gray-500 hover:text-gray-900 dark:hover:text-gray-200'
+                    ? "border-[#0A4DA6] text-[#0A4DA6] dark:text-blue-400"
+                    : "border-transparent text-gray-500 hover:text-gray-900 dark:hover:text-gray-200"
                 }`}
               >
                 <IconComp size={15} />
@@ -206,31 +233,39 @@ export const LocalHubEnterpriseDrawer: React.FC<LocalHubEnterpriseDrawerProps> =
 
         {/* Section Contents Body (Scrollable) */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6 text-xs">
-          
           {/* SECTION 1: BASIC DETAILS */}
-          {activeSection === 'basic' && (
+          {activeSection === "basic" && (
             <div className="space-y-4 animate-in fade-in duration-200">
               <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-2">
-                <Info size={16} className="text-[#0A4DA6]" /> SECTION 1: Basic Service Details
+                <Info size={16} className="text-[#0A4DA6]" /> SECTION 1: Basic
+                Service Details
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="font-bold text-gray-700 dark:text-gray-300">Service / Provider Title *</label>
+                  <label className="font-bold text-gray-700 dark:text-gray-300">
+                    Service / Provider Title *
+                  </label>
                   <input
                     type="text"
                     required
                     value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, title: e.target.value })
+                    }
                     className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-bold text-gray-700 dark:text-gray-300">Category *</label>
+                  <label className="font-bold text-gray-700 dark:text-gray-300">
+                    Category *
+                  </label>
                   <select
                     value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, category: e.target.value })
+                    }
                     className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold text-[#0A4DA6]"
                   >
                     <option value="transport">Transport &amp; Cabs</option>
@@ -246,10 +281,14 @@ export const LocalHubEnterpriseDrawer: React.FC<LocalHubEnterpriseDrawerProps> =
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-bold text-gray-700 dark:text-gray-300">City / Holy Destination *</label>
+                  <label className="font-bold text-gray-700 dark:text-gray-300">
+                    City / Holy Destination *
+                  </label>
                   <select
                     value={formData.city}
-                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, city: e.target.value })
+                    }
                     className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold"
                   >
                     <option value="Varanasi">Varanasi (Kashi Dham)</option>
@@ -263,46 +302,72 @@ export const LocalHubEnterpriseDrawer: React.FC<LocalHubEnterpriseDrawerProps> =
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-bold text-gray-700 dark:text-gray-300">Location / Landmark *</label>
+                  <label className="font-bold text-gray-700 dark:text-gray-300">
+                    Location / Landmark *
+                  </label>
                   <input
                     type="text"
                     required
                     value={formData.location}
-                    onChange={(e) => setFormData({ ...formData, location: e.target.value, address: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        location: e.target.value,
+                        address: e.target.value,
+                      })
+                    }
                     className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-bold text-gray-700 dark:text-gray-300">Latitude Coordinate</label>
+                  <label className="font-bold text-gray-700 dark:text-gray-300">
+                    Latitude Coordinate
+                  </label>
                   <input
                     type="number"
                     step="any"
                     value={formData.latitude}
-                    onChange={(e) => setFormData({ ...formData, latitude: parseFloat(e.target.value) || 0 })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        latitude: parseFloat(e.target.value) || 0,
+                      })
+                    }
                     className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-mono"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-bold text-gray-700 dark:text-gray-300">Longitude Coordinate</label>
+                  <label className="font-bold text-gray-700 dark:text-gray-300">
+                    Longitude Coordinate
+                  </label>
                   <input
                     type="number"
                     step="any"
                     value={formData.longitude}
-                    onChange={(e) => setFormData({ ...formData, longitude: parseFloat(e.target.value) || 0 })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        longitude: parseFloat(e.target.value) || 0,
+                      })
+                    }
                     className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-mono"
                   />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="font-bold text-gray-700 dark:text-gray-300">Service Description *</label>
+                <label className="font-bold text-gray-700 dark:text-gray-300">
+                  Service Description *
+                </label>
                 <textarea
                   rows={4}
                   required
                   value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
                   className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl leading-relaxed"
                 />
               </div>
@@ -310,14 +375,15 @@ export const LocalHubEnterpriseDrawer: React.FC<LocalHubEnterpriseDrawerProps> =
           )}
 
           {/* SECTION 2: IMAGE MANAGEMENT */}
-          {activeSection === 'images' && (
+          {activeSection === "images" && (
             <div className="space-y-4 animate-in fade-in duration-200">
               <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-2">
-                <ImageIcon size={16} className="text-[#0A4DA6]" /> SECTION 2: Enterprise Media &amp; Image Management
+                <ImageIcon size={16} className="text-[#0A4DA6]" /> SECTION 2:
+                Enterprise Media &amp; Image Management
               </h3>
 
               <ImageGalleryManager
-                coverImage={formData.image || ''}
+                coverImage={formData.image || ""}
                 onCoverImageChange={(url) =>
                   setFormData((prev) => ({
                     ...prev,
@@ -337,45 +403,64 @@ export const LocalHubEnterpriseDrawer: React.FC<LocalHubEnterpriseDrawerProps> =
           )}
 
           {/* SECTION 3: PRICING */}
-          {activeSection === 'pricing' && (
+          {activeSection === "pricing" && (
             <div className="space-y-4 animate-in fade-in duration-200">
               <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-2">
-                <DollarSign size={16} className="text-[#0A4DA6]" /> SECTION 3: Service Pricing &amp; Tax Structure
+                <DollarSign size={16} className="text-[#0A4DA6]" /> SECTION 3:
+                Service Pricing &amp; Tax Structure
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-1">
-                  <label className="font-bold text-gray-700 dark:text-gray-300">Base Fare / Display Price *</label>
+                  <label className="font-bold text-gray-700 dark:text-gray-300">
+                    Base Fare / Display Price *
+                  </label>
                   <input
                     type="text"
                     required
                     placeholder="e.g. ₹400 / transfer"
                     value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, price: e.target.value })
+                    }
                     className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold text-[#0A4DA6]"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-bold text-gray-700 dark:text-gray-300">Pilgrim Discount (%)</label>
+                  <label className="font-bold text-gray-700 dark:text-gray-300">
+                    Pilgrim Discount (%)
+                  </label>
                   <input
                     type="number"
                     min="0"
                     max="100"
                     value={formData.discount}
-                    onChange={(e) => setFormData({ ...formData, discount: parseFloat(e.target.value) || 0 })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        discount: parseFloat(e.target.value) || 0,
+                      })
+                    }
                     className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-bold text-gray-700 dark:text-gray-300">Applicable GST (%)</label>
+                  <label className="font-bold text-gray-700 dark:text-gray-300">
+                    Applicable GST (%)
+                  </label>
                   <input
                     type="number"
                     min="0"
                     max="28"
                     value={formData.gst}
-                    onChange={(e) => setFormData({ ...formData, gst: parseFloat(e.target.value) || 0 })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        gst: parseFloat(e.target.value) || 0,
+                      })
+                    }
                     className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold"
                   />
                 </div>
@@ -384,42 +469,55 @@ export const LocalHubEnterpriseDrawer: React.FC<LocalHubEnterpriseDrawerProps> =
           )}
 
           {/* SECTION 4: CONTACT */}
-          {activeSection === 'contact' && (
+          {activeSection === "contact" && (
             <div className="space-y-4 animate-in fade-in duration-200">
               <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-2">
-                <Phone size={16} className="text-[#0A4DA6]" /> SECTION 4: Direct Contact &amp; Communication Channels
+                <Phone size={16} className="text-[#0A4DA6]" /> SECTION 4: Direct
+                Contact &amp; Communication Channels
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-1">
-                  <label className="font-bold text-gray-700 dark:text-gray-300">Contact Phone Number *</label>
+                  <label className="font-bold text-gray-700 dark:text-gray-300">
+                    Contact Phone Number *
+                  </label>
                   <input
                     type="text"
                     required
                     value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, phone: e.target.value })
+                    }
                     className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-bold text-gray-700 dark:text-gray-300">Official Email Address</label>
+                  <label className="font-bold text-gray-700 dark:text-gray-300">
+                    Official Email Address
+                  </label>
                   <input
                     type="email"
                     placeholder="support@serviceprovider.com"
                     value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
                     className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-bold text-gray-700 dark:text-gray-300">Official Website URL</label>
+                  <label className="font-bold text-gray-700 dark:text-gray-300">
+                    Official Website URL
+                  </label>
                   <input
                     type="url"
                     placeholder="https://..."
                     value={formData.website}
-                    onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, website: e.target.value })
+                    }
                     className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl"
                   />
                 </div>
@@ -428,40 +526,53 @@ export const LocalHubEnterpriseDrawer: React.FC<LocalHubEnterpriseDrawerProps> =
           )}
 
           {/* SECTION 5: AVAILABILITY */}
-          {activeSection === 'availability' && (
+          {activeSection === "availability" && (
             <div className="space-y-4 animate-in fade-in duration-200">
               <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-2">
-                <Clock size={16} className="text-[#0A4DA6]" /> SECTION 5: Operating Hours &amp; Schedule
+                <Clock size={16} className="text-[#0A4DA6]" /> SECTION 5:
+                Operating Hours &amp; Schedule
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-1">
-                  <label className="font-bold text-gray-700 dark:text-gray-300">Opening Time</label>
+                  <label className="font-bold text-gray-700 dark:text-gray-300">
+                    Opening Time
+                  </label>
                   <input
                     type="text"
                     placeholder="e.g. 06:00 AM"
                     value={formData.openingHours}
-                    onChange={(e) => setFormData({ ...formData, openingHours: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, openingHours: e.target.value })
+                    }
                     className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-bold text-gray-700 dark:text-gray-300">Closing Time</label>
+                  <label className="font-bold text-gray-700 dark:text-gray-300">
+                    Closing Time
+                  </label>
                   <input
                     type="text"
                     placeholder="e.g. 09:00 PM"
                     value={formData.closingHours}
-                    onChange={(e) => setFormData({ ...formData, closingHours: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, closingHours: e.target.value })
+                    }
                     className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-bold text-gray-700 dark:text-gray-300">Weekly Off Day</label>
+                  <label className="font-bold text-gray-700 dark:text-gray-300">
+                    Weekly Off Day
+                  </label>
                   <select
                     value={formData.weeklyOff}
-                    onChange={(e) => setFormData({ ...formData, weeklyOff: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, weeklyOff: e.target.value })
+                    }
                     className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold"
                   >
                     <option value="None">Open All 7 Days (No Off)</option>
@@ -479,30 +590,39 @@ export const LocalHubEnterpriseDrawer: React.FC<LocalHubEnterpriseDrawerProps> =
           )}
 
           {/* SECTION 6: VERIFICATION */}
-          {activeSection === 'verification' && (
+          {activeSection === "verification" && (
             <div className="space-y-4 animate-in fade-in duration-200">
               <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-2">
-                <ShieldCheck size={16} className="text-[#0A4DA6]" /> SECTION 6: Verification, Badges &amp; Status Controls
+                <ShieldCheck size={16} className="text-[#0A4DA6]" /> SECTION 6:
+                Verification, Badges &amp; Status Controls
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="font-bold text-gray-700 dark:text-gray-300">Verified Badge Text *</label>
+                  <label className="font-bold text-gray-700 dark:text-gray-300">
+                    Verified Badge Text *
+                  </label>
                   <input
                     type="text"
                     required
                     placeholder="e.g. VERIFIED OPERATOR / CERTIFIED SHASTRI"
                     value={formData.badge}
-                    onChange={(e) => setFormData({ ...formData, badge: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, badge: e.target.value })
+                    }
                     className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold text-[#0A4DA6]"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-bold text-gray-700 dark:text-gray-300">Approval Status *</label>
+                  <label className="font-bold text-gray-700 dark:text-gray-300">
+                    Approval Status *
+                  </label>
                   <select
                     value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, status: e.target.value })
+                    }
                     className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold"
                   >
                     <option value="active">Active &amp; Published</option>
@@ -517,26 +637,38 @@ export const LocalHubEnterpriseDrawer: React.FC<LocalHubEnterpriseDrawerProps> =
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                 <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl cursor-pointer">
                   <div>
-                    <span className="font-extrabold text-xs block text-[#0B192C] dark:text-white">Is Ministry Verified</span>
-                    <span className="text-[10px] text-gray-400 font-bold">Display verified tick badge on cards</span>
+                    <span className="font-extrabold text-xs block text-[#0B192C] dark:text-white">
+                      Is Ministry Verified
+                    </span>
+                    <span className="text-[10px] text-gray-400 font-bold">
+                      Display verified tick badge on cards
+                    </span>
                   </div>
                   <input
                     type="checkbox"
                     checked={formData.isVerified}
-                    onChange={(e) => setFormData({ ...formData, isVerified: e.target.checked })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, isVerified: e.target.checked })
+                    }
                     className="w-5 h-5 accent-[#0A4DA6] cursor-pointer"
                   />
                 </label>
 
                 <label className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl cursor-pointer">
                   <div>
-                    <span className="font-extrabold text-xs block text-[#0B192C] dark:text-white">Featured Listing</span>
-                    <span className="text-[10px] text-gray-400 font-bold">Pin item to the top of search results</span>
+                    <span className="font-extrabold text-xs block text-[#0B192C] dark:text-white">
+                      Featured Listing
+                    </span>
+                    <span className="text-[10px] text-gray-400 font-bold">
+                      Pin item to the top of search results
+                    </span>
                   </div>
                   <input
                     type="checkbox"
                     checked={formData.isFeatured}
-                    onChange={(e) => setFormData({ ...formData, isFeatured: e.target.checked })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, isFeatured: e.target.checked })
+                    }
                     className="w-5 h-5 accent-[#0A4DA6] cursor-pointer"
                   />
                 </label>
@@ -545,49 +677,64 @@ export const LocalHubEnterpriseDrawer: React.FC<LocalHubEnterpriseDrawerProps> =
           )}
 
           {/* SECTION 7: SEO */}
-          {activeSection === 'seo' && (
+          {activeSection === "seo" && (
             <div className="space-y-4 animate-in fade-in duration-200">
               <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-2">
-                <Globe size={16} className="text-[#0A4DA6]" /> SECTION 7: Search Engine Optimization (SEO)
+                <Globe size={16} className="text-[#0A4DA6]" /> SECTION 7: Search
+                Engine Optimization (SEO)
               </h3>
 
               <div className="space-y-4">
                 <div className="space-y-1">
-                  <label className="font-bold text-gray-700 dark:text-gray-300">Custom URL Slug</label>
+                  <label className="font-bold text-gray-700 dark:text-gray-300">
+                    Custom URL Slug
+                  </label>
                   <input
                     type="text"
                     placeholder="e.g. haridwar-ac-innova-cab-hub"
                     value={formData.slug}
-                    onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, slug: e.target.value })
+                    }
                     className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-mono text-blue-600"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-bold text-gray-700 dark:text-gray-300">Meta Title Tag</label>
+                  <label className="font-bold text-gray-700 dark:text-gray-300">
+                    Meta Title Tag
+                  </label>
                   <input
                     type="text"
                     placeholder="e.g. Book Haridwar to Rishikesh Cabs | Tirvona Services"
                     value={formData.metaTitle}
-                    onChange={(e) => setFormData({ ...formData, metaTitle: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, metaTitle: e.target.value })
+                    }
                     className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-bold text-gray-700 dark:text-gray-300">Meta Description Tag</label>
+                  <label className="font-bold text-gray-700 dark:text-gray-300">
+                    Meta Description Tag
+                  </label>
                   <textarea
                     rows={3}
                     placeholder="Brief 150-character summary for Google search snippet..."
                     value={formData.metaDescription}
-                    onChange={(e) => setFormData({ ...formData, metaDescription: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        metaDescription: e.target.value,
+                      })
+                    }
                     className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl leading-relaxed"
                   />
                 </div>
               </div>
             </div>
           )}
-
         </div>
 
         {/* Drawer Footer */}
@@ -611,11 +758,12 @@ export const LocalHubEnterpriseDrawer: React.FC<LocalHubEnterpriseDrawerProps> =
               className="px-6 py-2.5 bg-[#0A4DA6] hover:bg-blue-900 text-white rounded-full font-black text-xs shadow-lg transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
             >
               <Save size={15} />
-              <span>{isSaving ? 'Saving to MongoDB...' : 'Save All Changes'}</span>
+              <span>
+                {isSaving ? "Saving to MongoDB..." : "Save All Changes"}
+              </span>
             </button>
           </div>
         </div>
-
       </div>
     </div>
   );

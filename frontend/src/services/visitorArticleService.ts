@@ -1,4 +1,4 @@
-import api from '../lib/api';
+import api from "../lib/api";
 
 export interface EligibleBooking {
   _id: string;
@@ -42,7 +42,7 @@ export interface VisitorArticle {
   galleryImages: string[];
   tags: string[];
   language: string;
-  status: 'draft' | 'pending' | 'approved' | 'rejected';
+  status: "draft" | "pending" | "approved" | "rejected";
   rejectionReason?: string;
   isVerifiedStay: boolean;
   visitDate: string;
@@ -56,20 +56,81 @@ export interface VisitorArticle {
 
 export const visitorArticleService = {
   // Visitor APIs
-  getEligibleBookings: () => api.get<{ success: boolean; count: number; data: EligibleBooking[] }>('/visitor-articles/visitor/eligible-bookings'),
-  getMyArticles: (status?: string) => api.get<{ success: boolean; counts: Record<string, number>; data: VisitorArticle[] }>(`/visitor-articles/visitor/my-articles${status ? `?status=${status}` : ''}`),
-  createArticle: (data: Omit<Partial<VisitorArticle>, 'bookingId'> & { bookingId: string }) => api.post<{ success: boolean; message: string; data: VisitorArticle }>('/visitor-articles', data),
-  updateArticle: (id: string, data: Partial<VisitorArticle>) => api.put<{ success: boolean; message: string; data: VisitorArticle }>(`/visitor-articles/${id}`, data),
+  getEligibleBookings: () =>
+    api.get<{ success: boolean; count: number; data: EligibleBooking[] }>(
+      "/visitor-articles/visitor/eligible-bookings",
+    ),
+  getMyArticles: (status?: string) =>
+    api.get<{
+      success: boolean;
+      counts: Record<string, number>;
+      data: VisitorArticle[];
+    }>(
+      `/visitor-articles/visitor/my-articles${status ? `?status=${status}` : ""}`,
+    ),
+  createArticle: (
+    data: Omit<Partial<VisitorArticle>, "bookingId"> & { bookingId: string },
+  ) =>
+    api.post<{ success: boolean; message: string; data: VisitorArticle }>(
+      "/visitor-articles",
+      data,
+    ),
+  updateArticle: (id: string, data: Partial<VisitorArticle>) =>
+    api.put<{ success: boolean; message: string; data: VisitorArticle }>(
+      `/visitor-articles/${id}`,
+      data,
+    ),
 
   // Owner APIs
-  getOwnerArticles: (status?: string) => api.get<{ success: boolean; counts: Record<string, number>; data: VisitorArticle[] }>(`/visitor-articles/owner/list${status ? `?status=${status}` : ''}`),
-  reviewArticle: (id: string, action: 'approve' | 'reject', rejectionReason?: string) => api.post<{ success: boolean; message: string; data: VisitorArticle }>(`/visitor-articles/${id}/review`, { action, rejectionReason }),
+  getOwnerArticles: (status?: string) =>
+    api.get<{
+      success: boolean;
+      counts: Record<string, number>;
+      data: VisitorArticle[];
+    }>(`/visitor-articles/owner/list${status ? `?status=${status}` : ""}`),
+  reviewArticle: (
+    id: string,
+    action: "approve" | "reject",
+    rejectionReason?: string,
+  ) =>
+    api.post<{ success: boolean; message: string; data: VisitorArticle }>(
+      `/visitor-articles/${id}/review`,
+      { action, rejectionReason },
+    ),
 
   // Public APIs
-  getPublicArticles: (params?: { category?: string; ashramId?: string; search?: string; sort?: string; page?: number; limit?: number }) => api.get<{ success: boolean; count: number; total: number; data: VisitorArticle[] }>('/visitor-articles/public', { params }),
-  getPublicArticleBySlug: (slug: string) => api.get<{ success: boolean; data: { article: VisitorArticle; comments: any[]; relatedArticles: VisitorArticle[] } }>(`/visitor-articles/public/${slug}`),
-  toggleLike: (id: string) => api.post<{ success: boolean; liked: boolean; likesCount: number }>(`/visitor-articles/${id}/like`),
-  addComment: (id: string, comment: string) => api.post<{ success: boolean; message: string; data: any }>(`/visitor-articles/${id}/comments`, { comment }),
+  getPublicArticles: (params?: {
+    category?: string;
+    ashramId?: string;
+    search?: string;
+    sort?: string;
+    page?: number;
+    limit?: number;
+  }) =>
+    api.get<{
+      success: boolean;
+      count: number;
+      total: number;
+      data: VisitorArticle[];
+    }>("/visitor-articles/public", { params }),
+  getPublicArticleBySlug: (slug: string) =>
+    api.get<{
+      success: boolean;
+      data: {
+        article: VisitorArticle;
+        comments: any[];
+        relatedArticles: VisitorArticle[];
+      };
+    }>(`/visitor-articles/public/${slug}`),
+  toggleLike: (id: string) =>
+    api.post<{ success: boolean; liked: boolean; likesCount: number }>(
+      `/visitor-articles/${id}/like`,
+    ),
+  addComment: (id: string, comment: string) =>
+    api.post<{ success: boolean; message: string; data: any }>(
+      `/visitor-articles/${id}/comments`,
+      { comment },
+    ),
 };
 
 export default visitorArticleService;

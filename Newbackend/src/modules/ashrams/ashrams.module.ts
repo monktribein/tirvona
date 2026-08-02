@@ -1,0 +1,30 @@
+import { Module } from "@nestjs/common";
+import { MongooseModule } from "@nestjs/mongoose";
+import { AshramsService } from "./application/ashrams.service";
+import { AshramsController } from "./presentation/ashrams.controller";
+import { RoomsController } from "./presentation/rooms.controller";
+import {
+  AshramSchema,
+  BookingAddonSchema,
+  BookingInventorySchema,
+  BookingPricingSchema,
+  HousekeepingUnitSchema,
+  RoomSchema,
+} from "./infrastructure/persistence/ashram.schemas";
+
+@Module({
+  imports: [
+    MongooseModule.forFeature([
+      { name: "Ashram", schema: AshramSchema },
+      { name: "Room", schema: RoomSchema },
+      { name: "BookingInventory", schema: BookingInventorySchema },
+      { name: "BookingPricing", schema: BookingPricingSchema },
+      { name: "BookingAddon", schema: BookingAddonSchema },
+      { name: "HousekeepingUnit", schema: HousekeepingUnitSchema },
+    ]),
+  ],
+  controllers: [AshramsController, RoomsController],
+  providers: [AshramsService],
+  exports: [MongooseModule, AshramsService],
+})
+export class AshramsModule {}

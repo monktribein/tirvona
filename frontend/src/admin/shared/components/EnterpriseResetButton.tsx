@@ -1,5 +1,5 @@
-import React from 'react';
-import { RotateCcw } from 'lucide-react';
+import React from "react";
+import { RotateCcw } from "lucide-react";
 
 interface EnterpriseResetButtonProps {
   onReset: () => void;
@@ -9,8 +9,8 @@ interface EnterpriseResetButtonProps {
 
 export const EnterpriseResetButton: React.FC<EnterpriseResetButtonProps> = ({
   onReset,
-  label = 'Reset Filters',
-  className = '',
+  label = "Reset Filters",
+  className = "",
 }) => {
   return (
     <button

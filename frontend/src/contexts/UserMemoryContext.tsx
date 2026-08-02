@@ -1,6 +1,15 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { userMemoryService, type UserMemoryProfile } from '../services/userMemory.service';
-import { useAuth } from './AuthContext';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useRef,
+} from "react";
+import {
+  userMemoryService,
+  type UserMemoryProfile,
+} from "../services/userMemory.service";
+import { useAuth } from "./AuthContext";
 
 interface UserMemoryContextType {
   memory: UserMemoryProfile;
@@ -21,9 +30,9 @@ const defaultMemory: UserMemoryProfile = {
   filters: {},
   dashboardState: {},
   profileProgress: {},
-  preferences: { language: 'en', currency: 'INR', theme: 'light' },
+  preferences: { language: "en", currency: "INR", theme: "light" },
   recentlyViewed: [],
-  lastVisitedPage: { path: '/', timestamp: new Date() },
+  lastVisitedPage: { path: "/", timestamp: new Date() },
 };
 
 const UserMemoryContext = createContext<UserMemoryContextType>({
@@ -34,13 +43,15 @@ const UserMemoryContext = createContext<UserMemoryContextType>({
   loading: false,
 });
 
-export const UserMemoryProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const UserMemoryProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const { user } = useAuth();
   const [memory, setMemory] = useState<UserMemoryProfile>(() => {
     try {
-      const cached = localStorage.getItem('tirvona_user_memory');
+      const cached = localStorage.getItem("tirvona_user_memory");
       return cached ? JSON.parse(cached) : defaultMemory;
-    } catch (e) {
+    } catch  {
       return defaultMemory;
     }
   });
@@ -60,10 +71,10 @@ export const UserMemoryProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       if (res.data?.success && res.data.data) {
         const merged = { ...defaultMemory, ...res.data.data };
         setMemory(merged);
-        localStorage.setItem('tirvona_user_memory', JSON.stringify(merged));
+        localStorage.setItem("tirvona_user_memory", JSON.stringify(merged));
       }
-    } catch (err) {
-      console.warn('UserMemory fetch offline/fallback to cache');
+    } catch  {
+      console.warn("UserMemory fetch offline/fallback to cache");
     } finally {
       setLoading(false);
     }
@@ -71,7 +82,7 @@ export const UserMemoryProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   // Schedule debounced auto-save sync to MongoDB
   const scheduleSync = (updatedMemory: UserMemoryProfile) => {
-    localStorage.setItem('tirvona_user_memory', JSON.stringify(updatedMemory));
+    localStorage.setItem("tirvona_user_memory", JSON.stringify(updatedMemory));
 
     if (syncTimerRef.current) {
       clearTimeout(syncTimerRef.current);
@@ -80,13 +91,16 @@ export const UserMemoryProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     syncTimerRef.current = setTimeout(async () => {
       try {
         await userMemoryService.saveMemory(updatedMemory);
-      } catch (err) {
-        console.warn('Debounced UserMemory sync error (cached locally)');
+      } catch  {
+        console.warn("Debounced UserMemory sync error (cached locally)");
       }
     }, 2500);
   };
 
-  const updateMemoryCategory = (category: keyof UserMemoryProfile, value: any) => {
+  const updateMemoryCategory = (
+    category: keyof UserMemoryProfile,
+    value: any,
+  ) => {
     setMemory((prev) => {
       const updated = { ...prev, [category]: value };
       scheduleSync(updated);

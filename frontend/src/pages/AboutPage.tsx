@@ -1,5 +1,5 @@
-import React from 'react';
-import { Sparkles, ShieldCheck, Clock } from 'lucide-react';
+import React from "react";
+import { Sparkles, ShieldCheck, Clock } from "lucide-react";
 
 const AboutPage: React.FC = () => {
   return (
@@ -15,11 +15,15 @@ const AboutPage: React.FC = () => {
             <Sparkles size={12} className="text-[#D4AF37]" />
             Official Announcement
           </span>
-          <h1 className="font-extrabold leading-tight text-white tracking-tight" style={{ fontSize: 'clamp(2rem, 5vw, 3.2rem)' }}>
+          <h1
+            className="font-extrabold leading-tight text-white tracking-tight"
+            style={{ fontSize: "clamp(2rem, 5vw, 3.2rem)" }}
+          >
             About <span className="text-[#D4AF37]">Tirvona</span>
           </h1>
           <p className="text-sm sm:text-base text-gray-300 leading-relaxed max-w-2xl mx-auto font-medium">
-            "We're preparing something meaningful. Our official company information will be available soon."
+            "We're preparing something meaningful. Our official company
+            information will be available soon."
           </p>
         </div>
       </section>
@@ -44,11 +48,16 @@ const AboutPage: React.FC = () => {
           </h2>
 
           <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed max-w-lg mx-auto font-normal mb-8">
-            We are curating our official background, mission statement, leadership team, and verified platform metrics. Check back soon for full details about Tirvona's sacred travel initiative.
+            We are curating our official background, mission statement,
+            leadership team, and verified platform metrics. Check back soon for
+            full details about Tirvona's sacred travel initiative.
           </p>
 
           <div className="pt-6 border-t border-gray-100 dark:border-slate-800/80 flex items-center justify-center gap-2 text-xs font-semibold text-gray-500 dark:text-gray-400">
-            <ShieldCheck size={16} className="text-[#0A4DA6] dark:text-[#D4AF37]" />
+            <ShieldCheck
+              size={16}
+              className="text-[#0A4DA6] dark:text-[#D4AF37]"
+            />
             <span>Tirvona Sacred Destinations &bull; Enterprise Platform</span>
           </div>
         </div>
@@ -66,5 +75,3 @@ const AboutPage: React.FC = () => {
 };
 
 export default AboutPage;
-
-

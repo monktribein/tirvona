@@ -1,26 +1,33 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Settings, ArrowLeft, Key, Lock, Globe, Bell } from 'lucide-react';
-import { useNotifications } from '../../contexts/NotificationContext';
-import { EnterpriseButton } from '../../admin/shared';
+import React, { useState } from "react";
+import { ArrowLeft, Lock, Bell } from "lucide-react";
+import { useNotifications } from "../../contexts/NotificationContext";
+import { EnterpriseButton } from "../../admin/shared";
 
 export const ProfileSettingsPage: React.FC = () => {
   const { addNotification } = useNotifications();
 
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   const handleChangePassword = (e: React.FormEvent) => {
     e.preventDefault();
     if (newPassword !== confirmPassword) {
-      addNotification('Password Mismatch', 'New passwords do not match.', 'error');
+      addNotification(
+        "Password Mismatch",
+        "New passwords do not match.",
+        "error",
+      );
       return;
     }
-    addNotification('Password Changed', 'Your security password has been updated.', 'success');
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
+    addNotification(
+      "Password Changed",
+      "Your security password has been updated.",
+      "success",
+    );
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
   };
 
   return (
@@ -32,9 +39,14 @@ export const ProfileSettingsPage: React.FC = () => {
             <Lock size={16} className="text-[#0A4DA6]" /> Change Password
           </h3>
 
-          <form onSubmit={handleChangePassword} className="space-y-3 text-xs font-bold">
+          <form
+            onSubmit={handleChangePassword}
+            className="space-y-3 text-xs font-bold"
+          >
             <div className="space-y-1">
-              <label className="text-gray-700 dark:text-gray-300">Current Password</label>
+              <label className="text-gray-700 dark:text-gray-300">
+                Current Password
+              </label>
               <input
                 type="password"
                 required
@@ -46,7 +58,9 @@ export const ProfileSettingsPage: React.FC = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-gray-700 dark:text-gray-300">New Password</label>
+                <label className="text-gray-700 dark:text-gray-300">
+                  New Password
+                </label>
                 <input
                   type="password"
                   required
@@ -57,7 +71,9 @@ export const ProfileSettingsPage: React.FC = () => {
               </div>
 
               <div className="space-y-1">
-                <label className="text-gray-700 dark:text-gray-300">Confirm New Password</label>
+                <label className="text-gray-700 dark:text-gray-300">
+                  Confirm New Password
+                </label>
                 <input
                   type="password"
                   required

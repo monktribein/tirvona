@@ -1,7 +1,7 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
-import { authService } from '../services';
-import { getErrorMessage, TOKEN_KEY } from '../lib/api';
-import { signInWithGoogle } from '../lib/googleAuth';
+import React, { createContext, useState, useEffect, useContext } from "react";
+import { authService } from "../services";
+import { getErrorMessage, TOKEN_KEY } from "../lib/api";
+import { signInWithGoogle } from "../lib/googleAuth";
 
 interface User {
   id: string;
@@ -19,8 +19,8 @@ interface User {
 // identifies the challenge — it is NOT a session token and is never persisted.
 export interface OtpChallenge {
   otpToken: string;
-  type: 'PHONE_REGISTER' | 'EMAIL_REGISTER' | 'EMAIL_LOGIN' | 'MOBILE_LOGIN';
-  channel: 'sms' | 'email';
+  type: "PHONE_REGISTER" | "EMAIL_REGISTER" | "EMAIL_LOGIN" | "MOBILE_LOGIN";
+  channel: "sms" | "email";
   /** Already masked by the server, e.g. "s***7@gmail.com" or "98****3210". */
   sentTo?: string;
   expiresAt: string;
@@ -29,7 +29,7 @@ export interface OtpChallenge {
 /** Google sign-up state carried between the OTP step and the profile step. */
 export interface GoogleChallenge {
   googleToken: string;
-  channel: 'email';
+  channel: "email";
   type?: string;
   sentTo?: string;
   expiresAt?: string;
@@ -58,16 +58,31 @@ interface AuthContextType {
   token: string | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<AuthResult>;
-  loginOTP: (phone: string, otp: string) => Promise<{ success: boolean; message?: string }>;
+  loginOTP: (
+    phone: string,
+    otp: string,
+  ) => Promise<{ success: boolean; message?: string }>;
   verifyLoginOtp: (otpToken: string, otp: string) => Promise<AuthResult>;
   verifyRegistrationOtp: (otpToken: string, otp: string) => Promise<AuthResult>;
-  resendOtp: (otpToken: string) => Promise<{ success: boolean; message?: string; challenge?: OtpChallenge }>;
+  resendOtp: (otpToken: string) => Promise<{
+    success: boolean;
+    message?: string;
+    challenge?: OtpChallenge;
+  }>;
   registerUser: (userData: any) => Promise<AuthResult>;
   // ── Google Sign-In ──
   loginWithGoogle: () => Promise<AuthResult>;
   verifyGoogleOtp: (googleToken: string, otp: string) => Promise<AuthResult>;
-  resendGoogleOtp: (googleToken: string) => Promise<{ success: boolean; message?: string; googleChallenge?: GoogleChallenge }>;
-  completeGoogleProfile: (googleToken: string, name: string, phone: string) => Promise<AuthResult>;
+  resendGoogleOtp: (googleToken: string) => Promise<{
+    success: boolean;
+    message?: string;
+    googleChallenge?: GoogleChallenge;
+  }>;
+  completeGoogleProfile: (
+    googleToken: string,
+    name: string,
+    phone: string,
+  ) => Promise<AuthResult>;
   /** Re-fetch the signed-in user, e.g. after they edit their own profile. */
   refreshUser: () => Promise<void>;
   logout: () => void;
@@ -75,10 +90,23 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const clearExpiredSession = () => {
+      setToken(null);
+      setUser(null);
+      setLoading(false);
+    };
+    window.addEventListener("tirvona:unauthorized", clearExpiredSession);
+    return () =>
+      window.removeEventListener("tirvona:unauthorized", clearExpiredSession);
+  }, []);
 
   // Restore session from stored token on mount.
   useEffect(() => {
@@ -100,7 +128,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         logout();
       }
     } catch (err) {
-      console.error('Error fetching user profile:', err);
+      console.error("Error fetching user profile:", err);
       logout();
     } finally {
       setLoading(false);
@@ -114,13 +142,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(userData);
   };
 
-  const login = async (email: string, password: string): Promise<AuthResult> => {
+  const login = async (
+    email: string,
+    password: string,
+  ): Promise<AuthResult> => {
     try {
       const res = await authService.login(email, password);
       // Guest Visitors get an OTP challenge instead of a session. No token is
       // stored here — the session only exists after the code is verified.
       if (res.data.success && res.data.otpRequired) {
-        return { success: true, otpRequired: true, challenge: res.data.data, message: res.data.message };
+        return {
+          success: true,
+          otpRequired: true,
+          challenge: res.data.data,
+          message: res.data.message,
+        };
       }
       if (res.data.success) {
         persistSession(res.data.data);
@@ -128,7 +164,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       return {
         success: false,
-        message: res.data.message || 'Login failed',
+        message: res.data.message || "Login failed",
         isSuspended: res.data.isSuspended,
         suspensionData: res.data.suspensionData,
       };
@@ -136,12 +172,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (err.response?.data?.isSuspended) {
         return {
           success: false,
-          message: err.response.data.message || 'Account Suspended',
+          message: err.response.data.message || "Account Suspended",
           isSuspended: true,
           suspensionData: err.response.data.suspensionData,
         };
       }
-      return { success: false, message: getErrorMessage(err, 'Invalid credentials') };
+      return {
+        success: false,
+        message: getErrorMessage(err, "Invalid credentials"),
+      };
     }
   };
 
@@ -152,9 +191,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         persistSession(res.data.data);
         return { success: true };
       }
-      return { success: false, message: res.data.message || 'Invalid OTP code' };
+      return {
+        success: false,
+        message: res.data.message || "Invalid OTP code",
+      };
     } catch (err) {
-      return { success: false, message: getErrorMessage(err, 'Invalid OTP') };
+      return { success: false, message: getErrorMessage(err, "Invalid OTP") };
     }
   };
 
@@ -164,15 +206,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Guest Visitor registrations return an OTP challenge; Ashram Owner
       // registrations still return a session immediately, unchanged.
       if (res.data.success && res.data.otpRequired) {
-        return { success: true, otpRequired: true, challenge: res.data.data, message: res.data.message };
+        return {
+          success: true,
+          otpRequired: true,
+          challenge: res.data.data,
+          message: res.data.message,
+        };
       }
       if (res.data.success) {
         persistSession(res.data.data);
         return { success: true };
       }
-      return { success: false, message: res.data.message || 'Registration failed' };
+      return {
+        success: false,
+        message: res.data.message || "Registration failed",
+      };
     } catch (err) {
-      return { success: false, message: getErrorMessage(err, 'Error occurred') };
+      return {
+        success: false,
+        message: getErrorMessage(err, "Error occurred"),
+      };
     }
   };
 
@@ -181,7 +234,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // caller only has to navigate.
   const completeChallenge = async (
     request: Promise<{ data: any }>,
-    fallback: string
+    fallback: string,
   ): Promise<AuthResult> => {
     try {
       const res = await request;
@@ -196,10 +249,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const verifyLoginOtp = (otpToken: string, otp: string) =>
-    completeChallenge(authService.verifyLoginOtp(otpToken, otp), 'Invalid OTP');
+    completeChallenge(authService.verifyLoginOtp(otpToken, otp), "Invalid OTP");
 
   const verifyRegistrationOtp = (otpToken: string, otp: string) =>
-    completeChallenge(authService.verifyRegistrationOtp(otpToken, otp), 'Invalid OTP');
+    completeChallenge(
+      authService.verifyRegistrationOtp(otpToken, otp),
+      "Invalid OTP",
+    );
 
   // ── Google Sign-In ─────────────────────────────────────────────────────────
 
@@ -213,33 +269,50 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       credential = await signInWithGoogle();
     } catch (err: any) {
-      return { success: false, message: err?.message || 'Google sign-in was cancelled.' };
+      return {
+        success: false,
+        message: err?.message || "Google sign-in was cancelled.",
+      };
     }
 
     try {
       const res = await authService.google(credential);
       if (res.data.success && res.data.otpRequired) {
-        return { success: true, otpRequired: true, googleChallenge: res.data.data, message: res.data.message };
+        return {
+          success: true,
+          otpRequired: true,
+          googleChallenge: res.data.data,
+          message: res.data.message,
+        };
       }
       if (res.data.success) {
         persistSession(res.data.data);
         return { success: true, message: res.data.message };
       }
-      return { success: false, message: res.data.message || 'Google sign-in failed' };
+      return {
+        success: false,
+        message: res.data.message || "Google sign-in failed",
+      };
     } catch (err: any) {
       if (err.response?.data?.isSuspended) {
         return {
           success: false,
-          message: err.response.data.message || 'Account Suspended',
+          message: err.response.data.message || "Account Suspended",
           isSuspended: true,
           suspensionData: err.response.data.suspensionData,
         };
       }
-      return { success: false, message: getErrorMessage(err, 'Google sign-in failed') };
+      return {
+        success: false,
+        message: getErrorMessage(err, "Google sign-in failed"),
+      };
     }
   };
 
-  const verifyGoogleOtp = async (googleToken: string, otp: string): Promise<AuthResult> => {
+  const verifyGoogleOtp = async (
+    googleToken: string,
+    otp: string,
+  ): Promise<AuthResult> => {
     try {
       const res = await authService.googleVerifyOtp(googleToken, otp);
       if (res.data.success) {
@@ -247,15 +320,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return {
           success: true,
           needsProfile: true,
-          googleChallenge: { googleToken: res.data.data.googleToken, channel: 'email' },
+          googleChallenge: {
+            googleToken: res.data.data.googleToken,
+            channel: "email",
+          },
           suggestedName: res.data.data.suggestedName,
           email: res.data.data.email,
           message: res.data.message,
         };
       }
-      return { success: false, message: res.data.message || 'Invalid OTP' };
+      return { success: false, message: res.data.message || "Invalid OTP" };
     } catch (err) {
-      return { success: false, message: getErrorMessage(err, 'Invalid OTP') };
+      return { success: false, message: getErrorMessage(err, "Invalid OTP") };
     }
   };
 
@@ -263,24 +339,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const res = await authService.googleResendOtp(googleToken);
       if (res.data.success) {
-        return { success: true, message: res.data.message, googleChallenge: res.data.data };
+        return {
+          success: true,
+          message: res.data.message,
+          googleChallenge: res.data.data,
+        };
       }
-      return { success: false, message: res.data.message || 'Could not resend OTP' };
+      return {
+        success: false,
+        message: res.data.message || "Could not resend OTP",
+      };
     } catch (err) {
-      return { success: false, message: getErrorMessage(err, 'Could not resend OTP') };
+      return {
+        success: false,
+        message: getErrorMessage(err, "Could not resend OTP"),
+      };
     }
   };
 
-  const completeGoogleProfile = async (googleToken: string, name: string, phone: string): Promise<AuthResult> => {
+  const completeGoogleProfile = async (
+    googleToken: string,
+    name: string,
+    phone: string,
+  ): Promise<AuthResult> => {
     try {
       const res = await authService.googleComplete(googleToken, name, phone);
       if (res.data.success) {
         persistSession(res.data.data);
         return { success: true, message: res.data.message };
       }
-      return { success: false, message: res.data.message || 'Could not finish creating your account' };
+      return {
+        success: false,
+        message: res.data.message || "Could not finish creating your account",
+      };
     } catch (err) {
-      return { success: false, message: getErrorMessage(err, 'Could not finish creating your account') };
+      return {
+        success: false,
+        message: getErrorMessage(err, "Could not finish creating your account"),
+      };
     }
   };
 
@@ -288,17 +384,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const res = await authService.resendOtp(otpToken);
       if (res.data.success) {
-        return { success: true, message: res.data.message, challenge: res.data.data };
+        return {
+          success: true,
+          message: res.data.message,
+          challenge: res.data.data,
+        };
       }
-      return { success: false, message: res.data.message || 'Could not resend OTP' };
+      return {
+        success: false,
+        message: res.data.message || "Could not resend OTP",
+      };
     } catch (err) {
-      return { success: false, message: getErrorMessage(err, 'Could not resend OTP') };
+      return {
+        success: false,
+        message: getErrorMessage(err, "Could not resend OTP"),
+      };
     }
   };
 
   const logout = () => {
     localStorage.removeItem(TOKEN_KEY);
-    sessionStorage.removeItem('sidebar_open_group');
+    sessionStorage.removeItem("sidebar_open_group");
     setToken(null);
     setUser(null);
   };
@@ -306,10 +412,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   return (
     <AuthContext.Provider
       value={{
-        user, token, loading, login, loginOTP, registerUser, logout,
+        user,
+        token,
+        loading,
+        login,
+        loginOTP,
+        registerUser,
+        logout,
         refreshUser: fetchUserProfile,
-        verifyLoginOtp, verifyRegistrationOtp, resendOtp,
-        loginWithGoogle, verifyGoogleOtp, resendGoogleOtp, completeGoogleProfile,
+        verifyLoginOtp,
+        verifyRegistrationOtp,
+        resendOtp,
+        loginWithGoogle,
+        verifyGoogleOtp,
+        resendGoogleOtp,
+        completeGoogleProfile,
       }}
     >
       {children}
@@ -320,7 +437,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };

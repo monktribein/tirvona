@@ -1,5 +1,5 @@
-import React from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
+import React from "react";
+import { motion, useReducedMotion } from "framer-motion";
 
 interface RevealProps {
   children: React.ReactNode;
@@ -13,7 +13,12 @@ interface RevealProps {
 // Subtle fade + slide-in-on-scroll wrapper. Animates only transform/opacity
 // (GPU-accelerated), fires once when it enters the viewport, and disables
 // itself when the user prefers reduced motion.
-export const Reveal: React.FC<RevealProps> = ({ children, className, y = 24, delay = 0 }) => {
+export const Reveal: React.FC<RevealProps> = ({
+  children,
+  className,
+  y = 24,
+  delay = 0,
+}) => {
   const reduce = useReducedMotion();
 
   if (reduce) return <div className={className}>{children}</div>;
@@ -23,7 +28,7 @@ export const Reveal: React.FC<RevealProps> = ({ children, className, y = 24, del
       className={className}
       initial={{ opacity: 0, y }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-80px' }}
+      viewport={{ once: true, margin: "-80px" }}
       transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1], delay }}
     >
       {children}

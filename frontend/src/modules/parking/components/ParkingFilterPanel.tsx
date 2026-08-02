@@ -1,6 +1,13 @@
-import React from 'react';
-import { SlidersHorizontal, Star, X, Umbrella, Zap, Navigation } from 'lucide-react';
-import { amenityLabel } from '../utils/parkingFormat';
+import React from "react";
+import {
+  SlidersHorizontal,
+  Star,
+  X,
+  Umbrella,
+  Zap,
+  Navigation,
+} from "lucide-react";
+import { amenityLabel } from "../utils/parkingFormat";
 
 interface ParkingFilterPanelProps {
   amenityOptions: { key: string; label: string }[];
@@ -43,13 +50,20 @@ export const ParkingFilterPanel: React.FC<ParkingFilterPanelProps> = ({
     onChange({ amenities: next });
   };
 
-  const activeCount = selectedAmenities.length + (covered ? 1 : 0) + (evCharging ? 1 : 0) + (minRating > 0 ? 1 : 0);
+  const activeCount =
+    selectedAmenities.length +
+    (covered ? 1 : 0) +
+    (evCharging ? 1 : 0) +
+    (minRating > 0 ? 1 : 0);
 
   return (
     <aside className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-4 space-y-5 shadow-sm">
       <header className="flex items-center justify-between gap-2">
         <h3 className="inline-flex items-center gap-2 font-extrabold text-sm text-[#0B192C] dark:text-white">
-          <SlidersHorizontal size={15} className="text-[#0A4DA6] stroke-[2.5]" />
+          <SlidersHorizontal
+            size={15}
+            className="text-[#0A4DA6] stroke-[2.5]"
+          />
           Filters
           {activeCount > 0 && (
             <span className="bg-[#0A4DA6] text-white text-[9px] font-black px-1.5 py-0.5 rounded-full">
@@ -71,7 +85,10 @@ export const ParkingFilterPanel: React.FC<ParkingFilterPanelProps> = ({
 
       {/* Sort */}
       <div className="space-y-2">
-        <label htmlFor="parking-sort" className="block text-[10px] uppercase tracking-wider font-bold text-gray-400">
+        <label
+          htmlFor="parking-sort"
+          className="block text-[10px] uppercase tracking-wider font-bold text-gray-400"
+        >
           Sort By
         </label>
         <select
@@ -99,7 +116,9 @@ export const ParkingFilterPanel: React.FC<ParkingFilterPanelProps> = ({
               <Navigation size={11} className="stroke-[2.5]" />
               Within
             </span>
-            <span className="text-[#0A4DA6] dark:text-blue-300 normal-case tracking-normal">{radiusKm} km</span>
+            <span className="text-[#0A4DA6] dark:text-blue-300 normal-case tracking-normal">
+              {radiusKm} km
+            </span>
           </label>
           <input
             id="parking-radius"
@@ -116,15 +135,17 @@ export const ParkingFilterPanel: React.FC<ParkingFilterPanelProps> = ({
 
       {/* Quick toggles */}
       <div className="space-y-2">
-        <span className="block text-[10px] uppercase tracking-wider font-bold text-gray-400">Quick Filters</span>
+        <span className="block text-[10px] uppercase tracking-wider font-bold text-gray-400">
+          Quick Filters
+        </span>
         <div className="flex flex-wrap gap-1.5">
           <button
             type="button"
             onClick={() => onChange({ covered: !covered })}
             className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-3 py-1.5 rounded-full border transition-all cursor-pointer ${
               covered
-                ? 'bg-[#0A4DA6] border-[#0A4DA6] text-white shadow-sm'
-                : 'bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-700 text-slate-600 dark:text-gray-300 hover:border-[#0A4DA6]'
+                ? "bg-[#0A4DA6] border-[#0A4DA6] text-white shadow-sm"
+                : "bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-700 text-slate-600 dark:text-gray-300 hover:border-[#0A4DA6]"
             }`}
           >
             <Umbrella size={12} className="stroke-[2.5]" />
@@ -135,8 +156,8 @@ export const ParkingFilterPanel: React.FC<ParkingFilterPanelProps> = ({
             onClick={() => onChange({ evCharging: !evCharging })}
             className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-3 py-1.5 rounded-full border transition-all cursor-pointer ${
               evCharging
-                ? 'bg-[#0A4DA6] border-[#0A4DA6] text-white shadow-sm'
-                : 'bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-700 text-slate-600 dark:text-gray-300 hover:border-[#0A4DA6]'
+                ? "bg-[#0A4DA6] border-[#0A4DA6] text-white shadow-sm"
+                : "bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-700 text-slate-600 dark:text-gray-300 hover:border-[#0A4DA6]"
             }`}
           >
             <Zap size={12} className="stroke-[2.5]" />
@@ -147,7 +168,9 @@ export const ParkingFilterPanel: React.FC<ParkingFilterPanelProps> = ({
 
       {/* Rating */}
       <div className="space-y-2">
-        <span className="block text-[10px] uppercase tracking-wider font-bold text-gray-400">Minimum Rating</span>
+        <span className="block text-[10px] uppercase tracking-wider font-bold text-gray-400">
+          Minimum Rating
+        </span>
         <div className="flex flex-wrap gap-1.5">
           {[0, 3, 4, 4.5].map((value) => (
             <button
@@ -156,15 +179,22 @@ export const ParkingFilterPanel: React.FC<ParkingFilterPanelProps> = ({
               onClick={() => onChange({ minRating: value })}
               className={`inline-flex items-center gap-1 text-[10px] font-bold px-3 py-1.5 rounded-full border transition-all cursor-pointer ${
                 minRating === value
-                  ? 'bg-[#0A4DA6] border-[#0A4DA6] text-white shadow-sm'
-                  : 'bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-700 text-slate-600 dark:text-gray-300 hover:border-[#0A4DA6]'
+                  ? "bg-[#0A4DA6] border-[#0A4DA6] text-white shadow-sm"
+                  : "bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-700 text-slate-600 dark:text-gray-300 hover:border-[#0A4DA6]"
               }`}
             >
               {value === 0 ? (
-                'Any'
+                "Any"
               ) : (
                 <>
-                  <Star size={11} className={minRating === value ? 'fill-white' : 'fill-[#D4AF37] text-[#D4AF37]'} />
+                  <Star
+                    size={11}
+                    className={
+                      minRating === value
+                        ? "fill-white"
+                        : "fill-[#D4AF37] text-[#D4AF37]"
+                    }
+                  />
                   {value}+
                 </>
               )}
@@ -175,7 +205,9 @@ export const ParkingFilterPanel: React.FC<ParkingFilterPanelProps> = ({
 
       {/* Amenities */}
       <div className="space-y-2">
-        <span className="block text-[10px] uppercase tracking-wider font-bold text-gray-400">Amenities</span>
+        <span className="block text-[10px] uppercase tracking-wider font-bold text-gray-400">
+          Amenities
+        </span>
         <div className="space-y-1">
           {amenityOptions.map((option) => (
             <label

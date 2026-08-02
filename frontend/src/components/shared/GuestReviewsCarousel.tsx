@@ -1,7 +1,15 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Star, ShieldCheck, ChevronLeft, ChevronRight, ThumbsUp, X, MessageSquareQuote, Sparkles } from 'lucide-react';
-import { VerifiedBadge } from './VerifiedBadge';
+import React, { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Star,
+  ShieldCheck,
+  ChevronLeft,
+  ChevronRight,
+  ThumbsUp,
+  X,
+  MessageSquareQuote,
+} from "lucide-react";
+import { VerifiedBadge } from "./VerifiedBadge";
 
 interface ReviewItem {
   _id: string;
@@ -26,11 +34,16 @@ interface GuestReviewsCarouselProps {
   ashramName?: string;
 }
 
-export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({ reviews, ashramName }) => {
+export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
+  reviews,
+  ashramName,
+}) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
-  const [helpfulClicks, setHelpfulClicks] = useState<Record<string, number>>({});
+  const [helpfulClicks, setHelpfulClicks] = useState<Record<string, number>>(
+    {},
+  );
   const touchStartX = useRef<number>(0);
 
   // Responsive cards per view: 1 mobile, 2 tablet, 3 desktop
@@ -47,14 +60,18 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({ revi
       }
     };
     updateItemsPerPage();
-    window.addEventListener('resize', updateItemsPerPage);
-    return () => window.removeEventListener('resize', updateItemsPerPage);
+    window.addEventListener("resize", updateItemsPerPage);
+    return () => window.removeEventListener("resize", updateItemsPerPage);
   }, []);
 
   // Calculate Average Rating
-  const averageRating = reviews.length > 0
-    ? (reviews.reduce((acc, r) => acc + (r.rating?.overall || 5), 0) / reviews.length).toFixed(1)
-    : '4.8';
+  const averageRating =
+    reviews.length > 0
+      ? (
+          reviews.reduce((acc, r) => acc + (r.rating?.overall || 5), 0) /
+          reviews.length
+        ).toFixed(1)
+      : "4.8";
 
   const totalPages = Math.ceil(reviews.length / itemsPerPage);
 
@@ -96,10 +113,10 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({ revi
 
   // Helper for formatted date
   const formatReviewDate = (dateStr?: string) => {
-    if (!dateStr) return 'Stayed in July 2026';
+    if (!dateStr) return "Stayed in July 2026";
     const date = new Date(dateStr);
-    if (isNaN(date.getTime())) return 'Stayed recently';
-    return `Stayed in ${date.toLocaleString('en-IN', { month: 'long', year: 'numeric' })}`;
+    if (isNaN(date.getTime())) return "Stayed recently";
+    return `Stayed in ${date.toLocaleString("en-IN", { month: "long", year: "numeric" })}`;
   };
 
   // Compute slice of reviews to display in current window
@@ -119,15 +136,19 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({ revi
     return (
       <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-4 shadow-sm text-left">
         <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white flex items-center gap-2 border-b border-gray-50 dark:border-slate-850 pb-3">
-          <Star size={18} className="text-[#0A4DA6] fill-[#0A4DA6]" /> Guest Reviews (0)
+          <Star size={18} className="text-[#0A4DA6] fill-[#0A4DA6]" /> Guest
+          Reviews (0)
         </h3>
-        <p className="text-xs text-gray-400 italic">No reviews posted yet for this ashram stay. Be the first to share your spiritual experience!</p>
+        <p className="text-xs text-gray-400 italic">
+          No reviews posted yet for this ashram stay. Be the first to share your
+          spiritual experience!
+        </p>
       </div>
     );
   }
 
   return (
-    <div 
+    <div
       className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-6 shadow-sm text-left relative overflow-hidden"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -137,12 +158,18 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({ revi
         <div>
           <div className="flex items-center gap-2">
             <h3 className="text-base sm:text-lg font-black text-[#0B192C] dark:text-white flex items-center gap-2">
-              <MessageSquareQuote size={20} className="text-[#0A4DA6]" /> Guest Reviews ({reviews.length})
+              <MessageSquareQuote size={20} className="text-[#0A4DA6]" /> Guest
+              Reviews ({reviews.length})
             </h3>
-            <VerifiedBadge isVerified={true} text="Verified Pilgrims" size="sm" />
+            <VerifiedBadge
+              isVerified={true}
+              text="Verified Pilgrims"
+              size="sm"
+            />
           </div>
           <p className="text-xs text-gray-400 font-semibold mt-0.5">
-            Authentic experiences shared by devotees and pilgrims who stayed at {ashramName || 'this Ashram'}.
+            Authentic experiences shared by devotees and pilgrims who stayed at{" "}
+            {ashramName || "this Ashram"}.
           </p>
         </div>
 
@@ -150,17 +177,22 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({ revi
         <div className="flex items-center gap-3 shrink-0 bg-gray-50 dark:bg-slate-900 px-4 py-2 rounded-2xl border border-gray-150 dark:border-slate-800">
           <div className="flex items-center gap-1">
             {[1, 2, 3, 4, 5].map((star) => (
-              <Star key={star} size={14} className="fill-[#D4AF37] text-[#D4AF37]" />
+              <Star
+                key={star}
+                size={14}
+                className="fill-[#D4AF37] text-[#D4AF37]"
+              />
             ))}
           </div>
           <div className="text-xs font-black text-[#0B192C] dark:text-white tabular-nums">
-            {averageRating} <span className="text-gray-400 text-[10px] font-normal">/ 5</span>
+            {averageRating}{" "}
+            <span className="text-gray-400 text-[10px] font-normal">/ 5</span>
           </div>
         </div>
       </div>
 
       {/* Carousel Container */}
-      <div 
+      <div
         className="relative"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
@@ -168,10 +200,14 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({ revi
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 min-h-[220px]">
           <AnimatePresence mode="popLayout">
             {visibleReviews.map((rev, idx) => {
-              const reviewerName = rev.customerId?.name || 'Verified Pilgrim';
-              const avatarUrl = rev.customerId?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(reviewerName)}&background=0A4DA6&color=fff&bold=true`;
+              const reviewerName = rev.customerId?.name || "Verified Pilgrim";
+              const avatarUrl =
+                rev.customerId?.avatar ||
+                `https://ui-avatars.com/api/?name=${encodeURIComponent(reviewerName)}&background=0A4DA6&color=fff&bold=true`;
               const ratingVal = rev.rating?.overall || 5;
-              const helpfulVal = helpfulClicks[rev._id] ?? (rev.helpfulCount || Math.floor(Math.random() * 8) + 3);
+              const helpfulVal =
+                helpfulClicks[rev._id] ??
+                (rev.helpfulCount || Math.floor(Math.random() * 8) + 3);
 
               return (
                 <motion.div
@@ -207,7 +243,10 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({ revi
 
                       {/* Rating Stars */}
                       <div className="flex items-center gap-0.5 bg-white dark:bg-slate-850 px-2 py-1 rounded-full border border-gray-150 dark:border-slate-800 shadow-2xs shrink-0">
-                        <Star size={11} className="fill-[#D4AF37] text-[#D4AF37]" />
+                        <Star
+                          size={11}
+                          className="fill-[#D4AF37] text-[#D4AF37]"
+                        />
                         <span className="text-[10px] font-black text-[#0B192C] dark:text-white tabular-nums">
                           {ratingVal}.0
                         </span>
@@ -225,7 +264,9 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({ revi
                     <span>{formatReviewDate(rev.createdAt)}</span>
                     <button
                       type="button"
-                      onClick={() => handleHelpful(rev._id, rev.helpfulCount || 4)}
+                      onClick={() =>
+                        handleHelpful(rev._id, rev.helpfulCount || 4)
+                      }
                       className="flex items-center gap-1 hover:text-[#0A4DA6] transition-colors cursor-pointer"
                     >
                       <ThumbsUp size={11} className="text-[#0A4DA6]" />
@@ -273,9 +314,9 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({ revi
               onClick={() => setCurrentIndex(i)}
               aria-label={`Go to slide ${i + 1}`}
               className={`h-2 rounded-full transition-all cursor-pointer ${
-                i === (currentIndex % reviews.length)
-                  ? 'w-6 bg-[#0A4DA6]'
-                  : 'w-2 bg-gray-200 dark:bg-slate-800 hover:bg-gray-300'
+                i === currentIndex % reviews.length
+                  ? "w-6 bg-[#0A4DA6]"
+                  : "w-2 bg-gray-200 dark:bg-slate-800 hover:bg-gray-300"
               }`}
             />
           ))}
@@ -304,10 +345,12 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({ revi
             <div className="p-6 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-black text-[#0B192C] dark:text-white flex items-center gap-2">
-                  <Star className="text-[#D4AF37] fill-[#D4AF37]" size={20} /> All Guest Reviews ({reviews.length})
+                  <Star className="text-[#D4AF37] fill-[#D4AF37]" size={20} />{" "}
+                  All Guest Reviews ({reviews.length})
                 </h3>
                 <p className="text-xs text-gray-400 font-semibold mt-0.5">
-                  Verified guest ratings and authentic feedback for {ashramName || 'this Ashram'}.
+                  Verified guest ratings and authentic feedback for{" "}
+                  {ashramName || "this Ashram"}.
                 </p>
               </div>
 
@@ -324,8 +367,11 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({ revi
             <div className="p-6 overflow-y-auto space-y-4 flex-1">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {reviews.map((rev, i) => {
-                  const reviewerName = rev.customerId?.name || 'Verified Pilgrim';
-                  const avatarUrl = rev.customerId?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(reviewerName)}&background=0A4DA6&color=fff&bold=true`;
+                  const reviewerName =
+                    rev.customerId?.name || "Verified Pilgrim";
+                  const avatarUrl =
+                    rev.customerId?.avatar ||
+                    `https://ui-avatars.com/api/?name=${encodeURIComponent(reviewerName)}&background=0A4DA6&color=fff&bold=true`;
                   const ratingVal = rev.rating?.overall || 5;
 
                   return (
@@ -345,7 +391,9 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({ revi
                             }}
                           />
                           <div>
-                            <h4 className="text-xs font-black text-[#0B192C] dark:text-white">{reviewerName}</h4>
+                            <h4 className="text-xs font-black text-[#0B192C] dark:text-white">
+                              {reviewerName}
+                            </h4>
                             <span className="text-[9px] font-extrabold text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5">
                               <ShieldCheck size={9} /> Verified Stay
                             </span>
@@ -353,7 +401,11 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({ revi
                         </div>
 
                         <div className="flex items-center gap-0.5 px-2 py-0.5 bg-white dark:bg-slate-800 border border-gray-150 dark:border-slate-700 rounded-full text-[10px] font-extrabold">
-                          <Star size={10} className="fill-[#D4AF37] text-[#D4AF37]" /> {ratingVal} / 5
+                          <Star
+                            size={10}
+                            className="fill-[#D4AF37] text-[#D4AF37]"
+                          />{" "}
+                          {ratingVal} / 5
                         </div>
                       </div>
 

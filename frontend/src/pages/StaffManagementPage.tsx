@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { Users, Plus, X, Trash2, ShieldCheck } from 'lucide-react';
-import { userService, ashramService } from '../services';
-import { getErrorMessage } from '../lib/api';
-import { useNotifications } from '../contexts/NotificationContext';
+import React, { useState, useEffect } from "react";
+import { Users, Plus, X, Trash2, ShieldCheck } from "lucide-react";
+import { userService, ashramService } from "../services";
+import { getErrorMessage } from "../lib/api";
+import { useNotifications } from "../contexts/NotificationContext";
 
 interface Staff {
   _id: string;
@@ -14,12 +14,15 @@ interface Staff {
   employerAshramId?: { _id: string; name: string };
 }
 
-interface AshramOption { _id: string; name: string }
+interface AshramOption {
+  _id: string;
+  name: string;
+}
 
 const ROLE_LABELS: Record<string, string> = {
-  manager: 'Manager',
-  reception: 'Reception',
-  housekeeping: 'Housekeeping',
+  manager: "Manager",
+  reception: "Reception",
+  housekeeping: "Housekeeping",
 };
 
 export const StaffManagementPage: React.FC = () => {
@@ -29,10 +32,15 @@ export const StaffManagementPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [formError, setFormError] = useState('');
+  const [formError, setFormError] = useState("");
 
   const [form, setForm] = useState({
-    name: '', email: '', phone: '', password: '', role: 'reception', ashramId: '',
+    name: "",
+    email: "",
+    phone: "",
+    password: "",
+    role: "reception",
+    ashramId: "",
   });
 
   useEffect(() => {
@@ -54,7 +62,11 @@ export const StaffManagementPage: React.FC = () => {
         }
       }
     } catch (err) {
-      addNotification('Load Failed', getErrorMessage(err, 'Could not load staff.'), 'error');
+      addNotification(
+        "Load Failed",
+        getErrorMessage(err, "Could not load staff."),
+        "error",
+      );
     } finally {
       setLoading(false);
     }
@@ -62,18 +74,29 @@ export const StaffManagementPage: React.FC = () => {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    setFormError('');
+    setFormError("");
     setSubmitting(true);
     try {
       const res = await userService.createStaff(form);
       if (res.data.success) {
         setShowCreate(false);
-        setForm({ name: '', email: '', phone: '', password: '', role: 'reception', ashramId: ashrams[0]?._id || '' });
-        addNotification('Staff Added', `${res.data.data.name} can now log in with the ${ROLE_LABELS[res.data.data.role]} portal.`, 'success');
+        setForm({
+          name: "",
+          email: "",
+          phone: "",
+          password: "",
+          role: "reception",
+          ashramId: ashrams[0]?._id || "",
+        });
+        addNotification(
+          "Staff Added",
+          `${res.data.data.name} can now log in with the ${ROLE_LABELS[res.data.data.role]} portal.`,
+          "success",
+        );
         fetchData();
       }
     } catch (err) {
-      setFormError(getErrorMessage(err, 'Could not create staff account.'));
+      setFormError(getErrorMessage(err, "Could not create staff account."));
     } finally {
       setSubmitting(false);
     }
@@ -83,11 +106,19 @@ export const StaffManagementPage: React.FC = () => {
     try {
       const res = await userService.removeStaff(id);
       if (res.data.success) {
-        addNotification('Staff Deactivated', 'The staff member can no longer sign in.', 'info');
+        addNotification(
+          "Staff Deactivated",
+          "The staff member can no longer sign in.",
+          "info",
+        );
         fetchData();
       }
     } catch (err) {
-      addNotification('Action Failed', getErrorMessage(err, 'Could not deactivate staff.'), 'error');
+      addNotification(
+        "Action Failed",
+        getErrorMessage(err, "Could not deactivate staff."),
+        "error",
+      );
     }
   };
 
@@ -95,13 +126,24 @@ export const StaffManagementPage: React.FC = () => {
 
   return (
     <div className="space-y-6 text-left">
-      <div className="flex justify-between items-center bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[24px] shadow-sm">
-        <div>
-          <h2 className="text-base font-extrabold text-[#0B192C] dark:text-white flex items-center gap-2"><Users size={18} className="text-[#0A4DA6]" /> Staff Management</h2>
-          <p className="text-xs text-gray-400 font-semibold mt-1">Create reception, housekeeping, and manager accounts tied to your ashrams.</p>
+      {/* Wraps on phones: the title block plus the action button cannot share
+          a 320px row, and without flex-wrap the button is squeezed until its
+          label clips. shrink-0 keeps it from being compressed once wrapped. */}
+      <div className="flex flex-wrap justify-between items-start sm:items-center gap-3 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-4 sm:p-6 rounded-[24px] shadow-sm">
+        <div className="min-w-0">
+          <h2 className="text-base font-extrabold text-[#0B192C] dark:text-white flex items-center gap-2">
+            <Users size={18} className="text-[#0A4DA6]" /> Staff Management
+          </h2>
+          <p className="text-xs text-gray-400 font-semibold mt-1">
+            Create reception, housekeeping, and manager accounts tied to your
+            ashrams.
+          </p>
         </div>
         {ashrams.length > 0 && (
-          <button onClick={() => setShowCreate(true)} className="px-5 py-2.5 bg-[#0A4DA6] text-white text-xs font-bold rounded-full hover:bg-opacity-95 shadow flex items-center gap-1.5 cursor-pointer">
+          <button
+            onClick={() => setShowCreate(true)}
+            className="shrink-0 px-5 py-2.5 bg-[#0A4DA6] text-white text-xs font-bold rounded-full hover:bg-opacity-95 shadow flex items-center gap-1.5 cursor-pointer"
+          >
             <Plus size={14} /> Add Staff
           </button>
         )}
@@ -112,8 +154,13 @@ export const StaffManagementPage: React.FC = () => {
       ) : staff.length === 0 ? (
         <div className="text-center py-20 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] space-y-3">
           <ShieldCheck className="mx-auto text-gray-300" size={32} />
-          <h4 className="font-extrabold text-base text-[#0B192C] dark:text-white">No staff yet</h4>
-          <p className="text-xs text-gray-400 max-w-sm mx-auto">Add reception or housekeeping staff so they can run the front desk and room board for your ashram.</p>
+          <h4 className="font-extrabold text-base text-[#0B192C] dark:text-white">
+            No staff yet
+          </h4>
+          <p className="text-xs text-gray-400 max-w-sm mx-auto">
+            Add reception or housekeeping staff so they can run the front desk
+            and room board for your ashram.
+          </p>
         </div>
       ) : (
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] shadow-sm overflow-hidden">
@@ -131,15 +178,43 @@ export const StaffManagementPage: React.FC = () => {
               </thead>
               <tbody>
                 {staff.map((s) => (
-                  <tr key={s._id} className="border-b border-gray-50 dark:border-slate-850 hover:bg-gray-50/20">
-                    <td className="py-4 px-6 font-bold text-[#0B192C] dark:text-white">{s.name}</td>
-                    <td className="py-4 px-6 text-gray-500"><div className="flex flex-col"><span>{s.email}</span><span className="text-[10px] text-gray-400">{s.phone}</span></div></td>
-                    <td className="py-4 px-6"><span className="px-2.5 py-0.5 bg-[#0A4DA6]/10 text-[#0A4DA6] rounded-full text-[9px] font-bold uppercase">{ROLE_LABELS[s.role] || s.role}</span></td>
-                    <td className="py-4 px-6 text-gray-500">{s.employerAshramId?.name || '—'}</td>
-                    <td className="py-4 px-6"><span className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold ${s.status === 'active' ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'}`}>{s.status}</span></td>
+                  <tr
+                    key={s._id}
+                    className="border-b border-gray-50 dark:border-slate-850 hover:bg-gray-50/20"
+                  >
+                    <td className="py-4 px-6 font-bold text-[#0B192C] dark:text-white">
+                      {s.name}
+                    </td>
+                    <td className="py-4 px-6 text-gray-500">
+                      <div className="flex flex-col">
+                        <span>{s.email}</span>
+                        <span className="text-[10px] text-gray-400">
+                          {s.phone}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="py-4 px-6">
+                      <span className="px-2.5 py-0.5 bg-[#0A4DA6]/10 text-[#0A4DA6] rounded-full text-[9px] font-bold uppercase">
+                        {ROLE_LABELS[s.role] || s.role}
+                      </span>
+                    </td>
+                    <td className="py-4 px-6 text-gray-500">
+                      {s.employerAshramId?.name || "—"}
+                    </td>
+                    <td className="py-4 px-6">
+                      <span
+                        className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold ${s.status === "active" ? "bg-success/10 text-success" : "bg-danger/10 text-danger"}`}
+                      >
+                        {s.status}
+                      </span>
+                    </td>
                     <td className="py-4 px-6 text-right">
-                      {s.status === 'active' && (
-                        <button onClick={() => handleRemove(s._id)} className="p-1.5 rounded-lg text-danger hover:bg-danger/10 transition-colors cursor-pointer" title="Deactivate">
+                      {s.status === "active" && (
+                        <button
+                          onClick={() => handleRemove(s._id)}
+                          className="p-1.5 rounded-lg text-danger hover:bg-danger/10 transition-colors cursor-pointer"
+                          title="Deactivate"
+                        >
                           <Trash2 size={15} />
                         </button>
                       )}
@@ -154,33 +229,91 @@ export const StaffManagementPage: React.FC = () => {
 
       {showCreate && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <form onSubmit={handleCreate} className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-md w-full rounded-[28px] p-6 space-y-4 max-h-[88vh] overflow-y-auto">
+          <form
+            onSubmit={handleCreate}
+            className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-md w-full rounded-[28px] p-6 space-y-4 max-h-[88vh] overflow-y-auto"
+          >
             <div className="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-3">
-              <h3 className="font-bold text-sm text-[#0B192C] dark:text-white flex items-center gap-1.5"><Users size={16} className="text-[#0A4DA6]" /> Add Staff Member</h3>
-              <button type="button" onClick={() => setShowCreate(false)} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+              <h3 className="font-bold text-sm text-[#0B192C] dark:text-white flex items-center gap-1.5">
+                <Users size={16} className="text-[#0A4DA6]" /> Add Staff Member
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowCreate(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X size={18} />
+              </button>
             </div>
 
-            {formError && <div className="p-3 bg-danger/10 text-danger border border-danger/20 text-xs rounded-xl font-semibold">{formError}</div>}
+            {formError && (
+              <div className="p-3 bg-danger/10 text-danger border border-danger/20 text-xs rounded-xl font-semibold">
+                {formError}
+              </div>
+            )}
 
             <div className="space-y-3">
-              <input required placeholder="Full name" value={form.name} onChange={(e) => set('name', e.target.value)} className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none" />
-              <input required type="email" placeholder="Email address" value={form.email} onChange={(e) => set('email', e.target.value)} className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none" />
-              <input required placeholder="Phone number" value={form.phone} onChange={(e) => set('phone', e.target.value)} className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none" />
-              <input required type="password" minLength={6} placeholder="Temporary password (min 6 chars)" value={form.password} onChange={(e) => set('password', e.target.value)} className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none" />
+              <input
+                required
+                placeholder="Full name"
+                value={form.name}
+                onChange={(e) => set("name", e.target.value)}
+                className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none"
+              />
+              <input
+                required
+                type="email"
+                placeholder="Email address"
+                value={form.email}
+                onChange={(e) => set("email", e.target.value)}
+                className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none"
+              />
+              <input
+                required
+                placeholder="Phone number"
+                value={form.phone}
+                onChange={(e) => set("phone", e.target.value)}
+                className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none"
+              />
+              <input
+                required
+                type="password"
+                minLength={6}
+                placeholder="Temporary password (min 6 chars)"
+                value={form.password}
+                onChange={(e) => set("password", e.target.value)}
+                className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none"
+              />
               <div className="grid grid-cols-2 gap-3">
-                <select value={form.role} onChange={(e) => set('role', e.target.value)} className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none">
+                <select
+                  value={form.role}
+                  onChange={(e) => set("role", e.target.value)}
+                  className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none"
+                >
                   <option value="reception">Reception</option>
                   <option value="housekeeping">Housekeeping</option>
                   <option value="manager">Manager</option>
                 </select>
-                <select value={form.ashramId} onChange={(e) => set('ashramId', e.target.value)} className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none">
-                  {ashrams.map((a) => <option key={a._id} value={a._id}>{a.name}</option>)}
+                <select
+                  value={form.ashramId}
+                  onChange={(e) => set("ashramId", e.target.value)}
+                  className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none"
+                >
+                  {ashrams.map((a) => (
+                    <option key={a._id} value={a._id}>
+                      {a.name}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
 
-            <button type="submit" disabled={submitting} className="w-full py-3 bg-[#0A4DA6] text-white rounded-full font-extrabold text-xs shadow-md cursor-pointer disabled:opacity-60">
-              {submitting ? 'Creating…' : 'Create Staff Account'}
+            <button
+              type="submit"
+              disabled={submitting}
+              className="w-full py-3 bg-[#0A4DA6] text-white rounded-full font-extrabold text-xs shadow-md cursor-pointer disabled:opacity-60"
+            >
+              {submitting ? "Creating…" : "Create Staff Account"}
             </button>
           </form>
         </div>

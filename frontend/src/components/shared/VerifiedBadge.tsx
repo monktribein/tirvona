@@ -1,8 +1,8 @@
-import React from 'react';
+import React from "react";
 
 export interface VerifiedBadgeProps {
   isVerified?: boolean;
-  size?: 'sm' | 'md' | 'lg';
+  size?: "sm" | "md" | "lg";
   className?: string;
   tooltipText?: string;
   // Kept for prop interface backward compatibility
@@ -12,16 +12,16 @@ export interface VerifiedBadgeProps {
 
 export const VerifiedBadge: React.FC<VerifiedBadgeProps> = ({
   isVerified = true,
-  size = 'md',
-  className = '',
-  tooltipText = 'Verified by Tirvona',
+  size = "md",
+  className = "",
+  tooltipText = "Verified by Tirvona",
 }) => {
   if (!isVerified) return null;
 
   const heightClasses = {
-    sm: 'h-6',
-    md: 'h-8',
-    lg: 'h-10',
+    sm: "h-6",
+    md: "h-8",
+    lg: "h-10",
   };
 
   return (

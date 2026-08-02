@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import React, { useEffect, useMemo, useState } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import {
   Car,
   User,
@@ -10,21 +10,26 @@ import {
   ShieldCheck,
   Clock,
   CreditCard,
-  ChevronLeft,
   CheckCircle2,
-} from 'lucide-react';
-import { getErrorMessage } from '../../../lib/api';
-import { useAuth } from '../../../contexts/AuthContext';
-import { openRazorpayCheckout } from '../../../lib/razorpay';
-import { parkingDiscoveryService, parkingBookingService } from '../services/parking.service';
-import type { ParkingQuote, ParkingVehicleTypeCode } from '../types/parking.types';
+} from "lucide-react";
+import { getErrorMessage } from "../../../lib/api";
+import { useAuth } from "../../../contexts/AuthContext";
+import { openRazorpayCheckout } from "../../../lib/razorpay";
+import {
+  parkingDiscoveryService,
+  parkingBookingService,
+} from "../services/parking.service";
+import type {
+  ParkingQuote,
+  ParkingVehicleTypeCode,
+} from "../types/parking.types";
 import {
   formatCurrency,
   formatDateTime,
   vehicleLabel,
   normalizeVehicleNumber,
   isValidVehicleNumber,
-} from '../utils/parkingFormat';
+} from "../utils/parkingFormat";
 
 /**
  * Parking checkout.
@@ -40,34 +45,37 @@ export const ParkingCheckoutPage: React.FC = () => {
 
   const params = useMemo(
     () => ({
-      locationId: searchParams.get('locationId') || '',
-      slotTypeId: searchParams.get('slotTypeId') || '',
-      vehicleType: (searchParams.get('vehicleType') || 'car') as ParkingVehicleTypeCode,
-      entryAt: searchParams.get('entryAt') || '',
-      exitAt: searchParams.get('exitAt') || '',
+      locationId: searchParams.get("locationId") || "",
+      slotTypeId: searchParams.get("slotTypeId") || "",
+      vehicleType: (searchParams.get("vehicleType") ||
+        "car") as ParkingVehicleTypeCode,
+      entryAt: searchParams.get("entryAt") || "",
+      exitAt: searchParams.get("exitAt") || "",
     }),
     [searchParams],
   );
 
   const [quote, setQuote] = useState<ParkingQuote | null>(null);
-  const [locationName, setLocationName] = useState('');
+  const [locationName, setLocationName] = useState("");
 
-  const [vehicleNumber, setVehicleNumber] = useState('');
-  const [vehicleModel, setVehicleModel] = useState('');
-  const [driverName, setDriverName] = useState(user?.name || '');
-  const [driverPhone, setDriverPhone] = useState(user?.phone || '');
+  const [vehicleNumber, setVehicleNumber] = useState("");
+  const [vehicleModel, setVehicleModel] = useState("");
+  const [driverName, setDriverName] = useState(user?.name || "");
+  const [driverPhone, setDriverPhone] = useState(user?.phone || "");
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
-  const [fieldError, setFieldError] = useState('');
+  const [error, setError] = useState("");
+  const [fieldError, setFieldError] = useState("");
 
   // Fetch the authoritative quote for this exact selection.
   useEffect(() => {
     let cancelled = false;
     (async () => {
       if (!params.locationId || !params.slotTypeId) {
-        setError('This booking link is incomplete. Please choose your parking again.');
+        setError(
+          "This booking link is incomplete. Please choose your parking again.",
+        );
         setLoading(false);
         return;
       }
@@ -86,7 +94,8 @@ export const ParkingCheckoutPage: React.FC = () => {
         if (quoteRes.data?.success) setQuote(quoteRes.data.data);
         if (detailRes.data?.success) setLocationName(detailRes.data.data.name);
       } catch (err) {
-        if (!cancelled) setError(getErrorMessage(err, 'Could not price this booking.'));
+        if (!cancelled)
+          setError(getErrorMessage(err, "Could not price this booking."));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -98,14 +107,14 @@ export const ParkingCheckoutPage: React.FC = () => {
 
   const validate = () => {
     if (!isValidVehicleNumber(vehicleNumber)) {
-      setFieldError('Enter a valid registration number, e.g. MH12AB1234');
+      setFieldError("Enter a valid registration number, e.g. MH12AB1234");
       return false;
     }
     if (!driverName.trim()) {
-      setFieldError('Driver name is required.');
+      setFieldError("Driver name is required.");
       return false;
     }
-    setFieldError('');
+    setFieldError("");
     return true;
   };
 
@@ -121,7 +130,7 @@ export const ParkingCheckoutPage: React.FC = () => {
     if (!validate() || submitting) return;
 
     setSubmitting(true);
-    setError('');
+    setError("");
 
     try {
       const createRes = await parkingBookingService.create({
@@ -137,21 +146,22 @@ export const ParkingCheckoutPage: React.FC = () => {
       });
 
       if (!createRes.data?.success) {
-        setError(createRes.data?.message || 'Could not hold a bay.');
+        setError(createRes.data?.message || "Could not hold a bay.");
         setSubmitting(false);
         return;
       }
 
       const bookingId = createRes.data.data.booking._id;
 
-      const orderRes = await parkingBookingService.createPaymentOrder(bookingId);
+      const orderRes =
+        await parkingBookingService.createPaymentOrder(bookingId);
       if (!orderRes.data?.success) {
-        setError(orderRes.data?.message || 'Could not start the payment.');
+        setError(orderRes.data?.message || "Could not start the payment.");
         setSubmitting(false);
         return;
       }
 
-      let paymentPayload: Record<string, string> = { method: 'demo' };
+      let paymentPayload: Record<string, string> = { method: "demo" };
 
       // Demo mode (no gateway keys configured) skips the checkout modal, exactly
       // as the stay booking flow does.
@@ -168,16 +178,21 @@ export const ParkingCheckoutPage: React.FC = () => {
         };
       }
 
-      const confirmRes = await parkingBookingService.confirmPayment(bookingId, paymentPayload);
+      const confirmRes = await parkingBookingService.confirmPayment(
+        bookingId,
+        paymentPayload,
+      );
       if (!confirmRes.data?.success) {
-        setError(confirmRes.data?.message || 'Payment could not be confirmed.');
+        setError(confirmRes.data?.message || "Payment could not be confirmed.");
         setSubmitting(false);
         return;
       }
 
       navigate(`/parking/booking/${bookingId}?justBooked=1`, { replace: true });
     } catch (err) {
-      setError(getErrorMessage(err, 'Something went wrong completing your booking.'));
+      setError(
+        getErrorMessage(err, "Something went wrong completing your booking."),
+      );
       setSubmitting(false);
     }
   };
@@ -194,11 +209,14 @@ export const ParkingCheckoutPage: React.FC = () => {
   return (
     <div className="pb-16 lg:pb-24 pt-8 sm:pt-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-5">
-
         <header className="space-y-1">
-          <h1 className="text-xl sm:text-2xl font-black text-[#0B192C] dark:text-white">Confirm your parking</h1>
+          <h1 className="text-xl sm:text-2xl font-black text-[#0B192C] dark:text-white">
+            Confirm your parking
+          </h1>
           <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-            {locationName && <span className="font-bold">{locationName} · </span>}
+            {locationName && (
+              <span className="font-bold">{locationName} · </span>
+            )}
             {quote?.slotTypeName}
           </p>
         </header>
@@ -234,7 +252,7 @@ export const ParkingCheckoutPage: React.FC = () => {
                     value={vehicleNumber}
                     onChange={(e) => {
                       setVehicleNumber(e.target.value.toUpperCase());
-                      setFieldError('');
+                      setFieldError("");
                     }}
                     placeholder="MH12AB1234"
                     autoComplete="off"
@@ -253,7 +271,10 @@ export const ParkingCheckoutPage: React.FC = () => {
                     htmlFor="vehicle-model"
                     className="block text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-1.5"
                   >
-                    Make &amp; Model <span className="text-gray-300 normal-case tracking-normal">(optional)</span>
+                    Make &amp; Model{" "}
+                    <span className="text-gray-300 normal-case tracking-normal">
+                      (optional)
+                    </span>
                   </label>
                   <input
                     id="vehicle-model"
@@ -327,7 +348,8 @@ export const ParkingCheckoutPage: React.FC = () => {
               ) : (
                 <>
                   <CreditCard size={16} className="stroke-[2.5]" />
-                  Pay {quote ? formatCurrency(quote.totalAmount) : ''} &amp; Confirm
+                  Pay {quote ? formatCurrency(quote.totalAmount) : ""} &amp;
+                  Confirm
                 </>
               )}
             </button>
@@ -345,19 +367,28 @@ export const ParkingCheckoutPage: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               className="lg:sticky lg:top-24 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 space-y-4 shadow-lg"
             >
-              <h2 className="font-extrabold text-sm text-[#0B192C] dark:text-white">Booking summary</h2>
+              <h2 className="font-extrabold text-sm text-[#0B192C] dark:text-white">
+                Booking summary
+              </h2>
 
               <dl className="space-y-2.5">
                 {[
-                  ['Parking', locationName || '—'],
-                  ['Area', quote?.slotTypeName || '—'],
-                  ['Vehicle', vehicleLabel(params.vehicleType)],
-                  ['Entry', formatDateTime(params.entryAt)],
-                  ['Exit', formatDateTime(params.exitAt)],
+                  ["Parking", locationName || "—"],
+                  ["Area", quote?.slotTypeName || "—"],
+                  ["Vehicle", vehicleLabel(params.vehicleType)],
+                  ["Entry", formatDateTime(params.entryAt)],
+                  ["Exit", formatDateTime(params.exitAt)],
                 ].map(([label, value]) => (
-                  <div key={label} className="flex justify-between gap-3 text-[11px]">
-                    <dt className="font-bold text-gray-400 shrink-0">{label}</dt>
-                    <dd className="font-bold text-slate-700 dark:text-gray-200 text-right">{value}</dd>
+                  <div
+                    key={label}
+                    className="flex justify-between gap-3 text-[11px]"
+                  >
+                    <dt className="font-bold text-gray-400 shrink-0">
+                      {label}
+                    </dt>
+                    <dd className="font-bold text-slate-700 dark:text-gray-200 text-right">
+                      {value}
+                    </dd>
                   </div>
                 ))}
               </dl>
@@ -366,18 +397,27 @@ export const ParkingCheckoutPage: React.FC = () => {
                 <div className="pt-3 space-y-1.5">
                   <div className="inline-flex items-center gap-1.5 text-[10px] font-bold text-gray-400 mb-1">
                     <Clock size={11} className="stroke-[2.5]" />
-                    {quote.durationHours} hour{quote.durationHours === 1 ? '' : 's'} billed
+                    {quote.durationHours} hour
+                    {quote.durationHours === 1 ? "" : "s"} billed
                   </div>
 
                   {quote.baseFee > 0 && (
                     <div className="flex justify-between text-[11px] font-semibold">
-                      <span className="text-gray-500 dark:text-gray-400">Base fee</span>
-                      <span className="text-slate-700 dark:text-gray-200">{formatCurrency(quote.baseFee)}</span>
+                      <span className="text-gray-500 dark:text-gray-400">
+                        Base fee
+                      </span>
+                      <span className="text-slate-700 dark:text-gray-200">
+                        {formatCurrency(quote.baseFee)}
+                      </span>
                     </div>
                   )}
                   <div className="flex justify-between text-[11px] font-semibold">
-                    <span className="text-gray-500 dark:text-gray-400">Parking charges</span>
-                    <span className="text-slate-700 dark:text-gray-200">{formatCurrency(quote.durationAmount)}</span>
+                    <span className="text-gray-500 dark:text-gray-400">
+                      Parking charges
+                    </span>
+                    <span className="text-slate-700 dark:text-gray-200">
+                      {formatCurrency(quote.durationAmount)}
+                    </span>
                   </div>
                   {quote.isPeak && (
                     <div className="flex justify-between text-[10px] font-bold text-amber-700 dark:text-amber-300">
@@ -386,12 +426,18 @@ export const ParkingCheckoutPage: React.FC = () => {
                     </div>
                   )}
                   <div className="flex justify-between text-[11px] font-semibold">
-                    <span className="text-gray-500 dark:text-gray-400">GST ({quote.taxPercent}%)</span>
-                    <span className="text-slate-700 dark:text-gray-200">{formatCurrency(quote.taxAmount)}</span>
+                    <span className="text-gray-500 dark:text-gray-400">
+                      GST ({quote.taxPercent}%)
+                    </span>
+                    <span className="text-slate-700 dark:text-gray-200">
+                      {formatCurrency(quote.taxAmount)}
+                    </span>
                   </div>
 
                   <div className="flex justify-between items-center pt-2.5 mt-1.5">
-                    <span className="text-xs font-black text-[#0B192C] dark:text-white">Total payable</span>
+                    <span className="text-xs font-black text-[#0B192C] dark:text-white">
+                      Total payable
+                    </span>
                     <span className="text-lg font-black text-[#0A4DA6] dark:text-blue-300">
                       {formatCurrency(quote.totalAmount)}
                     </span>
@@ -401,15 +447,18 @@ export const ParkingCheckoutPage: React.FC = () => {
 
               <ul className="space-y-1.5 pt-1">
                 {[
-                  'QR pass issued the moment payment clears',
-                  'Bay assigned automatically at the gate',
-                  'Free cancellation within the policy window',
+                  "QR pass issued the moment payment clears",
+                  "Bay assigned automatically at the gate",
+                  "Free cancellation within the policy window",
                 ].map((point) => (
                   <li
                     key={point}
                     className="flex items-start gap-1.5 text-[10px] font-semibold text-gray-500 dark:text-gray-400"
                   >
-                    <CheckCircle2 size={11} className="text-emerald-500 shrink-0 mt-0.5 stroke-[2.5]" />
+                    <CheckCircle2
+                      size={11}
+                      className="text-emerald-500 shrink-0 mt-0.5 stroke-[2.5]"
+                    />
                     {point}
                   </li>
                 ))}

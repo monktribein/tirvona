@@ -8,7 +8,7 @@
 ## 📂 Project Structure
 
 The project is structured as a monorepo containing two main modules:
-*   **`/backend`**: Express REST API & Socket.io server integrated with MongoDB Atlas using Mongoose.
+*   **`/Newbackend`**: NestJS REST API and Socket.IO server integrated with MongoDB Atlas using Mongoose.
 *   **`/frontend`**: React 19 SPA styled with TailwindCSS v4 and Framer Motion for smooth micro-animations.
 
 ---
@@ -23,7 +23,7 @@ The project is structured as a monorepo containing two main modules:
 *   **Routing**: React Router DOM (v7)
 
 ### Backend
-*   **Core**: Node.js, Express, ES Modules
+*   **Core**: Node.js, NestJS, TypeScript
 *   **Real-time Update**: Socket.io (live booking lifecycle events to customer & owner)
 *   **Database**: MongoDB Atlas via Mongoose
 *   **Authentication**: JWT (JSON Web Tokens), bcryptjs
@@ -66,29 +66,28 @@ cd tirvona
 ### 2. Backend Setup
 1.  Navigate to the backend directory:
     ```bash
-    cd backend
+    cd Newbackend
     ```
 2.  Install dependencies:
     ```bash
-    npm install
+    npm ci
     ```
-3.  Configure environment variables. Copy `backend/.env.example` to `backend/.env` and fill in real values:
+3.  Configure environment variables. Copy `Newbackend/.env.example` to `Newbackend/.env` and fill in real values:
     ```env
     PORT=5000
     NODE_ENV=development
     MONGODB_URI="your_mongodb_atlas_connection_string"
+    MONGODB_DB_NAME="tirvona"
+    REDIS_URL="your_redis_connection_string"
     JWT_SECRET="a_long_random_secret"   # generate: node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
     JWT_EXPIRES_IN="30d"
-    CLIENT_URL="http://localhost:5173"  # comma-separated list of allowed frontend origins
+    CLIENT_URL="http://localhost:5173"
+    CORS_ORIGINS="http://localhost:5173" # comma-separated allowed origins
     ```
     > **Security:** The server refuses to boot in production if `MONGODB_URI` or `JWT_SECRET` are missing, and never falls back to a hardcoded secret. Use a dedicated least-privilege DB user and rotate any credential that has ever been shared or committed.
-4.  Seed the database with default demo data:
+4.  Start the development server:
     ```bash
-    node src/scripts/seed.js
-    ```
-5.  Start the development server:
-    ```bash
-    npm run dev
+    npm run start:dev
     ```
 
 ### 3. Frontend Setup
@@ -98,7 +97,7 @@ cd tirvona
     ```
 2.  Install dependencies:
     ```bash
-    npm install
+    npm ci
     ```
 3.  Start the dev server:
     ```bash
