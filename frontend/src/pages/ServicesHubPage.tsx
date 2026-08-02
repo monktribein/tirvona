@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Car,
   Users,
@@ -24,6 +24,13 @@ import {
 } from "../services/service.service";
 import { useNotifications } from "../contexts/NotificationContext";
 import { useMemory } from "../contexts/UserMemoryContext";
+import { useAuth } from "../contexts/AuthContext";
+import {
+  clearGuestPendingIntent,
+  currentReturnUrl,
+  getGuestPendingIntent,
+  setGuestPendingIntent,
+} from "../utils/guestGate";
 import {
   EnterpriseModal,
   EnterpriseButton,
@@ -33,6 +40,8 @@ import {
 
 export const ServicesHubPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const { addNotification } = useNotifications();
   const { updateMemoryCategory } = useMemory();
 
@@ -89,6 +98,42 @@ export const ServicesHubPage: React.FC = () => {
   useEffect(() => {
     fetchServices();
   }, [selectedCategory, selectedCity, pureVegOnly, govtVerifiedOnly, sortBy]);
+
+  useEffect(() => {
+    if (!user || services.length === 0) return;
+    const intent = getGuestPendingIntent();
+    if (intent?.type !== "service_booking" || !intent.data) return;
+    const service = services.find(
+      (item) => item._id === String(intent.data?.serviceId ?? ""),
+    );
+    if (!service) return;
+    setSelectedService(service);
+    setBookingDate(String(intent.data.bookingDate ?? ""));
+    setBookingTime(String(intent.data.bookingTime ?? "10:00 AM"));
+    setGuestsCount(Number(intent.data.guestsCount ?? 1));
+    setSpecialNotes(String(intent.data.specialNotes ?? ""));
+    clearGuestPendingIntent();
+  }, [services, user]);
+
+  useEffect(() => {
+    const preserveOpenBooking = () => {
+      if (!selectedService) return;
+      setGuestPendingIntent({
+        type: "service_booking",
+        returnUrl: currentReturnUrl(),
+        data: {
+          serviceId: selectedService._id,
+          bookingDate,
+          bookingTime,
+          guestsCount,
+          specialNotes,
+        },
+      });
+    };
+    window.addEventListener("tirvona:unauthorized", preserveOpenBooking);
+    return () =>
+      window.removeEventListener("tirvona:unauthorized", preserveOpenBooking);
+  }, [bookingDate, bookingTime, guestsCount, selectedService, specialNotes]);
 
   const fetchServices = async () => {
     setLoading(true);
@@ -159,13 +204,30 @@ export const ServicesHubPage: React.FC = () => {
     e.preventDefault();
     if (!selectedService) return;
 
+    if (!user) {
+      const returnUrl = currentReturnUrl();
+      setGuestPendingIntent({
+        type: "service_booking",
+        returnUrl,
+        data: {
+          serviceId: selectedService._id,
+          bookingDate,
+          bookingTime,
+          guestsCount,
+          specialNotes,
+        },
+      });
+      navigate(`/login?redirect=${encodeURIComponent(returnUrl)}`);
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const totalAmt = (selectedService.pricing.amount || 500) * guestsCount;
       const res = await serviceEcosystemService.book({
         serviceId: selectedService._id,
-        customerName: "Sacred Pilgrim",
-        customerPhone: "9876543210",
+        customerName: user.name,
+        customerPhone: user.phone,
         bookingDate: bookingDate || new Date().toISOString(),
         bookingTime,
         guestsCount,

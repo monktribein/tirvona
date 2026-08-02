@@ -125,7 +125,7 @@ export const ParkingQrTicket: React.FC<ParkingQrTicketProps> = ({
           </div>
           <div className="col-span-2">
             <dt className="text-[9px] uppercase tracking-wider font-bold text-gray-400">
-              Entry
+              Selected check-in
             </dt>
             <dd className="text-[11px] font-bold text-slate-700 dark:text-gray-200">
               {formatDateTime(booking.entryAt)}
@@ -133,7 +133,7 @@ export const ParkingQrTicket: React.FC<ParkingQrTicketProps> = ({
           </div>
           <div className="col-span-2">
             <dt className="text-[9px] uppercase tracking-wider font-bold text-gray-400">
-              Exit
+              Selected check-out
             </dt>
             <dd className="text-[11px] font-bold text-slate-700 dark:text-gray-200">
               {formatDateTime(booking.exitAt)}

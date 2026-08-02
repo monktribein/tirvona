@@ -88,7 +88,11 @@ export const ParkingCheckoutPage: React.FC = () => {
             entryAt: params.entryAt,
             exitAt: params.exitAt,
           }),
-          parkingDiscoveryService.getDetail(params.locationId),
+          parkingDiscoveryService.getDetail(params.locationId, {
+            entryAt: params.entryAt,
+            exitAt: params.exitAt,
+            vehicleType: params.vehicleType,
+          }),
         ]);
         if (cancelled) return;
         if (quoteRes.data?.success) setQuote(quoteRes.data.data);

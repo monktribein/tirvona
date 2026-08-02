@@ -16,11 +16,19 @@ import {
   Flame,
 } from "lucide-react";
 import { useNotifications } from "../contexts/NotificationContext";
+import { useAuth } from "../contexts/AuthContext";
+import {
+  clearGuestPendingIntent,
+  currentReturnUrl,
+  getGuestPendingIntent,
+  setGuestPendingIntent,
+} from "../utils/guestGate";
 
 export const MarketplaceCategoryDetailPage: React.FC = () => {
   const { slug } = useParams();
   const { addNotification } = useNotifications();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [categoryData, setCategoryData] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
@@ -49,12 +57,38 @@ export const MarketplaceCategoryDetailPage: React.FC = () => {
   };
 
   const handleAddToCart = (product: any) => {
+    if (!user) {
+      const returnUrl = currentReturnUrl();
+      setGuestPendingIntent({
+        type: "marketplace_cart",
+        returnUrl,
+        data: {
+          productId: product._id,
+          productName: product.productName,
+        },
+      });
+      navigate(`/login?redirect=${encodeURIComponent(returnUrl)}`);
+      return;
+    }
     addNotification(
       "Added to Cart!",
       `"${product.productName}" added to your sacred cart.`,
       "success",
     );
   };
+
+  useEffect(() => {
+    if (!user || !categoryData) return;
+    const intent = getGuestPendingIntent();
+    if (intent?.type !== "marketplace_cart" || !intent.data) return;
+    const productName = String(intent.data.productName ?? "Selected product");
+    addNotification(
+      "Selection Restored",
+      `“${productName}” is ready in your sacred cart flow.`,
+      "success",
+    );
+    clearGuestPendingIntent();
+  }, [addNotification, categoryData, user]);
 
   if (loading) {
     return (

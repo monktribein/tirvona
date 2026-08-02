@@ -26,12 +26,13 @@ import {
 } from "../services/volunteer.service";
 import { useNotifications } from "../contexts/NotificationContext";
 import { useAuth } from "../contexts/AuthContext";
-import { setGuestPendingIntent } from "../utils/guestGate";
-import { useProfileAutoFill } from "../hooks/useProfileAutoFill";
 import {
-  EnterpriseModal,
-  EnterpriseButton,
-} from "../admin/shared";
+  clearGuestPendingIntent,
+  getGuestPendingIntent,
+  setGuestPendingIntent,
+} from "../utils/guestGate";
+import { useProfileAutoFill } from "../hooks/useProfileAutoFill";
+import { EnterpriseModal, EnterpriseButton } from "../admin/shared";
 
 export const VolunteerJobDetailPage: React.FC = () => {
   const { jobId } = useParams<{ jobId: string }>();
@@ -109,9 +110,92 @@ export const VolunteerJobDetailPage: React.FC = () => {
     setIsApplyModalOpen(true);
   };
 
+  useEffect(() => {
+    if (!user || !job) return;
+    const intent = getGuestPendingIntent();
+    if (
+      intent?.type !== "volunteer_apply" ||
+      String(intent.data?.jobId ?? "") !== job._id
+    )
+      return;
+    const data = intent.data ?? {};
+    if (data.applicantName) setApplicantName(String(data.applicantName));
+    if (data.email) setEmail(String(data.email));
+    if (data.phone) setPhone(String(data.phone));
+    if (data.city) setCity(String(data.city));
+    if (data.education) setEducation(String(data.education));
+    if (data.skills) setSkills(String(data.skills));
+    if (data.languages) setLanguages(String(data.languages));
+    if (data.availability) setAvailability(String(data.availability));
+    if (data.motivation) setMotivation(String(data.motivation));
+    setIsApplyModalOpen(true);
+    clearGuestPendingIntent();
+  }, [job, user]);
+
+  useEffect(() => {
+    const preserveOpenApplication = () => {
+      if (!job || !isApplyModalOpen) return;
+      setGuestPendingIntent({
+        type: "volunteer_apply",
+        returnUrl: `/volunteer/${job._id}`,
+        data: {
+          jobId: job._id,
+          applicantName,
+          email,
+          phone,
+          city,
+          education,
+          skills,
+          languages,
+          availability,
+          motivation,
+        },
+      });
+    };
+    window.addEventListener("tirvona:unauthorized", preserveOpenApplication);
+    return () =>
+      window.removeEventListener(
+        "tirvona:unauthorized",
+        preserveOpenApplication,
+      );
+  }, [
+    applicantName,
+    availability,
+    city,
+    education,
+    email,
+    isApplyModalOpen,
+    job,
+    languages,
+    motivation,
+    phone,
+    skills,
+  ]);
+
   const handleApplySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!job) return;
+    if (!user) {
+      const targetUrl = `/volunteer/${job._id}`;
+      setGuestPendingIntent({
+        type: "volunteer_apply",
+        returnUrl: targetUrl,
+        data: {
+          jobId: job._id,
+          applicantName,
+          email,
+          phone,
+          city,
+          education,
+          skills,
+          languages,
+          availability,
+          motivation,
+        },
+      });
+      navigate(`/login?redirect=${encodeURIComponent(targetUrl)}`);
+      return;
+    }
     setIsSubmitting(true);
     try {
       const res = await volunteerService.applyJob({

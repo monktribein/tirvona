@@ -295,10 +295,20 @@ export const ParkingBookingDetailPage: React.FC = () => {
                     "Vehicle",
                     `${booking.vehicleNumber} · ${vehicleLabel(booking.vehicleType)}`,
                   ],
-                  ["Entry", formatDateTime(booking.entryAt)],
-                  ["Exit", formatDateTime(booking.exitAt)],
-                  ["Checked in", formatDateTime(booking.checkedInAt)],
-                  ["Checked out", formatDateTime(booking.checkedOutAt)],
+                  ["Selected check-in", formatDateTime(booking.entryAt)],
+                  ["Selected check-out", formatDateTime(booking.exitAt)],
+                  [
+                    "Actual check-in",
+                    booking.checkedInAt
+                      ? formatDateTime(booking.checkedInAt)
+                      : "Pending gate scan",
+                  ],
+                  [
+                    "Actual check-out",
+                    booking.checkedOutAt
+                      ? formatDateTime(booking.checkedOutAt)
+                      : "Pending gate scan",
+                  ],
                   ["Bay", booking.assignedSlotNumber || "Assigned on arrival"],
                   [
                     "Actual stay",

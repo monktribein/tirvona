@@ -15,6 +15,7 @@ import { BookingSearchProvider } from "./contexts/BookingSearchContext";
 import PublicLayout from "./layouts/PublicLayout";
 import DashboardLayout from "./layouts/DashboardLayout";
 import PageLoader from "./components/PageLoader";
+import AuthReturnRestorer from "./components/AuthReturnRestorer";
 
 // Pages (lazy — code-split so each route loads its own chunk)
 const HomePage = lazy(() => import("./pages/HomePage"));
@@ -232,6 +233,7 @@ const AppContent: React.FC = () => {
   return (
     <BrowserRouter>
       <ScrollToTop />
+      <AuthReturnRestorer />
       <Suspense fallback={<PageLoader />}>
         <Routes>
           {/* Public Routes */}

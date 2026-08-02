@@ -5,7 +5,7 @@ import {
 } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import type { Model } from "mongoose";
-import { eachNight } from "../domain/booking.utils";
+import { eachNight, resolveBookingAddon } from "../domain/booking.utils";
 import type { CreateBookingDto } from "../presentation/dtos/booking.dto";
 
 @Injectable()
@@ -18,6 +18,7 @@ export class BookingPricingService {
     @InjectModel("BookingCoupon") private readonly coupons: Model<any>,
     @InjectModel("BookingPolicy") private readonly policies: Model<any>,
     @InjectModel("PlatformSettings") private readonly settings: Model<any>,
+    @InjectModel("Ashram") private readonly ashrams: Model<any>,
   ) {}
 
   async quote(dto: CreateBookingDto): Promise<any> {
@@ -47,7 +48,7 @@ export class BookingPricingService {
       throw new BadRequestException(
         "Guest count exceeds the selected room capacity",
       );
-    const [availability, rules, addonRows, policy, settings] =
+    const [availability, rules, addonRows, policy, settings, ashram] =
       await Promise.all([
         this.inventory.find({ roomId: room._id, date: { $in: dates } }).lean(),
         this.pricingRules
@@ -70,6 +71,14 @@ export class BookingPricingService {
           .sort({ scope: 1 })
           .lean(),
         this.settings.findOne({ key: "main" }).lean(),
+        this.ashrams
+          .findOne({
+            _id: dto.ashramId,
+            status: "approved",
+            deletedAt: null,
+          })
+          .select("addOnServices")
+          .lean(),
       ]);
     const byDate = new Map(
       availability.map((row: any) => [
@@ -103,8 +112,10 @@ export class BookingPricingService {
       ? dto.services!.selectedAddOns
       : [];
     for (const item of requested) {
-      const addon = addonRows.find(
-        (row: any) => String(row._id) === String(item.serviceId ?? item._id),
+      const addon = resolveBookingAddon(
+        addonRows,
+        Array.isArray(ashram?.addOnServices) ? ashram.addOnServices : [],
+        item.serviceId ?? item._id,
       );
       if (!addon)
         throw new BadRequestException("A selected add-on is unavailable");

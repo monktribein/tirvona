@@ -172,10 +172,23 @@ export class AshramsService {
       .findOne({ _id: id, status: "approved", deletedAt: null })
       .lean();
     if (!ashram) throw new NotFoundException("Ashram not found");
-    const rooms = await this.rooms
-      .find({ ashramId: id, status: "active", deletedAt: null })
-      .lean();
-    return { ashram, rooms };
+    const [rooms, managedAddOns] = await Promise.all([
+      this.rooms
+        .find({ ashramId: id, status: "active", deletedAt: null })
+        .lean(),
+      this.addons.find({ ashramId: id, enabled: true }).lean(),
+    ]);
+    return {
+      ashram: {
+        ...ashram,
+        // New owner-managed records are authoritative. Embedded records remain
+        // available for ashrams created before the catalog was introduced.
+        addOnServices: managedAddOns.length
+          ? managedAddOns
+          : (ashram.addOnServices ?? []),
+      },
+      rooms,
+    };
   }
 
   async managedDetail(user: AuthenticatedUser, id: string): Promise<any> {

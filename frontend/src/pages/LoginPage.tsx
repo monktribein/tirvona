@@ -21,9 +21,7 @@ import {
 } from "lucide-react";
 import { authService } from "../services";
 import { getErrorMessage } from "../lib/api";
-import {
-  getPostLoginRedirect,
-} from "../utils/roleRedirect";
+import { getPostLoginRedirect } from "../utils/roleRedirect";
 
 // Small multicolor Google mark (lucide has no brand logos).
 const GoogleIcon: React.FC = () => (
@@ -71,9 +69,13 @@ export const LoginPage: React.FC = () => {
     null,
   );
 
-  const google = useGoogleAuth((userArg) => {
-    const target = getPostLoginRedirect(userArg?.role);
+  const goAfterAuthentication = (role?: string) => {
+    const target = getPostLoginRedirect(role, redirect);
     navigate(target.url, { replace: true });
+  };
+
+  const google = useGoogleAuth((userArg) => {
+    goAfterAuthentication(userArg?.role);
   });
 
   const handleGoogle = async () => {
@@ -96,8 +98,7 @@ export const LoginPage: React.FC = () => {
         setLoginChallenge(res.challenge);
         return;
       }
-      const target = getPostLoginRedirect(res.user?.role);
-      navigate(target.url, { replace: true });
+      goAfterAuthentication(res.user?.role);
     } else {
       if (res.isSuspended && res.suspensionData) {
         setSuspensionInfo(res.suspensionData);
@@ -170,8 +171,7 @@ export const LoginPage: React.FC = () => {
     const res = await loginOTP(phone, otpCode);
     setLoading(false);
     if (res.success) {
-      const target = getPostLoginRedirect(user?.role);
-      navigate(target.url, { replace: true });
+      goAfterAuthentication(user?.role);
     } else {
       setError(res.message || "Invalid OTP");
     }
@@ -331,11 +331,7 @@ export const LoginPage: React.FC = () => {
                   return res;
                 }}
                 onCancel={() => setLoginChallenge(null)}
-                onVerified={() =>
-                  navigate(getPostLoginRedirect(user?.role).url, {
-                    replace: true,
-                  })
-                }
+                onVerified={() => goAfterAuthentication(user?.role)}
               />
             ) : (
               <>
@@ -711,9 +707,7 @@ export const LoginPage: React.FC = () => {
           email={google.email}
           suggestedName={google.suggestedName}
           onSubmit={google.completeProfile}
-          onDone={() =>
-            navigate(getPostLoginRedirect(user?.role).url, { replace: true })
-          }
+          onDone={() => goAfterAuthentication(user?.role)}
           onCancel={google.reset}
         />
       )}

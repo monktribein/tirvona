@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { getErrorMessage } from "../../../lib/api";
 import { useAuth } from "../../../contexts/AuthContext";
+import { setGuestPendingIntent } from "../../../utils/guestGate";
 import { parkingDiscoveryService } from "../services/parking.service";
 import type {
   ParkingLocationDetail,
@@ -226,9 +227,12 @@ export const ParkingDetailPage: React.FC = () => {
     // Send an unauthenticated visitor to log in first, then straight back here —
     // the same pattern the stay booking flow uses.
     if (!user) {
-      navigate(
-        `/login?redirect=${encodeURIComponent(`/parking/checkout?${params.toString()}`)}`,
-      );
+      const returnUrl = `/parking/checkout?${params.toString()}`;
+      setGuestPendingIntent({
+        type: "parking_booking",
+        returnUrl,
+      });
+      navigate(`/login?redirect=${encodeURIComponent(returnUrl)}`);
       return;
     }
     navigate(`/parking/checkout?${params.toString()}`);
