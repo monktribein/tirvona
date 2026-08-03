@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { analyticsService, bookingService, approvalService } from "../services";
 import api, { getErrorMessage } from "../lib/api";
+import { RecordFieldList } from "../admin/shared/components/RecordValue";
 import { useNotifications } from "../contexts/NotificationContext";
 import {
   TrendingUp,
@@ -378,13 +379,11 @@ export const OwnerDashboard: React.FC = () => {
                     <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider block">
                       Current Live Version (Old)
                     </span>
-                    <pre className="text-[11px] text-gray-600 dark:text-gray-400 font-mono whitespace-pre-wrap overflow-x-auto max-h-24">
-                      {JSON.stringify(
-                        req.oldValue || { note: "Default system content" },
-                        null,
-                        2,
-                      )}
-                    </pre>
+                    <RecordFieldList
+                      data={req.oldValue}
+                      emptyLabel="Default system content"
+                      className="text-[11px] text-gray-600 dark:text-gray-400 overflow-y-auto max-h-32"
+                    />
                   </div>
 
                   {/* New Proposed Value */}
@@ -412,9 +411,11 @@ export const OwnerDashboard: React.FC = () => {
                       </div>
                     )}
 
-                    <pre className="text-[11px] text-emerald-900 dark:text-emerald-200 font-mono whitespace-pre-wrap overflow-x-auto max-h-24">
-                      {JSON.stringify(req.newValue, null, 2)}
-                    </pre>
+                    <RecordFieldList
+                      data={req.newValue}
+                      emptyLabel="No changes proposed"
+                      className="text-[11px] text-emerald-900 dark:text-emerald-200 overflow-y-auto max-h-32"
+                    />
                   </div>
                 </div>
 

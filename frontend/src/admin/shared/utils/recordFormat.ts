@@ -1,0 +1,93 @@
+/**
+ * Formatting helpers for record values coming back from the API.
+ *
+ * Admin records hold nested objects (address, contact, rating), arrays, ISO
+ * dates and booleans. Printing those with JSON.stringify or String() shows the
+ * reader raw JSON or "[object Object]", so detail views, table cells and
+ * exports all format through here.
+ */
+
+const ACRONYMS: Record<string, string> = {
+  id: "ID",
+  ids: "IDs",
+  url: "URL",
+  urls: "URLs",
+  api: "API",
+  gst: "GST",
+  pan: "PAN",
+  kyc: "KYC",
+  otp: "OTP",
+  qr: "QR",
+  sms: "SMS",
+  ac: "AC",
+  cms: "CMS",
+  seo: "SEO",
+  faq: "FAQ",
+  html: "HTML",
+  pin: "PIN",
+};
+
+/** "ownerId" / "owner_id" / "address.city" -> "Owner ID" / "Address › City" */
+export const humanizeKey = (key: string): string =>
+  key
+    .replace(/\./g, " › ")
+    .replace(/_/g, " ")
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .split(" ")
+    .filter(Boolean)
+    .map((word) =>
+      word === "›"
+        ? word
+        : (ACRONYMS[word.toLowerCase()] ??
+          word.charAt(0).toUpperCase() + word.slice(1)),
+    )
+    .join(" ");
+
+export const ISO_DATE = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}|$)/;
+export const URL_LIKE = /^https?:\/\//i;
+
+export const isEmptyValue = (value: unknown): boolean =>
+  value === null ||
+  value === undefined ||
+  (typeof value === "string" && value.trim() === "");
+
+/** Single-line text for one scalar. */
+export const formatScalar = (value: unknown): string => {
+  if (isEmptyValue(value)) return "—";
+  if (typeof value === "boolean") return value ? "Yes" : "No";
+  if (typeof value === "number") return value.toLocaleString();
+  if (value instanceof Date) return value.toLocaleString();
+  if (typeof value === "string" && ISO_DATE.test(value)) {
+    const parsed = new Date(value);
+    if (!Number.isNaN(parsed.getTime())) return parsed.toLocaleString();
+  }
+  return String(value);
+};
+
+/**
+ * Compact one-line summary — for table cells and CSV export, where a nested
+ * block would break the row. Objects collapse to their most name-like field.
+ */
+export const formatInline = (value: unknown): string => {
+  if (isEmptyValue(value)) return "—";
+  if (Array.isArray(value)) {
+    if (!value.length) return "—";
+    return value.every((item) => item === null || typeof item !== "object")
+      ? value.map(formatScalar).join(", ")
+      : `${value.length} items`;
+  }
+  if (typeof value === "object" && !(value instanceof Date)) {
+    const record = value as Record<string, unknown>;
+    for (const key of ["name", "title", "label", "city", "average", "url"])
+      if (!isEmptyValue(record[key])) return formatScalar(record[key]);
+    const entries = Object.entries(record).filter(
+      ([, item]) => !isEmptyValue(item),
+    );
+    if (!entries.length) return "—";
+    return entries
+      .slice(0, 3)
+      .map(([key, item]) => `${humanizeKey(key)}: ${formatScalar(item)}`)
+      .join(" · ");
+  }
+  return formatScalar(value);
+};
