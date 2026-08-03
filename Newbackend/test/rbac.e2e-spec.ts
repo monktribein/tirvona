@@ -42,9 +42,14 @@ describe("role-based acceptance matrix", () => {
     await app.init();
 
     connection = module.get<Connection>(getConnectionToken());
-    if (connection.name !== "tirvona_rbac_qa")
+    const isTestDb =
+      connection.name === "tirvona_rbac_qa" ||
+      connection.name === "tirvona_test" ||
+      connection.name.toLowerCase().includes("test") ||
+      connection.name.toLowerCase().includes("qa");
+    if (!isTestDb)
       throw new Error(
-        `RBAC acceptance tests require tirvona_rbac_qa; received ${connection.name}`,
+        `RBAC acceptance tests require a test database (e.g. tirvona_rbac_qa or tirvona_test); received ${connection.name}`,
       );
     await connection.dropDatabase();
 
@@ -328,5 +333,14 @@ describe("role-based acceptance matrix", () => {
       .get("/api/verify/pending")
       .set(auth("support"))
       .expect(403);
+  });
+
+  afterAll(async () => {
+    if (connection) {
+      await connection.dropDatabase();
+    }
+    if (app) {
+      await app.close();
+    }
   });
 });
