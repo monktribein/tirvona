@@ -1,7 +1,11 @@
 import "reflect-metadata";
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
-import { AshramQueryDto } from "../../../ashrams/presentation/dtos/ashram.dto";
+import {
+  AshramQueryDto,
+  UpdateAddOnDto,
+  UpdateAshramDto,
+} from "../../../ashrams/presentation/dtos/ashram.dto";
 import { RegisterDto } from "../../../auth/presentation/dtos/auth.dto";
 import { USER_ROLES } from "../../../users/infrastructure/persistence/user.schema";
 import {
@@ -83,6 +87,42 @@ describe("legacy frontend DTO contracts", () => {
     expect(
       await validate(dto, { whitelist: true, forbidNonWhitelisted: true }),
     ).toHaveLength(0);
+  });
+  it("accepts the partial ashram edit sent by ManageAshramsPage", async () => {
+    // That screen edits only the profile fields it shows; address, contact,
+    // and trust stay untouched and are not resubmitted.
+    const dto = plainToInstance(UpdateAshramDto, {
+      name: "Shanti Ashram",
+      description: "A calm riverside ashram",
+      history: "Founded in 1954",
+      rules: ["No smoking", "Silence after 9pm"],
+      amenities: ["AC", "River View"],
+      images: ["https://cdn.example.com/a.jpg"],
+    });
+    expect(
+      await validate(dto, { whitelist: true, forbidNonWhitelisted: true }),
+    ).toHaveLength(0);
+  });
+  it("strips the server fields the add-on editor round-trips", async () => {
+    // OwnerAddOnsPage seeds its form with the loaded record, so the save still
+    // carries _id/ashramId/timestamps.
+    const dto = plainToInstance(UpdateAddOnDto, {
+      _id: "507f1f77bcf86cd799439011",
+      ashramId: "507f1f77bcf86cd799439012",
+      createdAt: "2026-01-01T00:00:00.000Z",
+      name: "Morning Prasad",
+      price: "150",
+      unit: "per_person",
+      unitLabel: "Person",
+      maxQuantity: 4,
+      enabled: true,
+    });
+    expect(await validate(dto, { whitelist: true })).toHaveLength(0);
+    expect(dto.price).toBe(150);
+  });
+  it("accepts the enable toggle the add-on list sends on its own", async () => {
+    const dto = plainToInstance(UpdateAddOnDto, { enabled: false });
+    expect(await validate(dto, { whitelist: true })).toHaveLength(0);
   });
   it("requires identity details when registering an owner", async () => {
     const dto = plainToInstance(RegisterDto, {

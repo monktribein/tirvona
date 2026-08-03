@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
@@ -9,14 +10,38 @@ import { InjectModel } from "@nestjs/mongoose";
 import type { Model } from "mongoose";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import type {
+  AshramDocumentsDto,
   AshramQueryDto,
   CreateRoomDto,
   RoomAvailabilityDto,
+  SaveAddOnDto,
   SaveAshramDto,
+  UpdateAddOnDto,
 } from "../presentation/dtos/ashram.dto";
 
 const escapeRegex = (value: string): string =>
   value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/**
+ * Inline base64 media belongs to no listing. One such image makes its ashram
+ * roughly twenty times larger than the rest and pushes a listing query past
+ * the client's request timeout, so media references must be links.
+ */
+const assertNoInlineMedia = (dto: {
+  images?: string[];
+  documents?: Record<string, any>;
+}): void => {
+  const isInline = (value: unknown): boolean =>
+    typeof value === "string" && value.trim().toLowerCase().startsWith("data:");
+  if ((dto.images ?? []).some(isInline))
+    throw new BadRequestException(
+      "Images must be uploaded first and referenced by URL, not embedded in the request",
+    );
+  if (Object.values(dto.documents ?? {}).some(isInline))
+    throw new BadRequestException(
+      "Documents must be uploaded first and referenced by URL, not embedded in the request",
+    );
+};
 
 const slugify = (value: string): string =>
   value
@@ -231,6 +256,30 @@ export class AshramsService {
     return { ashram: ashram.toObject(), rooms };
   }
 
+  /**
+   * Every ashram the caller may operate on. Staff reach ashrams through either
+   * `scopedAshramIds` or the single `employerAshramId`, so both are honoured —
+   * the same pair `assertScope` accepts on a write.
+   */
+  async listForUser(user: AuthenticatedUser): Promise<any[]> {
+    if (user.role === "super_admin")
+      return this.ashrams.find({ deletedAt: null }).sort({ createdAt: -1 });
+    if (user.role === "owner")
+      return this.ashrams
+        .find({ ownerId: user.id, deletedAt: null })
+        .sort({ createdAt: -1 });
+    const ids = [
+      ...new Set([
+        ...(user.scopedAshramIds ?? []),
+        ...(user.employerAshramId ? [user.employerAshramId] : []),
+      ]),
+    ];
+    if (!ids.length) return [];
+    return this.ashrams
+      .find({ _id: { $in: ids }, deletedAt: null })
+      .sort({ createdAt: -1 });
+  }
+
   assertScope(user: AuthenticatedUser, ashram: any): void {
     if (!ashram) throw new NotFoundException("Ashram not found");
     if (user.role === "super_admin") return;
@@ -244,6 +293,7 @@ export class AshramsService {
   }
 
   async create(user: AuthenticatedUser, dto: SaveAshramDto): Promise<any> {
+    assertNoInlineMedia(dto);
     const { rooms = [], ...payload } = dto;
     const legalIdentifiers = [
       ["trust.trustRegNo", payload.trust?.trustRegNo],
@@ -303,6 +353,7 @@ export class AshramsService {
     id: string,
     dto: Partial<SaveAshramDto>,
   ): Promise<any> {
+    assertNoInlineMedia(dto);
     const ashram = await this.ashrams.findById(id);
     if (!ashram) throw new NotFoundException("Ashram not found");
     this.assertScope(user, ashram);
@@ -328,6 +379,87 @@ export class AshramsService {
     Object.assign(ashram, payload, { updatedBy: user.id });
     await ashram.save();
     return ashram;
+  }
+
+  /**
+   * Storing KYC documents also re-opens a rejected application: the government
+   * queue only lists `pending_docs` / `pending_inspection`, so without this a
+   * rejected ashram could never be reviewed again.
+   */
+  async saveDocuments(
+    user: AuthenticatedUser,
+    id: string,
+    body: AshramDocumentsDto,
+  ): Promise<{ documents: any; status: string; reopened: boolean }> {
+    assertNoInlineMedia({ documents: body });
+    const ashram = await this.ashrams.findOne({ _id: id, deletedAt: null });
+    if (!ashram) throw new NotFoundException("Ashram not found");
+    this.assertScope(user, ashram);
+    ashram.documents = {
+      ...(ashram.documents?.toObject?.() ?? ashram.documents ?? {}),
+      ...body,
+    };
+    const reopened = ashram.status === "rejected";
+    if (reopened) {
+      ashram.status = "pending_docs";
+      ashram.rejectionReason = "";
+    }
+    ashram.updatedBy = user.id;
+    await ashram.save();
+    return { documents: ashram.documents, status: ashram.status, reopened };
+  }
+
+  listAddOns(ashramId: string): Promise<any[]> {
+    return this.addons.find({ ashramId }).sort({ createdAt: 1 }).lean();
+  }
+
+  private async assertAddOnScope(
+    user: AuthenticatedUser,
+    ashramId: string,
+  ): Promise<void> {
+    const ashram = await this.ashrams.findOne({
+      _id: ashramId,
+      deletedAt: null,
+    });
+    this.assertScope(user, ashram);
+  }
+
+  async createAddOn(
+    user: AuthenticatedUser,
+    ashramId: string,
+    body: SaveAddOnDto,
+  ): Promise<any[]> {
+    await this.assertAddOnScope(user, ashramId);
+    await this.addons.create({ ...body, ashramId, createdBy: user.id });
+    return this.listAddOns(ashramId);
+  }
+
+  async updateAddOn(
+    user: AuthenticatedUser,
+    ashramId: string,
+    addonId: string,
+    body: UpdateAddOnDto,
+  ): Promise<any[]> {
+    await this.assertAddOnScope(user, ashramId);
+    const updated = await this.addons.findOneAndUpdate(
+      { _id: addonId, ashramId },
+      { $set: body },
+      { new: true },
+    );
+    if (!updated) throw new NotFoundException("Add-on service not found");
+    return this.listAddOns(ashramId);
+  }
+
+  async deleteAddOn(
+    user: AuthenticatedUser,
+    ashramId: string,
+    addonId: string,
+  ): Promise<any[]> {
+    await this.assertAddOnScope(user, ashramId);
+    const removed = await this.addons.deleteOne({ _id: addonId, ashramId });
+    if (!removed.deletedCount)
+      throw new NotFoundException("Add-on service not found");
+    return this.listAddOns(ashramId);
   }
 
   async createRoom(user: AuthenticatedUser, dto: CreateRoomDto): Promise<any> {

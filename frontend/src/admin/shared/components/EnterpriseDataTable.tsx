@@ -22,6 +22,8 @@ import {
   ToggleRight,
   Sparkles,
 } from "lucide-react";
+import { RecordValue } from "./RecordValue";
+import { formatInline, humanizeKey } from "../utils/recordFormat";
 
 export interface TableColumn {
   key: string;
@@ -127,7 +129,9 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
     const headers = columns.map((c) => c.label).join(",");
     const rows = filteredData.map((row) =>
       keys
-        .map((k) => `"${String(row[k] ?? "").replace(/"/g, '""')}"`)
+        // formatInline keeps nested values readable; String() would export
+        // "[object Object]" for address, contact, rating and friends.
+        .map((k) => `"${formatInline(row[k]).replace(/"/g, '""')}"`)
         .join(","),
     );
     const csvContent =
@@ -390,7 +394,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                           >
                             {col.render
                               ? col.render(item[col.key], item)
-                              : String(item[col.key] ?? "—")}
+                              : formatInline(item[col.key])}
                           </td>
                         ))}
                         <td className="py-3.5 px-4">
@@ -592,22 +596,22 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
             {/* Tab Content */}
             <div className="space-y-4 max-h-[360px] overflow-y-auto pr-1">
               {activeTab === "overview" && (
-                <div className="grid grid-cols-2 gap-4 text-xs">
-                  {Object.entries(detailItem).map(([k, v]) => (
-                    <div
-                      key={k}
-                      className="p-3 bg-gray-50 dark:bg-slate-900 rounded-xl space-y-1"
-                    >
-                      <span className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">
-                        {k}
-                      </span>
-                      <p className="font-semibold text-[#0B192C] dark:text-white break-words">
-                        {typeof v === "object"
-                          ? JSON.stringify(v)
-                          : String(v ?? "—")}
-                      </p>
-                    </div>
-                  ))}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                  {Object.entries(detailItem)
+                    .filter(([k]) => k !== "__v")
+                    .map(([k, v]) => (
+                      <div
+                        key={k}
+                        className="p-3 bg-gray-50 dark:bg-slate-900 rounded-xl space-y-1"
+                      >
+                        <span className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">
+                          {humanizeKey(k)}
+                        </span>
+                        <div className="font-semibold text-[#0B192C] dark:text-white">
+                          <RecordValue value={v} />
+                        </div>
+                      </div>
+                    ))}
                 </div>
               )}
 

@@ -5,6 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
+import { randomUUID } from "node:crypto";
 import { Types } from "mongoose";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import { escapeRegex } from "../../../common/utils/escape-regex";
@@ -12,6 +13,7 @@ import {
   GOVERNANCE_REPOSITORY,
   type GovernanceRepository,
 } from "../domain/governance.repository";
+import { ADMIN_MODULE_KEYS } from "../infrastructure/persistence/governance.schemas";
 import type {
   ApprovalRequestDto,
   BulkNotificationDto,
@@ -39,7 +41,54 @@ export class GovernanceService {
     festivals: "events",
     audit: "reports",
     volunteer_jobs: "volunteer",
+    room_categories: "rooms",
+    service: "service_bookings",
     services: "service_bookings",
+    planner: "circuits",
+    routes: "templates",
+    rituals: "templates",
+  };
+  private readonly adminCollections = new Set(ADMIN_MODULE_KEYS);
+  /**
+   * The console renders a table of scalar columns and edits a handful of
+   * fields, so the listing fetches only those. Everything else stays in the
+   * database — safe, because a save issues a partial $set and leaves untouched
+   * fields alone. Ashram profiles are large enough that sending them whole put
+   * the request past the client's timeout on a slow connection.
+   */
+  private static readonly ADMIN_LIST_PROJECTIONS: Record<string, string> = {
+    Admin_ashrams:
+      "name status isVerified rating slug ashramCode ownerId email phone contact.email contact.phone address.city address.state address.district createdAt updatedAt",
+    Admin_rooms:
+      "name type acType capacity totalInventory basePrice status ashramId createdAt updatedAt",
+    Admin_users:
+      "name email phone role status isVerified district state employerAshramId createdAt updatedAt",
+  };
+  private readonly adminNeutralSubKeys = new Set([
+    "all",
+    "homepage",
+    "hero_slider",
+    "upload",
+    "approval",
+    "amenities",
+    "categories",
+    "facilities",
+    "availability",
+    "pricing",
+    "season_pricing",
+    "inventory",
+  ]);
+  private readonly adminStatusSubKeys: Record<string, string> = {
+    approved: "approved",
+    rejected: "rejected",
+    pending: "pending",
+    confirmed: "confirmed",
+    completed: "completed",
+    cancelled: "cancelled",
+    active: "active",
+    draft: "draft",
+    scheduled: "scheduled",
+    refunds: "pending",
   };
   constructor(
     @Inject(GOVERNANCE_REPOSITORY)
@@ -595,8 +644,7 @@ export class GovernanceService {
     this.assertAdminModuleAccess(user, moduleKey, subKey, false);
     const name = this.adminModel(moduleKey, subKey);
     const filter: Record<string, any> = {};
-    if (moduleKey === "local" && subKey)
-      filter.category = subKey === "restaurants" ? "food" : subKey;
+    this.applyAdminSubKeyFilter(moduleKey, subKey, filter);
     if (query.status && query.status !== "all") filter.status = query.status;
     if (query.search) {
       const term = escapeRegex(query.search.slice(0, 100));
@@ -613,6 +661,9 @@ export class GovernanceService {
       await this.repository.list(name, filter, {
         sort: { createdAt: -1 },
         limit: 100,
+        ...(GovernanceService.ADMIN_LIST_PROJECTIONS[name]
+          ? { select: GovernanceService.ADMIN_LIST_PROJECTIONS[name] }
+          : {}),
       })
     ).map((row) => this.redact(row));
     return { success: true, count: data.length, data };
@@ -625,6 +676,13 @@ export class GovernanceService {
   ): Promise<any> {
     this.assertAdminModuleAccess(user, moduleKey, subKey, true);
     const name = this.adminModel(moduleKey, subKey);
+    if (
+      GovernanceService.ADMIN_STATUS_LOCKED.has(name) &&
+      ("status" in body || "isVerified" in body)
+    )
+      throw new BadRequestException(
+        "A booking's status changes through the payment, check-in, check-out, or cancellation workflow, not this console",
+      );
     const payload = this.cleanAdminPayload(
       body,
       user.role === "super_admin",
@@ -636,26 +694,86 @@ export class GovernanceService {
         : undefined;
     const data = id
       ? await this.repository.update(name, { _id: id }, { $set: payload })
-      : await this.repository.create(name, payload);
+      : await this.repository.create(
+          name,
+          await this.withCreationDefaults(user, name, payload),
+        );
+    if (!data) throw new NotFoundException("Record not found");
     return {
       success: true,
       message: id ? "Record saved successfully" : "Record created successfully",
       data: this.redact(data),
     };
   }
+
+  /**
+   * Ashrams and rooms carry required identity fields that the generic console
+   * form does not collect. Without them a created row is invisible to the
+   * public listing and unusable by the booking engine.
+   */
+  private async withCreationDefaults(
+    user: AuthenticatedUser,
+    model: string,
+    payload: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
+    if (model === "Admin_ashrams") {
+      const suffix = randomUUID().replace(/-/g, "").slice(0, 8).toUpperCase();
+      const name = String(payload.name ?? "").trim();
+      if (!name)
+        throw new BadRequestException("An ashram needs a name to be created");
+      return {
+        ...payload,
+        name,
+        ownerId: payload.ownerId ?? user.id,
+        createdBy: user.id,
+        description:
+          String(payload.description ?? "").trim() ||
+          "Spiritual Ashram lodging & accommodation.",
+        ashramCode: payload.ashramCode ?? `ASH-${suffix}`,
+        slug:
+          payload.slug ??
+          `${
+            name
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, "-")
+              .replace(/(^-|-$)/g, "") || "ashram"
+          }-${suffix.toLowerCase()}`,
+        status: payload.status ?? "pending_docs",
+      };
+    }
+    if (model === "Admin_rooms") {
+      if (!payload.ashramId)
+        throw new BadRequestException(
+          "A room category must be linked to an ashram",
+        );
+      return {
+        ...payload,
+        type: payload.type ?? "private_room",
+        acType: payload.acType ?? "Non-AC",
+        capacity: Number(payload.capacity ?? 1),
+        totalInventory: Number(payload.totalInventory ?? 1),
+        basePrice: Number(payload.basePrice ?? 0),
+        status: payload.status ?? "active",
+      };
+    }
+    return payload;
+  }
   async adminDelete(
     user: AuthenticatedUser,
     moduleKey: string,
     id: string,
+    subKey?: string,
   ): Promise<any> {
-    this.assertAdminModuleAccess(user, moduleKey, undefined, true);
-    const name = this.adminModel(moduleKey);
+    this.assertAdminModuleAccess(user, moduleKey, subKey, true);
+    const name = this.adminModel(moduleKey, subKey);
     if (name === "Admin_users" && user.role !== "super_admin")
       throw new ForbiddenException(
         "Only a Super Admin can delete user accounts",
       );
-    if (Types.ObjectId.isValid(id))
-      await this.repository.remove(name, { _id: id });
+    if (!Types.ObjectId.isValid(id))
+      throw new BadRequestException("Invalid record id");
+    const removed = await this.repository.remove(name, { _id: id });
+    if (!removed) throw new NotFoundException("Record not found");
     return { success: true, message: "Record deleted successfully" };
   }
 
@@ -753,9 +871,94 @@ export class GovernanceService {
       data,
     };
   }
+  private normalizeAdminKey(value?: string): string | undefined {
+    return value?.trim().replace(/-/g, "_");
+  }
+
+  private adminLogicalKey(moduleKey: string, subKey?: string): string {
+    const moduleName = this.normalizeAdminKey(moduleKey) ?? moduleKey;
+    const section = this.normalizeAdminKey(subKey);
+    const moduleLogical = this.adminAliases[moduleName] ?? moduleName;
+    if (moduleName === "local") return "local";
+    if (moduleName === "banner") return "banner";
+    if (moduleName === "ashrams" && section === "room_categories")
+      return "rooms";
+    if (
+      !section ||
+      this.adminNeutralSubKeys.has(section) ||
+      this.adminStatusSubKeys[section]
+    )
+      return moduleLogical;
+    const sectionLogical = this.adminAliases[section] ?? section;
+    // A sub-key only redirects to another collection when one actually exists
+    // for it. Anything else (users/roles, offers/featured, reports/revenue …)
+    // is a view of the module itself, narrowed by applyAdminSubKeyFilter.
+    return this.adminCollections.has(sectionLogical)
+      ? sectionLogical
+      : moduleLogical;
+  }
+
+  private applyAdminSubKeyFilter(
+    moduleKey: string,
+    subKey: string | undefined,
+    filter: Record<string, any>,
+  ): void {
+    const moduleName = this.normalizeAdminKey(moduleKey) ?? moduleKey;
+    const section = this.normalizeAdminKey(subKey);
+    if (!section || section === "all") return;
+    // When the sub-key selected a collection of its own (blogs/authors,
+    // marketplace/orders, reports/bookings …) the data set is already scoped
+    // and narrowing it by the sub-key again would empty the result.
+    if (
+      this.adminLogicalKey(moduleKey, subKey) !==
+      (this.adminAliases[moduleName] ?? moduleName)
+    )
+      return;
+
+    if (moduleName === "local") {
+      filter.category = section === "restaurants" ? "food" : section;
+      return;
+    }
+
+    if (moduleName === "users") {
+      if (section === "pilgrims") filter.role = "customer";
+      else if (section === "owners") filter.role = "owner";
+      else if (section === "staff")
+        filter.role = {
+          $in: ["manager", "reception", "housekeeping", "staff"],
+        };
+      else if (section === "banner_managers") filter.role = "banner_manager";
+      else if (section === "content_managers") filter.role = "content_manager";
+      // `roles` is the whole directory grouped by role in the UI — no filter.
+      return;
+    }
+
+    if (moduleName === "institution" && section === "trusts") {
+      filter.trustType = { $exists: true, $ne: "" };
+      return;
+    }
+
+    if (moduleName === "reports") {
+      // booking_reports rows are typed by what was generated.
+      filter.reportType = { $regex: escapeRegex(section), $options: "i" };
+      return;
+    }
+
+    if (moduleName === "banner" && !this.adminStatusSubKeys[section]) {
+      filter.category = section;
+      return;
+    }
+
+    if (moduleName === "offers" && section === "featured") {
+      filter.featured = true;
+      return;
+    }
+
+    const status = this.adminStatusSubKeys[section];
+    if (status) filter.status = status;
+  }
   private adminModel(moduleKey: string, subKey?: string): string {
-    const requested = moduleKey === "local" ? "local" : subKey || moduleKey;
-    const key = this.adminAliases[requested] ?? requested;
+    const key = this.adminLogicalKey(moduleKey, subKey);
     if (
       [
         "institution",
@@ -771,37 +974,9 @@ export class GovernanceService {
           : key === "institution_locations"
             ? "InstitutionLocation"
             : "InstitutionQualityAudit";
-    const name = `Admin_${key}`;
-    const allowed = new Set([
-      "users",
-      "ashrams",
-      "rooms",
-      "bookings",
-      "offers",
-      "blogs",
-      "authors",
-      "comments",
-      "banner",
-      "marketplace",
-      "categories",
-      "waitlist",
-      "local",
-      "guides",
-      "circuits",
-      "temples",
-      "events",
-      "support",
-      "reports",
-      "volunteer",
-      "volunteer_applications",
-      "reviews",
-      "payments",
-      "service_bookings",
-      "providers",
-    ]);
-    if (!allowed.has(key))
+    if (!this.adminCollections.has(key))
       throw new BadRequestException("Unsupported administration module");
-    return name;
+    return `Admin_${key}`;
   }
 
   private assertAdminModuleAccess(
@@ -812,8 +987,7 @@ export class GovernanceService {
   ): void {
     if (user.role === "super_admin") return;
 
-    const requested = moduleKey === "local" ? "local" : subKey || moduleKey;
-    const key = this.adminAliases[requested] ?? requested;
+    const key = this.adminLogicalKey(moduleKey, subKey);
     const roleModules: Record<string, string[]> = {
       banner_manager: ["banner"],
       content_manager: [
@@ -854,6 +1028,27 @@ export class GovernanceService {
         "This role has read-only access to that module",
       );
   }
+  /**
+   * Booking state drives inventory, payments, and refunds, so it may only move
+   * through the booking workflow endpoints.
+   */
+  private static readonly ADMIN_STATUS_LOCKED = new Set(["Admin_bookings"]);
+  /**
+   * The console's generic active/inactive toggle, mapped onto the ashram
+   * verification lifecycle. Everything else must match the schema enum.
+   */
+  private static readonly ASHRAM_STATUS_ALIASES: Record<string, string> = {
+    active: "approved",
+    inactive: "suspended",
+    verified: "approved",
+    approved: "approved",
+    rejected: "rejected",
+    suspended: "suspended",
+    pending: "pending_docs",
+    pending_docs: "pending_docs",
+    pending_inspection: "pending_inspection",
+  };
+
   private cleanAdminPayload(
     input: Record<string, unknown>,
     superAdmin: boolean,
@@ -874,13 +1069,31 @@ export class GovernanceService {
       "constructor",
       "prototype",
     ]);
+    // Roles and permissions stay a user-module concern regardless of who asks.
     if (!superAdmin || model !== "Admin_users")
-      ["role", "status", "isVerified", "permissions"].forEach((key) =>
-        blocked.add(key),
-      );
-    return Object.fromEntries(
+      ["role", "permissions"].forEach((key) => blocked.add(key));
+    // Moderation flags are a Super Admin lever; other admin roles edit content
+    // only. Modules with their own state machine never accept them here.
+    if (!superAdmin || GovernanceService.ADMIN_STATUS_LOCKED.has(model))
+      ["status", "isVerified"].forEach((key) => blocked.add(key));
+
+    const payload = Object.fromEntries(
       Object.entries(input).filter(([key]) => !blocked.has(key)),
     );
+
+    if (model === "Admin_ashrams" && typeof payload.status === "string") {
+      const mapped =
+        GovernanceService.ASHRAM_STATUS_ALIASES[
+          payload.status.trim().toLowerCase()
+        ];
+      if (!mapped)
+        throw new BadRequestException(
+          "An ashram can only be set to approved, rejected, suspended, pending_docs, or pending_inspection",
+        );
+      payload.status = mapped;
+      delete payload.isVerified;
+    }
+    return payload;
   }
   private redact<T>(value: T): T {
     if (!value || typeof value !== "object") return value;

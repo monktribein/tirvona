@@ -22,35 +22,54 @@ export const ManageRoomsPage: React.FC = () => {
   const [amenities, setAmenities] = useState("Attached Bath, WiFi, Cooler");
 
   useEffect(() => {
-    fetchInitialData();
+    fetchAshrams();
   }, []);
 
-  const fetchInitialData = async () => {
+  // Rooms follow whichever ashram is selected — an owner with several
+  // properties needs to reach all of them, not just the first.
+  useEffect(() => {
+    if (selectedAshramId) fetchRooms(selectedAshramId);
+    else setRooms([]);
+  }, [selectedAshramId]);
+
+  const fetchAshrams = async () => {
     setLoading(true);
     try {
       const ashramsRes = await ashramService.myListings();
       if (ashramsRes.data.success && ashramsRes.data.data.length > 0) {
         setMyAshrams(ashramsRes.data.data);
         setSelectedAshramId(ashramsRes.data.data[0]._id);
-
-        const roomsRes = await ashramService.getManagedById(
-          ashramsRes.data.data[0]._id,
-        );
-        if (roomsRes.data.success) {
-          setRooms(roomsRes.data.data.rooms);
-        }
       } else {
         setMyAshrams([]);
         setRooms([]);
+        setLoading(false);
       }
     } catch (err) {
       console.error("Fetch data error:", err);
       addNotification(
         "Load Failed",
-        getErrorMessage(err, "Unable to load your rooms."),
+        getErrorMessage(err, "Unable to load your ashrams."),
         "error",
       );
       setMyAshrams([]);
+      setRooms([]);
+      setLoading(false);
+    }
+  };
+
+  const fetchRooms = async (ashramId: string) => {
+    setLoading(true);
+    try {
+      const roomsRes = await ashramService.getManagedById(ashramId);
+      if (roomsRes.data.success) setRooms(roomsRes.data.data.rooms || []);
+      else setRooms([]);
+    } catch (err) {
+      console.error("Fetch rooms error:", err);
+      addNotification(
+        "Load Failed",
+        getErrorMessage(err, "Unable to load your rooms."),
+        "error",
+      );
       setRooms([]);
     } finally {
       setLoading(false);
@@ -81,7 +100,7 @@ export const ManageRoomsPage: React.FC = () => {
           "New room configuration saved successfully.",
           "success",
         );
-        fetchInitialData();
+        fetchRooms(selectedAshramId);
       }
     } catch (err) {
       console.error("Room create error:", err);
@@ -106,12 +125,28 @@ export const ManageRoomsPage: React.FC = () => {
           </p>
         </div>
         {myAshrams.length > 0 && (
-          <button
-            onClick={() => setShowCreate(true)}
-            className="shrink-0 px-5 py-2.5 bg-[#0A4DA6] text-white text-xs font-bold rounded-full hover:bg-opacity-95 shadow flex items-center gap-1.5 cursor-pointer"
-          >
-            <Plus size={14} /> Add Room Category
-          </button>
+          <div className="flex flex-wrap items-center gap-3">
+            {myAshrams.length > 1 && (
+              <select
+                value={selectedAshramId}
+                onChange={(e) => setSelectedAshramId(e.target.value)}
+                aria-label="Select ashram"
+                className="px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-full text-xs font-bold focus:outline-none cursor-pointer"
+              >
+                {myAshrams.map((a) => (
+                  <option key={a._id} value={a._id}>
+                    {a.name}
+                  </option>
+                ))}
+              </select>
+            )}
+            <button
+              onClick={() => setShowCreate(true)}
+              className="shrink-0 px-5 py-2.5 bg-[#0A4DA6] text-white text-xs font-bold rounded-full hover:bg-opacity-95 shadow flex items-center gap-1.5 cursor-pointer"
+            >
+              <Plus size={14} /> Add Room Category
+            </button>
+          </div>
         )}
       </div>
 

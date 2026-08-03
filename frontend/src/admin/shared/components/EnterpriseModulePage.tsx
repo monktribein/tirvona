@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import EnterpriseDataTable, { type TableColumn } from "./EnterpriseDataTable";
 import ImageGalleryManager from "./ImageGalleryManager";
+import { RecordFieldList } from "./RecordValue";
 import LocalHubEnterpriseDrawer from "./LocalHubEnterpriseDrawer";
 import { useNotifications } from "../../../contexts/NotificationContext";
 import api, { getErrorMessage } from "../../../lib/api";
@@ -577,9 +578,14 @@ export const EnterpriseModulePage: React.FC<{
     }
   };
 
+  // The sub-key decides which collection a record lives in (blogs/authors,
+  // marketplace/orders …), so a delete has to carry it too.
+  const crudDeletePath = (id: string) =>
+    `/admin/crud/${activeModule}/${id}${activeSubKey ? `?subKey=${activeSubKey}` : ""}`;
+
   const handleDelete = async (id: string) => {
     try {
-      await api.delete(`/admin/crud/${activeModule}/${id}`);
+      await api.delete(crudDeletePath(id));
       addNotification("Deleted", "Record removed.", "info");
       setData((prev) => prev.filter((x) => (x._id || x.id) !== id));
     } catch (err) {
@@ -593,9 +599,7 @@ export const EnterpriseModulePage: React.FC<{
 
   const handleBulkDelete = async (ids: string[]) => {
     try {
-      await Promise.all(
-        ids.map((id) => api.delete(`/admin/crud/${activeModule}/${id}`)),
-      );
+      await Promise.all(ids.map((id) => api.delete(crudDeletePath(id))));
       addNotification(
         "Bulk Delete Complete",
         `${ids.length} records removed.`,
@@ -799,13 +803,11 @@ export const EnterpriseModulePage: React.FC<{
                       <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider block">
                         Current Live Version (Old)
                       </span>
-                      <pre className="text-[11px] text-gray-600 dark:text-gray-400 font-mono whitespace-pre-wrap overflow-x-auto max-h-24">
-                        {JSON.stringify(
-                          req.oldValue || { note: "Default system content" },
-                          null,
-                          2,
-                        )}
-                      </pre>
+                      <RecordFieldList
+                        data={req.oldValue}
+                        emptyLabel="Default system content"
+                        className="text-[11px] text-gray-600 dark:text-gray-400 overflow-y-auto max-h-32"
+                      />
                     </div>
 
                     <div className="p-3 bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 rounded-xl space-y-2">
@@ -832,9 +834,11 @@ export const EnterpriseModulePage: React.FC<{
                         </div>
                       )}
 
-                      <pre className="text-[11px] text-emerald-900 dark:text-emerald-200 font-mono whitespace-pre-wrap overflow-x-auto max-h-24">
-                        {JSON.stringify(req.newValue, null, 2)}
-                      </pre>
+                      <RecordFieldList
+                        data={req.newValue}
+                        emptyLabel="No changes proposed"
+                        className="text-[11px] text-emerald-900 dark:text-emerald-200 overflow-y-auto max-h-32"
+                      />
                     </div>
                   </div>
 

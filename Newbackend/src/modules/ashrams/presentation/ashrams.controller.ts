@@ -7,6 +7,7 @@ import {
   Post,
   Put,
   Query,
+  ValidationPipe,
 } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { Public } from "../../../common/decorators/public.decorator";
@@ -19,8 +20,18 @@ import { AshramsService } from "../application/ashrams.service";
 import {
   AshramDocumentsDto,
   AshramQueryDto,
+  SaveAddOnDto,
   SaveAshramDto,
+  UpdateAddOnDto,
+  UpdateAshramDto,
 } from "./dtos/ashram.dto";
+
+/**
+ * Add-on editors round-trip the record they loaded, so the saved payload still
+ * carries `_id`, `ashramId`, and timestamps. Strip those instead of rejecting
+ * the request the way the global pipe would.
+ */
+const addOnBody = new ValidationPipe({ transform: true, whitelist: true });
 
 @ApiTags("Ashrams")
 @Controller("ashrams")
@@ -33,15 +44,7 @@ export class AshramsController {
   @ApiBearerAuth()
   @Roles("owner", "manager", "super_admin")
   async mine(@CurrentUser() user: AuthenticatedUser) {
-    const filter =
-      user.role === "super_admin"
-        ? {}
-        : user.role === "owner"
-          ? { ownerId: user.id }
-          : { _id: { $in: user.scopedAshramIds } };
-    const data = await this.service.ashrams
-      .find(filter)
-      .sort({ createdAt: -1 });
+    const data = await this.service.listForUser(user);
     return { success: true, count: data.length, data };
   }
   @Get("manage/:id")
@@ -71,7 +74,7 @@ export class AshramsController {
   @Put(":id") @ApiBearerAuth() @Roles("owner", "manager") async update(
     @CurrentUser() user: AuthenticatedUser,
     @Param("id") id: string,
-    @Body() dto: SaveAshramDto,
+    @Body() dto: UpdateAshramDto,
   ) {
     return {
       success: true,
@@ -87,52 +90,42 @@ export class AshramsController {
     @Param("id") id: string,
     @Body() body: AshramDocumentsDto,
   ) {
-    const ashram = await this.service.ashrams.findById(id);
-    if (!ashram) return { success: false, message: "Ashram not found" };
-    this.service.assertScope(user, ashram);
-    ashram.documents = { ...ashram.documents?.toObject?.(), ...body };
-    await ashram.save();
+    const result = await this.service.saveDocuments(user, id, body);
     return {
       success: true,
-      message: "Documents uploaded.",
-      data: ashram.documents,
+      message: result.reopened
+        ? "Documents uploaded. Your application is back in the verification queue."
+        : "Documents uploaded.",
+      data: result.documents,
+      status: result.status,
     };
   }
   @Public() @Get(":id/add-ons") async addons(@Param("id") id: string) {
-    const data = await this.service.addons.find({ ashramId: id });
+    const data = await this.service.listAddOns(id);
     return { success: true, count: data.length, data };
   }
+  // Add-on mutations answer with the ashram's whole catalogue: the owner
+  // console renders the list straight from the response.
   @Post(":id/add-ons") @Roles("owner", "manager") async createAddon(
     @CurrentUser() user: AuthenticatedUser,
     @Param("id") id: string,
-    @Body() body: Record<string, any>,
+    @Body(addOnBody) body: SaveAddOnDto,
   ) {
-    const ashram = await this.service.ashrams.findById(id);
-    this.service.assertScope(user, ashram);
-    return {
-      success: true,
-      data: await this.service.addons.create({
-        ...body,
-        ashramId: id,
-        createdBy: user.id,
-      }),
-    };
+    const data = await this.service.createAddOn(user, id, body);
+    return { success: true, message: "Add-on saved.", count: data.length, data };
   }
   @Put(":id/add-ons/:addonId") @Roles("owner", "manager") async updateAddon(
     @CurrentUser() user: AuthenticatedUser,
     @Param("id") id: string,
     @Param("addonId") addonId: string,
-    @Body() body: Record<string, any>,
+    @Body(addOnBody) body: UpdateAddOnDto,
   ) {
-    const ashram = await this.service.ashrams.findById(id);
-    this.service.assertScope(user, ashram);
+    const data = await this.service.updateAddOn(user, id, addonId, body);
     return {
       success: true,
-      data: await this.service.addons.findOneAndUpdate(
-        { _id: addonId, ashramId: id },
-        { $set: body },
-        { new: true },
-      ),
+      message: "Add-on updated.",
+      count: data.length,
+      data,
     };
   }
   @Delete(":id/add-ons/:addonId") @Roles("owner", "manager") async deleteAddon(
@@ -140,9 +133,12 @@ export class AshramsController {
     @Param("id") id: string,
     @Param("addonId") addonId: string,
   ) {
-    const ashram = await this.service.ashrams.findById(id);
-    this.service.assertScope(user, ashram);
-    await this.service.addons.deleteOne({ _id: addonId, ashramId: id });
-    return { success: true, message: "Add-on removed." };
+    const data = await this.service.deleteAddOn(user, id, addonId);
+    return {
+      success: true,
+      message: "Add-on removed.",
+      count: data.length,
+      data,
+    };
   }
 }

@@ -7,6 +7,7 @@ import {
 } from "../../../services/approval.service";
 import { useNotifications } from "../../../contexts/NotificationContext";
 import { getErrorMessage } from "../../../lib/api";
+import { RecordFieldList } from "../../shared/components/RecordValue";
 import {
   FileCheck,
   XCircle,
@@ -542,9 +543,13 @@ export const CentralApprovalCenterPage: React.FC = () => {
               <h4 className="font-extrabold text-gray-700 dark:text-gray-200 uppercase tracking-wider text-[11px]">
                 Requested Data Payload
               </h4>
-              <pre className="p-4 bg-gray-900 text-emerald-400 rounded-2xl overflow-x-auto font-mono text-[11px] leading-relaxed max-h-48">
-                {JSON.stringify(selectedRequest.requestedData, null, 2)}
-              </pre>
+              <div className="p-4 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl overflow-y-auto max-h-56">
+                <RecordFieldList
+                  data={selectedRequest.requestedData}
+                  emptyLabel="This request carries no payload"
+                  className="text-[11px] leading-relaxed"
+                />
+              </div>
             </div>
 
             {/* Comment Thread */}

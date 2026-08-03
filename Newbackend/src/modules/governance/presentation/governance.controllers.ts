@@ -222,7 +222,8 @@ export class AdminCrudController {
     @CurrentUser() user: AuthenticatedUser,
     @Param("moduleKey") moduleKey: string,
     @Param("id") id: string,
+    @Query("subKey") subKey: string | undefined,
   ) {
-    return this.governance.adminDelete(user, moduleKey, id);
+    return this.governance.adminDelete(user, moduleKey, id, subKey);
   }
 }

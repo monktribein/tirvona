@@ -1,6 +1,8 @@
 import { Type } from "class-transformer";
+import { PartialType } from "@nestjs/swagger";
 import {
   IsArray,
+  IsBoolean,
   IsIn,
   IsInt,
   IsMongoId,
@@ -9,6 +11,7 @@ import {
   IsOptional,
   IsString,
   Max,
+  MaxLength,
   Min,
   MinLength,
 } from "class-validator";
@@ -59,6 +62,28 @@ export class SaveAshramDto {
   @IsOptional() @IsObject() transport?: Record<string, any>;
   @IsOptional() @IsObject() documents?: Record<string, any>;
 }
+
+/**
+ * Owner edit screens (the wizard's edit mode, the manage-ashram inline editor)
+ * each submit a different subset of the profile, so an update accepts any
+ * subset of the create payload.
+ */
+export class UpdateAshramDto extends PartialType(SaveAshramDto) {}
+
+export class SaveAddOnDto {
+  @IsString() @MinLength(2) @MaxLength(120) name: string;
+  @Type(() => Number) @IsNumber() @Min(0) price: number;
+  @IsOptional()
+  @IsIn(["per_day", "per_meal", "per_person", "one_time", "per_box"])
+  unit?: string;
+  @IsOptional() @IsString() @MaxLength(60) unitLabel?: string;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100)
+  maxQuantity?: number;
+  @IsOptional() @IsBoolean() enabled?: boolean;
+  @IsOptional() @IsString() iconUrl?: string;
+  @IsOptional() @IsString() @MaxLength(2000) description?: string;
+}
+export class UpdateAddOnDto extends PartialType(SaveAddOnDto) {}
 
 export class AshramDocumentsDto {
   @IsOptional() @IsString() trustDeedUrl?: string;

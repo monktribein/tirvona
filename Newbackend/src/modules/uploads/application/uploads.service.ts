@@ -34,16 +34,13 @@ export class UploadsService {
       this.config.get<string>("cloudinaryApiKey") &&
       this.config.get<string>("cloudinaryApiSecret"),
     );
-    if (!configured && this.config.get<string>("nodeEnv") === "production")
-      throw new ServiceUnavailableException("File storage is not configured");
+    // No base64 fallback in any environment. A data: URI is persisted into the
+    // record that references it, and a single inline image is enough to push a
+    // listing query past the client timeout.
     if (!configured)
-      return {
-        url: `data:${file.mimetype};base64,${file.buffer.toString("base64")}`,
-        publicId: `local_${Date.now()}`,
-        resourceType: "image",
-        bytes: file.size,
-        format: file.mimetype.split("/")[1] || "jpeg",
-      };
+      throw new ServiceUnavailableException(
+        "File storage is not configured. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET.",
+      );
     try {
       const safeFolder =
         String(folder ?? "uploads")
