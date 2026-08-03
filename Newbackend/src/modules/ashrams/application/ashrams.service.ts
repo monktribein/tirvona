@@ -32,7 +32,7 @@ export class AshramsService {
     @InjectModel("Room") readonly rooms: Model<any>,
     @InjectModel("BookingInventory") readonly inventory: Model<any>,
     @InjectModel("BookingAddon") readonly addons: Model<any>,
-  ) {}
+  ) { }
 
   async publicList(query: AshramQueryDto): Promise<any> {
     const filter: Record<string, any> = { status: "approved", deletedAt: null };
@@ -124,10 +124,10 @@ export class AshramsService {
               day?.isClosed ||
               (day &&
                 day.totalInventory -
-                  day.bookedCount -
-                  day.heldCount -
-                  day.maintenanceCount <
-                  1)
+                day.bookedCount -
+                day.heldCount -
+                day.maintenanceCount <
+                1)
             ) {
               ok = false;
               break;
@@ -150,6 +150,36 @@ export class AshramsService {
             ...a,
             lowestNightPrice: available.get(String(a._id)),
           }));
+      }
+    }
+    // For candidates without a date-derived price (the common browse case),
+    // attach the lowest active-room basePrice so listings show a real
+    // per-night price instead of the default pricing.lowestNightPrice (often 0).
+    const missingPrice = candidates.filter(
+      (a: any) => a.lowestNightPrice == null,
+    );
+    if (missingPrice.length) {
+      const rooms = await this.rooms
+        .find({
+          ashramId: { $in: missingPrice.map((a: any) => a._id) },
+          status: "active",
+          deletedAt: null,
+        })
+        .select("ashramId basePrice")
+        .lean();
+      const cheapest = new Map<string, number>();
+      for (const room of rooms as any[]) {
+        const key = String(room.ashramId);
+        const prior = cheapest.get(key) ?? Infinity;
+        cheapest.set(key, Math.min(prior, room.basePrice));
+      }
+      for (const a of missingPrice as any[]) {
+        const price = cheapest.get(String(a._id));
+        if (price != null && Number.isFinite(price)) {
+          a.lowestNightPrice = price;
+        } else if (a.pricing?.lowestNightPrice) {
+          a.lowestNightPrice = a.pricing.lowestNightPrice;
+        }
       }
     }
     const total = candidates.length;
@@ -258,9 +288,9 @@ export class AshramsService {
         amenities:
           typeof room.amenities === "string"
             ? room.amenities
-                .split(",")
-                .map((x: string) => x.trim())
-                .filter(Boolean)
+              .split(",")
+              .map((x: string) => x.trim())
+              .filter(Boolean)
             : (room.amenities ?? []),
         status: "active",
       }));
