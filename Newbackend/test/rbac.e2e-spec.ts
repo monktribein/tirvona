@@ -42,14 +42,14 @@ describe("role-based acceptance matrix", () => {
     await app.init();
 
     connection = module.get<Connection>(getConnectionToken());
-    const isTestDb =
-      connection.name === "tirvona_rbac_qa" ||
-      connection.name === "tirvona_test" ||
-      connection.name.toLowerCase().includes("test") ||
-      connection.name.toLowerCase().includes("qa");
-    if (!isTestDb)
+    // This suite drops the database it connects to, so the name must match a
+    // dedicated test database exactly. A substring check is not safe enough:
+    // an unset MONGODB_DB_NAME resolves to Mongo's default database, "test",
+    // which would pass a contains("test") rule and wipe real data.
+    const TEST_DATABASES = ["tirvona_rbac_qa", "tirvona_test"];
+    if (!TEST_DATABASES.includes(connection.name))
       throw new Error(
-        `RBAC acceptance tests require a test database (e.g. tirvona_rbac_qa or tirvona_test); received ${connection.name}`,
+        `RBAC acceptance tests require one of ${TEST_DATABASES.join(" or ")}; received "${connection.name}". Point MONGODB_URI at a disposable database before running them.`,
       );
     await connection.dropDatabase();
 
@@ -335,12 +335,4 @@ describe("role-based acceptance matrix", () => {
       .expect(403);
   });
 
-  afterAll(async () => {
-    if (connection) {
-      await connection.dropDatabase();
-    }
-    if (app) {
-      await app.close();
-    }
-  });
 });
