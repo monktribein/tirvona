@@ -12,6 +12,12 @@ interface User {
   status: string;
   district?: string;
   state?: string;
+  /**
+   * Active parking grants from `parking_staff`. Parking authorisation is not a
+   * value of `role` — a guard or partner reads `customer` like any pilgrim — so
+   * this is the only signal that an account is parking staff.
+   */
+  parkingRoles?: string[];
 }
 
 // Returned when the backend answers a password login / registration with an OTP
@@ -58,10 +64,7 @@ interface AuthContextType {
   token: string | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<AuthResult>;
-  loginOTP: (
-    phone: string,
-    otp: string,
-  ) => Promise<{ success: boolean; message?: string }>;
+  loginOTP: (phone: string, otp: string) => Promise<AuthResult>;
   verifyLoginOtp: (otpToken: string, otp: string) => Promise<AuthResult>;
   verifyRegistrationOtp: (otpToken: string, otp: string) => Promise<AuthResult>;
   resendOtp: (otpToken: string) => Promise<{
@@ -184,12 +187,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const loginOTP = async (phone: string, otp: string) => {
+  // Returns the signed-in user alongside the result. Callers that navigate by
+  // role cannot read it from context here — `setUser` has not flushed yet, so
+  // the value in their closure is still the previous one (usually null).
+  const loginOTP = async (phone: string, otp: string): Promise<AuthResult> => {
     try {
       const res = await authService.verifyOtp(phone, otp);
       if (res.data.success) {
         persistSession(res.data.data);
-        return { success: true };
+        return { success: true, user: res.data.data };
       }
       return {
         success: false,
@@ -240,7 +246,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       const res = await request;
       if (res.data.success) {
         persistSession(res.data.data);
-        return { success: true };
+        // Carried back for the same reason as loginOTP: context state is not
+        // readable by the caller until after this render commits.
+        return { success: true, user: res.data.data };
       }
       return { success: false, message: res.data.message || fallback };
     } catch (err) {
@@ -366,7 +374,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       const res = await authService.googleComplete(googleToken, name, phone);
       if (res.data.success) {
         persistSession(res.data.data);
-        return { success: true, message: res.data.message };
+        return { success: true, message: res.data.message, user: res.data.data };
       }
       return {
         success: false,

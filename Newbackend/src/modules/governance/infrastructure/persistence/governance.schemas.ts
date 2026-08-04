@@ -103,10 +103,98 @@ const ADMIN_COLLECTIONS: Record<string, string> = {
   payments: "booking_payments",
   service_bookings: "servicebookings",
   providers: "serviceproviders",
+  // Parking. The module owns its own typed models and a capability-guarded API;
+  // these entries only expose the same collections to the read/search/edit
+  // console so a Super Admin can see parking data alongside everything else.
+  // Anything that moves money or state (partner approval, commission
+  // settlement, refunds) stays on /parking/admin, which enforces the workflow.
+  parking_partners: "parking_partners",
+  parking_locations: "parking_locations",
+  parking_bookings: "parking_bookings",
+  parking_slot_types: "parking_slot_types",
+  parking_slots: "parking_slots",
+  parking_pricing: "parking_pricing",
+  parking_staff: "parking_staff",
+  parking_commissions: "parking_commissions",
+  parking_transactions: "parking_transactions",
+  parking_scan_logs: "parking_scan_logs",
+  parking_reviews: "parking_reviews",
 };
+/**
+ * Foreign keys the console resolves to a readable label.
+ *
+ * The generic `Admin_*` models are schemaless, so an ObjectId field has no ref
+ * for Mongoose to follow and the table renders a bare id. Parking rows are
+ * almost entirely joins — a booking names neither its location nor its
+ * customer — so the handful of columns a human reads are typed here. Targets
+ * stay inside the `Admin_*` family to keep this module self-contained.
+ */
+const LOCATION = { ref: "Admin_parking_locations", select: "name slug" };
+const PARTNER = {
+  ref: "Admin_parking_partners",
+  select: "businessName partnerCode",
+};
+const SLOT_TYPE = { ref: "Admin_parking_slot_types", select: "name code" };
+const BOOKING = {
+  ref: "Admin_parking_bookings",
+  select: "bookingReference status",
+};
+// `Admin_users` is schemaless, so the real User schema's `select: false` on
+// passwordHash does not apply here. redact() strips it on the way out either
+// way, but an explicit projection keeps it out of the query to begin with.
+const ACCOUNT = { ref: "Admin_users", select: "name email phone role" };
+
+export const ADMIN_REFS: Record<
+  string,
+  Record<string, { ref: string; select: string }>
+> = {
+  parking_locations: { partnerId: PARTNER },
+  parking_bookings: {
+    locationId: LOCATION,
+    partnerId: PARTNER,
+    customerId: ACCOUNT,
+    slotTypeId: SLOT_TYPE,
+  },
+  parking_slot_types: { locationId: LOCATION },
+  parking_slots: { locationId: LOCATION, slotTypeId: SLOT_TYPE },
+  parking_pricing: { locationId: LOCATION, slotTypeId: SLOT_TYPE },
+  parking_staff: {
+    userId: ACCOUNT,
+    partnerId: PARTNER,
+    locationIds: LOCATION,
+  },
+  parking_commissions: {
+    partnerId: PARTNER,
+    locationId: LOCATION,
+    bookingId: BOOKING,
+  },
+  parking_transactions: { partnerId: PARTNER, locationId: LOCATION },
+  parking_scan_logs: {
+    locationId: LOCATION,
+    bookingId: BOOKING,
+    scannedByUserId: ACCOUNT,
+  },
+  parking_reviews: { locationId: LOCATION, customerId: ACCOUNT },
+};
+
 /** Logical admin-console module keys that map to a real collection. */
 export const ADMIN_MODULE_KEYS = Object.keys(ADMIN_COLLECTIONS);
-for (const [key, collection] of Object.entries(ADMIN_COLLECTIONS))
-  GOVERNANCE_MODELS.push({ name: `Admin_${key}`, schema: loose(collection) });
+for (const [key, collection] of Object.entries(ADMIN_COLLECTIONS)) {
+  const refs = ADMIN_REFS[key] ?? {};
+  const fields = Object.fromEntries(
+    Object.entries(refs).map(([path, { ref }]) => [
+      path,
+      // A plural `…Ids` path holds an array of references (a staff grant is
+      // scoped to several locations); everything else is a single id.
+      path.endsWith("Ids")
+        ? [{ type: SchemaTypes.ObjectId, ref }]
+        : { type: SchemaTypes.ObjectId, ref },
+    ]),
+  );
+  GOVERNANCE_MODELS.push({
+    name: `Admin_${key}`,
+    schema: loose(collection, fields),
+  });
+}
 GOVERNANCE_MODELS[0].schema.index({ module: 1, status: 1, createdAt: -1 });
 GOVERNANCE_MODELS[3].schema.index({ isRead: 1, createdAt: -1 });

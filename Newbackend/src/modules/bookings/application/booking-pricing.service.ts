@@ -5,7 +5,13 @@ import {
 } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import type { Model } from "mongoose";
-import { eachNight, resolveBookingAddon } from "../domain/booking.utils";
+import {
+  PLATFORM_FEE_GST_PERCENT,
+  eachNight,
+  platformFeeGst,
+  resolveBookingAddon,
+  roundMoney,
+} from "../domain/booking.utils";
 import type { CreateBookingDto } from "../presentation/dtos/booking.dto";
 
 @Injectable()
@@ -206,8 +212,6 @@ export class BookingPricingService {
     }
     const extraGuestAmount =
       Math.max(0, dto.guestsCount - 2) * 200 * dates.length;
-    const gstPercent = policy?.taxPercent ?? settings?.gstRate ?? 5;
-    const gstAmount = Math.round((originalAmount * gstPercent) / 100);
     const platformFee =
       policy?.platformFeePercent != null
         ? Math.round((originalAmount * policy.platformFeePercent) / 100)
@@ -216,14 +220,21 @@ export class BookingPricingService {
           : settings?.platformFee?.type === "percentage"
             ? Math.round((originalAmount * settings.platformFee.value) / 100)
             : Number(settings?.platformFee?.value ?? 49);
+    // GST is charged on the platform fee alone. The stay, add-on services,
+    // extra-guest charge and donation are supplied by the ashram and carry no
+    // GST here, so the taxable base is the fee — not the booking value.
+    const gstPercent = Number(
+      settings?.platformFeeGstRate ?? PLATFORM_FEE_GST_PERCENT,
+    );
+    const gstAmount = platformFeeGst(platformFee, gstPercent);
     const totalAmount = Math.max(
       0,
-      Math.round(
+      roundMoney(
         originalAmount +
           extraGuestAmount -
           discountAmount +
-          gstAmount +
-          platformFee,
+          platformFee +
+          gstAmount,
       ),
     );
     return {
@@ -242,6 +253,10 @@ export class BookingPricingService {
         discountAmount,
         loyaltyDiscount: 0,
         gstAmount,
+        // Stored with the booking so an invoice reprinted after the platform
+        // changes its rate still shows the rate that was actually charged.
+        gstPercent,
+        gstTaxableAmount: platformFee,
         platformFee,
         originalAmount,
         finalAmount: totalAmount,
@@ -258,6 +273,9 @@ export class BookingPricingService {
         donationAmount,
         couponDiscount: discountAmount,
         gstAmount,
+        gstPercent,
+        gstTaxableAmount: platformFee,
+        gstNote: "GST is charged on the platform fee only.",
         platformFee,
         totalSavings: discountAmount,
         finalPayableAmount: totalAmount,

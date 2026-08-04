@@ -13,7 +13,10 @@ import {
   GOVERNANCE_REPOSITORY,
   type GovernanceRepository,
 } from "../domain/governance.repository";
-import { ADMIN_MODULE_KEYS } from "../infrastructure/persistence/governance.schemas";
+import {
+  ADMIN_MODULE_KEYS,
+  ADMIN_REFS,
+} from "../infrastructure/persistence/governance.schemas";
 import type {
   ApprovalRequestDto,
   BulkNotificationDto,
@@ -63,6 +66,26 @@ export class GovernanceService {
       "name type acType capacity totalInventory basePrice status ashramId createdAt updatedAt",
     Admin_users:
       "name email phone role status isVerified district state employerAshramId createdAt updatedAt",
+    // Parking rows nest pricing, history, and geo objects the table never
+    // renders; a location additionally carries its whole image gallery.
+    Admin_parking_partners:
+      "partnerCode businessName contactPerson contactEmail contactPhone status isVerified commissionPercent address.city address.state createdAt updatedAt",
+    Admin_parking_locations:
+      "name slug status isVerified isFeatured totalCapacity partnerId address.city address.state rating.average contactPhone createdAt updatedAt",
+    Admin_parking_bookings:
+      "bookingReference status paymentStatus vehicleType vehicleNumber assignedSlotNumber entryAt exitAt durationHours pricing.totalAmount locationId partnerId customerId slotTypeId createdAt updatedAt",
+    Admin_parking_slot_types:
+      "name code locationId totalCapacity vehicleTypes isCovered hasEvCharging floorLabel isActive displayOrder createdAt updatedAt",
+    Admin_parking_slots:
+      "slotNumber locationId slotTypeId status floorLabel zone isActive occupiedAt createdAt updatedAt",
+    Admin_parking_staff:
+      "userId partnerId locationIds parkingRole employeeCode shift phone status lastActiveAt createdAt updatedAt",
+    Admin_parking_commissions:
+      "bookingId partnerId locationId grossAmount commissionPercent commissionAmount partnerEarning settlementStatus settledAt payoutBatchId createdAt updatedAt",
+    Admin_parking_transactions:
+      "reference type direction amount currency partnerId locationId bookingId description occurredAt createdAt",
+    Admin_parking_scan_logs:
+      "action result locationId bookingId vehicleNumber assignedSlotNumber scannedByUserId message scannedAt createdAt",
   };
   private readonly adminNeutralSubKeys = new Set([
     "all",
@@ -657,10 +680,19 @@ export class GovernanceService {
         "department",
       ].map((field) => ({ [field]: { $regex: term, $options: "i" } }));
     }
+    // Foreign keys render as a bare ObjectId unless they are resolved, which
+    // makes a joined table (a parking booking names neither its location nor
+    // its customer) unreadable.
+    const refs = ADMIN_REFS[name.replace(/^Admin_/, "")] ?? {};
+    const populate = Object.entries(refs).map(([path, { select }]) => ({
+      path,
+      select,
+    }));
     const data = (
       await this.repository.list(name, filter, {
         sort: { createdAt: -1 },
         limit: 100,
+        ...(populate.length ? { populate } : {}),
         ...(GovernanceService.ADMIN_LIST_PROJECTIONS[name]
           ? { select: GovernanceService.ADMIN_LIST_PROJECTIONS[name] }
           : {}),
@@ -954,6 +986,53 @@ export class GovernanceService {
       return;
     }
 
+    // Parking tables are narrowed by their own lifecycle values, which do not
+    // overlap the shared status sub-keys ("upcoming"/"checked_in"/"no_show" for
+    // a booking, "settled"/"on_hold" for a commission). Handled before the
+    // shared map so a name it happens to share — "pending", "cancelled" — still
+    // lands on the right field.
+    if (moduleName.startsWith("parking_")) {
+      if (moduleName === "parking_commissions") {
+        if (GovernanceService.PARKING_SETTLEMENT_STATUSES.has(section))
+          filter.settlementStatus = section;
+        return;
+      }
+      if (moduleName === "parking_transactions") {
+        if (GovernanceService.PARKING_TRANSACTION_TYPES.has(section))
+          filter.type = section;
+        return;
+      }
+      if (moduleName === "parking_scan_logs") {
+        if (["entry", "exit", "verify"].includes(section))
+          filter.action = section;
+        else if (section === "failed") filter.result = { $ne: "success" };
+        return;
+      }
+      if (moduleName === "parking_staff") {
+        if (GovernanceService.PARKING_STAFF_ROLES.has(section))
+          filter.parkingRole = section;
+        else if (["active", "inactive", "suspended"].includes(section))
+          filter.status = section;
+        return;
+      }
+      if (moduleName === "parking_slots" && section === "occupied") {
+        filter.status = "occupied";
+        return;
+      }
+      // Partners, locations, bookings, slot types and pricing all key off
+      // `status`, except the two boolean flags a location exposes.
+      if (section === "featured") {
+        filter.isFeatured = true;
+        return;
+      }
+      if (section === "unverified") {
+        filter.isVerified = false;
+        return;
+      }
+      filter.status = section;
+      return;
+    }
+
     const status = this.adminStatusSubKeys[section];
     if (status) filter.status = status;
   }
@@ -1032,7 +1111,36 @@ export class GovernanceService {
    * Booking state drives inventory, payments, and refunds, so it may only move
    * through the booking workflow endpoints.
    */
-  private static readonly ADMIN_STATUS_LOCKED = new Set(["Admin_bookings"]);
+  private static readonly ADMIN_STATUS_LOCKED = new Set([
+    "Admin_bookings",
+    // Same reasoning for parking: a booking's state drives slot occupancy, QR
+    // validity, and refunds; a partner's drives a cascade that suspends every
+    // location it owns; money rows are written by the settlement run. All of
+    // these move through /parking/admin, which enforces the transition.
+    "Admin_parking_bookings",
+    "Admin_parking_partners",
+    "Admin_parking_commissions",
+    "Admin_parking_transactions",
+  ]);
+  private static readonly PARKING_SETTLEMENT_STATUSES = new Set([
+    "pending",
+    "processing",
+    "settled",
+    "on_hold",
+    "reversed",
+  ]);
+  private static readonly PARKING_TRANSACTION_TYPES = new Set([
+    "booking",
+    "overstay",
+    "refund",
+    "commission",
+    "payout",
+  ]);
+  private static readonly PARKING_STAFF_ROLES = new Set([
+    "parking_partner",
+    "parking_manager",
+    "security_guard",
+  ]);
   /**
    * The console's generic active/inactive toggle, mapped onto the ashram
    * verification lifecycle. Everything else must match the schema enum.

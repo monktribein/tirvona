@@ -9,18 +9,16 @@ import compression from "compression";
 import helmet from "helmet";
 import { Logger } from "nestjs-pino";
 import { ConfigService } from "@nestjs/config";
-import { setServers } from "node:dns";
+// Importing AppModule evaluates ConfigModule.forRoot(), which loads .env into
+// process.env — so DNS_SERVERS is readable by the time bootstrap() runs.
 import { AppModule } from "./app.module";
+import { applyDnsServersFromEnvironment } from "./config/environment";
 import { ApiExceptionFilter } from "./common/filters/api-exception.filter";
 import { RequestIdInterceptor } from "./common/interceptors/request-id.interceptor";
 
 async function bootstrap(): Promise<void> {
   const isProduction = process.env.NODE_ENV === "production";
-  const dnsServers = (process.env.DNS_SERVERS ?? "")
-    .split(",")
-    .map((server) => server.trim())
-    .filter(Boolean);
-  if (dnsServers.length > 0) setServers(dnsServers);
+  applyDnsServersFromEnvironment();
 
   const app = await NestFactory.create(AppModule, {
     bufferLogs: isProduction,

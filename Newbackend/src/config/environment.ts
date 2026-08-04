@@ -1,3 +1,5 @@
+import { setServers } from "node:dns";
+
 const integer = (value: string | undefined, fallback: number): number => {
   const parsed = Number(value ?? fallback);
   return Number.isInteger(parsed) ? parsed : fallback;
@@ -64,6 +66,23 @@ export interface Environment {
   googleClientId: string;
   googleClientSecret: string;
 }
+
+/**
+ * Point Node's resolver at DNS_SERVERS before anything opens a connection.
+ *
+ * An Atlas URI is an SRV record, so a resolver that cannot answer SRV queries
+ * fails the connection outright — a machine whose resolver is a local proxy
+ * answers ECONNREFUSED and Mongoose only reports "Unable to connect". Every
+ * entry point that reaches the database has to apply this, not just main.ts:
+ * a standalone script gets the same resolver and the same failure.
+ *
+ * Safe to call more than once, and a no-op when DNS_SERVERS is unset.
+ */
+export const applyDnsServersFromEnvironment = (): string[] => {
+  const servers = csv(process.env.DNS_SERVERS, "");
+  if (servers.length > 0) setServers(servers);
+  return servers;
+};
 
 export const corsOriginsFromEnvironment = (): string[] =>
   csv(
@@ -237,6 +256,16 @@ export function validateEnvironment(
       throw new Error(
         "PARKING_QR_SECRET must contain at least 32 characters in production",
       );
+    // Without a key secret the payment services fall back to a demo mode that
+    // skips signature verification entirely — in production that confirms
+    // bookings for free. `requireTogether` above only enforces "both or
+    // neither", so absent keys would otherwise sail through.
+    for (const name of ["RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET"]) {
+      if (!String(input[name] ?? "").trim())
+        throw new Error(
+          `${name} is required in production — payments cannot run in demo mode with real customers`,
+        );
+    }
     if (!input.MONGODB_URI)
       throw new Error("MONGODB_URI is required in production");
     if (!input.REDIS_URL)

@@ -275,7 +275,11 @@ export class ParkingBookingService {
 
   private verifyRazorpay(dto: ConfirmParkingPaymentDto): boolean {
     const keySecret = this.config.get<string>("razorpayKeySecret");
-    if (!keySecret) return true;
+    // Mirrors BookingsService.signatureValid: the unverified demo path is for
+    // local development only and must never confirm a paid parking booking in
+    // production.
+    if (!keySecret)
+      return this.config.get<string>("nodeEnv") !== "production";
     if (
       !dto.razorpay_order_id ||
       !dto.razorpay_payment_id ||
@@ -334,6 +338,7 @@ export class ParkingBookingService {
           locationId: booking.locationId,
           customerId: booking.customerId,
           tokenHash: hashParkingQr(token),
+          token,
           displayCode,
           version,
           validFrom,
@@ -493,19 +498,11 @@ export class ParkingBookingService {
     };
   }
 
-  async reissueQr(id: string, userId: string, format: string): Promise<any> {
-    const booking = await this.ownBooking(id, userId);
-    if (
-      booking.paymentStatus !== "paid" ||
-      ["cancelled", "expired", "no_show"].includes(booking.status)
-    )
-      throw new ParkingException(
-        "This booking no longer has a valid pass.",
-        400,
-      );
-    const pass = await this.transactions.run((session) =>
-      this.issueQr(booking, session),
-    );
+  private async renderPass(
+    pass: { token: string; [key: string]: unknown },
+    booking: any,
+    format: string,
+  ): Promise<any> {
     const image =
       format === "svg"
         ? await QRCode.toString(pass.token, {
@@ -525,6 +522,67 @@ export class ParkingBookingService {
       bookingReference: booking.bookingReference,
       vehicleNumber: booking.vehicleNumber,
     };
+  }
+
+  /**
+   * The booking's current pass — the same one every time it is asked for.
+   *
+   * Viewing a pass must never change it. This endpoint used to call
+   * `reissueQr`, which revokes the outstanding pass and mints a replacement, so
+   * the QR changed on every page refresh and the code a visitor was holding at
+   * the gate had already been revoked — the guard's scan failed with "this pass
+   * has been revoked". Reissuing is now an explicit action of its own.
+   *
+   * A pass is minted here only when there is genuinely none to show: a booking
+   * that predates the stored-token column has a hash but no token, and cannot
+   * be re-rendered. That mints once and is then stable.
+   */
+  async currentPass(id: string, userId: string, format: string): Promise<any> {
+    const booking = await this.assertPassable(id, userId);
+    const existing = await this.qrCodes
+      .findOne({ bookingId: booking._id, status: { $in: ["active", "used"] } })
+      .sort({ version: -1 })
+      .select("+token");
+    if (existing?.token)
+      return this.renderPass(
+        {
+          token: existing.token,
+          displayCode: existing.displayCode,
+          validFrom: existing.validFrom,
+          validUntil: existing.validUntil,
+        },
+        booking,
+        format,
+      );
+    const pass = await this.transactions.run((session) =>
+      this.issueQr(booking, session),
+    );
+    return this.renderPass(pass, booking, format);
+  }
+
+  private async assertPassable(id: string, userId: string): Promise<any> {
+    const booking = await this.ownBooking(id, userId);
+    if (
+      booking.paymentStatus !== "paid" ||
+      ["cancelled", "expired", "no_show"].includes(booking.status)
+    )
+      throw new ParkingException(
+        "This booking no longer has a valid pass.",
+        400,
+      );
+    return booking;
+  }
+
+  /**
+   * Deliberately invalidates the outstanding pass and issues a replacement —
+   * for a pass that was lost or shared. Never call this to display one.
+   */
+  async reissueQr(id: string, userId: string, format: string): Promise<any> {
+    const booking = await this.assertPassable(id, userId);
+    const pass = await this.transactions.run((session) =>
+      this.issueQr(booking, session),
+    );
+    return this.renderPass(pass, booking, format);
   }
 
   async cancel(

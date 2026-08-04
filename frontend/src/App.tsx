@@ -92,6 +92,9 @@ const ParkingGuardPanelPage = lazy(
 const ParkingPartnerDashboardPage = lazy(
   () => import("./modules/parking/pages/ParkingPartnerDashboardPage"),
 );
+const ParkingRoleDashboardPage = lazy(
+  () => import("./modules/parking/pages/ParkingRoleDashboardPage"),
+);
 
 const AdminDashboard = lazy(
   () => import("./admin/dashboard/pages/AdminDashboard"),
@@ -122,6 +125,12 @@ const CentralApprovalCenterPage = lazy(
 );
 const AdminMarketplaceProductsPage = lazy(
   () => import("./admin/marketplace/pages/AdminMarketplaceProductsPage"),
+);
+const ParkingControlCenterPage = lazy(
+  () => import("./admin/parking/pages/ParkingControlCenterPage"),
+);
+const ParkingStaffRolesPage = lazy(
+  () => import("./admin/parking/pages/ParkingStaffRolesPage"),
 );
 
 // Sacred Services Ecosystem & Media Hub Pages
@@ -401,17 +410,33 @@ const AppContent: React.FC = () => {
           >
             <Route path="/parking/checkout" element={<ParkingCheckoutPage />} />
             <Route
-              path="/parking/my-bookings"
-              element={<ParkingMyBookingsPage />}
-            />
-            <Route
               path="/parking/booking/:id"
               element={<ParkingBookingDetailPage />}
+            />
+          </Route>
+
+          {/* Smart Parking Role Dashboard (Partners, Managers, Guards, Admins).
+            All operational parking pages render inside DashboardLayout console. */}
+          <Route
+            element={
+              <ProtectedRoute>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/parking/dashboard" element={<ParkingRoleDashboardPage />} />
+            <Route
+              path="/admin/parking/dashboard"
+              element={<ParkingRoleDashboardPage />}
             />
             <Route path="/parking/gate" element={<ParkingGuardPanelPage />} />
             <Route
               path="/parking/partner"
               element={<ParkingPartnerDashboardPage />}
+            />
+            <Route
+              path="/parking/my-bookings"
+              element={<ParkingMyBookingsPage />}
             />
           </Route>
 
@@ -591,6 +616,18 @@ const AppContent: React.FC = () => {
             <Route
               path="/admin/enterprise-notifications/:subSection?"
               element={<EnterpriseNotificationCenterPage />}
+            />
+            {/* Parking. The workflow actions (partner approval, payout
+              settlement, refunds) live here rather than in the generic console,
+              which can only $set fields. Declared before
+              /admin/manage/:moduleKey so neither shadows the other. */}
+            <Route
+              path="/admin/parking/control"
+              element={<ParkingControlCenterPage />}
+            />
+            <Route
+              path="/admin/parking/roles"
+              element={<ParkingStaffRolesPage />}
             />
             <Route
               path="/admin/approvals/room-categories"

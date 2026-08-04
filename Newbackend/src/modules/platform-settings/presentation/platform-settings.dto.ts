@@ -8,6 +8,13 @@ export class UpdatePlatformSettingsDto {
     label?: string;
   };
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) gstRate?: number;
+  /** GST on the platform fee. The stay itself is never taxed. */
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  platformFeeGstRate?: number;
   @IsOptional()
   @Type(() => Number)
   @IsNumber()

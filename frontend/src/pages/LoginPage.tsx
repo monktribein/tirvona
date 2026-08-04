@@ -69,13 +69,16 @@ export const LoginPage: React.FC = () => {
     null,
   );
 
-  const goAfterAuthentication = (role?: string) => {
-    const target = getPostLoginRedirect(role, redirect);
+  // `parkingRoles` comes from the session: parking staff read `role: customer`,
+  // so the grant list is the only thing that sends them to their own dashboard
+  // rather than the pilgrim profile.
+  const goAfterAuthentication = (role?: string, parkingRoles?: string[]) => {
+    const target = getPostLoginRedirect(role, redirect, parkingRoles);
     navigate(target.url, { replace: true });
   };
 
   const google = useGoogleAuth((userArg) => {
-    goAfterAuthentication(userArg?.role);
+    goAfterAuthentication(userArg?.role, userArg?.parkingRoles);
   });
 
   const handleGoogle = async () => {
@@ -98,7 +101,7 @@ export const LoginPage: React.FC = () => {
         setLoginChallenge(res.challenge);
         return;
       }
-      goAfterAuthentication(res.user?.role);
+      goAfterAuthentication(res.user?.role, res.user?.parkingRoles);
     } else {
       if (res.isSuspended && res.suspensionData) {
         setSuspensionInfo(res.suspensionData);
@@ -171,7 +174,9 @@ export const LoginPage: React.FC = () => {
     const res = await loginOTP(phone, otpCode);
     setLoading(false);
     if (res.success) {
-      goAfterAuthentication(user?.role);
+      // From the response, not context: `setUser` has not committed yet, so
+      // `user` here is still the pre-login value.
+      goAfterAuthentication(res.user?.role, res.user?.parkingRoles);
     } else {
       setError(res.message || "Invalid OTP");
     }
@@ -331,7 +336,7 @@ export const LoginPage: React.FC = () => {
                   return res;
                 }}
                 onCancel={() => setLoginChallenge(null)}
-                onVerified={() => goAfterAuthentication(user?.role)}
+                onVerified={() => goAfterAuthentication(user?.role, user?.parkingRoles)}
               />
             ) : (
               <>
@@ -707,7 +712,7 @@ export const LoginPage: React.FC = () => {
           email={google.email}
           suggestedName={google.suggestedName}
           onSubmit={google.completeProfile}
-          onDone={() => goAfterAuthentication(user?.role)}
+          onDone={() => goAfterAuthentication(user?.role, user?.parkingRoles)}
           onCancel={google.reset}
         />
       )}

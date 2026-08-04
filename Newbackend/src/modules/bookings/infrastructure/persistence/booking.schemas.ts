@@ -67,6 +67,10 @@ export const BookingSchema = new Schema(
       discountAmount: { type: Number, default: 0 },
       loyaltyDiscount: { type: Number, default: 0 },
       gstAmount: { type: Number, default: 0 },
+      // GST is levied on the platform fee only, never on the stay, so the
+      // taxable base is recorded alongside the rate that produced the amount.
+      gstPercent: { type: Number, default: 18 },
+      gstTaxableAmount: { type: Number, default: 0 },
       platformFee: { type: Number, default: 0 },
       originalAmount: Number,
       finalAmount: Number,

@@ -55,6 +55,28 @@ const randomCode = (length: number): string =>
 export const parkingBookingReference = (): string => `TVN-PKG-${randomCode(8)}`;
 export const parkingDisplayCode = (): string =>
   `${randomCode(4)}-${randomCode(4)}`;
+
+/**
+ * Accepts a hand-typed gate code and returns it in stored form, or null when it
+ * is not a gate code at all (so a sealed token falls through to its own path).
+ *
+ * ALPHABET omits I, L, O and U precisely because they are misread, so the
+ * characters a guard is most likely to type by mistake are exactly the ones
+ * that can be mapped back without ambiguity. Separators and case are ignored:
+ * "h24r bgtb", "H24R-BGTB" and "h24rbgtb" are the same pass.
+ */
+export const normalizeGateCode = (value: string): string | null => {
+  const cleaned = value
+    .toUpperCase()
+    .replace(/[^0-9A-Z]/g, "")
+    .replace(/[IL]/g, "1")
+    .replace(/O/g, "0")
+    .replace(/U/g, "V");
+  if (cleaned.length !== 8) return null;
+  if (![...cleaned].every((character) => ALPHABET.includes(character)))
+    return null;
+  return `${cleaned.slice(0, 4)}-${cleaned.slice(4)}`;
+};
 export const parkingPartnerCode = (): string => `PKP-${randomCode(6)}`;
 export const parkingTransactionReference = (): string =>
   `PKTXN-${randomCode(8)}`;

@@ -1,16 +1,18 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import type { Model } from "mongoose";
+import { Types, type Model } from "mongoose";
 import { Interval } from "@nestjs/schedule";
 import { TransactionService } from "../../../common/database/transaction.service";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import {
   PARKING_AMENITIES,
   PARKING_MODEL,
+  PARKING_ROLE_CAPABILITIES,
   PARKING_ROLES,
   PARKING_VEHICLE_META,
   PARKING_VEHICLE_TYPES,
@@ -200,11 +202,21 @@ export class ParkingManagementService {
     body: Record<string, any>,
   ): Promise<any> {
     const partnerId = body.partnerId || access.partnerIds[0];
+    // A platform admin holds no partner grants of their own, so `partnerId`
+    // falls back to nothing and the authorisation check below waves it through.
+    // Without this the upsert writes a grant that belongs to no partner —
+    // still loaded by ParkingAccessService, but scoped to nobody.
+    if (!partnerId || !Types.ObjectId.isValid(String(partnerId)))
+      throw new BadRequestException("Select the partner this role belongs to.");
+    if (!body.userId || !Types.ObjectId.isValid(String(body.userId)))
+      throw new BadRequestException("Select the user to grant this role to.");
     if (
       !access.isPlatformAdmin &&
       !access.partnerIds.includes(String(partnerId))
     )
       throw new ForbiddenException("Not authorised for this partner.");
+    if (!(await this.partners.exists({ _id: partnerId })))
+      throw new NotFoundException("That parking partner does not exist.");
     const managerOnly =
       !access.isPlatformAdmin &&
       access.roles.includes("parking_manager") &&
@@ -236,6 +248,68 @@ export class ParkingManagementService {
       },
       { upsert: true, new: true },
     );
+  }
+
+  /**
+   * Every parking grant on the platform, optionally narrowed.
+   *
+   * The partner-facing roster answers for a single `partnerId` and returns
+   * nothing when the caller holds no grants of their own, which is exactly the
+   * case for a Super Admin — so the console needs its own unscoped view to
+   * manage roles across partners.
+   */
+  async staffRoster(query: Record<string, string>): Promise<any> {
+    const filter: Record<string, any> = {};
+    if (query.partnerId && Types.ObjectId.isValid(query.partnerId))
+      filter.partnerId = query.partnerId;
+    if (query.locationId && Types.ObjectId.isValid(query.locationId))
+      filter.locationIds = query.locationId;
+    if (query.parkingRole && PARKING_ROLES.includes(query.parkingRole as never))
+      filter.parkingRole = query.parkingRole;
+    if (query.status && query.status !== "all") filter.status = query.status;
+    const page = Math.max(1, Number(query.page) || 1);
+    const limit = Math.min(100, Math.max(1, Number(query.limit) || 50));
+    const [rows, total] = await Promise.all([
+      this.staff
+        .find(filter)
+        .populate("userId", "name email phone role status")
+        .populate("partnerId", "businessName partnerCode status")
+        .populate("locationIds", "name slug")
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
+      this.staff.countDocuments(filter),
+    ]);
+    // A grant carries the role's capability set, and the console has to show
+    // what a role actually permits before an admin hands it out.
+    const data = rows.map((row: any) => {
+      const base = PARKING_ROLE_CAPABILITIES[String(row.parkingRole)] ?? [];
+      return {
+        ...row,
+        capabilities: row.capabilityOverrides?.length
+          ? base.filter((capability: string) =>
+              row.capabilityOverrides.includes(capability),
+            )
+          : base,
+        // An empty `locationIds` means partner-wide, which reads as "no
+        // locations" in a table unless it is stated.
+        scope: row.locationIds?.length ? "locations" : "all_partner_locations",
+      };
+    });
+    return { success: true, count: data.length, total, page, data };
+  }
+
+  async revokeStaff(id: string): Promise<any> {
+    if (!Types.ObjectId.isValid(id))
+      throw new BadRequestException("Invalid staff record id");
+    const grant = await this.staff.findByIdAndUpdate(
+      id,
+      { $set: { status: "inactive" } },
+      { new: true },
+    );
+    if (!grant) throw new NotFoundException("Staff record not found.");
+    return grant;
   }
 
   async saveSettings(

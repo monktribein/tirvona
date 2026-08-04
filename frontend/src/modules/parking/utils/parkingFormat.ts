@@ -153,3 +153,18 @@ export const normalizeVehicleNumber = (value: string) =>
 
 export const isValidVehicleNumber = (value: string) =>
   /^[A-Z]{2}[0-9]{1,2}[A-Z]{0,3}[0-9]{4}$/.test(normalizeVehicleNumber(value));
+
+/**
+ * Whether the scanner box holds something worth sending.
+ *
+ * Mirrors what the API accepts, so the gate can fire the moment a code lands
+ * instead of waiting for Enter or a tap: a sealed pass (`TVNPK1.iv.data.tag`)
+ * or an 8-character gate code. Deliberately strict — a half-typed code must not
+ * fire and burn a scan, and the guard can always press the button.
+ */
+export const isCompleteScanInput = (value: string): boolean => {
+  const trimmed = String(value || "").trim();
+  if (!trimmed) return false;
+  if (trimmed.startsWith("TVNPK1.")) return trimmed.split(".").length === 4;
+  return trimmed.toUpperCase().replace(/[^0-9A-Z]/g, "").length === 8;
+};

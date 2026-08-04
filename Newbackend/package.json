@@ -16,7 +16,9 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "typecheck": "tsc --noEmit",
     "db:indexes": "node dist/scripts/create-indexes.js",
-    "db:indexes:dev": "ts-node src/scripts/create-indexes.ts"
+    "db:indexes:dev": "ts-node src/scripts/create-indexes.ts",
+    "parking:staff": "ts-node src/scripts/parking-staff-accounts.ts",
+    "parking:seed": "ts-node src/scripts/seed-parking-roles.ts"
   },
   "jest": {
     "moduleFileExtensions": [

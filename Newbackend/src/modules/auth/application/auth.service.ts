@@ -26,6 +26,7 @@ import {
   UserRepository,
 } from "../../users/domain/user.repository";
 import type { UserDocument } from "../../users/infrastructure/persistence/user.schema";
+import { PARKING_MODEL } from "../../parking/domain/parking.constants";
 import type { LoginDto, RegisterDto } from "../presentation/dtos/auth.dto";
 
 @Injectable()
@@ -36,7 +37,31 @@ export class AuthService {
     private readonly config: ConfigService,
     @InjectModel("AuthChallenge") private readonly challenges: Model<any>,
     @InjectModel("User") private readonly userModel: Model<any>,
+    @InjectModel(PARKING_MODEL.Staff) private readonly parkingStaff: Model<any>,
   ) {}
+
+  /**
+   * The parking roles an account currently holds.
+   *
+   * Parking authorisation is a grant in `parking_staff`, not a value of
+   * `User.role` — the enum has no parking entries at all — so a security guard
+   * or parking partner still reads `role: "customer"`. Nothing downstream can
+   * tell them apart from a pilgrim without this, which is why it travels on the
+   * session: the client uses it to route to the right dashboard, and login uses
+   * it to decide whether the OTP applies.
+   *
+   * Only ACTIVE grants count; a revoked one leaves the account an ordinary
+   * Visitor. Covered by `parking_staff`'s `{ userId: 1, status: 1 }` index.
+   */
+  private async activeParkingRoles(userId: unknown): Promise<string[]> {
+    const grants = await this.parkingStaff
+      .find({ userId, status: "active" })
+      .select("parkingRole")
+      .lean();
+    return [
+      ...new Set(grants.map((grant: any) => String(grant.parkingRole))),
+    ];
+  }
 
   async login(dto: LoginDto): Promise<Record<string, any>> {
     const user = await this.users.findByEmail(dto.email, true);
@@ -51,7 +76,11 @@ export class AuthService {
         "Your account is suspended. Contact support.",
       );
     }
-    if (user.role === "customer")
+    const parkingRoles = await this.activeParkingRoles(user._id);
+    // The login OTP is a Guest Visitor mechanism. Holding an operational grant
+    // makes an account staff, so it signs in with a password like every other
+    // role — otherwise the code goes to an address the holder may never read.
+    if (user.role === "customer" && parkingRoles.length === 0)
       return {
         otpRequired: true,
         challenge: await this.createChallenge("login", user.email, {
@@ -60,7 +89,7 @@ export class AuthService {
       };
     user.lastLoginAt = new Date();
     await user.save();
-    return this.session(user);
+    return this.session(user, parkingRoles);
   }
 
   async register(dto: RegisterDto): Promise<Record<string, any>> {
@@ -94,7 +123,14 @@ export class AuthService {
     return this.session(user);
   }
 
-  session(user: UserDocument): Record<string, unknown> {
+  /**
+   * `parkingRoles` is passed in by callers that have already resolved it, so a
+   * login costs one lookup rather than two.
+   */
+  async session(
+    user: UserDocument,
+    parkingRoles?: string[],
+  ): Promise<Record<string, unknown>> {
     const token = this.jwt.sign({
       id: user._id.toString(),
       sub: user._id.toString(),
@@ -110,6 +146,9 @@ export class AuthService {
       status: user.status,
       isVerified: user.isVerified,
       permissions: user.permissions ?? [],
+      // Grant-based roles the account holds. Empty for everyone else, so the
+      // client can treat "has parking roles" as the whole test.
+      parkingRoles: parkingRoles ?? (await this.activeParkingRoles(user._id)),
       token,
     };
   }
@@ -349,7 +388,7 @@ export class AuthService {
     if (user) {
       user.lastLoginAt = new Date();
       await user.save();
-      return { session: this.session(user) };
+      return { session: await this.session(user) };
     }
     return {
       otpRequired: true,

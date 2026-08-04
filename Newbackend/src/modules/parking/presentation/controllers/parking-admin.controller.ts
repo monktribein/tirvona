@@ -8,6 +8,7 @@ import {
   Post,
   Put,
   Query,
+  Req,
   UseGuards,
 } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
@@ -18,9 +19,16 @@ import {
 } from "../../../../common/decorators/current-user.decorator";
 import { ParkingBookingService } from "../../application/parking-booking.service";
 import { ParkingManagementService } from "../../application/parking-management.service";
-import { PARKING_CAPABILITIES } from "../../domain/parking.constants";
+import {
+  PARKING_CAPABILITIES,
+  PARKING_ROLE_CAPABILITIES,
+  PARKING_ROLES,
+} from "../../domain/parking.constants";
 import { ParkingCapabilities } from "../decorators/parking-capabilities.decorator";
-import { ParkingCapabilityGuard } from "../guards/parking-capability.guard";
+import {
+  ParkingCapabilityGuard,
+  type ParkingRequest,
+} from "../guards/parking-capability.guard";
 
 @ApiTags("Parking Administration")
 @ApiBearerAuth()
@@ -179,6 +187,51 @@ export class ParkingAdminController {
       message: `Booking cancelled and ₹${data.refund.refundAmount} refunded.`,
       data,
     };
+  }
+
+  /**
+   * Parking roles are grants in `parking_staff`, not values of `User.role`, so
+   * they are invisible to the user-management console. These three routes are
+   * the platform-wide view of them; the partner-scoped equivalents on
+   * /parking/partner answer only for a caller who holds grants of their own.
+   */
+  @Get("staff")
+  @ParkingCapabilities(PARKING_CAPABILITIES.MANAGE_STAFF)
+  async staff(@Query() query: Record<string, string>) {
+    return this.service.staffRoster(query);
+  }
+
+  @Get("staff/roles")
+  @ParkingCapabilities(PARKING_CAPABILITIES.MANAGE_STAFF)
+  roles() {
+    return {
+      success: true,
+      data: PARKING_ROLES.map((role) => ({
+        role,
+        capabilities: PARKING_ROLE_CAPABILITIES[role] ?? [],
+      })),
+    };
+  }
+
+  @Post("staff")
+  @ParkingCapabilities(PARKING_CAPABILITIES.MANAGE_STAFF)
+  async assignStaff(
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() req: ParkingRequest,
+    @Body() body: Record<string, any>,
+  ) {
+    return {
+      success: true,
+      message: "Parking role assigned.",
+      data: await this.service.assignStaff(user, req.parking, body),
+    };
+  }
+
+  @Delete("staff/:id")
+  @ParkingCapabilities(PARKING_CAPABILITIES.MANAGE_STAFF)
+  async revokeStaff(@Param("id") id: string) {
+    await this.service.revokeStaff(id);
+    return { success: true, message: "Parking role revoked." };
   }
 
   @Get("commissions")
