@@ -1044,6 +1044,7 @@ export class GovernanceService {
     approved: "approved",
     rejected: "rejected",
     suspended: "suspended",
+    archived: "suspended",
     pending: "pending_docs",
     pending_docs: "pending_docs",
     pending_inspection: "pending_inspection",
@@ -1082,10 +1083,15 @@ export class GovernanceService {
     );
 
     if (model === "Admin_ashrams" && typeof payload.status === "string") {
-      const mapped =
-        GovernanceService.ASHRAM_STATUS_ALIASES[
-          payload.status.trim().toLowerCase()
-        ];
+      const requested = payload.status.trim().toLowerCase();
+      // An untouched select submits "" — leave the record's status alone
+      // rather than rejecting the whole save.
+      if (!requested) {
+        delete payload.status;
+        delete payload.isVerified;
+        return payload;
+      }
+      const mapped = GovernanceService.ASHRAM_STATUS_ALIASES[requested];
       if (!mapped)
         throw new BadRequestException(
           "An ashram can only be set to approved, rejected, suspended, pending_docs, or pending_inspection",

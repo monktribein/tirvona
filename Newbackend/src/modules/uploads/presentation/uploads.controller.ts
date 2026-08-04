@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Controller,
   Post,
   UploadedFile,
@@ -15,25 +14,14 @@ export class UploadsController {
   constructor(private readonly service: UploadsService) {}
   @Post()
   @Throttle({ default: { limit: 20, ttl: 900_000 } })
+  // No MIME allowlist here on purpose: the declared type is chosen by the
+  // browser and is wrong often enough to reject valid photos. UploadsService
+  // identifies the file from its magic bytes, which is both more permissive
+  // for real images and stricter for anything pretending to be one.
   @UseInterceptors(
     FileInterceptor("file", {
       storage: memoryStorage(),
       limits: { fileSize: 10 * 1024 * 1024 },
-      fileFilter: (_req, file, done) =>
-        [
-          "image/jpeg",
-          "image/png",
-          "image/webp",
-          "image/gif",
-          "application/pdf",
-        ].includes(file.mimetype)
-          ? done(null, true)
-          : done(
-              new BadRequestException(
-                "Unsupported file type. Allowed: JPG, PNG, WEBP, GIF, PDF.",
-              ),
-              false,
-            ),
     }),
   )
   async upload(

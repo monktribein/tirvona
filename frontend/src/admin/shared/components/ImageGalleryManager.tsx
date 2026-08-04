@@ -40,48 +40,34 @@ export const ImageGalleryManager: React.FC<ImageGalleryManagerProps> = ({
   const handleFileUpload = async (file: File, replaceIdx?: number) => {
     setUploading(true);
     try {
-      // First try to upload via server endpoint POST /api/uploads
+      // The upload endpoint is the only source of an image reference. There is
+      // deliberately no local base64 fallback: a data URI gets saved into the
+      // record, bloats every listing that reads it, and pushes the save past
+      // the request body limit.
       const formData = new FormData();
       formData.append("file", file);
       formData.append("folder", "admin-gallery");
 
-      let uploadedUrl = "";
-      try {
-        const res = await api.post("/uploads", formData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
-        if (res.data?.success && res.data.data?.url) {
-          uploadedUrl = res.data.data.url;
-        }
-      } catch (apiErr) {
-        console.warn("API upload fallback to local FileReader:", apiErr);
-      }
+      const res = await api.post("/uploads", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      const uploadedUrl: string = res.data?.data?.url ?? "";
+      if (!res.data?.success || !uploadedUrl)
+        throw new Error(res.data?.message || "Upload did not return an image.");
 
-      // If server returned data URI or URL, use it; otherwise read as base64 locally
-      if (!uploadedUrl) {
-        uploadedUrl = await new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onload = (e) => resolve(e.target?.result as string);
-          reader.readAsDataURL(file);
-        });
+      if (replaceIdx !== undefined && replaceIdx >= 0) {
+        handleReplace(replaceIdx, uploadedUrl);
+      } else {
+        handleAddImage(uploadedUrl);
       }
-
-      if (uploadedUrl) {
-        if (replaceIdx !== undefined && replaceIdx >= 0) {
-          handleReplace(replaceIdx, uploadedUrl);
-        } else {
-          handleAddImage(uploadedUrl);
-        }
-        addNotification(
-          "Photo Uploaded",
-          "Selected image loaded from local device memory.",
-          "success",
-        );
-      }
+      addNotification("Photo Uploaded", "Image saved to media storage.", "success");
     } catch (err) {
       addNotification(
         "Upload Failed",
-        getErrorMessage(err, "Could not load photo from device."),
+        getErrorMessage(
+          err,
+          "Could not upload this photo. Use a JPG, PNG, WEBP or GIF file under 10 MB.",
+        ),
         "error",
       );
     } finally {
