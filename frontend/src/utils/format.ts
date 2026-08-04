@@ -62,3 +62,14 @@ export const formatDateTimeIN = (value?: string | Date | null): string => {
     minute: "2-digit",
   });
 };
+
+/**
+ * Round a money amount to paise.
+ *
+ * Mirrors `roundMoney` in the backend's booking utils. Both sides must agree
+ * exactly: this file drives the price a guest is shown before booking, and the
+ * server drives the amount actually charged. GST on a platform fee produces
+ * fractions (18% of 49 is 8.82), and raw float arithmetic drifts.
+ */
+export const roundMoney = (value: number): number =>
+  Math.round((value + Number.EPSILON) * 100) / 100;

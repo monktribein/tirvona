@@ -182,7 +182,7 @@ export class AuthController {
   async me(@CurrentUser() current: AuthenticatedUser) {
     const user = await this.users.findById(current.id);
     if (!user) return { success: false, message: "User not found" };
-    return { success: true, data: this.auth.session(user) };
+    return { success: true, data: await this.auth.session(user) };
   }
 
   @Put("me")
@@ -196,7 +196,7 @@ export class AuthController {
     if (dto.name !== undefined) user.name = dto.name.trim();
     if (dto.phone !== undefined) user.phone = dto.phone;
     await user.save();
-    return { success: true, data: this.auth.session(user) };
+    return { success: true, data: await this.auth.session(user) };
   }
 
   @Get("owner-staff") @Roles("super_admin") async staff(

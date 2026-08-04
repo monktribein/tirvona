@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { platformSettingsService } from "../../services";
+import { roundMoney } from "../../utils/format";
 import { useNotifications } from "../../contexts/NotificationContext";
 import {
   DollarSign,
@@ -30,7 +31,9 @@ export const AdminPlatformSettingsPage: React.FC = () => {
     value: 49,
     label: "Tirvona Platform Fee",
   });
-  const [gstRate, setGstRate] = useState<number>(5);
+  // GST charged on the platform fee. The stay is never taxed, so this is the
+  // only rate that reaches a booking total.
+  const [platformFeeGstRate, setPlatformFeeGstRate] = useState<number>(18);
 
   useEffect(() => {
     fetchSettings();
@@ -43,7 +46,8 @@ export const AdminPlatformSettingsPage: React.FC = () => {
       if (res.data?.success && res.data.data) {
         const data = res.data.data;
         if (data.platformFee) setPlatformFee(data.platformFee);
-        if (data.gstRate !== undefined) setGstRate(data.gstRate);
+        if (data.platformFeeGstRate !== undefined)
+          setPlatformFeeGstRate(data.platformFeeGstRate);
       }
     } catch (err) {
       console.error("Fetch settings error:", err);
@@ -59,7 +63,7 @@ export const AdminPlatformSettingsPage: React.FC = () => {
     try {
       const res = await platformSettingsService.updateSettings({
         platformFee,
-        gstRate,
+        platformFeeGstRate,
       });
       if (res.data?.success) {
         addNotification(
@@ -80,13 +84,16 @@ export const AdminPlatformSettingsPage: React.FC = () => {
 
   // Sample Live Preview calculations based on a ₹1,000 stay
   const sampleStayCost = 1000;
-  const sampleGst = Math.round((sampleStayCost * gstRate) / 100);
   const samplePlatformFee = !platformFee.enabled
     ? 0
     : platformFee.type === "percentage"
       ? Math.round((sampleStayCost * platformFee.value) / 100)
       : Math.round(platformFee.value);
-  const sampleTotal = sampleStayCost + sampleGst + samplePlatformFee;
+  // Mirrors BookingPricingService.quote: GST applies to the fee, not the stay.
+  const sampleGst = roundMoney((samplePlatformFee * platformFeeGstRate) / 100);
+  const sampleTotal = roundMoney(
+    sampleStayCost + samplePlatformFee + sampleGst,
+  );
 
   return (
     <div className="p-6 space-y-6 max-w-5xl mx-auto text-left">
@@ -223,14 +230,16 @@ export const AdminPlatformSettingsPage: React.FC = () => {
             {/* GST Rate */}
             <div className="space-y-1.5 text-xs font-semibold">
               <label className="text-[10px] font-extrabold uppercase text-gray-400">
-                Government GST Rate (%)
+                GST on platform fee (%)
               </label>
               <input
                 type="number"
                 min={0}
                 max={28}
-                value={gstRate}
-                onChange={(e) => setGstRate(parseFloat(e.target.value) || 0)}
+                value={platformFeeGstRate}
+                onChange={(e) =>
+                  setPlatformFeeGstRate(parseFloat(e.target.value) || 0)
+                }
                 className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:outline-none"
               />
             </div>
@@ -261,7 +270,7 @@ export const AdminPlatformSettingsPage: React.FC = () => {
               </div>
 
               <div className="flex justify-between text-gray-400 text-[11px]">
-                <span>Govt GST ({gstRate}%):</span>
+                <span>GST ({platformFeeGstRate}% on platform fee):</span>
                 <span>₹{sampleGst}</span>
               </div>
 

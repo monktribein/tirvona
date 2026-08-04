@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   Loader2,
   RotateCcw,
+  Camera,
 } from "lucide-react";
 import { getErrorMessage } from "../../../lib/api";
 import { parkingScanService } from "../services/parking.service";
@@ -23,6 +24,7 @@ import {
   formatCurrency,
   formatDateTime,
   formatDuration,
+  isCompleteScanInput,
   vehicleLabel,
 } from "../utils/parkingFormat";
 import ParkingStatusBadge from "../components/ParkingStatusBadge";
@@ -56,7 +58,16 @@ export const ParkingGuardPanelPage: React.FC = () => {
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  const [autoScan, setAutoScan] = useState(true);
+  const [cameraOn, setCameraOn] = useState(false);
+  const [cameraError, setCameraError] = useState("");
+
   const inputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  // `busy` as a ref as well: the auto-fire timer and the camera loop both read
+  // it outside React's render cycle, where the state value is a stale closure.
+  const busyRef = useRef(false);
+  const lastSubmittedRef = useRef("");
 
   // Which facilities this guard is posted to. A guard with one post gets it
   // preselected so the screen is immediately usable.
@@ -102,13 +113,100 @@ export const ParkingGuardPanelPage: React.FC = () => {
     setPlate("");
     setResult(null);
     setMessage("");
+    // Clear the guard against re-sending, so the SAME vehicle can legitimately
+    // be scanned again — an entry followed by an exit, for instance.
+    lastSubmittedRef.current = "";
     refocus();
   };
 
-  const handleScan = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!token.trim() || !locationId || busy) return;
+  /**
+   * Camera scanning via the browser's own BarcodeDetector.
+   *
+   * Deliberately no QR library: the native detector is hardware-accelerated,
+   * adds nothing to the bundle, and is present in the Chromium browsers a gate
+   * terminal actually runs. Where it is missing the panel says so and the
+   * scanner box, gate code and plate lookup all still work.
+   */
+  const cameraSupported =
+    typeof window !== "undefined" && "BarcodeDetector" in window;
 
+  useEffect(() => {
+    if (!cameraOn) return;
+    let cancelled = false;
+    let timer = 0;
+    // Held locally, not on a ref: cleanup must stop the stream THIS run opened,
+    // whatever a later run may have replaced the ref with.
+    let activeStream: MediaStream | null = null;
+    const video = videoRef.current;
+
+    (async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment" },
+        });
+        if (cancelled) {
+          stream.getTracks().forEach((track) => track.stop());
+          return;
+        }
+        activeStream = stream;
+        if (video) {
+          video.srcObject = stream;
+          await video.play();
+        }
+        const Detector = (
+          window as unknown as {
+            BarcodeDetector: new (options: { formats: string[] }) => {
+              detect: (source: CanvasImageSource) => Promise<{ rawValue: string }[]>;
+            };
+          }
+        ).BarcodeDetector;
+        const detector = new Detector({ formats: ["qr_code"] });
+
+        const tick = async () => {
+          if (cancelled) return;
+          if (video && video.readyState >= 2 && !busyRef.current) {
+            try {
+              const [found] = await detector.detect(video);
+              const value = found?.rawValue?.trim();
+              if (value && value !== lastSubmittedRef.current) {
+                setToken(value);
+                await submitToken(value);
+              }
+            } catch {
+              // A single failed frame is normal while focusing; keep polling.
+            }
+          }
+          if (!cancelled) timer = window.setTimeout(tick, 350);
+        };
+        void tick();
+      } catch (err) {
+        if (!cancelled)
+          setCameraError(
+            getErrorMessage(
+              err,
+              "Could not open the camera. Check the browser's camera permission.",
+            ),
+          );
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+      // Release the device, or the camera light stays on after leaving.
+      activeStream?.getTracks().forEach((track) => track.stop());
+      if (video) video.srcObject = null;
+    };
+  }, [cameraOn, locationId, mode]);
+
+  const submitToken = async (raw: string) => {
+    const value = raw.trim();
+    if (!value || !locationId || busyRef.current) return;
+
+    // Remember what was sent so the auto-fire watcher cannot send it twice —
+    // a duplicate check-in is a real scan against the booking, not a no-op.
+    lastSubmittedRef.current = value;
+    busyRef.current = true;
     setBusy(true);
     setMessage("");
     setResult(null);
@@ -116,10 +214,10 @@ export const ParkingGuardPanelPage: React.FC = () => {
     try {
       const call =
         mode === "check-in"
-          ? parkingScanService.checkIn(token.trim(), locationId)
+          ? parkingScanService.checkIn(value, locationId)
           : mode === "check-out"
-            ? parkingScanService.checkOut(token.trim(), locationId)
-            : parkingScanService.verify(token.trim(), locationId);
+            ? parkingScanService.checkOut(value, locationId)
+            : parkingScanService.verify(value, locationId);
 
       const res = await call;
 
@@ -135,11 +233,35 @@ export const ParkingGuardPanelPage: React.FC = () => {
       setResultTone("error");
       setMessage(getErrorMessage(err, "This pass could not be accepted."));
     } finally {
+      busyRef.current = false;
       setBusy(false);
       setToken("");
       refocus();
     }
   };
+
+  const handleScan = (e: React.FormEvent) => {
+    e.preventDefault();
+    void submitToken(token);
+  };
+
+  /**
+   * Fire as soon as a whole code lands, so the gate needs no keypress or tap.
+   *
+   * A hardware reader that sends Enter already submitted via the form; this
+   * covers the ones that do not, and pasting. The short delay lets a reader
+   * finish typing — it emits characters one at a time, and an 8-character gate
+   * code passes the completeness test at its last character either way.
+   */
+  useEffect(() => {
+    if (!autoScan || manualMode || busy || !locationId) return;
+    const value = token.trim();
+    if (!isCompleteScanInput(value) || value === lastSubmittedRef.current)
+      return;
+    const timer = window.setTimeout(() => void submitToken(value), 250);
+    return () => window.clearTimeout(timer);
+    // submitToken closes over mode/locationId, both in the dependency list.
+  }, [token, autoScan, manualMode, busy, locationId, mode]);
 
   const handleLookup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -275,19 +397,74 @@ export const ParkingGuardPanelPage: React.FC = () => {
             <section className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 space-y-3 shadow-sm">
               {!manualMode ? (
                 <form onSubmit={handleScan} className="space-y-3">
-                  <label
-                    htmlFor="scan-token"
-                    className="block text-[10px] uppercase tracking-wider font-bold text-gray-400"
-                  >
-                    Scan or paste the QR pass
-                  </label>
+                  <div className="flex items-center justify-between gap-2">
+                    <label
+                      htmlFor="scan-token"
+                      className="block text-[10px] uppercase tracking-wider font-bold text-gray-400"
+                    >
+                      Scan the QR pass, or type the gate code
+                    </label>
+                    <label className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 cursor-pointer shrink-0">
+                      <input
+                        type="checkbox"
+                        checked={autoScan}
+                        onChange={(e) => setAutoScan(e.target.checked)}
+                        className="accent-[#0A4DA6]"
+                      />
+                      AUTO
+                    </label>
+                  </div>
+
+                  {cameraSupported && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCameraError("");
+                        setCameraOn((on) => !on);
+                      }}
+                      className={`w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl border text-xs font-extrabold transition-all cursor-pointer ${
+                        cameraOn
+                          ? "bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300"
+                          : "bg-white dark:bg-[#0B192C] border-gray-200 dark:border-slate-700 text-slate-600 dark:text-gray-300 hover:border-[#0A4DA6]"
+                      }`}
+                    >
+                      <Camera size={15} />
+                      {cameraOn ? "Stop camera" : "Scan with camera"}
+                    </button>
+                  )}
+
+                  {cameraOn && (
+                    <div className="relative rounded-2xl overflow-hidden bg-black aspect-video">
+                      <video
+                        ref={videoRef}
+                        muted
+                        playsInline
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <div className="w-40 h-40 border-2 border-white/80 rounded-2xl shadow-[0_0_0_9999px_rgba(0,0,0,0.35)]" />
+                      </div>
+                      <span className="absolute bottom-2 left-0 right-0 text-center text-[10px] font-bold text-white/90">
+                        Hold the pass inside the frame
+                      </span>
+                    </div>
+                  )}
+
+                  {cameraError && (
+                    <p className="text-[11px] font-semibold text-rose-600 dark:text-rose-400">
+                      {cameraError}
+                    </p>
+                  )}
                   <input
                     id="scan-token"
                     ref={inputRef}
                     type="text"
                     value={token}
                     onChange={(e) => setToken(e.target.value)}
-                    placeholder="Point the scanner here…"
+                    // Both inputs resolve to the same pass: the scanner reads
+                    // the sealed token, and the gate code printed under the QR
+                    // is accepted for a screen the scanner will not read.
+                    placeholder="Point the scanner here, or type e.g. H24R-BGTB"
                     autoComplete="off"
                     autoFocus
                     className="w-full bg-gray-50 dark:bg-slate-900 border-2 border-dashed border-[#0A4DA6]/30 focus:border-[#0A4DA6] rounded-2xl px-4 py-4 text-xs font-mono text-[#0B192C] dark:text-white placeholder:text-gray-400 placeholder:font-sans focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/20 transition-all"

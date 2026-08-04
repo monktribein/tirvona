@@ -18,10 +18,12 @@ import {
   type BookingRepository,
 } from "../domain/booking.repository";
 import {
+  PLATFORM_FEE_GST_PERCENT,
   bookingReference,
   checkinCode,
   financialReference,
   reservationReference,
+  roundMoney,
 } from "../domain/booking.utils";
 import type {
   AssignRoomDto,
@@ -354,7 +356,13 @@ export class BookingsService {
 
   private signatureValid(dto: ConfirmBookingPaymentDto): boolean {
     const keySecret = this.config.get<string>("razorpayKeySecret");
-    if (!keySecret) return true;
+    // No secret means local development against a demo gateway, where there is
+    // no signature to check. Production must never take that path — an
+    // unverified confirmation would mark a booking paid for nothing — so it
+    // refuses instead. Boot validation already demands the keys; this is the
+    // second lock.
+    if (!keySecret)
+      return this.config.get<string>("nodeEnv") !== "production";
     if (
       !dto.razorpay_order_id ||
       !dto.razorpay_payment_id ||
@@ -620,6 +628,10 @@ export class BookingsService {
           { session },
         ),
       ]);
+      // Rate as charged at booking time, not today's setting.
+      const gstPercent = Number(
+        booking.pricing.gstPercent ?? PLATFORM_FEE_GST_PERCENT,
+      );
       const invoiceNo = financialReference("INV");
       const [invoice] = await this.invoices.create(
         [
@@ -628,17 +640,34 @@ export class BookingsService {
             bookingId: booking._id,
             customerId: user.id,
             ashramId: booking.ashramId,
+            // Two lines, because only one of them is taxed. The stay is
+            // supplied by the ashram and carries no GST; the platform fee is
+            // Tirvona's own service and is taxed at the recorded rate.
             lineItems: [
               {
                 description: "Ashram stay and selected services",
                 quantity: 1,
                 unitAmount: booking.pricing.originalAmount,
                 totalAmount: booking.pricing.originalAmount,
-                taxRate: 5,
-                taxAmount: booking.pricing.gstAmount,
+                taxRate: 0,
+                taxAmount: 0,
               },
+              ...(booking.pricing.platformFee > 0
+                ? [
+                    {
+                      description: "Tirvona platform fee",
+                      quantity: 1,
+                      unitAmount: booking.pricing.platformFee,
+                      totalAmount: booking.pricing.platformFee,
+                      taxRate: gstPercent,
+                      taxAmount: booking.pricing.gstAmount,
+                    },
+                  ]
+                : []),
             ],
-            subtotal: booking.pricing.originalAmount,
+            subtotal: roundMoney(
+              booking.pricing.originalAmount + booking.pricing.platformFee,
+            ),
             taxAmount: booking.pricing.gstAmount,
             discountAmount: booking.pricing.discountAmount,
             donationAmount: booking.pricing.donationAmount,
@@ -666,10 +695,19 @@ export class BookingsService {
               bookingId: booking._id,
               invoiceId: invoice._id,
               ashramId: booking.ashramId,
-              taxableAmount: booking.pricing.originalAmount,
-              gstPercent: 5,
-              cgst: booking.pricing.gstAmount / 2,
-              sgst: booking.pricing.gstAmount / 2,
+              // The taxable value is the platform fee, not the booking total.
+              taxableAmount:
+                booking.pricing.gstTaxableAmount ??
+                booking.pricing.platformFee ??
+                0,
+              gstPercent,
+              // Halving can leave a stray paise on an odd amount, so the split
+              // is rounded and SGST takes the remainder — cgst + sgst always
+              // adds back to totalTax exactly.
+              cgst: roundMoney(booking.pricing.gstAmount / 2),
+              sgst: roundMoney(
+                booking.pricing.gstAmount - roundMoney(booking.pricing.gstAmount / 2),
+              ),
               igst: 0,
               totalTax: booking.pricing.gstAmount,
               taxPeriod: new Date().toISOString().slice(0, 7),

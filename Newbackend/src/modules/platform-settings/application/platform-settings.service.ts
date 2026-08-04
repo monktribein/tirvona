@@ -18,6 +18,7 @@ export class PlatformSettingsService {
             label: "Tirvona Platform Fee",
           },
           gstRate: 5,
+          platformFeeGstRate: 18,
           bookingCommissionPercent: 10,
         },
       },
@@ -40,6 +41,8 @@ export class PlatformSettingsService {
           dto.platformFee.label.trim() || "Tirvona Platform Fee";
     }
     if (dto.gstRate !== undefined) row.gstRate = dto.gstRate;
+    if (dto.platformFeeGstRate !== undefined)
+      row.platformFeeGstRate = dto.platformFeeGstRate;
     if (dto.bookingCommissionPercent !== undefined)
       row.bookingCommissionPercent = dto.bookingCommissionPercent;
     row.updatedBy = user.id;

@@ -20,6 +20,7 @@ import {
   XCircle,
   CheckCircle,
   Key,
+  Car,
 } from "lucide-react";
 
 interface CmsRequest {
@@ -64,10 +65,13 @@ export const EnterpriseModulePage: React.FC<{
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [managingItem, setManagingItem] = useState<any | null>(null);
 
+  // Underscores are separators too — module keys arrive as `parking_partners`
+  // and `institution_contacts`, which rendered with the underscore intact.
   const formatTitle = (str: string) =>
     str
-      .replace(/-/g, " ")
+      .replace(/[-_]/g, " ")
       .replace(/([A-Z])/g, " $1")
+      .replace(/\s+/g, " ")
       .replace(/^./, (c) => c.toUpperCase())
       .trim();
 
@@ -190,8 +194,21 @@ export const EnterpriseModulePage: React.FC<{
     }
   };
 
+  // Tables the console shows but must never write. Parking bookings drive slot
+  // occupancy and QR validity, commissions and transactions are written by the
+  // settlement run, scan logs are an audit trail, and a staff grant carries
+  // authorisation rules that a plain field update would bypass — all of them
+  // change through /parking/admin, which enforces the transition.
+  const READ_ONLY_MODULES = new Set([
+    "parking_bookings",
+    "parking_commissions",
+    "parking_transactions",
+    "parking_scan_logs",
+    "parking_staff",
+  ]);
   const isReadOnlyFinance =
-    activeModule === "bookings" && activeSubKey === "refunds";
+    (activeModule === "bookings" && activeSubKey === "refunds") ||
+    READ_ONLY_MODULES.has(activeModule);
 
   // Custom Form & Column Definitions per Feature Area
   const getModuleConfig = () => {
@@ -471,6 +488,398 @@ export const EnterpriseModulePage: React.FC<{
               label: "Status",
               type: "select",
               options: ["active", "closed", "draft"],
+            },
+          ],
+        };
+
+      // ── Parking ────────────────────────────────────────────────────────────
+      // The console lists and searches these; partner approval, commission
+      // settlement, and refunds live in the Parking Control Center because
+      // they are workflow transitions, not field edits.
+      case "parking_partners":
+        return {
+          icon: <Car size={20} className="text-[#0A4DA6]" />,
+          columns: [
+            { key: "businessName", label: "Business Name" },
+            { key: "partnerCode", label: "Partner Code" },
+            { key: "contactPhone", label: "Contact Phone" },
+            {
+              key: "city",
+              label: "City",
+              render: (_: any, item: any) => item.address?.city || "—",
+            },
+            {
+              key: "commissionPercent",
+              label: "Commission",
+              render: (v: any) => (v == null ? "Platform default" : `${v}%`),
+            },
+            { key: "status", label: "Status" },
+          ],
+          // `status` is deliberately absent: approving a partner cascades to
+          // every location it owns, so it goes through the Control Center.
+          fields: [
+            {
+              name: "businessName",
+              label: "Business Name",
+              type: "text",
+              required: true,
+            },
+            { name: "contactPerson", label: "Contact Person", type: "text" },
+            { name: "contactEmail", label: "Contact Email", type: "email" },
+            { name: "contactPhone", label: "Contact Phone", type: "text" },
+            { name: "gstNumber", label: "GST Number", type: "text" },
+            { name: "panNumber", label: "PAN Number", type: "text" },
+            { name: "notes", label: "Internal Notes", type: "textarea" },
+          ],
+        };
+
+      case "parking_locations":
+        return {
+          icon: <Car size={20} className="text-[#0A4DA6]" />,
+          columns: [
+            { key: "name", label: "Parking Name" },
+            {
+              key: "partnerId",
+              label: "Partner",
+              render: (v: any) => v?.businessName || "—",
+            },
+            {
+              key: "city",
+              label: "City",
+              render: (_: any, item: any) => item.address?.city || "—",
+            },
+            { key: "totalCapacity", label: "Capacity" },
+            {
+              key: "rating",
+              label: "Rating",
+              render: (v: any) => `⭐ ${v?.average ?? 0}`,
+            },
+            { key: "status", label: "Status" },
+          ],
+          fields: [
+            {
+              name: "name",
+              label: "Parking Name",
+              type: "text",
+              required: true,
+            },
+            { name: "description", label: "Description", type: "textarea" },
+            { name: "contactPhone", label: "Contact Phone", type: "text" },
+            { name: "totalCapacity", label: "Total Capacity", type: "number" },
+            { name: "instructions", label: "Entry Instructions", type: "textarea" },
+            {
+              name: "status",
+              label: "Status",
+              type: "select",
+              options: ["draft", "pending", "active", "inactive", "suspended"],
+            },
+          ],
+        };
+
+      case "parking_bookings":
+        return {
+          icon: <Car size={20} className="text-[#0A4DA6]" />,
+          columns: [
+            { key: "bookingReference", label: "Reference" },
+            { key: "vehicleNumber", label: "Vehicle" },
+            { key: "vehicleType", label: "Type" },
+            {
+              key: "locationId",
+              label: "Parking",
+              render: (v: any) => v?.name || "—",
+            },
+            {
+              key: "entryAt",
+              label: "Entry",
+              render: (v: any) =>
+                v ? new Date(v).toLocaleString("en-IN") : "—",
+            },
+            {
+              key: "pricing",
+              label: "Amount",
+              render: (v: any) => `₹${v?.totalAmount ?? 0}`,
+            },
+            { key: "paymentStatus", label: "Payment" },
+            { key: "status", label: "Status" },
+          ],
+          fields: [],
+        };
+
+      case "parking_slot_types":
+        return {
+          icon: <Car size={20} className="text-[#0A4DA6]" />,
+          columns: [
+            { key: "name", label: "Slot Type" },
+            { key: "code", label: "Code" },
+            {
+              key: "locationId",
+              label: "Parking",
+              render: (v: any) => v?.name || "—",
+            },
+            { key: "totalCapacity", label: "Capacity" },
+            {
+              key: "vehicleTypes",
+              label: "Vehicles",
+              render: (v: any) => (Array.isArray(v) ? v.join(", ") : "—"),
+            },
+            {
+              key: "isActive",
+              label: "Active",
+              render: (v: any) => (v === false ? "No" : "Yes"),
+            },
+          ],
+          fields: [
+            { name: "name", label: "Slot Type", type: "text", required: true },
+            { name: "code", label: "Code", type: "text" },
+            {
+              name: "totalCapacity",
+              label: "Total Capacity",
+              type: "number",
+              required: true,
+            },
+            { name: "floorLabel", label: "Floor Label", type: "text" },
+            { name: "displayOrder", label: "Display Order", type: "number" },
+            { name: "description", label: "Description", type: "textarea" },
+          ],
+        };
+
+      case "parking_slots":
+        return {
+          icon: <Car size={20} className="text-[#0A4DA6]" />,
+          columns: [
+            { key: "slotNumber", label: "Slot Number" },
+            {
+              key: "locationId",
+              label: "Parking",
+              render: (v: any) => v?.name || "—",
+            },
+            {
+              key: "slotTypeId",
+              label: "Slot Type",
+              render: (v: any) => v?.name || "—",
+            },
+            { key: "floorLabel", label: "Floor" },
+            { key: "zone", label: "Zone" },
+            { key: "status", label: "Status" },
+          ],
+          fields: [
+            {
+              name: "slotNumber",
+              label: "Slot Number",
+              type: "text",
+              required: true,
+            },
+            { name: "floorLabel", label: "Floor Label", type: "text" },
+            { name: "zone", label: "Zone", type: "text" },
+            {
+              name: "status",
+              label: "Status",
+              type: "select",
+              options: [
+                "available",
+                "occupied",
+                "reserved",
+                "maintenance",
+                "blocked",
+              ],
+            },
+            { name: "maintenanceNote", label: "Maintenance Note", type: "textarea" },
+          ],
+        };
+
+      case "parking_pricing":
+        return {
+          icon: <Car size={20} className="text-[#0A4DA6]" />,
+          columns: [
+            {
+              key: "locationId",
+              label: "Parking",
+              render: (v: any) => v?.name || "—",
+            },
+            { key: "vehicleType", label: "Vehicle Type" },
+            { key: "mode", label: "Mode" },
+            {
+              key: "baseFee",
+              label: "Base Fee",
+              render: (v: any) => `₹${v ?? 0}`,
+            },
+            {
+              key: "hourlyRate",
+              label: "Hourly",
+              render: (v: any) => `₹${v ?? 0}`,
+            },
+            {
+              key: "dailyRate",
+              label: "Daily",
+              render: (v: any) => `₹${v ?? 0}`,
+            },
+          ],
+          fields: [
+            {
+              name: "mode",
+              label: "Pricing Mode",
+              type: "select",
+              options: ["hourly", "slab", "flat_day"],
+            },
+            { name: "baseFee", label: "Base Fee (₹)", type: "number" },
+            { name: "hourlyRate", label: "Hourly Rate (₹)", type: "number" },
+            { name: "dailyRate", label: "Daily Rate (₹)", type: "number" },
+            { name: "peakMultiplier", label: "Peak Multiplier", type: "number" },
+            { name: "freeMinutes", label: "Free Minutes", type: "number" },
+          ],
+        };
+
+      case "parking_staff":
+        return {
+          icon: <ShieldCheck size={20} className="text-[#0A4DA6]" />,
+          columns: [
+            {
+              key: "userId",
+              label: "Staff Member",
+              render: (v: any) => v?.name || v?.email || "—",
+            },
+            {
+              key: "partnerId",
+              label: "Partner",
+              render: (v: any) => v?.businessName || "—",
+            },
+            { key: "parkingRole", label: "Parking Role" },
+            {
+              key: "locationIds",
+              label: "Scope",
+              render: (v: any) =>
+                Array.isArray(v) && v.length
+                  ? v.map((l: any) => l?.name || "—").join(", ")
+                  : "All partner locations",
+            },
+            { key: "shift", label: "Shift" },
+            { key: "status", label: "Status" },
+          ],
+          fields: [],
+        };
+
+      case "parking_commissions":
+        return {
+          icon: <Car size={20} className="text-[#0A4DA6]" />,
+          columns: [
+            {
+              key: "partnerId",
+              label: "Partner",
+              render: (v: any) => v?.businessName || "—",
+            },
+            {
+              key: "bookingId",
+              label: "Booking",
+              render: (v: any) => v?.bookingReference || "—",
+            },
+            {
+              key: "grossAmount",
+              label: "Gross",
+              render: (v: any) => `₹${v ?? 0}`,
+            },
+            {
+              key: "commissionAmount",
+              label: "Commission",
+              render: (v: any, item: any) =>
+                `₹${v ?? 0} (${item.commissionPercent ?? 0}%)`,
+            },
+            {
+              key: "partnerEarning",
+              label: "Partner Earning",
+              render: (v: any) => `₹${v ?? 0}`,
+            },
+            { key: "settlementStatus", label: "Settlement" },
+          ],
+          fields: [],
+        };
+
+      case "parking_transactions":
+        return {
+          icon: <Car size={20} className="text-[#0A4DA6]" />,
+          columns: [
+            { key: "reference", label: "Reference" },
+            { key: "type", label: "Type" },
+            { key: "direction", label: "Direction" },
+            {
+              key: "amount",
+              label: "Amount",
+              render: (v: any) => `₹${v ?? 0}`,
+            },
+            {
+              key: "partnerId",
+              label: "Partner",
+              render: (v: any) => v?.businessName || "—",
+            },
+            {
+              key: "occurredAt",
+              label: "Occurred",
+              render: (v: any) =>
+                v ? new Date(v).toLocaleString("en-IN") : "—",
+            },
+          ],
+          fields: [],
+        };
+
+      case "parking_scan_logs":
+        return {
+          icon: <ShieldCheck size={20} className="text-[#0A4DA6]" />,
+          columns: [
+            { key: "action", label: "Action" },
+            { key: "result", label: "Result" },
+            { key: "vehicleNumber", label: "Vehicle" },
+            {
+              key: "locationId",
+              label: "Parking",
+              render: (v: any) => v?.name || "—",
+            },
+            {
+              key: "scannedByUserId",
+              label: "Scanned By",
+              render: (v: any) => v?.name || "—",
+            },
+            {
+              key: "scannedAt",
+              label: "Scanned At",
+              render: (v: any) =>
+                v ? new Date(v).toLocaleString("en-IN") : "—",
+            },
+          ],
+          fields: [],
+        };
+
+      case "parking_reviews":
+        return {
+          icon: <Car size={20} className="text-[#0A4DA6]" />,
+          columns: [
+            {
+              key: "locationId",
+              label: "Parking",
+              render: (v: any) => v?.name || "—",
+            },
+            {
+              key: "customerId",
+              label: "Reviewer",
+              render: (v: any) => v?.name || "—",
+            },
+            {
+              key: "rating",
+              label: "Rating",
+              render: (v: any) => `⭐ ${v?.overall ?? 0}`,
+            },
+            { key: "comment", label: "Comment" },
+            { key: "status", label: "Moderation" },
+          ],
+          fields: [
+            {
+              name: "status",
+              label: "Moderation Status",
+              type: "select",
+              options: ["pending", "approved", "rejected"],
+            },
+            {
+              name: "moderationNote",
+              label: "Moderation Note",
+              type: "textarea",
             },
           ],
         };

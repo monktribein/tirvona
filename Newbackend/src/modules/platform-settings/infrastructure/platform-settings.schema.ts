@@ -9,6 +9,9 @@ export const PlatformSettingsSchema = new Schema(
       label: { type: String, default: "Tirvona Platform Fee" },
     },
     gstRate: { type: Number, default: 5, min: 0 },
+    // GST charged on the platform fee. The stay itself is untaxed, so this is
+    // the only rate that reaches a booking total; `gstRate` above is legacy.
+    platformFeeGstRate: { type: Number, default: 18, min: 0, max: 100 },
     bookingCommissionPercent: { type: Number, default: 10, min: 0, max: 100 },
     updatedBy: { type: Schema.Types.ObjectId, ref: "User" },
   },

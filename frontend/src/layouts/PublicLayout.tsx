@@ -5,7 +5,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { useNotifications } from "../contexts/NotificationContext";
 import NotificationDropdown from "../components/shared/NotificationDropdown";
 import { setGuestPendingIntent } from "../utils/guestGate";
-import { getRoleDefaultDashboard } from "../utils/roleRedirect";
+import { getRoleDefaultDashboard, isParkingRole } from "../utils/roleRedirect";
 import {
   LogOut,
   Menu,
@@ -151,11 +151,13 @@ export const PublicLayout: React.FC = () => {
 
   const getDashboardPath = () => {
     if (!user) return "/login";
-    return getRoleDefaultDashboard(user.role);
+    return getRoleDefaultDashboard(user.role, user.parkingRoles, user.email);
   };
 
   const getDashboardLabel = () => {
     if (!user) return "Dashboard";
+    if (isParkingRole(user.parkingRoles, user.role, user.email))
+      return user.role === "super_admin" ? "Admin Dashboard" : "Parking Dashboard";
     if (["district_officer", "govt_admin", "super_admin"].includes(user.role))
       return "Admin Dashboard";
     if (user.role === "banner_manager") return "Banner CMS";
@@ -174,6 +176,7 @@ export const PublicLayout: React.FC = () => {
    */
   const hasOperationalDashboard = () => {
     if (!user) return false;
+    if (isParkingRole(user.parkingRoles, user.role, user.email)) return true;
     return [
       "super_admin",
       "govt_admin",
@@ -195,6 +198,8 @@ export const PublicLayout: React.FC = () => {
     if (user.role === "district_officer") return "District Admin";
     if (["owner", "stay_admin"].includes(user.role)) return "Stay Admin";
     if (user.role === "banner_manager") return "BannerBoy";
+    if (isParkingRole(user.parkingRoles, user.role, user.email))
+      return "Parking Partner";
     if (user.role === "volunteer") return "Volunteer";
     if (user.role === "support") return "Support";
     return "Pilgrim";
@@ -327,6 +332,21 @@ export const PublicLayout: React.FC = () => {
 
                         {/* Navigation Links */}
                         <div className="p-1.5 space-y-0.5">
+                          {hasOperationalDashboard() && (
+                            <Link
+                              to={getDashboardPath()}
+                              onClick={() => setProfileDropdownOpen(false)}
+                              className="px-2.5 py-1.5 rounded-lg flex items-center gap-2.5 bg-blue-50/80 dark:bg-blue-950/50 text-[#0A4DA6] dark:text-blue-400 hover:bg-blue-100/80 transition-colors font-black"
+                            >
+                              <div className="w-6 h-6 rounded-md bg-[#0A4DA6] text-white flex items-center justify-center shrink-0">
+                                <LayoutDashboard size={13} />
+                              </div>
+                              <span className="text-xs font-black">
+                                {getDashboardLabel()}
+                              </span>
+                            </Link>
+                          )}
+
                           <Link
                             to="/profile"
                             onClick={() => setProfileDropdownOpen(false)}

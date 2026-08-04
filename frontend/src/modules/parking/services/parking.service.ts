@@ -108,8 +108,18 @@ export const parkingBookingService = {
     },
   ) => api.post(`/parking/bookings/${id}/payment`, payload),
 
+  /** Returns the booking's existing pass. Safe to call on every render. */
   getQr: (id: string, format: "png" | "svg" = "png") =>
     api.get(`/parking/bookings/${id}/qr`, { params: { format } }),
+
+  /**
+   * Revokes the current pass and issues a new one — only for a pass that was
+   * lost or shared. Anything the visitor is already holding stops working.
+   */
+  reissueQr: (id: string, format: "png" | "svg" = "png") =>
+    api.post(`/parking/bookings/${id}/qr/reissue`, null, {
+      params: { format },
+    }),
 
   previewRefund: (id: string) =>
     api.get(`/parking/bookings/${id}/refund-preview`),
@@ -276,6 +286,16 @@ export const parkingAdminService = {
 
   seedVehicleTypes: () => api.post("/parking/admin/vehicle-types/seed", {}),
   runSweep: () => api.post("/parking/admin/maintenance/sweep", {}),
+
+  // Parking roles are grants in `parking_staff`, not values of `User.role`, so
+  // they never appear in user management. These are the platform-wide roster;
+  // the /parking/partner equivalents answer only for a caller who already
+  // holds a grant, which a Super Admin never does.
+  listStaff: (params: Record<string, unknown> = {}) =>
+    api.get("/parking/admin/staff", { params: clean(params) }),
+  listRoles: () => api.get("/parking/admin/staff/roles"),
+  assignStaff: (payload: unknown) => api.post("/parking/admin/staff", payload),
+  revokeStaff: (id: string) => api.delete(`/parking/admin/staff/${id}`),
 };
 
 export default {

@@ -40,6 +40,7 @@ import useMyBookings, {
   type BookingCategory,
   type UnifiedBooking,
 } from "../../hooks/useMyBookings";
+import { isParkingRole } from "../../utils/roleRedirect";
 
 const BOOKING_TABS: { key: BookingCategory; label: string }[] = [
   { key: "upcoming", label: "Upcoming" },
@@ -67,6 +68,13 @@ export const ProfileMainPage: React.FC = () => {
   const { addNotification } = useNotifications();
   const location = useLocation();
   const navigate = useNavigate();
+
+  // Redirect parking staff / partners directly to their dedicated dashboard
+  useEffect(() => {
+    if (user && isParkingRole(user.parkingRoles, user.role, user.email)) {
+      navigate("/parking/dashboard", { replace: true });
+    }
+  }, [user, navigate]);
 
   // Unified Bookings Feed
   const {

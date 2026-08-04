@@ -25,6 +25,7 @@ import {
   type BookingDraftPayload,
 } from "../utils/bookingDraft";
 import { setGuestPendingIntent } from "../utils/guestGate";
+import { roundMoney } from "../utils/format";
 import { GuestRoomSelector } from "../components/shared/GuestRoomSelector";
 import { GuestReviewsCarousel } from "../components/shared/GuestReviewsCarousel";
 import { VerifiedBadge } from "../components/shared/VerifiedBadge";
@@ -487,6 +488,10 @@ export const AshramDetailPage: React.FC = () => {
     label: "Tirvona Platform Fee",
   });
 
+  // GST rate applied to the platform fee. Defaults to the same 18% the server
+  // falls back to, so a failed settings fetch cannot quietly change the price.
+  const [platformGstRate, setPlatformGstRate] = useState(18);
+
   useEffect(() => {
     platformSettingsService
       .getSettings()
@@ -494,24 +499,33 @@ export const AshramDetailPage: React.FC = () => {
         if (res.data?.success && res.data.data?.platformFee) {
           setPlatformSettings(res.data.data.platformFee);
         }
+        if (res.data?.success && res.data.data?.platformFeeGstRate != null) {
+          setPlatformGstRate(Number(res.data.data.platformFeeGstRate));
+        }
       })
       .catch(() => {});
   }, []);
 
   const extraGuestCalc = adults > 2 ? (adults - 2) * 200 * daysCount : 0;
   const loyaltyCalc = useLoyalty ? 100 : 0;
-  const gstCalc = Math.round(subtotalCalc * 0.05);
   const platformFeeCalc = !platformSettings.enabled
     ? 0
     : platformSettings.type === "percentage"
       ? Math.round((subtotalCalc * platformSettings.value) / 100)
       : Math.round(platformSettings.value || 49);
 
+  // GST is charged on the platform fee alone — the stay, add-ons, extra-guest
+  // charge and donation are supplied by the ashram and are not taxed here.
+  // Mirrors BookingPricingService.quote exactly; if the two ever disagree the
+  // price shown is not the price charged.
+  const gstRateCalc = platformGstRate;
+  const gstCalc = roundMoney((platformFeeCalc * gstRateCalc) / 100);
+
   const totalSavingsCalc = Math.round(discountCalc + loyaltyCalc);
   const finalPayableCalc = Math.max(
     0,
-    Math.round(
-      subtotalCalc - discountCalc - loyaltyCalc + gstCalc + platformFeeCalc,
+    roundMoney(
+      subtotalCalc - discountCalc - loyaltyCalc + platformFeeCalc + gstCalc,
     ),
   );
 
@@ -1928,13 +1942,7 @@ export const AshramDetailPage: React.FC = () => {
                     </div>
                   )}
 
-                  {/* 2. Government GST */}
-                  <div className="flex justify-between text-gray-500 text-[11px]">
-                    <span>Government GST (5%):</span>
-                    <span>₹{gstCalc}</span>
-                  </div>
-
-                  {/* 3. Tirvona Platform Fee */}
+                  {/* 2. Tirvona Platform Fee (the only taxed line) */}
                   {platformSettings.enabled && (
                     <div className="flex justify-between text-[#0A4DA6] font-extrabold text-[11px]">
                       <span>
@@ -1948,6 +1956,16 @@ export const AshramDetailPage: React.FC = () => {
                           </span>
                         )}
                       </span>
+                    </div>
+                  )}
+
+                  {/* 3. GST — on the platform fee only, never on the stay */}
+                  {gstCalc > 0 && (
+                    <div className="flex justify-between text-gray-500 text-[11px]">
+                      <span>
+                        GST ({gstRateCalc}% on platform fee):
+                      </span>
+                      <span>₹{gstCalc}</span>
                     </div>
                   )}
 

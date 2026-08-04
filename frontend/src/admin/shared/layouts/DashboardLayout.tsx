@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../../contexts/AuthContext";
 import NotificationDropdown from "../../../components/shared/NotificationDropdown";
+import { isParkingRole } from "../../../utils/roleRedirect";
 import {
   LayoutDashboard,
   Bed,
@@ -30,6 +31,7 @@ import {
   Globe,
   ArrowRight,
   Landmark,
+  Car,
 } from "lucide-react";
 
 interface NavGroup {
@@ -58,6 +60,12 @@ const getFormattedRole = (role?: string): string => {
     case "govt_admin":
     case "government_admin":
       return "Government Admin";
+    case "parking_partner":
+      return "Parking Partner";
+    case "parking_manager":
+      return "Parking Manager";
+    case "security_guard":
+      return "Security Guard";
     case "customer":
     case "pilgrim":
       return "Customer";
@@ -272,6 +280,42 @@ export const DashboardLayout: React.FC = () => {
       ],
     },
     {
+      // Parking keeps one module key per collection rather than
+      // parking/<section>: the console resolves a sub-key against a shared
+      // alias table, where "bookings" already means ashram bookings.
+      groupName: "PARKING MANAGEMENT",
+      icon: <Car size={15} />,
+      links: [
+        { label: "⚡ Parking Console", path: "/parking/dashboard" },
+        { label: "Control Center", path: "/admin/parking/control" },
+        { label: "Staff & Roles", path: "/admin/parking/roles" },
+        { label: "Partners", path: "/admin/manage/parking_partners/all" },
+        {
+          label: "Pending Partners",
+          path: "/admin/manage/parking_partners/pending",
+        },
+        { label: "Locations", path: "/admin/manage/parking_locations/all" },
+        { label: "Bookings", path: "/admin/manage/parking_bookings/all" },
+        {
+          label: "Vehicles On-Site",
+          path: "/admin/manage/parking_bookings/checked_in",
+        },
+        { label: "Slot Types", path: "/admin/manage/parking_slot_types/all" },
+        { label: "Slots", path: "/admin/manage/parking_slots/all" },
+        { label: "Pricing Rules", path: "/admin/manage/parking_pricing/all" },
+        {
+          label: "Commissions",
+          path: "/admin/manage/parking_commissions/pending",
+        },
+        {
+          label: "Transactions",
+          path: "/admin/manage/parking_transactions/all",
+        },
+        { label: "Scan Logs", path: "/admin/manage/parking_scan_logs/all" },
+        { label: "Reviews", path: "/admin/manage/parking_reviews/all" },
+      ],
+    },
+    {
       groupName: "OFFERS & BLOGS",
       icon: <Tag size={15} />,
       links: [
@@ -479,6 +523,23 @@ export const DashboardLayout: React.FC = () => {
   ];
 
   // Helper to resolve active role's navigation structure
+  // Parking staff are identified by their grants, not by `user.role` — a guard
+  // and a pilgrim both read `customer`. Checked before the role switch so a
+  // grant holder lands on the parking dashboard instead of the pilgrim profile.
+  const userHasParkingRole = isParkingRole(user?.parkingRoles, user?.role, user?.email);
+  const parkingGroups: NavGroup[] = [
+    {
+      groupName: "PARKING OPERATIONS",
+      icon: <Car size={15} />,
+      links: [
+        { label: "⚡ Operations Console", path: "/parking/dashboard" },
+        { label: "Partner & Revenue Console", path: "/parking/partner" },
+        { label: "Gate Scanner & Verifier", path: "/parking/gate" },
+        { label: "My Parking Bookings", path: "/parking/my-bookings" },
+      ],
+    },
+  ];
+
   const getRoleNavData = () => {
     if (user?.role === "super_admin") {
       return {
@@ -488,6 +549,16 @@ export const DashboardLayout: React.FC = () => {
           icon: <LayoutDashboard size={16} className="text-[#E58C28]" />,
         },
         groups: superAdminGroups,
+      };
+    }
+    if (userHasParkingRole) {
+      return {
+        topLink: {
+          label: "Parking Console",
+          path: "/parking/dashboard",
+          icon: <Car size={16} className="text-[#E58C28]" />,
+        },
+        groups: parkingGroups,
       };
     }
     if (["owner", "stay_admin"].includes(user?.role || "")) {
@@ -734,11 +805,10 @@ export const DashboardLayout: React.FC = () => {
             <Link
               to={navData.topLink.path}
               onClick={isMobile ? () => setSidebarOpen(false) : undefined}
-              className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-black transition-all ${
-                location.pathname === navData.topLink.path
-                  ? "bg-[#0A4DA6] text-white shadow-lg shadow-[#0A4DA6]/30 border-l-4 border-[#E58C28]"
-                  : "text-gray-300 hover:bg-slate-850 hover:text-white"
-              }`}
+              className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-black transition-all ${location.pathname === navData.topLink.path
+                ? "bg-[#0A4DA6] text-white shadow-lg shadow-[#0A4DA6]/30 border-l-4 border-[#E58C28]"
+                : "text-gray-300 hover:bg-slate-850 hover:text-white"
+                }`}
             >
               {navData.topLink.icon}
               <span>{navData.topLink.label}</span>
@@ -756,11 +826,10 @@ export const DashboardLayout: React.FC = () => {
               <div key={group.groupName} className="space-y-1">
                 <button
                   onClick={() => toggleGroup(group.groupName)}
-                  className={`w-full flex items-center justify-between px-3.5 py-2 text-[10px] font-black uppercase tracking-wider transition-colors text-left rounded-xl ${
-                    hasActiveLink
-                      ? "text-[#E58C28] bg-white/5"
-                      : "text-gray-400 hover:text-gray-200"
-                  }`}
+                  className={`w-full flex items-center justify-between px-3.5 py-2 text-[10px] font-black uppercase tracking-wider transition-colors text-left rounded-xl ${hasActiveLink
+                    ? "text-[#E58C28] bg-white/5"
+                    : "text-gray-400 hover:text-gray-200"
+                    }`}
                 >
                   <div className="flex items-center gap-2">
                     {group.icon}
@@ -784,11 +853,10 @@ export const DashboardLayout: React.FC = () => {
                           onClick={
                             isMobile ? () => setSidebarOpen(false) : undefined
                           }
-                          className={`flex items-center justify-between px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all ${
-                            isActive
-                              ? "bg-[#0A4DA6] text-white shadow-md border-l-2 border-[#E58C28]"
-                              : "text-gray-400 hover:text-white hover:bg-slate-850"
-                          }`}
+                          className={`flex items-center justify-between px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all ${isActive
+                            ? "bg-[#0A4DA6] text-white shadow-md border-l-2 border-[#E58C28]"
+                            : "text-gray-400 hover:text-white hover:bg-slate-850"
+                            }`}
                         >
                           <span className="truncate">{link.label}</span>
                         </Link>
@@ -829,9 +897,9 @@ export const DashboardLayout: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50/70 dark:bg-[#070F1B] flex flex-row font-sans text-left">
+    <div className="min-h-screen bg-white dark:bg-[#070F1B] flex flex-row font-sans text-left">
       {/* ── Desktop Left Sidebar (Dark Navy Backdrop Matching Landing Page Footer & Dark Sections) ── */}
-      <aside className="hidden lg:flex flex-col w-72 bg-[#0B192C] text-white border-r border-slate-800 shadow-2xl shrink-0 h-screen sticky top-0 z-30">
+      <aside className="hidden lg:flex flex-col w-72 bg-[#0B192C] text-white border-r border-[#0B192C] shadow-2xl shrink-0 h-screen sticky top-0 z-30">
         {renderSidebarContent(false)}
       </aside>
 
@@ -844,7 +912,7 @@ export const DashboardLayout: React.FC = () => {
             onClick={() => setSidebarOpen(false)}
           />
           {/* Mobile Sidebar */}
-          <aside className="relative flex flex-col w-72 max-w-[85vw] bg-[#0B192C] text-white border-r border-slate-800 shadow-2xl h-full z-10">
+          <aside className="relative flex flex-col w-72 max-w-[85vw] bg-[#0B192C] text-white border-r border-[#0B192C] shadow-2xl h-full z-10">
             <button
               onClick={() => setSidebarOpen(false)}
               className="absolute top-4 right-4 p-2 text-gray-400 hover:text-white rounded-full hover:bg-white/10 transition-colors z-20"
@@ -858,10 +926,10 @@ export const DashboardLayout: React.FC = () => {
       )}
 
       {/* ── Right Workspace ── */}
-      <div className="flex-grow flex flex-col min-w-0">
+      <div className="flex-grow flex flex-col min-w-0 bg-white dark:bg-[#070F1B]">
         {/* Floating Pill Top Navigation Header (Matching Landing Page Top Bar in Image 2) */}
-        <header className="py-4 px-6 lg:px-8 shrink-0 sticky top-0 z-20">
-          <div className="max-w-7xl mx-auto bg-white/95 dark:bg-[#0B192C]/95 backdrop-blur-xl border border-gray-200/80 dark:border-slate-800 rounded-full px-6 py-3 shadow-lg shadow-gray-200/40 dark:shadow-none flex justify-between items-center">
+        <header className="py-4 px-4 lg:px-6 shrink-0 sticky top-0 z-20">
+          <div className="w-full bg-white dark:bg-[#0B192C]/95 backdrop-blur-xl border border-black dark:border-slate-800 rounded-full px-6 py-3 shadow-md flex justify-between items-center">
             {/* Left: Mobile Menu & Govt Badge */}
             <div className="flex items-center gap-3">
               <button
@@ -870,7 +938,7 @@ export const DashboardLayout: React.FC = () => {
               >
                 <Menu size={18} />
               </button>
-              <span className="px-3.5 py-1 bg-[#E58C28]/15 text-[#E58C28] border border-[#E58C28]/30 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5">
+              <span className="px-3.5 py-1 bg-[#E58C28]/15 text-[#E58C28] border border-black/20 dark:border-[#E58C28]/30 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5">
                 🇮🇳 Government Enterprise
               </span>
               <h1 className="hidden sm:block text-xs font-black text-[#0B192C] dark:text-white tracking-tight uppercase">
@@ -883,13 +951,13 @@ export const DashboardLayout: React.FC = () => {
             <div className="flex items-center gap-3">
               <div className="relative hidden md:block w-64">
                 <Search
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500"
                   size={14}
                 />
                 <input
                   type="text"
                   placeholder="Search modules, ashrams..."
-                  className="w-full pl-9 pr-4 py-2 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-full text-xs font-medium focus:outline-none focus:border-[#0A4DA6]"
+                  className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-900 border border-black dark:border-slate-800 rounded-full text-xs font-medium focus:outline-none focus:border-[#0A4DA6]"
                 />
               </div>
 
@@ -909,7 +977,7 @@ export const DashboardLayout: React.FC = () => {
         </header>
 
         {/* Content Workspace */}
-        <main className="flex-grow p-6 lg:p-8 pb-12 lg:pb-16 overflow-y-auto max-w-7xl w-full mx-auto">
+        <main className="flex-grow p-4 lg:p-6 pb-12 lg:pb-16 overflow-y-auto w-full bg-white dark:bg-[#070F1B]">
           <Outlet />
         </main>
       </div>

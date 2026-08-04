@@ -12,6 +12,7 @@ import {
   datesInSpan,
   hashParkingQr,
   minutesBetween,
+  normalizeGateCode,
   normalizeVehicleNumber,
   openParkingQr,
   parkingTransactionReference,
@@ -79,20 +80,34 @@ export class ParkingScanService {
     token: string,
     locationId: string,
     session?: ClientSession,
-  ): Promise<{ qr: any; booking: any; payload: Record<string, unknown> }> {
+    // The decrypted payload is deliberately not returned: no caller reads it,
+    // and a gate-code scan has none to give.
+  ): Promise<{ qr: any; booking: any }> {
+    // Two ways in. A scanner reads the sealed token out of the QR image; a
+    // guard whose scanner will not read the screen types the gate code printed
+    // under it. Only the token path was accepted before, so typing the code the
+    // pass displays most prominently answered "This QR code is not valid."
     const payload = openParkingQr(token);
-    if (!payload?.b)
+    const gateCode = payload?.b ? null : normalizeGateCode(token);
+    if (!payload?.b && !gateCode)
       throw new ParkingException(
         "This QR code is not valid.",
         400,
         "INVALID_TOKEN",
       );
     const qr = await this.qrCodes
-      .findOne({ tokenHash: hashParkingQr(token) })
+      .findOne(
+        gateCode
+          ? { displayCode: gateCode }
+          : { tokenHash: hashParkingQr(token) },
+      )
+      .sort({ version: -1 })
       .session(session ?? null);
     if (!qr)
       throw new ParkingException(
-        "This pass is not recognised.",
+        gateCode
+          ? "No pass found for that gate code. Check the code, or look the vehicle up by its number plate."
+          : "This pass is not recognised.",
         404,
         "NOT_FOUND",
       );
@@ -125,7 +140,7 @@ export class ParkingScanService {
         404,
         "NOT_FOUND",
       );
-    return { qr, booking, payload };
+    return { qr, booking };
   }
 
   async verify(

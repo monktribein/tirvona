@@ -137,6 +137,7 @@ export class ParkingBookingController {
     };
   }
 
+  /** Idempotent: returns the booking's existing pass, unchanged. */
   @Get(":id/qr") async qr(
     @CurrentUser() user: AuthenticatedUser,
     @Param("id") id: string,
@@ -144,6 +145,23 @@ export class ParkingBookingController {
   ) {
     return {
       success: true,
+      data: await this.service.currentPass(id, user.id, format),
+    };
+  }
+
+  /**
+   * Revokes the outstanding pass and issues a replacement. A POST because it
+   * changes state — a GET must never invalidate the code a visitor is holding
+   * at the gate.
+   */
+  @Post(":id/qr/reissue") async reissue(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("id") id: string,
+    @Query("format") format = "png",
+  ) {
+    return {
+      success: true,
+      message: "A new pass has been issued. The previous one no longer works.",
       data: await this.service.reissueQr(id, user.id, format),
     };
   }
