@@ -171,7 +171,7 @@ const AboutPage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#060D17] text-slate-900 dark:text-slate-100 transition-colors duration-300">
+    <div className="min-h-screen text-slate-900 dark:text-slate-100 transition-colors duration-300">
       {/* ================= 1. HERO SECTION ================= */}
       <header className="bg-[#0B192C] text-white py-16 sm:py-24 px-4 sm:px-6 lg:px-8 relative overflow-hidden border-b border-slate-800">
         <div className="absolute top-0 right-1/4 w-96 h-96 bg-[#0A4DA6]/20 rounded-full blur-3xl pointer-events-none" />

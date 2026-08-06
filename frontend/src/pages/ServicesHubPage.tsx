@@ -256,7 +256,7 @@ export const ServicesHubPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50/70 dark:bg-[#070F1B] pb-20 text-left">
+    <div className="min-h-screen pb-20 text-left">
       {/* ── 1. Page Header Banner ── */}
       {/* Clean Text Header (Matching all other section headers on the site) */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6">

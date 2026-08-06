@@ -164,7 +164,7 @@ export const SacredDirectoryModulePage: React.FC = () => {
   if (["restaurants", "shops"].includes(pathnameModule)) {
     const isFood = pathnameModule === "restaurants";
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-[#070F1B] pb-16">
+      <div className="min-h-screen pb-16">
         {/* Clean Text Header */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8">
           <div className="text-center space-y-2.5 max-w-3xl mx-auto py-2">
@@ -220,7 +220,7 @@ export const SacredDirectoryModulePage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-[#070F1B] pb-16">
+    <div className="min-h-screen pb-16">
       {/* Clean Text Header */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6">
         <div className="text-center space-y-2.5 max-w-3xl mx-auto py-2">

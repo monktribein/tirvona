@@ -26,6 +26,7 @@ import { ContentModule } from "./modules/content/content.module";
 import { CommerceModule } from "./modules/commerce/commerce.module";
 import { CommunityModule } from "./modules/community/community.module";
 import { GovernanceModule } from "./modules/governance/governance.module";
+import { RefundsModule } from "./modules/refunds/refunds.module";
 import { SearchModule } from "./modules/search/search.module";
 
 @Module({
@@ -114,6 +115,7 @@ import { SearchModule } from "./modules/search/search.module";
     CommerceModule,
     CommunityModule,
     GovernanceModule,
+    RefundsModule,
     SearchModule,
   ],
   providers: [

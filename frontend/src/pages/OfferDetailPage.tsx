@@ -109,7 +109,7 @@ export const OfferDetailPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-slate-950 p-8 flex items-center justify-center">
+      <div className="min-h-screen p-8 flex items-center justify-center">
         <div className="space-y-4 text-center">
           <div className="w-12 h-12 border-4 border-[#0A4DA6] border-t-transparent rounded-full animate-spin mx-auto" />
           <p className="text-xs font-extrabold text-gray-400">
@@ -122,7 +122,7 @@ export const OfferDetailPage: React.FC = () => {
 
   if (!offer) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-slate-950 p-12 text-center space-y-4">
+      <div className="min-h-screen p-12 text-center space-y-4">
         <Gift size={48} className="mx-auto text-gray-400" />
         <h2 className="text-2xl font-black text-[#0B192C] dark:text-white">
           Offer Not Found
@@ -144,7 +144,7 @@ export const OfferDetailPage: React.FC = () => {
     offer.ashramId || (offer.applicableAshrams && offer.applicableAshrams[0]);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 pb-28 space-y-10">
+    <div className="min-h-screen pb-28 space-y-10">
       {/* Hero Section */}
       <div className="relative bg-black text-white min-h-[420px] flex items-center overflow-hidden">
         {/* Background Image with Dark Gradient Overlay */}

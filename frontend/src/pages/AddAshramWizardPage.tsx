@@ -2846,7 +2846,7 @@ const AddAshramWizardPage: React.FC = () => {
   // ─── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-[#070F1B]">
+    <div className="min-h-screen">
       {/* ── Sticky Header ── */}
       <div className="sticky top-0 z-30 bg-white dark:bg-[#0B192C] border-b border-gray-100 dark:border-slate-800 shadow-sm">
         <div className="max-w-5xl mx-auto px-4 md:px-8 py-4 flex items-center justify-between gap-4">

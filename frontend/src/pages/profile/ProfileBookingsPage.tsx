@@ -119,7 +119,7 @@ export const ProfileBookingsPage: React.FC = () => {
   // Signed out — the list is per-account, so there is nothing to show.
   if (!authLoading && !user) {
     return (
-      <div className="min-h-screen bg-gray-50/70 dark:bg-[#070F1B] flex items-center justify-center px-4">
+      <div className="min-h-screen flex items-center justify-center px-4">
         <div className="text-center space-y-4 max-w-sm">
           <Calendar
             size={40}
@@ -144,7 +144,7 @@ export const ProfileBookingsPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50/70 dark:bg-[#070F1B] pb-24 text-left">
+    <div className="min-h-screen pb-24 text-left">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-1 sm:pt-3 space-y-5">
         {/* Tabs — counts are live */}
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-full p-2 shadow-lg flex items-center justify-center gap-1 sm:gap-2 max-w-lg mx-auto text-[11px] sm:text-xs font-extrabold">

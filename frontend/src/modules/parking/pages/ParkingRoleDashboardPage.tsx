@@ -336,7 +336,7 @@ export const ParkingRoleDashboardPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50/50 dark:bg-[#070F1B] pt-28 pb-16 flex flex-col items-center justify-center">
+      <div className="min-h-screen pt-28 pb-16 flex flex-col items-center justify-center">
         <div className="w-12 h-12 border-4 border-[#0A4DA6] border-t-transparent rounded-full animate-spin mb-4" />
         <p className="text-xs font-bold text-gray-500 dark:text-gray-400">
           Loading Smart Parking Dashboard...
@@ -346,7 +346,7 @@ export const ParkingRoleDashboardPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50/70 dark:bg-[#070F1B] pt-20 sm:pt-24 pb-20 px-4 sm:px-6 lg:px-8 space-y-6 text-left">
+    <div className="min-h-screen pt-20 sm:pt-24 pb-20 px-4 sm:px-6 lg:px-8 space-y-6 text-left">
       {/* ── Top Header Banner ── */}
       <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 shadow-xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />

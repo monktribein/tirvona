@@ -107,7 +107,7 @@ export const OffersPage: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 pb-20 space-y-10">
+    <div className="min-h-screen pb-20 space-y-10">
       {/* Clean Text Header (Matching all other section headers on the site) */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6">
         <div className="text-center space-y-2.5 max-w-3xl mx-auto py-2">

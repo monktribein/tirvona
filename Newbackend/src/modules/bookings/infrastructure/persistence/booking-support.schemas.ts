@@ -159,7 +159,19 @@ export const BookingReviewSchema = new Schema(
 );
 // Sparse, because most reviews now carry no booking at all and a plain unique
 // index would permit only ONE such document across the whole collection.
-BookingReviewSchema.index({ bookingId: 1 }, { unique: true, sparse: true });
+// PARTIAL, not sparse. The schema stores `bookingId: null` for a visitor
+// review, and a sparse index only skips documents where the field is ABSENT —
+// an explicit null is still indexed, so two visitor reviews collided on a
+// duplicate null and the second one anywhere on the platform failed.
+// Restricting the index to real ObjectIds keeps "one review per booking" while
+// leaving null-booking reviews unconstrained.
+BookingReviewSchema.index(
+  { bookingId: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { bookingId: { $type: "objectId" } },
+  },
+);
 // One review per person per ashram, which is what stops a single account from
 // burying a property under repeat posts.
 BookingReviewSchema.index({ customerId: 1, ashramId: 1 }, { unique: true });

@@ -8,6 +8,7 @@ const createService = (models: {
   ashrams?: Record<string, unknown>;
   platformAudits?: Record<string, unknown>;
   audits?: Record<string, unknown>;
+  parking?: Record<string, unknown>;
 }) =>
   new AnalyticsService(
     (models.bookings ?? {}) as never,
@@ -16,6 +17,9 @@ const createService = (models: {
     {} as never,
     (models.audits ?? {}) as never,
     (models.platformAudits ?? {}) as never,
+    // Parking contributes to the platform totals; specs that do not care about
+    // it pass an aggregate returning nothing.
+    (models.parking ?? { aggregate: jest.fn().mockResolvedValue([]) }) as never,
   );
 
 const emptyAshramFacet = [
@@ -320,5 +324,125 @@ describe("AnalyticsService.logs", () => {
 
     expect(entry.summary).toBe("roomNumber: 12");
     expect(entry.timestamp).toEqual(new Date("2026-08-02T10:00:00Z"));
+  });
+});
+
+describe("AnalyticsService parking inclusion", () => {
+  const parkingModel = (rows: unknown[]) => ({
+    aggregate: jest.fn().mockResolvedValue(rows),
+  });
+
+  /**
+   * Parking settles in its own collection. Omitting it made a platform that had
+   * genuinely collected money through car parks report zero revenue.
+   */
+  it("adds parking revenue to the platform financials", async () => {
+    const service = createService({
+      ashrams: { aggregate: jest.fn().mockResolvedValue(emptyAshramFacet) },
+      bookings: {
+        aggregate: jest.fn().mockResolvedValue([
+          {
+            totals: [
+              {
+                totalBookings: 16,
+                revenue: 0,
+                grossValue: 40006.02,
+                cancellations: 0,
+              },
+            ],
+            pilgrims: [{ count: 5 }],
+          },
+        ]),
+      },
+      parking: parkingModel([
+        { totalBookings: 18, revenue: 2284, grossValue: 7677, cancellations: 1 },
+      ]),
+    });
+
+    const result = await service.system(superAdmin);
+
+    expect(result.financials.revenue).toBe(2284);
+    expect(result.financials.totalBookings).toBe(34);
+    expect(result.financials.grossValue).toBe(47683.02);
+  });
+
+  /**
+   * A parking booking references a partner and a location, never an ashram, so
+   * it cannot honestly be attributed to a state or district.
+   */
+  it("excludes parking from a jurisdiction-scoped caller", async () => {
+    const parking = parkingModel([
+      { totalBookings: 18, revenue: 2284, grossValue: 7677, cancellations: 0 },
+    ]);
+    const service = createService({
+      ashrams: {
+        aggregate: jest.fn().mockResolvedValue(emptyAshramFacet),
+        distinct: jest.fn().mockResolvedValue([]),
+      },
+      bookings: {
+        aggregate: jest.fn().mockResolvedValue([{ totals: [], pilgrims: [] }]),
+      },
+      parking,
+    });
+
+    const result = await service.system({
+      id: "officer-1",
+      role: "district_officer",
+      state: "Uttarakhand",
+      district: "Haridwar",
+    } as never);
+
+    expect(parking.aggregate).not.toHaveBeenCalled();
+    expect(result.financials.revenue).toBe(0);
+  });
+
+  it("reports the per-module split so streams stay legible", async () => {
+    const service = createService({
+      bookings: {
+        aggregate: jest
+          .fn()
+          .mockResolvedValueOnce([])
+          .mockResolvedValueOnce([
+            {
+              channels: [],
+              statuses: [],
+              window: [{ bookings: 16, revenue: 0 }],
+            },
+          ])
+          .mockResolvedValueOnce([]),
+      },
+      parking: {
+        aggregate: jest
+          .fn()
+          .mockResolvedValueOnce([])
+          .mockResolvedValueOnce([
+            {
+              window: [{ bookings: 4, revenue: 30, gross: 467 }],
+              allTime: [{ bookings: 18, revenue: 2284, gross: 7677 }],
+            },
+          ]),
+      },
+    });
+
+    const result = await service.overview(superAdmin, "daily");
+
+    expect(result.modules).toEqual([
+      {
+        module: "ashram_booking",
+        label: "Ashram stays",
+        bookings: 16,
+        revenue: 0,
+      },
+      {
+        module: "parking_booking",
+        label: "Parking",
+        bookings: 4,
+        revenue: 30,
+        allTimeBookings: 18,
+        allTimeRevenue: 2284,
+      },
+    ]);
+    expect(result.totals.windowBookings).toBe(20);
+    expect(result.totals.windowRevenue).toBe(30);
   });
 });

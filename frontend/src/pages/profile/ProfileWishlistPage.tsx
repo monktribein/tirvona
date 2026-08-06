@@ -39,7 +39,7 @@ export const ProfileWishlistPage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50/70 dark:bg-[#070F1B] pb-24 text-left">
+    <div className="min-h-screen pb-24 text-left">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-1 sm:pt-3">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {wishlistItems.map((item) => (

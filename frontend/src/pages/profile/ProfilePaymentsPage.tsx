@@ -36,7 +36,7 @@ export const ProfilePaymentsPage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50/70 dark:bg-[#070F1B] pb-24 text-left">
+    <div className="min-h-screen pb-24 text-left">
       <section className="bg-gradient-to-r from-[#0B192C] via-[#0A4DA6] to-[#0B192C] text-white pt-10 pb-16 px-4 sm:px-6 lg:px-8 border-b border-white/10 relative overflow-hidden">
         <div className="max-w-7xl mx-auto space-y-3 relative z-10">
           <Link

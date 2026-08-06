@@ -118,6 +118,14 @@ interface Overview {
     share: number;
   }[];
   statuses: { status: string; count: number; share: number }[];
+  modules?: {
+    module: string;
+    label: string;
+    bookings: number;
+    revenue: number;
+    allTimeBookings?: number;
+    allTimeRevenue?: number;
+  }[];
   topAshrams: {
     ashramId: string;
     name: string;
@@ -996,6 +1004,39 @@ export const AdminDashboard: React.FC = () => {
               </h3>
               <ChannelSplit channels={overview?.channels ?? []} />
             </div>
+
+            {/* Revenue by stream. The headline figures are the platform
+                total; this is what keeps stays and parking distinguishable —
+                parking used to be missing from the dashboard entirely. */}
+            {(overview?.modules ?? []).length > 0 && (
+              <div className="bg-white dark:bg-[#0B192C] rounded-2xl border border-gray-200 dark:border-slate-800 p-6 shadow-sm">
+                <h3 className="text-base font-bold text-[#0B192C] dark:text-white tracking-tight mb-4">
+                  Revenue by stream
+                </h3>
+                <RankedBars
+                  rows={(overview?.modules ?? []).map((m) => ({
+                    key: m.module,
+                    label: m.label,
+                    sub: `${m.bookings} booking${m.bookings === 1 ? "" : "s"}`,
+                    value: m.revenue,
+                  }))}
+                  format={formatCurrency}
+                />
+                {(overview?.modules ?? []).some(
+                  (m) => (m.allTimeRevenue ?? 0) > 0,
+                ) && (
+                  <p className="text-[10px] text-gray-400 mt-3 leading-relaxed">
+                    {(overview?.modules ?? [])
+                      .filter((m) => (m.allTimeRevenue ?? 0) > 0)
+                      .map(
+                        (m) =>
+                          `${m.label}: ${formatCurrency(m.allTimeRevenue ?? 0)} collected all time across ${m.allTimeBookings} bookings.`,
+                      )
+                      .join(" ")}
+                  </p>
+                )}
+              </div>
+            )}
 
             <div className="bg-white dark:bg-[#0B192C] rounded-2xl border border-gray-200 dark:border-slate-800 p-6 shadow-sm">
               <h3 className="text-base font-bold text-[#0B192C] dark:text-white tracking-tight mb-4">

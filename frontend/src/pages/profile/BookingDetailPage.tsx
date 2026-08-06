@@ -106,6 +106,8 @@ export const BookingDetailPage: React.FC = () => {
   const [error, setError] = useState<string>("");
   const [cancelling, setCancelling] = useState<boolean>(false);
   const [cancelError, setCancelError] = useState<string>("");
+  const [showReceiptModal, setShowReceiptModal] = useState<boolean>(false);
+  const [isDownloadingReceipt, setIsDownloadingReceipt] = useState<boolean>(false);
 
   const fetchBookingDetails = async () => {
     if (!id) return;
@@ -156,12 +158,267 @@ export const BookingDetailPage: React.FC = () => {
   };
 
   const handlePrintReceipt = () => {
-    window.print();
+    setShowReceiptModal(true);
+  };
+
+  const handleDownloadReceiptCanvas = async () => {
+    if (!booking || isDownloadingReceipt) return;
+    setIsDownloadingReceipt(true);
+
+    try {
+      const scale = 2;
+      const width = 450;
+      const height = 680;
+      const canvas = document.createElement("canvas");
+      canvas.width = width * scale;
+      canvas.height = height * scale;
+      const ctx = canvas.getContext("2d");
+
+      if (!ctx) return;
+      ctx.scale(scale, scale);
+
+      const drawRoundedRect = (
+        x: number,
+        y: number,
+        w: number,
+        h: number,
+        r: number | [number, number, number, number]
+      ) => {
+        if (typeof ctx.roundRect === "function") {
+          ctx.beginPath();
+          ctx.roundRect(x, y, w, h, r);
+        } else {
+          const [tl, tr, br, bl] = typeof r === "number" ? [r, r, r, r] : r;
+          ctx.beginPath();
+          ctx.moveTo(x + tl, y);
+          ctx.lineTo(x + w - tr, y);
+          ctx.quadraticCurveTo(x + w, y, x + w, y + tr);
+          ctx.lineTo(x + w, y + h - br);
+          ctx.quadraticCurveTo(x + w, y + h, x + w - br, y + h);
+          ctx.lineTo(x + bl, y + h);
+          ctx.quadraticCurveTo(x, y + h, x, y + h - bl);
+          ctx.lineTo(x, y + tl);
+          ctx.quadraticCurveTo(x, y, x + tl, y);
+          ctx.closePath();
+        }
+      };
+
+      // Load Tirvona Logo
+      const logoImg = await new Promise<HTMLImageElement | null>((resolve) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => resolve(img);
+        img.onerror = () => resolve(null);
+        img.src = "/logo/logo.png";
+      });
+
+      // Card Base
+      drawRoundedRect(0, 0, width, height, 24);
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fill();
+      ctx.strokeStyle = "#E5E7EB";
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Header Banner
+      const headerH = 80;
+      ctx.save();
+      drawRoundedRect(0, 0, width, headerH, [24, 24, 0, 0]);
+      ctx.clip();
+      const headerGrad = ctx.createLinearGradient(0, 0, width, 0);
+      headerGrad.addColorStop(0, "#0B192C");
+      headerGrad.addColorStop(0.5, "#0A4DA6");
+      headerGrad.addColorStop(1, "#0B192C");
+      ctx.fillStyle = headerGrad;
+      ctx.fillRect(0, 0, width, headerH);
+
+      let textY = 28;
+      if (logoImg && logoImg.naturalWidth > 0) {
+        const logoH = 24;
+        const logoW = (logoImg.naturalWidth / logoImg.naturalHeight) * logoH;
+        ctx.drawImage(logoImg, (width - logoW) / 2, 10, logoW, logoH);
+        textY = 46;
+      }
+
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#DBEAFE";
+      ctx.font = "900 9.5px sans-serif";
+      ctx.fillText("TIRVONA SACRED STAYS", width / 2, textY);
+
+      ctx.fillStyle = "#FFFFFF";
+      ctx.font = "800 14px sans-serif";
+      ctx.fillText("OFFICIAL ACCOMMODATION RECEIPT", width / 2, textY + 18);
+      ctx.restore();
+
+      // Ashram Title Block
+      const ashramName = booking.ashramId?.name || "Ashram Stay";
+      const roomName = booking.roomId?.name || booking.roomId?.type || "Standard Room";
+
+      ctx.textAlign = "left";
+      ctx.fillStyle = "#0B192C";
+      ctx.font = "900 16px sans-serif";
+      ctx.fillText(ashramName, 24, 114);
+
+      if (booking.ashramId?.address) {
+        const addr = [
+          booking.ashramId.address.street,
+          booking.ashramId.address.city,
+          booking.ashramId.address.state,
+          booking.ashramId.address.pincode,
+        ]
+          .filter(Boolean)
+          .join(", ");
+        ctx.fillStyle = "#64748B";
+        ctx.font = "500 10px sans-serif";
+        ctx.fillText(addr, 24, 130);
+      }
+
+      // Check-in Code Banner Box
+      drawRoundedRect(24, 146, width - 48, 56, 14);
+      ctx.fillStyle = "#ECFDF5";
+      ctx.fill();
+      ctx.strokeStyle = "#A7F3D0";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      ctx.textAlign = "left";
+      ctx.fillStyle = "#047857";
+      ctx.font = "700 9px sans-serif";
+      ctx.fillText("6-DIGIT DESK CHECK-IN CODE", 40, 166);
+
+      ctx.fillStyle = "#064E3B";
+      ctx.font = "900 18px monospace";
+      ctx.fillText(booking.checkInCode || "VERIFIED", 40, 190);
+
+      ctx.textAlign = "right";
+      ctx.fillStyle = "#047857";
+      ctx.font = "700 9px sans-serif";
+      ctx.fillText("ROOM CATEGORY", width - 40, 166);
+      ctx.fillStyle = "#064E3B";
+      ctx.font = "800 12px sans-serif";
+      ctx.fillText(roomName, width - 40, 188);
+
+      // Schedule & Guest Info Grid
+      const drawDetailRow = (l1: string, v1: string, l2: string, v2: string, y: number) => {
+        ctx.textAlign = "left";
+        ctx.fillStyle = "#94A3B8";
+        ctx.font = "700 9px sans-serif";
+        ctx.fillText(l1, 24, y);
+        ctx.fillStyle = "#0B192C";
+        ctx.font = "800 12px sans-serif";
+        ctx.fillText(v1, 24, y + 16);
+
+        ctx.textAlign = "left";
+        ctx.fillStyle = "#94A3B8";
+        ctx.font = "700 9px sans-serif";
+        ctx.fillText(l2, 240, y);
+        ctx.fillStyle = "#0B192C";
+        ctx.font = "800 12px sans-serif";
+        ctx.fillText(v2, 240, y + 16);
+      };
+
+      drawDetailRow(
+        "BOOKING REFERENCE",
+        booking.bookingId,
+        "RESERVATION NO",
+        booking.reservationNumber || booking._id.substring(0, 10),
+        224
+      );
+
+      drawDetailRow(
+        "CHECK-IN DATE",
+        formatDateIN(booking.checkInDate),
+        "CHECK-OUT DATE",
+        formatDateIN(booking.checkOutDate),
+        268
+      );
+
+      drawDetailRow(
+        "GUESTS & ROOMS",
+        `${booking.guestsCount} Guest(s) • ${booking.roomsBookedCount} Room(s)`,
+        "ASSIGNED ROOM",
+        booking.assignedRoomNumber || "Front Desk",
+        312
+      );
+
+      // Divider Line
+      ctx.save();
+      ctx.strokeStyle = "#E2E8F0";
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(24, 356);
+      ctx.lineTo(width - 24, 356);
+      ctx.stroke();
+      ctx.restore();
+
+      // Tariff Summary Box
+      drawRoundedRect(24, 372, width - 48, 170, 16);
+      ctx.fillStyle = "#F8FAFC";
+      ctx.fill();
+      ctx.strokeStyle = "#E2E8F0";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      ctx.textAlign = "left";
+      ctx.fillStyle = "#0B192C";
+      ctx.font = "800 11px sans-serif";
+      ctx.fillText("TARIFF & PAYMENT BREAKDOWN", 38, 394);
+
+      const drawItem = (label: string, val: string, y: number, bold = false) => {
+        ctx.textAlign = "left";
+        ctx.fillStyle = bold ? "#0B192C" : "#64748B";
+        ctx.font = bold ? "800 11px sans-serif" : "600 10.5px sans-serif";
+        ctx.fillText(label, 38, y);
+
+        ctx.textAlign = "right";
+        ctx.fillStyle = bold ? "#0A4DA6" : "#0B192C";
+        ctx.font = bold ? "900 13px sans-serif" : "700 11px sans-serif";
+        ctx.fillText(val, width - 38, y);
+      };
+
+      drawItem("Base Room Charges", formatCurrency(booking.pricing?.basePrice || 0), 418);
+      if (booking.pricing?.servicesPrice) {
+        drawItem("Add-On Services", formatCurrency(booking.pricing.servicesPrice), 438);
+      }
+      if (booking.pricing?.donationAmount) {
+        drawItem("Seva / Donation", formatCurrency(booking.pricing.donationAmount), 458);
+      }
+      drawItem("Total Amount", formatCurrency(booking.pricing?.totalAmount || 0), 484, true);
+      drawItem("Amount Paid", formatCurrency(booking.pricing?.amountPaid || 0), 506);
+      drawItem("Payment Status", (booking.paymentStatus || "Pending").toUpperCase(), 526);
+
+      // Support & Helpline Footer Note
+      ctx.textAlign = "left";
+      ctx.fillStyle = "#475569";
+      ctx.font = "600 9.5px sans-serif";
+      ctx.fillText("📞 24x7 Pilgrim Helpline: 1800-11-1363 / 112 • Support: +91 98765 43210", 24, 574);
+      ctx.fillStyle = "#94A3B8";
+      ctx.font = "500 9px sans-serif";
+      ctx.fillText("Valid digital accommodation voucher issued under Government Digital India guidelines.", 24, 592);
+
+      // Watermark Stamp
+      ctx.textAlign = "right";
+      ctx.fillStyle = "#0A4DA6";
+      ctx.font = "900 10px sans-serif";
+      ctx.fillText("VERIFIED BY TIRVONA", width - 24, 620);
+
+      // Download standard PNG image
+      const dataUrl = canvas.toDataURL("image/png");
+      const a = document.createElement("a");
+      a.href = dataUrl;
+      a.download = `tirvona-booking-receipt-${booking.bookingId}.png`;
+      a.click();
+    } catch (err) {
+      console.error("Failed to generate receipt image:", err);
+    } finally {
+      setIsDownloadingReceipt(false);
+    }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50/70 dark:bg-[#070F1B] flex flex-col items-center justify-center p-6 text-center">
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
         <Loader2 className="animate-spin text-[#0A4DA6] mb-3" size={36} />
         <p className="text-xs font-bold text-gray-500 dark:text-gray-400">
           Loading reservation details...
@@ -172,7 +429,7 @@ export const BookingDetailPage: React.FC = () => {
 
   if (error || !booking) {
     return (
-      <div className="min-h-screen bg-gray-50/70 dark:bg-[#070F1B] flex items-center justify-center p-6 text-left">
+      <div className="min-h-screen flex items-center justify-center p-6 text-left">
         <div className="max-w-md w-full bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-8 shadow-xl space-y-4 text-center">
           <AlertCircle size={44} className="text-rose-500 mx-auto" />
           <h2 className="text-lg font-black text-[#0B192C] dark:text-white">
@@ -181,12 +438,6 @@ export const BookingDetailPage: React.FC = () => {
           <p className="text-xs text-gray-400 font-medium">
             {error || "The requested booking could not be retrieved."}
           </p>
-          <button
-            onClick={() => navigate("/profile/bookings")}
-            className="inline-flex items-center gap-2 bg-[#0A4DA6] hover:bg-[#083D85] text-white text-xs font-bold px-6 py-2.5 rounded-full transition-all cursor-pointer"
-          >
-            <ArrowLeft size={14} /> Return to My Bookings
-          </button>
         </div>
       </div>
     );
@@ -204,58 +455,49 @@ export const BookingDetailPage: React.FC = () => {
     booking.status === "confirmed" || booking.status === "pending";
 
   return (
-    <div className="min-h-screen bg-gray-50/70 dark:bg-[#070F1B] pb-24 text-left">
+    <div className="min-h-screen pb-24 text-left">
       {/* Header Bar */}
-      <div className="bg-white dark:bg-[#0B192C] border-b border-gray-100 dark:border-slate-800 sticky top-0 z-30 shadow-xs">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => navigate("/profile/bookings")}
-              className="p-2 rounded-xl bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:text-[#0B192C] dark:hover:text-white transition-colors cursor-pointer"
-              title="Back to My Bookings"
-            >
-              <ArrowLeft size={18} />
-            </button>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-base sm:text-lg font-black text-[#0B192C] dark:text-white">
-                  Booking #{booking.bookingId}
-                </h1>
-                <EnterpriseStatusBadge status={booking.status} />
-              </div>
-              <p className="text-xs text-gray-400 font-semibold">
-                Ref: {booking.reservationNumber || booking._id}
-              </p>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-2 flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-base sm:text-lg font-black text-[#0B192C] dark:text-white">
+                Booking #{booking.bookingId}
+              </h1>
+              <EnterpriseStatusBadge status={booking.status} />
             </div>
+            <p className="text-xs text-gray-400 font-semibold">
+              Ref: {booking.reservationNumber || booking._id}
+            </p>
           </div>
+        </div>
 
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handlePrintReceipt}
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-white dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 text-[#0B192C] dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer shadow-2xs"
+          >
+            <Download size={14} /> Receipt
+          </button>
+
+          {isCancellable && (
             <button
-              onClick={handlePrintReceipt}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-[#0B192C] dark:text-white rounded-xl text-xs font-bold transition-colors cursor-pointer"
+              onClick={handleCancelBooking}
+              disabled={cancelling}
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900/50 rounded-xl text-xs font-bold hover:bg-rose-100 transition-colors cursor-pointer disabled:opacity-50"
             >
-              <Download size={14} /> Receipt
+              {cancelling ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <XCircle size={14} />
+              )}{" "}
+              Cancel Stay
             </button>
-
-            {isCancellable && (
-              <button
-                onClick={handleCancelBooking}
-                disabled={cancelling}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900/50 rounded-xl text-xs font-bold hover:bg-rose-100 transition-colors cursor-pointer disabled:opacity-50"
-              >
-                {cancelling ? (
-                  <Loader2 size={14} className="animate-spin" />
-                ) : (
-                  <XCircle size={14} />
-                )}{" "}
-                Cancel Stay
-              </button>
-            )}
-          </div>
+          )}
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-6 space-y-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-6">
         {cancelError && (
           <div className="flex items-center gap-2 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 text-rose-700 dark:text-rose-300 rounded-2xl p-4 text-xs font-semibold">
             <AlertCircle size={16} className="shrink-0" />
@@ -543,6 +785,204 @@ export const BookingDetailPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* ── Printable Official Receipt Modal ── */}
+      {showReceiptModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
+          <style>{`
+            @media print {
+              body * {
+                visibility: hidden !important;
+              }
+              #printable-receipt-card, #printable-receipt-card * {
+                visibility: visible !important;
+              }
+              #printable-receipt-card {
+                position: fixed !important;
+                left: 50% !important;
+                top: 20px !important;
+                transform: translateX(-50%) !important;
+                width: 100% !important;
+                max-width: 650px !important;
+                box-shadow: none !important;
+                border: 1px solid #e5e7eb !important;
+                background: #ffffff !important;
+                color: #0b192c !important;
+              }
+            }
+          `}</style>
+
+          <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] max-w-lg w-full p-6 shadow-2xl space-y-5 text-left relative my-8">
+            <button
+              onClick={() => setShowReceiptModal(false)}
+              className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-400 cursor-pointer"
+            >
+              ✕
+            </button>
+
+            {/* Printable Card Area */}
+            <div id="printable-receipt-card" className="space-y-4">
+              <div className="bg-gradient-to-r from-[#0B192C] via-[#0A4DA6] to-[#0B192C] text-white p-4 rounded-2xl text-center relative overflow-hidden">
+                <img src="/logo/logo.png" alt="Tirvona Logo" className="h-6 w-auto mx-auto mb-1 object-contain" />
+                <p className="text-[10px] font-black tracking-widest text-blue-100 uppercase">
+                  Tirvona Sacred Stays
+                </p>
+                <h3 className="font-extrabold text-sm mt-0.5">
+                  Official Accommodation Receipt
+                </h3>
+              </div>
+
+              {/* Ashram & Check-in Info */}
+              <div className="border border-gray-100 dark:border-slate-800 p-4 rounded-2xl space-y-3 bg-gray-50/50 dark:bg-slate-900/50">
+                <div>
+                  <h4 className="font-black text-base text-[#0B192C] dark:text-white">
+                    {ashram?.name || "Omkarananda Ashram Himalayas"}
+                  </h4>
+                  {ashram?.address && (
+                    <p className="text-xs text-gray-400 font-medium">
+                      {[
+                        ashram.address.street,
+                        ashram.address.city,
+                        ashram.address.state,
+                        ashram.address.pincode,
+                      ]
+                        .filter(Boolean)
+                        .join(", ")}
+                    </p>
+                  )}
+                </div>
+
+                <div className="bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-900/50 p-3 rounded-xl flex items-center justify-between">
+                  <div>
+                    <span className="text-[9px] font-extrabold tracking-wider text-emerald-700 dark:text-emerald-300 block">
+                      6-DIGIT CHECK-IN CODE
+                    </span>
+                    <span className="font-mono font-black text-lg text-emerald-900 dark:text-emerald-200">
+                      {booking.checkInCode || "VERIFIED"}
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[9px] font-extrabold tracking-wider text-emerald-700 dark:text-emerald-300 block">
+                      ROOM CATEGORY
+                    </span>
+                    <span className="font-bold text-xs text-emerald-900 dark:text-emerald-200">
+                      {room?.name || room?.type || "Standard Room"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Booking Metadata Grid */}
+              <dl className="grid grid-cols-2 gap-3 text-xs border-b border-gray-100 dark:border-slate-800 pb-3">
+                <div>
+                  <dt className="text-gray-400 font-bold text-[10px]">Booking Reference:</dt>
+                  <dd className="font-mono font-extrabold text-[#0B192C] dark:text-white">
+                    #{booking.bookingId}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-gray-400 font-bold text-[10px]">Reservation No:</dt>
+                  <dd className="font-mono font-bold text-[#0A4DA6]">
+                    {booking.reservationNumber || booking._id.substring(0, 10)}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-gray-400 font-bold text-[10px]">Check-In Date:</dt>
+                  <dd className="font-semibold text-[#0B192C] dark:text-white">
+                    {formatDateIN(booking.checkInDate)} (12:00 PM)
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-gray-400 font-bold text-[10px]">Check-Out Date:</dt>
+                  <dd className="font-semibold text-[#0B192C] dark:text-white">
+                    {formatDateIN(booking.checkOutDate)} (11:00 AM)
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-gray-400 font-bold text-[10px]">Guests & Rooms:</dt>
+                  <dd className="font-semibold text-[#0B192C] dark:text-white">
+                    {booking.guestsCount} Guest(s) • {booking.roomsBookedCount} Room(s)
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-gray-400 font-bold text-[10px]">Assigned Room:</dt>
+                  <dd className="font-bold text-purple-600 dark:text-purple-400">
+                    {booking.assignedRoomNumber || "Front Desk"}
+                  </dd>
+                </div>
+              </dl>
+
+              {/* Financial Breakdown Table */}
+              <div className="space-y-2 text-xs bg-gray-50 dark:bg-slate-900/60 p-3.5 rounded-2xl border border-gray-100 dark:border-slate-800">
+                <span className="text-[10px] font-extrabold tracking-wider text-gray-400 block mb-1">
+                  TARIFF & PAYMENT SUMMARY
+                </span>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Base Room Charges:</span>
+                  <span className="font-semibold">{formatCurrency(pricing?.basePrice || 0)}</span>
+                </div>
+                {Boolean(pricing?.servicesPrice) && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Add-On Services:</span>
+                    <span className="font-semibold">{formatCurrency(pricing?.servicesPrice || 0)}</span>
+                  </div>
+                )}
+                {Boolean(pricing?.donationAmount) && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Seva / Donation:</span>
+                    <span className="font-semibold">{formatCurrency(pricing?.donationAmount || 0)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between pt-2 border-t border-gray-200 dark:border-slate-800 font-black text-sm">
+                  <span>Total Amount:</span>
+                  <span className="text-[#0A4DA6] dark:text-blue-400">
+                    {formatCurrency(pricing?.totalAmount || 0)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-xs font-extrabold pt-1">
+                  <span className="text-gray-400">Amount Paid:</span>
+                  <span className="text-emerald-600 dark:text-emerald-400">
+                    {formatCurrency(pricing?.amountPaid || 0)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-[11px] font-bold text-amber-600">
+                  <span>Payment Status:</span>
+                  <span className="capitalize">{booking.paymentStatus || "Pending"}</span>
+                </div>
+              </div>
+
+              <div className="text-[10px] text-gray-400 leading-relaxed space-y-0.5 pt-1">
+                <p>📞 <strong>24x7 Pilgrim Helpline:</strong> 1800-11-1363 / 112 | <strong>Support:</strong> +91 98765 43210</p>
+                <p className="italic text-gray-400">Digital India compliant stay voucher. Present check-in code at ashram desk.</p>
+              </div>
+            </div>
+
+            {/* Modal Action Footer */}
+            <div className="pt-2 flex flex-wrap gap-2.5">
+              <button
+                onClick={handleDownloadReceiptCanvas}
+                disabled={isDownloadingReceipt}
+                className="flex-1 py-2.5 bg-[#0A4DA6] hover:bg-[#083D85] disabled:opacity-50 text-white font-extrabold text-xs rounded-xl cursor-pointer transition-all inline-flex items-center justify-center gap-1.5 shadow-sm"
+              >
+                <Download size={14} />
+                {isDownloadingReceipt ? "Generating Image..." : "Download Receipt"}
+              </button>
+              <button
+                onClick={() => window.print()}
+                className="px-5 py-2.5 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-slate-700 font-bold text-xs rounded-xl cursor-pointer transition-colors"
+              >
+                Print Receipt
+              </button>
+              <button
+                onClick={() => setShowReceiptModal(false)}
+                className="px-4 py-2.5 bg-gray-100 dark:bg-slate-800 text-gray-500 font-bold text-xs rounded-xl cursor-pointer hover:bg-gray-200"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

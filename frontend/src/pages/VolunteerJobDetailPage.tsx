@@ -235,7 +235,7 @@ export const VolunteerJobDetailPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50/70 dark:bg-[#070F1B] pt-28 pb-20 flex flex-col items-center justify-center space-y-4">
+      <div className="min-h-screen pt-28 pb-20 flex flex-col items-center justify-center space-y-4">
         <div className="w-12 h-12 border-4 border-[#0A4DA6] border-t-transparent rounded-full animate-spin" />
         <p className="text-xs font-bold text-gray-500 animate-pulse">
           Loading Volunteer Opportunity Details...
@@ -246,7 +246,7 @@ export const VolunteerJobDetailPage: React.FC = () => {
 
   if (error || !job) {
     return (
-      <div className="min-h-screen bg-gray-50/70 dark:bg-[#070F1B] pt-28 pb-20 max-w-4xl mx-auto px-4 text-center space-y-6">
+      <div className="min-h-screen pt-28 pb-20 max-w-4xl mx-auto px-4 text-center space-y-6">
         <div className="p-8 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl shadow-sm space-y-4">
           <AlertCircle size={48} className="text-rose-500 mx-auto" />
           <h2 className="text-xl font-extrabold text-[#0B192C] dark:text-white">
@@ -267,7 +267,7 @@ export const VolunteerJobDetailPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50/70 dark:bg-[#070F1B] pt-24 pb-24 text-left">
+    <div className="min-h-screen pt-24 pb-24 text-left">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         {/* Breadcrumb Navigation */}
         <div className="flex items-center gap-2 text-xs font-extrabold text-gray-400 overflow-x-auto whitespace-nowrap">

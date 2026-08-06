@@ -34,6 +34,7 @@ import {
   ArrowRight,
   Landmark,
   Car,
+  Undo2,
 } from "lucide-react";
 
 interface NavGroup {
@@ -383,6 +384,14 @@ export const DashboardLayout: React.FC = () => {
         },
         { label: "Upload Media", path: "/admin/manage/banner/upload" },
         { label: "Approval Queue", path: "/admin/manage/banner/approval" },
+      ],
+    },
+    {
+      groupName: "Refund requests",
+      icon: <Undo2 size={15} />,
+      links: [
+        { label: "Refund Queue", path: "/admin/refunds" },
+        { label: "Refund Policies", path: "/admin/refunds/policies" },
       ],
     },
     {
