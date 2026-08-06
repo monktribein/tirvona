@@ -336,13 +336,8 @@ export const MarketplaceCategoryDetailPage: React.FC = () => {
                         e.target.src = "/banner/ashram_rishikesh.png";
                       }}
                     />
-<<<<<<< HEAD
-                    <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-emerald-600 text-white text-[10px] font-black">
-                      PURE DESI GHEE
-=======
                     <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-red-600/90 text-white text-[10px] font-black uppercase tracking-wider">
                       OUT OF STOCK
->>>>>>> f540da6 (updated UI)
                     </span>
                     <span className="absolute top-3 right-3 px-3 py-1 rounded-full bg-amber-500 text-white text-xs font-black">
                       ₹{prod.price} ({prod.weight || "500g"})

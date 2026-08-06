@@ -967,13 +967,8 @@ export const HomePage: React.FC = () => {
               className="group cursor-pointer rounded-2xl p-3 sm:p-3.5 hover:bg-gray-50/80 dark:hover:bg-slate-800/50 transition-all flex flex-col justify-center min-h-[72px] lg:border-r border-gray-200/80 dark:border-slate-800/80 relative min-w-0"
               ref={autocompleteRef}
             >
-<<<<<<< HEAD
-              <label className="block text-[10px] font-extrabold tracking-wider text-gray-400 mb-1.5 pl-1">
-                Destinations
-=======
               <label className="block text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-gray-400 dark:text-slate-400 mb-1 select-none">
                 Destination
->>>>>>> f540da6 (updated UI)
               </label>
               <div className="relative flex items-center gap-2.5 min-w-0 w-full">
                 <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-[#0A4DA6] dark:text-amber-400 flex items-center justify-center shrink-0">
@@ -1018,15 +1013,9 @@ export const HomePage: React.FC = () => {
               </AnimatePresence>
             </div>
 
-<<<<<<< HEAD
-            {/* Field 3: CHECK IN */}
-            <div className="col-span-1 lg:col-span-2 relative pb-3 border-b lg:pb-0 lg:border-b-0 lg:px-4 lg:border-r border-gray-200 dark:border-slate-800">
-              <label className="block text-[10px] font-extrabold tracking-wider text-gray-400 mb-1.5 pl-1">
-=======
             {/* Field 2: CHECK IN (18% / 1.2fr ratio) */}
             <div className="group cursor-pointer rounded-2xl p-3 sm:p-3.5 hover:bg-gray-50/80 dark:hover:bg-slate-800/50 transition-all flex flex-col justify-center min-h-[72px] lg:border-r border-gray-200/80 dark:border-slate-800/80 relative min-w-0 lg:px-4">
               <label className="block text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-gray-400 dark:text-slate-400 mb-1 select-none">
->>>>>>> f540da6 (updated UI)
                 Check In
               </label>
               <div className="relative flex items-center gap-2.5 min-w-0 w-full">
@@ -1039,15 +1028,9 @@ export const HomePage: React.FC = () => {
               </div>
             </div>
 
-<<<<<<< HEAD
-            {/* Field 4: CHECK OUT */}
-            <div className="col-span-1 lg:col-span-2 relative pb-3 border-b lg:pb-0 lg:border-b-0 lg:px-4 lg:border-r border-gray-200 dark:border-slate-800">
-              <label className="block text-[10px] font-extrabold tracking-wider text-gray-400 mb-1.5 pl-1">
-=======
             {/* Field 3: CHECK OUT (18% / 1.2fr ratio) */}
             <div className="group cursor-pointer rounded-2xl p-3 sm:p-3.5 hover:bg-gray-50/80 dark:hover:bg-slate-800/50 transition-all flex flex-col justify-center min-h-[72px] lg:border-r border-gray-200/80 dark:border-slate-800/80 relative min-w-0 lg:px-4">
               <label className="block text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-gray-400 dark:text-slate-400 mb-1 select-none">
->>>>>>> f540da6 (updated UI)
                 Check Out
               </label>
               <div className="relative flex items-center gap-2.5 min-w-0 w-full">
@@ -1439,13 +1422,6 @@ export const HomePage: React.FC = () => {
           className="flex gap-4 sm:gap-6 overflow-x-auto pb-6 pt-2 scrollbar-none -mx-4 sm:mx-0 px-4 sm:px-0 justify-start"
           style={{ scrollbarWidth: "none" }}
         >
-<<<<<<< HEAD
-          {/* Doubled like every other marquee row on this page. The loop wraps
-              onto the second copy, so without it this row rewound halfway
-              through its own content and read as a jitter. */}
-          {[...prasadItems, ...prasadItems].map((item: any, idx: number) => {
-            const isProduct = !!item.price || Array.isArray(item.images);
-=======
           {(() => {
             const defaultPrasadList = [
               {
@@ -1501,7 +1477,6 @@ export const HomePage: React.FC = () => {
           })().map((item: any, idx: number) => {
             const isProduct =
               !!item.price || Array.isArray(item.images) || item.salePrice;
->>>>>>> f540da6 (updated UI)
             const imgUrl = isProduct
               ? item.images?.[0] ||
                 item.img ||
@@ -1546,20 +1521,6 @@ export const HomePage: React.FC = () => {
                           "https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?auto=format&fit=crop&w=500&q=80";
                       }}
                     />
-<<<<<<< HEAD
-                    {isProduct &&
-                      item.salePrice &&
-                      item.price > item.salePrice && (
-                        <span className="absolute top-3 left-3 bg-rose-600 text-white text-[9px] font-black px-2.5 py-0.5 rounded-full shadow-sm">
-                          {Math.round(
-                            ((item.price - item.salePrice) / item.price) * 100,
-                          )}
-                          % OFF
-                        </span>
-                      )}
-                    {isProduct && item.rating && (
-                      <span className="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-amber-400 text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1">
-=======
                     {/* Mandatory Out of Stock badge (NO offer or discount tags) */}
                     <span className="absolute top-3 left-3 bg-red-600/90 backdrop-blur-md text-white text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-md tracking-wider">
                       OUT OF STOCK
@@ -1567,7 +1528,6 @@ export const HomePage: React.FC = () => {
 
                     {(item.rating || isProduct) && (
                       <span className="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-amber-400 text-[10px] font-black uppercase px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1">
->>>>>>> f540da6 (updated UI)
                         <Star size={10} className="fill-amber-400" />{" "}
                         {item.rating || 4.9}
                       </span>
