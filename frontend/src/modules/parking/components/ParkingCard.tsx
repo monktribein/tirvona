@@ -58,7 +58,7 @@ export const ParkingCard: React.FC<ParkingCardProps> = ({
         <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent" />
 
         {parking.isVerified && (
-          <span className="absolute top-3 left-3 inline-flex items-center gap-1 bg-[#0A4DA6] text-white text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shadow-md">
+          <span className="absolute top-3 left-3 inline-flex items-center gap-1 bg-[#0A4DA6] text-white text-[9px] font-black tracking-wider px-2.5 py-1 rounded-full shadow-md">
             <ShieldCheck size={11} className="stroke-[2.5]" />
             Verified
           </span>
@@ -141,7 +141,7 @@ export const ParkingCard: React.FC<ParkingCardProps> = ({
             <div className="pt-2.5">
               {fromPrice !== undefined ? (
                 <>
-                  <span className="block text-[9px] uppercase tracking-wider font-bold text-gray-400">
+                  <span className="block text-[9px] tracking-wider font-bold text-gray-400">
                     From
                   </span>
                   <span className="text-base font-black text-[#0B192C] dark:text-white">

@@ -272,7 +272,7 @@ export const BookingDetailPage: React.FC = () => {
 
           <div className="space-y-3 flex-1 min-w-0">
             <div className="flex items-center justify-between gap-2">
-              <span className="text-[10px] uppercase tracking-wider font-extrabold px-3 py-1 bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 rounded-full">
+              <span className="text-[10px] tracking-wider font-extrabold px-3 py-1 bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 rounded-full">
                 Ashram Reservation
               </span>
               <span className="text-xs font-bold text-gray-400">
@@ -338,13 +338,13 @@ export const BookingDetailPage: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Left Card: Dates, Guests & Add-Ons */}
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 shadow-sm space-y-5">
-            <h3 className="font-black text-sm text-[#0B192C] dark:text-white uppercase tracking-wide border-b border-gray-100 dark:border-slate-800 pb-3">
+            <h3 className="font-black text-sm text-[#0B192C] dark:text-white tracking-wide border-b border-gray-100 dark:border-slate-800 pb-3">
               Stay Schedule & Guests
             </h3>
 
             <div className="grid grid-cols-2 gap-4 bg-gray-50 dark:bg-slate-900/70 p-4 rounded-2xl border border-gray-100 dark:border-slate-800">
               <div>
-                <span className="text-[10px] text-gray-400 font-bold uppercase block">
+                <span className="text-[10px] text-gray-400 font-bold block">
                   Check-In
                 </span>
                 <span className="text-sm font-extrabold text-[#0B192C] dark:text-white block mt-0.5">
@@ -356,7 +356,7 @@ export const BookingDetailPage: React.FC = () => {
               </div>
 
               <div>
-                <span className="text-[10px] text-gray-400 font-bold uppercase block">
+                <span className="text-[10px] text-gray-400 font-bold block">
                   Check-Out
                 </span>
                 <span className="text-sm font-extrabold text-[#0B192C] dark:text-white block mt-0.5">
@@ -385,7 +385,7 @@ export const BookingDetailPage: React.FC = () => {
               </div>
               <div className="flex justify-between py-1 border-b border-gray-50 dark:border-slate-850">
                 <span className="text-gray-400 font-medium">Payment Mode:</span>
-                <span className="font-extrabold text-[#0B192C] dark:text-white uppercase">
+                <span className="font-extrabold text-[#0B192C] dark:text-white">
                   {booking.paymentMode || "Pay at Ashram"}
                 </span>
               </div>
@@ -431,7 +431,7 @@ export const BookingDetailPage: React.FC = () => {
           {/* Right Card: Pricing Breakdown & Payment */}
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 shadow-sm space-y-5 flex flex-col justify-between">
             <div className="space-y-4">
-              <h3 className="font-black text-sm text-[#0B192C] dark:text-white uppercase tracking-wide border-b border-gray-100 dark:border-slate-800 pb-3">
+              <h3 className="font-black text-sm text-[#0B192C] dark:text-white tracking-wide border-b border-gray-100 dark:border-slate-800 pb-3">
                 Tariff & Payment Summary
               </h3>
 
@@ -512,7 +512,7 @@ export const BookingDetailPage: React.FC = () => {
 
         {/* ── Booking Lifecycle Timeline ── */}
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 shadow-sm space-y-4">
-          <h3 className="font-black text-sm text-[#0B192C] dark:text-white uppercase tracking-wide border-b border-gray-100 dark:border-slate-800 pb-3">
+          <h3 className="font-black text-sm text-[#0B192C] dark:text-white tracking-wide border-b border-gray-100 dark:border-slate-800 pb-3">
             Reservation Timeline & History
           </h3>
 

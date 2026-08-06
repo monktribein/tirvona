@@ -3,6 +3,7 @@ import { approvalService } from "../../../services";
 import type { RoomCategoryRequestItem } from "../../../services/approval.service";
 import { useNotifications } from "../../../contexts/NotificationContext";
 import { getErrorMessage } from "../../../lib/api";
+import { humanizeLabel } from "../../../utils/labels";
 import {
   Bed,
   XCircle,
@@ -65,7 +66,7 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
       );
       if (res.success) {
         addNotification(
-          `Request ${action.toUpperCase()}`,
+          `Request ${humanizeLabel(action)}`,
           res.message,
           action === "approve"
             ? "success"
@@ -118,7 +119,7 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
           </div>
         </div>
 
-        <span className="px-3.5 py-1.5 bg-[#0A4DA6]/10 text-[#0A4DA6] border border-[#0A4DA6]/20 rounded-full text-xs font-black uppercase tracking-wider">
+        <span className="px-3.5 py-1.5 bg-[#0A4DA6]/10 text-[#0A4DA6] border border-[#0A4DA6]/20 rounded-full text-xs font-black tracking-wider">
           Super Admin Console
         </span>
       </div>
@@ -179,7 +180,7 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-gray-100 dark:border-slate-800 text-gray-400 font-bold uppercase text-[10px] tracking-wider">
+                <tr className="border-b border-gray-100 dark:border-slate-800 text-gray-400 font-bold text-[10px] tracking-wider">
                   <th className="py-3 px-4">Request ID</th>
                   <th className="py-3 px-4">Ashram Name</th>
                   <th className="py-3 px-4">Stay Admin</th>
@@ -232,7 +233,7 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
                     </td>
                     <td className="py-3.5 px-4">
                       <span
-                        className={`px-2.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase border ${
+                        className={`px-2.5 py-0.5 rounded-full text-[9px] font-extrabold border ${
                           req.status === "approved"
                             ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
                             : req.status === "rejected"
@@ -267,7 +268,7 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 max-w-2xl w-full space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in duration-200">
             <div className="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-3">
               <div>
-                <span className="text-[10px] font-extrabold text-[#0A4DA6] tracking-wider uppercase">
+                <span className="text-[10px] font-extrabold text-[#0A4DA6] tracking-wider">
                   {selectedRequest.requestId}
                 </span>
                 <h3 className="font-extrabold text-lg text-[#0B192C] dark:text-white flex items-center gap-2">
@@ -286,7 +287,7 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
             {/* Request Summary Info */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-gray-50 dark:bg-slate-900/60 p-4 rounded-2xl text-xs">
               <div>
-                <span className="text-gray-400 block text-[10px] font-bold uppercase">
+                <span className="text-gray-400 block text-[10px] font-bold">
                   Target Ashram
                 </span>
                 <span className="font-extrabold text-[#0B192C] dark:text-white">
@@ -294,7 +295,7 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
                 </span>
               </div>
               <div>
-                <span className="text-gray-400 block text-[10px] font-bold uppercase">
+                <span className="text-gray-400 block text-[10px] font-bold">
                   Stay Admin
                 </span>
                 <span className="font-bold text-gray-700 dark:text-gray-200">
@@ -302,7 +303,7 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
                 </span>
               </div>
               <div>
-                <span className="text-gray-400 block text-[10px] font-bold uppercase">
+                <span className="text-gray-400 block text-[10px] font-bold">
                   Max Capacity
                 </span>
                 <span className="font-bold text-gray-700 dark:text-gray-200">
@@ -310,7 +311,7 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
                 </span>
               </div>
               <div>
-                <span className="text-gray-400 block text-[10px] font-bold uppercase">
+                <span className="text-gray-400 block text-[10px] font-bold">
                   Suggested Price
                 </span>
                 <span className="font-bold text-[#0A4DA6]">
@@ -318,15 +319,15 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
                 </span>
               </div>
               <div>
-                <span className="text-gray-400 block text-[10px] font-bold uppercase">
+                <span className="text-gray-400 block text-[10px] font-bold">
                   Current Status
                 </span>
-                <span className="font-bold uppercase text-amber-600">
+                <span className="font-bold text-amber-600">
                   {selectedRequest.status?.replace("_", " ")}
                 </span>
               </div>
               <div>
-                <span className="text-gray-400 block text-[10px] font-bold uppercase">
+                <span className="text-gray-400 block text-[10px] font-bold">
                   Submitted Date
                 </span>
                 <span className="font-semibold text-gray-600 dark:text-gray-300">
@@ -337,7 +338,7 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
 
             {/* Description & Amenities */}
             <div className="space-y-2 text-xs">
-              <h4 className="font-extrabold text-gray-700 dark:text-gray-200 uppercase tracking-wider text-[11px]">
+              <h4 className="font-extrabold text-gray-700 dark:text-gray-200 tracking-wider text-[11px]">
                 Reason for Request & Details
               </h4>
               <p className="p-3 bg-gray-50 dark:bg-slate-900 rounded-xl text-gray-600 dark:text-gray-300 font-medium">
@@ -348,7 +349,7 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
               {selectedRequest.categoryData?.defaultAmenities &&
                 selectedRequest.categoryData.defaultAmenities.length > 0 && (
                   <div className="pt-2">
-                    <h4 className="font-extrabold text-gray-700 dark:text-gray-200 uppercase tracking-wider text-[11px] mb-1.5">
+                    <h4 className="font-extrabold text-gray-700 dark:text-gray-200 tracking-wider text-[11px] mb-1.5">
                       Default Amenities
                     </h4>
                     <div className="flex flex-wrap gap-1.5">
@@ -369,7 +370,7 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
 
             {/* Review Comment Box */}
             <div className="space-y-1.5">
-              <label className="block text-[11px] font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+              <label className="block text-[11px] font-bold text-gray-600 dark:text-gray-300 tracking-wider">
                 Reviewer Notes / Feedback Comment
               </label>
               <textarea

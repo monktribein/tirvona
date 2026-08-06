@@ -19,7 +19,7 @@ export const CancellationPolicyPage: React.FC = () => (
   <div className="pb-20">
     <section className="bg-[#0B192C] text-white py-14 px-4 sm:px-6">
       <div className="max-w-3xl mx-auto text-center space-y-3">
-        <span className="inline-block text-[10px] font-extrabold uppercase tracking-widest text-[#D4AF37] bg-[#D4AF37]/10 border border-[#D4AF37]/20 rounded-full px-4 py-1.5">
+        <span className="inline-block text-[10px] font-extrabold tracking-widest text-[#D4AF37] bg-[#D4AF37]/10 border border-[#D4AF37]/20 rounded-full px-4 py-1.5">
           Policies
         </span>
         <h1
@@ -170,7 +170,7 @@ export const GovtGuidelinesPage: React.FC = () => (
   <div className="pb-20">
     <section className="bg-[#0B192C] text-white py-14 px-4 sm:px-6">
       <div className="max-w-3xl mx-auto text-center space-y-3">
-        <span className="inline-block text-[10px] font-extrabold uppercase tracking-widest text-[#D4AF37] bg-[#D4AF37]/10 border border-[#D4AF37]/20 rounded-full px-4 py-1.5">
+        <span className="inline-block text-[10px] font-extrabold tracking-widest text-[#D4AF37] bg-[#D4AF37]/10 border border-[#D4AF37]/20 rounded-full px-4 py-1.5">
           Information
         </span>
         <h1
@@ -271,7 +271,7 @@ export const OwnerGuidePage: React.FC = () => (
   <div className="pb-20">
     <section className="bg-[#0B192C] text-white py-14 px-4 sm:px-6">
       <div className="max-w-3xl mx-auto text-center space-y-3">
-        <span className="inline-block text-[10px] font-extrabold uppercase tracking-widest text-[#D4AF37] bg-[#D4AF37]/10 border border-[#D4AF37]/20 rounded-full px-4 py-1.5">
+        <span className="inline-block text-[10px] font-extrabold tracking-widest text-[#D4AF37] bg-[#D4AF37]/10 border border-[#D4AF37]/20 rounded-full px-4 py-1.5">
           For Owners
         </span>
         <h1
@@ -375,7 +375,7 @@ export const StayPoliciesPage: React.FC = () => (
   <div className="pb-20">
     <section className="bg-[#0B192C] text-white py-14 px-4 sm:px-6">
       <div className="max-w-3xl mx-auto text-center space-y-3">
-        <span className="inline-block text-[10px] font-extrabold uppercase tracking-widest text-[#D4AF37] bg-[#D4AF37]/10 border border-[#D4AF37]/20 rounded-full px-4 py-1.5">
+        <span className="inline-block text-[10px] font-extrabold tracking-widest text-[#D4AF37] bg-[#D4AF37]/10 border border-[#D4AF37]/20 rounded-full px-4 py-1.5">
           Information
         </span>
         <h1
@@ -492,7 +492,7 @@ export const TermsPage: React.FC = () => (
   <div className="pb-20">
     <section className="bg-[#0B192C] text-white py-14 px-4 sm:px-6">
       <div className="max-w-3xl mx-auto text-center space-y-3">
-        <span className="inline-block text-[10px] font-extrabold uppercase tracking-widest text-[#D4AF37] bg-[#D4AF37]/10 border border-[#D4AF37]/20 rounded-full px-4 py-1.5">
+        <span className="inline-block text-[10px] font-extrabold tracking-widest text-[#D4AF37] bg-[#D4AF37]/10 border border-[#D4AF37]/20 rounded-full px-4 py-1.5">
           Legal
         </span>
         <h1
@@ -585,7 +585,7 @@ export const PrivacyPage: React.FC = () => (
   <div className="pb-20">
     <section className="bg-[#0B192C] text-white py-14 px-4 sm:px-6">
       <div className="max-w-3xl mx-auto text-center space-y-3">
-        <span className="inline-block text-[10px] font-extrabold uppercase tracking-widest text-[#D4AF37] bg-[#D4AF37]/10 border border-[#D4AF37]/20 rounded-full px-4 py-1.5">
+        <span className="inline-block text-[10px] font-extrabold tracking-widest text-[#D4AF37] bg-[#D4AF37]/10 border border-[#D4AF37]/20 rounded-full px-4 py-1.5">
           Legal
         </span>
         <h1
@@ -702,7 +702,7 @@ export const RefundPolicyPage: React.FC = () => (
   <div className="pb-20">
     <section className="bg-[#0B192C] text-white py-14 px-4 sm:px-6">
       <div className="max-w-3xl mx-auto text-center space-y-3">
-        <span className="inline-block text-[10px] font-extrabold uppercase tracking-widest text-[#D4AF37] bg-[#D4AF37]/10 border border-[#D4AF37]/20 rounded-full px-4 py-1.5">
+        <span className="inline-block text-[10px] font-extrabold tracking-widest text-[#D4AF37] bg-[#D4AF37]/10 border border-[#D4AF37]/20 rounded-full px-4 py-1.5">
           Legal
         </span>
         <h1
@@ -806,7 +806,7 @@ export const CookiePolicyPage: React.FC = () => (
   <div className="pb-20">
     <section className="bg-[#0B192C] text-white py-14 px-4 sm:px-6">
       <div className="max-w-3xl mx-auto text-center space-y-3">
-        <span className="inline-block text-[10px] font-extrabold uppercase tracking-widest text-[#D4AF37] bg-[#D4AF37]/10 border border-[#D4AF37]/20 rounded-full px-4 py-1.5">
+        <span className="inline-block text-[10px] font-extrabold tracking-widest text-[#D4AF37] bg-[#D4AF37]/10 border border-[#D4AF37]/20 rounded-full px-4 py-1.5">
           Legal
         </span>
         <h1
@@ -893,7 +893,7 @@ export const CookiePolicyPage: React.FC = () => (
                   </td>
                   <td className="px-3 py-2.5">
                     <span
-                      className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase ${c.type === "Essential" ? "bg-[#0E7B6C]/10 text-[#0E7B6C]" : c.type === "Analytics" ? "bg-[#0A4DA6]/10 text-[#0A4DA6]" : "bg-[#D4AF37]/10 text-[#D4AF37]"}`}
+                      className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold ${c.type === "Essential" ? "bg-[#0E7B6C]/10 text-[#0E7B6C]" : c.type === "Analytics" ? "bg-[#0A4DA6]/10 text-[#0A4DA6]" : "bg-[#D4AF37]/10 text-[#D4AF37]"}`}
                     >
                       {c.type}
                     </span>

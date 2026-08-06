@@ -5,6 +5,7 @@ import { useAuth } from "../../../contexts/AuthContext";
 import { verificationService } from "../../../services";
 import { getErrorMessage } from "../../../lib/api";
 import { EnterprisePageHeader } from "../../shared";
+import { humanizeLabel } from "../../../utils/labels";
 
 export const VerificationQueuePage: React.FC = () => {
   const { addNotification } = useNotifications();
@@ -63,7 +64,7 @@ export const VerificationQueuePage: React.FC = () => {
         setComments("");
         addNotification(
           "Inspection Decided",
-          `Ashram has been marked as ${targetStatus.toUpperCase()}`,
+          `Ashram has been marked as ${humanizeLabel(targetStatus)}`,
           "success",
         );
         fetchPending();
@@ -152,7 +153,7 @@ export const VerificationQueuePage: React.FC = () => {
               {/* Owner KYC contacts */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
                 <div className="space-y-1">
-                  <span className="text-[9px] text-gray-450 block uppercase font-bold">
+                  <span className="text-[9px] text-gray-450 block font-bold">
                     Applicant Owner
                   </span>
                   <span className="font-semibold text-secondary dark:text-white">
@@ -177,7 +178,7 @@ export const VerificationQueuePage: React.FC = () => {
 
                 {/* Documents uploaded */}
                 <div className="space-y-1 md:col-span-2">
-                  <span className="text-[9px] text-gray-455 block uppercase font-bold">
+                  <span className="text-[9px] text-gray-455 block font-bold">
                     KYC Attachments
                   </span>
                   <div className="flex flex-wrap gap-2">
@@ -305,7 +306,7 @@ export const VerificationQueuePage: React.FC = () => {
                   targetStatus === "approved" ? "bg-success" : "bg-danger"
                 }`}
               >
-                Confirm {targetStatus.toUpperCase()}
+                Confirm {humanizeLabel(targetStatus)}
               </button>
             </div>
           </form>

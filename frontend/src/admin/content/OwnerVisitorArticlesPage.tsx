@@ -18,6 +18,7 @@ import {
 } from "../../services/visitorArticleService";
 import { useNotifications } from "../../contexts/NotificationContext";
 import { getErrorMessage } from "../../lib/api";
+import { humanizeLabel } from "../../utils/labels";
 
 export const OwnerVisitorArticlesPage: React.FC = () => {
   const { addNotification } = useNotifications();
@@ -220,8 +221,8 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
                     <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 rounded-full text-[10px] font-black flex items-center gap-1">
                       <ShieldCheck size={11} /> Verified Visitor Stay
                     </span>
-                    <span className="px-2.5 py-0.5 bg-blue-50 text-[#0A4DA6] dark:bg-blue-950/40 dark:text-blue-300 rounded-full text-[10px] font-black uppercase">
-                      {art.category}
+                    <span className="px-2.5 py-0.5 bg-blue-50 text-[#0A4DA6] dark:bg-blue-950/40 dark:text-blue-300 rounded-full text-[10px] font-black">
+                      {humanizeLabel(art.category)}
                     </span>
                     <span
                       className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold capitalize ${
@@ -232,7 +233,7 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
                             : "bg-rose-100 text-rose-700"
                       }`}
                     >
-                      {art.status}
+                      {humanizeLabel(art.status)}
                     </span>
                   </div>
 
@@ -308,7 +309,7 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
             {/* Verified Booking Banner */}
             <div className="p-4 bg-emerald-50 dark:bg-emerald-950/30 rounded-2xl border border-emerald-200 dark:border-emerald-900 space-y-1">
               <div className="flex items-center justify-between">
-                <span className="text-emerald-700 dark:text-emerald-400 font-black uppercase text-[11px] flex items-center gap-1.5">
+                <span className="text-emerald-700 dark:text-emerald-400 font-black text-[11px] flex items-center gap-1.5">
                   <ShieldCheck size={14} /> Verified Stay Record
                 </span>
                 <span className="text-[10px] text-gray-500 font-mono">
@@ -338,7 +339,7 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
 
             {/* Short Description */}
             <div className="space-y-1">
-              <span className="text-gray-400 uppercase text-[10px]">
+              <span className="text-gray-400 text-[10px]">
                 Short Description
               </span>
               <p className="p-3 bg-gray-50 dark:bg-slate-900 rounded-xl font-medium text-gray-700 dark:text-gray-200">
@@ -348,7 +349,7 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
 
             {/* Full Content */}
             <div className="space-y-1">
-              <span className="text-gray-400 uppercase text-[10px]">
+              <span className="text-gray-400 text-[10px]">
                 Article Body Content
               </span>
               <div className="p-4 bg-gray-50 dark:bg-slate-900 rounded-xl font-medium text-gray-700 dark:text-gray-200 whitespace-pre-line leading-relaxed">
@@ -359,7 +360,7 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
             {/* Gallery Images */}
             {selectedArticle.galleryImages?.length > 0 && (
               <div className="space-y-1">
-                <span className="text-gray-400 uppercase text-[10px]">
+                <span className="text-gray-400 text-[10px]">
                   Uploaded Gallery Photos (
                   {selectedArticle.galleryImages.length})
                 </span>

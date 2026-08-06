@@ -500,7 +500,7 @@ export const VolunteerHubPage: React.FC = () => {
                   {/* Card Header */}
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-[#0A4DA6]/10 text-[#0A4DA6] flex items-center justify-center font-black text-sm uppercase">
+                      <div className="w-10 h-10 rounded-2xl bg-[#0A4DA6]/10 text-[#0A4DA6] flex items-center justify-center font-black text-sm">
                         {job.ashramName.charAt(0)}
                       </div>
                       <div>
@@ -529,7 +529,7 @@ export const VolunteerHubPage: React.FC = () => {
                         {job.title}
                       </h3>
                     </Link>
-                    <span className="inline-block mt-1 px-2.5 py-0.5 bg-blue-50 dark:bg-slate-900 text-[#0A4DA6] border border-blue-100 dark:border-slate-800 rounded-full text-[10px] font-black uppercase tracking-wider">
+                    <span className="inline-block mt-1 px-2.5 py-0.5 bg-blue-50 dark:bg-slate-900 text-[#0A4DA6] border border-blue-100 dark:border-slate-800 rounded-full text-[10px] font-black tracking-wider">
                       {job.department}
                     </span>
                   </div>

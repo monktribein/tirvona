@@ -47,7 +47,7 @@ export const ParkingStatTile: React.FC<ParkingStatTileProps> = ({
   return (
     <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-4 space-y-2 shadow-sm hover:shadow-md transition-all">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-[9px] uppercase tracking-wider font-bold text-gray-400 line-clamp-1">
+        <span className="text-[9px] tracking-wider font-bold text-gray-400 line-clamp-1">
           {label}
         </span>
         <span

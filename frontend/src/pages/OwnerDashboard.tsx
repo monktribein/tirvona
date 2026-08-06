@@ -223,7 +223,7 @@ export const OwnerDashboard: React.FC = () => {
           </div>
         </div>
 
-        <span className="px-3.5 py-1.5 bg-[#E58C28]/15 text-[#E58C28] border border-[#E58C28]/30 rounded-full text-xs font-black uppercase tracking-wider">
+        <span className="px-3.5 py-1.5 bg-[#E58C28]/15 text-[#E58C28] border border-[#E58C28]/30 rounded-full text-xs font-black tracking-wider">
           Verified Trust Portal
         </span>
       </div>
@@ -242,12 +242,12 @@ export const OwnerDashboard: React.FC = () => {
             <div className="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 flex items-center justify-center">
               <DollarSign size={20} />
             </div>
-            <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-full text-[10px] font-black uppercase">
+            <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-full text-[10px] font-black">
               +12% MO.
             </span>
           </div>
           <div>
-            <span className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider block">
+            <span className="text-[10px] text-gray-400 font-extrabold tracking-wider block">
               Gross Revenue
             </span>
             <h3 className="text-2xl font-black text-[#0B192C] dark:text-white mt-0.5">
@@ -262,12 +262,12 @@ export const OwnerDashboard: React.FC = () => {
             <div className="w-10 h-10 rounded-2xl bg-[#0A4DA6]/10 text-[#0A4DA6] flex items-center justify-center">
               <TrendingUp size={20} />
             </div>
-            <span className="px-2.5 py-0.5 bg-[#0A4DA6]/10 text-[#0A4DA6] border border-[#0A4DA6]/20 rounded-full text-[10px] font-black uppercase">
+            <span className="px-2.5 py-0.5 bg-[#0A4DA6]/10 text-[#0A4DA6] border border-[#0A4DA6]/20 rounded-full text-[10px] font-black">
               TODAY
             </span>
           </div>
           <div>
-            <span className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider block">
+            <span className="text-[10px] text-gray-400 font-extrabold tracking-wider block">
               Today's Revenue
             </span>
             <h3 className="text-2xl font-black text-[#0A4DA6] mt-0.5">
@@ -282,12 +282,12 @@ export const OwnerDashboard: React.FC = () => {
             <div className="w-10 h-10 rounded-2xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 flex items-center justify-center">
               <Bed size={20} />
             </div>
-            <span className="px-2.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-full text-[10px] font-black uppercase">
+            <span className="px-2.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-full text-[10px] font-black">
               OCCUPANCY
             </span>
           </div>
           <div>
-            <span className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider block">
+            <span className="text-[10px] text-gray-400 font-extrabold tracking-wider block">
               Bed Occupancy Rate
             </span>
             <h3 className="text-2xl font-black text-[#0B192C] dark:text-white mt-0.5">
@@ -302,12 +302,12 @@ export const OwnerDashboard: React.FC = () => {
             <div className="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 flex items-center justify-center">
               <Check size={20} />
             </div>
-            <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-full text-[10px] font-black uppercase">
+            <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-full text-[10px] font-black">
               VACANT
             </span>
           </div>
           <div>
-            <span className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider block">
+            <span className="text-[10px] text-gray-400 font-extrabold tracking-wider block">
               Available Rooms
             </span>
             <h3 className="text-2xl font-black text-emerald-600 mt-0.5">
@@ -376,7 +376,7 @@ export const OwnerDashboard: React.FC = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                   {/* Old Value */}
                   <div className="p-3 bg-white dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl space-y-1">
-                    <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider block">
+                    <span className="text-[10px] font-extrabold text-gray-400 tracking-wider block">
                       Current Live Version (Old)
                     </span>
                     <RecordFieldList
@@ -389,7 +389,7 @@ export const OwnerDashboard: React.FC = () => {
                   {/* New Proposed Value */}
                   <div className="p-3 bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 rounded-xl space-y-2">
                     <div className="flex justify-between items-center">
-                      <span className="text-[10px] font-extrabold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider block">
+                      <span className="text-[10px] font-extrabold text-emerald-700 dark:text-emerald-300 tracking-wider block">
                         Proposed BannerBoy Version (New)
                       </span>
                       {req.newValue?.bannerWidth && (
@@ -522,7 +522,7 @@ export const OwnerDashboard: React.FC = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-gray-100 dark:border-slate-800 text-gray-400 font-bold uppercase text-[10px] tracking-wider">
+                <tr className="border-b border-gray-100 dark:border-slate-800 text-gray-400 font-bold text-[10px] tracking-wider">
                   <th className="py-2.5 px-3">Request ID</th>
                   <th className="py-2.5 px-3">Category Name</th>
                   <th className="py-2.5 px-3">Max Guests</th>
@@ -551,7 +551,7 @@ export const OwnerDashboard: React.FC = () => {
                     </td>
                     <td className="py-3 px-3">
                       <span
-                        className={`px-2.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase border ${
+                        className={`px-2.5 py-0.5 rounded-full text-[9px] font-extrabold border ${
                           req.status === "approved"
                             ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
                             : req.status === "rejected"
@@ -597,7 +597,7 @@ export const OwnerDashboard: React.FC = () => {
               className="space-y-3.5 text-left"
             >
               <div>
-                <label className="block text-[11px] font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-1">
+                <label className="block text-[11px] font-bold text-gray-600 dark:text-gray-300 tracking-wider mb-1">
                   Category Name *
                 </label>
                 <input
@@ -614,7 +614,7 @@ export const OwnerDashboard: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-1">
+                  <label className="block text-[11px] font-bold text-gray-600 dark:text-gray-300 tracking-wider mb-1">
                     Max Guest Capacity *
                   </label>
                   <input
@@ -633,7 +633,7 @@ export const OwnerDashboard: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-1">
+                  <label className="block text-[11px] font-bold text-gray-600 dark:text-gray-300 tracking-wider mb-1">
                     Suggested Base Price (₹)
                   </label>
                   <input
@@ -652,7 +652,7 @@ export const OwnerDashboard: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-1">
+                <label className="block text-[11px] font-bold text-gray-600 dark:text-gray-300 tracking-wider mb-1">
                   Default Amenities (comma separated)
                 </label>
                 <input
@@ -669,7 +669,7 @@ export const OwnerDashboard: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-1">
+                <label className="block text-[11px] font-bold text-gray-600 dark:text-gray-300 tracking-wider mb-1">
                   Reason for Request *
                 </label>
                 <textarea
@@ -727,7 +727,7 @@ export const OwnerDashboard: React.FC = () => {
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="border-b border-gray-100 dark:border-slate-800 text-gray-400 font-bold uppercase text-[10px] tracking-wider">
+              <tr className="border-b border-gray-100 dark:border-slate-800 text-gray-400 font-bold text-[10px] tracking-wider">
                 <th className="py-3 px-4">Booking ID</th>
                 <th className="py-3 px-4">Pilgrim Name</th>
                 <th className="py-3 px-4">Room Type</th>

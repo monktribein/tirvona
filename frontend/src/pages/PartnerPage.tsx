@@ -100,7 +100,7 @@ const PartnerPage: React.FC = () => {
       <section className="bg-[#0B192C] text-white py-16 px-4 sm:px-6 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-[#D4AF37]/5 rounded-full blur-[80px] pointer-events-none" />
         <div className="max-w-4xl mx-auto text-center relative z-10 space-y-4">
-          <span className="inline-block text-[10px] font-extrabold uppercase tracking-widest text-[#D4AF37] bg-[#D4AF37]/10 border border-[#D4AF37]/20 rounded-full px-4 py-1.5">
+          <span className="inline-block text-[10px] font-extrabold tracking-widest text-[#D4AF37] bg-[#D4AF37]/10 border border-[#D4AF37]/20 rounded-full px-4 py-1.5">
             For Ashram Owners
           </span>
           <h1
@@ -171,13 +171,13 @@ const PartnerPage: React.FC = () => {
                 className={`rounded-3xl p-6 space-y-5 shadow-sm relative overflow-hidden ${plan.highlight ? "bg-[#0A4DA6] text-white border-2 border-[#0A4DA6]" : "bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800"}`}
               >
                 {plan.highlight && (
-                  <div className="absolute top-4 right-4 bg-[#D4AF37] text-[#0B192C] text-[9px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">
+                  <div className="absolute top-4 right-4 bg-[#D4AF37] text-[#0B192C] text-[9px] font-extrabold px-3 py-1 rounded-full tracking-wider">
                     Most Popular
                   </div>
                 )}
                 <div>
                   <p
-                    className={`text-[10px] font-extrabold uppercase tracking-widest ${plan.highlight ? "text-blue-200" : "text-[#D4AF37]"}`}
+                    className={`text-[10px] font-extrabold tracking-widest ${plan.highlight ? "text-blue-200" : "text-[#D4AF37]"}`}
                   >
                     {plan.name}
                   </p>
@@ -281,7 +281,7 @@ const PartnerPage: React.FC = () => {
                 },
               ].map((field) => (
                 <div key={field.key}>
-                  <label className="block text-[10px] font-extrabold uppercase tracking-wider text-gray-400 mb-1.5">
+                  <label className="block text-[10px] font-extrabold tracking-wider text-gray-400 mb-1.5">
                     {field.label}
                   </label>
                   <input
@@ -297,7 +297,7 @@ const PartnerPage: React.FC = () => {
                 </div>
               ))}
               <div>
-                <label className="block text-[10px] font-extrabold uppercase tracking-wider text-gray-400 mb-1.5">
+                <label className="block text-[10px] font-extrabold tracking-wider text-gray-400 mb-1.5">
                   Additional Information
                 </label>
                 <textarea

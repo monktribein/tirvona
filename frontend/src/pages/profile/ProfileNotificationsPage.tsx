@@ -46,7 +46,7 @@ export const ProfileNotificationsPage: React.FC = () => {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-20">
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 shadow-lg space-y-4">
           <div className="flex justify-between items-center pb-2 border-b border-gray-100 dark:border-slate-800">
-            <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white uppercase tracking-wider">
+            <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white tracking-wider">
               All Notifications
             </h3>
             <button className="text-xs font-bold text-[#0A4DA6] hover:underline cursor-pointer">

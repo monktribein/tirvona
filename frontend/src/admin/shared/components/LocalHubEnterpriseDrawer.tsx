@@ -66,7 +66,7 @@ export const LocalHubEnterpriseDrawer: React.FC<
         openingHours: item.openingHours || "06:00 AM",
         closingHours: item.closingHours || "09:00 PM",
         weeklyOff: item.weeklyOff || "None",
-        badge: item.badge || "VERIFIED OPERATOR",
+        badge: item.badge || "Verified operator",
         rating: item.rating || 4.9,
         isVerified: item.isVerified !== undefined ? item.isVerified : true,
         isFeatured: item.isFeatured !== undefined ? item.isFeatured : false,
@@ -103,7 +103,7 @@ export const LocalHubEnterpriseDrawer: React.FC<
         openingHours: "06:00 AM",
         closingHours: "09:00 PM",
         weeklyOff: "None",
-        badge: "VERIFIED OPERATOR",
+        badge: "Verified operator",
         rating: 4.9,
         isVerified: true,
         isFeatured: false,
@@ -171,7 +171,7 @@ export const LocalHubEnterpriseDrawer: React.FC<
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="px-2.5 py-0.5 rounded-full bg-[#0A4DA6] text-white text-[10px] font-black uppercase">
+                <span className="px-2.5 py-0.5 rounded-full bg-[#0A4DA6] text-white text-[10px] font-black">
                   {formData.category || "Local Hub"}
                 </span>
                 <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 text-[10px] font-bold">

@@ -181,7 +181,7 @@ export const CustomerDashboard: React.FC = () => {
                     <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white leading-snug">
                       {b.ashramId?.name}
                     </h3>
-                    <p className="text-[10px] text-gray-400 font-bold flex items-center gap-0.5 uppercase">
+                    <p className="text-[10px] text-gray-400 font-bold flex items-center gap-0.5">
                       <MapPin size={10} className="text-[#0A4DA6]" />{" "}
                       {b.ashramId?.address?.city}
                     </p>
@@ -192,7 +192,7 @@ export const CustomerDashboard: React.FC = () => {
                 {/* Dates */}
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div className="space-y-1">
-                    <span className="text-[9px] text-gray-400 font-bold block uppercase">
+                    <span className="text-[9px] text-gray-400 font-bold block">
                       Check In
                     </span>
                     <span className="font-semibold flex items-center gap-1.5">
@@ -201,7 +201,7 @@ export const CustomerDashboard: React.FC = () => {
                     </span>
                   </div>
                   <div className="space-y-1">
-                    <span className="text-[9px] text-gray-400 font-bold block uppercase">
+                    <span className="text-[9px] text-gray-400 font-bold block">
                       Check Out
                     </span>
                     <span className="font-semibold flex items-center gap-1.5">
@@ -215,7 +215,7 @@ export const CustomerDashboard: React.FC = () => {
                 {isConfirmed && (
                   <div className="p-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 rounded-2xl flex items-center justify-between">
                     <div>
-                      <span className="text-[9px] text-[#0A4DA6] font-extrabold block uppercase tracking-wider">
+                      <span className="text-[9px] text-[#0A4DA6] font-extrabold block tracking-wider">
                         Digital Check-in Pass
                       </span>
                       <span className="text-[10px] text-gray-400 leading-normal">
@@ -242,7 +242,7 @@ export const CustomerDashboard: React.FC = () => {
                 {/* Footer price & actions */}
                 <div className="pt-3 border-t border-gray-150 dark:border-slate-800 flex justify-between items-center bg-gray-50/50 dark:bg-slate-900/10 px-3 py-2.5 rounded-2xl">
                   <div className="flex flex-col">
-                    <span className="text-[9px] text-gray-400 uppercase font-bold tracking-wider">
+                    <span className="text-[9px] text-gray-400 font-bold tracking-wider">
                       Total Paid
                     </span>
                     <span className="text-xs font-extrabold text-[#0B192C] dark:text-white">
@@ -292,7 +292,7 @@ export const CustomerDashboard: React.FC = () => {
             )}
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-gray-400 uppercase">
+              <label className="text-xs font-bold text-gray-400">
                 Overall Rating (1 - 5)
               </label>
               <select
@@ -309,7 +309,7 @@ export const CustomerDashboard: React.FC = () => {
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-gray-400 uppercase">
+              <label className="text-xs font-bold text-gray-400">
                 Comments
               </label>
               <textarea
@@ -362,7 +362,7 @@ export const CustomerDashboard: React.FC = () => {
             </p>
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-gray-400 uppercase">
+              <label className="text-xs font-bold text-gray-400">
                 Reason for Cancellation
               </label>
               <textarea

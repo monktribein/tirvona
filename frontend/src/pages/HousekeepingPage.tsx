@@ -122,7 +122,7 @@ export const HousekeepingPage: React.FC = () => {
             <span className={`text-2xl font-extrabold ${s.color}`}>
               {counts[s.key] || 0}
             </span>
-            <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider mt-1">
+            <p className="text-[10px] font-bold text-gray-500 tracking-wider mt-1">
               {s.label}
             </p>
           </div>
@@ -185,11 +185,11 @@ export const HousekeepingPage: React.FC = () => {
                   <h4 className="font-extrabold text-xs text-[#0B192C] dark:text-white truncate pr-2">
                     {unit.unitNumber}
                   </h4>
-                  <p className="text-[9px] text-gray-400 font-bold uppercase truncate">
+                  <p className="text-[9px] text-gray-400 font-bold truncate">
                     {unit.roomId?.name || "Room"}
                   </p>
                   {unit.assignedTo?.name && (
-                    <p className="text-[9px] text-gray-400 font-bold uppercase">
+                    <p className="text-[9px] text-gray-400 font-bold">
                       Staff: {unit.assignedTo.name}
                     </p>
                   )}
@@ -197,7 +197,7 @@ export const HousekeepingPage: React.FC = () => {
 
                 <div className="flex justify-between items-center pt-2">
                   <span
-                    className={`px-2.5 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-wider ${
+                    className={`px-2.5 py-0.5 rounded-full text-[8px] font-bold tracking-wider ${
                       isClean
                         ? "bg-success/10 text-success"
                         : isCleaning

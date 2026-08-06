@@ -143,7 +143,7 @@ export const GuestRoomSelector: React.FC<GuestRoomSelectorProps> = ({
               transition={{ duration: 0.15, ease: "easeOut" }}
               className="absolute left-0 top-full mt-2 w-[280px] max-w-[calc(100vw-2rem)] bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl shadow-xl z-50 p-5 space-y-4"
             >
-              <h4 className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400">
+              <h4 className="text-[10px] font-extrabold tracking-wider text-gray-400">
                 Guests & Rooms
               </h4>
 
@@ -216,7 +216,7 @@ export const GuestRoomSelector: React.FC<GuestRoomSelectorProps> = ({
 
   return (
     <div className="flex-1 min-w-0">
-      <label className="block text-[10px] font-extrabold uppercase tracking-wider text-gray-400 mb-1.5 pl-1">
+      <label className="block text-[10px] font-extrabold tracking-wider text-gray-400 mb-1.5 pl-1">
         Guests & Rooms
       </label>
       <div className="relative flex items-center" ref={containerRef}>
@@ -244,7 +244,7 @@ export const GuestRoomSelector: React.FC<GuestRoomSelectorProps> = ({
               transition={{ duration: 0.15, ease: "easeOut" }}
               className="absolute right-0 top-full mt-3 w-[280px] max-w-[calc(100vw-2rem)] bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl shadow-xl shadow-[#0B192C]/10 z-50 p-5 space-y-5"
             >
-              <h4 className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400">
+              <h4 className="text-[10px] font-extrabold tracking-wider text-gray-400">
                 Guests & Rooms
               </h4>
 

@@ -20,7 +20,7 @@ export const PageLoader: React.FC = () => (
       <div className="skeleton h-3 w-1/2 mx-auto rounded-full" />
     </div>
 
-    <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400">
+    <p className="text-[11px] font-bold tracking-widest text-gray-400">
       Loading
     </p>
   </div>

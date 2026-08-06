@@ -10,6 +10,7 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { NotificationProvider } from "./contexts/NotificationContext";
 import { UserMemoryProvider } from "./contexts/UserMemoryContext";
 import { BookingSearchProvider } from "./contexts/BookingSearchContext";
+import { CartProvider } from "./contexts/CartContext";
 
 // Layouts (eager — always needed)
 import PublicLayout from "./layouts/PublicLayout";
@@ -178,6 +179,9 @@ const EventsFestivalsPage = lazy(() => import("./pages/EventsFestivalsPage"));
 const LocalServicesHubPage = lazy(() => import("./pages/LocalServicesHubPage"));
 const ServicesHubPage = lazy(() => import("./pages/ServicesHubPage"));
 const MarketplaceHubPage = lazy(() => import("./pages/MarketplaceHubPage"));
+const MarketplaceCheckoutPage = lazy(
+  () => import("./pages/MarketplaceCheckoutPage"),
+);
 const VolunteerHubPage = lazy(() => import("./pages/VolunteerHubPage"));
 const VolunteerJobDetailPage = lazy(
   () => import("./pages/VolunteerJobDetailPage"),
@@ -373,11 +377,16 @@ const AppContent: React.FC = () => {
               path="/profile/bookings/:id"
               element={<BookingDetailPage />}
             />
+            <Route
+              path="/marketplace/checkout"
+              element={<MarketplaceCheckoutPage />}
+            />
             <Route path="/profile" element={<ProfileMainPage />} />
             <Route path="/profile/bookings" element={<ProfileMainPage />} />
             <Route path="/profile/history" element={<ProfileMainPage />} />
             <Route path="/profile/articles" element={<ProfileMainPage />} />
             <Route path="/profile/blogs" element={<ProfileMainPage />} />
+            <Route path="/profile/orders" element={<ProfileMainPage />} />
             <Route path="/profile/wishlist" element={<ProfileMainPage />} />
             <Route path="/profile/coupons" element={<ProfileMainPage />} />
             <Route path="/profile/payments" element={<ProfileMainPage />} />
@@ -723,7 +732,9 @@ export const App: React.FC = () => {
       <NotificationProvider>
         <UserMemoryProvider>
           <BookingSearchProvider>
-            <AppContent />
+            <CartProvider>
+              <AppContent />
+            </CartProvider>
           </BookingSearchProvider>
         </UserMemoryProvider>
       </NotificationProvider>

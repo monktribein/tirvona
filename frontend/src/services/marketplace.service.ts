@@ -35,9 +35,9 @@ export const marketplaceService = {
     return api.get(`/marketplace/products/${idOrSlug}`);
   },
 
-  createOrder: async (orderData: Record<string, any>) => {
-    return api.post("/marketplace/order", orderData);
-  },
+  // The legacy `POST /marketplace/order` helper was removed: it had no callers
+  // and posted client-supplied prices. `createOrder` below replaces it against
+  // the server-priced endpoint.
 
   createProduct: async (data: Record<string, any>) => {
     return api.post("/marketplace/products", data);
@@ -50,6 +50,47 @@ export const marketplaceService = {
   deleteProduct: async (id: string) => {
     return api.delete(`/marketplace/products/${id}`);
   },
+
+  // ── Cart / checkout ──────────────────────────────────────────────────────
+  /**
+   * Price a basket server-side. Only ids and quantities are sent; every rupee
+   * comes back from the catalogue, so the cart total and the amount charged
+   * are produced by the same code path.
+   */
+  quote: async (items: { productId: string; quantity: number }[]) =>
+    api.post("/marketplace/cart/quote", { items }),
+
+  createOrder: async (payload: {
+    items: { productId: string; quantity: number }[];
+    addressId?: string;
+    address?: Record<string, unknown>;
+    saveAddress?: boolean;
+    paymentMode?: "online" | "cod";
+    notes?: string;
+  }) => api.post("/marketplace/orders", payload),
+
+  myOrders: async (params: Record<string, unknown> = {}) =>
+    api.get("/marketplace/orders", { params }),
+
+  getOrder: async (id: string) => api.get(`/marketplace/orders/${id}`),
+
+  cancelOrder: async (id: string, reason: string) =>
+    api.post(`/marketplace/orders/${id}/cancel`, { reason }),
+
+  paymentOrder: async (id: string) =>
+    api.post(`/marketplace/orders/${id}/payment/order`, {}),
+
+  confirmPayment: async (id: string, payload: Record<string, string>) =>
+    api.post(`/marketplace/orders/${id}/payment`, payload),
+
+  // ── Saved addresses ──────────────────────────────────────────────────────
+  addresses: async () => api.get("/marketplace/addresses"),
+  addAddress: async (data: Record<string, unknown>) =>
+    api.post("/marketplace/addresses", data),
+  updateAddress: async (id: string, data: Record<string, unknown>) =>
+    api.put(`/marketplace/addresses/${id}`, data),
+  deleteAddress: async (id: string) =>
+    api.delete(`/marketplace/addresses/${id}`),
 };
 
 export default marketplaceService;

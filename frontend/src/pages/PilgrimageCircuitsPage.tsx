@@ -155,7 +155,7 @@ export const PilgrimageCircuitsPage: React.FC = () => {
                       alt={item.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
-                    <span className="absolute top-4 left-4 bg-[#0A4DA6] text-white text-[10px] font-black uppercase px-3 py-1 rounded-full shadow-md">
+                    <span className="absolute top-4 left-4 bg-[#0A4DA6] text-white text-[10px] font-black px-3 py-1 rounded-full shadow-md">
                       {item.circuitType}
                     </span>
                     <span className="absolute top-4 right-4 bg-black/60 backdrop-blur-md text-white text-[10px] font-extrabold px-3 py-1 rounded-full border border-white/20">
@@ -186,7 +186,7 @@ export const PilgrimageCircuitsPage: React.FC = () => {
 
                 <div className="p-6 pt-0 flex items-center justify-between border-t border-gray-50 dark:border-slate-800/50 mt-4">
                   <div className="text-left">
-                    <span className="text-[10px] text-gray-400 font-bold uppercase block">
+                    <span className="text-[10px] text-gray-400 font-bold block">
                       Budget
                     </span>
                     <span className="text-xs font-black text-[#0A4DA6] dark:text-amber-400">
@@ -206,7 +206,7 @@ export const PilgrimageCircuitsPage: React.FC = () => {
         {/* In Future Badge Banner */}
         <div className="mt-12 bg-gradient-to-r from-amber-500 to-orange-600 rounded-3xl p-6 text-white flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
           <div className="space-y-1 text-center sm:text-left">
-            <span className="px-3 py-0.5 rounded-full bg-white/20 text-[10px] font-black uppercase">
+            <span className="px-3 py-0.5 rounded-full bg-white/20 text-[10px] font-black">
               In Future
             </span>
             <h4 className="font-black text-lg">

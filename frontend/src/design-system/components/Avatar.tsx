@@ -45,7 +45,7 @@ export const Avatar: React.FC<AvatarProps> = ({
             </span>
           )}
           {role && (
-            <span className="text-[9px] font-black text-[#E58C28] uppercase tracking-wider">
+            <span className="text-[9px] font-black text-[#E58C28] tracking-wider">
               {role.replace(/_/g, " ")}
             </span>
           )}

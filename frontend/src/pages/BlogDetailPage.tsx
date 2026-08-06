@@ -258,7 +258,7 @@ export const BlogDetailPage: React.FC = () => {
         {/* 1. Centered Header Section (Matching 2nd image UI) */}
         <div className="text-center space-y-3 max-w-4xl mx-auto py-2">
           <div className="flex items-center justify-center gap-2 flex-wrap">
-            <span className="px-3.5 py-1 rounded-full bg-blue-50 dark:bg-blue-950/40 text-[#0A4DA6] dark:text-blue-300 border border-blue-100 dark:border-slate-800 text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow-xs">
+            <span className="px-3.5 py-1 rounded-full bg-blue-50 dark:bg-blue-950/40 text-[#0A4DA6] dark:text-blue-300 border border-blue-100 dark:border-slate-800 text-[11px] font-black tracking-wider flex items-center gap-1.5 shadow-xs">
               <ShieldCheck size={12} className="text-emerald-500" />
               {post.category || "TRAVEL GUIDE"} • RISHIKESH, UTTARAKHAND
             </span>
@@ -459,7 +459,7 @@ export const BlogDetailPage: React.FC = () => {
                   "Every pilgrimage is a sacred inward journey towards peace,
                   self-realization, and divine grace."
                 </p>
-                <span className="text-xs font-extrabold text-gray-500 uppercase block">
+                <span className="text-xs font-extrabold text-gray-500 block">
                   — Tirvona Spiritual Guidelines
                 </span>
               </div>
@@ -565,7 +565,7 @@ export const BlogDetailPage: React.FC = () => {
             {/* Sidebar Author Card with Passport Size Image */}
             <div className="bg-white dark:bg-[#0B192C] rounded-[32px] p-6 border border-gray-100 dark:border-slate-800 shadow-sm space-y-4">
               <div className="pt-2 border-t border-gray-100 dark:border-slate-800 space-y-3">
-                <h5 className="font-black text-xs text-gray-400 uppercase tracking-wider">
+                <h5 className="font-black text-xs text-gray-400 tracking-wider">
                   Related Articles
                 </h5>
                 <div className="space-y-3">

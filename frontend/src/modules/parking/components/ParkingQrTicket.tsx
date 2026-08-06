@@ -41,7 +41,7 @@ export const ParkingQrTicket: React.FC<ParkingQrTicketProps> = ({
       <div className="bg-gradient-to-r from-[#0B192C] via-[#0A4DA6] to-[#0B192C] text-white px-5 py-4 text-center relative overflow-hidden">
         <div className="absolute right-0 top-0 w-40 h-40 bg-[#E58C28]/20 rounded-full blur-3xl pointer-events-none" />
         <div className="relative">
-          <p className="inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-blue-100">
+          <p className="inline-flex items-center gap-1.5 text-[9px] font-black tracking-[0.2em] text-blue-100">
             <CircleParking size={12} className="stroke-[2.5]" />
             Tirvona Parking Pass
           </p>
@@ -66,7 +66,7 @@ export const ParkingQrTicket: React.FC<ParkingQrTicketProps> = ({
         )}
 
         <div className="text-center space-y-0.5">
-          <p className="text-[9px] uppercase tracking-wider font-bold text-gray-400">
+          <p className="text-[9px] tracking-wider font-bold text-gray-400">
             Gate Code
           </p>
           <p className="font-black text-lg tracking-[0.15em] text-[#0B192C] dark:text-white">
@@ -91,7 +91,7 @@ export const ParkingQrTicket: React.FC<ParkingQrTicketProps> = ({
       <div className="p-5 space-y-3">
         <dl className="grid grid-cols-2 gap-x-3 gap-y-3 text-left">
           <div>
-            <dt className="text-[9px] uppercase tracking-wider font-bold text-gray-400">
+            <dt className="text-[9px] tracking-wider font-bold text-gray-400">
               Booking
             </dt>
             <dd className="text-[11px] font-black text-[#0B192C] dark:text-white break-all">
@@ -99,7 +99,7 @@ export const ParkingQrTicket: React.FC<ParkingQrTicketProps> = ({
             </dd>
           </div>
           <div>
-            <dt className="text-[9px] uppercase tracking-wider font-bold text-gray-400">
+            <dt className="text-[9px] tracking-wider font-bold text-gray-400">
               Vehicle
             </dt>
             <dd className="text-[11px] font-black text-[#0B192C] dark:text-white inline-flex items-center gap-1">
@@ -108,7 +108,7 @@ export const ParkingQrTicket: React.FC<ParkingQrTicketProps> = ({
             </dd>
           </div>
           <div>
-            <dt className="text-[9px] uppercase tracking-wider font-bold text-gray-400">
+            <dt className="text-[9px] tracking-wider font-bold text-gray-400">
               Type
             </dt>
             <dd className="text-[11px] font-bold text-slate-700 dark:text-gray-200">
@@ -116,7 +116,7 @@ export const ParkingQrTicket: React.FC<ParkingQrTicketProps> = ({
             </dd>
           </div>
           <div>
-            <dt className="text-[9px] uppercase tracking-wider font-bold text-gray-400">
+            <dt className="text-[9px] tracking-wider font-bold text-gray-400">
               Bay
             </dt>
             <dd className="text-[11px] font-bold text-slate-700 dark:text-gray-200">
@@ -124,7 +124,7 @@ export const ParkingQrTicket: React.FC<ParkingQrTicketProps> = ({
             </dd>
           </div>
           <div className="col-span-2">
-            <dt className="text-[9px] uppercase tracking-wider font-bold text-gray-400">
+            <dt className="text-[9px] tracking-wider font-bold text-gray-400">
               Selected check-in
             </dt>
             <dd className="text-[11px] font-bold text-slate-700 dark:text-gray-200">
@@ -132,7 +132,7 @@ export const ParkingQrTicket: React.FC<ParkingQrTicketProps> = ({
             </dd>
           </div>
           <div className="col-span-2">
-            <dt className="text-[9px] uppercase tracking-wider font-bold text-gray-400">
+            <dt className="text-[9px] tracking-wider font-bold text-gray-400">
               Selected check-out
             </dt>
             <dd className="text-[11px] font-bold text-slate-700 dark:text-gray-200">

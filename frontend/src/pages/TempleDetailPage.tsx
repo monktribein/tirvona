@@ -82,7 +82,7 @@ export const TempleDetailPage: React.FC = () => {
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
 
           <div className="relative z-10 space-y-3 max-w-3xl text-white">
-            <span className="px-3.5 py-1 rounded-full bg-[#0A4DA6] text-white text-[10px] font-black uppercase tracking-wider">
+            <span className="px-3.5 py-1 rounded-full bg-[#0A4DA6] text-white text-[10px] font-black tracking-wider">
               {temple.city}, {temple.state}
             </span>
             <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black leading-tight">
@@ -121,7 +121,7 @@ export const TempleDetailPage: React.FC = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="p-4 rounded-2xl bg-blue-50/50 dark:bg-slate-900 border border-blue-100 dark:border-slate-800 space-y-1">
-                  <span className="text-[10px] text-gray-400 font-extrabold uppercase block">
+                  <span className="text-[10px] text-gray-400 font-extrabold block">
                     Darshan Timings
                   </span>
                   <p className="font-black text-sm text-[#0A4DA6] dark:text-amber-400">
@@ -129,7 +129,7 @@ export const TempleDetailPage: React.FC = () => {
                   </p>
                 </div>
                 <div className="p-4 rounded-2xl bg-blue-50/50 dark:bg-slate-900 border border-blue-100 dark:border-slate-800 space-y-1">
-                  <span className="text-[10px] text-gray-400 font-extrabold uppercase block">
+                  <span className="text-[10px] text-gray-400 font-extrabold block">
                     Aarti Schedule
                   </span>
                   <p className="font-black text-sm text-[#0A4DA6] dark:text-amber-400">
@@ -195,7 +195,7 @@ export const TempleDetailPage: React.FC = () => {
 
             {/* In Future Badges */}
             <div className="bg-slate-900 text-white rounded-3xl p-6 space-y-3 border border-slate-800">
-              <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-[10px] font-black uppercase">
+              <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-[10px] font-black">
                 In Future Integrations
               </span>
               <h5 className="font-black text-sm">

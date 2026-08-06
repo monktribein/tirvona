@@ -425,7 +425,7 @@ export const BannerBoyDashboard: React.FC = () => {
           {/* Stats Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-6">
             <div className="p-5 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] shadow-lg shadow-gray-200/40 dark:shadow-none hover:shadow-xl transition-all space-y-1">
-              <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider block">
+              <span className="text-[10px] font-black text-gray-400 tracking-wider block">
                 Total Submissions
               </span>
               <h3 className="text-2xl font-black text-[#0B192C] dark:text-white mt-1">
@@ -433,7 +433,7 @@ export const BannerBoyDashboard: React.FC = () => {
               </h3>
             </div>
             <div className="p-5 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] shadow-lg shadow-gray-200/40 dark:shadow-none hover:shadow-xl transition-all space-y-1">
-              <span className="text-[10px] font-black text-amber-500 uppercase tracking-wider block">
+              <span className="text-[10px] font-black text-amber-500 tracking-wider block">
                 Pending Approvals
               </span>
               <h3 className="text-2xl font-black text-amber-600 mt-1">
@@ -441,7 +441,7 @@ export const BannerBoyDashboard: React.FC = () => {
               </h3>
             </div>
             <div className="p-5 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] shadow-lg shadow-gray-200/40 dark:shadow-none hover:shadow-xl transition-all space-y-1">
-              <span className="text-[10px] font-black text-emerald-500 uppercase tracking-wider block">
+              <span className="text-[10px] font-black text-emerald-500 tracking-wider block">
                 Approved & Live
               </span>
               <h3 className="text-2xl font-black text-emerald-600 mt-1">
@@ -449,7 +449,7 @@ export const BannerBoyDashboard: React.FC = () => {
               </h3>
             </div>
             <div className="p-5 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] shadow-lg shadow-gray-200/40 dark:shadow-none hover:shadow-xl transition-all space-y-1">
-              <span className="text-[10px] font-black text-rose-500 uppercase tracking-wider block">
+              <span className="text-[10px] font-black text-rose-500 tracking-wider block">
                 Rejected Changes
               </span>
               <h3 className="text-2xl font-black text-rose-600 mt-1">
@@ -671,7 +671,7 @@ export const BannerBoyDashboard: React.FC = () => {
                         <span className="font-black text-xs text-[#0B192C] dark:text-white truncate">
                           {uploadedFileName || "Selected Banner Image"}
                         </span>
-                        <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded text-[9px] font-black uppercase">
+                        <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded text-[9px] font-black">
                           Ready for Submission
                         </span>
                       </div>
@@ -928,7 +928,7 @@ export const BannerBoyDashboard: React.FC = () => {
             </div>
             <div>
               <span className="text-gray-400 block font-bold">Role:</span>
-              <span className="font-bold text-amber-500 uppercase">
+              <span className="font-bold text-amber-500">
                 {user?.role}
               </span>
             </div>

@@ -131,7 +131,7 @@ export const SupportTicketsPage: React.FC = () => {
                       {t.status}
                     </span>
                   </div>
-                  <span className="text-[9px] uppercase font-bold text-gray-400 block mt-1">
+                  <span className="text-[9px] font-bold text-gray-400 block mt-1">
                     {t.category.replace("_", " ")}
                   </span>
                 </div>
@@ -155,7 +155,7 @@ export const SupportTicketsPage: React.FC = () => {
                   {activeTicket.description}
                 </p>
               </div>
-              <div className="text-[10px] text-gray-400 font-bold uppercase flex items-center gap-1">
+              <div className="text-[10px] text-gray-400 font-bold flex items-center gap-1">
                 {activeTicket.status === "resolved" ? (
                   <>
                     <CheckCircle className="text-success" size={12} /> Resolved

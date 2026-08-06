@@ -142,7 +142,7 @@ export const CouponVoucherCard: React.FC<CouponVoucherCardProps> = ({
       >
         {/* Top Pill Badge */}
         <div
-          className={`relative z-10 border ${theme.stubPillBorder} px-1.5 sm:px-3 py-0.5 rounded-full text-[8px] sm:text-[10px] md:text-xs font-extrabold text-white uppercase tracking-wider backdrop-blur-sm shadow-sm whitespace-nowrap`}
+          className={`relative z-10 border ${theme.stubPillBorder} px-1.5 sm:px-3 py-0.5 rounded-full text-[8px] sm:text-[10px] md:text-xs font-extrabold text-white tracking-wider backdrop-blur-sm shadow-sm whitespace-nowrap`}
         >
           {offerType}
         </div>
@@ -150,7 +150,7 @@ export const CouponVoucherCard: React.FC<CouponVoucherCardProps> = ({
         {/* Big Discount Section */}
         <div className="relative z-10 my-auto space-y-0.5 w-full">
           {!isPercentage && (
-            <div className="text-[8px] sm:text-[10px] font-bold text-white/90 tracking-widest uppercase">
+            <div className="text-[8px] sm:text-[10px] font-bold text-white/90 tracking-widest">
               &mdash; FLAT &mdash;
             </div>
           )}
@@ -177,12 +177,12 @@ export const CouponVoucherCard: React.FC<CouponVoucherCardProps> = ({
             )}
           </div>
 
-          <div className="text-[9px] sm:text-xs md:text-sm font-black text-white/95 tracking-widest flex items-center justify-center gap-1 uppercase mt-0.5">
+          <div className="text-[9px] sm:text-xs md:text-sm font-black text-white/95 tracking-widest flex items-center justify-center gap-1 mt-0.5">
             <span className="text-white/70">&rarr;</span> OFF{" "}
             <span className="text-white/70">&larr;</span>
           </div>
 
-          <div className="text-[7px] sm:text-[9px] font-extrabold text-white/80 tracking-wider uppercase pt-0.5 sm:pt-1">
+          <div className="text-[7px] sm:text-[9px] font-extrabold text-white/80 tracking-wider pt-0.5 sm:pt-1">
             {theme.subtext}
           </div>
         </div>
@@ -237,7 +237,7 @@ export const CouponVoucherCard: React.FC<CouponVoucherCardProps> = ({
 
         {/* Floating Top Right Badge */}
         <div
-          className={`absolute top-0 right-2 sm:right-5 ${theme.badgeBg} text-white px-2 sm:px-3 py-0.5 sm:py-1 rounded-b-lg sm:rounded-b-xl text-[8px] sm:text-[10px] md:text-xs font-extrabold uppercase tracking-wider shadow-sm flex items-center gap-1 z-10`}
+          className={`absolute top-0 right-2 sm:right-5 ${theme.badgeBg} text-white px-2 sm:px-3 py-0.5 sm:py-1 rounded-b-lg sm:rounded-b-xl text-[8px] sm:text-[10px] md:text-xs font-extrabold tracking-wider shadow-sm flex items-center gap-1 z-10`}
         >
           <Clock size={10} className="sm:w-3 sm:h-3" />
           <span>{theme.badgeText}</span>
@@ -283,7 +283,7 @@ export const CouponVoucherCard: React.FC<CouponVoucherCardProps> = ({
           >
             <div className="flex flex-col">
               <span
-                className={`text-[7px] sm:text-[9px] md:text-[10px] font-black uppercase tracking-wider ${theme.codeLabel}`}
+                className={`text-[7px] sm:text-[9px] md:text-[10px] font-black tracking-wider ${theme.codeLabel}`}
               >
                 COUPON CODE
               </span>

@@ -6,6 +6,7 @@ import { RecordFieldList } from "./RecordValue";
 import LocalHubEnterpriseDrawer from "./LocalHubEnterpriseDrawer";
 import { useNotifications } from "../../../contexts/NotificationContext";
 import api, { getErrorMessage } from "../../../lib/api";
+import { humanizeLabel } from "../../../utils/labels";
 import {
   Image,
   Tag as TagIcon,
@@ -1209,7 +1210,7 @@ export const EnterpriseModulePage: React.FC<{
                   {/* Side-by-Side Old vs New Preview */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                     <div className="p-3 bg-white dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl space-y-1">
-                      <span className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider block">
+                      <span className="text-[10px] font-extrabold text-gray-400 tracking-wider block">
                         Current Live Version (Old)
                       </span>
                       <RecordFieldList
@@ -1221,7 +1222,7 @@ export const EnterpriseModulePage: React.FC<{
 
                     <div className="p-3 bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 rounded-xl space-y-2">
                       <div className="flex justify-between items-center">
-                        <span className="text-[10px] font-extrabold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider block">
+                        <span className="text-[10px] font-extrabold text-emerald-700 dark:text-emerald-300 tracking-wider block">
                           Proposed BannerBoy Version (New)
                         </span>
                         {req.newValue?.bannerWidth && (
@@ -1360,7 +1361,7 @@ export const EnterpriseModulePage: React.FC<{
                   whole page scrolls sideways instead of just the table. */}
               <div className="max-h-[320px] overflow-y-auto overflow-x-auto rounded-2xl border border-amber-200/50 dark:border-slate-800 bg-white dark:bg-[#0B192C] shadow-inner">
                 <table className="w-full min-w-[520px] text-left text-xs">
-                  <thead className="bg-amber-50/80 dark:bg-slate-900 border-b border-amber-100 dark:border-slate-800 text-[10px] uppercase font-black text-amber-800 dark:text-amber-400 sticky top-0 backdrop-blur-md">
+                  <thead className="bg-amber-50/80 dark:bg-slate-900 border-b border-amber-100 dark:border-slate-800 text-[10px] font-black text-amber-800 dark:text-amber-400 sticky top-0 backdrop-blur-md">
                     <tr>
                       <th className="py-3 px-4">Ashram / Owner Name</th>
                       <th className="py-3 px-4">Login Email Address</th>
@@ -1550,7 +1551,7 @@ export const EnterpriseModulePage: React.FC<{
                     >
                       {f.options?.map((opt) => (
                         <option key={opt} value={opt}>
-                          {opt.replace(/_/g, " ").toUpperCase()}
+                          {humanizeLabel(opt)}
                         </option>
                       ))}
                     </select>

@@ -26,6 +26,7 @@ import { ContentModule } from "./modules/content/content.module";
 import { CommerceModule } from "./modules/commerce/commerce.module";
 import { CommunityModule } from "./modules/community/community.module";
 import { GovernanceModule } from "./modules/governance/governance.module";
+import { SearchModule } from "./modules/search/search.module";
 
 @Module({
   imports: [
@@ -113,6 +114,7 @@ import { GovernanceModule } from "./modules/governance/governance.module";
     CommerceModule,
     CommunityModule,
     GovernanceModule,
+    SearchModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

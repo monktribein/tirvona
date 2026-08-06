@@ -435,7 +435,7 @@ export const ServicesHubPage: React.FC = () => {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
 
                   {/* Category Pill Tag */}
-                  <span className="absolute top-3 left-3 px-3 py-1 bg-[#0A4DA6] text-white rounded-full text-[10px] font-black uppercase tracking-wider shadow-md">
+                  <span className="absolute top-3 left-3 px-3 py-1 bg-[#0A4DA6] text-white rounded-full text-[10px] font-black tracking-wider shadow-md">
                     {item.subcategory}
                   </span>
 
@@ -487,7 +487,7 @@ export const ServicesHubPage: React.FC = () => {
                   {/* Pricing & CTA */}
                   <div className="pt-3 border-t border-gray-100 dark:border-slate-800 flex justify-between items-center">
                     <div>
-                      <span className="text-[10px] text-gray-400 block font-bold uppercase">
+                      <span className="text-[10px] text-gray-400 block font-bold">
                         Estimated Fare
                       </span>
                       <span className="text-base font-black text-[#0A4DA6] dark:text-white">
@@ -536,7 +536,7 @@ export const ServicesHubPage: React.FC = () => {
           >
             <div className="p-3 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 rounded-2xl flex justify-between items-center">
               <div>
-                <span className="text-[10px] text-[#0A4DA6] block uppercase font-bold">
+                <span className="text-[10px] text-[#0A4DA6] block font-bold">
                   Provider
                 </span>
                 <span className="text-sm font-extrabold text-[#0B192C] dark:text-white">

@@ -8,6 +8,7 @@ import {
 import { useNotifications } from "../../../contexts/NotificationContext";
 import { getErrorMessage } from "../../../lib/api";
 import { RecordFieldList } from "../../shared/components/RecordValue";
+import { humanizeLabel } from "../../../utils/labels";
 import {
   FileCheck,
   XCircle,
@@ -125,7 +126,7 @@ export const CentralApprovalCenterPage: React.FC = () => {
       );
       if (res.success) {
         addNotification(
-          `Request ${action.toUpperCase()}`,
+          `Request ${humanizeLabel(action)}`,
           res.message,
           action === "approve"
             ? "success"
@@ -209,7 +210,7 @@ export const CentralApprovalCenterPage: React.FC = () => {
           </div>
         </div>
 
-        <span className="px-3.5 py-1.5 bg-[#0A4DA6] text-white rounded-full text-xs font-black uppercase tracking-wider shadow-sm">
+        <span className="px-3.5 py-1.5 bg-[#0A4DA6] text-white rounded-full text-xs font-black tracking-wider shadow-sm">
           Master Approval Queue
         </span>
       </div>
@@ -217,7 +218,7 @@ export const CentralApprovalCenterPage: React.FC = () => {
       {/* KPI Dashboard Widgets */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-4 rounded-[22px] shadow-sm space-y-1">
-          <span className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider block">
+          <span className="text-[10px] text-gray-400 font-extrabold tracking-wider block">
             Total Pending
           </span>
           <h3 className="text-2xl font-black text-[#0A4DA6]">
@@ -229,7 +230,7 @@ export const CentralApprovalCenterPage: React.FC = () => {
         </div>
 
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-4 rounded-[22px] shadow-sm space-y-1">
-          <span className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider block">
+          <span className="text-[10px] text-gray-400 font-extrabold tracking-wider block">
             Approved Today
           </span>
           <h3 className="text-2xl font-black text-emerald-600">
@@ -241,7 +242,7 @@ export const CentralApprovalCenterPage: React.FC = () => {
         </div>
 
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-4 rounded-[22px] shadow-sm space-y-1">
-          <span className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider block">
+          <span className="text-[10px] text-gray-400 font-extrabold tracking-wider block">
             Under Review
           </span>
           <h3 className="text-2xl font-black text-blue-500">
@@ -253,7 +254,7 @@ export const CentralApprovalCenterPage: React.FC = () => {
         </div>
 
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-4 rounded-[22px] shadow-sm space-y-1">
-          <span className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider block">
+          <span className="text-[10px] text-gray-400 font-extrabold tracking-wider block">
             Needs Changes
           </span>
           <h3 className="text-2xl font-black text-amber-500">
@@ -265,7 +266,7 @@ export const CentralApprovalCenterPage: React.FC = () => {
         </div>
 
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-4 rounded-[22px] shadow-sm space-y-1">
-          <span className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider block">
+          <span className="text-[10px] text-gray-400 font-extrabold tracking-wider block">
             Rejected Today
           </span>
           <h3 className="text-2xl font-black text-rose-500">
@@ -275,7 +276,7 @@ export const CentralApprovalCenterPage: React.FC = () => {
         </div>
 
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-4 rounded-[22px] shadow-sm space-y-1">
-          <span className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider block">
+          <span className="text-[10px] text-gray-400 font-extrabold tracking-wider block">
             High Priority
           </span>
           <h3 className="text-2xl font-black text-purple-600">
@@ -383,7 +384,7 @@ export const CentralApprovalCenterPage: React.FC = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-gray-100 dark:border-slate-800 text-gray-400 font-bold uppercase text-[10px] tracking-wider">
+                <tr className="border-b border-gray-100 dark:border-slate-800 text-gray-400 font-bold text-[10px] tracking-wider">
                   <th className="py-3 px-4">Request ID</th>
                   <th className="py-3 px-4">Module</th>
                   <th className="py-3 px-4">Ashram Name</th>
@@ -405,7 +406,7 @@ export const CentralApprovalCenterPage: React.FC = () => {
                       {req.requestId}
                     </td>
                     <td className="py-3.5 px-4">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 dark:bg-slate-800 rounded-lg text-[10px] font-bold uppercase">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 dark:bg-slate-800 rounded-lg text-[10px] font-bold">
                         {MODULE_ICON_MAP[req.module] || MODULE_ICON_MAP.other}
                         {req.module?.replace("_", " ")}
                       </span>
@@ -428,7 +429,7 @@ export const CentralApprovalCenterPage: React.FC = () => {
                     </td>
                     <td className="py-3.5 px-4">
                       <span
-                        className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase ${
+                        className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold ${
                           req.priority === "urgent"
                             ? "bg-rose-500/10 text-rose-600"
                             : req.priority === "high"
@@ -441,7 +442,7 @@ export const CentralApprovalCenterPage: React.FC = () => {
                     </td>
                     <td className="py-3.5 px-4">
                       <span
-                        className={`px-2.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase border ${
+                        className={`px-2.5 py-0.5 rounded-full text-[9px] font-extrabold border ${
                           req.status === "approved"
                             ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
                             : req.status === "rejected"
@@ -485,9 +486,9 @@ export const CentralApprovalCenterPage: React.FC = () => {
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 max-w-3xl w-full space-y-5 shadow-2xl max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in duration-200">
             <div className="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-3">
               <div>
-                <span className="text-[10px] font-extrabold text-[#0A4DA6] tracking-wider uppercase">
+                <span className="text-[10px] font-extrabold text-[#0A4DA6] tracking-wider">
                   {selectedRequest.requestId} •{" "}
-                  {selectedRequest.module?.toUpperCase()}
+                  {humanizeLabel(selectedRequest.module)}
                 </span>
                 <h3 className="font-extrabold text-lg text-[#0B192C] dark:text-white flex items-center gap-2">
                   <FileCheck size={20} className="text-[#0A4DA6]" />{" "}
@@ -505,7 +506,7 @@ export const CentralApprovalCenterPage: React.FC = () => {
             {/* Request Summary Info */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-gray-50 dark:bg-slate-900/60 p-4 rounded-2xl text-xs">
               <div>
-                <span className="text-gray-400 block text-[10px] font-bold uppercase">
+                <span className="text-gray-400 block text-[10px] font-bold">
                   Ashram
                 </span>
                 <span className="font-extrabold text-[#0B192C] dark:text-white">
@@ -513,7 +514,7 @@ export const CentralApprovalCenterPage: React.FC = () => {
                 </span>
               </div>
               <div>
-                <span className="text-gray-400 block text-[10px] font-bold uppercase">
+                <span className="text-gray-400 block text-[10px] font-bold">
                   Stay Admin
                 </span>
                 <span className="font-bold text-gray-700 dark:text-gray-200">
@@ -521,18 +522,18 @@ export const CentralApprovalCenterPage: React.FC = () => {
                 </span>
               </div>
               <div>
-                <span className="text-gray-400 block text-[10px] font-bold uppercase">
+                <span className="text-gray-400 block text-[10px] font-bold">
                   Priority
                 </span>
-                <span className="font-extrabold uppercase text-purple-600">
+                <span className="font-extrabold text-purple-600">
                   {selectedRequest.priority || "normal"}
                 </span>
               </div>
               <div>
-                <span className="text-gray-400 block text-[10px] font-bold uppercase">
+                <span className="text-gray-400 block text-[10px] font-bold">
                   Current Status
                 </span>
-                <span className="font-extrabold uppercase text-amber-600">
+                <span className="font-extrabold text-amber-600">
                   {selectedRequest.status?.replace("_", " ")}
                 </span>
               </div>
@@ -540,7 +541,7 @@ export const CentralApprovalCenterPage: React.FC = () => {
 
             {/* Payload Inspector */}
             <div className="space-y-2 text-xs">
-              <h4 className="font-extrabold text-gray-700 dark:text-gray-200 uppercase tracking-wider text-[11px]">
+              <h4 className="font-extrabold text-gray-700 dark:text-gray-200 tracking-wider text-[11px]">
                 Requested Data Payload
               </h4>
               <div className="p-4 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl overflow-y-auto max-h-56">
@@ -556,7 +557,7 @@ export const CentralApprovalCenterPage: React.FC = () => {
             {selectedRequest.comments &&
               selectedRequest.comments.length > 0 && (
                 <div className="space-y-2 text-xs border-t border-gray-100 dark:border-slate-800 pt-3">
-                  <h4 className="font-extrabold text-gray-700 dark:text-gray-200 uppercase tracking-wider text-[11px]">
+                  <h4 className="font-extrabold text-gray-700 dark:text-gray-200 tracking-wider text-[11px]">
                     Approval Thread ({selectedRequest.comments.length})
                   </h4>
                   <div className="space-y-2 max-h-36 overflow-y-auto">
@@ -597,7 +598,7 @@ export const CentralApprovalCenterPage: React.FC = () => {
 
             {/* Review Comment Box */}
             <div className="space-y-1.5 border-t border-gray-100 dark:border-slate-800 pt-3">
-              <label className="block text-[11px] font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+              <label className="block text-[11px] font-bold text-gray-600 dark:text-gray-300 tracking-wider">
                 Review Decision Note
               </label>
               <textarea

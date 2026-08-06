@@ -8,6 +8,7 @@ import React, {
 import { io, type Socket } from "socket.io-client";
 import { useAuth } from "./AuthContext";
 import { API_BASE_URL, TOKEN_KEY } from "../lib/api";
+import { humanizeLabel } from "../utils/labels";
 
 export interface Notification {
   id: string;
@@ -65,7 +66,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         {
           id: "init-1",
           title: "Welcome to Tirvona",
-          message: `Namaste ${user.name}, your account is active as an official ${user.role.toUpperCase() === "CUSTOMER" ? "Pilgrim" : user.role.toUpperCase()}.`,
+          message: `Namaste ${user.name}, your account is active as an official ${user.role === "customer" ? "Pilgrim" : humanizeLabel(user.role)}.`,
           type: "success",
           timestamp: new Date(),
           read: false,

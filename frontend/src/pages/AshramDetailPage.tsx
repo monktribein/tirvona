@@ -28,6 +28,7 @@ import { setGuestPendingIntent } from "../utils/guestGate";
 import { roundMoney } from "../utils/format";
 import { GuestRoomSelector } from "../components/shared/GuestRoomSelector";
 import { GuestReviewsCarousel } from "../components/shared/GuestReviewsCarousel";
+import WriteReviewCard from "../components/shared/WriteReviewCard";
 import { VerifiedBadge } from "../components/shared/VerifiedBadge";
 import { useBookingSearch } from "../contexts/BookingSearchContext";
 import TirvonaMap from "../components/TirvonaMap";
@@ -937,7 +938,7 @@ export const AshramDetailPage: React.FC = () => {
               text="Verified Stay"
               size="md"
             />
-            <span className="text-xs text-gray-400 font-extrabold tracking-wider uppercase">
+            <span className="text-xs text-gray-400 font-extrabold tracking-wider">
               {[ashram.address?.city, ashram.address?.state]
                 .filter(Boolean)
                 .join(", ")}
@@ -1194,7 +1195,7 @@ export const AshramDetailPage: React.FC = () => {
 
             {ashram.history && (
               <div className="pt-4 border-t border-gray-100 dark:border-slate-800 space-y-2">
-                <h4 className="text-xs font-bold text-[#0A4DA6] uppercase tracking-wider">
+                <h4 className="text-xs font-bold text-[#0A4DA6] tracking-wider">
                   Historical Significance
                 </h4>
                 <p className="text-xs text-gray-500 leading-relaxed italic bg-gray-50/50 dark:bg-slate-900/10 p-4 rounded-2xl border border-dashed border-gray-100 dark:border-slate-850">
@@ -1244,7 +1245,7 @@ export const AshramDetailPage: React.FC = () => {
                     </p>
                   </div>
                   <div className="flex flex-col sm:items-end text-left sm:text-right shrink-0">
-                    <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">
+                    <span className="text-xs text-gray-400 font-bold tracking-wider">
                       Bed Rate
                     </span>
                     <span className="text-sm font-extrabold text-[#0B192C] dark:text-white">
@@ -1263,11 +1264,11 @@ export const AshramDetailPage: React.FC = () => {
                 <CalendarIcon size={18} className="text-[#0A4DA6] shrink-0" />{" "}
                 Room Availability
               </h3>
-              <span className="shrink-0 text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+              <span className="shrink-0 text-[10px] text-gray-400 font-bold tracking-wider">
                 Next 30 days
               </span>
             </div>
-            <p className="text-[10px] text-gray-400 font-bold uppercase">
+            <p className="text-[10px] text-gray-400 font-bold">
               Room Category:{" "}
               <span className="text-[#0B192C] dark:text-white font-extrabold">
                 {selectedRoom?.name || "Selected Room"}
@@ -1381,7 +1382,7 @@ export const AshramDetailPage: React.FC = () => {
                     </p>
 
                     {/* Weekday header */}
-                    <div className="grid grid-cols-7 gap-1 sm:gap-1.5 text-center text-[9px] sm:text-[10px] font-extrabold text-gray-400 uppercase tracking-wider">
+                    <div className="grid grid-cols-7 gap-1 sm:gap-1.5 text-center text-[9px] sm:text-[10px] font-extrabold text-gray-400 tracking-wider">
                       {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(
                         (d) => (
                           <span key={d}>{d}</span>
@@ -1479,7 +1480,7 @@ export const AshramDetailPage: React.FC = () => {
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
               <div className="space-y-3">
-                <h4 className="font-bold text-[#0A4DA6] uppercase tracking-wider text-[10px]">
+                <h4 className="font-bold text-[#0A4DA6] tracking-wider text-[10px]">
                   Guidelines for Guests
                 </h4>
                 <ul className="text-gray-500 space-y-2 list-disc pl-5">
@@ -1489,7 +1490,7 @@ export const AshramDetailPage: React.FC = () => {
                 </ul>
               </div>
               <div className="space-y-3">
-                <h4 className="font-bold text-[#0A4DA6] uppercase tracking-wider text-[10px]">
+                <h4 className="font-bold text-[#0A4DA6] tracking-wider text-[10px]">
                   Check-in Policies
                 </h4>
                 <div className="space-y-1.5 text-gray-500">
@@ -1531,7 +1532,7 @@ export const AshramDetailPage: React.FC = () => {
                     className="p-4 bg-gray-50/70 dark:bg-slate-900/60 border border-gray-100 dark:border-slate-800 rounded-2xl space-y-2"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-black uppercase text-[#0A4DA6] bg-blue-50 dark:bg-slate-850 px-2 py-0.5 rounded-full">
+                      <span className="text-[10px] font-black text-[#0A4DA6] bg-blue-50 dark:bg-slate-850 px-2 py-0.5 rounded-full">
                         {j.department}
                       </span>
                       <span className="text-[10px] font-bold text-gray-400">
@@ -1600,7 +1601,7 @@ export const AshramDetailPage: React.FC = () => {
               <form onSubmit={handleBookingSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-gray-400 uppercase">
+                    <label className="text-[10px] font-bold text-gray-400">
                       Check In
                     </label>
                     <input
@@ -1612,7 +1613,7 @@ export const AshramDetailPage: React.FC = () => {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-gray-400 uppercase">
+                    <label className="text-[10px] font-bold text-gray-400">
                       Check Out
                     </label>
                     <input
@@ -1626,7 +1627,7 @@ export const AshramDetailPage: React.FC = () => {
                 </div>
 
                 <div className="p-3.5 bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-800 rounded-[20px] space-y-1 select-none">
-                  <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">
+                  <span className="text-[9px] text-gray-400 font-bold tracking-wider">
                     Active Category
                   </span>
                   <span className="text-xs font-extrabold text-secondary dark:text-white block leading-tight">
@@ -1638,7 +1639,7 @@ export const AshramDetailPage: React.FC = () => {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400">
+                  <label className="text-[10px] font-extrabold tracking-wider text-gray-400">
                     Guests & Rooms
                   </label>
                   <GuestRoomSelector compact />
@@ -1647,7 +1648,7 @@ export const AshramDetailPage: React.FC = () => {
                 {/* Add ons - 4 distinct options */}
                 {/* Dynamic Database-Driven Add-on Services */}
                 <div className="pt-3 border-t border-gray-100 dark:border-slate-800 space-y-3">
-                  <span className="text-[10px] uppercase font-extrabold tracking-wider text-gray-400 block">
+                  <span className="text-[10px] font-extrabold tracking-wider text-gray-400 block">
                     Add-on Services (Dynamic Pricing)
                   </span>
 
@@ -1740,7 +1741,7 @@ export const AshramDetailPage: React.FC = () => {
 
                 {/* Donation */}
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1">
+                  <label className="text-[10px] font-bold text-gray-400 flex items-center gap-1">
                     Ashram Donation (₹){" "}
                     <Heart size={10} className="text-danger fill-danger" />
                   </label>
@@ -1767,7 +1768,7 @@ export const AshramDetailPage: React.FC = () => {
                           🎉
                         </span>
                         <div>
-                          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-black uppercase tracking-wider block">
+                          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-black tracking-wider block">
                             Offer Applied Successfully
                           </span>
                           <h4 className="text-xs font-black text-[#0B192C] dark:text-white">
@@ -1776,7 +1777,7 @@ export const AshramDetailPage: React.FC = () => {
                           </h4>
                         </div>
                       </div>
-                      <span className="px-2.5 py-1 bg-emerald-500 text-white rounded-full text-[10px] font-black uppercase shadow-sm">
+                      <span className="px-2.5 py-1 bg-emerald-500 text-white rounded-full text-[10px] font-black shadow-sm">
                         {appliedOfferData.promoCode}
                       </span>
                     </div>
@@ -1827,7 +1828,7 @@ export const AshramDetailPage: React.FC = () => {
 
                 {/* Promo Coupon Code Entry */}
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase">
+                  <label className="text-[10px] font-bold text-gray-400">
                     Promo / Coupon Code
                   </label>
                   <div className="flex gap-2">
@@ -1836,7 +1837,7 @@ export const AshramDetailPage: React.FC = () => {
                       placeholder="e.g. KUMBH2026"
                       value={couponCode}
                       onChange={(e) => setCouponCode(e.target.value)}
-                      className="flex-1 p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs font-semibold uppercase"
+                      className="flex-1 p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs font-semibold"
                     />
                     <button
                       type="button"
@@ -1898,7 +1899,7 @@ export const AshramDetailPage: React.FC = () => {
 
                 {/* Special Requests / Notes */}
                 <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase">
+                  <label className="text-[10px] font-bold text-gray-400">
                     Special Requests / Notes
                   </label>
                   <textarea
@@ -2060,7 +2061,7 @@ export const AshramDetailPage: React.FC = () => {
 
                 <div className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-[22px] p-4.5 space-y-2.5 text-xs font-semibold">
                   <div className="flex justify-between items-center pb-2 border-b border-gray-200 dark:border-slate-800">
-                    <span className="text-gray-400 uppercase text-[10px] font-extrabold">
+                    <span className="text-gray-400 text-[10px] font-extrabold">
                       Booking ID:
                     </span>
                     <span className="font-mono font-extrabold text-[#0B192C] dark:text-white">
@@ -2183,15 +2184,24 @@ export const AshramDetailPage: React.FC = () => {
           to one column — the entire booking sidecard (add-ons, coupons,
           loyalty, payment badges) plus the location map stacked between the
           reviews and the related stays, pushing them far apart. */}
-      <div className="pt-10 border-t border-gray-100 dark:border-slate-800">
+      <div className="pt-10 border-t border-gray-100 dark:border-slate-800 space-y-6">
         <GuestReviewsCarousel reviews={reviews} ashramName={ashram?.name} />
+        {id && (
+          <div className="max-w-2xl">
+            <WriteReviewCard
+              ashramId={id}
+              ashramName={ashram?.name}
+              onSubmitted={() => fetchReviews(id)}
+            />
+          </div>
+        )}
       </div>
 
       {/* Related stays */}
       {relatedStays.length > 0 && (
         <div className="space-y-6 pt-10 border-t border-gray-100 dark:border-slate-800">
           <div className="space-y-1">
-            <span className="text-xs uppercase font-extrabold text-[#0A4DA6] tracking-widest">
+            <span className="text-xs font-extrabold text-[#0A4DA6] tracking-widest">
               More Places
             </span>
             <h3 className="text-lg md:text-2xl font-extrabold text-[#0B192C] dark:text-white">
@@ -2235,7 +2245,7 @@ export const AshramDetailPage: React.FC = () => {
                   <h4 className="font-extrabold text-xs text-[#0B192C] dark:text-white line-clamp-1">
                     {rel.name}
                   </h4>
-                  <span className="text-[9px] text-[#0A4DA6] font-bold block uppercase">
+                  <span className="text-[9px] text-[#0A4DA6] font-bold block">
                     {rel.address?.city}
                   </span>
                 </div>

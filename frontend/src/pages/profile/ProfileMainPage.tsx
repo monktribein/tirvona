@@ -5,6 +5,7 @@ import {
   Calendar,
   Heart,
   CreditCard,
+  Package,
   Settings,
   LogOut,
   MapPin,
@@ -28,6 +29,7 @@ import {
   BookOpen,
 } from "lucide-react";
 import { VisitorArticlesTab } from "./VisitorArticlesTab";
+import ProfileOrdersPage from "./ProfileOrdersPage";
 import { useAuth } from "../../contexts/AuthContext";
 import { useNotifications } from "../../contexts/NotificationContext";
 import {
@@ -91,6 +93,7 @@ export const ProfileMainPage: React.FC = () => {
     | "overview"
     | "bookings"
     | "articles"
+    | "orders"
     | "wishlist"
     | "payments"
     | "settings" => {
@@ -104,6 +107,7 @@ export const ProfileMainPage: React.FC = () => {
       pathname.includes("/profile/blogs")
     )
       return "articles";
+    if (pathname.includes("/profile/orders")) return "orders";
     if (pathname.includes("/profile/wishlist")) return "wishlist";
     if (pathname.includes("/profile/payments")) return "payments";
     if (pathname.includes("/profile/settings")) return "settings";
@@ -406,6 +410,14 @@ export const ProfileMainPage: React.FC = () => {
       iconBg: "bg-amber-50 dark:bg-amber-950/40 text-amber-600",
     },
     {
+      key: "orders",
+      path: "/profile/orders",
+      label: "My Orders",
+      desc: "Prasad & marketplace purchases",
+      icon: <Package size={18} />,
+      iconBg: "bg-blue-50 dark:bg-blue-950/40 text-[#0A4DA6]",
+    },
+    {
       key: "wishlist",
       path: "/profile/wishlist",
       label: "Wishlist & Saved",
@@ -474,7 +486,7 @@ export const ProfileMainPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Left Sidebar Category Navigation (lg:col-span-4) */}
           <div className="lg:col-span-4 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-3 shadow-lg space-y-1 lg:sticky lg:top-24">
-            <div className="px-3 py-2 text-[10px] font-black text-gray-400 uppercase tracking-wider">
+            <div className="px-3 py-2 text-[10px] font-black text-gray-400 tracking-wider">
               Profile Categories
             </div>
 
@@ -555,7 +567,7 @@ export const ProfileMainPage: React.FC = () => {
               <div className="space-y-6">
                 {/* Quick Stats Grid */}
                 <div>
-                  <h3 className="text-sm font-extrabold text-[#0B192C] dark:text-white uppercase tracking-wider mb-3">
+                  <h3 className="text-sm font-extrabold text-[#0B192C] dark:text-white tracking-wider mb-3">
                     Booking Overview
                   </h3>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -584,7 +596,7 @@ export const ProfileMainPage: React.FC = () => {
 
                 {/* Recent Activity List */}
                 <div className="space-y-3">
-                  <h3 className="text-sm font-extrabold text-[#0B192C] dark:text-white uppercase tracking-wider">
+                  <h3 className="text-sm font-extrabold text-[#0B192C] dark:text-white tracking-wider">
                     Recent Yatra Activity
                   </h3>
 
@@ -764,7 +776,7 @@ export const ProfileMainPage: React.FC = () => {
 
                             <div className="space-y-1 min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <span className="px-2 py-0.5 bg-blue-50 text-[#0A4DA6] dark:bg-blue-950/40 dark:text-blue-300 rounded-md text-[10px] font-black uppercase">
+                                <span className="px-2 py-0.5 bg-blue-50 text-[#0A4DA6] dark:bg-blue-950/40 dark:text-blue-300 rounded-md text-[10px] font-black">
                                   {b.kind === "parking"
                                     ? "Parking"
                                     : "Ashram Stay"}
@@ -834,6 +846,8 @@ export const ProfileMainPage: React.FC = () => {
 
             {/* TAB: MY ARTICLES & BLOGS */}
             {activeTab === "articles" && <VisitorArticlesTab />}
+
+            {activeTab === "orders" && <ProfileOrdersPage />}
 
             {/* TAB 3: WISHLIST & SAVED */}
             {activeTab === "wishlist" && (
@@ -907,7 +921,7 @@ export const ProfileMainPage: React.FC = () => {
 
                         <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-slate-800">
                           <div>
-                            <span className="text-[10px] text-gray-400 font-bold uppercase block">
+                            <span className="text-[10px] text-gray-400 font-bold block">
                               Starting from
                             </span>
                             <span className="text-sm font-black text-[#0A4DA6] dark:text-white">
@@ -945,7 +959,7 @@ export const ProfileMainPage: React.FC = () => {
                 </div>
 
                 <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-5 shadow-md space-y-4">
-                  <h3 className="font-extrabold text-xs text-gray-400 uppercase tracking-wider">
+                  <h3 className="font-extrabold text-xs text-gray-400 tracking-wider">
                     Transaction Receipts
                   </h3>
 
@@ -1008,7 +1022,7 @@ export const ProfileMainPage: React.FC = () => {
                 </div>
 
                 <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-5 shadow-md space-y-4">
-                  <h3 className="font-extrabold text-xs text-[#0B192C] dark:text-white uppercase tracking-wider flex items-center gap-2">
+                  <h3 className="font-extrabold text-xs text-[#0B192C] dark:text-white tracking-wider flex items-center gap-2">
                     <Lock size={15} className="text-[#0A4DA6]" /> Change
                     Password
                   </h3>

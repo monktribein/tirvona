@@ -109,7 +109,7 @@ export const PilgrimagePlannerPage: React.FC = () => {
             {/* Step 1: Destination Selection */}
             {step === 1 && (
               <div className="space-y-4">
-                <label className="block text-xs font-black text-gray-500 uppercase tracking-wider">
+                <label className="block text-xs font-black text-gray-500 tracking-wider">
                   1. Where do you want to go? (Destination, Temple or Circuit)
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -143,7 +143,7 @@ export const PilgrimagePlannerPage: React.FC = () => {
             {/* Step 2: Purpose */}
             {step === 2 && (
               <div className="space-y-4">
-                <label className="block text-xs font-black text-gray-500 uppercase tracking-wider">
+                <label className="block text-xs font-black text-gray-500 tracking-wider">
                   2. Purpose of Your Sacred Journey
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -176,7 +176,7 @@ export const PilgrimagePlannerPage: React.FC = () => {
             {step === 3 && (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                 <div className="space-y-2">
-                  <label className="block text-xs font-black text-gray-500 uppercase">
+                  <label className="block text-xs font-black text-gray-500">
                     Starting City
                   </label>
                   <input
@@ -187,7 +187,7 @@ export const PilgrimagePlannerPage: React.FC = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="block text-xs font-black text-gray-500 uppercase">
+                  <label className="block text-xs font-black text-gray-500">
                     Travel Date
                   </label>
                   <input
@@ -198,7 +198,7 @@ export const PilgrimagePlannerPage: React.FC = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="block text-xs font-black text-gray-500 uppercase">
+                  <label className="block text-xs font-black text-gray-500">
                     Duration (Days)
                   </label>
                   <input
@@ -294,7 +294,7 @@ export const PilgrimagePlannerPage: React.FC = () => {
             <div className="bg-gradient-to-r from-[#0B192C] via-indigo-950 to-[#0B192C] text-white rounded-[32px] p-6 sm:p-10 border border-white/10 shadow-2xl space-y-6">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                  <span className="px-3.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black uppercase tracking-wider">
+                  <span className="px-3.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black tracking-wider">
                     VERIFIED ITINERARY GENERATED
                   </span>
                   <h2 className="text-2xl sm:text-4xl font-black mt-2">
@@ -324,7 +324,7 @@ export const PilgrimagePlannerPage: React.FC = () => {
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs font-bold pt-2 border-t border-white/10">
                 <div className="bg-white/5 p-3 rounded-2xl">
-                  <span className="text-gray-400 block text-[10px] uppercase">
+                  <span className="text-gray-400 block text-[10px]">
                     Best Season
                   </span>
                   <span className="text-amber-400 font-black">
@@ -332,7 +332,7 @@ export const PilgrimagePlannerPage: React.FC = () => {
                   </span>
                 </div>
                 <div className="bg-white/5 p-3 rounded-2xl">
-                  <span className="text-gray-400 block text-[10px] uppercase">
+                  <span className="text-gray-400 block text-[10px]">
                     Crowd Level
                   </span>
                   <span className="text-emerald-400 font-black">
@@ -340,7 +340,7 @@ export const PilgrimagePlannerPage: React.FC = () => {
                   </span>
                 </div>
                 <div className="bg-white/5 p-3 rounded-2xl">
-                  <span className="text-gray-400 block text-[10px] uppercase">
+                  <span className="text-gray-400 block text-[10px]">
                     Weather
                   </span>
                   <span className="text-blue-300 font-black">
@@ -348,7 +348,7 @@ export const PilgrimagePlannerPage: React.FC = () => {
                   </span>
                 </div>
                 <div className="bg-white/5 p-3 rounded-2xl">
-                  <span className="text-gray-400 block text-[10px] uppercase">
+                  <span className="text-gray-400 block text-[10px]">
                     Distance
                   </span>
                   <span className="text-amber-300 font-black">

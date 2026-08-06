@@ -328,7 +328,7 @@ export const ManageAshramsPage: React.FC = () => {
                 {/* Column 1: Overview & Spiritual History */}
                 <div className="lg:col-span-2 space-y-6">
                   <div className="bg-gray-50/70 dark:bg-slate-900/70 border border-gray-100 dark:border-slate-800 rounded-2xl p-5 space-y-3">
-                    <h3 className="text-xs font-black uppercase tracking-wider text-gray-400 flex items-center gap-2">
+                    <h3 className="text-xs font-black tracking-wider text-gray-400 flex items-center gap-2">
                       <Info size={14} className="text-[#0A4DA6]" /> About & Bio
                     </h3>
                     <p className="text-xs leading-relaxed font-semibold text-slate-700 dark:text-slate-300">
@@ -339,7 +339,7 @@ export const ManageAshramsPage: React.FC = () => {
 
                   {ashram.history && (
                     <div className="bg-amber-500/5 border border-amber-500/15 rounded-2xl p-5 space-y-3">
-                      <h3 className="text-xs font-black uppercase tracking-wider text-amber-600 flex items-center gap-2">
+                      <h3 className="text-xs font-black tracking-wider text-amber-600 flex items-center gap-2">
                         <BookOpen size={14} /> Spiritual Heritage & History
                       </h3>
                       <p className="text-xs leading-relaxed font-semibold text-slate-700 dark:text-slate-300">
@@ -350,7 +350,7 @@ export const ManageAshramsPage: React.FC = () => {
 
                   {/* Amenities */}
                   <div className="space-y-3">
-                    <h3 className="text-xs font-black uppercase tracking-wider text-gray-400">
+                    <h3 className="text-xs font-black tracking-wider text-gray-400">
                       Ashram Facilities & Services
                     </h3>
                     <div className="flex flex-wrap gap-2">
@@ -382,7 +382,7 @@ export const ManageAshramsPage: React.FC = () => {
                 <div className="space-y-6">
                   {/* Daily Guidelines & Rules */}
                   <div className="bg-gray-50/70 dark:bg-slate-900/70 border border-gray-100 dark:border-slate-800 rounded-2xl p-5 space-y-3">
-                    <h3 className="text-xs font-black uppercase tracking-wider text-gray-400 flex items-center gap-2">
+                    <h3 className="text-xs font-black tracking-wider text-gray-400 flex items-center gap-2">
                       <Sun size={14} className="text-[#E58C28]" /> Sacred
                       Guidelines & Rules
                     </h3>
@@ -406,7 +406,7 @@ export const ManageAshramsPage: React.FC = () => {
 
                   {/* KYC Legal Verification */}
                   <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-5 space-y-3">
-                    <h3 className="text-xs font-black uppercase tracking-wider text-emerald-600 flex items-center gap-2">
+                    <h3 className="text-xs font-black tracking-wider text-emerald-600 flex items-center gap-2">
                       <FileCheck size={14} /> Government KYC Verification
                     </h3>
                     <div className="space-y-2 text-xs font-bold text-slate-700 dark:text-slate-300">
@@ -469,7 +469,7 @@ export const ManageAshramsPage: React.FC = () => {
 
             <form onSubmit={handleSaveEdit} className="space-y-4">
               <div>
-                <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                <label className="block text-[10px] font-black text-gray-400 mb-1">
                   Ashram Name
                 </label>
                 <input
@@ -484,7 +484,7 @@ export const ManageAshramsPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                <label className="block text-[10px] font-black text-gray-400 mb-1">
                   Description / Bio
                 </label>
                 <textarea
@@ -501,7 +501,7 @@ export const ManageAshramsPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                <label className="block text-[10px] font-black text-gray-400 mb-1">
                   Spiritual History & Heritage
                 </label>
                 <textarea
@@ -518,7 +518,7 @@ export const ManageAshramsPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                <label className="block text-[10px] font-black text-gray-400 mb-1">
                   Facilities & Amenities (comma separated)
                 </label>
                 <input
@@ -536,7 +536,7 @@ export const ManageAshramsPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                <label className="block text-[10px] font-black text-gray-400 mb-1">
                   Rules & Guidelines (comma separated)
                 </label>
                 <input
@@ -553,7 +553,7 @@ export const ManageAshramsPage: React.FC = () => {
               {/* ════════════ Image Gallery Manager ════════════ */}
               <div className="bg-gray-50/80 dark:bg-slate-900/80 border border-gray-100 dark:border-slate-800 rounded-2xl p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <label className="text-[10px] font-black uppercase text-gray-400 flex items-center gap-1.5">
+                  <label className="text-[10px] font-black text-gray-400 flex items-center gap-1.5">
                     <ImageIcon size={14} className="text-[#0A4DA6]" /> Ashram
                     Photo Gallery ({editFormData.images?.length || 0} Photos)
                   </label>
@@ -660,7 +660,7 @@ export const ManageAshramsPage: React.FC = () => {
 
             <div className="space-y-3">
               <div>
-                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">
+                <label className="text-[10px] font-bold text-gray-500 tracking-wide">
                   Trust Deed (PDF)
                 </label>
                 <FileUploader
@@ -672,7 +672,7 @@ export const ManageAshramsPage: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">
+                <label className="text-[10px] font-bold text-gray-500 tracking-wide">
                   Fire Safety Certificate (PDF)
                 </label>
                 <FileUploader
@@ -684,7 +684,7 @@ export const ManageAshramsPage: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">
+                <label className="text-[10px] font-bold text-gray-500 tracking-wide">
                   Land Ownership (PDF)
                 </label>
                 <FileUploader

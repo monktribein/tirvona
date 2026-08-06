@@ -20,6 +20,21 @@ export class ReviewsController {
       data: await this.service.create(user, dto),
     };
   }
+  /**
+   * Whether the signed-in caller may review this ashram, and the verified-stay
+   * status the badge would carry. Declared before `ashram/:ashramId` so the
+   * static segment is not captured by that parameter.
+   */
+  @Get("eligibility/:ashramId") async eligibility(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("ashramId") ashramId: string,
+  ) {
+    return {
+      success: true,
+      data: await this.service.eligibility(user, ashramId),
+    };
+  }
+
   @Public() @Get("recent") async recent() {
     const data = await this.service.recent();
     return { success: true, count: data.length, data };

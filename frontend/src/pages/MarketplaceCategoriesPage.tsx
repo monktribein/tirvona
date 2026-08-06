@@ -141,7 +141,7 @@ export const MarketplaceCategoriesPage: React.FC = () => {
                         e.target.src = "/banner/ashram_rishikesh.png";
                       }}
                     />
-                    <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-[#0A4DA6] text-white text-[10px] font-black uppercase shadow-lg">
+                    <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-[#0A4DA6] text-white text-[10px] font-black shadow-lg">
                       {cat.trendingBadge || "POPULAR"}
                     </span>
                     <span className="absolute top-3 right-3 px-3 py-1 rounded-full bg-white/95 dark:bg-[#0B192C]/90 text-[#0B192C] dark:text-white text-xs font-black shadow-lg flex items-center gap-1">

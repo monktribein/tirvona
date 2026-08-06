@@ -167,7 +167,7 @@ export const StaffManagementPage: React.FC = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="border-b border-gray-50 dark:border-slate-850 bg-gray-50 dark:bg-slate-900 text-gray-400 font-bold uppercase text-[10px] tracking-wider">
+                <tr className="border-b border-gray-50 dark:border-slate-850 bg-gray-50 dark:bg-slate-900 text-gray-400 font-bold text-[10px] tracking-wider">
                   <th className="py-4 px-6">Name</th>
                   <th className="py-4 px-6">Contact</th>
                   <th className="py-4 px-6">Role</th>
@@ -194,7 +194,7 @@ export const StaffManagementPage: React.FC = () => {
                       </div>
                     </td>
                     <td className="py-4 px-6">
-                      <span className="px-2.5 py-0.5 bg-[#0A4DA6]/10 text-[#0A4DA6] rounded-full text-[9px] font-bold uppercase">
+                      <span className="px-2.5 py-0.5 bg-[#0A4DA6]/10 text-[#0A4DA6] rounded-full text-[9px] font-bold">
                         {ROLE_LABELS[s.role] || s.role}
                       </span>
                     </td>

@@ -137,7 +137,7 @@ export const ReceptionCheckinPage: React.FC = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="border-b border-gray-50 dark:border-slate-850 bg-gray-50 dark:bg-slate-900 text-gray-450 font-bold uppercase text-[10px] tracking-wider">
+                <tr className="border-b border-gray-50 dark:border-slate-850 bg-gray-50 dark:bg-slate-900 text-gray-450 font-bold text-[10px] tracking-wider">
                   <th className="py-4 px-6">Booking Ref</th>
                   <th className="py-4 px-6">Guest Contact</th>
                   <th className="py-4 px-6">Room / Assigned</th>
@@ -262,7 +262,7 @@ export const ReceptionCheckinPage: React.FC = () => {
             )}
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block text-center">
+              <label className="text-xs font-bold text-gray-400 tracking-wider block text-center">
                 Check-In Pass Code
               </label>
               <input

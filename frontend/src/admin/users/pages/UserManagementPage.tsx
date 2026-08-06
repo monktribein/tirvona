@@ -26,6 +26,7 @@ import { userService } from "../../../services";
 import { getErrorMessage } from "../../../lib/api";
 import { useAuth } from "../../../contexts/AuthContext";
 import { useNotifications } from "../../../contexts/NotificationContext";
+import { humanizeLabel } from "../../../utils/labels";
 
 interface ManagedUser {
   _id: string;
@@ -104,8 +105,12 @@ export const UserManagementPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Filters & Search State
-  const [searchTerm, setSearchTerm] = useState("");
+  // Filters & Search State. `?q=` is seeded by the console's global search so
+  // a picked account is already filtered to on arrival, rather than leaving the
+  // operator to retype what they just searched for.
+  const [searchTerm, setSearchTerm] = useState(
+    () => new URLSearchParams(window.location.search).get("q") ?? "",
+  );
   const [filterStatus, setFilterStatus] = useState("all");
 
   // Multi-step Create Account Modal State
@@ -267,7 +272,7 @@ export const UserManagementPage: React.FC = () => {
       if (res.data?.success) {
         addNotification(
           "Role Updated",
-          `User role changed to ${newSelectedRole.toUpperCase()}`,
+          `User role changed to ${humanizeLabel(newSelectedRole)}`,
           "success",
         );
         setRoleTarget(null);
@@ -535,7 +540,7 @@ export const UserManagementPage: React.FC = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="border-b border-gray-100 dark:border-slate-800 bg-gray-50/70 dark:bg-slate-900/50 text-gray-400 font-extrabold uppercase text-[10px] tracking-wider">
+                <tr className="border-b border-gray-100 dark:border-slate-800 bg-gray-50/70 dark:bg-slate-900/50 text-gray-400 font-extrabold text-[10px] tracking-wider">
                   <th className="py-4 px-6">Employee / User Info</th>
                   <th className="py-4 px-6">Role</th>
                   <th className="py-4 px-6">Status</th>
@@ -581,13 +586,13 @@ export const UserManagementPage: React.FC = () => {
                           </div>
                         </td>
                         <td className="py-4 px-6">
-                          <span className="px-2.5 py-0.5 bg-[#0A4DA6]/10 text-[#0A4DA6] rounded-full text-[9px] font-extrabold uppercase">
+                          <span className="px-2.5 py-0.5 bg-[#0A4DA6]/10 text-[#0A4DA6] rounded-full text-[9px] font-extrabold">
                             {u.role.replace("_", " ")}
                           </span>
                         </td>
                         <td className="py-4 px-6">
                           <span
-                            className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wide ${
+                            className={`px-2.5 py-0.5 rounded-full text-[9px] font-black tracking-wide ${
                               isSoftDeleted
                                 ? "bg-gray-200 text-gray-700 dark:bg-slate-800 dark:text-gray-400"
                                 : !isUserSuspended && u.status === "active"

@@ -1,135 +1,431 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { analyticsService, bookingService } from "../../../services";
+import { analyticsService } from "../../../services";
 import { useAuth } from "../../../contexts/AuthContext";
-import { useNotifications } from "../../../contexts/NotificationContext";
-import api from "../../../lib/api";
+import { formatCurrency, formatIndianNumber } from "../../../utils/format";
+import { humanizeLabel } from "../../../utils/labels";
 import {
-  Plus,
+  AlertTriangle,
+  ArrowDownRight,
+  ArrowUpRight,
+  BarChart3,
+  Building2,
+  ClipboardCheck,
   Eye,
-  Trash2,
+  Inbox,
   Lock,
-  Search,
-  ChevronLeft,
-  ChevronRight,
-  TrendingUp,
-  Crown,
-  Share2,
-  Wrench,
-  MessageSquare,
-  FileText,
-  Clock,
-  Zap,
+  Plus,
   RefreshCw,
+  Search,
+  Table2,
+  Users,
 } from "lucide-react";
 
-// ── 1. DUAL CURVE MAIN ANALYTICS CHART ──
-const DualCurveAnalyticsChart: React.FC<{
-  timeRange: string;
-  monthlyRevenue: number;
-  totalBookings: number;
-}> = ({ timeRange, monthlyRevenue, totalBookings }) => {
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+/**
+ * Chart ink, as CSS custom properties.
+ *
+ * Series hues are slots 1 and 2 of the validated categorical palette, stepped
+ * separately for each surface (white in light, #0B192C in dark) rather than
+ * flipped automatically. Both sets clear the lightness band, chroma floor,
+ * CVD separation and normal-vision floor against the surface they actually
+ * render on. Grid and axis are hairline chrome, deliberately one shade off the
+ * surface so they never compete with the data.
+ */
+const VIZ_TOKENS = `
+.tv-viz {
+  --viz-series-1: #2a78d6;
+  --viz-series-2: #eb6834;
+  --viz-grid: #e6e7e4;
+  --viz-axis: #c3c2b7;
+  --viz-muted: #7c8794;
+  --viz-surface: #ffffff;
+}
+.dark .tv-viz {
+  --viz-series-1: #3987e5;
+  --viz-series-2: #d95926;
+  --viz-grid: #1d3145;
+  --viz-axis: #274257;
+  --viz-muted: #93a4b5;
+  --viz-surface: #0B192C;
+}
+`;
 
-  const factor = (monthlyRevenue || 346896) / 346896;
-  const pointsData = [
-    { x: 30, y1: 140, y2: 170, label: "1", online: Math.round(120 * factor), store: Math.round(85 * factor) },
-    { x: 120, y1: 150, y2: 140, label: "2", online: Math.round(140 * factor), store: Math.round(110 * factor) },
-    { x: 210, y1: 80, y2: 100, label: "3", online: Math.round(280 * factor), store: Math.round(210 * factor) },
-    { x: 300, y1: 130, y2: 70, label: "4", online: Math.round(170 * factor), store: Math.round(290 * factor) },
-    { x: 390, y1: 90, y2: 120, label: "5", online: Math.round(260 * factor), store: Math.round(190 * factor) },
-    { x: 480, y1: 30, y2: 60, label: "6", online: Math.round(390 * factor), store: Math.round(320 * factor) },
-    { x: 570, y1: 110, y2: 130, label: "7", online: Math.round(210 * factor), store: Math.round(160 * factor) },
-  ];
+type Range = "daily" | "weekly" | "monthly" | "yearly";
 
-  const buildPath = (key: "y1" | "y2") => {
-    return pointsData.reduce((acc, pt, i) => {
-      if (i === 0) return `M ${pt.x},${pt[key]}`;
-      const prev = pointsData[i - 1];
-      const cx1 = prev.x + (pt.x - prev.x) / 2;
-      const cy1 = prev[key];
-      const cx2 = prev.x + (pt.x - prev.x) / 2;
-      const cy2 = pt[key];
-      return `${acc} C ${cx1},${cy1} ${cx2},${cy2} ${pt.x},${pt[key]}`;
-    }, "");
+interface SeriesPoint {
+  bucket: string;
+  label: string;
+  onlineBookings: number;
+  deskBookings: number;
+  onlineRevenue: number;
+  deskRevenue: number;
+  onlineGross: number;
+  deskGross: number;
+  bookings: number;
+  revenue: number;
+  gross: number;
+}
+
+type Metric = "gross" | "revenue" | "bookings";
+
+/**
+ * How each metric reads a point. Booked value is the default because it is the
+ * activity signal: a stay settled at the counter carries no `amountPaid` at
+ * all, so a collected-only chart flatlines on a platform that is working fine.
+ */
+const METRIC: Record<
+  Metric,
+  {
+    label: string;
+    online: (p: SeriesPoint) => number;
+    desk: (p: SeriesPoint) => number;
+    total: (p: SeriesPoint) => number;
+    money: boolean;
+  }
+> = {
+  gross: {
+    label: "Booked",
+    online: (p) => p.onlineGross,
+    desk: (p) => p.deskGross,
+    total: (p) => p.gross,
+    money: true,
+  },
+  revenue: {
+    label: "Collected",
+    online: (p) => p.onlineRevenue,
+    desk: (p) => p.deskRevenue,
+    total: (p) => p.revenue,
+    money: true,
+  },
+  bookings: {
+    label: "Bookings",
+    online: (p) => p.onlineBookings,
+    desk: (p) => p.deskBookings,
+    total: (p) => p.bookings,
+    money: false,
+  },
+};
+
+interface Overview {
+  range: Range;
+  series: SeriesPoint[];
+  channels: {
+    channel: string;
+    label: string;
+    count: number;
+    revenue: number;
+    share: number;
+  }[];
+  statuses: { status: string; count: number; share: number }[];
+  topAshrams: {
+    ashramId: string;
+    name: string;
+    city: string;
+    revenue: number;
+    gross: number;
+    bookings: number;
+  }[];
+  totals: {
+    windowBookings: number;
+    windowRevenue: number;
+    windowGrossValue: number;
+    windowGuests: number;
+    averageBookingValue: number;
+    collectionRate: number;
   };
+  trend: {
+    revenueChange: number;
+    bookingsChange: number;
+    comparable: boolean;
+  };
+}
 
-  const path1 = buildPath("y1");
-  const path2 = buildPath("y2");
-  const fill1 = `${path1} L 570,200 L 30,200 Z`;
-  const fill2 = `${path2} L 570,200 L 30,200 Z`;
+const RANGE_LABEL: Record<Range, string> = {
+  daily: "last 14 days",
+  weekly: "last 12 weeks",
+  monthly: "last 12 months",
+  yearly: "last 5 years",
+};
+
+/** Round a maximum up to a readable axis ceiling (1, 2, 5 × a power of ten). */
+const niceCeiling = (value: number): number => {
+  if (!Number.isFinite(value) || value <= 0) return 1;
+  const magnitude = 10 ** Math.floor(Math.log10(value));
+  const normalized = value / magnitude;
+  const step =
+    normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
+  return step * magnitude;
+};
+
+const compactCurrency = (value: number): string => {
+  if (Math.abs(value) >= 10_000_000)
+    return `₹${(value / 10_000_000).toFixed(1)}Cr`;
+  if (Math.abs(value) >= 100_000) return `₹${(value / 100_000).toFixed(1)}L`;
+  if (Math.abs(value) >= 1_000) return `₹${(value / 1_000).toFixed(1)}k`;
+  return `₹${Math.round(value)}`;
+};
+
+const EmptyState: React.FC<{ message: string; hint?: string }> = ({
+  message,
+  hint,
+}) => (
+  <div className="flex flex-col items-center justify-center gap-2 py-10 text-center">
+    <Inbox size={26} className="text-gray-300 dark:text-slate-600" />
+    <p className="text-xs font-bold text-gray-600 dark:text-gray-300">
+      {message}
+    </p>
+    {hint && (
+      <p className="text-[11px] text-gray-400 max-w-xs leading-relaxed">
+        {hint}
+      </p>
+    )}
+  </div>
+);
+
+// ── Booking / revenue trend ─────────────────────────────────────────────────
+// Two series on ONE axis: a booking paid through the gateway vs one settled at
+// the counter. The metric toggle swaps what the single axis measures — never
+// two scales on one plot.
+const TrendChart: React.FC<{
+  series: SeriesPoint[];
+  metric: Metric;
+}> = ({ series, metric }) => {
+  const [hovered, setHovered] = useState<number | null>(null);
+  const spec = METRIC[metric];
+
+  const W = 720;
+  const H = 260;
+  const padLeft = 58;
+  const padRight = 18;
+  const padTop = 18;
+  const padBottom = 36;
+  const plotW = W - padLeft - padRight;
+  const plotH = H - padTop - padBottom;
+
+  const online = series.map(spec.online);
+  const desk = series.map(spec.desk);
+  const max = niceCeiling(Math.max(...online, ...desk, 0));
+
+  const xAt = (index: number) =>
+    series.length <= 1
+      ? padLeft + plotW / 2
+      : padLeft + (index / (series.length - 1)) * plotW;
+  const yAt = (value: number) => padTop + plotH - (value / max) * plotH;
+
+  const linePath = (values: number[]) =>
+    values.map((v, i) => `${i === 0 ? "M" : "L"} ${xAt(i)},${yAt(v)}`).join(" ");
+  const areaPath = (values: number[]) =>
+    `${linePath(values)} L ${xAt(values.length - 1)},${padTop + plotH} L ${xAt(0)},${padTop + plotH} Z`;
+
+  const ticks = [0, 0.25, 0.5, 0.75, 1];
+  const formatValue = (value: number) =>
+    spec.money ? formatCurrency(value) : formatIndianNumber(value);
+
+  // Only every nth label is drawn so ticks never overlap on a 14-point axis.
+  const labelStride = Math.ceil(series.length / 7);
 
   return (
     <div className="relative w-full">
-      <svg viewBox="0 0 600 220" className="w-full h-56 overflow-visible">
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        className="w-full h-64"
+        role="img"
+        aria-label={`${spec.label} by booking channel over time`}
+      >
         <defs>
-          <linearGradient id="blueGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#00A3FF" stopOpacity="0.25" />
-            <stop offset="100%" stopColor="#00A3FF" stopOpacity="0.0" />
+          <linearGradient id="tvOnlineFill" x1="0" y1="0" x2="0" y2="1">
+            <stop
+              offset="0%"
+              stopColor="var(--viz-series-1)"
+              stopOpacity="0.20"
+            />
+            <stop
+              offset="100%"
+              stopColor="var(--viz-series-1)"
+              stopOpacity="0"
+            />
           </linearGradient>
-          <linearGradient id="orangeGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#FF7A00" stopOpacity="0.2" />
-            <stop offset="100%" stopColor="#FF7A00" stopOpacity="0.0" />
+          <linearGradient id="tvDeskFill" x1="0" y1="0" x2="0" y2="1">
+            <stop
+              offset="0%"
+              stopColor="var(--viz-series-2)"
+              stopOpacity="0.18"
+            />
+            <stop
+              offset="100%"
+              stopColor="var(--viz-series-2)"
+              stopOpacity="0"
+            />
           </linearGradient>
         </defs>
 
-        {/* Horizontal Grid lines */}
-        {[35, 30, 20, 15, 10, 5, 0].map((val, idx) => {
-          const y = 30 + idx * 26;
+        {/* Solid hairline grid — never dashed. */}
+        {ticks.map((t) => {
+          const y = padTop + plotH - t * plotH;
           return (
-            <g key={idx}>
+            <g key={t}>
               <line
-                x1="25"
+                x1={padLeft}
                 y1={y}
-                x2="585"
+                x2={W - padRight}
                 y2={y}
-                stroke="#E5E7EB"
-                strokeDasharray="2 2"
+                stroke="var(--viz-grid)"
                 strokeWidth="1"
               />
-              <text x="10" y={y + 4} className="text-[10px] fill-gray-400 font-mono">
-                {val}
+              <text
+                x={padLeft - 10}
+                y={y + 4}
+                textAnchor="end"
+                fontSize="10"
+                fill="var(--viz-muted)"
+                style={{ fontVariantNumeric: "tabular-nums" }}
+              >
+                {spec.money
+                  ? compactCurrency(max * t)
+                  : formatIndianNumber(Math.round(max * t))}
               </text>
             </g>
           );
         })}
 
-        {/* Fills */}
-        <path d={fill1} fill="url(#blueGrad)" />
-        <path d={fill2} fill="url(#orangeGrad)" />
+        <path d={areaPath(online)} fill="url(#tvOnlineFill)" />
+        <path d={areaPath(desk)} fill="url(#tvDeskFill)" />
+        <path
+          d={linePath(online)}
+          fill="none"
+          stroke="var(--viz-series-1)"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d={linePath(desk)}
+          fill="none"
+          stroke="var(--viz-series-2)"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
 
-        {/* Curves */}
-        <path d={path1} fill="none" stroke="#00A3FF" strokeWidth="3" strokeLinecap="round" />
-        <path d={path2} fill="none" stroke="#FF7A00" strokeWidth="3" strokeLinecap="round" />
-
-        {/* Data Points */}
-        {pointsData.map((pt, i) => (
-          <g
-            key={i}
-            className="cursor-pointer"
-            onMouseEnter={() => setHoveredIndex(i)}
-            onMouseLeave={() => setHoveredIndex(null)}
-          >
-            <circle cx={pt.x} cy={pt.y1} r="5" className="fill-white stroke-[#00A3FF] stroke-[3]" />
-            <circle cx={pt.x} cy={pt.y2} r="5" className="fill-white stroke-[#FF7A00] stroke-[3]" />
-            <text x={pt.x} y="215" textAnchor="middle" className="text-[11px] font-medium fill-gray-400 font-sans">
-              {pt.label}
+        {/* x-axis labels */}
+        {series.map((point, i) =>
+          i % labelStride === 0 || i === series.length - 1 ? (
+            <text
+              key={point.bucket}
+              x={xAt(i)}
+              y={H - 12}
+              textAnchor="middle"
+              fontSize="10"
+              fill="var(--viz-muted)"
+            >
+              {point.label}
             </text>
-          </g>
+          ) : null,
+        )}
+
+        {/* Crosshair for the hovered bucket */}
+        {hovered !== null && (
+          <line
+            x1={xAt(hovered)}
+            y1={padTop}
+            x2={xAt(hovered)}
+            y2={padTop + plotH}
+            stroke="var(--viz-axis)"
+            strokeWidth="1"
+          />
+        )}
+
+        {/* Endpoint markers, direct-labelled so the latest value is readable
+            without hovering. 8px across with a 2px surface ring. */}
+        {series.length > 0 &&
+          (
+            [
+              { values: online, color: "var(--viz-series-1)" },
+              { values: desk, color: "var(--viz-series-2)" },
+            ] as const
+          ).map(({ values, color }, seriesIndex) => {
+            const last = values.length - 1;
+            return (
+              <circle
+                key={seriesIndex}
+                cx={xAt(last)}
+                cy={yAt(values[last])}
+                r="4"
+                fill={color}
+                stroke="var(--viz-surface)"
+                strokeWidth="2"
+              />
+            );
+          })}
+
+        {/* Hovered points sit above the crosshair. */}
+        {hovered !== null &&
+          (
+            [
+              { values: online, color: "var(--viz-series-1)" },
+              { values: desk, color: "var(--viz-series-2)" },
+            ] as const
+          ).map(({ values, color }, seriesIndex) => (
+            <circle
+              key={seriesIndex}
+              cx={xAt(hovered)}
+              cy={yAt(values[hovered])}
+              r="4"
+              fill={color}
+              stroke="var(--viz-surface)"
+              strokeWidth="2"
+            />
+          ))}
+
+        {/* Full-height hit columns: the target is the whole band, not the dot. */}
+        {series.map((point, i) => (
+          <rect
+            key={point.bucket}
+            x={xAt(i) - plotW / Math.max(series.length - 1, 1) / 2}
+            y={padTop}
+            width={plotW / Math.max(series.length - 1, 1)}
+            height={plotH}
+            fill="transparent"
+            onMouseEnter={() => setHovered(i)}
+            onMouseLeave={() => setHovered(null)}
+          />
         ))}
       </svg>
 
-      {/* Tooltip Overlay */}
-      {hoveredIndex !== null && (
-        <div className="absolute top-2 left-1/2 transform -translate-x-1/2 bg-[#0B192C] text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-xl border border-white/10 flex gap-4 pointer-events-none z-10">
-          <div>
-            <span className="text-[#00A3FF] block text-[10px] uppercase">● Online</span>
-            <span>₹{(pointsData[hoveredIndex].online * 100).toLocaleString("en-IN")}</span>
+      {hovered !== null && (
+        <div
+          className="absolute -top-1 z-10 pointer-events-none bg-[#0B192C] text-white px-3 py-2 rounded-lg shadow-xl border border-white/10 text-[11px] min-w-[150px]"
+          style={{
+            left: `${(xAt(hovered) / W) * 100}%`,
+            transform:
+              hovered > series.length / 2
+                ? "translateX(-105%)"
+                : "translateX(5%)",
+          }}
+        >
+          <div className="font-black mb-1.5 text-[10px] tracking-wide text-white/60">
+            {series[hovered].label}
           </div>
-          <div>
-            <span className="text-[#FF7A00] block text-[10px] uppercase">● Store</span>
-            <span>₹{(pointsData[hoveredIndex].store * 100).toLocaleString("en-IN")}</span>
+          <div className="flex items-center justify-between gap-4">
+            <span className="flex items-center gap-1.5">
+              <span
+                className="w-2 h-2 rounded-full"
+                style={{ background: "var(--viz-series-1)" }}
+              />
+              Online
+            </span>
+            <span className="font-bold">{formatValue(online[hovered])}</span>
+          </div>
+          <div className="flex items-center justify-between gap-4 mt-0.5">
+            <span className="flex items-center gap-1.5">
+              <span
+                className="w-2 h-2 rounded-full"
+                style={{ background: "var(--viz-series-2)" }}
+              />
+              Desk
+            </span>
+            <span className="font-bold">{formatValue(desk[hovered])}</span>
           </div>
         </div>
       )}
@@ -137,689 +433,807 @@ const DualCurveAnalyticsChart: React.FC<{
   );
 };
 
-// ── 2. TRAFFIC DONUT CHART ──
-const TrafficDonutChart: React.FC<{
-  pilgrimPct?: number;
-  ashramPct?: number;
-  directPct?: number;
-}> = ({ pilgrimPct = 34, ashramPct = 55, directPct = 11 }) => {
+/** The WCAG-clean twin of the trend chart — every plotted value, as text. */
+const TrendTable: React.FC<{
+  series: SeriesPoint[];
+  metric: Metric;
+}> = ({ series, metric }) => {
+  const spec = METRIC[metric];
+  const value = (n: number) =>
+    spec.money ? formatCurrency(n) : formatIndianNumber(n);
   return (
-    <div className="flex flex-col items-center justify-between h-full py-2">
-      <div className="relative w-48 h-48 flex items-center justify-center">
-        <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
-          <circle
-            cx="50"
-            cy="50"
-            r="38"
-            fill="none"
-            stroke="#00A3FF"
-            strokeWidth="18"
-            strokeDasharray={`${(pilgrimPct / 100) * 238} 238`}
-            strokeDashoffset="0"
-          />
-          <circle
-            cx="50"
-            cy="50"
-            r="38"
-            fill="none"
-            stroke="#FF5722"
-            strokeWidth="18"
-            strokeDasharray={`${(ashramPct / 100) * 238} 238`}
-            strokeDashoffset={`-${(pilgrimPct / 100) * 238}`}
-          />
-          <circle
-            cx="50"
-            cy="50"
-            r="38"
-            fill="none"
-            stroke="#FFC107"
-            strokeWidth="18"
-            strokeDasharray={`${(directPct / 100) * 238} 238`}
-            strokeDashoffset={`-${((pilgrimPct + ashramPct) / 100) * 238}`}
-          />
-        </svg>
-      </div>
+    <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-slate-800 max-h-64 overflow-y-auto overscroll-contain">
+      <table className="w-full text-left text-xs">
+        <thead className="bg-gray-50 dark:bg-slate-900 text-gray-600 dark:text-gray-300 font-extrabold text-[10px] sticky top-0">
+          <tr>
+            <th className="py-2 px-3">Period</th>
+            <th className="py-2 px-3 text-right">Online</th>
+            <th className="py-2 px-3 text-right">Desk</th>
+            <th className="py-2 px-3 text-right">Total</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100 dark:divide-slate-800 tabular-nums">
+          {series.map((point) => (
+            <tr key={point.bucket}>
+              <td className="py-2 px-3 font-semibold">{point.label}</td>
+              <td className="py-2 px-3 text-right">
+                {value(spec.online(point))}
+              </td>
+              <td className="py-2 px-3 text-right">{value(spec.desk(point))}</td>
+              <td className="py-2 px-3 text-right font-bold">
+                {value(spec.total(point))}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
 
-      <div className="grid grid-cols-3 gap-4 w-full pt-4 text-center border-t border-gray-100 dark:border-slate-800">
-        <div>
-          <h4 className="text-xl font-black text-[#0B192C] dark:text-white">{pilgrimPct}%</h4>
-          <span className="text-[11px] font-medium text-gray-400 flex items-center justify-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-[#00A3FF]" /> Pilgrim Traffic
-          </span>
-        </div>
-        <div>
-          <h4 className="text-xl font-black text-[#0B192C] dark:text-white">{ashramPct}%</h4>
-          <span className="text-[11px] font-medium text-gray-400 flex items-center justify-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-[#FF5722]" /> Ashram Stays
-          </span>
-        </div>
-        <div>
-          <h4 className="text-xl font-black text-[#0B192C] dark:text-white">{directPct}%</h4>
-          <span className="text-[11px] font-medium text-gray-400 flex items-center justify-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-[#FFC107]" /> Direct Search
-          </span>
-        </div>
+// ── Channel split ───────────────────────────────────────────────────────────
+// Two categories is a stacked bar, not a donut: a two-slice pie asks the reader
+// to compare arcs when a single length does it exactly.
+const ChannelSplit: React.FC<{ channels: Overview["channels"] }> = ({
+  channels,
+}) => {
+  const total = channels.reduce((sum, c) => sum + c.count, 0);
+  if (total === 0)
+    return (
+      <EmptyState
+        message="No bookings yet"
+        hint="The channel split appears once pilgrims start booking."
+      />
+    );
+
+  return (
+    <div className="space-y-3">
+      {/* 2px surface gap between segments rather than a border. */}
+      <div className="flex w-full h-9 rounded-lg overflow-hidden gap-[2px]">
+        {channels
+          .filter((c) => c.count > 0)
+          .map((c, i) => (
+            <div
+              key={c.channel}
+              className="h-full flex items-center justify-center"
+              style={{
+                width: `${c.share}%`,
+                background:
+                  i === 0 ? "var(--viz-series-1)" : "var(--viz-series-2)",
+              }}
+              title={`${c.label}: ${c.count}`}
+            >
+              {c.share >= 18 && (
+                <span className="text-[11px] font-black text-white">
+                  {c.share}%
+                </span>
+              )}
+            </div>
+          ))}
+      </div>
+      <div className="space-y-2">
+        {channels.map((c, i) => (
+          <div
+            key={c.channel}
+            className="flex items-center justify-between text-xs"
+          >
+            <span className="flex items-center gap-2 text-gray-600 dark:text-gray-300 font-semibold">
+              <span
+                className="w-2.5 h-2.5 rounded-full shrink-0"
+                style={{
+                  background:
+                    i === 0 ? "var(--viz-series-1)" : "var(--viz-series-2)",
+                }}
+              />
+              {c.label}
+            </span>
+            <span className="font-black text-[#0B192C] dark:text-white tabular-nums">
+              {c.share}%{" "}
+              <span className="text-gray-400 font-semibold">
+                ({formatIndianNumber(c.count)})
+              </span>
+            </span>
+          </div>
+        ))}
       </div>
     </div>
   );
 };
 
+// ── Ranked horizontal bars ──────────────────────────────────────────────────
+// One series, so every bar takes slot 1 — bar length already encodes magnitude
+// and a value-ramp would spend the identity channel re-saying it.
+const RankedBars: React.FC<{
+  rows: { key: string; label: string; sub?: string; value: number }[];
+  format: (value: number) => string;
+}> = ({ rows, format }) => {
+  const max = Math.max(...rows.map((r) => r.value), 1);
+  return (
+    <div className="space-y-3">
+      {rows.map((row) => (
+        <div key={row.key} className="space-y-1">
+          <div className="flex items-baseline justify-between gap-3 text-xs">
+            <span className="font-bold text-[#0B192C] dark:text-white truncate">
+              {row.label}
+              {row.sub && (
+                <span className="text-gray-400 font-medium"> · {row.sub}</span>
+              )}
+            </span>
+            <span className="font-black tabular-nums text-[#0B192C] dark:text-white shrink-0">
+              {format(row.value)}
+            </span>
+          </div>
+          <div className="h-2 w-full rounded-full bg-gray-100 dark:bg-slate-800 overflow-hidden">
+            <div
+              className="h-full rounded-full"
+              style={{
+                width: `${Math.max((row.value / max) * 100, row.value > 0 ? 3 : 0)}%`,
+                background: "var(--viz-series-1)",
+              }}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+/** Single-series mini area — no axis, no labels; the stat tile carries both. */
+const Sparkline: React.FC<{ values: number[] }> = ({ values }) => {
+  if (values.length < 2 || values.every((v) => v === 0))
+    return <div className="h-10" />;
+  const max = Math.max(...values);
+  const W = 100;
+  const H = 30;
+  const x = (i: number) => (i / (values.length - 1)) * W;
+  const y = (v: number) => H - (v / max) * (H - 4) - 2;
+  const line = values
+    .map((v, i) => `${i === 0 ? "M" : "L"} ${x(i)},${y(v)}`)
+    .join(" ");
+  return (
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      className="w-full h-10"
+      preserveAspectRatio="none"
+      aria-hidden="true"
+    >
+      <path
+        d={`${line} L ${W},${H} L 0,${H} Z`}
+        fill="var(--viz-series-1)"
+        fillOpacity="0.14"
+      />
+      <path
+        d={line}
+        fill="none"
+        stroke="var(--viz-series-1)"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        vectorEffect="non-scaling-stroke"
+      />
+    </svg>
+  );
+};
+
+const DeltaBadge: React.FC<{ change: number; comparable: boolean }> = ({
+  change,
+  comparable,
+}) => {
+  if (!comparable)
+    return (
+      <span className="text-[10px] font-semibold text-gray-400">
+        No prior period
+      </span>
+    );
+  const up = change >= 0;
+  return (
+    <span
+      className={`inline-flex items-center gap-0.5 text-[10px] font-black ${
+        up
+          ? "text-emerald-600 dark:text-emerald-400"
+          : "text-rose-600 dark:text-rose-400"
+      }`}
+    >
+      {up ? <ArrowUpRight size={11} /> : <ArrowDownRight size={11} />}
+      {Math.abs(change)}%
+    </span>
+  );
+};
+
+const StatTile: React.FC<{
+  label: string;
+  value: string;
+  caption?: React.ReactNode;
+  children?: React.ReactNode;
+}> = ({ label, value, caption, children }) => (
+  <div className="bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-2">
+    <span className="text-[11px] font-extrabold text-gray-500 dark:text-gray-400 block tracking-wide">
+      {label}
+    </span>
+    <h4 className="text-2xl font-black text-[#0B192C] dark:text-white">
+      {value}
+    </h4>
+    {caption && <div className="text-[10px] font-semibold">{caption}</div>}
+    {children}
+  </div>
+);
+
+const QuickPill: React.FC<{
+  icon: React.ReactNode;
+  tone: string;
+  label: string;
+  value: string;
+}> = ({ icon, tone, label, value }) => (
+  <div className="flex items-center gap-3 p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800">
+    <div
+      className={`w-9 h-9 rounded-full ${tone} flex items-center justify-center shrink-0`}
+    >
+      {icon}
+    </div>
+    <div className="min-w-0">
+      <span className="text-[10px] text-gray-500 font-semibold block leading-tight">
+        {label}
+      </span>
+      <span className="text-xs font-black text-[#0B192C] dark:text-white tabular-nums">
+        {value}
+      </span>
+    </div>
+  </div>
+);
+
 export const AdminDashboard: React.FC = () => {
   const { user } = useAuth();
-  const { addNotification } = useNotifications();
   const navigate = useNavigate();
 
-  const [timeRange, setTimeRange] = useState<"DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY">("DAILY");
+  const [range, setRange] = useState<Range>("daily");
+  const [metric, setMetric] = useState<Metric>("gross");
+  const [showTable, setShowTable] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Real API Data States
-  const [stats, setStats] = useState<any>(null);
-  const [dashStats, setDashStats] = useState<any>(null);
-  const [realBookings, setRealBookings] = useState<any[]>([]);
-  const [realActivities, setRealActivities] = useState<any[]>([]);
+  const [overview, setOverview] = useState<Overview | null>(null);
+  const [system, setSystem] = useState<any>(null);
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [activities, setActivities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [errors, setErrors] = useState<string[]>([]);
+
+  const load = useCallback(
+    async (nextRange: Range, isInitial: boolean) => {
+      if (isInitial) setLoading(true);
+      else setRefreshing(true);
+
+      const [overviewRes, systemRes, bookingsRes, logsRes] =
+        await Promise.allSettled([
+          analyticsService.overview(nextRange),
+          analyticsService.system(),
+          analyticsService.recentBookings(8),
+          analyticsService.auditLogs(),
+        ]);
+
+      const failed: string[] = [];
+      if (overviewRes.status === "fulfilled")
+        setOverview(overviewRes.value.data?.data ?? null);
+      else failed.push("analytics overview");
+
+      if (systemRes.status === "fulfilled")
+        setSystem(systemRes.value.data?.data ?? null);
+      else failed.push("platform totals");
+
+      if (bookingsRes.status === "fulfilled")
+        setBookings(bookingsRes.value.data?.data ?? []);
+      else failed.push("recent bookings");
+
+      if (logsRes.status === "fulfilled")
+        setActivities(logsRes.value.data?.data?.slice(0, 6) ?? []);
+      else failed.push("audit activity");
+
+      setErrors(failed);
+      setLoading(false);
+      setRefreshing(false);
+    },
+    [],
+  );
 
   useEffect(() => {
-    loadRealDashboardData();
-  }, []);
+    load(range, overview === null);
+    // `overview` is read only to choose the loading style, not to re-trigger.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [range, load]);
 
-  const loadRealDashboardData = async () => {
-    setLoading(true);
-    try {
-      const [sysRes, dashRes, historyRes, auditRes, cmsRes] = await Promise.allSettled([
-        analyticsService.system(),
-        bookingService.dashboard(),
-        bookingService.history(),
-        analyticsService.auditLogs(),
-        api.get("/cms/pending-approvals"),
-      ]);
+  const filteredBookings = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return bookings;
+    return bookings.filter((row) =>
+      [row.customerName, row.ashramName, row.city, row.bookingId]
+        .filter(Boolean)
+        .some((field: string) => String(field).toLowerCase().includes(term)),
+    );
+  }, [bookings, searchTerm]);
 
-      if (sysRes.status === "fulfilled" && sysRes.value.data?.success) {
-        setStats(sysRes.value.data.data);
-      }
-      if (dashRes.status === "fulfilled" && dashRes.value.data?.success) {
-        setDashStats(dashRes.value.data.data);
-      }
+  const statusRows = useMemo(
+    () =>
+      (overview?.statuses ?? []).map((row) => ({
+        key: row.status,
+        label: humanizeLabel(row.status),
+        sub: `${row.share}%`,
+        value: row.count,
+      })),
+    [overview],
+  );
 
-      // Load Real Orders/Bookings Table
-      let bookingsList: any[] = [];
-      if (historyRes.status === "fulfilled" && historyRes.value.data?.data) {
-        bookingsList = historyRes.value.data.data;
-      }
+  const ashramRows = useMemo(
+    () =>
+      (overview?.topAshrams ?? []).map((row) => ({
+        key: row.ashramId,
+        label: row.name,
+        sub: [row.city, `${row.bookings} booking${row.bookings === 1 ? "" : "s"}`]
+          .filter(Boolean)
+          .join(", "),
+        value: row.gross,
+      })),
+    [overview],
+  );
 
-      if (!bookingsList.length) {
-        bookingsList = [
-          {
-            _id: "ASH-12386",
-            bookingCode: "12386",
-            userName: "Nakul Jain",
-            location: "Rishikesh",
-            priceNum: 29900,
-            price: "₹29,900",
-            status: "Process",
-            statusColor: "bg-rose-500 text-white",
-          },
-          {
-            _id: "ASH-12387",
-            bookingCode: "12387",
-            userName: "Swami Vidyanand",
-            location: "Haridwar",
-            priceNum: 264200,
-            price: "₹2,64,200",
-            status: "Open",
-            statusColor: "bg-emerald-500 text-white",
-          },
-          {
-            _id: "ASH-12388",
-            bookingCode: "12388",
-            userName: "Radha Krishna Trust",
-            location: "Vrindavan",
-            priceNum: 98100,
-            price: "₹98,100",
-            status: "On Hold",
-            statusColor: "bg-blue-500 text-white",
-          },
-          {
-            _id: "ASH-12389",
-            bookingCode: "12389",
-            userName: "Ganga Kripa Board",
-            location: "Ayodhya",
-            priceNum: 36900,
-            price: "₹36,900",
-            status: "Process",
-            statusColor: "bg-rose-500 text-white",
-          },
-          {
-            _id: "ASH-12390",
-            bookingCode: "12390",
-            userName: "Kedarnath Yatra Trust",
-            location: "Kedarnath",
-            priceNum: 124000,
-            price: "₹1,24,000",
-            status: "Open",
-            statusColor: "bg-emerald-500 text-white",
-          },
-        ];
-      } else {
-        bookingsList = bookingsList.map((b: any, idx: number) => {
-          const numPrice = Number(b.pricing?.totalAmount || b.pricing?.amountPaid || b.totalAmount || b.amount || 2500 * (idx + 1));
-          return {
-            _id: b._id || `BK-${idx + 1}`,
-            bookingCode: b.bookingCode || b._id?.substring(0, 6) || `1238${idx + 6}`,
-            userName: b.userId?.name || b.contactDetails?.fullName || b.userName || "Pilgrim Guest",
-            location: b.ashramId?.name || b.ashramId?.address?.city || b.location || "Rishikesh",
-            priceNum: numPrice,
-            price: `₹${numPrice.toLocaleString("en-IN")}`,
-            status: b.status === "confirmed" || b.status === "completed" ? "Open" : b.status === "pending" ? "Process" : "On Hold",
-            statusColor: b.status === "confirmed" || b.status === "completed" ? "bg-emerald-500 text-white" : b.status === "pending" ? "bg-rose-500 text-white" : "bg-blue-500 text-white",
-          };
-        });
-      }
-      setRealBookings(bookingsList);
+  if (loading) {
+    return (
+      <div className="space-y-6 p-2 sm:p-4">
+        <div className="h-72 rounded-2xl bg-gray-100 dark:bg-slate-900 animate-pulse" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {[0, 1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="h-32 rounded-2xl bg-gray-100 dark:bg-slate-900 animate-pulse"
+            />
+          ))}
+        </div>
+        <div className="h-64 rounded-2xl bg-gray-100 dark:bg-slate-900 animate-pulse" />
+      </div>
+    );
+  }
 
-      // Load Real Activities Feed
-      let activityList: any[] = [];
-      if (auditRes.status === "fulfilled" && auditRes.value.data?.data) {
-        activityList = auditRes.value.data.data.map((log: any) => ({
-          time: new Date(log.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          title: log.action || "Task Updated",
-          sub: `${log.performedBy?.name || log.userName || "Admin"} — ${log.details || log.description || "Updated system telemetry"}`,
-          badgeBg: "bg-blue-500 text-white",
-        }));
-      }
-
-      if (cmsRes.status === "fulfilled" && cmsRes.value.data?.data?.length) {
-        const cmsActivities = cmsRes.value.data.data.map((c: any) => ({
-          time: new Date(c.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          title: `CMS Proposal: ${c.title || c.section}`,
-          sub: `${c.userId?.name || "BannerBoy"} proposed ${c.section} update`,
-          badgeBg: "bg-amber-500 text-white",
-        }));
-        activityList = [...cmsActivities, ...activityList];
-      }
-
-      if (!activityList.length) {
-        activityList = [
-          {
-            time: "42 Mins Ago",
-            title: "Ashram Listing Verified",
-            sub: `${user?.name || "Super Admin"} verified Parmarth Niketan #2`,
-            badgeBg: "bg-blue-500 text-white",
-          },
-          {
-            time: "1 Hour Ago",
-            title: "CMS Banner Submitted",
-            sub: "BannerBoy submitted Sravan Yatra Hero Banner",
-            badgeBg: "bg-rose-500 text-white",
-          },
-          {
-            time: "2 Hours Ago",
-            title: "Inspection Scheduled",
-            sub: "District Magistrate approved Ganga Kripa inspection",
-            badgeBg: "bg-cyan-500 text-white",
-          },
-          {
-            time: "4 Hours Ago",
-            title: "Room Inventory Updated",
-            sub: "Swami Vidyanand added 12 Deluxe AC rooms",
-            badgeBg: "bg-amber-500 text-white",
-          },
-          {
-            time: "1 Day Ago",
-            title: "System Audit Executed",
-            sub: "Platform Bot completed 100% security telemetry check",
-            badgeBg: "bg-emerald-500 text-white",
-          },
-        ];
-      }
-      setRealActivities(activityList);
-    } catch (err) {
-      console.warn("Real data fetch error:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Real Calculated Amounts
-  const totalRevenueVal = useMemo(() => {
-    if (stats?.financials?.revenue && stats.financials.revenue > 0) {
-      return Number(stats.financials.revenue);
-    }
-    if (dashStats?.revenue && dashStats.revenue > 0) {
-      return Number(dashStats.revenue);
-    }
-    const sumBookings = realBookings.reduce((acc, b) => acc + (b.priceNum || 0), 0);
-    return sumBookings > 0 ? sumBookings : 553100;
-  }, [stats, dashStats, realBookings]);
-
-  const totalBookingsVal = useMemo(() => {
-    if (stats?.financials?.totalBookings && stats.financials.totalBookings > 0) {
-      return Number(stats.financials.totalBookings);
-    }
-    if (dashStats?.totalBookings && dashStats.totalBookings > 0) {
-      return Number(dashStats.totalBookings);
-    }
-    return realBookings.length || 824;
-  }, [stats, dashStats, realBookings]);
+  const series = overview?.series ?? [];
+  const hasWindowData = (overview?.totals.windowBookings ?? 0) > 0;
 
   return (
-    <div className="space-y-6 text-left w-full pb-12 font-sans bg-white dark:bg-[#070F1B] p-2 sm:p-4 rounded-3xl">
-      {/* ── ROW 1: TOP DUAL ANALYTICS & TRAFFIC DONUT ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* TOP LEFT: Main Dual-Curve Analytics Panel */}
-        <div className="lg:col-span-8 bg-white dark:bg-[#0B192C] rounded-2xl border border-black dark:border-slate-800 p-6 shadow-sm flex flex-col justify-between space-y-6">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-              <h2 className="text-xl font-bold text-[#0B192C] dark:text-white tracking-tight">
-                Dashboard
-              </h2>
-              <span className="text-xs text-gray-500 font-medium">
-                Overview of Real API Telemetry for{" "}
-                <strong className="text-[#0A4DA6] dark:text-blue-400 font-extrabold">
-                  {user?.name || "Super Admin"}
-                </strong>
-              </span>
-            </div>
+    <div className="tv-viz space-y-6 text-left w-full pb-12 font-sans bg-white dark:bg-[#070F1B] p-2 sm:p-4 rounded-3xl">
+      <style>{VIZ_TOKENS}</style>
 
-            {/* Time Filter Tabs */}
-            <div className="flex items-center gap-6 text-xs font-bold tracking-wider">
-              {(["DAILY", "WEEKLY", "MONTHLY", "YEARLY"] as const).map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setTimeRange(tab)}
-                  className={`pb-1 transition-all cursor-pointer relative ${
-                    timeRange === tab
-                      ? "text-[#FF5722] font-black"
-                      : "text-gray-400 hover:text-gray-700 dark:hover:text-white"
-                  }`}
-                >
-                  {tab}
-                  {timeRange === tab && (
-                    <motion.div
-                      layoutId="tabUnderline"
-                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#FF5722]"
-                    />
-                  )}
-                </button>
-              ))}
-            </div>
+      {errors.length > 0 && (
+        <div className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 dark:bg-amber-500/10 dark:border-amber-500/30 px-4 py-3">
+          <AlertTriangle
+            size={16}
+            className="text-amber-600 dark:text-amber-400 mt-0.5 shrink-0"
+          />
+          <div className="text-xs">
+            <p className="font-bold text-amber-900 dark:text-amber-300">
+              Some panels could not load
+            </p>
+            <p className="text-amber-800/80 dark:text-amber-400/80">
+              Failed to fetch: {errors.join(", ")}. The affected panels are left
+              empty rather than filled with placeholder figures.
+            </p>
           </div>
+        </div>
+      )}
 
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-            <div className="space-y-2">
-              <div>
-                <h3 className="text-3xl font-black text-[#0B192C] dark:text-white font-mono">
-                  ₹{totalRevenueVal.toLocaleString("en-IN")}
-                </h3>
-                <span className="text-xs text-gray-500 font-medium">Current Month Real Revenue</span>
-              </div>
-              <div>
-                <h4 className="text-xl font-extrabold text-[#0B192C] dark:text-white font-mono">
-                  {totalBookingsVal.toLocaleString("en-IN")}
-                </h4>
-                <span className="text-xs text-gray-500 font-medium">Current Month Real Bookings</span>
-              </div>
+      {/* Filter row — one control set above everything it scopes. */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-gray-200 dark:border-slate-800 pb-4">
+        <div>
+          <h2 className="text-xl font-bold text-[#0B192C] dark:text-white tracking-tight">
+            Dashboard
+          </h2>
+          <span className="text-xs text-gray-500 font-medium">
+            Live platform telemetry for{" "}
+            <strong className="text-[#0A4DA6] dark:text-blue-400 font-extrabold">
+              {user?.name || "Super Admin"}
+            </strong>{" "}
+            · {RANGE_LABEL[range]}
+          </span>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-5 text-xs font-bold tracking-wider">
+            {(["daily", "weekly", "monthly", "yearly"] as const).map((tab) => (
               <button
-                onClick={() =>
-                  addNotification("Report Exported", `Real monthly telemetry exported for ${user?.name || "Admin"}.`, "success")
-                }
-                className="mt-2 px-5 py-2.5 bg-[#FF5722] hover:bg-[#E64A19] text-white font-bold text-xs rounded-xl shadow-md transition-all cursor-pointer transform active:scale-95"
+                key={tab}
+                onClick={() => setRange(tab)}
+                className={`pb-1 transition-all cursor-pointer relative ${
+                  range === tab
+                    ? "text-[#FF5722] font-black"
+                    : "text-gray-400 hover:text-gray-700 dark:hover:text-white"
+                }`}
               >
-                Last Month Summary
+                {tab}
+                {range === tab && (
+                  <motion.div
+                    layoutId="tabUnderline"
+                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#FF5722]"
+                  />
+                )}
               </button>
-            </div>
-
-            {/* Main Dual Curve SVG Chart */}
-            <div className="flex-1 w-full max-w-lg">
-              <div className="flex justify-end gap-4 text-xs font-semibold mb-2">
-                <span className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#00A3FF]" /> Online Bookings
-                </span>
-                <span className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#FF7A00]" /> Direct Desk
-                </span>
-              </div>
-              <DualCurveAnalyticsChart
-                timeRange={timeRange}
-                monthlyRevenue={totalRevenueVal}
-                totalBookings={totalBookingsVal}
-              />
-            </div>
-          </div>
-
-          {/* 4 Bottom Quick Stat Pills */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-black dark:border-slate-800">
-            {/* Real Revenue Sum */}
-            <div className="flex items-center gap-3 p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-black dark:border-slate-800">
-              <div className="w-9 h-9 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
-                <Crown size={18} />
-              </div>
-              <div>
-                <span className="text-[10px] text-gray-500 font-semibold block leading-tight">
-                  Real Revenue Sum
-                </span>
-                <span className="text-xs font-black text-[#0B192C] dark:text-white font-mono">
-                  ₹{totalRevenueVal.toLocaleString("en-IN")}
-                </span>
-              </div>
-            </div>
-
-            {/* Verified Ashrams */}
-            <div className="flex items-center gap-3 p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-black dark:border-slate-800">
-              <div className="w-9 h-9 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
-                <Share2 size={18} />
-              </div>
-              <div>
-                <span className="text-[10px] text-gray-500 font-semibold block leading-tight">
-                  Verified Ashrams
-                </span>
-                <span className="text-xs font-black text-[#0B192C] dark:text-white font-mono">
-                  {stats?.ashrams?.approved || 19} Active
-                </span>
-              </div>
-            </div>
-
-            {/* Audit Queue */}
-            <div className="flex items-center gap-3 p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-black dark:border-slate-800">
-              <div className="w-9 h-9 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
-                <Wrench size={18} />
-              </div>
-              <div>
-                <span className="text-[10px] text-gray-500 font-semibold block leading-tight">
-                  Audit Queue
-                </span>
-                <span className="text-xs font-black text-[#0B192C] dark:text-white font-mono">
-                  {stats?.ashrams?.pending || 34} Pending
-                </span>
-              </div>
-            </div>
-
-            {/* Registered Users */}
-            <div className="flex items-center gap-3 p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-black dark:border-slate-800">
-              <div className="w-9 h-9 rounded-full bg-pink-100 text-pink-600 flex items-center justify-center shrink-0">
-                <TrendingUp size={18} />
-              </div>
-              <div>
-                <span className="text-[10px] text-gray-500 font-semibold block leading-tight">
-                  Registered Users
-                </span>
-                <span className="text-xs font-black text-[#0B192C] dark:text-white font-mono">
-                  {stats?.users?.pilgrims || 1890} Pilgrims
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* TOP RIGHT: Traffic Donut Panel */}
-        <div className="lg:col-span-4 bg-white dark:bg-[#0B192C] rounded-2xl border border-black dark:border-slate-800 p-6 shadow-sm flex flex-col justify-between">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-bold text-[#0B192C] dark:text-white tracking-tight">
-              Traffic &amp; Channel Distribution
-            </h3>
-          </div>
-          <TrafficDonutChart pilgrimPct={34} ashramPct={55} directPct={11} />
-        </div>
-      </div>
-
-      {/* ── ROW 2: 4 PASTEL METRIC CARDS ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {/* Card 1: Revenue Run Rate */}
-        <div className="bg-white border border-black dark:bg-[#0B192C] dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-3 relative overflow-hidden">
-          <span className="text-xs font-extrabold text-[#006064] dark:text-cyan-300 block">
-            Real Revenue Run Rate
-          </span>
-          <div className="flex items-end justify-between">
-            <div className="w-20 h-10 flex items-end gap-1">
-              {[40, 70, 45, 90, 60, 100].map((h, i) => (
-                <div
-                  key={i}
-                  style={{ height: `${h}%` }}
-                  className="w-2.5 bg-[#00838F] rounded-t-sm"
-                />
-              ))}
-            </div>
-            <div>
-              <h4 className="text-2xl font-black text-[#0B192C] dark:text-white font-mono">
-                ↑ ₹{Math.round(totalRevenueVal * 0.15).toLocaleString("en-IN")}
-              </h4>
-              <span className="text-[10px] text-gray-500 dark:text-gray-400 font-semibold block text-right">
-                10-Day Fetch Rate
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Card 2: Page View Telemetry */}
-        <div className="bg-white border border-black dark:bg-[#0B192C] dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-3 relative overflow-hidden">
-          <span className="text-xs font-extrabold text-[#F57F17] dark:text-amber-300 block">
-            Page View Telemetry
-          </span>
-          <div>
-            <h4 className="text-2xl font-black text-[#0B192C] dark:text-white font-mono">
-              ↑ {(totalBookingsVal * 5.2).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
-            </h4>
-          </div>
-          <div className="w-full h-10 pt-1">
-            <svg viewBox="0 0 100 30" className="w-full h-full" preserveAspectRatio="none">
-              <path
-                d="M 0 25 Q 25 5 50 15 T 100 5 L 100 30 L 0 30 Z"
-                fill="#FFF59D"
-                fillOpacity="0.5"
-              />
-              <path
-                d="M 0 25 Q 25 5 50 15 T 100 5"
-                fill="none"
-                stroke="#FBC02D"
-                strokeWidth="2.5"
-              />
-            </svg>
-          </div>
-        </div>
-
-        {/* Card 3: Cancellation Rate */}
-        <div className="bg-white border border-black dark:bg-[#0B192C] dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-3 relative overflow-hidden">
-          <div className="flex justify-between items-center">
-            <span className="text-xs font-extrabold text-[#E65100] dark:text-orange-300">
-              Cancellation Rate
-            </span>
-            <span className="px-2.5 py-0.5 bg-white dark:bg-slate-900 rounded-full text-[10px] font-bold text-[#E65100] border border-black">
-              Monthly ⌄
-            </span>
-          </div>
-          <div className="flex items-center justify-between">
-            <h4 className="text-2xl font-black text-[#0B192C] dark:text-white font-mono">
-              {stats?.financials?.cancellationRate ?? 4.3}%
-            </h4>
-            <div className="w-24 h-8">
-              <svg viewBox="0 0 100 30" className="w-full h-full" preserveAspectRatio="none">
-                <path
-                  d="M 0 20 Q 25 5 50 25 T 100 10"
-                  fill="none"
-                  stroke="#FF5722"
-                  strokeWidth="2.5"
-                />
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        {/* Card 4: Approval Velocity */}
-        <div className="bg-white border border-black dark:bg-[#0B192C] dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-3 relative overflow-hidden">
-          <span className="text-xs font-extrabold text-[#4A148C] dark:text-purple-300 block">
-            Approval Velocity
-          </span>
-          <div className="flex items-end justify-between">
-            <div className="w-20 h-10 flex items-end gap-1">
-              {[60, 30, 80, 45, 95, 70].map((h, i) => (
-                <div
-                  key={i}
-                  style={{ height: `${h}%` }}
-                  className="w-2.5 bg-[#8E24AA] rounded-t-sm"
-                />
-              ))}
-            </div>
-            <div>
-              <h4 className="text-2xl font-black text-[#0B192C] dark:text-white font-mono">
-                {stats?.financials?.approvalRate ?? 96}%
-              </h4>
-              <span className="text-[10px] text-gray-500 dark:text-gray-400 font-semibold block text-right">
-                Verified listings
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── ROW 3: RECENT ACTIVITIES STREAM & ORDER STATUS DATA TABLE ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* BOTTOM LEFT: Recent Activities Stream */}
-        <div className="lg:col-span-5 bg-white dark:bg-[#0B192C] rounded-2xl border border-black dark:border-slate-800 p-6 shadow-sm space-y-6">
-          <div className="flex justify-between items-center border-b border-black dark:border-slate-800 pb-3">
-            <h3 className="text-base font-bold text-[#0B192C] dark:text-white tracking-tight">
-              Recent System Activities
-            </h3>
-            <button
-              onClick={loadRealDashboardData}
-              className="text-gray-400 hover:text-[#0A4DA6] transition-colors p-1"
-              title="Refresh Real Feeds"
-            >
-              <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-            </button>
-          </div>
-
-          <div className="space-y-6 text-xs">
-            {realActivities.map((act, i) => (
-              <div key={i} className="flex items-center gap-4">
-                <span className="w-20 text-[11px] font-semibold text-gray-500 shrink-0">
-                  {act.time}
-                </span>
-                <div className={`w-8 h-8 rounded-full ${act.badgeBg} flex items-center justify-center shrink-0 shadow-sm`}>
-                  {i % 2 === 0 ? <FileText size={14} /> : <Zap size={14} />}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h4 className="font-extrabold text-[#0B192C] dark:text-white text-xs truncate">
-                    {act.title}
-                  </h4>
-                  <span className="text-[11px] text-gray-500 font-medium block truncate">
-                    {act.sub}
-                  </span>
-                </div>
-              </div>
             ))}
           </div>
+          <button
+            onClick={() => load(range, false)}
+            className="text-gray-400 hover:text-[#0A4DA6] transition-colors p-1.5 rounded-lg border border-gray-200 dark:border-slate-700 cursor-pointer"
+            title="Refresh"
+          >
+            <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
+          </button>
+        </div>
+      </div>
+
+      {/* Hold the previous render at reduced opacity while refetching. */}
+      <div
+        className={`space-y-6 transition-opacity ${refreshing ? "opacity-60" : "opacity-100"}`}
+      >
+        {/* ── ROW 1: trend + channel/status ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="lg:col-span-8 bg-white dark:bg-[#0B192C] rounded-2xl border border-gray-200 dark:border-slate-800 p-6 shadow-sm space-y-5">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div className="space-y-1">
+                <h3 className="text-3xl font-black text-[#0B192C] dark:text-white">
+                  {formatCurrency(overview?.totals.windowRevenue ?? 0)}
+                </h3>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-500 font-medium">
+                    Collected · {RANGE_LABEL[range]}
+                  </span>
+                  <DeltaBadge
+                    change={overview?.trend.revenueChange ?? 0}
+                    comparable={overview?.trend.comparable ?? false}
+                  />
+                </div>
+                {/* Booked value sits beside collected cash: a platform whose
+                    stays are settled at the counter reads as zero revenue
+                    otherwise, which is true but useless on its own. */}
+                <div className="text-xs text-gray-500 font-medium">
+                  of{" "}
+                  <strong className="text-[#0B192C] dark:text-white font-black">
+                    {formatCurrency(overview?.totals.windowGrossValue ?? 0)}
+                  </strong>{" "}
+                  booked ({overview?.totals.collectionRate ?? 0}% collected)
+                </div>
+                <div className="text-xs text-gray-500 font-medium pt-1">
+                  <strong className="text-[#0B192C] dark:text-white font-black">
+                    {formatIndianNumber(overview?.totals.windowBookings ?? 0)}
+                  </strong>{" "}
+                  bookings ·{" "}
+                  <strong className="text-[#0B192C] dark:text-white font-black">
+                    {formatIndianNumber(overview?.totals.windowGuests ?? 0)}
+                  </strong>{" "}
+                  guests
+                </div>
+              </div>
+
+              <div className="flex flex-col items-end gap-2">
+                {/* Legend — always present for two series. */}
+                <div className="flex gap-4 text-xs font-semibold">
+                  <span className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300">
+                    <span
+                      className="w-2.5 h-2.5 rounded-full"
+                      style={{ background: "var(--viz-series-1)" }}
+                    />
+                    Online Gateway
+                  </span>
+                  <span className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300">
+                    <span
+                      className="w-2.5 h-2.5 rounded-full"
+                      style={{ background: "var(--viz-series-2)" }}
+                    />
+                    Direct Desk
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  {(["gross", "revenue", "bookings"] as const).map((m) => (
+                    <button
+                      key={m}
+                      onClick={() => setMetric(m)}
+                      className={`px-3 py-1 rounded-lg text-[11px] font-bold border transition-colors cursor-pointer ${
+                        metric === m
+                          ? "bg-[#0A4DA6] text-white border-[#0A4DA6]"
+                          : "border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-300 hover:border-[#0A4DA6]"
+                      }`}
+                    >
+                      {METRIC[m].label}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => setShowTable((v) => !v)}
+                    className="px-2.5 py-1 rounded-lg border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-300 hover:border-[#0A4DA6] transition-colors cursor-pointer"
+                    title={showTable ? "Show chart" : "Show data table"}
+                  >
+                    {showTable ? <BarChart3 size={13} /> : <Table2 size={13} />}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {!hasWindowData ? (
+              <EmptyState
+                message={`No bookings in the ${RANGE_LABEL[range]}`}
+                hint="Switch to a wider range, or wait for the first booking of this period."
+              />
+            ) : showTable ? (
+              <TrendTable series={series} metric={metric} />
+            ) : (
+              <TrendChart series={series} metric={metric} />
+            )}
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-gray-200 dark:border-slate-800">
+              <QuickPill
+                icon={<Building2 size={18} />}
+                tone="bg-blue-100 text-blue-600"
+                label="Verified ashrams"
+                value={`${formatIndianNumber(system?.ashrams?.approved ?? 0)} active`}
+              />
+              <QuickPill
+                icon={<ClipboardCheck size={18} />}
+                tone="bg-amber-100 text-amber-600"
+                label="Verification queue"
+                value={`${formatIndianNumber(system?.ashrams?.pending ?? 0)} pending`}
+              />
+              <QuickPill
+                icon={<Users size={18} />}
+                tone="bg-emerald-100 text-emerald-600"
+                label="Pilgrims booked"
+                value={formatIndianNumber(system?.users?.pilgrims ?? 0)}
+              />
+              <QuickPill
+                icon={<Building2 size={18} />}
+                tone="bg-pink-100 text-pink-600"
+                label="Registered owners"
+                value={formatIndianNumber(system?.users?.owners ?? 0)}
+              />
+            </div>
+          </div>
+
+          <div className="lg:col-span-4 space-y-6">
+            <div className="bg-white dark:bg-[#0B192C] rounded-2xl border border-gray-200 dark:border-slate-800 p-6 shadow-sm">
+              <h3 className="text-base font-bold text-[#0B192C] dark:text-white tracking-tight mb-4">
+                Booking channel
+              </h3>
+              <ChannelSplit channels={overview?.channels ?? []} />
+            </div>
+
+            <div className="bg-white dark:bg-[#0B192C] rounded-2xl border border-gray-200 dark:border-slate-800 p-6 shadow-sm">
+              <h3 className="text-base font-bold text-[#0B192C] dark:text-white tracking-tight mb-4">
+                Booking status
+              </h3>
+              {statusRows.length === 0 ? (
+                <EmptyState message="No bookings recorded yet" />
+              ) : (
+                <RankedBars rows={statusRows} format={formatIndianNumber} />
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* BOTTOM RIGHT: Order / Approval Status Data Table */}
-        <div className="lg:col-span-7 bg-white dark:bg-[#0B192C] rounded-2xl border border-black dark:border-slate-800 p-6 shadow-sm flex flex-col justify-between space-y-5">
-          <div className="space-y-4">
+        {/* ── ROW 2: stat tiles ── */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <StatTile
+            label="Booked value"
+            value={formatCurrency(overview?.totals.windowGrossValue ?? 0)}
+            caption={
+              <span className="text-gray-400">
+                {overview?.totals.collectionRate ?? 0}% collected
+              </span>
+            }
+          >
+            <Sparkline values={series.map((p) => p.gross)} />
+          </StatTile>
+
+          <StatTile
+            label="Bookings"
+            value={formatIndianNumber(overview?.totals.windowBookings ?? 0)}
+            caption={
+              <DeltaBadge
+                change={overview?.trend.bookingsChange ?? 0}
+                comparable={overview?.trend.comparable ?? false}
+              />
+            }
+          >
+            <Sparkline values={series.map((p) => p.bookings)} />
+          </StatTile>
+
+          <StatTile
+            label="Average booking value"
+            value={formatCurrency(overview?.totals.averageBookingValue ?? 0)}
+            caption={
+              <span className="text-gray-400">
+                Booked, across{" "}
+                {formatIndianNumber(overview?.totals.windowBookings ?? 0)}{" "}
+                bookings
+              </span>
+            }
+          />
+
+          <StatTile
+            label="Cancellation rate"
+            value={`${system?.financials?.cancellationRate ?? 0}%`}
+            caption={
+              <span className="text-gray-400">
+                All time ·{" "}
+                {formatIndianNumber(system?.financials?.totalBookings ?? 0)}{" "}
+                bookings
+              </span>
+            }
+          />
+        </div>
+
+        {/* ── ROW 3: recent bookings + top ashrams ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="lg:col-span-7 bg-white dark:bg-[#0B192C] rounded-2xl border border-gray-200 dark:border-slate-800 p-6 shadow-sm space-y-4">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div>
                 <h3 className="text-base font-bold text-[#0B192C] dark:text-white tracking-tight">
-                  Order &amp; Booking Status
+                  Recent bookings
                 </h3>
-                <span className="text-xs text-gray-500 font-medium">Real API Booking Amounts &amp; Records</span>
+                <span className="text-xs text-gray-500 font-medium">
+                  Newest {bookings.length} across your jurisdiction
+                </span>
               </div>
-            </div>
-
-            {/* Action Toolbar */}
-            <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => navigate("/admin/users")}
-                  className="px-4 py-2 bg-[#FF5722] hover:bg-[#E64A19] text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
-                >
-                  <Plus size={14} /> Add User / Ashram
-                </button>
-                <button
-                  onClick={() => navigate("/admin/manage/bookings/all")}
-                  className="p-2 rounded-xl border border-black dark:border-slate-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
-                  title="View All Bookings"
-                >
-                  <Eye size={14} />
-                </button>
-                <button
-                  onClick={() => navigate("/admin/audit-logs")}
-                  className="p-2 rounded-xl border border-black dark:border-slate-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
-                  title="System Security Audit"
-                >
-                  <Lock size={14} />
-                </button>
-              </div>
-
-              {/* Search input */}
-              <div className="relative min-w-[200px]">
+              <div className="relative min-w-[190px]">
                 <input
                   type="text"
-                  placeholder="Search real orders..."
+                  placeholder="Search bookings..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-3 pr-8 py-1.5 rounded-xl border border-black dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-[#0B192C] dark:text-white focus:outline-none focus:ring-1 focus:ring-[#FF5722]"
+                  className="w-full pl-3 pr-8 py-1.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-[#0B192C] dark:text-white focus:outline-none focus:ring-1 focus:ring-[#0A4DA6]"
                 />
-                <Search size={14} className="absolute right-2.5 top-2 text-gray-500 pointer-events-none" />
+                <Search
+                  size={14}
+                  className="absolute right-2.5 top-2 text-gray-400 pointer-events-none"
+                />
               </div>
             </div>
 
-            {/* Styled Data Table */}
-            <div className="overflow-x-auto rounded-xl border border-black dark:border-slate-800">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-gray-100 dark:bg-slate-900 text-black dark:text-white font-extrabold uppercase tracking-wider text-[10px] border-b border-black dark:border-slate-800">
-                  <tr>
-                    <th className="py-3 px-4">INVOICE</th>
-                    <th className="py-3 px-4">CUSTOMERS</th>
-                    <th className="py-3 px-4">FROM / HUB</th>
-                    <th className="py-3 px-4">REAL AMOUNT</th>
-                    <th className="py-3 px-4">STATUS</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-slate-800 font-medium text-[#0B192C] dark:text-gray-200">
-                  {realBookings
-                    .filter((row) =>
-                      row.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                      row.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                      row.bookingCode.includes(searchTerm)
-                    )
-                    .map((row) => (
-                      <tr key={row._id} className="hover:bg-gray-50/60 dark:hover:bg-slate-900/50 transition-colors">
-                        <td className="py-3 px-4 font-mono font-bold">{row.bookingCode}</td>
-                        <td className="py-3 px-4 font-extrabold">{row.userName}</td>
-                        <td className="py-3 px-4 text-gray-600">{row.location}</td>
-                        <td className="py-3 px-4 font-mono font-bold text-[#0A4DA6] dark:text-blue-400">
-                          {row.price}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => navigate("/admin/users")}
+                className="px-4 py-2 bg-[#0A4DA6] hover:bg-[#083d85] text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+              >
+                <Plus size={14} /> Manage users
+              </button>
+              <button
+                onClick={() => navigate("/admin/manage/bookings/all")}
+                className="p-2 rounded-xl border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                title="View all bookings"
+              >
+                <Eye size={14} />
+              </button>
+              <button
+                onClick={() => navigate("/admin/audit-logs")}
+                className="p-2 rounded-xl border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                title="Security audit log"
+              >
+                <Lock size={14} />
+              </button>
+            </div>
+
+            {filteredBookings.length === 0 ? (
+              <EmptyState
+                message={
+                  bookings.length === 0
+                    ? "No bookings recorded yet"
+                    : "No bookings match that search"
+                }
+              />
+            ) : (
+              <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-slate-800">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-gray-50 dark:bg-slate-900 text-gray-600 dark:text-gray-300 font-extrabold tracking-wider text-[10px] border-b border-gray-200 dark:border-slate-800">
+                    <tr>
+                      <th className="py-3 px-4">Booking</th>
+                      <th className="py-3 px-4">Pilgrim</th>
+                      <th className="py-3 px-4">Ashram</th>
+                      <th className="py-3 px-4 text-right">Paid</th>
+                      <th className="py-3 px-4">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 dark:divide-slate-800 font-medium text-[#0B192C] dark:text-gray-200">
+                    {filteredBookings.map((row) => (
+                      <tr
+                        key={row.id}
+                        onClick={() => navigate(`/admin/manage/bookings/all`)}
+                        className="hover:bg-gray-50/60 dark:hover:bg-slate-900/50 transition-colors cursor-pointer"
+                      >
+                        <td className="py-3 px-4 font-mono font-bold">
+                          {row.bookingId || row.id.slice(-6)}
+                        </td>
+                        <td className="py-3 px-4 font-extrabold">
+                          {row.customerName}
+                        </td>
+                        <td className="py-3 px-4 text-gray-600 dark:text-gray-400">
+                          {row.ashramName}
+                          {row.city && (
+                            <span className="text-gray-400"> · {row.city}</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 font-bold text-right tabular-nums">
+                          {formatCurrency(row.amountPaid)}
+                          {row.amountPaid < row.totalAmount && (
+                            <span className="block text-[10px] text-gray-400 font-semibold">
+                              of {formatCurrency(row.totalAmount)}
+                            </span>
+                          )}
                         </td>
                         <td className="py-3 px-4">
-                          <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase shadow-xs ${row.statusColor}`}>
-                            {row.status}
+                          <span className="px-2.5 py-1 rounded-lg text-[10px] font-black bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-200">
+                            {humanizeLabel(row.status)}
                           </span>
                         </td>
                       </tr>
                     ))}
-                </tbody>
-              </table>
-            </div>
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
 
-          {/* Table Pagination Footer */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-500 pt-2 font-medium border-t border-black dark:border-slate-800">
-            <span>Showing 1 to {Math.min(5, realBookings.length)} of {realBookings.length || 20} entries</span>
-            <div className="flex items-center gap-1">
-              <button className="p-1 rounded hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-500 cursor-pointer">
-                <ChevronLeft size={16} />
-              </button>
-              <button className="w-6 h-6 rounded bg-[#FF5722] text-white font-bold flex items-center justify-center text-xs">
-                1
-              </button>
-              <button className="w-6 h-6 rounded hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300 font-bold flex items-center justify-center text-xs">
-                2
-              </button>
-              <button className="w-6 h-6 rounded hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300 font-bold flex items-center justify-center text-xs">
-                3
-              </button>
-              <button className="p-1 rounded hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-500 cursor-pointer">
-                <ChevronRight size={16} />
-              </button>
+          <div className="lg:col-span-5 bg-white dark:bg-[#0B192C] rounded-2xl border border-gray-200 dark:border-slate-800 p-6 shadow-sm space-y-4">
+            <div>
+              <h3 className="text-base font-bold text-[#0B192C] dark:text-white tracking-tight">
+                Top ashrams by booked value
+              </h3>
+              <span className="text-xs text-gray-500 font-medium">
+                All time, across your jurisdiction
+              </span>
             </div>
+            {ashramRows.length === 0 ? (
+              <EmptyState message="No revenue recorded yet" />
+            ) : (
+              <RankedBars rows={ashramRows} format={formatCurrency} />
+            )}
           </div>
+        </div>
+
+        {/* ── ROW 4: audit activity ── */}
+        <div className="bg-white dark:bg-[#0B192C] rounded-2xl border border-gray-200 dark:border-slate-800 p-6 shadow-sm space-y-4">
+          <div className="flex justify-between items-center border-b border-gray-200 dark:border-slate-800 pb-3">
+            <h3 className="text-base font-bold text-[#0B192C] dark:text-white tracking-tight">
+              Recent system activity
+            </h3>
+            <button
+              onClick={() => navigate("/admin/audit-logs")}
+              className="text-[11px] font-bold text-[#0A4DA6] hover:underline cursor-pointer"
+            >
+              View full audit log
+            </button>
+          </div>
+
+          {activities.length === 0 ? (
+            <EmptyState
+              message="No audit activity recorded"
+              hint="Entries appear here as admins approve listings, change roles and settle payments."
+            />
+          ) : (
+            <div className="space-y-4 text-xs">
+              {activities.map((log) => (
+                <div key={log._id} className="flex items-start gap-4">
+                  <span className="w-32 text-[11px] font-semibold text-gray-500 shrink-0 tabular-nums">
+                    {log.timestamp
+                      ? new Date(log.timestamp).toLocaleString("en-IN", {
+                          day: "2-digit",
+                          month: "short",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : "—"}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <h4 className="font-extrabold text-[#0B192C] dark:text-white text-xs">
+                      {humanizeLabel(String(log.action ?? "Activity"))}
+                    </h4>
+                    <span className="text-[11px] text-gray-500 font-medium block truncate">
+                      {log.userId?.name || "System"} · {log.summary || log.module}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

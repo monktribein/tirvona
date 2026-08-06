@@ -178,7 +178,7 @@ export const MarketplaceCategoryDetailPage: React.FC = () => {
 
           {/* Badges */}
           <div className="flex flex-wrap items-center gap-3">
-            <span className="px-4 py-1.5 rounded-full bg-amber-500 text-white text-xs font-black uppercase tracking-wider shadow-lg flex items-center gap-1">
+            <span className="px-4 py-1.5 rounded-full bg-amber-500 text-white text-xs font-black tracking-wider shadow-lg flex items-center gap-1">
               <Flame size={14} />{" "}
               {category.trendingBadge || "AUTHENTIC MAHASWET"}
             </span>
@@ -198,7 +198,7 @@ export const MarketplaceCategoryDetailPage: React.FC = () => {
           {/* Key Stats Bar */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 text-white max-w-3xl">
             <div className="space-y-0.5">
-              <div className="text-[10px] font-bold text-gray-300 uppercase">
+              <div className="text-[10px] font-bold text-gray-300">
                 Famous Temple
               </div>
               <div className="font-extrabold text-xs sm:text-sm text-amber-400 truncate">
@@ -207,7 +207,7 @@ export const MarketplaceCategoryDetailPage: React.FC = () => {
             </div>
 
             <div className="space-y-0.5">
-              <div className="text-[10px] font-bold text-gray-300 uppercase">
+              <div className="text-[10px] font-bold text-gray-300">
                 Avg Delivery
               </div>
               <div className="font-black text-xs sm:text-sm flex items-center gap-1">
@@ -217,7 +217,7 @@ export const MarketplaceCategoryDetailPage: React.FC = () => {
             </div>
 
             <div className="space-y-0.5">
-              <div className="text-[10px] font-bold text-gray-300 uppercase">
+              <div className="text-[10px] font-bold text-gray-300">
                 Verified Vendors
               </div>
               <div className="font-black text-xs sm:text-sm flex items-center gap-1">
@@ -227,7 +227,7 @@ export const MarketplaceCategoryDetailPage: React.FC = () => {
             </div>
 
             <div className="space-y-0.5">
-              <div className="text-[10px] font-bold text-gray-300 uppercase">
+              <div className="text-[10px] font-bold text-gray-300">
                 Customer Rating
               </div>
               <div className="font-black text-xs sm:text-sm flex items-center gap-1">
@@ -336,7 +336,7 @@ export const MarketplaceCategoryDetailPage: React.FC = () => {
                         e.target.src = "/banner/ashram_rishikesh.png";
                       }}
                     />
-                    <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-emerald-600 text-white text-[10px] font-black uppercase">
+                    <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-emerald-600 text-white text-[10px] font-black">
                       PURE DESI GHEE
                     </span>
                     <span className="absolute top-3 right-3 px-3 py-1 rounded-full bg-amber-500 text-white text-xs font-black">

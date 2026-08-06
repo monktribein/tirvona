@@ -245,7 +245,7 @@ export const ParkingCheckoutPage: React.FC = () => {
                 <div>
                   <label
                     htmlFor="vehicle-number"
-                    className="block text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-1.5"
+                    className="block text-[10px] tracking-wider font-bold text-gray-400 mb-1.5"
                   >
                     Registration Number <span className="text-rose-500">*</span>
                   </label>
@@ -260,7 +260,7 @@ export const ParkingCheckoutPage: React.FC = () => {
                     }}
                     placeholder="MH12AB1234"
                     autoComplete="off"
-                    className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-sm font-black tracking-widest uppercase text-[#0B192C] dark:text-white placeholder:text-gray-300 placeholder:font-medium placeholder:tracking-normal focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 focus:border-[#0A4DA6] transition-all"
+                    className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-sm font-black tracking-widest text-[#0B192C] dark:text-white placeholder:text-gray-300 placeholder:font-medium placeholder:tracking-normal focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 focus:border-[#0A4DA6] transition-all"
                   />
                   {fieldError && (
                     <p className="flex items-center gap-1 text-[10px] font-bold text-rose-600 dark:text-rose-400 mt-1.5">
@@ -273,7 +273,7 @@ export const ParkingCheckoutPage: React.FC = () => {
                 <div>
                   <label
                     htmlFor="vehicle-model"
-                    className="block text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-1.5"
+                    className="block text-[10px] tracking-wider font-bold text-gray-400 mb-1.5"
                   >
                     Make &amp; Model{" "}
                     <span className="text-gray-300 normal-case tracking-normal">
@@ -294,7 +294,7 @@ export const ParkingCheckoutPage: React.FC = () => {
                   <div>
                     <label
                       htmlFor="driver-name"
-                      className="block text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-1.5"
+                      className="block text-[10px] tracking-wider font-bold text-gray-400 mb-1.5"
                     >
                       Driver Name <span className="text-rose-500">*</span>
                     </label>
@@ -317,7 +317,7 @@ export const ParkingCheckoutPage: React.FC = () => {
                   <div>
                     <label
                       htmlFor="driver-phone"
-                      className="block text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-1.5"
+                      className="block text-[10px] tracking-wider font-bold text-gray-400 mb-1.5"
                     >
                       Contact Number
                     </label>

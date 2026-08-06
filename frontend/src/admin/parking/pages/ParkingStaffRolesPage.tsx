@@ -14,6 +14,7 @@ import { EnterpriseStatusBadge } from "../../shared/components/EnterpriseStatusB
 import { useNotifications } from "../../../contexts/NotificationContext";
 import api, { getErrorMessage } from "../../../lib/api";
 import { parkingAdminService } from "../../../modules/parking/services/parking.service";
+import { humanizeLabel } from "../../../utils/labels";
 
 /**
  * Parking Staff & Roles.
@@ -248,12 +249,12 @@ export const ParkingStaffRolesPage: React.FC = () => {
   const card =
     "bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] shadow-sm";
   const th =
-    "text-left px-4 py-3 text-[11px] font-black uppercase tracking-wider text-gray-400";
+    "text-left px-4 py-3 text-[11px] font-black tracking-wider text-gray-400";
   const td = "px-4 py-3 text-sm text-[#0B192C] dark:text-slate-200";
   const input =
     "w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30";
   const label =
-    "text-[11px] font-black uppercase tracking-wider text-gray-400 block mb-1.5";
+    "text-[11px] font-black tracking-wider text-gray-400 block mb-1.5";
 
   return (
     <div className="space-y-6">
@@ -261,7 +262,7 @@ export const ParkingStaffRolesPage: React.FC = () => {
         title="Parking Staff & Roles"
         subtitle="Parking permissions are grants against a partner, not account roles — they do not appear in user management."
         icon={<ShieldCheck size={22} />}
-        badgeText="SUPER ADMIN"
+        badgeText="Super admin"
         actions={
           <div className="flex gap-2">
             <button
@@ -327,7 +328,7 @@ export const ParkingStaffRolesPage: React.FC = () => {
 
       <div className={`${card} overflow-hidden`}>
         <div className="p-5 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between gap-3">
-          <h3 className="text-sm font-black uppercase tracking-wider text-gray-400">
+          <h3 className="text-sm font-black tracking-wider text-gray-400">
             {roleFilter
               ? `${roleFilter.replace(/_/g, " ")} grants`
               : "All parking grants"}
@@ -489,7 +490,7 @@ export const ParkingStaffRolesPage: React.FC = () => {
                               {user.name}
                             </span>
                             <span className="text-xs text-gray-400">
-                              {user.email} · {user.role}
+                              {user.email} · {humanizeLabel(user.role)}
                             </span>
                           </button>
                         ))}

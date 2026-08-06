@@ -63,7 +63,7 @@ export const ProfileCouponsPage: React.FC = () => {
               className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 shadow-lg space-y-4 flex flex-col justify-between"
             >
               <div className="space-y-2">
-                <span className="px-3 py-1 bg-amber-50 text-amber-600 border border-amber-200 rounded-full text-[10px] font-black uppercase">
+                <span className="px-3 py-1 bg-amber-50 text-amber-600 border border-amber-200 rounded-full text-[10px] font-black">
                   {c.discount}
                 </span>
                 <h3 className="text-xl font-black text-[#0A4DA6] tracking-wider pt-1">

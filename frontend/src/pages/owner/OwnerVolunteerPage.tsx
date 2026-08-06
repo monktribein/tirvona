@@ -179,7 +179,7 @@ export const OwnerVolunteerPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="px-3 py-1 bg-[#E58C28]/15 text-[#E58C28] border border-[#E58C28]/30 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5">
+            <span className="px-3 py-1 bg-[#E58C28]/15 text-[#E58C28] border border-[#E58C28]/30 rounded-full text-[10px] font-black tracking-wider flex items-center gap-1.5">
               <Heart size={12} /> Ashram Recruitment Module
             </span>
           </div>
@@ -228,7 +228,7 @@ export const OwnerVolunteerPage: React.FC = () => {
       <div className="flex items-center gap-3 border-b border-gray-200 dark:border-slate-800">
         <button
           onClick={() => setActiveTab("openings")}
-          className={`pb-3 text-xs font-black uppercase tracking-wider transition-all border-b-2 cursor-pointer ${
+          className={`pb-3 text-xs font-black tracking-wider transition-all border-b-2 cursor-pointer ${
             activeTab === "openings"
               ? "border-[#0A4DA6] text-[#0A4DA6] dark:text-[#E58C28]"
               : "border-transparent text-gray-400 hover:text-gray-600"
@@ -239,7 +239,7 @@ export const OwnerVolunteerPage: React.FC = () => {
 
         <button
           onClick={() => setActiveTab("applications")}
-          className={`pb-3 text-xs font-black uppercase tracking-wider transition-all border-b-2 cursor-pointer ${
+          className={`pb-3 text-xs font-black tracking-wider transition-all border-b-2 cursor-pointer ${
             activeTab === "applications"
               ? "border-[#0A4DA6] text-[#0A4DA6] dark:text-[#E58C28]"
               : "border-transparent text-gray-400 hover:text-gray-600"
@@ -265,7 +265,7 @@ export const OwnerVolunteerPage: React.FC = () => {
                 <div className="space-y-3">
                   <div className="flex items-start justify-between">
                     <div>
-                      <span className="text-[10px] font-black uppercase tracking-wider text-[#E58C28] bg-[#E58C28]/10 px-2.5 py-0.5 rounded-full border border-[#E58C28]/20">
+                      <span className="text-[10px] font-black tracking-wider text-[#E58C28] bg-[#E58C28]/10 px-2.5 py-0.5 rounded-full border border-[#E58C28]/20">
                         {job.department}
                       </span>
                       <h3 className="text-base font-black text-[#0B192C] dark:text-white mt-1.5">
@@ -326,7 +326,7 @@ export const OwnerVolunteerPage: React.FC = () => {
         <div className="bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 rounded-3xl p-5 shadow-xl overflow-x-auto">
           <table className="w-full text-left text-xs font-bold">
             <thead>
-              <tr className="border-b border-gray-100 dark:border-slate-800 text-gray-400 uppercase tracking-wider text-[10px]">
+              <tr className="border-b border-gray-100 dark:border-slate-800 text-gray-400 tracking-wider text-[10px]">
                 <th className="py-3 px-4">Applicant</th>
                 <th className="py-3 px-4">Contact</th>
                 <th className="py-3 px-4">City / Availability</th>

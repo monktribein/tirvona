@@ -64,7 +64,7 @@ const ContactPage: React.FC = () => {
       <section className="bg-[#0B192C] text-white py-14 px-4 sm:px-6 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-[#0A4DA6]/10 rounded-full blur-[80px] pointer-events-none" />
         <div className="max-w-3xl mx-auto text-center relative z-10 space-y-4">
-          <span className="inline-block text-[10px] font-extrabold uppercase tracking-widest text-[#D4AF37] bg-[#D4AF37]/10 border border-[#D4AF37]/20 rounded-full px-4 py-1.5">
+          <span className="inline-block text-[10px] font-extrabold tracking-widest text-[#D4AF37] bg-[#D4AF37]/10 border border-[#D4AF37]/20 rounded-full px-4 py-1.5">
             Get In Touch
           </span>
           <h1
@@ -131,7 +131,7 @@ const ContactPage: React.FC = () => {
                   },
                 ].map((f) => (
                   <div key={f.key}>
-                    <label className="block text-[10px] font-extrabold uppercase tracking-wider text-gray-400 mb-1.5">
+                    <label className="block text-[10px] font-extrabold tracking-wider text-gray-400 mb-1.5">
                       {f.label}
                     </label>
                     <input
@@ -151,7 +151,7 @@ const ContactPage: React.FC = () => {
                 ))}
               </div>
               <div>
-                <label className="block text-[10px] font-extrabold uppercase tracking-wider text-gray-400 mb-1.5">
+                <label className="block text-[10px] font-extrabold tracking-wider text-gray-400 mb-1.5">
                   Message
                 </label>
                 <textarea
@@ -212,7 +212,7 @@ const ContactPage: React.FC = () => {
                 <div className="w-9 h-9 rounded-xl bg-[#0A4DA6]/5 border border-[#0A4DA6]/10 flex items-center justify-center">
                   {c.icon}
                 </div>
-                <p className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400">
+                <p className="text-[10px] font-extrabold tracking-wider text-gray-400">
                   {c.label}
                 </p>
                 <p className="text-sm font-extrabold text-[#0B192C] dark:text-white">

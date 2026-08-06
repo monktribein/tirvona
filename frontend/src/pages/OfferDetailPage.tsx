@@ -176,7 +176,7 @@ export const OfferDetailPage: React.FC = () => {
 
           {/* Badges */}
           <div className="flex flex-wrap items-center gap-3">
-            <span className="px-4 py-1.5 rounded-full bg-[#0A4DA6] text-white text-xs font-black uppercase tracking-wider shadow-lg">
+            <span className="px-4 py-1.5 rounded-full bg-[#0A4DA6] text-white text-xs font-black tracking-wider shadow-lg">
               {offer.offerType || "Special Promotion"}
             </span>
             <span className="px-4 py-1.5 rounded-full bg-amber-500 text-white text-xs font-black shadow-lg flex items-center gap-1.5">
@@ -328,7 +328,7 @@ export const OfferDetailPage: React.FC = () => {
         <div className="space-y-6">
           <div className="bg-white dark:bg-[#0B192C] border border-amber-500/30 rounded-3xl p-6 space-y-6 shadow-xl sticky top-24">
             <div className="space-y-2 border-b border-gray-100 dark:border-slate-800 pb-4">
-              <span className="text-[10px] font-black uppercase tracking-widest text-amber-500">
+              <span className="text-[10px] font-black tracking-widest text-amber-500">
                 EXCLUSIVE PROMO CODE
               </span>
               <div className="flex items-center justify-between bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4">
@@ -383,7 +383,7 @@ export const OfferDetailPage: React.FC = () => {
       <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/90 dark:bg-[#0B192C]/90 backdrop-blur-md border-t border-gray-200 dark:border-slate-800 p-4 shadow-2xl">
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
           <div>
-            <div className="text-[10px] font-black uppercase text-amber-500">
+            <div className="text-[10px] font-black text-amber-500">
               APPLY CODE AT CHECKOUT
             </div>
             <div className="font-mono font-black text-sm text-[#0B192C] dark:text-white">

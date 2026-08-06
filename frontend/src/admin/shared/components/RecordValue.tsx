@@ -137,7 +137,7 @@ export const RecordFieldList: React.FC<{
     <dl className={`space-y-1.5 ${className}`}>
       {entries.map(([key, value]) => (
         <div key={key} className="grid grid-cols-[minmax(0,7rem)_1fr] gap-x-3">
-          <dt className="text-[10px] uppercase font-bold tracking-wider text-gray-400 dark:text-gray-500 pt-0.5">
+          <dt className="text-[10px] font-bold tracking-wider text-gray-400 dark:text-gray-500 pt-0.5">
             {humanizeKey(key)}
           </dt>
           <dd className="min-w-0">
