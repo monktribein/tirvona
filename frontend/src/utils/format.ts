@@ -3,23 +3,64 @@
  * Standardizes Indian Rupee (₹) and Indian Numbering System across the platform.
  */
 
+export const SUPPORTED_CURRENCIES = [
+  { code: "INR", symbol: "₹", label: "₹ INR", name: "Indian Rupee" },
+  { code: "USD", symbol: "$", label: "$ USD", name: "US Dollar" },
+];
+
 export const CURRENCY_SYMBOL = "₹";
 export const CURRENCY_CODE = "INR";
 
+export const getActiveCurrency = (): "INR" | "USD" => {
+  try {
+    const stored = localStorage.getItem("tirvona_active_currency");
+    if (stored === "USD" || stored === "INR") return stored;
+    const cachedMem = localStorage.getItem("tirvona_user_memory");
+    if (cachedMem) {
+      const parsed = JSON.parse(cachedMem);
+      if (parsed?.preferences?.currency === "USD") return "USD";
+    }
+  } catch {
+    // fallback to INR
+  }
+  return "INR";
+};
+
+export const setActiveCurrency = (currency: "INR" | "USD") => {
+  try {
+    localStorage.setItem("tirvona_active_currency", currency);
+    const cachedMem = localStorage.getItem("tirvona_user_memory");
+    if (cachedMem) {
+      const parsed = JSON.parse(cachedMem);
+      parsed.preferences = { ...(parsed.preferences || {}), currency };
+      localStorage.setItem("tirvona_user_memory", JSON.stringify(parsed));
+    }
+    window.dispatchEvent(
+      new CustomEvent("currency_changed", { detail: currency }),
+    );
+  } catch {
+    // ignore
+  }
+};
+
 /**
- * Format any number or numeric string as Indian Rupee (₹)
- * Example outputs:
- *   formatCurrency(250)     => "₹250"
- *   formatCurrency(1200)    => "₹1,200"
- *   formatCurrency(12500)   => "₹12,500"
- *   formatCurrency(125000)  => "₹1,25,000"
+ * Format any number or numeric string as Currency (INR ₹ or USD $)
  */
 export const formatCurrency = (
   amount: number | string | undefined | null,
+  overrideCurrency?: "INR" | "USD",
 ): string => {
   const numeric =
     typeof amount === "number" ? amount : parseFloat(String(amount || 0));
   const safeNumber = isNaN(numeric) ? 0 : numeric;
+  const currency = overrideCurrency || getActiveCurrency();
+
+  if (currency === "USD") {
+    // Standard exchange conversion rate: 1 INR ≈ $0.012 USD
+    const usdAmount = safeNumber * 0.012;
+    return `$${usdAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+
   return `₹${safeNumber.toLocaleString("en-IN")}`;
 };
 

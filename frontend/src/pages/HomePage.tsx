@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import api from "../lib/api";
 import { ashramService, reviewService, marketplaceService } from "../services";
 import { visitorArticleService } from "../services/visitorArticleService";
+import { formatCurrency } from "../utils/format";
 import { CouponVoucherCard } from "../components/CouponVoucherCard";
 import { DatePicker } from "../components/DatePicker";
 import { GuestRoomSelector } from "../components/shared/GuestRoomSelector";
@@ -32,6 +33,7 @@ import {
   ChevronDown,
   Tag,
   HeartHandshake,
+  Flame,
 } from "lucide-react";
 
 export const HomePage: React.FC = () => {
@@ -611,20 +613,38 @@ export const HomePage: React.FC = () => {
   // Destinations for carousel
   const sacredDestinations = [
     {
-      name: "Rishikesh",
-      state: "Uttarakhand",
-      rating: "4.9",
-      tours: "12 Stays",
-      img: "https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=500&q=80",
-      fallback:
-        "https://images.unsplash.com/photo-1598977123418-45f04b61582e?auto=format&fit=crop&w=500&q=80",
-    },
-    {
       name: "Vrindavan",
       state: "Uttar Pradesh",
-      rating: "4.8",
+      rating: "4.9",
       tours: "18 Ashrams",
       img: "https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?auto=format&fit=crop&w=500&q=80",
+      fallback:
+        "https://images.unsplash.com/photo-1608958416801-9c60e3a6a908?auto=format&fit=crop&w=500&q=80",
+    },
+    {
+      name: "Mathura",
+      state: "Uttar Pradesh",
+      rating: "4.8",
+      tours: "15 Stays",
+      img: "https://images.unsplash.com/photo-1599420186946-7b6fb4e297f0?auto=format&fit=crop&w=500&q=80",
+      fallback:
+        "https://images.unsplash.com/photo-1608958416801-9c60e3a6a908?auto=format&fit=crop&w=500&q=80",
+    },
+    {
+      name: "Goverdhan",
+      state: "Uttar Pradesh",
+      rating: "4.8",
+      tours: "10 Stays",
+      img: "https://images.unsplash.com/photo-1609137144813-7d84b06385a7?auto=format&fit=crop&w=500&q=80",
+      fallback:
+        "https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?auto=format&fit=crop&w=500&q=80",
+    },
+    {
+      name: "Barsana",
+      state: "Uttar Pradesh",
+      rating: "4.8",
+      tours: "12 Stays",
+      img: "https://images.unsplash.com/photo-1598977123418-45f04b61582e?auto=format&fit=crop&w=500&q=80",
       fallback:
         "https://images.unsplash.com/photo-1608958416801-9c60e3a6a908?auto=format&fit=crop&w=500&q=80",
     },
@@ -638,13 +658,13 @@ export const HomePage: React.FC = () => {
         "https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=500&q=80",
     },
     {
-      name: "Kedarnath",
+      name: "Rishikesh",
       state: "Uttarakhand",
-      rating: "4.8",
-      tours: "08 Circuits",
-      img: "https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=500&q=80",
+      rating: "4.9",
+      tours: "12 Stays",
+      img: "https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=500&q=80",
       fallback:
-        "https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=500&q=80",
+        "https://images.unsplash.com/photo-1598977123418-45f04b61582e?auto=format&fit=crop&w=500&q=80",
     },
     {
       name: "Varanasi",
@@ -656,6 +676,24 @@ export const HomePage: React.FC = () => {
         "https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?auto=format&fit=crop&w=500&q=80",
     },
     {
+      name: "Kedarnath",
+      state: "Uttarakhand",
+      rating: "4.8",
+      tours: "08 Circuits",
+      img: "https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=500&q=80",
+      fallback:
+        "https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=500&q=80",
+    },
+    {
+      name: "Ayodhya",
+      state: "Uttar Pradesh",
+      rating: "4.7",
+      tours: "25 Stays",
+      img: "https://images.unsplash.com/photo-1609137144813-7d84b06385a7?auto=format&fit=crop&w=500&q=80",
+      fallback:
+        "https://images.unsplash.com/photo-1599420186946-7b6fb4e297f0?auto=format&fit=crop&w=500&q=80",
+    },
+    {
       name: "Tirupati",
       state: "Andhra Pradesh",
       rating: "4.8",
@@ -663,15 +701,6 @@ export const HomePage: React.FC = () => {
       img: "https://images.unsplash.com/photo-1582555172866-f73bb12a2ab3?auto=format&fit=crop&w=500&q=80",
       fallback:
         "https://images.unsplash.com/photo-1506461883276-594a12b11db3?auto=format&fit=crop&w=500&q=85",
-    },
-    {
-      name: "Rameswaram",
-      state: "Tamil Nadu",
-      rating: "4.7",
-      tours: "10 Stays",
-      img: "https://images.unsplash.com/photo-1596402184320-417e7178b2cd?auto=format&fit=crop&w=500&q=80",
-      fallback:
-        "https://images.unsplash.com/photo-1612438214708-f428a707dd4e?auto=format&fit=crop&w=500&q=80",
     },
     {
       name: "Shirdi",
@@ -683,13 +712,13 @@ export const HomePage: React.FC = () => {
         "https://images.unsplash.com/photo-1617854818583-09e7f077a156?auto=format&fit=crop&w=500&q=80",
     },
     {
-      name: "Ayodhya",
-      state: "Uttar Pradesh",
+      name: "Rameswaram",
+      state: "Tamil Nadu",
       rating: "4.7",
-      tours: "25 Stays",
-      img: "https://images.unsplash.com/photo-1609137144813-7d84b06385a7?auto=format&fit=crop&w=500&q=80",
+      tours: "10 Stays",
+      img: "https://images.unsplash.com/photo-1596402184320-417e7178b2cd?auto=format&fit=crop&w=500&q=80",
       fallback:
-        "https://images.unsplash.com/photo-1599420186946-7b6fb4e297f0?auto=format&fit=crop&w=500&q=80",
+        "https://images.unsplash.com/photo-1612438214708-f428a707dd4e?auto=format&fit=crop&w=500&q=80",
     },
   ];
 
@@ -770,11 +799,18 @@ export const HomePage: React.FC = () => {
       target: "/shops",
     },
     {
-      id: "puja",
-      label: "Live Arti",
+      id: "pooja",
+      label: "Live Pooja",
+      icon: Flame,
+      category: "pooja",
+      target: "/temples",
+    },
+    {
+      id: "aarti",
+      label: "Arati Booking",
       icon: Heart,
-      category: "puja",
-      target: "/live-aarti",
+      category: "aarti",
+      target: "/temples",
     },
     {
       id: "volunteer",
@@ -854,35 +890,7 @@ export const HomePage: React.FC = () => {
               {activeSubtitle}
             </motion.p>
 
-            {/* Hero Action Buttons */}
-            <motion.div
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.5 }}
-              className="flex flex-wrap items-center justify-center gap-4 pt-2"
-            >
-              {/* Primary Pill Button */}
-              <button
-                onClick={() => navigate("/search")}
-                className="bg-[#0A4DA6] hover:bg-[#083D85] text-white text-xs sm:text-sm font-bold pl-5 pr-1.5 py-2 rounded-full flex items-center gap-3 shadow-md hover:shadow-lg transition-all cursor-pointer group border border-white/20"
-              >
-                <span>{activeCtaText}</span>
-                <div className="w-7 h-7 rounded-full bg-white text-[#0A4DA6] flex items-center justify-center transition-transform group-hover:translate-x-1 shadow-xs">
-                  <ArrowRight size={14} className="stroke-[2.5]" />
-                </div>
-              </button>
 
-              {/* Secondary Pill Button */}
-              <button
-                onClick={() => navigate("/search")}
-                className="bg-white/90 backdrop-blur-md hover:bg-white text-[#0B192C] text-xs sm:text-sm font-bold pl-5 pr-1.5 py-2 rounded-full flex items-center gap-3 shadow-md hover:shadow-lg transition-all cursor-pointer group"
-              >
-                <span>Popular Destinations</span>
-                <div className="w-7 h-7 rounded-full bg-[#0A4DA6] text-white flex items-center justify-center transition-transform group-hover:translate-x-1 shadow-xs">
-                  <ArrowRight size={14} className="stroke-[2.5]" />
-                </div>
-              </button>
-            </motion.div>
           </div>
         </div>
       </section>
@@ -949,39 +957,41 @@ export const HomePage: React.FC = () => {
         </div>
 
         {/* Main Search Card */}
-        <div className="bg-white dark:bg-[#0B192C] rounded-[28px] sm:rounded-[36px] shadow-2xl shadow-[#0B192C]/15 border border-gray-100 dark:border-slate-800/80 p-4 sm:p-5 lg:p-6">
-          {/* Two columns from the smallest size so Check In / Check Out pair up
-              instead of each eating a full row — that alone removed a lot of the
-              card's height on a phone. The desktop 12-column bar is unchanged.
-              items-start on mobile keeps the fields top-aligned once they have
-              different heights; lg restores vertical centring for the bar. */}
+        <div className="bg-white dark:bg-[#0B192C] rounded-[24px] sm:rounded-[32px] shadow-2xl shadow-[#0B192C]/10 border border-gray-100 dark:border-slate-800/80 p-2 sm:p-3 lg:p-3.5">
           <form
             onSubmit={handleSearch}
-            className="grid grid-cols-2 lg:grid-cols-12 gap-x-3 gap-y-3.5 lg:gap-0 items-start lg:items-center"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[2fr_1.2fr_1.2fr_1.2fr_auto] gap-2 lg:gap-0 items-center"
           >
-            {/* Field 1: DESTINATIONS */}
+            {/* Field 1: DESTINATION (30% / 2fr ratio) */}
             <div
-              className="col-span-2 lg:col-span-4 relative pb-3 border-b lg:pb-0 lg:border-b-0 lg:pr-4 lg:border-r border-gray-200 dark:border-slate-800"
+              className="group cursor-pointer rounded-2xl p-3 sm:p-3.5 hover:bg-gray-50/80 dark:hover:bg-slate-800/50 transition-all flex flex-col justify-center min-h-[72px] lg:border-r border-gray-200/80 dark:border-slate-800/80 relative min-w-0"
               ref={autocompleteRef}
             >
+<<<<<<< HEAD
               <label className="block text-[10px] font-extrabold tracking-wider text-gray-400 mb-1.5 pl-1">
                 Destinations
+=======
+              <label className="block text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-gray-400 dark:text-slate-400 mb-1 select-none">
+                Destination
+>>>>>>> f540da6 (updated UI)
               </label>
-              <div className="relative flex items-center">
-                <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-[#0A4DA6] dark:text-amber-400 flex items-center justify-center shrink-0 mr-2.5">
+              <div className="relative flex items-center gap-2.5 min-w-0 w-full">
+                <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-[#0A4DA6] dark:text-amber-400 flex items-center justify-center shrink-0">
                   <MapPin size={16} />
                 </div>
-                <input
-                  type="text"
-                  placeholder="Where to next..."
-                  value={destination}
-                  onChange={handleInputChange}
-                  onFocus={() => setShowSuggestions(true)}
-                  className="w-full bg-transparent border-none p-0 text-xs sm:text-sm font-bold focus:outline-none text-[#0B192C] dark:text-white placeholder:text-gray-400"
-                />
+                <div className="min-w-0 flex-1 relative flex items-center">
+                  <input
+                    type="text"
+                    placeholder="Where to next..."
+                    value={destination}
+                    onChange={handleInputChange}
+                    onFocus={() => setShowSuggestions(true)}
+                    className="w-full bg-transparent border-none p-0 text-xs sm:text-sm font-bold focus:outline-none text-[#0B192C] dark:text-white placeholder:text-gray-400 truncate"
+                  />
+                </div>
                 <ChevronDown
                   size={14}
-                  className="text-gray-400 pointer-events-none ml-1 shrink-0"
+                  className="text-gray-400 pointer-events-none shrink-0"
                 />
               </div>
               <AnimatePresence>
@@ -1000,7 +1010,7 @@ export const HomePage: React.FC = () => {
                         className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-slate-800 font-semibold flex items-center gap-2 border-b border-gray-50 dark:border-slate-800 last:border-b-0 cursor-pointer"
                       >
                         <Compass size={13} className="text-[#0A4DA6]" />
-                        <span>{sug}</span>
+                        <span className="truncate">{sug}</span>
                       </button>
                     ))}
                   </motion.div>
@@ -1008,57 +1018,66 @@ export const HomePage: React.FC = () => {
               </AnimatePresence>
             </div>
 
+<<<<<<< HEAD
             {/* Field 3: CHECK IN */}
             <div className="col-span-1 lg:col-span-2 relative pb-3 border-b lg:pb-0 lg:border-b-0 lg:px-4 lg:border-r border-gray-200 dark:border-slate-800">
               <label className="block text-[10px] font-extrabold tracking-wider text-gray-400 mb-1.5 pl-1">
+=======
+            {/* Field 2: CHECK IN (18% / 1.2fr ratio) */}
+            <div className="group cursor-pointer rounded-2xl p-3 sm:p-3.5 hover:bg-gray-50/80 dark:hover:bg-slate-800/50 transition-all flex flex-col justify-center min-h-[72px] lg:border-r border-gray-200/80 dark:border-slate-800/80 relative min-w-0 lg:px-4">
+              <label className="block text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-gray-400 dark:text-slate-400 mb-1 select-none">
+>>>>>>> f540da6 (updated UI)
                 Check In
               </label>
-              <div className="relative flex items-center">
-                <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-[#0A4DA6] dark:text-amber-400 flex items-center justify-center shrink-0 mr-2">
+              <div className="relative flex items-center gap-2.5 min-w-0 w-full">
+                <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-[#0A4DA6] dark:text-amber-400 flex items-center justify-center shrink-0">
                   <Calendar size={15} />
                 </div>
-                <DatePicker value={checkIn} onChange={setCheckIn} />
+                <div className="min-w-0 flex-1">
+                  <DatePicker value={checkIn} onChange={setCheckIn} />
+                </div>
               </div>
             </div>
 
+<<<<<<< HEAD
             {/* Field 4: CHECK OUT */}
             <div className="col-span-1 lg:col-span-2 relative pb-3 border-b lg:pb-0 lg:border-b-0 lg:px-4 lg:border-r border-gray-200 dark:border-slate-800">
               <label className="block text-[10px] font-extrabold tracking-wider text-gray-400 mb-1.5 pl-1">
+=======
+            {/* Field 3: CHECK OUT (18% / 1.2fr ratio) */}
+            <div className="group cursor-pointer rounded-2xl p-3 sm:p-3.5 hover:bg-gray-50/80 dark:hover:bg-slate-800/50 transition-all flex flex-col justify-center min-h-[72px] lg:border-r border-gray-200/80 dark:border-slate-800/80 relative min-w-0 lg:px-4">
+              <label className="block text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-gray-400 dark:text-slate-400 mb-1 select-none">
+>>>>>>> f540da6 (updated UI)
                 Check Out
               </label>
-              <div className="relative flex items-center">
-                <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-[#0A4DA6] dark:text-amber-400 flex items-center justify-center shrink-0 mr-2">
+              <div className="relative flex items-center gap-2.5 min-w-0 w-full">
+                <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-[#0A4DA6] dark:text-amber-400 flex items-center justify-center shrink-0">
                   <Calendar size={15} />
                 </div>
-                {/* Right-anchored: Check Out is the right-hand column on phones,
-                    and the 288px calendar opening left-to-right from there would
-                    run past the screen edge. */}
-                <DatePicker
-                  value={checkOut}
-                  onChange={setCheckOut}
-                  min={checkIn}
-                  align="right"
-                />
+                <div className="min-w-0 flex-1">
+                  <DatePicker
+                    value={checkOut}
+                    onChange={setCheckOut}
+                    min={checkIn}
+                    align="right"
+                  />
+                </div>
               </div>
             </div>
 
-            {/* Field 5: GUESTS & SEARCH.
-                Stacked on phones: sharing one row forced the guest selector to
-                give up most of its width to the Search button, so "1 Room · 2
-                Adults" had nowhere to go. A full-width primary action is also
-                the easier tap target. */}
-            <div className="col-span-2 lg:col-span-4 relative lg:pl-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <div className="min-w-0 flex-1">
-                <GuestRoomSelector />
-              </div>
+            {/* Field 4: GUESTS & ROOMS (18% / 1.2fr ratio) */}
+            <div className="group cursor-pointer rounded-2xl p-3 sm:p-3.5 hover:bg-gray-50/80 dark:hover:bg-slate-800/50 transition-all flex flex-col justify-center min-h-[72px] relative min-w-0 lg:px-4">
+              <GuestRoomSelector />
+            </div>
 
-              {/* Search Button */}
+            {/* Field 5: SEARCH BUTTON (16% / auto ratio) */}
+            <div className="flex items-center justify-center p-1.5 sm:p-2 col-span-1 sm:col-span-2 lg:col-span-1 min-h-[72px]">
               <button
                 type="submit"
-                className="w-full sm:w-auto justify-center bg-[#0A4DA6] hover:bg-[#083D85] text-white font-bold text-xs sm:text-sm px-6 py-3 rounded-full flex items-center gap-2 shadow-none transition-all cursor-pointer shrink-0 active:scale-95 sm:self-end"
+                className="w-full lg:w-auto h-12 lg:h-14 px-6 sm:px-8 bg-[#0A4DA6] hover:bg-[#083D85] text-white font-bold text-xs sm:text-sm rounded-full flex items-center justify-center gap-2.5 shadow-md shadow-[#0A4DA6]/20 hover:shadow-lg hover:shadow-[#0A4DA6]/30 transition-all cursor-pointer shrink-0 active:scale-95"
               >
                 <span>Search</span>
-                <Search size={15} className="stroke-[2.5]" />
+                <Search size={16} className="stroke-[2.5]" />
               </button>
             </div>
           </form>
@@ -1104,170 +1123,7 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* ══════════════════════ FEATURED OFFERS & FESTIVAL SPECIALS BANNER ══════════════════════ */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 space-y-8 mb-12 lg:mb-20 mt-6">
-        {/* Clean Text Header (No Background Wallpaper) */}
-        <div className="text-center space-y-2 max-w-3xl mx-auto py-2">
-          <p className="font-['Kalam'] text-base sm:text-4xl font-bold text-[#E58C28]">
-            Exclusive Offers
-          </p>
-          {/* Decorative Saffron Underline Divider */}
-          <div className="flex items-center justify-center gap-2.5 my-1.5">
-            <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
-            <Sparkles
-              size={14}
-              className="text-[#E58C28] fill-[#E58C28] shrink-0"
-            />
-            <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
-          </div>
-          <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-xl mx-auto leading-relaxed">
-            Exclusive discounts, promo vouchers, and festival packages for your
-            sacred retreat.
-          </p>
-          <button
-            type="button"
-            onClick={() => navigate("/offers")}
-            className="mt-2 inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-[#083b80] text-white text-xs font-extrabold shadow-md transition-all cursor-pointer"
-          >
-            Explore All Offers <ArrowRight size={14} />
-          </button>
-        </div>
 
-        {/* Horizontal Carousel (Exact same container & scroll layout as all other sections on the page) */}
-        <div
-          ref={offersRef}
-          className="flex gap-4 sm:gap-6 overflow-x-auto pb-6 pt-2 scrollbar-none -mx-4 sm:mx-0 px-4 sm:px-0 justify-start"
-          style={{ scrollbarWidth: "none" }}
-        >
-          {(() => {
-            const defaultList = [
-              {
-                _id: "default-1",
-                offerType: "MAHAKUMBH OFFER",
-                discountPercentage: 20,
-                offerTitle: "Mahakumbh Sacred Stay Special",
-                description:
-                  "Experience the holy Kumbh Mela 2026 with 20% OFF accommodation & VIP pass.",
-                promoCode: "KUMBH2026",
-                image: "/banner/upcominglogo.png",
-                ashramId: {
-                  address: { city: "Prayagraj" },
-                  name: "Shantikunj Gayatri Pariwar",
-                },
-              },
-              {
-                _id: "default-2",
-                offerType: "WEEKEND OFFER",
-                discountPercentage: 10,
-                discountValue: 500,
-                discountType: "FixedAmount",
-                offerTitle: "Weekend Spiritual Yoga & Retreat",
-                description:
-                  "Recharge your mind & soul with our weekend spiritual retreat package in Haridwar.",
-                promoCode: "WEEKEND500",
-                image: "/banner/ashram_rishikesh.png",
-                ashramId: {
-                  address: { city: "Haridwar" },
-                  name: "Prem Nagar Ashram",
-                },
-              },
-              {
-                _id: "default-3",
-                offerType: "FESTIVAL OFFER",
-                discountPercentage: 15,
-                offerTitle: "Festival Season Kashi Discount",
-                description:
-                  "Get 15% instant savings on top verified ashrams across Kashi & Haridwar.",
-                promoCode: "FESTIVAL2026",
-                image: "/banner/ashram_varanasi.png",
-                ashramId: {
-                  address: { city: "Varanasi" },
-                  name: "Kashi Vishwanath Ashram",
-                },
-              },
-              {
-                _id: "default-4",
-                offerType: "SPECIAL OFFER",
-                discountPercentage: 25,
-                offerTitle: "Vrindavan Dham Yatra Deal",
-                description:
-                  "Exclusive 25% discount on serene dharamshala stays in holy Vrindavan.",
-                promoCode: "VRINDAVAN25",
-                image: "/banner/ashram_vrindavan.png",
-                ashramId: {
-                  address: { city: "Vrindavan" },
-                  name: "Bhagwat Dham Ashram",
-                },
-              },
-            ];
-
-            return offers.length > 0 ? offers : defaultList;
-          })().map((offer: any, idx: number) => {
-            const offerImages = [
-              "/banner/upcominglogo.png",
-              "/banner/ashram_rishikesh.png",
-              "/banner/ashram_varanasi.png",
-              "/banner/ashram_vrindavan.png",
-            ];
-            const cardImg =
-              offer.bannerImage ||
-              offer.thumbnailImage ||
-              offer.image ||
-              offerImages[idx % offerImages.length];
-            const cardTitle =
-              offer.offerTitle || offer.title || "Special Ashram Offer";
-            const cardDesc =
-              offer.description ||
-              offer.bannerText ||
-              "Book early to get exclusive room rate discounts and complimentary Satvik meals.";
-            const offerBadge =
-              offer.offerType || offer.category || "FESTIVAL OFFER";
-
-            const targetAshram = offer.ashramId?._id
-              ? offer.ashramId
-              : offer.applicableAshrams && offer.applicableAshrams[0];
-            const city =
-              offer.ashramId?.address?.city ||
-              targetAshram?.address?.city ||
-              (idx === 0 ? "Prayagraj" : "Haridwar");
-
-            const handleCardClick = () => {
-              if (targetAshram?._id) {
-                navigate(
-                  `/ashram/${targetAshram._id}?promoCode=${encodeURIComponent(offer.promoCode || "")}`,
-                );
-              } else if (
-                offer._id &&
-                typeof offer._id === "string" &&
-                offer._id.length > 10 &&
-                !offer._id.startsWith("default")
-              ) {
-                navigate(`/offers/${offer._id}`);
-              } else {
-                navigate(
-                  `/search?promoCode=${encodeURIComponent(offer.promoCode || "KUMBH2026")}`,
-                );
-              }
-            };
-
-            return (
-              <CouponVoucherCard
-                key={`${offer._id || "offer"}-${idx}`}
-                offer={{
-                  ...offer,
-                  image: cardImg,
-                  offerTitle: cardTitle,
-                  description: cardDesc,
-                  offerType: offerBadge,
-                  ashramId: { address: { city }, name: targetAshram?.name },
-                }}
-                onBookNow={handleCardClick}
-                isCarouselItem={true}
-              />
-            );
-          })}
-        </div>
-      </section>
 
       {/* ══════════════════════ EVERYTHING YOU NEED ══════════════════════ */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 space-y-8 mb-10 lg:mb-20 mt-6 lg:mt-0">
@@ -1369,8 +1225,8 @@ export const HomePage: React.FC = () => {
             <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
           </div>
           <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-xl mx-auto leading-relaxed">
-            Explore sacred cities across India including Rishikesh, Haridwar,
-            Varanasi, Vrindavan, and Prayagraj.
+            Explore sacred cities across India including Vrindavan, Mathura,
+            Goverdhan, Barsana, and Haridwar.
           </p>
           <button
             type="button"
@@ -1583,29 +1439,85 @@ export const HomePage: React.FC = () => {
           className="flex gap-4 sm:gap-6 overflow-x-auto pb-6 pt-2 scrollbar-none -mx-4 sm:mx-0 px-4 sm:px-0 justify-start"
           style={{ scrollbarWidth: "none" }}
         >
+<<<<<<< HEAD
           {/* Doubled like every other marquee row on this page. The loop wraps
               onto the second copy, so without it this row rewound halfway
               through its own content and read as a jitter. */}
           {[...prasadItems, ...prasadItems].map((item: any, idx: number) => {
             const isProduct = !!item.price || Array.isArray(item.images);
+=======
+          {(() => {
+            const defaultPrasadList = [
+              {
+                _id: "prasad-1",
+                name: "neelkanth mahadev prasad",
+                templeSource: "Heritage Brass Guild",
+                price: 799,
+                rating: 4.8,
+                images: [
+                  "https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?auto=format&fit=crop&w=500&q=80",
+                ],
+              },
+              {
+                _id: "prasad-2",
+                name: "ganga arti prasad",
+                templeSource: "Haridwar Ganga Sabha Trust",
+                price: 899,
+                rating: 5.0,
+                images: [
+                  "https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=500&q=80",
+                ],
+              },
+              {
+                _id: "prasad-3",
+                name: "Nitya Puja prasad",
+                templeSource: "Tirvona Spiritual Foundation",
+                price: 499,
+                rating: 4.9,
+                images: [
+                  "https://images.unsplash.com/photo-1561361058-c24e36e56336?auto=format&fit=crop&w=500&q=80",
+                ],
+              },
+              {
+                _id: "prasad-4",
+                name: "Vrindavan prasad",
+                templeSource: "ISKCON Vrindavan Artisans",
+                price: 199,
+                rating: 4.9,
+                images: [
+                  "https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?auto=format&fit=crop&w=500&q=80",
+                ],
+              },
+            ];
+
+            const list =
+              marketplaceProducts.length > 0
+                ? marketplaceProducts
+                : marketplaceCategories.length > 0
+                  ? marketplaceCategories
+                  : defaultPrasadList;
+
+            return list;
+          })().map((item: any, idx: number) => {
+            const isProduct =
+              !!item.price || Array.isArray(item.images) || item.salePrice;
+>>>>>>> f540da6 (updated UI)
             const imgUrl = isProduct
               ? item.images?.[0] ||
+                item.img ||
                 "https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?auto=format&fit=crop&w=500&q=80"
               : item.coverImage ||
                 item.thumbnail ||
                 item.img ||
                 "/banner/ashram_rishikesh.png";
-            const name = item.name;
-            const subtitle = isProduct
-              ? item.templeSource || "Sanctified Product"
-              : item.originCity
+            const name = item.name || item.title || "Sacred Prasad";
+            const subtitle =
+              item.templeSource ||
+              item.subtitle ||
+              (item.originCity
                 ? `${item.originCity}, ${item.originState}`
-                : "Sacred Prashad";
-            const priceDisplay = isProduct
-              ? item.salePrice
-                ? `₹${item.salePrice}`
-                : `₹${item.price}`
-              : null;
+                : "Sanctified Prasad");
+            const rawPrice = item.price || item.salePrice || 199;
 
             return (
               <div
@@ -1626,7 +1538,7 @@ export const HomePage: React.FC = () => {
                     <img
                       src={imgUrl}
                       alt={name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90"
                       loading="lazy"
                       onError={(e) => {
                         e.currentTarget.onerror = null;
@@ -1634,6 +1546,7 @@ export const HomePage: React.FC = () => {
                           "https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?auto=format&fit=crop&w=500&q=80";
                       }}
                     />
+<<<<<<< HEAD
                     {isProduct &&
                       item.salePrice &&
                       item.price > item.salePrice && (
@@ -1646,13 +1559,22 @@ export const HomePage: React.FC = () => {
                       )}
                     {isProduct && item.rating && (
                       <span className="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-amber-400 text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1">
+=======
+                    {/* Mandatory Out of Stock badge (NO offer or discount tags) */}
+                    <span className="absolute top-3 left-3 bg-red-600/90 backdrop-blur-md text-white text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-md tracking-wider">
+                      OUT OF STOCK
+                    </span>
+
+                    {(item.rating || isProduct) && (
+                      <span className="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-amber-400 text-[10px] font-black uppercase px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1">
+>>>>>>> f540da6 (updated UI)
                         <Star size={10} className="fill-amber-400" />{" "}
-                        {item.rating}
+                        {item.rating || 4.9}
                       </span>
                     )}
                   </div>
 
-                  {/* Centered Bottom Title & Price Area */}
+                  {/* Centered Bottom Title & Out of Stock / Price Area */}
                   <div className="p-4 text-center flex flex-col items-center justify-center min-h-[84px]">
                     <h4 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight line-clamp-1 text-center group-hover:text-[#0A4DA6] transition-colors">
                       {name}
@@ -1660,11 +1582,14 @@ export const HomePage: React.FC = () => {
                     <p className="text-[11px] text-gray-400 font-bold mt-0.5 text-center line-clamp-1">
                       {subtitle}
                     </p>
-                    {priceDisplay && (
-                      <span className="mt-1 font-black text-xs text-[#0A4DA6] dark:text-blue-400">
-                        {priceDisplay}
+                    <div className="mt-1 flex items-center justify-center gap-2">
+                      <span className="font-black text-xs text-[#0B192C] dark:text-gray-300">
+                        {formatCurrency(rawPrice)}
                       </span>
-                    )}
+                      <span className="text-[9px] font-extrabold text-red-500 uppercase bg-red-50 dark:bg-red-950/40 px-2 py-0.5 rounded-md border border-red-200/50 dark:border-red-900/30">
+                        Out of Stock
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1879,6 +1804,171 @@ export const HomePage: React.FC = () => {
             </div>
           </div>
         )}
+      </section>
+
+      {/* ══════════════════════ FEATURED OFFERS & FESTIVAL SPECIALS BANNER ══════════════════════ */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 space-y-8 mb-12 lg:mb-20 mt-6">
+        {/* Clean Text Header (No Background Wallpaper) */}
+        <div className="text-center space-y-2 max-w-3xl mx-auto py-2">
+          <p className="font-['Kalam'] text-base sm:text-4xl font-bold text-[#E58C28]">
+            Exclusive Offers
+          </p>
+          {/* Decorative Saffron Underline Divider */}
+          <div className="flex items-center justify-center gap-2.5 my-1.5">
+            <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
+            <Sparkles
+              size={14}
+              className="text-[#E58C28] fill-[#E58C28] shrink-0"
+            />
+            <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
+          </div>
+          <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-xl mx-auto leading-relaxed">
+            Exclusive discounts, promo vouchers, and festival packages for your
+            sacred retreat.
+          </p>
+          <button
+            type="button"
+            onClick={() => navigate("/offers")}
+            className="mt-2 inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-[#083b80] text-white text-xs font-extrabold shadow-md transition-all cursor-pointer"
+          >
+            Explore All Offers <ArrowRight size={14} />
+          </button>
+        </div>
+
+        {/* Horizontal Carousel (Exact same container & scroll layout as all other sections on the page) */}
+        <div
+          ref={offersRef}
+          className="flex gap-4 sm:gap-6 overflow-x-auto pb-6 pt-2 scrollbar-none -mx-4 sm:mx-0 px-4 sm:px-0 justify-start"
+          style={{ scrollbarWidth: "none" }}
+        >
+          {(() => {
+            const defaultList = [
+              {
+                _id: "default-1",
+                offerType: "MAHAKUMBH OFFER",
+                discountPercentage: 20,
+                offerTitle: "Mahakumbh Sacred Stay Special",
+                description:
+                  "Experience the holy Kumbh Mela 2026 with 20% OFF accommodation & VIP pass.",
+                promoCode: "KUMBH2026",
+                image: "/banner/upcominglogo.png",
+                ashramId: {
+                  address: { city: "Prayagraj" },
+                  name: "Shantikunj Gayatri Pariwar",
+                },
+              },
+              {
+                _id: "default-2",
+                offerType: "WEEKEND OFFER",
+                discountPercentage: 10,
+                discountValue: 500,
+                discountType: "FixedAmount",
+                offerTitle: "Weekend Spiritual Yoga & Retreat",
+                description:
+                  "Recharge your mind & soul with our weekend spiritual retreat package in Haridwar.",
+                promoCode: "WEEKEND500",
+                image: "/banner/ashram_rishikesh.png",
+                ashramId: {
+                  address: { city: "Haridwar" },
+                  name: "Prem Nagar Ashram",
+                },
+              },
+              {
+                _id: "default-3",
+                offerType: "FESTIVAL OFFER",
+                discountPercentage: 15,
+                offerTitle: "Festival Season Kashi Discount",
+                description:
+                  "Get 15% instant savings on top verified ashrams across Kashi & Haridwar.",
+                promoCode: "FESTIVAL2026",
+                image: "/banner/ashram_varanasi.png",
+                ashramId: {
+                  address: { city: "Varanasi" },
+                  name: "Kashi Vishwanath Ashram",
+                },
+              },
+              {
+                _id: "default-4",
+                offerType: "SPECIAL OFFER",
+                discountPercentage: 25,
+                offerTitle: "Vrindavan Dham Yatra Deal",
+                description:
+                  "Exclusive 25% discount on serene dharamshala stays in holy Vrindavan.",
+                promoCode: "VRINDAVAN25",
+                image: "/banner/ashram_vrindavan.png",
+                ashramId: {
+                  address: { city: "Vrindavan" },
+                  name: "Bhagwat Dham Ashram",
+                },
+              },
+            ];
+
+            return offers.length > 0 ? offers : defaultList;
+          })().map((offer: any, idx: number) => {
+            const offerImages = [
+              "/banner/upcominglogo.png",
+              "/banner/ashram_rishikesh.png",
+              "/banner/ashram_varanasi.png",
+              "/banner/ashram_vrindavan.png",
+            ];
+            const cardImg =
+              offer.bannerImage ||
+              offer.thumbnailImage ||
+              offer.image ||
+              offerImages[idx % offerImages.length];
+            const cardTitle =
+              offer.offerTitle || offer.title || "Special Ashram Offer";
+            const cardDesc =
+              offer.description ||
+              offer.bannerText ||
+              "Book early to get exclusive room rate discounts and complimentary Satvik meals.";
+            const offerBadge =
+              offer.offerType || offer.category || "FESTIVAL OFFER";
+
+            const targetAshram = offer.ashramId?._id
+              ? offer.ashramId
+              : offer.applicableAshrams && offer.applicableAshrams[0];
+            const city =
+              offer.ashramId?.address?.city ||
+              targetAshram?.address?.city ||
+              (idx === 0 ? "Prayagraj" : "Haridwar");
+
+            const handleCardClick = () => {
+              if (targetAshram?._id) {
+                navigate(
+                  `/ashram/${targetAshram._id}?promoCode=${encodeURIComponent(offer.promoCode || "")}`,
+                );
+              } else if (
+                offer._id &&
+                typeof offer._id === "string" &&
+                offer._id.length > 10 &&
+                !offer._id.startsWith("default")
+              ) {
+                navigate(`/offers/${offer._id}`);
+              } else {
+                navigate(
+                  `/search?promoCode=${encodeURIComponent(offer.promoCode || "KUMBH2026")}`,
+                );
+              }
+            };
+
+            return (
+              <CouponVoucherCard
+                key={`${offer._id || "offer"}-${idx}`}
+                offer={{
+                  ...offer,
+                  image: cardImg,
+                  offerTitle: cardTitle,
+                  description: cardDesc,
+                  offerType: offerBadge,
+                  ashramId: { address: { city }, name: targetAshram?.name },
+                }}
+                onBookNow={handleCardClick}
+                isCarouselItem={true}
+              />
+            );
+          })}
+        </div>
       </section>
 
       {/* ══════════════════════ SPIRITUAL MEDIA & KNOWLEDGE HUB SECTION ══════════════════════ */}

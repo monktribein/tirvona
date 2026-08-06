@@ -7,6 +7,8 @@ import NotificationDropdown from "../components/shared/NotificationDropdown";
 import CartDrawer, { CartButton } from "../components/shared/CartDrawer";
 import { setGuestPendingIntent } from "../utils/guestGate";
 import { getRoleDefaultDashboard, isParkingRole } from "../utils/roleRedirect";
+import { getActiveCurrency, setActiveCurrency } from "../utils/format";
+import { getActiveLanguage, setActiveLanguage } from "../utils/language";
 import {
   LogOut,
   Menu,
@@ -74,6 +76,74 @@ export const PublicLayout: React.FC = () => {
   const notifRef = useRef<HTMLDivElement>(null);
 
   const [showHeader, setShowHeader] = useState(true);
+  const [activeCurrency, setCurrencyState] = useState<"INR" | "USD">(() =>
+    getActiveCurrency(),
+  );
+  const [showCurrencyDropdown, setShowCurrencyDropdown] = useState(false);
+  const currencyDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleCurrencyChange = (e: any) => {
+      setCurrencyState(e.detail || getActiveCurrency());
+    };
+    window.addEventListener("currency_changed", handleCurrencyChange);
+    return () =>
+      window.removeEventListener("currency_changed", handleCurrencyChange);
+  }, []);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (
+        currencyDropdownRef.current &&
+        !currencyDropdownRef.current.contains(e.target as Node)
+      ) {
+        setShowCurrencyDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const handleSelectCurrency = (code: "INR" | "USD") => {
+    setActiveCurrency(code);
+    setCurrencyState(code);
+    setShowCurrencyDropdown(false);
+  };
+
+  const [activeLang, setLangState] = useState<"en" | "hi">(() =>
+    getActiveLanguage(),
+  );
+  const [showLangDropdown, setShowLangDropdown] = useState(false);
+  const langDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleLangChange = (e: any) => {
+      setLangState(e.detail || getActiveLanguage());
+    };
+    window.addEventListener("language_changed", handleLangChange);
+    return () =>
+      window.removeEventListener("language_changed", handleLangChange);
+  }, []);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (
+        langDropdownRef.current &&
+        !langDropdownRef.current.contains(e.target as Node)
+      ) {
+        setShowLangDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const handleSelectLang = (code: "en" | "hi") => {
+    setActiveLanguage(code);
+    setLangState(code);
+    setShowLangDropdown(false);
+  };
+
   const authReturnUrl = `${location.pathname}${location.search}${location.hash}`;
   const rememberCurrentPage = () =>
     setGuestPendingIntent({ type: "generic", returnUrl: authReturnUrl });
@@ -259,18 +329,93 @@ export const PublicLayout: React.FC = () => {
 
             {/* Right Side Action & Utility Area */}
             <div className="flex items-center gap-2 lg:gap-3">
-              {/* Currency selector inside navbar */}
-              <button className="hidden sm:flex text-slate-600 dark:text-gray-300 hover:text-[#D4AF37] transition-colors text-xs font-semibold items-center cursor-pointer px-1.5 py-1">
-                <span>₹ INR</span>
-              </button>
+              {/* Currency selector inside navbar with USD and INR options */}
+              <div className="relative hidden sm:block" ref={currencyDropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setShowCurrencyDropdown(!showCurrencyDropdown)}
+                  className="text-slate-600 dark:text-gray-300 hover:text-[#E58C28] transition-colors text-xs font-bold flex items-center gap-1 cursor-pointer px-2 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+                >
+                  <span>{activeCurrency === "USD" ? "$ USD" : "₹ INR"}</span>
+                  <ChevronRight
+                    size={12}
+                    className={`transition-transform duration-200 ${showCurrencyDropdown ? "rotate-90" : ""}`}
+                  />
+                </button>
 
-              {/* Language globe inside navbar */}
-              <button
-                className="hidden sm:flex text-slate-600 dark:text-gray-300 hover:text-[#0A4DA6] transition-colors cursor-pointer p-1"
-                title="Languages"
-              >
-                <Globe size={15} />
-              </button>
+                {showCurrencyDropdown && (
+                  <div className="absolute right-0 top-full mt-2 w-28 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-xl shadow-xl z-50 py-1 overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => handleSelectCurrency("INR")}
+                      className={`w-full text-left px-3 py-2 text-xs font-bold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer ${
+                        activeCurrency === "INR"
+                          ? "text-[#0A4DA6] dark:text-amber-400 bg-blue-50/50 dark:bg-slate-800/50"
+                          : "text-gray-700 dark:text-gray-200"
+                      }`}
+                    >
+                      <span>₹ INR</span>
+                      <span className="text-[10px] font-semibold text-gray-400">Rupee</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSelectCurrency("USD")}
+                      className={`w-full text-left px-3 py-2 text-xs font-bold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer ${
+                        activeCurrency === "USD"
+                          ? "text-[#0A4DA6] dark:text-amber-400 bg-blue-50/50 dark:bg-slate-800/50"
+                          : "text-gray-700 dark:text-gray-200"
+                      }`}
+                    >
+                      <span>$ USD</span>
+                      <span className="text-[10px] font-semibold text-gray-400">Dollar</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Language Globe Selector inside navbar */}
+              <div className="relative hidden sm:block" ref={langDropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setShowLangDropdown(!showLangDropdown)}
+                  className="text-slate-600 dark:text-gray-300 hover:text-[#0A4DA6] transition-colors p-1 cursor-pointer flex items-center gap-1 text-xs font-bold rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+                  title="Languages"
+                >
+                  <Globe size={15} />
+                  <span className="uppercase text-[11px] font-extrabold">
+                    {activeLang === "hi" ? "HI" : "EN"}
+                  </span>
+                </button>
+
+                {showLangDropdown && (
+                  <div className="absolute right-0 top-full mt-2 w-32 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-xl shadow-xl z-50 py-1 overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => handleSelectLang("en")}
+                      className={`w-full text-left px-3 py-2 text-xs font-bold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer ${
+                        activeLang === "en"
+                          ? "text-[#0A4DA6] dark:text-amber-400 bg-blue-50/50 dark:bg-slate-800/50"
+                          : "text-gray-700 dark:text-gray-200"
+                      }`}
+                    >
+                      <span>English</span>
+                      <span className="text-[10px] font-semibold text-gray-400">EN</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSelectLang("hi")}
+                      className={`w-full text-left px-3 py-2 text-xs font-bold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer ${
+                        activeLang === "hi"
+                          ? "text-[#0A4DA6] dark:text-amber-400 bg-blue-50/50 dark:bg-slate-800/50"
+                          : "text-gray-700 dark:text-gray-200"
+                      }`}
+                    >
+                      <span>हिंदी</span>
+                      <span className="text-[10px] font-semibold text-gray-400">HI</span>
+                    </button>
+                  </div>
+                )}
+              </div>
 
               {/* User Auth / Action Buttons */}
               {user ? (
@@ -574,12 +719,63 @@ export const PublicLayout: React.FC = () => {
               </span>
             </button>
             <div className="flex items-center justify-between py-3 px-3 rounded-xl text-sm text-gray-500">
-              <span className="flex items-center gap-2">
+              <span className="flex items-center gap-2 font-semibold">
                 <Globe size={15} /> Currency
               </span>
-              <span className="font-bold text-gray-700 dark:text-gray-200">
-                ₹ INR
+              <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg text-xs font-bold">
+                <button
+                  type="button"
+                  onClick={() => handleSelectCurrency("INR")}
+                  className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+                    activeCurrency === "INR"
+                      ? "bg-white dark:bg-[#0A4DA6] text-[#0A4DA6] dark:text-white shadow-xs"
+                      : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
+                  }`}
+                >
+                  ₹ INR
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSelectCurrency("USD")}
+                  className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+                    activeCurrency === "USD"
+                      ? "bg-white dark:bg-[#0A4DA6] text-[#0A4DA6] dark:text-white shadow-xs"
+                      : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
+                  }`}
+                >
+                  $ USD
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between py-3 px-3 rounded-xl text-sm text-gray-500">
+              <span className="flex items-center gap-2 font-semibold">
+                <Globe size={15} /> Language
               </span>
+              <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg text-xs font-bold">
+                <button
+                  type="button"
+                  onClick={() => handleSelectLang("en")}
+                  className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+                    activeLang === "en"
+                      ? "bg-white dark:bg-[#0A4DA6] text-[#0A4DA6] dark:text-white shadow-xs"
+                      : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
+                  }`}
+                >
+                  English
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSelectLang("hi")}
+                  className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+                    activeLang === "hi"
+                      ? "bg-white dark:bg-[#0A4DA6] text-[#0A4DA6] dark:text-white shadow-xs"
+                      : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
+                  }`}
+                >
+                  हिंदी
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -758,18 +954,7 @@ export const PublicLayout: React.FC = () => {
                       Knowledge Hub
                     </Link>
                   </li>
-                  <li>
-                    <Link
-                      to="/careers"
-                      className="hover:text-amber-400 transition-colors flex items-center gap-1"
-                    >
-                      <ArrowRight
-                        size={10}
-                        className="text-slate-500 shrink-0"
-                      />{" "}
-                      Careers
-                    </Link>
-                  </li>
+
                   <li>
                     <Link
                       to="/volunteer"
@@ -805,18 +990,6 @@ export const PublicLayout: React.FC = () => {
                   </li>
                   <li>
                     <Link
-                      to="/temples"
-                      className="hover:text-amber-400 transition-colors flex items-center gap-1"
-                    >
-                      <ArrowRight
-                        size={10}
-                        className="text-slate-500 shrink-0"
-                      />{" "}
-                      Temple Darshan
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
                       to="/restaurants"
                       className="hover:text-amber-400 transition-colors flex items-center gap-1"
                     >
@@ -837,18 +1010,6 @@ export const PublicLayout: React.FC = () => {
                         className="text-slate-500 shrink-0"
                       />{" "}
                       Parking
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      to="/local-guides"
-                      className="hover:text-amber-400 transition-colors flex items-center gap-1"
-                    >
-                      <ArrowRight
-                        size={10}
-                        className="text-slate-500 shrink-0"
-                      />{" "}
-                      Tour Guides
                     </Link>
                   </li>
                   <li>

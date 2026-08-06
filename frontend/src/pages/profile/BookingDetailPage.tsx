@@ -23,6 +23,7 @@ import {
   formatDateIN,
   formatDateTimeIN,
 } from "../../utils/format";
+import { SUPPORT_CONFIG } from "../../constants/support";
 
 interface BookingDetailsData {
   _id: string;
@@ -503,7 +504,7 @@ export const BookingDetailPage: React.FC = () => {
               <p className="text-gray-500 dark:text-gray-400 font-medium">
                 24x7 Pilgrim Helpline:{" "}
                 <strong className="text-[#0B192C] dark:text-white">
-                  1800-11-1363 / 112
+                  {SUPPORT_CONFIG.helpline}
                 </strong>
               </p>
             </div>

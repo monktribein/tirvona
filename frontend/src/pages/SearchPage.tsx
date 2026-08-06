@@ -17,6 +17,9 @@ import {
   UtensilsCrossed,
   Droplet,
   X,
+  Building2,
+  Landmark,
+  Home,
 } from "lucide-react";
 
 export const SearchPage: React.FC = () => {
@@ -51,6 +54,9 @@ export const SearchPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   // Filters State
+  const [ashramFilter, setAshramFilter] = useState(false);
+  const [dharamshalaFilter, setDharamshalaFilter] = useState(false);
+  const [homestayFilter, setHomestayFilter] = useState(false);
   const [acFilter, setAcFilter] = useState(false);
   const [foodFilter, setFoodFilter] = useState(false);
   const [riverViewFilter, setRiverViewFilter] = useState(false);
@@ -422,6 +428,53 @@ export const SearchPage: React.FC = () => {
               <Filter size={16} className="text-[#0A4DA6]" /> Filters
             </h3>
 
+            {/* Property Type Section */}
+            <div className="space-y-4">
+              <h4 className="text-[10px] uppercase font-extrabold text-gray-400 tracking-wider">
+                Property Type
+              </h4>
+              <div className="space-y-3.5">
+                <label className="flex items-center gap-3 text-xs font-semibold cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={ashramFilter}
+                    onChange={() => setAshramFilter(!ashramFilter)}
+                    className="rounded border-gray-200 dark:border-slate-700 text-[#0A4DA6] focus:ring-[#0A4DA6]/20 cursor-pointer w-4 h-4"
+                  />
+                  <span className="flex items-center gap-1.5 text-[#0B192C] dark:text-gray-200">
+                    <Building2 size={14} className="text-gray-400" /> Ashram
+                  </span>
+                </label>
+
+                <label className="flex items-center gap-3 text-xs font-semibold cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={dharamshalaFilter}
+                    onChange={() => setDharamshalaFilter(!dharamshalaFilter)}
+                    className="rounded border-gray-200 dark:border-slate-700 text-[#0A4DA6] focus:ring-[#0A4DA6]/20 cursor-pointer w-4 h-4"
+                  />
+                  <span className="flex items-center gap-1.5 text-[#0B192C] dark:text-gray-200">
+                    <Landmark size={14} className="text-gray-400" /> Dharamshala
+                  </span>
+                </label>
+
+                <label className="flex items-center gap-3 text-xs font-semibold cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={homestayFilter}
+                    onChange={() => setHomestayFilter(!homestayFilter)}
+                    className="rounded border-gray-200 dark:border-slate-700 text-[#0A4DA6] focus:ring-[#0A4DA6]/20 cursor-pointer w-4 h-4"
+                  />
+                  <span className="flex items-center gap-1.5 text-[#0B192C] dark:text-gray-200">
+                    <Home size={14} className="text-gray-400" /> Homestay
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            <div className="border-t border-gray-100 dark:border-slate-800" />
+
+            {/* Common Facilities Section */}
             <div className="space-y-4">
               <h4 className="text-[10px] font-extrabold text-gray-400 tracking-wider">
                 Common Facilities

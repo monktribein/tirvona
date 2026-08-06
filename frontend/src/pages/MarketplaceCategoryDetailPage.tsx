@@ -336,8 +336,13 @@ export const MarketplaceCategoryDetailPage: React.FC = () => {
                         e.target.src = "/banner/ashram_rishikesh.png";
                       }}
                     />
+<<<<<<< HEAD
                     <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-emerald-600 text-white text-[10px] font-black">
                       PURE DESI GHEE
+=======
+                    <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-red-600/90 text-white text-[10px] font-black uppercase tracking-wider">
+                      OUT OF STOCK
+>>>>>>> f540da6 (updated UI)
                     </span>
                     <span className="absolute top-3 right-3 px-3 py-1 rounded-full bg-amber-500 text-white text-xs font-black">
                       ₹{prod.price} ({prod.weight || "500g"})
@@ -367,10 +372,10 @@ export const MarketplaceCategoryDetailPage: React.FC = () => {
 
                 <div className="p-6 pt-0 flex items-center gap-2 border-t border-gray-100 dark:border-slate-800/80 pt-4">
                   <button
-                    onClick={() => handleAddToCart(prod)}
-                    className="flex-1 py-3 bg-[#0A4DA6] hover:bg-[#083b80] text-white font-black text-xs rounded-full shadow-md shadow-[#0A4DA6]/20 flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95"
+                    disabled
+                    className="flex-1 py-3 bg-gray-200 dark:bg-slate-800 text-gray-500 dark:text-gray-400 font-black text-xs rounded-full cursor-not-allowed flex items-center justify-center gap-1.5"
                   >
-                    <ShoppingCart size={14} /> Add To Cart
+                    Out of Stock
                   </button>
                 </div>
               </div>

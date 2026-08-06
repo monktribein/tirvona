@@ -24,6 +24,7 @@ import {
   volunteerService,
   type VolunteerJobItem,
 } from "../services/volunteer.service";
+import { SUPPORT_CONFIG } from "../constants/support";
 import { useNotifications } from "../contexts/NotificationContext";
 import { useAuth } from "../contexts/AuthContext";
 import {
@@ -563,7 +564,7 @@ export const VolunteerJobDetailPage: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-2.5">
                   <Phone size={14} className="text-emerald-500 shrink-0" />
-                  <span>{job.contactPerson?.phone || "+91 98765 43210"}</span>
+                  <span>{job.contactPerson?.phone || SUPPORT_CONFIG.phone}</span>
                 </div>
                 <div className="flex items-center gap-2.5">
                   <Mail size={14} className="text-blue-500 shrink-0" />
