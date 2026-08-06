@@ -85,7 +85,7 @@ const CareersPage: React.FC = () => {
       <section className="bg-[#0B192C] text-white py-16 px-4 sm:px-6 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-[#0A4DA6]/10 rounded-full blur-[80px] pointer-events-none" />
         <div className="max-w-4xl mx-auto text-center relative z-10 space-y-4">
-          <span className="inline-block text-[10px] font-extrabold uppercase tracking-widest text-[#D4AF37] bg-[#D4AF37]/10 border border-[#D4AF37]/20 rounded-full px-4 py-1.5">
+          <span className="inline-block text-[10px] font-extrabold tracking-widest text-[#D4AF37] bg-[#D4AF37]/10 border border-[#D4AF37]/20 rounded-full px-4 py-1.5">
             Join The Team
           </span>
           <h1

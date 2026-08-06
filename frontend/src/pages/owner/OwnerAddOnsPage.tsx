@@ -338,7 +338,7 @@ export const OwnerAddOnsPage: React.FC = () => {
               className="space-y-4 text-xs font-semibold"
             >
               <div className="space-y-1">
-                <label className="text-[10px] font-extrabold uppercase text-gray-400">
+                <label className="text-[10px] font-extrabold text-gray-400">
                   Service Name *
                 </label>
                 <input
@@ -355,7 +355,7 @@ export const OwnerAddOnsPage: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-extrabold uppercase text-gray-400">
+                  <label className="text-[10px] font-extrabold text-gray-400">
                     Price (₹) *
                   </label>
                   <input
@@ -374,7 +374,7 @@ export const OwnerAddOnsPage: React.FC = () => {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[10px] font-extrabold uppercase text-gray-400">
+                  <label className="text-[10px] font-extrabold text-gray-400">
                     Pricing Unit *
                   </label>
                   <select
@@ -407,7 +407,7 @@ export const OwnerAddOnsPage: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-extrabold uppercase text-gray-400">
+                  <label className="text-[10px] font-extrabold text-gray-400">
                     Unit Label
                   </label>
                   <input
@@ -421,7 +421,7 @@ export const OwnerAddOnsPage: React.FC = () => {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[10px] font-extrabold uppercase text-gray-400">
+                  <label className="text-[10px] font-extrabold text-gray-400">
                     Max Quantity
                   </label>
                   <input
@@ -441,7 +441,7 @@ export const OwnerAddOnsPage: React.FC = () => {
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-extrabold uppercase text-gray-400">
+                <label className="text-[10px] font-extrabold text-gray-400">
                   Description
                 </label>
                 <textarea

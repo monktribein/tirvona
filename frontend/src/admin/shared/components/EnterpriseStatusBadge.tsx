@@ -95,7 +95,7 @@ export const EnterpriseStatusBadge: React.FC<EnterpriseStatusBadgeProps> = ({
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 font-black uppercase tracking-wider rounded-full border shadow-2xs ${style.bg} ${sizeClasses}`}
+      className={`inline-flex items-center gap-1.5 font-black tracking-wider rounded-full border shadow-2xs ${style.bg} ${sizeClasses}`}
     >
       {style.icon}
       <span className="capitalize">{displayLabel}</span>

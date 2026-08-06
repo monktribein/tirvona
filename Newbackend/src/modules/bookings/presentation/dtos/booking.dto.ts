@@ -9,6 +9,7 @@ import {
   IsOptional,
   IsString,
   Max,
+  MaxLength,
   Min,
   MinLength,
   ValidateNested,
@@ -139,17 +140,28 @@ export class SaveOfferDto {
 
 export class ReviewRatingDto {
   @Type(() => Number) @IsNumber() @Min(1) @Max(5) overall: number;
-  @Type(() => Number) @IsNumber() @Min(1) @Max(5) cleanliness: number;
-  @Type(() => Number) @IsNumber() @Min(1) @Max(5) service: number;
-  @Type(() => Number) @IsNumber() @Min(1) @Max(5) location: number;
-  @Type(() => Number) @IsNumber() @Min(1) @Max(5) valueForMoney: number;
+  // Sub-scores are optional: a visitor leaving a one-line impression should not
+  // have to grade five separate dimensions.
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(1) @Max(5)
+  cleanliness?: number;
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(1) @Max(5)
+  service?: number;
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(1) @Max(5)
+  location?: number;
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(1) @Max(5)
+  valueForMoney?: number;
 }
 export class CreateReviewDto {
-  @IsMongoId() bookingId: string;
+  /**
+   * Supplied when the review relates to a specific stay. Omitting it posts an
+   * unverified visitor review; the server decides the `verifiedStay` flag from
+   * the caller's own booking history either way, so it is never client-claimed.
+   */
+  @IsOptional() @IsMongoId() bookingId?: string;
   @IsMongoId() ashramId: string;
   @IsObject()
   @ValidateNested()
   @Type(() => ReviewRatingDto)
   rating: ReviewRatingDto;
-  @IsString() @MinLength(2) comment: string;
+  @IsString() @MinLength(2) @MaxLength(1500) comment: string;
 }

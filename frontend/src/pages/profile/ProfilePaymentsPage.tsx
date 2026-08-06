@@ -56,7 +56,7 @@ export const ProfilePaymentsPage: React.FC = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-20">
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 shadow-lg space-y-4">
-          <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white uppercase tracking-wider">
+          <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white tracking-wider">
             Transaction History
           </h3>
 

@@ -158,10 +158,27 @@ export const HomePage: React.FC = () => {
     ].filter(Boolean) as HTMLDivElement[];
     if (rows.length === 0) return;
 
-    const SPEED = 0.6; // px per frame (~36px/sec at 60fps)
+    // Pixels per SECOND, not per frame. The old constant was per-frame, so the
+    // marquee ran at double speed on a 120Hz display and visibly hitched
+    // whenever a frame came late — the motion was tied to how often rAF fired
+    // rather than to elapsed time.
+    const SPEED = 36;
+
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
     type RowState = {
       pos: number;
+      /**
+       * Width of ONE copy of the duplicated items, including the gap that
+       * follows the last card.
+       *
+       * Not `scrollWidth / 2`: with `gap-6` between N doubled cards the track
+       * holds 2N-1 gaps, so half the scroll width lands half a gap short of the
+       * seam and every wrap jumped ~12px sideways. Measuring to the offset of
+       * the first card of the second copy is exact, whatever the gap.
+       */
+      period: number;
+      visible: boolean;
       hovered: boolean;
       dragging: boolean;
       touching: boolean;
@@ -191,6 +208,8 @@ export const HomePage: React.FC = () => {
 
       const s: RowState = {
         pos: c.scrollLeft,
+        period: 0,
+        visible: true,
         hovered: false,
         dragging: false,
         touching: false,
@@ -199,6 +218,50 @@ export const HomePage: React.FC = () => {
         startScroll: 0,
       };
       st.set(c, s);
+
+      // Measured on resize and on content change only — never inside the frame
+      // loop. Reading scrollWidth/offsetLeft forces synchronous layout, and
+      // doing that for five rows on every frame interleaves reads with the
+      // scrollLeft writes below into classic layout thrash, which is what made
+      // the motion judder.
+      const measure = () => {
+        const kids = c.children;
+        s.period =
+          kids.length >= 2 && kids.length % 2 === 0
+            ? (kids[kids.length / 2] as HTMLElement).offsetLeft -
+              (kids[0] as HTMLElement).offsetLeft
+            : 0;
+      };
+
+      const resizeObserver = new ResizeObserver(measure);
+      const observeAll = () => {
+        resizeObserver.disconnect();
+        resizeObserver.observe(c);
+        for (const child of Array.from(c.children)) resizeObserver.observe(child);
+        measure();
+      };
+      observeAll();
+
+      // Cards arrive after fetch, and adding children never changes the
+      // container's own border box, so ResizeObserver alone would not re-fire.
+      const mutationObserver = new MutationObserver(observeAll);
+      mutationObserver.observe(c, { childList: true });
+
+      // An off-screen marquee burns battery and would have drifted somewhere
+      // arbitrary by the time the visitor scrolls down to it.
+      const visibilityObserver = new IntersectionObserver(
+        ([entry]) => {
+          s.visible = entry.isIntersecting;
+        },
+        { threshold: 0 },
+      );
+      visibilityObserver.observe(c);
+
+      disposers.push(() => {
+        resizeObserver.disconnect();
+        mutationObserver.disconnect();
+        visibilityObserver.disconnect();
+      });
 
       const onEnter = () => {
         s.hovered = true;
@@ -270,24 +333,30 @@ export const HomePage: React.FC = () => {
     });
 
     let animationFrameId: number;
-    const step = () => {
+    let lastTime = 0;
+    const step = (now: number) => {
+      animationFrameId = requestAnimationFrame(step);
+      // Clamped so returning to a backgrounded tab does not apply one enormous
+      // delta and teleport every row.
+      const delta = lastTime ? Math.min(now - lastTime, 50) : 0;
+      lastTime = now;
+      if (reduceMotion.matches) return;
+
       rows.forEach((c) => {
         const s = st.get(c);
-        if (!s) return;
-        const half = c.scrollWidth / 2; // width of one copy of the duplicated items
-        if (half <= 0) return;
+        if (!s || s.period <= 0 || !s.visible) return;
         if (s.hovered || s.dragging || s.touching) {
           // Paused — mirror any manual scroll so we resume from here (no jump).
           s.pos = c.scrollLeft;
           return;
         }
-        let pos = s.pos + SPEED;
-        while (pos >= half) pos -= half; // wrap onto the identical 2nd copy → seamless
-        while (pos < 0) pos += half;
+        let pos = s.pos + (SPEED * delta) / 1000;
+        // Wrap onto the identical second copy → seamless.
+        while (pos >= s.period) pos -= s.period;
+        while (pos < 0) pos += s.period;
         s.pos = pos;
         c.scrollLeft = pos;
       });
-      animationFrameId = requestAnimationFrame(step);
     };
     animationFrameId = requestAnimationFrame(step);
 
@@ -300,6 +369,10 @@ export const HomePage: React.FC = () => {
   const [homePosts, setHomePosts] = useState<any[]>([]);
   const [marketplaceCategories, setMarketplaceCategories] = useState<any[]>([]);
   const [marketplaceProducts, setMarketplaceProducts] = useState<any[]>([]);
+
+  // Products when they exist, category tiles as the stand-in until they do.
+  const prasadItems =
+    marketplaceProducts.length > 0 ? marketplaceProducts : marketplaceCategories;
 
   useEffect(() => {
     fetchStays();
@@ -620,69 +693,8 @@ export const HomePage: React.FC = () => {
     },
   ];
 
-  // Customer feedback with varied authentic images and fallback support
-  const demoFeedbacks = [
-    {
-      name: "Parmarth Niketan Ashram",
-      location: "Rishikesh, Uttarakhand",
-      reviewer: "Tanvi Desai",
-      rating: 5,
-      ratingValue: "5.0",
-      comment:
-        "Clean beds, very quiet and right next to the holy river Ganga. Morning yoga and sunset Aarti made our stay unforgettable.",
-      img: "/banner/ashram_rishikesh.png",
-    },
-    {
-      name: "Swarg Ashram Trust",
-      location: "Rishikesh, Uttarakhand",
-      reviewer: "Deepak Choudhary",
-      rating: 5,
-      ratingValue: "4.9",
-      comment:
-        "Helpful reception team. Excellent meditation hall facilities, pure satvik food, and peaceful garden surroundings.",
-      img: "/banner/ashram_himalayas.png",
-    },
-    {
-      name: "Kashi Vishwanath Annakshetra",
-      location: "Varanasi, Uttar Pradesh",
-      reviewer: "Pranav Mishra",
-      rating: 5,
-      ratingValue: "5.0",
-      comment:
-        "Delicious satvik vegetarian prasad and beautiful ancient temple compound. Walking distance from Dashashwamedh Ghat.",
-      img: "/banner/ashram_varanasi.png",
-    },
-    {
-      name: "Bhagwat Dham Ashram",
-      location: "Vrindavan, Uttar Pradesh",
-      reviewer: "Vikram Singh",
-      rating: 4,
-      ratingValue: "4.8",
-      comment:
-        "Extremely peaceful stay. The environment is pure spiritual bliss and clean. Radha Krishna kirtans were soulful.",
-      img: "/banner/ashram_vrindavan.png",
-    },
-    {
-      name: "Bholagiri Ashram",
-      location: "Haridwar, Uttarakhand",
-      reviewer: "Pooja Bhatt",
-      rating: 5,
-      ratingValue: "4.9",
-      comment:
-        "Highly safe for solo women pilgrims. Clean toilets, spacious rooms, and divine early morning Ganga view.",
-      img: "/banner/accomendation.png",
-    },
-    {
-      name: "Geeta Bhawan",
-      location: "Rishikesh, Uttarakhand",
-      reviewer: "Suresh Iyer",
-      rating: 5,
-      ratingValue: "5.0",
-      comment:
-        "Loved the morning Havan and spiritual satsangs. Very economical, clean rooms and divine atmosphere.",
-      img: "/banner/popular.png",
-    },
-  ];
+  // (demoFeedbacks removed — the Sacred Experiences band now renders real
+  // reviews only, and hides itself when there are none.)
 
   const feedbackImages = [
     "/banner/ashram_rishikesh.png",
@@ -695,22 +707,23 @@ export const HomePage: React.FC = () => {
     "/banner/Blogs.png",
   ];
 
-  const customerFeedbacks =
-    feedbacks.length > 0
-      ? feedbacks.map((r, i) => ({
-          name: r.ashramId?.name || "Verified Ashram Stay",
-          location: r.ashramId?.address
-            ? [r.ashramId.address.city, r.ashramId.address.state]
-                .filter(Boolean)
-                .join(", ")
-            : "Rishikesh, Uttarakhand",
-          reviewer: r.customerId?.name || "Verified Guest",
-          rating: Math.max(1, Math.round(r.rating?.overall || 5)),
-          ratingValue: (r.rating?.overall || 5).toFixed(1),
-          comment: r.comment,
-          img: feedbackImages[i % feedbackImages.length],
-        }))
-      : demoFeedbacks;
+  // Real reviews only. The section is hidden entirely when there are none
+  // rather than filled with sample testimonials — an invented quote attributed
+  // to a named pilgrim is not a placeholder, it is a fabricated endorsement.
+  const customerFeedbacks = feedbacks.map((r, i) => ({
+    name: r.ashramId?.name || "Ashram stay",
+    location: r.ashramId?.address
+      ? [r.ashramId.address.city, r.ashramId.address.state]
+          .filter(Boolean)
+          .join(", ")
+      : "",
+    reviewer: r.customerId?.name || "Guest",
+    verifiedStay: Boolean(r.verifiedStay),
+    rating: Math.max(1, Math.round(r.rating?.overall || 5)),
+    ratingValue: (r.rating?.overall || 5).toFixed(1),
+    comment: r.comment,
+    img: feedbackImages[i % feedbackImages.length],
+  }));
 
   // Service icons strip aligned with Tirvona Theme & Routing
   const serviceIcons = [
@@ -951,7 +964,7 @@ export const HomePage: React.FC = () => {
               className="col-span-2 lg:col-span-4 relative pb-3 border-b lg:pb-0 lg:border-b-0 lg:pr-4 lg:border-r border-gray-200 dark:border-slate-800"
               ref={autocompleteRef}
             >
-              <label className="block text-[10px] font-extrabold uppercase tracking-wider text-gray-400 mb-1.5 pl-1">
+              <label className="block text-[10px] font-extrabold tracking-wider text-gray-400 mb-1.5 pl-1">
                 Destinations
               </label>
               <div className="relative flex items-center">
@@ -997,7 +1010,7 @@ export const HomePage: React.FC = () => {
 
             {/* Field 3: CHECK IN */}
             <div className="col-span-1 lg:col-span-2 relative pb-3 border-b lg:pb-0 lg:border-b-0 lg:px-4 lg:border-r border-gray-200 dark:border-slate-800">
-              <label className="block text-[10px] font-extrabold uppercase tracking-wider text-gray-400 mb-1.5 pl-1">
+              <label className="block text-[10px] font-extrabold tracking-wider text-gray-400 mb-1.5 pl-1">
                 Check In
               </label>
               <div className="relative flex items-center">
@@ -1010,7 +1023,7 @@ export const HomePage: React.FC = () => {
 
             {/* Field 4: CHECK OUT */}
             <div className="col-span-1 lg:col-span-2 relative pb-3 border-b lg:pb-0 lg:border-b-0 lg:px-4 lg:border-r border-gray-200 dark:border-slate-800">
-              <label className="block text-[10px] font-extrabold uppercase tracking-wider text-gray-400 mb-1.5 pl-1">
+              <label className="block text-[10px] font-extrabold tracking-wider text-gray-400 mb-1.5 pl-1">
                 Check Out
               </label>
               <div className="relative flex items-center">
@@ -1311,7 +1324,7 @@ export const HomePage: React.FC = () => {
               <div className="relative z-10 p-5 sm:p-6 h-full flex flex-col justify-between items-center text-center">
                 <div className="space-y-2 max-w-[90%] mx-auto flex flex-col items-center">
                   <p
-                    className={`text-[10px] font-extrabold uppercase tracking-widest text-center ${card.eyebrowClass}`}
+                    className={`text-[10px] font-extrabold tracking-widest text-center ${card.eyebrowClass}`}
                   >
                     Tirvona
                   </p>
@@ -1570,10 +1583,10 @@ export const HomePage: React.FC = () => {
           className="flex gap-4 sm:gap-6 overflow-x-auto pb-6 pt-2 scrollbar-none -mx-4 sm:mx-0 px-4 sm:px-0 justify-start"
           style={{ scrollbarWidth: "none" }}
         >
-          {(marketplaceProducts.length > 0
-            ? marketplaceProducts
-            : marketplaceCategories
-          ).map((item: any, idx: number) => {
+          {/* Doubled like every other marquee row on this page. The loop wraps
+              onto the second copy, so without it this row rewound halfway
+              through its own content and read as a jitter. */}
+          {[...prasadItems, ...prasadItems].map((item: any, idx: number) => {
             const isProduct = !!item.price || Array.isArray(item.images);
             const imgUrl = isProduct
               ? item.images?.[0] ||
@@ -1596,7 +1609,9 @@ export const HomePage: React.FC = () => {
 
             return (
               <div
-                key={item._id || idx}
+                // Index is part of the key because the list is deliberately
+                // doubled — `_id` alone repeats across the two copies.
+                key={`${item._id ?? "item"}-${idx}`}
                 onClick={() => navigate("/marketplace")}
                 className="flex-shrink-0 relative group cursor-pointer"
                 style={{ width: "clamp(210px, 48vw, 230px)" }}
@@ -1622,7 +1637,7 @@ export const HomePage: React.FC = () => {
                     {isProduct &&
                       item.salePrice &&
                       item.price > item.salePrice && (
-                        <span className="absolute top-3 left-3 bg-rose-600 text-white text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-sm">
+                        <span className="absolute top-3 left-3 bg-rose-600 text-white text-[9px] font-black px-2.5 py-0.5 rounded-full shadow-sm">
                           {Math.round(
                             ((item.price - item.salePrice) / item.price) * 100,
                           )}
@@ -1630,7 +1645,7 @@ export const HomePage: React.FC = () => {
                         </span>
                       )}
                     {isProduct && item.rating && (
-                      <span className="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-amber-400 text-[10px] font-black uppercase px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1">
+                      <span className="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-amber-400 text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1">
                         <Star size={10} className="fill-amber-400" />{" "}
                         {item.rating}
                       </span>
@@ -2059,16 +2074,21 @@ export const HomePage: React.FC = () => {
 
                       <div className="pt-3 border-t border-white/20 flex items-center justify-between gap-2">
                         <div className="min-w-0">
-                          <h4 className="font-extrabold text-sm text-white leading-none truncate">
+                          <h4 className="font-extrabold text-sm text-white leading-none truncate flex items-center gap-1.5">
                             {fb.reviewer}
+                            {fb.verifiedStay && (
+                              <span
+                                title="Stayed at this ashram"
+                                className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-emerald-500/25 border border-emerald-400/40 text-emerald-200 text-[9px] font-black shrink-0"
+                              >
+                                <CheckCircle size={9} /> Verified stay
+                              </span>
+                            )}
                           </h4>
                           <p className="text-[10px] text-gray-300 font-semibold mt-1 truncate">
                             {fb.name}
                             {fb.location ? ` · ${fb.location}` : ""}
                           </p>
-                        </div>
-                        <div className="w-7 h-7 rounded-full bg-[#0A4DA6] text-white flex items-center justify-center shadow-xs shrink-0">
-                          <CheckCircle size={14} className="stroke-[2.5]" />
                         </div>
                       </div>
                     </div>

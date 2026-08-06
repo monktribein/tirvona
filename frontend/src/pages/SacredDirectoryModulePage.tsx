@@ -299,7 +299,7 @@ export const SacredDirectoryModulePage: React.FC = () => {
                       alt={item.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
-                    <span className="absolute top-4 left-4 bg-[#0A4DA6] text-white text-[10px] font-black uppercase px-3 py-1 rounded-full shadow-md">
+                    <span className="absolute top-4 left-4 bg-[#0A4DA6] text-white text-[10px] font-black px-3 py-1 rounded-full shadow-md">
                       {item.badge || item.category}
                     </span>
                     <span className="absolute top-4 right-4 bg-black/60 backdrop-blur-md text-white text-[10px] font-extrabold px-3 py-1 rounded-full border border-white/20">
@@ -308,7 +308,7 @@ export const SacredDirectoryModulePage: React.FC = () => {
                   </div>
 
                   <div className="p-6 space-y-3">
-                    <span className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider block">
+                    <span className="text-[10px] text-gray-400 font-extrabold tracking-wider block">
                       {item.city}, {item.state}
                     </span>
                     <h3 className="font-black text-lg text-[#0B192C] dark:text-white leading-tight">
@@ -352,7 +352,7 @@ export const SacredDirectoryModulePage: React.FC = () => {
         {/* Future Integration Banner */}
         <div className="mt-12 bg-gradient-to-r from-blue-950 via-slate-900 to-indigo-950 text-white rounded-3xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4 border border-blue-500/20 shadow-xl">
           <div className="space-y-1 text-center sm:text-left">
-            <span className="px-3 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-[10px] font-black uppercase">
+            <span className="px-3 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-[10px] font-black">
               In Future
             </span>
             <h4 className="font-black text-lg">{config.futureTitle}</h4>

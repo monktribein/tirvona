@@ -281,7 +281,7 @@ export const VolunteerJobDetailPage: React.FC = () => {
             Volunteer & Careers
           </Link>
           <span>/</span>
-          <span className="text-[#0A4DA6] uppercase">{job.city}</span>
+          <span className="text-[#0A4DA6]">{job.city}</span>
           <span>/</span>
           <span className="text-[#0B192C] dark:text-white truncate max-w-xs">
             {job.title}
@@ -303,7 +303,7 @@ export const VolunteerJobDetailPage: React.FC = () => {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-3 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="px-3 py-1 bg-blue-50 dark:bg-slate-850 text-[#0A4DA6] dark:text-blue-400 rounded-full text-xs font-black uppercase tracking-wider">
+                <span className="px-3 py-1 bg-blue-50 dark:bg-slate-850 text-[#0A4DA6] dark:text-blue-400 rounded-full text-xs font-black tracking-wider">
                   {job.department}
                 </span>
                 {job.isGovtVerified && (
@@ -347,7 +347,7 @@ export const VolunteerJobDetailPage: React.FC = () => {
             {/* Apply Action Widget */}
             <div className="bg-gray-50 dark:bg-slate-900/90 border border-gray-200 dark:border-slate-800 rounded-2xl p-5 shrink-0 flex flex-col items-center justify-center space-y-3 text-center md:w-64">
               <div className="text-center">
-                <span className="text-[10px] font-extrabold uppercase text-gray-400 block">
+                <span className="text-[10px] font-extrabold text-gray-400 block">
                   Stipend & Honorarium
                 </span>
                 <span className="text-base font-black text-[#E58C28]">
@@ -374,7 +374,7 @@ export const VolunteerJobDetailPage: React.FC = () => {
             <div className="p-3 bg-gray-50/80 dark:bg-slate-900/60 rounded-2xl border border-gray-100 dark:border-slate-800 flex items-center gap-2.5">
               <HomeIcon size={18} className="text-emerald-500 shrink-0" />
               <div>
-                <span className="text-[10px] text-gray-400 font-bold block uppercase">
+                <span className="text-[10px] text-gray-400 font-bold block">
                   Accommodation
                 </span>
                 <span className="font-extrabold">
@@ -388,7 +388,7 @@ export const VolunteerJobDetailPage: React.FC = () => {
             <div className="p-3 bg-gray-50/80 dark:bg-slate-900/60 rounded-2xl border border-gray-100 dark:border-slate-800 flex items-center gap-2.5">
               <Utensils size={18} className="text-[#E58C28] shrink-0" />
               <div>
-                <span className="text-[10px] text-gray-400 font-bold block uppercase">
+                <span className="text-[10px] text-gray-400 font-bold block">
                   Meals Provided
                 </span>
                 <span className="font-extrabold">
@@ -402,7 +402,7 @@ export const VolunteerJobDetailPage: React.FC = () => {
             <div className="p-3 bg-gray-50/80 dark:bg-slate-900/60 rounded-2xl border border-gray-100 dark:border-slate-800 flex items-center gap-2.5">
               <Clock size={18} className="text-blue-500 shrink-0" />
               <div>
-                <span className="text-[10px] text-gray-400 font-bold block uppercase">
+                <span className="text-[10px] text-gray-400 font-bold block">
                   Duration
                 </span>
                 <span className="font-extrabold">{job.duration}</span>
@@ -412,7 +412,7 @@ export const VolunteerJobDetailPage: React.FC = () => {
             <div className="p-3 bg-gray-50/80 dark:bg-slate-900/60 rounded-2xl border border-gray-100 dark:border-slate-800 flex items-center gap-2.5">
               <Award size={18} className="text-amber-500 shrink-0" />
               <div>
-                <span className="text-[10px] text-gray-400 font-bold block uppercase">
+                <span className="text-[10px] text-gray-400 font-bold block">
                   Certificate
                 </span>
                 <span className="font-extrabold">
@@ -431,7 +431,7 @@ export const VolunteerJobDetailPage: React.FC = () => {
           <div className="lg:col-span-2 space-y-6">
             {/* Overview / About Section */}
             <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-4 shadow-sm">
-              <h3 className="text-sm font-extrabold uppercase tracking-wider text-[#0A4DA6]">
+              <h3 className="text-sm font-extrabold tracking-wider text-[#0A4DA6]">
                 About This Seva Opportunity
               </h3>
               <p className="text-xs font-medium text-gray-600 dark:text-gray-300 leading-relaxed">
@@ -447,7 +447,7 @@ export const VolunteerJobDetailPage: React.FC = () => {
             {/* Key Responsibilities */}
             {job.responsibilities && job.responsibilities.length > 0 && (
               <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-4 shadow-sm">
-                <h3 className="text-sm font-extrabold uppercase tracking-wider text-[#0A4DA6] flex items-center gap-2">
+                <h3 className="text-sm font-extrabold tracking-wider text-[#0A4DA6] flex items-center gap-2">
                   <CheckCircle2 size={16} /> Key Responsibilities & Duties
                 </h3>
                 <ul className="space-y-2.5 text-xs font-medium text-gray-600 dark:text-gray-300">
@@ -466,7 +466,7 @@ export const VolunteerJobDetailPage: React.FC = () => {
             {/* Requirements & Eligibility */}
             {job.requirements && job.requirements.length > 0 && (
               <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-4 shadow-sm">
-                <h3 className="text-sm font-extrabold uppercase tracking-wider text-[#0A4DA6] flex items-center gap-2">
+                <h3 className="text-sm font-extrabold tracking-wider text-[#0A4DA6] flex items-center gap-2">
                   <Users size={16} /> Eligibility & Requirements
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-medium text-gray-600 dark:text-gray-300">
@@ -486,7 +486,7 @@ export const VolunteerJobDetailPage: React.FC = () => {
             {/* Benefits & Perks */}
             {job.benefits && job.benefits.length > 0 && (
               <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-4 shadow-sm">
-                <h3 className="text-sm font-extrabold uppercase tracking-wider text-[#0A4DA6] flex items-center gap-2">
+                <h3 className="text-sm font-extrabold tracking-wider text-[#0A4DA6] flex items-center gap-2">
                   <Award size={16} /> Volunteer Benefits & Experience
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-medium text-gray-600 dark:text-gray-300">
@@ -605,7 +605,7 @@ export const VolunteerJobDetailPage: React.FC = () => {
                 Applying for Job ID:{" "}
                 <code className="font-mono">{job._id}</code>
               </span>
-              <span className="text-[10px] bg-blue-500 text-white px-2 py-0.5 rounded-full uppercase">
+              <span className="text-[10px] bg-blue-500 text-white px-2 py-0.5 rounded-full">
                 {job.department}
               </span>
             </div>

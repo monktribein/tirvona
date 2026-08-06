@@ -83,7 +83,7 @@ export const PilgrimageCircuitDetailPage: React.FC = () => {
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
 
           <div className="relative z-10 space-y-3 max-w-3xl text-white">
-            <span className="px-3.5 py-1 rounded-full bg-[#E58C28] text-white text-[10px] font-black uppercase tracking-wider">
+            <span className="px-3.5 py-1 rounded-full bg-[#E58C28] text-white text-[10px] font-black tracking-wider">
               {circuit.circuitType}
             </span>
             <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black leading-tight">
@@ -195,7 +195,7 @@ export const PilgrimageCircuitDetailPage: React.FC = () => {
 
             {/* In Future Widgets */}
             <div className="bg-slate-900 text-white rounded-3xl p-6 space-y-3 border border-slate-800">
-              <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-[10px] font-black uppercase">
+              <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-[10px] font-black">
                 In Future Integration
               </span>
               <h5 className="font-black text-sm">

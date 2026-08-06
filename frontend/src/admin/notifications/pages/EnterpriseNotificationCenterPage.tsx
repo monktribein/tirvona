@@ -20,6 +20,7 @@ import {
 import { enterpriseNotificationService } from "../../../services";
 import { useNotifications } from "../../../contexts/NotificationContext";
 import { getErrorMessage } from "../../../lib/api";
+import { humanizeLabel } from "../../../utils/labels";
 
 export const EnterpriseNotificationCenterPage: React.FC = () => {
   const { subSection } = useParams<{ subSection?: string }>();
@@ -183,25 +184,25 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
       case "emergency":
       case "security":
         return (
-          <span className="px-2.5 py-0.5 bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 rounded-full text-[9px] font-black uppercase tracking-wider">
+          <span className="px-2.5 py-0.5 bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 rounded-full text-[9px] font-black tracking-wider">
             🚨 {severity}
           </span>
         );
       case "warning":
         return (
-          <span className="px-2.5 py-0.5 bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 rounded-full text-[9px] font-black uppercase tracking-wider">
+          <span className="px-2.5 py-0.5 bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 rounded-full text-[9px] font-black tracking-wider">
             ⚠️ Warning
           </span>
         );
       case "success":
         return (
-          <span className="px-2.5 py-0.5 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 rounded-full text-[9px] font-black uppercase tracking-wider">
+          <span className="px-2.5 py-0.5 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 rounded-full text-[9px] font-black tracking-wider">
             ✅ Success
           </span>
         );
       default:
         return (
-          <span className="px-2.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-full text-[9px] font-bold uppercase tracking-wider">
+          <span className="px-2.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-full text-[9px] font-bold tracking-wider">
             ℹ️ Info
           </span>
         );
@@ -253,7 +254,7 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
       {/* Real-time Dashboard Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
-          <span className="text-[10px] text-gray-400 font-bold uppercase block">
+          <span className="text-[10px] text-gray-400 font-bold block">
             Today's Notifications
           </span>
           <span className="text-2xl font-black text-[#0B192C] dark:text-white mt-1 block">
@@ -261,7 +262,7 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
           </span>
         </div>
         <div className="bg-white dark:bg-[#0B192C] border border-rose-200 dark:border-rose-950/60 p-4 rounded-2xl shadow-sm">
-          <span className="text-[10px] text-rose-500 font-bold uppercase block">
+          <span className="text-[10px] text-rose-500 font-bold block">
             Critical Alerts
           </span>
           <span className="text-2xl font-black text-rose-600 dark:text-rose-400 mt-1 block">
@@ -269,7 +270,7 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
           </span>
         </div>
         <div className="bg-white dark:bg-[#0B192C] border border-amber-200 dark:border-amber-950/60 p-4 rounded-2xl shadow-sm">
-          <span className="text-[10px] text-amber-500 font-bold uppercase block">
+          <span className="text-[10px] text-amber-500 font-bold block">
             Unread Notifications
           </span>
           <span className="text-2xl font-black text-amber-600 dark:text-amber-400 mt-1 block">
@@ -277,7 +278,7 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
           </span>
         </div>
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
-          <span className="text-[10px] text-gray-400 font-bold uppercase block">
+          <span className="text-[10px] text-gray-400 font-bold block">
             Failed Logins
           </span>
           <span className="text-2xl font-black text-gray-800 dark:text-gray-200 mt-1 block">
@@ -285,7 +286,7 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
           </span>
         </div>
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
-          <span className="text-[10px] text-gray-400 font-bold uppercase block">
+          <span className="text-[10px] text-gray-400 font-bold block">
             Failed Payments
           </span>
           <span className="text-2xl font-black text-gray-800 dark:text-gray-200 mt-1 block">
@@ -293,7 +294,7 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
           </span>
         </div>
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
-          <span className="text-[10px] text-gray-400 font-bold uppercase block">
+          <span className="text-[10px] text-gray-400 font-bold block">
             Server / API Errors
           </span>
           <span className="text-2xl font-black text-gray-800 dark:text-gray-200 mt-1 block">
@@ -415,7 +416,7 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
                   <div className="flex justify-between items-start">
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-xs text-[#0B192C] dark:text-white">
-                        {item.action}
+                        {humanizeLabel(item.action)}
                       </span>
                       {getSeverityBadge(item.severity)}
                     </div>
@@ -432,7 +433,7 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
 
                   <div className="flex items-center gap-4 text-[10px] text-gray-400 pt-1 font-mono">
                     <span>
-                      User: {item.userName} ({item.role})
+                      User: {item.userName} ({humanizeLabel(item.role)})
                     </span>
                     <span>IP: {item.ipAddress}</span>
                     <span>Endpoint: {item.apiEndpoint}</span>
@@ -448,7 +449,7 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="border-b border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900 text-gray-400 font-extrabold uppercase text-[10px] tracking-wider">
+                <tr className="border-b border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900 text-gray-400 font-extrabold text-[10px] tracking-wider">
                   <th className="py-4 px-6">Timestamp</th>
                   <th className="py-4 px-6">Module / Action</th>
                   <th className="py-4 px-6">User / Actor</th>
@@ -471,10 +472,10 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
                     <td className="py-4 px-6">
                       <div className="flex flex-col">
                         <span className="font-extrabold text-[#0B192C] dark:text-white">
-                          {item.action}
+                          {humanizeLabel(item.action)}
                         </span>
-                        <span className="text-[10px] text-[#0A4DA6] font-bold uppercase">
-                          {item.module}
+                        <span className="text-[10px] text-[#0A4DA6] font-bold">
+                          {humanizeLabel(item.module)}
                         </span>
                       </div>
                     </td>
@@ -484,7 +485,7 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
                           {item.userName}
                         </span>
                         <span className="text-[10px] text-gray-400">
-                          {item.role} • {item.ipAddress}
+                          {humanizeLabel(item.role)} • {item.ipAddress}
                         </span>
                       </div>
                     </td>

@@ -316,7 +316,7 @@ export const SearchPage: React.FC = () => {
             className="flex flex-col text-left space-y-1.5 relative"
             ref={autocompleteRef}
           >
-            <label className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400">
+            <label className="text-[10px] font-extrabold tracking-wider text-gray-400">
               Destination City / Ashram
             </label>
             <div className="relative">
@@ -360,7 +360,7 @@ export const SearchPage: React.FC = () => {
 
           {/* Check In */}
           <div className="flex flex-col text-left space-y-1.5">
-            <label className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400">
+            <label className="text-[10px] font-extrabold tracking-wider text-gray-400">
               Check In Date
             </label>
             <div className="relative">
@@ -379,7 +379,7 @@ export const SearchPage: React.FC = () => {
 
           {/* Check Out */}
           <div className="flex flex-col text-left space-y-1.5">
-            <label className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400">
+            <label className="text-[10px] font-extrabold tracking-wider text-gray-400">
               Check Out Date
             </label>
             <div className="relative">
@@ -398,7 +398,7 @@ export const SearchPage: React.FC = () => {
 
           {/* Guest & Room Count */}
           <div className="flex flex-col text-left space-y-1.5">
-            <label className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400">
+            <label className="text-[10px] font-extrabold tracking-wider text-gray-400">
               Guests & Rooms
             </label>
             <GuestRoomSelector compact />
@@ -423,7 +423,7 @@ export const SearchPage: React.FC = () => {
             </h3>
 
             <div className="space-y-4">
-              <h4 className="text-[10px] uppercase font-extrabold text-gray-400 tracking-wider">
+              <h4 className="text-[10px] font-extrabold text-gray-400 tracking-wider">
                 Common Facilities
               </h4>
               <div className="space-y-3.5">
@@ -473,10 +473,18 @@ export const SearchPage: React.FC = () => {
             <div className="absolute inset-0 bg-[#0A4DA6]/5 opacity-40 pointer-events-none" />
             <MapPin className="text-[#0A4DA6]" size={28} />
             <h4 className="text-xs font-extrabold text-[#0B192C] dark:text-white">
-              Spatial Map Grid View
+              How far is each stay?
             </h4>
-            <p className="text-[10px] text-gray-400 max-w-[190px] leading-relaxed">
-              View coordinates of all retreats relative to holy temples.
+            {/* Named the landmark outright. "Spatial Map Grid View — view
+                coordinates of all retreats relative to holy temples" described
+                the implementation rather than the answer a pilgrim wants,
+                which is simply how close the bed is to the temple. */}
+            <p className="text-[10px] text-gray-400 max-w-[200px] leading-relaxed">
+              See every ashram on a map, sorted by distance from{" "}
+              <strong className="text-[#0A4DA6] font-bold">
+                {getCentralLandmark().name}
+              </strong>
+              .
             </p>
             <button
               type="button"
@@ -503,7 +511,7 @@ export const SearchPage: React.FC = () => {
               }}
               className="px-5 py-2.5 bg-[#0A4DA6]/10 text-[#0A4DA6] border border-[#0A4DA6]/20 rounded-full text-[10px] font-bold hover:bg-[#0A4DA6]/15 transition-all cursor-pointer"
             >
-              Activate Map Grid
+              Show distances
             </button>
           </div>
         </aside>
@@ -587,7 +595,7 @@ export const SearchPage: React.FC = () => {
                           </span>
                         </div>
                       </div>
-                      <p className="text-[10px] text-gray-400 font-bold flex items-center gap-1 uppercase">
+                      <p className="text-[10px] text-gray-400 font-bold flex items-center gap-1">
                         <MapPin size={10} className="text-[#0A4DA6]" />{" "}
                         {ashram.address?.city}, {ashram.address?.state}
                       </p>
@@ -614,7 +622,7 @@ export const SearchPage: React.FC = () => {
                   {/* Pricing info & Action button */}
                   <div className="w-full md:w-40 md:border-l border-gray-100 dark:border-slate-800 pl-0 md:pl-6 flex md:flex-col justify-between md:justify-center items-center md:items-end gap-4 shrink-0">
                     <div className="flex flex-col md:text-right">
-                      <span className="text-[9px] text-gray-400 uppercase font-bold tracking-wider">
+                      <span className="text-[9px] text-gray-400 font-bold tracking-wider">
                         Starts From
                       </span>
                       <span className="text-base font-extrabold text-[#0B192C] dark:text-white">
@@ -695,6 +703,18 @@ export const SearchPage: React.FC = () => {
                   {/* Map Grid Plot - Left */}
                   <div className="flex-grow bg-slate-950 text-slate-200 relative p-6 flex flex-col items-center justify-center border-r border-slate-900 h-[40vh] md:h-full overflow-hidden select-none">
                     <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(10,77,166,0.06),transparent_70%)]" />
+                    {/* The modal opened straight onto an unlabelled plot, so it
+                        was not obvious the gold pin is the temple and the
+                        distances are measured from it. */}
+                    <div className="absolute top-4 left-5 right-5 z-10 pointer-events-none">
+                      <p className="text-[11px] font-black text-white">
+                        Distance from {central.name}
+                      </p>
+                      <p className="text-[10px] text-slate-400">
+                        Gold pin marks the temple · tap a stay to see how far it
+                        is
+                      </p>
+                    </div>
                     <div className="absolute inset-0 border border-slate-900 grid grid-cols-6 grid-rows-6 opacity-20 pointer-events-none">
                       {Array.from({ length: 36 }).map((_, i) => (
                         <div key={i} className="border border-slate-800" />
@@ -714,7 +734,7 @@ export const SearchPage: React.FC = () => {
                               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#0A4DA6] opacity-75"></span>
                               <span className="relative inline-flex rounded-full h-3 w-3 bg-[#0A4DA6] border border-white"></span>
                             </span>
-                            <div className="mt-1 bg-slate-900/90 border border-slate-700 text-[8px] font-black text-white px-2 py-0.5 rounded shadow whitespace-nowrap uppercase tracking-wide">
+                            <div className="mt-1 bg-slate-900/90 border border-slate-700 text-[8px] font-black text-white px-2 py-0.5 rounded shadow whitespace-nowrap tracking-wide">
                               🕉️ {central.name}
                             </div>
                           </div>
@@ -743,7 +763,7 @@ export const SearchPage: React.FC = () => {
                               <span className="h-1.5 w-1.5 rounded-full bg-white" />
                             </span>
 
-                            <div className="absolute left-1/2 bottom-full mb-1.5 transform -translate-x-1/2 bg-slate-900 text-white text-[9px] font-bold py-1 px-2 rounded border border-slate-700 shadow-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none uppercase tracking-wide">
+                            <div className="absolute left-1/2 bottom-full mb-1.5 transform -translate-x-1/2 bg-slate-900 text-white text-[9px] font-bold py-1 px-2 rounded border border-slate-700 shadow-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none tracking-wide">
                               {item.name} ({item.distance} km)
                             </div>
                           </button>
@@ -771,10 +791,10 @@ export const SearchPage: React.FC = () => {
                   <div className="w-full md:w-[360px] flex flex-col h-[50vh] md:h-full bg-white dark:bg-[#0B192C]">
                     <div className="p-4 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center bg-gray-50 dark:bg-slate-900">
                       <div>
-                        <h3 className="font-extrabold text-xs text-[#0B192C] dark:text-white uppercase tracking-wider">
+                        <h3 className="font-extrabold text-xs text-[#0B192C] dark:text-white tracking-wider">
                           Distance Matrix
                         </h3>
-                        <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">
+                        <p className="text-[9px] text-gray-400 font-bold tracking-wider">
                           Closest to Central Landmark
                         </p>
                       </div>
@@ -815,7 +835,7 @@ export const SearchPage: React.FC = () => {
                                   {item.distance} km
                                 </span>
                               </div>
-                              <p className="text-[9px] text-gray-400 font-semibold uppercase mt-1">
+                              <p className="text-[9px] text-gray-400 font-semibold mt-1">
                                 Locality: {item.address?.city}
                               </p>
 

@@ -24,6 +24,7 @@ import {
 } from "../../../services/marketplace.service";
 import { useNotifications } from "../../../contexts/NotificationContext";
 import api, { getErrorMessage } from "../../../lib/api";
+import { humanizeLabel } from "../../../utils/labels";
 import {
   EnterpriseModal,
   EnterpriseButton,
@@ -543,7 +544,7 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-gray-50/80 dark:bg-slate-900/80 border-b border-gray-100 dark:border-slate-800 font-extrabold text-gray-500 uppercase tracking-wider text-[11px]">
+              <thead className="bg-gray-50/80 dark:bg-slate-900/80 border-b border-gray-100 dark:border-slate-800 font-extrabold text-gray-500 tracking-wider text-[11px]">
                 <tr>
                   <th className="py-3.5 px-4">Product Image</th>
                   <th className="py-3.5 px-4">Title & Source</th>
@@ -613,8 +614,8 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
 
                       {/* Category */}
                       <td className="py-3 px-4">
-                        <span className="px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-950/40 text-[#0A4DA6] dark:text-blue-300 font-extrabold text-[11px] uppercase tracking-wide">
-                          {p.category}
+                        <span className="px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-950/40 text-[#0A4DA6] dark:text-blue-300 font-extrabold text-[11px] tracking-wide">
+                          {humanizeLabel(p.category)}
                         </span>
                       </td>
 
@@ -708,7 +709,7 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
         >
           {/* Section 1: Basic Info */}
           <div className="space-y-3 p-4 bg-gray-50 dark:bg-slate-900/60 rounded-2xl border border-gray-200/60 dark:border-slate-800">
-            <h3 className="text-xs font-black text-[#0A4DA6] uppercase tracking-wider flex items-center gap-1.5">
+            <h3 className="text-xs font-black text-[#0A4DA6] tracking-wider flex items-center gap-1.5">
               <ShoppingBag size={14} /> Product Overview
             </h3>
 
@@ -804,7 +805,7 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
 
           {/* Section 2: Pricing & Inventory */}
           <div className="space-y-3 p-4 bg-gray-50 dark:bg-slate-900/60 rounded-2xl border border-gray-200/60 dark:border-slate-800">
-            <h3 className="text-xs font-black text-[#0A4DA6] uppercase tracking-wider flex items-center gap-1.5">
+            <h3 className="text-xs font-black text-[#0A4DA6] tracking-wider flex items-center gap-1.5">
               <Tag size={14} /> Pricing, Stock & Weight
             </h3>
 
@@ -923,7 +924,7 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <ImageIcon size={16} className="text-[#0A4DA6]" />
-                <h3 className="text-xs font-black text-[#0A4DA6] uppercase tracking-wider">
+                <h3 className="text-xs font-black text-[#0A4DA6] tracking-wider">
                   Product Image Management
                 </h3>
               </div>

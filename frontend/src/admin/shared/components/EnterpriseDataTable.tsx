@@ -330,7 +330,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="border-b border-gray-100 dark:border-slate-800 bg-gray-50/70 dark:bg-slate-900/50 text-gray-400 uppercase font-extrabold text-[10px] tracking-wider">
+                <tr className="border-b border-gray-100 dark:border-slate-800 bg-gray-50/70 dark:bg-slate-900/50 text-gray-400 font-extrabold text-[10px] tracking-wider">
                   <th className="py-4 px-4 w-10 text-center">
                     <input
                       type="checkbox"
@@ -399,7 +399,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                         ))}
                         <td className="py-3.5 px-4">
                           <span
-                            className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wide ${
+                            className={`px-2.5 py-0.5 rounded-full text-[9px] font-black tracking-wide ${
                               ["active", "approved"].includes(statusStr)
                                 ? "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400"
                                 : ["pending"].includes(statusStr)
@@ -604,7 +604,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                         key={k}
                         className="p-3 bg-gray-50 dark:bg-slate-900 rounded-xl space-y-1"
                       >
-                        <span className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">
+                        <span className="text-[10px] text-gray-400 font-bold tracking-wider">
                           {humanizeKey(k)}
                         </span>
                         <div className="font-semibold text-[#0B192C] dark:text-white">

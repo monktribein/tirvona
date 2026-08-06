@@ -354,7 +354,7 @@ export const ParkingRoleDashboardPage: React.FC = () => {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5">
+              <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[11px] font-black tracking-wider flex items-center gap-1.5">
                 <Car size={13} /> Smart Parking Operations
               </span>
               {refreshing && (
@@ -448,7 +448,7 @@ export const ParkingRoleDashboardPage: React.FC = () => {
 
           <div className="text-[11px] font-extrabold text-gray-400">
             Role Mode:{" "}
-            <span className="uppercase text-amber-600 dark:text-amber-400">
+            <span className="text-amber-600 dark:text-amber-400">
               {activeRoleView}
             </span>
           </div>
@@ -508,7 +508,7 @@ export const ParkingRoleDashboardPage: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white uppercase tracking-wider flex items-center gap-2">
+                <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white tracking-wider flex items-center gap-2">
                   <TrendingUp size={16} className="text-[#0A4DA6]" /> Financial
                   Performance Reports
                 </h3>
@@ -519,7 +519,7 @@ export const ParkingRoleDashboardPage: React.FC = () => {
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2">
                 <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-900/80 border border-gray-100 dark:border-slate-800">
-                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider block">
+                  <span className="text-[10px] font-black text-gray-400 tracking-wider block">
                     Gross Volume
                   </span>
                   <span className="text-lg font-black text-[#0B192C] dark:text-white">
@@ -527,7 +527,7 @@ export const ParkingRoleDashboardPage: React.FC = () => {
                   </span>
                 </div>
                 <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-900/80 border border-gray-100 dark:border-slate-800">
-                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider block">
+                  <span className="text-[10px] font-black text-gray-400 tracking-wider block">
                     Platform Fee
                   </span>
                   <span className="text-lg font-black text-rose-500">
@@ -535,7 +535,7 @@ export const ParkingRoleDashboardPage: React.FC = () => {
                   </span>
                 </div>
                 <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-900/80 border border-gray-100 dark:border-slate-800">
-                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider block">
+                  <span className="text-[10px] font-black text-gray-400 tracking-wider block">
                     Partner Net
                   </span>
                   <span className="text-lg font-black text-emerald-500">
@@ -543,7 +543,7 @@ export const ParkingRoleDashboardPage: React.FC = () => {
                   </span>
                 </div>
                 <div className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-900/80 border border-gray-100 dark:border-slate-800">
-                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider block">
+                  <span className="text-[10px] font-black text-gray-400 tracking-wider block">
                     Total Bookings
                   </span>
                   <span className="text-lg font-black text-[#0B192C] dark:text-white">
@@ -580,7 +580,7 @@ export const ParkingRoleDashboardPage: React.FC = () => {
             {/* Assigned Staff & Roster Card */}
             <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white uppercase tracking-wider flex items-center gap-2">
+                <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white tracking-wider flex items-center gap-2">
                   <Users size={16} className="text-[#0A4DA6]" /> Assigned Staff
                 </h3>
                 <span className="text-xs font-bold text-gray-400">
@@ -603,7 +603,7 @@ export const ParkingRoleDashboardPage: React.FC = () => {
                         <div className="text-xs font-black text-[#0B192C] dark:text-white">
                           {st.userId?.name || st.employeeCode || "Staff Member"}
                         </div>
-                        <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                        <div className="text-[10px] font-bold text-gray-400 tracking-wider">
                           Role: {st.parkingRole || "Security Guard"}
                         </div>
                       </div>
@@ -625,14 +625,14 @@ export const ParkingRoleDashboardPage: React.FC = () => {
 
           {/* Recent Partner Bookings List */}
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
-            <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white uppercase tracking-wider flex items-center gap-2">
+            <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white tracking-wider flex items-center gap-2">
               <Car size={16} className="text-[#0A4DA6]" /> Facility Booking Roster
             </h3>
 
             <div className="overflow-x-auto">
               <table className="w-full min-w-[700px] text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-gray-100 dark:border-slate-800 text-[10px] font-black uppercase tracking-wider text-gray-400">
+                  <tr className="border-b border-gray-100 dark:border-slate-800 text-[10px] font-black tracking-wider text-gray-400">
                     <th className="py-3 px-4">Ref Code</th>
                     <th className="py-3 px-4">Vehicle Number</th>
                     <th className="py-3 px-4">Vehicle Type</th>
@@ -652,7 +652,7 @@ export const ParkingRoleDashboardPage: React.FC = () => {
                     partnerBookings.map((b) => (
                       <tr key={b._id} className="hover:bg-gray-50/50 dark:hover:bg-slate-900/50">
                         <td className="py-3 px-4 font-mono text-[#0A4DA6]">{b.bookingReference}</td>
-                        <td className="py-3 px-4 uppercase font-black">{b.vehicleNumber}</td>
+                        <td className="py-3 px-4 font-black">{b.vehicleNumber}</td>
                         <td className="py-3 px-4 capitalize">{vehicleLabel(b.vehicleType)}</td>
                         <td className="py-3 px-4 text-gray-500 dark:text-gray-400">
                           {formatDateTime(b.entryAt)}
@@ -703,7 +703,7 @@ export const ParkingRoleDashboardPage: React.FC = () => {
 
           {/* Slot Types & Categories */}
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
-            <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white uppercase tracking-wider flex items-center gap-2">
+            <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white tracking-wider flex items-center gap-2">
               <Layers size={16} className="text-[#0A4DA6]" /> Parking Areas & Slot Categories
             </h3>
 
@@ -738,7 +738,7 @@ export const ParkingRoleDashboardPage: React.FC = () => {
           {/* Real-time Parking Bays Grid & Status Toggles */}
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white uppercase tracking-wider flex items-center gap-2">
+              <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white tracking-wider flex items-center gap-2">
                 <Car size={16} className="text-[#0A4DA6]" /> Live Parking Bays ({slots.length})
               </h3>
               <span className="text-[11px] font-bold text-gray-400">
@@ -770,7 +770,7 @@ export const ParkingRoleDashboardPage: React.FC = () => {
                       }`}
                     >
                       <div className="text-xs font-black">{sl.slotNumber}</div>
-                      <div className="text-[9px] font-extrabold uppercase tracking-wider opacity-80">
+                      <div className="text-[9px] font-extrabold tracking-wider opacity-80">
                         {sl.status}
                       </div>
                     </button>
@@ -792,10 +792,10 @@ export const ParkingRoleDashboardPage: React.FC = () => {
             {/* QR Pass Token Scanner */}
             <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white uppercase tracking-wider flex items-center gap-2">
+                <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white tracking-wider flex items-center gap-2">
                   <QrCode size={16} className="text-amber-500" /> QR Pass Gate Verification
                 </h3>
-                <span className="px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-500 text-[10px] font-black uppercase">
+                <span className="px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-500 text-[10px] font-black">
                   Security Duty
                 </span>
               </div>
@@ -834,18 +834,18 @@ export const ParkingRoleDashboardPage: React.FC = () => {
                     <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
                       <CheckCircle2 size={16} /> Verified Parking Pass
                     </span>
-                    <span className="text-[10px] font-bold text-gray-400 uppercase">
+                    <span className="text-[10px] font-bold text-gray-400">
                       Status: {scanResult.booking?.status || "Valid"}
                     </span>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2 text-xs font-bold text-[#0B192C] dark:text-white pt-1">
                     <div>
-                      <span className="text-gray-400 block text-[10px] uppercase">Vehicle No</span>
+                      <span className="text-gray-400 block text-[10px]">Vehicle No</span>
                       <span className="font-mono text-sm">{scanResult.booking?.vehicleNumber}</span>
                     </div>
                     <div>
-                      <span className="text-gray-400 block text-[10px] uppercase">Assigned Bay</span>
+                      <span className="text-gray-400 block text-[10px]">Assigned Bay</span>
                       <span className="text-amber-500">{scanResult.booking?.assignedSlotNumber || "P-01"}</span>
                     </div>
                   </div>
@@ -870,7 +870,7 @@ export const ParkingRoleDashboardPage: React.FC = () => {
 
             {/* License Plate Search */}
             <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
-              <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white uppercase tracking-wider flex items-center gap-2">
+              <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white tracking-wider flex items-center gap-2">
                 <Search size={16} className="text-[#0A4DA6]" /> License Plate Search
               </h3>
 
@@ -884,7 +884,7 @@ export const ParkingRoleDashboardPage: React.FC = () => {
                     value={plateSearchInput}
                     onChange={(e) => setPlateSearchInput(e.target.value)}
                     placeholder="e.g. UK07AB1234"
-                    className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl px-4 py-2.5 text-xs font-mono uppercase text-[#0B192C] dark:text-white focus:outline-none"
+                    className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl px-4 py-2.5 text-xs font-mono text-[#0B192C] dark:text-white focus:outline-none"
                   />
                   <button
                     type="submit"
@@ -901,7 +901,7 @@ export const ParkingRoleDashboardPage: React.FC = () => {
 
           {/* Security Gate Audit Logs */}
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
-            <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white uppercase tracking-wider flex items-center gap-2">
+            <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white tracking-wider flex items-center gap-2">
               <Clock size={16} className="text-[#0A4DA6]" /> Live Gate Scan Log Activity
             </h3>
 
@@ -917,7 +917,7 @@ export const ParkingRoleDashboardPage: React.FC = () => {
                     className="p-3 rounded-2xl bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold"
                   >
                     <div className="space-y-0.5">
-                      <span className="text-[#0B192C] dark:text-white uppercase font-mono">
+                      <span className="text-[#0B192C] dark:text-white font-mono">
                         {log.vehicleNumber || "Pass Token Scan"}
                       </span>
                       <span className="text-[10px] text-gray-400 block font-normal">
@@ -925,7 +925,7 @@ export const ParkingRoleDashboardPage: React.FC = () => {
                       </span>
                     </div>
                     <span
-                      className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase ${
+                      className={`px-2.5 py-1 rounded-full text-[10px] font-black ${
                         log.result === "success" || log.result === "valid"
                           ? "bg-emerald-500/10 text-emerald-500"
                           : "bg-red-500/10 text-red-400"
@@ -946,7 +946,7 @@ export const ParkingRoleDashboardPage: React.FC = () => {
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white uppercase tracking-wider flex items-center gap-2">
+              <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white tracking-wider flex items-center gap-2">
                 <Plus size={16} className="text-[#0A4DA6]" /> Manual Spot Allocation
               </h3>
               <button
@@ -966,7 +966,7 @@ export const ParkingRoleDashboardPage: React.FC = () => {
                   placeholder="e.g. UK07AB1234"
                   value={manualVehicleNo}
                   onChange={(e) => setManualVehicleNo(e.target.value)}
-                  className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-mono uppercase text-[#0B192C] dark:text-white"
+                  className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-mono text-[#0B192C] dark:text-white"
                 />
               </div>
 

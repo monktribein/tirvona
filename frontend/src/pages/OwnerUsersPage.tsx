@@ -253,7 +253,7 @@ export const OwnerUsersPage: React.FC = () => {
       {/* Stats Overview Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-5 rounded-2xl shadow-sm space-y-2">
-          <span className="text-xs font-extrabold uppercase tracking-wider text-gray-400">
+          <span className="text-xs font-extrabold tracking-wider text-gray-400">
             Total Staff
           </span>
           <div className="text-2xl font-black text-[#0B192C] dark:text-white">
@@ -261,7 +261,7 @@ export const OwnerUsersPage: React.FC = () => {
           </div>
         </div>
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-5 rounded-2xl shadow-sm space-y-2">
-          <span className="text-xs font-extrabold uppercase tracking-wider text-gray-400">
+          <span className="text-xs font-extrabold tracking-wider text-gray-400">
             Ashram Admins
           </span>
           <div className="text-2xl font-black text-amber-600">
@@ -269,7 +269,7 @@ export const OwnerUsersPage: React.FC = () => {
           </div>
         </div>
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-5 rounded-2xl shadow-sm space-y-2">
-          <span className="text-xs font-extrabold uppercase tracking-wider text-gray-400">
+          <span className="text-xs font-extrabold tracking-wider text-gray-400">
             Managers & Desk
           </span>
           <div className="text-2xl font-black text-[#0A4DA6]">
@@ -280,7 +280,7 @@ export const OwnerUsersPage: React.FC = () => {
           </div>
         </div>
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-5 rounded-2xl shadow-sm space-y-2">
-          <span className="text-xs font-extrabold uppercase tracking-wider text-gray-400">
+          <span className="text-xs font-extrabold tracking-wider text-gray-400">
             Active Accounts
           </span>
           <div className="text-2xl font-black text-emerald-600">
@@ -344,7 +344,7 @@ export const OwnerUsersPage: React.FC = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50 text-[10px] font-black uppercase tracking-wider text-gray-400">
+                <tr className="border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50 text-[10px] font-black tracking-wider text-gray-400">
                   <th className="py-4 px-6">User Name</th>
                   <th className="py-4 px-6">Login Email / Phone</th>
                   <th className="py-4 px-6">Password / Credentials</th>
@@ -529,7 +529,7 @@ export const OwnerUsersPage: React.FC = () => {
               {/* Form */}
               <form onSubmit={handleCreateStaff} className="space-y-4">
                 <div>
-                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                  <label className="block text-[10px] font-black text-gray-400 mb-1">
                     Full Name
                   </label>
                   <input
@@ -546,7 +546,7 @@ export const OwnerUsersPage: React.FC = () => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                    <label className="block text-[10px] font-black text-gray-400 mb-1">
                       Login Email / Username
                     </label>
                     <input
@@ -562,7 +562,7 @@ export const OwnerUsersPage: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                    <label className="block text-[10px] font-black text-gray-400 mb-1">
                       Phone Number
                     </label>
                     <input
@@ -580,7 +580,7 @@ export const OwnerUsersPage: React.FC = () => {
 
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="block text-[10px] font-black uppercase text-gray-400">
+                    <label className="block text-[10px] font-black text-gray-400">
                       Login Password
                     </label>
                     <button
@@ -617,7 +617,7 @@ export const OwnerUsersPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                  <label className="block text-[10px] font-black text-gray-400 mb-1">
                     Assigned Role
                   </label>
                   <select
@@ -722,7 +722,7 @@ export const OwnerUsersPage: React.FC = () => {
               <form onSubmit={handleResetPassword} className="space-y-4">
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="block text-[10px] font-black uppercase text-gray-400">
+                    <label className="block text-[10px] font-black text-gray-400">
                       New Password
                     </label>
                     <button

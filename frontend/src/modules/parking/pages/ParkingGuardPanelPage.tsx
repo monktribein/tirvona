@@ -339,7 +339,7 @@ export const ParkingGuardPanelPage: React.FC = () => {
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-4 shadow-sm">
             <label
               htmlFor="guard-location"
-              className="block text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-1.5"
+              className="block text-[10px] tracking-wider font-bold text-gray-400 mb-1.5"
             >
               Your Post
             </label>
@@ -400,7 +400,7 @@ export const ParkingGuardPanelPage: React.FC = () => {
                   <div className="flex items-center justify-between gap-2">
                     <label
                       htmlFor="scan-token"
-                      className="block text-[10px] uppercase tracking-wider font-bold text-gray-400"
+                      className="block text-[10px] tracking-wider font-bold text-gray-400"
                     >
                       Scan the QR pass, or type the gate code
                     </label>
@@ -494,7 +494,7 @@ export const ParkingGuardPanelPage: React.FC = () => {
                 <form onSubmit={handleLookup} className="space-y-3">
                   <label
                     htmlFor="lookup-plate"
-                    className="block text-[10px] uppercase tracking-wider font-bold text-gray-400"
+                    className="block text-[10px] tracking-wider font-bold text-gray-400"
                   >
                     Vehicle registration number
                   </label>
@@ -505,7 +505,7 @@ export const ParkingGuardPanelPage: React.FC = () => {
                     onChange={(e) => setPlate(e.target.value.toUpperCase())}
                     placeholder="MH12AB1234"
                     autoComplete="off"
-                    className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-2xl px-4 py-4 text-base font-black tracking-widest uppercase text-center text-[#0B192C] dark:text-white placeholder:text-gray-300 placeholder:tracking-normal placeholder:text-sm focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 focus:border-[#0A4DA6] transition-all"
+                    className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-2xl px-4 py-4 text-base font-black tracking-widest text-center text-[#0B192C] dark:text-white placeholder:text-gray-300 placeholder:tracking-normal placeholder:text-sm focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 focus:border-[#0A4DA6] transition-all"
                   />
 
                   <button
@@ -579,7 +579,7 @@ export const ParkingGuardPanelPage: React.FC = () => {
                     <div className="p-5 space-y-4">
                       {/* Plate — the single most important thing on this screen */}
                       <div className="text-center space-y-1">
-                        <p className="text-[9px] uppercase tracking-wider font-bold text-gray-500 dark:text-gray-400">
+                        <p className="text-[9px] tracking-wider font-bold text-gray-500 dark:text-gray-400">
                           Vehicle
                         </p>
                         <p className="text-2xl sm:text-3xl font-black tracking-widest text-[#0B192C] dark:text-white">
@@ -594,7 +594,7 @@ export const ParkingGuardPanelPage: React.FC = () => {
 
                       {result.assignedSlotNumber && (
                         <div className="bg-[#0B192C] dark:bg-slate-900 text-white rounded-2xl px-5 py-4 text-center space-y-0.5">
-                          <p className="text-[9px] uppercase tracking-[0.2em] font-bold text-blue-200">
+                          <p className="text-[9px] tracking-[0.2em] font-bold text-blue-200">
                             Direct to bay
                           </p>
                           <p className="text-2xl font-black tracking-wider">
@@ -605,7 +605,7 @@ export const ParkingGuardPanelPage: React.FC = () => {
 
                       {result.overstay && result.overstay.amount > 0 && (
                         <div className="bg-amber-100 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-800 rounded-2xl px-4 py-3 text-center space-y-0.5">
-                          <p className="text-[10px] uppercase tracking-wider font-black text-amber-800 dark:text-amber-300">
+                          <p className="text-[10px] tracking-wider font-black text-amber-800 dark:text-amber-300">
                             Overstay collected
                           </p>
                           <p className="text-xl font-black text-amber-900 dark:text-amber-200">
@@ -652,7 +652,7 @@ export const ParkingGuardPanelPage: React.FC = () => {
                             : []),
                         ].map(([label, value]) => (
                           <div key={label} className="pt-2 space-y-0.5 min-w-0">
-                            <dt className="text-[9px] uppercase tracking-wider font-bold text-gray-500 dark:text-gray-400">
+                            <dt className="text-[9px] tracking-wider font-bold text-gray-500 dark:text-gray-400">
                               {label}
                             </dt>
                             <dd className="text-[11px] font-bold text-[#0B192C] dark:text-white break-words">

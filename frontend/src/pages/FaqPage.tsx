@@ -44,7 +44,7 @@ export const FaqPage: React.FC = () => {
   return (
     <div className="py-16 px-6 max-w-4xl mx-auto space-y-12">
       <div className="text-center space-y-3">
-        <span className="px-4 py-1.5 bg-[#0A4DA6]/10 text-[#0A4DA6] text-[10px] font-extrabold rounded-full uppercase tracking-wider">
+        <span className="px-4 py-1.5 bg-[#0A4DA6]/10 text-[#0A4DA6] text-[10px] font-extrabold rounded-full tracking-wider">
           Support Desk
         </span>
         <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-[#0B192C] dark:text-white">
@@ -64,7 +64,7 @@ export const FaqPage: React.FC = () => {
           >
             <div className="flex items-center gap-2">
               {faq.icon}
-              <span className="text-[10px] uppercase font-extrabold text-[#D4AF37] tracking-wider">
+              <span className="text-[10px] font-extrabold text-[#D4AF37] tracking-wider">
                 {faq.category}
               </span>
             </div>

@@ -331,7 +331,7 @@ export const OwnerOffersPage: React.FC = () => {
       {/* Statistics Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-4 shadow-sm space-y-1">
-          <div className="text-[10px] font-black text-gray-400 uppercase tracking-wider">
+          <div className="text-[10px] font-black text-gray-400 tracking-wider">
             Total Offers
           </div>
           <div className="text-xl font-black text-[#0B192C] dark:text-white">
@@ -340,7 +340,7 @@ export const OwnerOffersPage: React.FC = () => {
         </div>
 
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-4 shadow-sm space-y-1">
-          <div className="text-[10px] font-black text-gray-400 uppercase tracking-wider">
+          <div className="text-[10px] font-black text-gray-400 tracking-wider">
             Active Deals
           </div>
           <div className="text-xl font-black text-emerald-600">
@@ -349,7 +349,7 @@ export const OwnerOffersPage: React.FC = () => {
         </div>
 
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-4 shadow-sm space-y-1">
-          <div className="text-[10px] font-black text-gray-400 uppercase tracking-wider">
+          <div className="text-[10px] font-black text-gray-400 tracking-wider">
             Scheduled
           </div>
           <div className="text-xl font-black text-[#0A4DA6] dark:text-amber-400">
@@ -358,7 +358,7 @@ export const OwnerOffersPage: React.FC = () => {
         </div>
 
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-4 shadow-sm space-y-1">
-          <div className="text-[10px] font-black text-gray-400 uppercase tracking-wider">
+          <div className="text-[10px] font-black text-gray-400 tracking-wider">
             Expired
           </div>
           <div className="text-xl font-black text-rose-500">
@@ -367,7 +367,7 @@ export const OwnerOffersPage: React.FC = () => {
         </div>
 
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-4 shadow-sm space-y-1">
-          <div className="text-[10px] font-black text-gray-400 uppercase tracking-wider">
+          <div className="text-[10px] font-black text-gray-400 tracking-wider">
             Redemptions
           </div>
           <div className="text-xl font-black text-purple-600">
@@ -376,7 +376,7 @@ export const OwnerOffersPage: React.FC = () => {
         </div>
 
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-4 shadow-sm space-y-1">
-          <div className="text-[10px] font-black text-gray-400 uppercase tracking-wider">
+          <div className="text-[10px] font-black text-gray-400 tracking-wider">
             Revenue
           </div>
           <div className="text-xl font-black text-amber-500">
@@ -451,7 +451,7 @@ export const OwnerOffersPage: React.FC = () => {
                       e.target.src = "/banner/ashram_rishikesh.png";
                     }}
                   />
-                  <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-[#0A4DA6] text-white text-[10px] font-black uppercase">
+                  <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-[#0A4DA6] text-white text-[10px] font-black">
                     {offer.offerType}
                   </span>
                   <span className="absolute top-3 right-3 px-3 py-1 rounded-full bg-amber-500 text-white text-xs font-black">
@@ -472,7 +472,7 @@ export const OwnerOffersPage: React.FC = () => {
                   </div>
 
                   <div className="bg-blue-50/60 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/30 rounded-2xl p-3 flex items-center justify-between">
-                    <span className="text-[10px] font-black uppercase text-gray-400">
+                    <span className="text-[10px] font-black text-gray-400">
                       PROMO
                     </span>
                     <span className="font-mono font-black text-sm text-[#0A4DA6] dark:text-amber-400">
@@ -584,7 +584,7 @@ export const OwnerOffersPage: React.FC = () => {
               {currentStep === 1 && (
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                    <label className="block text-[10px] font-black text-gray-400 mb-1">
                       Offer Title
                     </label>
                     <input
@@ -601,7 +601,7 @@ export const OwnerOffersPage: React.FC = () => {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                      <label className="block text-[10px] font-black text-gray-400 mb-1">
                         Offer Category
                       </label>
                       <select
@@ -623,7 +623,7 @@ export const OwnerOffersPage: React.FC = () => {
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                      <label className="block text-[10px] font-black text-gray-400 mb-1">
                         Short Subtitle
                       </label>
                       <input
@@ -643,7 +643,7 @@ export const OwnerOffersPage: React.FC = () => {
               {/* STEP 2: Ashram Selection */}
               {currentStep === 2 && (
                 <div className="space-y-4">
-                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                  <label className="block text-[10px] font-black text-gray-400 mb-1">
                     Select Primary Ashram
                   </label>
                   <select
@@ -667,7 +667,7 @@ export const OwnerOffersPage: React.FC = () => {
               {currentStep === 3 && (
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                    <label className="block text-[10px] font-black text-gray-400 mb-1">
                       Offer Description
                     </label>
                     <textarea
@@ -685,7 +685,7 @@ export const OwnerOffersPage: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                    <label className="block text-[10px] font-black text-gray-400 mb-1">
                       Offer Highlights (comma separated)
                     </label>
                     <input
@@ -705,7 +705,7 @@ export const OwnerOffersPage: React.FC = () => {
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                      <label className="block text-[10px] font-black text-gray-400 mb-1">
                         Promo Code
                       </label>
                       <input
@@ -718,12 +718,12 @@ export const OwnerOffersPage: React.FC = () => {
                             promoCode: e.target.value.toUpperCase(),
                           })
                         }
-                        className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-mono font-black uppercase focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                        className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-mono font-black focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                      <label className="block text-[10px] font-black text-gray-400 mb-1">
                         Discount Type
                       </label>
                       <select
@@ -747,7 +747,7 @@ export const OwnerOffersPage: React.FC = () => {
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                      <label className="block text-[10px] font-black text-gray-400 mb-1">
                         Discount Value
                       </label>
                       <input
@@ -765,7 +765,7 @@ export const OwnerOffersPage: React.FC = () => {
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                      <label className="block text-[10px] font-black text-gray-400 mb-1">
                         Max Discount (₹)
                       </label>
                       <input
@@ -782,7 +782,7 @@ export const OwnerOffersPage: React.FC = () => {
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                      <label className="block text-[10px] font-black text-gray-400 mb-1">
                         Min Booking Amount (₹)
                       </label>
                       <input
@@ -804,7 +804,7 @@ export const OwnerOffersPage: React.FC = () => {
               {/* STEP 5: Banner Images */}
               {currentStep === 5 && (
                 <div className="space-y-4">
-                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                  <label className="block text-[10px] font-black text-gray-400 mb-1">
                     Offer Banner Image
                   </label>
                   <FileUploader
@@ -827,7 +827,7 @@ export const OwnerOffersPage: React.FC = () => {
               {currentStep === 6 && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                    <label className="block text-[10px] font-black text-gray-400 mb-1">
                       Valid From
                     </label>
                     <input
@@ -842,7 +842,7 @@ export const OwnerOffersPage: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                    <label className="block text-[10px] font-black text-gray-400 mb-1">
                       Valid Till
                     </label>
                     <input
@@ -861,7 +861,7 @@ export const OwnerOffersPage: React.FC = () => {
               {/* STEP 7: Terms */}
               {currentStep === 7 && (
                 <div>
-                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                  <label className="block text-[10px] font-black text-gray-400 mb-1">
                     Terms & Conditions (comma separated)
                   </label>
                   <textarea
@@ -881,7 +881,7 @@ export const OwnerOffersPage: React.FC = () => {
               {/* STEP 8: Live Interactive Preview */}
               {currentStep === 8 && (
                 <div className="bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-3xl p-6 space-y-4">
-                  <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest">
+                  <span className="text-[10px] font-black text-amber-500 tracking-widest">
                     LIVE CUSTOMER PREVIEW
                   </span>
                   <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-4 space-y-3">

@@ -46,7 +46,7 @@ export const ParkingStatusBadge: React.FC<ParkingStatusBadgeProps> = ({
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 font-black uppercase tracking-wider rounded-full border shadow-2xs ${
+      className={`inline-flex items-center gap-1.5 font-black tracking-wider rounded-full border shadow-2xs ${
         STATUS_STYLES[status] || STATUS_STYLES.pending
       } ${sizeClasses}`}
     >

@@ -121,7 +121,7 @@ export const MarketplaceComingSoonPage: React.FC = () => {
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-purple-950 via-indigo-950 to-[#0B192C] text-white py-16 sm:py-20 px-4 sm:px-6 relative overflow-hidden">
         <div className="max-w-4xl mx-auto text-center space-y-6 relative z-10">
-          <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-purple-500/20 text-purple-300 text-xs font-black uppercase border border-purple-400/30">
+          <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-purple-500/20 text-purple-300 text-xs font-black border border-purple-400/30">
             <Sparkles size={14} className="text-amber-400" />
             <span>Tirvona Sacred Marketplace • Launching Soon</span>
           </div>
@@ -179,7 +179,7 @@ export const MarketplaceComingSoonPage: React.FC = () => {
         {/* What's Coming Grid */}
         <div className="space-y-6">
           <div className="text-center space-y-2 max-w-2xl mx-auto">
-            <span className="px-3.5 py-1 rounded-full bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 text-[10px] font-black uppercase">
+            <span className="px-3.5 py-1 rounded-full bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 text-[10px] font-black">
               Upcoming Product Categories
             </span>
             <h2 className="text-2xl sm:text-3xl font-black text-[#0B192C] dark:text-white">
@@ -199,7 +199,7 @@ export const MarketplaceComingSoonPage: React.FC = () => {
                     <div className="w-12 h-12 rounded-2xl bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 flex items-center justify-center font-black">
                       <IconComp size={22} />
                     </div>
-                    <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 text-[10px] font-black uppercase">
+                    <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 text-[10px] font-black">
                       {cat.badge}
                     </span>
                   </div>
@@ -238,7 +238,7 @@ export const MarketplaceComingSoonPage: React.FC = () => {
                 }`}
               >
                 <span
-                  className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full ${step.current ? "bg-purple-600 text-white" : "bg-gray-200 text-gray-700 dark:bg-slate-800 dark:text-gray-300"}`}
+                  className={`text-[10px] font-black px-2.5 py-0.5 rounded-full ${step.current ? "bg-purple-600 text-white" : "bg-gray-200 text-gray-700 dark:bg-slate-800 dark:text-gray-300"}`}
                 >
                   {step.phase}
                 </span>

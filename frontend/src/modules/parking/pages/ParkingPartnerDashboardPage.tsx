@@ -262,7 +262,7 @@ export const ParkingPartnerDashboardPage: React.FC = () => {
             <div className="overflow-x-auto -mx-5 px-5">
               <table className="w-full min-w-[36rem]">
                 <thead>
-                  <tr className="">
+                  <tr>
                     {[
                       "Vehicle",
                       "Entry",
@@ -273,7 +273,7 @@ export const ParkingPartnerDashboardPage: React.FC = () => {
                     ].map((h) => (
                       <th
                         key={h}
-                        className="text-left text-[9px] uppercase tracking-wider font-bold text-gray-400 pb-2 pr-3"
+                        className="text-left text-[9px] tracking-wider font-bold text-gray-400 pb-2 pr-3"
                       >
                         {h}
                       </th>
@@ -282,7 +282,7 @@ export const ParkingPartnerDashboardPage: React.FC = () => {
                 </thead>
                 <tbody>
                   {bookings.map((b) => (
-                    <tr key={b._id} className="">
+                    <tr key={b._id}>
                       <td className="py-2.5 pr-3">
                         <p className="text-[11px] font-black text-[#0B192C] dark:text-white">
                           {b.vehicleNumber}
@@ -339,7 +339,7 @@ export const ParkingPartnerDashboardPage: React.FC = () => {
                         {loc.name}
                       </p>
                       <span
-                        className={`text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0 ${
+                        className={`text-[8px] font-black tracking-wider px-2 py-0.5 rounded-full shrink-0 ${
                           loc.status === "active"
                             ? "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300"
                             : "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300"

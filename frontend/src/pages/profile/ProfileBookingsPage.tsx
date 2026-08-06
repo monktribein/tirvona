@@ -291,12 +291,12 @@ export const ProfileBookingsPage: React.FC = () => {
 
                   <div className="space-y-1 text-xs min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-[10px] text-gray-400 font-bold uppercase">
+                      <span className="text-[10px] text-gray-400 font-bold">
                         {b.reference}
                       </span>
                       <EnterpriseStatusBadge status={b.status} />
                       <span
-                        className={`inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                        className={`inline-flex items-center gap-1 text-[9px] font-black tracking-wider px-2 py-0.5 rounded-full ${
                           b.kind === "parking"
                             ? "bg-blue-50 dark:bg-blue-950/50 text-[#0A4DA6] dark:text-blue-300"
                             : "bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300"
@@ -384,7 +384,7 @@ export const ProfileBookingsPage: React.FC = () => {
 
                 <div className="flex md:flex-col justify-between items-end gap-3 w-full md:w-auto pt-3 md:pt-0 shrink-0">
                   <div className="text-right">
-                    <span className="text-[10px] text-gray-400 block font-bold uppercase">
+                    <span className="text-[10px] text-gray-400 block font-bold">
                       {b.amountPaid > 0 ? "Paid" : "Payable at Ashram"}
                     </span>
                     <span className="text-lg font-black text-[#0A4DA6] dark:text-white">
@@ -492,7 +492,7 @@ export const ProfileBookingsPage: React.FC = () => {
               </button>
 
               <div className="text-center pb-3 border-b border-gray-100 dark:border-slate-800 space-y-1">
-                <span className="text-xs font-black uppercase tracking-wider text-[#0A4DA6]">
+                <span className="text-xs font-black tracking-wider text-[#0A4DA6]">
                   Tirvona Sacred Stays
                 </span>
                 <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white">

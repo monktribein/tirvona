@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { RefreshCw, Clock, History } from "lucide-react";
 import { analyticsService } from "../../../services";
 import { EnterprisePageHeader } from "../../shared";
+import { humanizeLabel } from "../../../utils/labels";
 
 export const AuditLogsPage: React.FC = () => {
   const [logs, setLogs] = useState<any[]>([]);
@@ -35,7 +36,7 @@ export const AuditLogsPage: React.FC = () => {
         title="Security & System Audit Logs"
         subtitle="Track real-time logins, RBAC transitions, system overrides, and counter check-in events."
         icon={<History size={22} />}
-        badgeText="TELEMETRY ACTIVE"
+        badgeText="Telemetry active"
         actions={
           <button
             onClick={fetchLogs}
@@ -61,7 +62,7 @@ export const AuditLogsPage: React.FC = () => {
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="border-b border-gray-50 dark:border-slate-855 bg-gray-50 dark:bg-slate-900 text-gray-450 font-bold uppercase text-[10px] tracking-wider">
+                <tr className="border-b border-gray-50 dark:border-slate-855 bg-gray-50 dark:bg-slate-900 text-gray-450 font-bold text-[10px] tracking-wider">
                   <th className="py-4 px-6">Timestamp</th>
                   <th className="py-4 px-6">Module</th>
                   <th className="py-4 px-6">Action Event</th>
@@ -80,12 +81,12 @@ export const AuditLogsPage: React.FC = () => {
                       {new Date(log.timestamp).toLocaleString()}
                     </td>
                     <td className="py-4 px-6">
-                      <span className="px-2.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-[#0B192C] dark:text-accent rounded-full text-[9px] font-bold uppercase">
-                        {log.module}
+                      <span className="px-2.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-[#0B192C] dark:text-accent rounded-full text-[9px] font-bold">
+                        {humanizeLabel(log.module)}
                       </span>
                     </td>
                     <td className="py-4 px-6 font-bold text-[#0B192C] dark:text-white">
-                      {log.action}
+                      {humanizeLabel(log.action)}
                     </td>
                     <td className="py-4 px-6">
                       <div className="flex flex-col">
@@ -115,12 +116,12 @@ export const AuditLogsPage: React.FC = () => {
                     <Clock size={10} className="text-[#0A4DA6]" />{" "}
                     {new Date(log.timestamp).toLocaleString()}
                   </span>
-                  <span className="px-2.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-[#0B192C] dark:text-accent rounded-full text-[8.5px] font-bold uppercase">
-                    {log.module}
+                  <span className="px-2.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-[#0B192C] dark:text-accent rounded-full text-[8.5px] font-bold">
+                    {humanizeLabel(log.module)}
                   </span>
                 </div>
                 <div className="font-extrabold text-xs text-[#0B192C] dark:text-white">
-                  {log.action}
+                  {humanizeLabel(log.action)}
                 </div>
                 <div className="flex justify-between items-end pt-1">
                   <div className="flex flex-col">

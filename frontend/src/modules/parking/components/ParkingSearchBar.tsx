@@ -54,7 +54,7 @@ export const ParkingSearchBar: React.FC<ParkingSearchBarProps> = ({
         <div className="flex-1 min-w-0">
           <label
             htmlFor="parking-destination"
-            className="block text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-1.5 px-1"
+            className="block text-[10px] tracking-wider font-bold text-gray-400 mb-1.5 px-1"
           >
             Destination or Temple
           </label>
@@ -78,7 +78,7 @@ export const ParkingSearchBar: React.FC<ParkingSearchBarProps> = ({
         <div className="flex-1 min-w-0">
           <label
             htmlFor="parking-entry"
-            className="block text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-1.5 px-1"
+            className="block text-[10px] tracking-wider font-bold text-gray-400 mb-1.5 px-1"
           >
             Entry
           </label>
@@ -101,7 +101,7 @@ export const ParkingSearchBar: React.FC<ParkingSearchBarProps> = ({
         <div className="flex-1 min-w-0">
           <label
             htmlFor="parking-exit"
-            className="block text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-1.5 px-1"
+            className="block text-[10px] tracking-wider font-bold text-gray-400 mb-1.5 px-1"
           >
             Exit
           </label>
@@ -137,7 +137,7 @@ export const ParkingSearchBar: React.FC<ParkingSearchBarProps> = ({
 
       {/* Vehicle class */}
       <div className="pt-1">
-        <span className="block text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-2 px-1">
+        <span className="block text-[10px] tracking-wider font-bold text-gray-400 mb-2 px-1">
           Vehicle Type
         </span>
         <VehicleTypePicker

@@ -31,7 +31,7 @@ export const EnterpriseStatsCard: React.FC<EnterpriseStatsCardProps> = ({
 
         {badgeText && (
           <span
-            className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${badgeColor}`}
+            className={`px-2.5 py-0.5 rounded-full text-[10px] font-black tracking-wider border ${badgeColor}`}
           >
             {badgeText}
           </span>
@@ -39,7 +39,7 @@ export const EnterpriseStatsCard: React.FC<EnterpriseStatsCardProps> = ({
       </div>
 
       <div className="space-y-1">
-        <span className="text-xs text-gray-400 font-bold uppercase tracking-wider block">
+        <span className="text-xs text-gray-400 font-bold tracking-wider block">
           {title}
         </span>
         <div className="flex items-baseline gap-2">

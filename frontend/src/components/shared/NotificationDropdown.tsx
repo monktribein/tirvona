@@ -60,7 +60,7 @@ export const NotificationDropdown: React.FC = () => {
       {/* Bell Trigger Button */}
       <button
         onClick={() => setIsOpen((prev) => !prev)}
-        className="p-2 rounded-full text-slate-700 dark:text-gray-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer relative flex items-center justify-center"
+        className="p-2 rounded-full text-[#0B192C] dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-slate-800 transition-all cursor-pointer relative flex items-center justify-center"
         title="Live Notifications"
       >
         <Bell size={18} />
@@ -84,7 +84,7 @@ export const NotificationDropdown: React.FC = () => {
                 <Bell size={14} />
               </div>
               <div>
-                <h3 className="text-xs font-black text-[#0B192C] dark:text-white uppercase tracking-wider">
+                <h3 className="text-xs font-black text-[#0B192C] dark:text-white tracking-wider">
                   Notifications
                 </h3>
                 <p className="text-[10px] text-gray-500 font-bold">
@@ -123,8 +123,9 @@ export const NotificationDropdown: React.FC = () => {
             </div>
           </div>
 
-          {/* Notifications List */}
-          <div className="max-h-80 overflow-y-auto divide-y divide-gray-100 dark:divide-slate-800 scrollbar-none">
+          {/* Notifications List. `overscroll-contain` keeps the page behind the
+              dropdown still once this list bottoms out. */}
+          <div className="max-h-80 overflow-y-auto overscroll-contain divide-y divide-gray-100 dark:divide-slate-800 scrollbar-none">
             {notifications.length === 0 ? (
               <div className="py-10 text-center space-y-2">
                 <div className="w-12 h-12 rounded-full bg-blue-50 dark:bg-slate-900 text-[#0A4DA6] mx-auto flex items-center justify-center">

@@ -163,8 +163,8 @@ export const LocalServicesHubPage: React.FC = () => {
                       alt={item.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
-                    <span className="absolute top-4 left-4 bg-[#0A4DA6] text-white text-[10px] font-black uppercase px-3 py-1 rounded-full shadow-md">
-                      {item.badge || "VERIFIED OPERATOR"}
+                    <span className="absolute top-4 left-4 bg-[#0A4DA6] text-white text-[10px] font-black px-3 py-1 rounded-full shadow-md">
+                      {item.badge || "Verified operator"}
                     </span>
                     <span className="absolute top-4 right-4 bg-black/60 backdrop-blur-md text-white text-[10px] font-extrabold px-3 py-1 rounded-full border border-white/20">
                       ★ {item.rating || "4.9"}

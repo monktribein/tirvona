@@ -316,7 +316,7 @@ export const ParkingBookingDetailPage: React.FC = () => {
                   ],
                 ].map(([label, value]) => (
                   <div key={label} className="pt-2 space-y-0.5">
-                    <dt className="text-[9px] uppercase tracking-wider font-bold text-gray-400">
+                    <dt className="text-[9px] tracking-wider font-bold text-gray-400">
                       {label}
                     </dt>
                     <dd className="text-[11px] font-bold text-slate-700 dark:text-gray-200 break-words">

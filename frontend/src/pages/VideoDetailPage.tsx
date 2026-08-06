@@ -136,7 +136,7 @@ export const VideoDetailPage: React.FC = () => {
             <div className="bg-white dark:bg-[#0B192C] rounded-[32px] p-6 sm:p-8 border border-gray-100 dark:border-slate-800 shadow-sm space-y-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="px-3.5 py-1 rounded-full bg-red-600 text-white text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-md">
+                  <span className="px-3.5 py-1 rounded-full bg-red-600 text-white text-xs font-black tracking-wider flex items-center gap-1.5 shadow-md">
                     <Video size={14} /> Sacred Video
                   </span>
                   <span className="px-3 py-1 rounded-full bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 text-xs font-bold flex items-center gap-1.5">
@@ -253,7 +253,7 @@ export const VideoDetailPage: React.FC = () => {
                   <h4 className="font-black text-lg text-[#0B192C] dark:text-white">
                     {author.name}
                   </h4>
-                  <span className="px-3 py-0.5 rounded-full bg-red-500/10 text-red-600 text-[10px] font-black uppercase">
+                  <span className="px-3 py-0.5 rounded-full bg-red-500/10 text-red-600 text-[10px] font-black">
                     VERIFIED CREATOR
                   </span>
                 </div>
@@ -304,7 +304,7 @@ export const VideoDetailPage: React.FC = () => {
           {/* Right Static Sidebar (Desktop Only) */}
           <div className="space-y-6">
             <div className="bg-white dark:bg-[#0B192C] rounded-[32px] p-6 border border-gray-100 dark:border-slate-800 shadow-sm space-y-4">
-              <h5 className="font-black text-xs text-gray-400 uppercase tracking-wider">
+              <h5 className="font-black text-xs text-gray-400 tracking-wider">
                 Related Videos & Media
               </h5>
 
@@ -358,7 +358,7 @@ export const VideoDetailPage: React.FC = () => {
         {/* 4. Pre-Footer CTA Banner */}
         <div className="mt-12 bg-gradient-to-r from-[#0B192C] via-[#0A4DA6] to-[#0B192C] text-white rounded-[32px] p-8 sm:p-10 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-6 border border-white/10">
           <div className="space-y-2 text-center md:text-left max-w-2xl">
-            <span className="px-3.5 py-1 rounded-full bg-white/10 text-amber-300 text-xs font-black uppercase tracking-wider">
+            <span className="px-3.5 py-1 rounded-full bg-white/10 text-amber-300 text-xs font-black tracking-wider">
               Continue Your Sacred Journey
             </span>
             <h3 className="text-2xl sm:text-3xl font-black">

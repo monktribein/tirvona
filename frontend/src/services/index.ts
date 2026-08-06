@@ -88,9 +88,22 @@ export const bookingService = {
 
 // ── Reviews ──────────────────────────────────────────────────────────────────
 export const reviewService = {
-  create: (data: unknown) => api.post("/reviews", data),
+  /**
+   * `bookingId` is optional: quoting a completed stay ties the review to it,
+   * omitting it posts a visitor review. Either way the server decides the
+   * verified-stay badge from the caller's own booking history.
+   */
+  create: (data: {
+    ashramId: string;
+    rating: { overall: number } & Record<string, number>;
+    comment: string;
+    bookingId?: string;
+  }) => api.post("/reviews", data),
   forAshram: (ashramId: string) => api.get(`/reviews/ashram/${ashramId}`),
   recent: () => api.get("/reviews/recent"),
+  /** Whether the signed-in caller may review this ashram. */
+  eligibility: (ashramId: string) =>
+    api.get(`/reviews/eligibility/${ashramId}`),
 };
 
 // ── Support ──────────────────────────────────────────────────────────────────
@@ -107,8 +120,28 @@ export const analyticsService = {
   dashboard: (params: Record<string, string> = {}) =>
     api.get("/analytics/dashboard", { params }),
   system: () => api.get("/analytics/system"),
+  /** Time series, channel split, status breakdown and top ashrams in one call. */
+  overview: (range: "daily" | "weekly" | "monthly" | "yearly" = "daily") =>
+    api.get("/analytics/overview", { params: { range } }),
+  /**
+   * Latest bookings across the caller's jurisdiction. Distinct from
+   * `bookingService.history`, which is the signed-in pilgrim's own stays only
+   * and answers 403 for an admin.
+   */
+  recentBookings: (limit = 10) =>
+    api.get("/analytics/recent-bookings", { params: { limit } }),
   auditLogs: (params: Record<string, string> = {}) =>
     api.get("/analytics/audit-logs", { params }),
+};
+
+/**
+ * Cross-domain lookup behind the admin console's global search bar. What comes
+ * back is scoped server-side to what the caller may see, so an owner and a
+ * district officer hit the same URL and get different estates.
+ */
+export const searchService = {
+  global: (q: string, perType = 5, signal?: AbortSignal) =>
+    api.get("/search", { params: { q, perType }, signal }),
 };
 
 export const verificationService = {

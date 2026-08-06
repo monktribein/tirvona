@@ -265,7 +265,7 @@ export const TemplesPage: React.FC = () => {
                             }}
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20 pointer-events-none" />
-                          <span className="absolute top-4 left-4 bg-[#0A4DA6]/90 backdrop-blur-md text-white text-[11px] font-black uppercase px-3.5 py-1 rounded-full shadow-md border border-white/10 flex items-center gap-1">
+                          <span className="absolute top-4 left-4 bg-[#0A4DA6]/90 backdrop-blur-md text-white text-[11px] font-black px-3.5 py-1 rounded-full shadow-md border border-white/10 flex items-center gap-1">
                             <MapPin size={11} className="text-amber-400" />
                             {item.city}, {item.state}
                           </span>

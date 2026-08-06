@@ -229,83 +229,79 @@ export const LoginPage: React.FC = () => {
       {/* Content */}
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-screen grid lg:grid-cols-2 gap-10 lg:gap-12 items-center pt-36 lg:pt-40 pb-16">
         {/* ── Left: Marketing hero ── */}
-        <div className="hidden lg:flex flex-col justify-center text-white space-y-7">
-          <div className="space-y-5">
+        <div className="hidden lg:flex flex-col justify-center text-white space-y-6 max-w-xl">
+          {/* Heading */}
+          <div className="space-y-3">
             <h1
-              className="font-black leading-[1.05] tracking-tight"
-              style={{ fontSize: "clamp(2.5rem, 5vw, 3.75rem)" }}
+              className="font-black leading-[1.08] tracking-tight text-white"
+              style={{ fontSize: "clamp(2.4rem, 4.5vw, 3.5rem)" }}
             >
-              Discover Divine
-              <br />
-              Destinations
+              Discover{" "}
+              <span className="bg-gradient-to-r from-amber-200 via-[#E58C28] to-amber-400 bg-clip-text text-transparent">
+                Divine Stays
+              </span>
+              <br />&amp; Sacred Retreats
             </h1>
-            <div className="flex items-center gap-3 text-[#E58C28]">
-              <span className="h-px w-24 bg-gradient-to-r from-transparent to-[#E58C28]" />
-              <span className="text-lg">✦</span>
-              <span className="h-px w-24 bg-gradient-to-l from-transparent to-[#E58C28]" />
-            </div>
-            <p className="text-base text-gray-200 max-w-md leading-relaxed">
-              Sign in to manage bookings, present digital check-in passes, and
-              continue your sacred journey across India.
+            <p className="text-sm text-slate-300 max-w-lg leading-relaxed font-medium">
+              Sign in to manage verified ashram bookings, view digital check-in
+              passes, and experience seamless spiritual stays across Rishikesh,
+              Haridwar &amp; Varanasi.
             </p>
           </div>
 
-          <div className="space-y-4">
+          {/* 2x2 Feature Cards Grid */}
+          <div className="grid grid-cols-2 gap-3 pt-1">
             {heroFeatures.map((f) => (
-              <div key={f.label} className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-white/10 border border-white/15 flex items-center justify-center text-[#E58C28] backdrop-blur-sm">
+              <div
+                key={f.label}
+                className="flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md hover:bg-white/10 hover:border-[#E58C28]/40 transition-all duration-300 group"
+              >
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0A4DA6]/40 to-[#E58C28]/30 border border-white/15 flex items-center justify-center text-[#E58C28] group-hover:scale-105 transition-transform shrink-0">
                   {f.icon}
                 </div>
-                <span className="font-bold text-sm">{f.label}</span>
+                <span className="font-extrabold text-xs text-slate-200 group-hover:text-white transition-colors">
+                  {f.label}
+                </span>
               </div>
             ))}
           </div>
 
-          {/* Stats strip */}
-          <div className="flex items-center gap-6">
+          {/* Glass Stats Card */}
+          <div className="bg-gradient-to-r from-white/5 to-white/10 backdrop-blur-md border border-white/10 p-4 rounded-2xl flex items-center justify-around shadow-xl">
             {[
               { n: "1,200+", l: "Verified Ashrams" },
               { n: "50+", l: "Sacred Cities" },
               { n: "25k+", l: "Happy Pilgrims" },
             ].map((s, i) => (
               <React.Fragment key={s.l}>
-                {i > 0 && <span className="h-8 w-px bg-white/20" />}
-                <div>
-                  <p className="text-2xl font-black leading-none">{s.n}</p>
-                  <p className="text-[11px] text-gray-300 font-semibold mt-1">
+                {i > 0 && <div className="h-8 w-px bg-white/15" />}
+                <div className="text-center">
+                  <p className="text-xl sm:text-2xl font-black bg-gradient-to-r from-white via-amber-100 to-amber-300 bg-clip-text text-transparent">
+                    {s.n}
+                  </p>
+                  <p className="text-[10px] text-slate-300 font-bold mt-0.5 tracking-wide">
                     {s.l}
                   </p>
                 </div>
               </React.Fragment>
             ))}
           </div>
-
-          {/* Testimonial */}
-          <blockquote className="border-l-2 border-[#E58C28]/60 pl-4 max-w-md">
-            <p className="text-sm text-gray-200 italic leading-relaxed">
-              “Booked our Kedarnath stay in minutes — verified, safe, and truly
-              blessed.”
-            </p>
-            <footer className="text-[11px] text-gray-400 font-bold mt-1.5">
-              — Ananya Sharma, Pune
-            </footer>
-          </blockquote>
         </div>
 
         {/* ── Right: Auth card ── */}
-        <div className="w-full max-w-md mx-auto lg:ml-auto lg:mr-0 space-y-4">
-          <div className="bg-white/95 dark:bg-[#0B192C]/95 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-[28px] shadow-2xl p-6 sm:p-8 space-y-5">
+        <div className="w-full max-w-[400px] mx-auto lg:ml-auto lg:mr-0 space-y-3">
+          <div className="bg-white/95 dark:bg-[#0B192C]/95 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-[24px] shadow-2xl p-5 sm:p-6 space-y-3.5">
             {/* Brand */}
-            <div className="text-center space-y-2">
+            <div className="text-center space-y-1">
               <img
                 src="/logo/logo.png"
                 alt="Tirvona"
-                className="w-14 h-14 object-contain inline-block"
+                className="w-10 h-10 object-contain inline-block"
               />
-              <h2 className="text-2xl font-black text-[#0B192C] dark:text-white">
+              <h2 className="text-xl font-black text-[#0B192C] dark:text-white">
                 Welcome Back <span className="align-middle">👋</span>
               </h2>
-              <p className="text-xs text-gray-400 font-semibold">
+              <p className="text-[11px] text-gray-400 font-semibold">
                 Sign in to continue your spiritual journey
               </p>
             </div>
@@ -344,38 +340,38 @@ export const LoginPage: React.FC = () => {
                 <div className="flex bg-gray-100 dark:bg-slate-900 p-1 rounded-full">
                   <button
                     onClick={() => switchMode(false)}
-                    className={`flex-1 py-2.5 text-xs font-bold rounded-full transition-all cursor-pointer ${!useOtp ? "bg-white dark:bg-slate-800 text-[#0A4DA6] shadow-sm" : "text-gray-400 hover:text-gray-500"}`}
+                    className={`flex-1 py-1.5 text-[11px] font-bold rounded-full transition-all cursor-pointer ${!useOtp ? "bg-white dark:bg-slate-800 text-[#0A4DA6] shadow-sm" : "text-gray-400 hover:text-gray-500"}`}
                   >
                     Password
                   </button>
                   <button
                     onClick={() => switchMode(true)}
-                    className={`flex-1 py-2.5 text-xs font-bold rounded-full transition-all cursor-pointer ${useOtp ? "bg-white dark:bg-slate-800 text-[#0A4DA6] shadow-sm" : "text-gray-400 hover:text-gray-500"}`}
+                    className={`flex-1 py-1.5 text-[11px] font-bold rounded-full transition-all cursor-pointer ${useOtp ? "bg-white dark:bg-slate-800 text-[#0A4DA6] shadow-sm" : "text-gray-400 hover:text-gray-500"}`}
                   >
                     Mobile OTP
                   </button>
                 </div>
 
                 {suspensionInfo ? (
-                  <div className="bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 rounded-2xl p-6 space-y-4 text-left shadow-lg animate-in zoom-in-95 duration-150">
+                  <div className="bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 rounded-2xl p-5 space-y-3 text-left shadow-lg animate-in zoom-in-95 duration-150">
                     <div className="flex items-center gap-3 border-b border-rose-200 dark:border-rose-900/60 pb-3">
-                      <div className="w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-900/50 text-rose-600 dark:text-rose-300 flex items-center justify-center shrink-0">
-                        <ShieldCheck size={20} />
+                      <div className="w-9 h-9 rounded-full bg-rose-100 dark:bg-rose-900/50 text-rose-600 dark:text-rose-300 flex items-center justify-center shrink-0">
+                        <ShieldCheck size={18} />
                       </div>
                       <div>
-                        <h3 className="font-extrabold text-sm text-rose-800 dark:text-rose-200">
+                        <h3 className="font-extrabold text-xs text-rose-800 dark:text-rose-200">
                           {suspensionInfo.suspensionType === "permanent"
                             ? "Account Permanently Suspended"
                             : "Account Temporarily Suspended"}
                         </h3>
-                        <p className="text-[11px] text-rose-600 dark:text-rose-400 font-semibold">
+                        <p className="text-[10px] text-rose-600 dark:text-rose-400 font-semibold">
                           Access to Tirvona platform has been restricted by
                           System Administration.
                         </p>
                       </div>
                     </div>
 
-                    <div className="space-y-2 text-xs">
+                    <div className="space-y-1.5 text-[11px]">
                       <div className="flex justify-between items-center py-1 border-b border-rose-100 dark:border-rose-900/40">
                         <span className="text-gray-500 font-bold">Reason:</span>
                         <span className="font-extrabold text-rose-700 dark:text-rose-300">
@@ -429,25 +425,25 @@ export const LoginPage: React.FC = () => {
                     </div>
 
                     {suspensionInfo.visibleMessage && (
-                      <div className="p-3 bg-white/80 dark:bg-slate-900/80 rounded-xl border border-rose-100 dark:border-rose-900 text-xs text-rose-800 dark:text-rose-300 italic">
+                      <div className="p-2.5 bg-white/80 dark:bg-slate-900/80 rounded-xl border border-rose-100 dark:border-rose-900 text-[11px] text-rose-800 dark:text-rose-300 italic">
                         "{suspensionInfo.visibleMessage}"
                       </div>
                     )}
 
-                    <div className="pt-2 border-t border-rose-200 dark:border-rose-900/60 text-center space-y-2">
+                    <div className="pt-2 border-t border-rose-200 dark:border-rose-900/60 text-center space-y-1.5">
                       <p className="text-xs font-bold text-gray-600 dark:text-gray-300">
                         Need Help? Contact Support
                       </p>
                       <a
                         href="mailto:support@tirvona.com"
-                        className="inline-block px-5 py-2 rounded-full bg-rose-600 text-white font-extrabold text-xs hover:bg-rose-700 transition-colors shadow-md"
+                        className="inline-block px-4 py-1.5 rounded-full bg-rose-600 text-white font-extrabold text-[11px] hover:bg-rose-700 transition-colors shadow-md"
                       >
                         support@tirvona.com
                       </a>
                       <div>
                         <button
                           onClick={() => setSuspensionInfo(null)}
-                          className="text-[11px] text-gray-400 underline font-semibold mt-1 cursor-pointer"
+                          className="text-[10px] text-gray-400 underline font-semibold mt-0.5 cursor-pointer"
                         >
                           Back to Login
                         </button>
@@ -457,12 +453,12 @@ export const LoginPage: React.FC = () => {
                 ) : (
                   <>
                     {error && (
-                      <div className="p-3 bg-danger/10 text-danger border border-danger/20 text-xs rounded-xl font-semibold">
+                      <div className="p-2.5 bg-danger/10 text-danger border border-danger/20 text-xs rounded-xl font-semibold">
                         {error}
                       </div>
                     )}
                     {notice && (
-                      <div className="p-3 bg-[#0A4DA6]/10 text-[#0A4DA6] border border-[#0A4DA6]/20 text-xs rounded-xl font-semibold">
+                      <div className="p-2.5 bg-[#0A4DA6]/10 text-[#0A4DA6] border border-[#0A4DA6]/20 text-xs rounded-xl font-semibold">
                         {notice}
                       </div>
                     )}
@@ -471,15 +467,15 @@ export const LoginPage: React.FC = () => {
 
                 {/* Password form */}
                 {!useOtp ? (
-                  <form onSubmit={handlePasswordSubmit} className="space-y-4">
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-extrabold text-[#0B192C] dark:text-gray-200">
+                  <form onSubmit={handlePasswordSubmit} className="space-y-2.5">
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-extrabold text-[#0B192C] dark:text-gray-200">
                         Email / Phone
                       </label>
                       <div className="relative">
                         <Mail
-                          className="absolute left-3.5 top-3.5 text-gray-400"
-                          size={16}
+                          className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                          size={15}
                         />
                         <input
                           type="text"
@@ -487,19 +483,19 @@ export const LoginPage: React.FC = () => {
                           placeholder="name@govt.in or +91 98765 43210"
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
-                          className="w-full pl-10 pr-4 py-3.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                          className="w-full pl-9 pr-3.5 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
                         />
                       </div>
                     </div>
 
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-extrabold text-[#0B192C] dark:text-gray-200">
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-extrabold text-[#0B192C] dark:text-gray-200">
                         Password
                       </label>
                       <div className="relative">
                         <Lock
-                          className="absolute left-3.5 top-3.5 text-gray-400"
-                          size={16}
+                          className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                          size={15}
                         />
                         <input
                           type={showPassword ? "text" : "password"}
@@ -507,31 +503,31 @@ export const LoginPage: React.FC = () => {
                           placeholder="Enter your password"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
-                          className="w-full pl-10 pr-10 py-3.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                          className="w-full pl-9 pr-9 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
                         />
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3.5 top-3.5 text-gray-400 hover:text-gray-600"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                         >
                           {showPassword ? (
-                            <EyeOff size={16} />
+                            <EyeOff size={15} />
                           ) : (
-                            <Eye size={16} />
+                            <Eye size={15} />
                           )}
                         </button>
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between">
-                      <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <div className="flex items-center justify-between pt-0.5">
+                      <label className="flex items-center gap-1.5 cursor-pointer select-none">
                         <input
                           type="checkbox"
                           checked={remember}
                           onChange={(e) => setRemember(e.target.checked)}
-                          className="w-4 h-4 rounded accent-[#0A4DA6] cursor-pointer"
+                          className="w-3.5 h-3.5 rounded accent-[#0A4DA6] cursor-pointer"
                         />
-                        <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">
+                        <span className="text-[11px] font-semibold text-gray-500 dark:text-gray-400">
                           Remember me
                         </span>
                       </label>
@@ -539,7 +535,7 @@ export const LoginPage: React.FC = () => {
                         type="button"
                         onClick={handleForgotPassword}
                         disabled={loading}
-                        className="text-xs font-bold text-[#0A4DA6] hover:underline cursor-pointer disabled:opacity-60"
+                        className="text-[11px] font-bold text-[#0A4DA6] hover:underline cursor-pointer disabled:opacity-60"
                       >
                         Forgot Password?
                       </button>
@@ -548,29 +544,29 @@ export const LoginPage: React.FC = () => {
                     <button
                       type="submit"
                       disabled={loading}
-                      className="w-full py-3.5 bg-[#0A4DA6] hover:bg-[#083b80] text-white font-extrabold rounded-full text-sm shadow-md shadow-[#0A4DA6]/20 transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60"
+                      className="w-full py-2.5 bg-[#0A4DA6] hover:bg-[#083b80] text-white font-extrabold rounded-full text-xs shadow-md shadow-[#0A4DA6]/20 transition-all cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-60 mt-1"
                     >
                       {loading ? (
                         "Signing in…"
                       ) : (
                         <>
-                          Continue <ArrowRight size={16} />
+                          Continue <ArrowRight size={15} />
                         </>
                       )}
                     </button>
                   </form>
                 ) : (
                   /* OTP form */
-                  <form onSubmit={handleOtpSubmit} className="space-y-4">
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-extrabold text-[#0B192C] dark:text-gray-200">
+                  <form onSubmit={handleOtpSubmit} className="space-y-2.5">
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-extrabold text-[#0B192C] dark:text-gray-200">
                         Mobile Phone Number
                       </label>
                       <div className="flex gap-2">
                         <div className="relative flex-grow">
                           <Phone
-                            className="absolute left-3.5 top-3.5 text-gray-400"
-                            size={16}
+                            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                            size={15}
                           />
                           <input
                             type="tel"
@@ -578,14 +574,14 @@ export const LoginPage: React.FC = () => {
                             placeholder="+91 98765 43210"
                             value={phone}
                             onChange={(e) => setPhone(e.target.value)}
-                            className="w-full pl-10 pr-4 py-3.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                            className="w-full pl-9 pr-3 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
                           />
                         </div>
                         <button
                           type="button"
                           onClick={handleSendOtp}
                           disabled={loading}
-                          className="px-4 py-3 bg-[#0B192C] text-white rounded-xl text-xs font-bold hover:opacity-90 transition-all cursor-pointer shrink-0"
+                          className="px-3.5 py-2 bg-[#0B192C] text-white rounded-xl text-xs font-bold hover:opacity-90 transition-all cursor-pointer shrink-0"
                         >
                           {otpSent ? "Resend" : "Send OTP"}
                         </button>
@@ -593,12 +589,12 @@ export const LoginPage: React.FC = () => {
                     </div>
 
                     {otpSent && (
-                      <div className="space-y-4 animate-in fade-in duration-200">
-                        <div className="p-3 bg-yellow-50 dark:bg-yellow-950/20 text-yellow-700 dark:text-yellow-400 border border-yellow-200/50 text-[10px] rounded-xl font-semibold leading-relaxed">
+                      <div className="space-y-2.5 animate-in fade-in duration-200">
+                        <div className="p-2.5 bg-yellow-50 dark:bg-yellow-950/20 text-yellow-700 dark:text-yellow-400 border border-yellow-200/50 text-[10px] rounded-xl font-semibold leading-relaxed">
                           {serverOtpMsg}
                         </div>
-                        <div className="space-y-1.5">
-                          <label className="text-xs font-extrabold text-[#0B192C] dark:text-gray-200">
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-extrabold text-[#0B192C] dark:text-gray-200">
                             Enter 6-digit OTP Code
                           </label>
                           <input
@@ -608,19 +604,19 @@ export const LoginPage: React.FC = () => {
                             placeholder="123456"
                             value={otpCode}
                             onChange={(e) => setOtpCode(e.target.value)}
-                            className="w-full px-4 py-3.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-sm text-center tracking-[0.4em] font-extrabold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                            className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs text-center tracking-[0.4em] font-extrabold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
                           />
                         </div>
                         <button
                           type="submit"
                           disabled={loading}
-                          className="w-full py-3.5 bg-[#0A4DA6] hover:bg-[#083b80] text-white rounded-full font-extrabold text-sm shadow-md transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60"
+                          className="w-full py-2.5 bg-[#0A4DA6] hover:bg-[#083b80] text-white rounded-full font-extrabold text-xs shadow-md transition-all cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-60"
                         >
                           {loading ? (
                             "Verifying…"
                           ) : (
                             <>
-                              Verify &amp; Continue <ArrowRight size={16} />
+                              Verify &amp; Continue <ArrowRight size={15} />
                             </>
                           )}
                         </button>
@@ -630,16 +626,16 @@ export const LoginPage: React.FC = () => {
                 )}
 
                 {/* Divider */}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2.5">
                   <span className="h-px flex-grow bg-gray-200 dark:bg-slate-800" />
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                  <span className="text-[10px] font-bold text-gray-400 tracking-wider">
                     Or
                   </span>
                   <span className="h-px flex-grow bg-gray-200 dark:bg-slate-800" />
                 </div>
 
                 {/* Social / alt login */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <button
                     type="button"
                     onClick={handleGoogle}
@@ -649,7 +645,7 @@ export const LoginPage: React.FC = () => {
                         ? undefined
                         : "Google Sign-In is not configured on this deployment"
                     }
-                    className="flex items-center justify-center gap-2 py-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold text-[#0B192C] dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-800 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex items-center justify-center gap-1.5 py-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold text-[#0B192C] dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-800 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <GoogleIcon />{" "}
                     {google.busy ? "Connecting…" : "Continue with Google"}
@@ -657,15 +653,15 @@ export const LoginPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => switchMode(true)}
-                    className="flex items-center justify-center gap-2 py-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold text-[#0B192C] dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-800 transition-all cursor-pointer"
+                    className="flex items-center justify-center gap-1.5 py-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold text-[#0B192C] dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-800 transition-all cursor-pointer"
                   >
-                    <Smartphone size={16} className="text-[#0A4DA6]" /> Login
+                    <Smartphone size={15} className="text-[#0A4DA6]" /> Login
                     with Mobile OTP
                   </button>
                 </div>
 
                 {/* Register */}
-                <p className="text-center text-xs text-gray-500 dark:text-gray-400 font-semibold">
+                <p className="text-center text-xs text-gray-500 dark:text-gray-400 font-semibold pt-0.5">
                   Don't have an account?{" "}
                   <Link
                     to={`/register${redirect ? `?redirect=${encodeURIComponent(redirect)}` : ""}`}

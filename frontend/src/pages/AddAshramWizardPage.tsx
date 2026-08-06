@@ -352,7 +352,7 @@ const Field: React.FC<{
   children: React.ReactNode;
 }> = ({ label, required, hint, children }) => (
   <div className="space-y-1.5">
-    <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-1">
+    <label className="text-xs font-bold text-gray-500 dark:text-gray-400 tracking-wider flex items-center gap-1">
       {label} {required && <span className="text-danger">*</span>}
     </label>
     {children}
@@ -1095,7 +1095,7 @@ const AddAshramWizardPage: React.FC = () => {
               </Field>
             </div>
             <div className="p-4 bg-[#0A4DA6]/5 border border-[#0A4DA6]/20 rounded-2xl space-y-4">
-              <h3 className="text-xs font-bold text-[#0A4DA6] uppercase tracking-wider flex items-center gap-1.5">
+              <h3 className="text-xs font-bold text-[#0A4DA6] tracking-wider flex items-center gap-1.5">
                 <Map size={14} /> GPS Coordinates (for map widget)
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -1175,7 +1175,7 @@ const AddAshramWizardPage: React.FC = () => {
               </Field>
             </div>
             <div className="p-4 bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-800 rounded-2xl space-y-4">
-              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+              <h3 className="text-xs font-bold text-gray-400 tracking-wider">
                 Social Media Links (Optional)
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -1247,7 +1247,7 @@ const AddAshramWizardPage: React.FC = () => {
             </Field>
 
             <div className="space-y-3">
-              <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <label className="text-xs font-bold text-gray-500 dark:text-gray-400 tracking-wider">
                 Gallery Images (Up to 10)
               </label>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1423,7 +1423,7 @@ const AddAshramWizardPage: React.FC = () => {
               subtitle="Programs, rituals, and activities conducted at the ashram for guests."
             />
             <div className="space-y-3">
-              <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <label className="text-xs font-bold text-gray-500 dark:text-gray-400 tracking-wider">
                 Activities & Programs
               </label>
               <div className="flex flex-wrap gap-2 min-h-12 p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl">
@@ -1606,7 +1606,7 @@ const AddAshramWizardPage: React.FC = () => {
                   className="p-5 bg-gray-50 dark:bg-slate-900/50 border border-gray-200 dark:border-slate-700 rounded-2xl space-y-4"
                 >
                   <div className="flex justify-between items-center">
-                    <span className="text-xs font-extrabold text-[#0A4DA6] uppercase tracking-wider flex items-center gap-2">
+                    <span className="text-xs font-extrabold text-[#0A4DA6] tracking-wider flex items-center gap-2">
                       <GripVertical size={14} className="text-gray-300" /> Room
                       Category {idx + 1}
                     </span>
@@ -1855,7 +1855,7 @@ const AddAshramWizardPage: React.FC = () => {
             </Field>
 
             <div className="space-y-3">
-              <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <label className="text-xs font-bold text-gray-500 dark:text-gray-400 tracking-wider">
                 Guest Rules & Guidelines
               </label>
               <div className="space-y-2">
@@ -2305,7 +2305,7 @@ const AddAshramWizardPage: React.FC = () => {
               {formData.lat && formData.lng ? (
                 <div className="flex flex-col sm:flex-row gap-3">
                   <div className="flex-1 p-4 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl space-y-1">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase">
+                    <span className="text-[10px] font-bold text-gray-400">
                       Coordinates
                     </span>
                     <p className="text-sm font-extrabold text-[#0B192C] dark:text-white">
@@ -2359,10 +2359,10 @@ const AddAshramWizardPage: React.FC = () => {
             <div className="flex flex-col md:flex-row justify-between items-start gap-4 border-b border-gray-100 dark:border-slate-800 pb-6">
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <span className="px-3 py-1 bg-[#0A4DA6] text-white text-[9px] font-extrabold rounded-full flex items-center gap-1 shadow-sm uppercase tracking-wider">
+                  <span className="px-3 py-1 bg-[#0A4DA6] text-white text-[9px] font-extrabold rounded-full flex items-center gap-1 shadow-sm tracking-wider">
                     <ShieldCheck size={11} /> Pending Verification
                   </span>
-                  <span className="text-xs text-gray-400 font-extrabold tracking-wider uppercase">
+                  <span className="text-xs text-gray-400 font-extrabold tracking-wider">
                     {formData.city}
                     {formData.state ? `, ${formData.state}` : ""}
                   </span>
@@ -2388,7 +2388,7 @@ const AddAshramWizardPage: React.FC = () => {
                   <span className="text-sm font-extrabold text-[#0B192C] dark:text-white">
                     New Listing
                   </span>
-                  <span className="text-[9px] text-gray-400 font-bold uppercase">
+                  <span className="text-[9px] text-gray-400 font-bold">
                     No reviews yet
                   </span>
                 </div>
@@ -2443,7 +2443,7 @@ const AddAshramWizardPage: React.FC = () => {
                 </p>
                 {formData.history && (
                   <div className="pt-4 border-t border-gray-100 dark:border-slate-800 space-y-2">
-                    <h4 className="text-xs font-bold text-[#0A4DA6] uppercase tracking-wider">
+                    <h4 className="text-xs font-bold text-[#0A4DA6] tracking-wider">
                       Historical Significance
                     </h4>
                     <p className="text-xs text-gray-500 leading-relaxed italic bg-gray-50/50 dark:bg-slate-900/10 p-4 rounded-2xl border border-dashed border-gray-100 dark:border-slate-850">
@@ -2501,7 +2501,7 @@ const AddAshramWizardPage: React.FC = () => {
                         )}
                       </div>
                       <div className="flex flex-col sm:items-end">
-                        <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">
+                        <span className="text-xs text-gray-400 font-bold tracking-wider">
                           Bed Rate
                         </span>
                         <span className="text-sm font-extrabold text-[#0B192C] dark:text-white">
@@ -2522,7 +2522,7 @@ const AddAshramWizardPage: React.FC = () => {
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
                   <div className="space-y-3">
-                    <h4 className="font-bold text-[#0A4DA6] uppercase tracking-wider text-[10px]">
+                    <h4 className="font-bold text-[#0A4DA6] tracking-wider text-[10px]">
                       Guidelines for Guests
                     </h4>
                     <ul className="text-gray-500 space-y-2 list-disc pl-5">
@@ -2532,7 +2532,7 @@ const AddAshramWizardPage: React.FC = () => {
                     </ul>
                   </div>
                   <div className="space-y-3">
-                    <h4 className="font-bold text-[#0A4DA6] uppercase tracking-wider text-[10px]">
+                    <h4 className="font-bold text-[#0A4DA6] tracking-wider text-[10px]">
                       Check-in Policies
                     </h4>
                     <div className="space-y-1.5 text-gray-500">
@@ -2562,7 +2562,7 @@ const AddAshramWizardPage: React.FC = () => {
 
             {/* ── Preview: Contact ── */}
             <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 shadow-sm space-y-4">
-              <h4 className="font-extrabold text-xs text-[#0B192C] dark:text-white uppercase tracking-wider">
+              <h4 className="font-extrabold text-xs text-[#0B192C] dark:text-white tracking-wider">
                 Contact Ashram Trust
               </h4>
               <div className="space-y-3 text-[11px] text-gray-500">

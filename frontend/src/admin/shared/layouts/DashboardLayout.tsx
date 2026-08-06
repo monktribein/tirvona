@@ -2,6 +2,9 @@ import React, { useState } from "react";
 import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../../contexts/AuthContext";
 import NotificationDropdown from "../../../components/shared/NotificationDropdown";
+import GlobalSearch, {
+  type SearchableLink,
+} from "../components/GlobalSearch";
 import { isParkingRole } from "../../../utils/roleRedirect";
 import {
   LayoutDashboard,
@@ -25,7 +28,6 @@ import {
   ShoppingBag,
   Image,
   BarChart3,
-  Search,
   Bell,
   ShieldCheck,
   Globe,
@@ -155,7 +157,7 @@ export const DashboardLayout: React.FC = () => {
   // Super Admin Categorized Navigation Groups
   const superAdminGroups: NavGroup[] = [
     {
-      groupName: "APPROVAL CENTER",
+      groupName: "Approval center",
       icon: <FileCheck size={15} />,
       links: [
         { label: "📥 All Requests", path: "/admin/approvals/all" },
@@ -189,7 +191,7 @@ export const DashboardLayout: React.FC = () => {
       ],
     },
     {
-      groupName: "USER MANAGEMENT",
+      groupName: "User management",
       icon: <Users size={15} />,
       links: [
         { label: "Users & IAM", path: "/admin/users" },
@@ -208,7 +210,7 @@ export const DashboardLayout: React.FC = () => {
       ],
     },
     {
-      groupName: "INSTITUTION MASTER DATA",
+      groupName: "Institution master data",
       icon: <Landmark size={15} />,
       links: [
         { label: "Institution Profiles", path: "/admin/manage/institution" },
@@ -228,7 +230,7 @@ export const DashboardLayout: React.FC = () => {
       ],
     },
     {
-      groupName: "ASHRAM MANAGEMENT",
+      groupName: "Ashram management",
       icon: <Building size={15} />,
       links: [
         { label: "All Ashrams", path: "/admin/manage/ashrams/all" },
@@ -249,7 +251,7 @@ export const DashboardLayout: React.FC = () => {
       ],
     },
     {
-      groupName: "ROOM MANAGEMENT",
+      groupName: "Room management",
       icon: <Bed size={15} />,
       links: [
         {
@@ -265,7 +267,7 @@ export const DashboardLayout: React.FC = () => {
       ],
     },
     {
-      groupName: "BOOKINGS",
+      groupName: "Bookings",
       icon: <Calendar size={15} />,
       links: [
         { label: "All Bookings", path: "/admin/manage/bookings/all" },
@@ -283,7 +285,7 @@ export const DashboardLayout: React.FC = () => {
       // Parking keeps one module key per collection rather than
       // parking/<section>: the console resolves a sub-key against a shared
       // alias table, where "bookings" already means ashram bookings.
-      groupName: "PARKING MANAGEMENT",
+      groupName: "Parking management",
       icon: <Car size={15} />,
       links: [
         { label: "⚡ Parking Console", path: "/parking/dashboard" },
@@ -316,7 +318,7 @@ export const DashboardLayout: React.FC = () => {
       ],
     },
     {
-      groupName: "OFFERS & BLOGS",
+      groupName: "Offers & blogs",
       icon: <Tag size={15} />,
       links: [
         { label: "All Offers", path: "/admin/manage/offers/all" },
@@ -327,7 +329,7 @@ export const DashboardLayout: React.FC = () => {
       ],
     },
     {
-      groupName: "PLANNER & CIRCUITS",
+      groupName: "Planner & circuits",
       icon: <Compass size={15} />,
       links: [
         { label: "Spiritual Circuits", path: "/admin/manage/planner/circuits" },
@@ -338,7 +340,7 @@ export const DashboardLayout: React.FC = () => {
       ],
     },
     {
-      groupName: "LOCAL HUB",
+      groupName: "Local hub",
       icon: <Compass size={15} />,
       links: [
         { label: "Transport", path: "/admin/manage/local/transport" },
@@ -352,7 +354,7 @@ export const DashboardLayout: React.FC = () => {
       ],
     },
     {
-      groupName: "MARKETPLACE",
+      groupName: "Marketplace",
       icon: <ShoppingBag size={15} />,
       links: [
         { label: "Products", path: "/admin/manage/marketplace/products" },
@@ -364,7 +366,7 @@ export const DashboardLayout: React.FC = () => {
       ],
     },
     {
-      groupName: "BANNER MANAGEMENT",
+      groupName: "Banner management",
       icon: <Image size={15} />,
       links: [
         { label: "Homepage Banner", path: "/admin/manage/banner/homepage" },
@@ -384,7 +386,7 @@ export const DashboardLayout: React.FC = () => {
       ],
     },
     {
-      groupName: "REPORTS & AUDIT",
+      groupName: "Reports & audit",
       icon: <BarChart3 size={15} />,
       links: [
         { label: "Revenue Reports", path: "/admin/manage/reports/revenue" },
@@ -393,7 +395,7 @@ export const DashboardLayout: React.FC = () => {
       ],
     },
     {
-      groupName: "ENTERPRISE NOTIFICATIONS",
+      groupName: "Enterprise notifications",
       icon: <Bell size={15} />,
       links: [
         {
@@ -434,7 +436,7 @@ export const DashboardLayout: React.FC = () => {
 
   const ownerGroups: NavGroup[] = [
     {
-      groupName: "ASHRAM MANAGEMENT",
+      groupName: "Ashram management",
       icon: <Building size={15} />,
       links: [
         { label: "Manage Ashrams", path: "/owner/ashrams" },
@@ -442,7 +444,7 @@ export const DashboardLayout: React.FC = () => {
       ],
     },
     {
-      groupName: "ROOM MANAGEMENT",
+      groupName: "Room management",
       icon: <Bed size={15} />,
       links: [
         { label: "Manage Rooms", path: "/owner/rooms" },
@@ -450,17 +452,17 @@ export const DashboardLayout: React.FC = () => {
       ],
     },
     {
-      groupName: "OFFERS & DEALS",
+      groupName: "Offers & deals",
       icon: <Tag size={15} />,
       links: [{ label: "Offers & Deals", path: "/owner/offers" }],
     },
     {
-      groupName: "VOLUNTEER & CAREERS",
+      groupName: "Volunteer & careers",
       icon: <Heart size={15} />,
       links: [{ label: "Volunteer & Careers", path: "/owner/volunteer" }],
     },
     {
-      groupName: "STAFF & USERS",
+      groupName: "Staff & users",
       icon: <Users size={15} />,
       links: [
         { label: "Users & Guests", path: "/owner/users" },
@@ -471,7 +473,7 @@ export const DashboardLayout: React.FC = () => {
 
   const bannerBoyGroups: NavGroup[] = [
     {
-      groupName: "BANNER MANAGEMENT",
+      groupName: "Banner management",
       icon: <Image size={15} />,
       links: [
         { label: "Banner Management", path: "/bannerboy/dashboard" },
@@ -480,7 +482,7 @@ export const DashboardLayout: React.FC = () => {
       ],
     },
     {
-      groupName: "COMMUNICATIONS & APPROVALS",
+      groupName: "Communications & approvals",
       icon: <Bell size={15} />,
       links: [
         { label: "Announcements", path: "/bannerboy/dashboard" },
@@ -493,7 +495,7 @@ export const DashboardLayout: React.FC = () => {
 
   const districtAdminGroups: NavGroup[] = [
     {
-      groupName: "VERIFICATIONS & ASHRAMS",
+      groupName: "Verifications & ashrams",
       icon: <FileCheck size={15} />,
       links: [
         { label: "Verification Queue", path: "/admin/verifications" },
@@ -501,7 +503,7 @@ export const DashboardLayout: React.FC = () => {
       ],
     },
     {
-      groupName: "REPORTS & AUDIT",
+      groupName: "Reports & audit",
       icon: <BarChart3 size={15} />,
       links: [
         { label: "Audit Logs", path: "/admin/audit-logs" },
@@ -512,7 +514,7 @@ export const DashboardLayout: React.FC = () => {
 
   const standardGroups: NavGroup[] = [
     {
-      groupName: "SYSTEM & AUDIT",
+      groupName: "System & audit",
       icon: <FileCheck size={15} />,
       links: [
         { label: "Verification Queue", path: "/admin/verifications" },
@@ -529,7 +531,7 @@ export const DashboardLayout: React.FC = () => {
   const userHasParkingRole = isParkingRole(user?.parkingRoles, user?.role, user?.email);
   const parkingGroups: NavGroup[] = [
     {
-      groupName: "PARKING OPERATIONS",
+      groupName: "Parking operations",
       icon: <Car size={15} />,
       links: [
         { label: "⚡ Operations Console", path: "/parking/dashboard" },
@@ -740,6 +742,19 @@ export const DashboardLayout: React.FC = () => {
 
   const navData = getRoleNavData();
 
+  // Flatten the same tree the sidebar renders, so global search can only ever
+  // offer pages this role actually has — no second list to keep in sync.
+  const searchableLinks: SearchableLink[] = [
+    { label: navData.topLink.label, path: navData.topLink.path, group: "Overview" },
+    ...navData.groups.flatMap((group) =>
+      group.links.map((link) => ({
+        label: link.label,
+        path: link.path,
+        group: group.groupName,
+      })),
+    ),
+  ];
+
   // Auto-expand ONLY the single parent group that contains the current active route
   React.useEffect(() => {
     const activeGroup = navData.groups.find((group) =>
@@ -771,34 +786,29 @@ export const DashboardLayout: React.FC = () => {
 
   const renderSidebarContent = (isMobile = false) => (
     <>
-      {/* Brand Header */}
-      <div className="p-6 border-b border-slate-800/80 flex flex-col items-center text-center space-y-3">
-        <Link
-          to="/"
-          className="group flex flex-col items-center space-y-2.5 cursor-pointer"
-          onClick={isMobile ? () => setSidebarOpen(false) : undefined}
-        >
-          {/* White Logo Container */}
-          <div className="flex items-center justify-center p-3.5 bg-white rounded-[18px] border border-gray-200/80 shadow-none group-hover:border-[#E58C28]/60 transition-all duration-300">
+      {/* Mobile Drawer Brand Header */}
+      {isMobile && (
+        <div className="p-4 border-b border-blue-100 dark:border-slate-800 flex items-center gap-3 bg-[#F8FAFC] dark:bg-[#0B192C]">
+          <div className="p-2 bg-white rounded-xl border border-blue-100 shadow-sm">
             <img
               src="/logo/logo.png"
               alt="Tirvona"
-              className="w-14 h-14 object-contain group-hover:scale-105 transition-transform duration-300"
+              className="w-8 h-8 object-contain"
             />
           </div>
-          <div className="flex flex-col items-center">
-            <span className="font-black text-xl tracking-tight text-white group-hover:text-[#E58C28] transition-colors">
+          <div className="flex flex-col">
+            <span className="font-black text-lg leading-tight text-[#0B192C] dark:text-white">
               Tirvona
             </span>
-            <span className="text-xs font-semibold text-[#E58C28] tracking-wide mt-0.5">
+            <span className="text-[10px] font-extrabold text-[#0A4DA6]">
               {getFormattedRole(user?.role)}
             </span>
           </div>
-        </Link>
-      </div>
+        </div>
+      )}
 
       {/* Links Navigation */}
-      <nav className="flex-grow p-4 space-y-3 overflow-y-auto max-h-[calc(100vh-210px)] scrollbar-thin">
+      <nav className="flex-grow p-4 space-y-3 overflow-y-auto overscroll-contain scrollbar-thin">
         <div className="space-y-3">
           {/* Main Role Overview Link */}
           {navData.topLink && (
@@ -806,8 +816,8 @@ export const DashboardLayout: React.FC = () => {
               to={navData.topLink.path}
               onClick={isMobile ? () => setSidebarOpen(false) : undefined}
               className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-black transition-all ${location.pathname === navData.topLink.path
-                ? "bg-[#0A4DA6] text-white shadow-lg shadow-[#0A4DA6]/30 border-l-4 border-[#E58C28]"
-                : "text-gray-300 hover:bg-slate-850 hover:text-white"
+                ? "bg-[#0A4DA6] text-white shadow-md shadow-[#0A4DA6]/20 border-l-4 border-[#0A4DA6]"
+                : "text-slate-600 dark:text-gray-300 hover:bg-[#EBF2FA] dark:hover:bg-slate-800 hover:text-[#0A4DA6]"
                 }`}
             >
               {navData.topLink.icon}
@@ -826,9 +836,9 @@ export const DashboardLayout: React.FC = () => {
               <div key={group.groupName} className="space-y-1">
                 <button
                   onClick={() => toggleGroup(group.groupName)}
-                  className={`w-full flex items-center justify-between px-3.5 py-2 text-[10px] font-black uppercase tracking-wider transition-colors text-left rounded-xl ${hasActiveLink
-                    ? "text-[#E58C28] bg-white/5"
-                    : "text-gray-400 hover:text-gray-200"
+                  className={`w-full flex items-center justify-between px-3.5 py-2 text-[10px] font-black tracking-wider transition-colors text-left rounded-xl ${hasActiveLink
+                    ? "text-[#0A4DA6] bg-[#EBF2FA] dark:bg-white/5"
+                    : "text-slate-500 dark:text-gray-400 hover:text-[#0A4DA6] hover:bg-[#F0F5FA]"
                     }`}
                 >
                   <div className="flex items-center gap-2">
@@ -843,7 +853,7 @@ export const DashboardLayout: React.FC = () => {
                 </button>
 
                 {isOpen && (
-                  <div className="pl-4 space-y-1 border-l border-slate-800 ml-3">
+                  <div className="pl-4 space-y-1 border-l border-blue-100 dark:border-slate-800 ml-3">
                     {group.links.map((link) => {
                       const isActive = location.pathname === link.path;
                       return (
@@ -854,8 +864,8 @@ export const DashboardLayout: React.FC = () => {
                             isMobile ? () => setSidebarOpen(false) : undefined
                           }
                           className={`flex items-center justify-between px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all ${isActive
-                            ? "bg-[#0A4DA6] text-white shadow-md border-l-2 border-[#E58C28]"
-                            : "text-gray-400 hover:text-white hover:bg-slate-850"
+                            ? "bg-[#E2EDF8] dark:bg-[#0A4DA6] text-[#0A4DA6] dark:text-white shadow-sm border-l-2 border-[#0A4DA6]"
+                            : "text-slate-600 dark:text-gray-400 hover:text-[#0A4DA6] hover:bg-[#F0F5FA]"
                             }`}
                         >
                           <span className="truncate">{link.label}</span>
@@ -871,23 +881,23 @@ export const DashboardLayout: React.FC = () => {
       </nav>
 
       {/* User Profile Bottom Bar */}
-      <div className="p-4 border-t border-slate-800 space-y-3 shrink-0">
+      <div className="p-4 border-t border-blue-100 dark:border-slate-800 space-y-3 shrink-0 bg-[#F8FAFC] dark:bg-[#0B192C]">
         <div className="flex items-center gap-3 px-2">
-          <div className="w-9 h-9 rounded-full bg-[#E58C28]/20 border border-[#E58C28]/50 flex items-center justify-center font-black text-[#E58C28] text-xs">
+          <div className="w-9 h-9 rounded-full bg-[#0A4DA6]/10 border border-[#0A4DA6]/30 flex items-center justify-center font-black text-[#0A4DA6] text-xs">
             {user.name.charAt(0).toUpperCase()}
           </div>
           <div className="flex flex-col">
-            <span className="text-xs font-extrabold truncate max-w-[140px] text-white">
+            <span className="text-xs font-extrabold truncate max-w-[140px] text-[#0B192C] dark:text-white">
               {user.name}
             </span>
-            <span className="text-[10px] text-[#E58C28] font-black tracking-wider">
+            <span className="text-[10px] text-[#0A4DA6] font-black tracking-wider">
               {getFormattedRole(user.role)}
             </span>
           </div>
         </div>
         <button
           onClick={handleLogout}
-          className="w-full flex items-center justify-center gap-2 py-2.5 bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 transition-all rounded-full text-xs font-black cursor-pointer"
+          className="w-full flex items-center justify-center gap-2 py-2.5 bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100 transition-all rounded-full text-xs font-black cursor-pointer"
         >
           <LogOut size={14} />
           <span>Sign Out</span>
@@ -897,87 +907,92 @@ export const DashboardLayout: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#070F1B] flex flex-row font-sans text-left">
-      {/* ── Desktop Left Sidebar (Dark Navy Backdrop Matching Landing Page Footer & Dark Sections) ── */}
-      <aside className="hidden lg:flex flex-col w-72 bg-[#0B192C] text-white border-r border-[#0B192C] shadow-2xl shrink-0 h-screen sticky top-0 z-30">
-        {renderSidebarContent(false)}
-      </aside>
+    <div className="min-h-screen bg-[#F0F4F9] dark:bg-[#070F1B] flex flex-col font-sans text-left">
+      {/* ── Unified Top Navigation Bar (Attaches Sidebar Brand & Dashboard Navbar into One Header) ── */}
+      <header className="w-full bg-white dark:bg-[#0B192C] text-[#0B192C] dark:text-white border-b border-blue-100 dark:border-slate-800 shadow-sm sticky top-0 z-30 px-4 lg:px-6 py-3 flex items-center justify-between gap-4 lg:gap-8">
+        {/* Left: Brand Logo + Mobile Menu */}
+        <div className="flex items-center gap-3 shrink-0">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="lg:hidden p-2 rounded-full hover:bg-blue-50 text-[#0B192C] dark:text-white transition-colors"
+            aria-label="Open navigation menu"
+          >
+            <Menu size={20} />
+          </button>
 
-      {/* ── Mobile & Tablet Overlay Drawer ── */}
-      {sidebarOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden flex">
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm transition-opacity"
-            onClick={() => setSidebarOpen(false)}
-          />
-          {/* Mobile Sidebar */}
-          <aside className="relative flex flex-col w-72 max-w-[85vw] bg-[#0B192C] text-white border-r border-[#0B192C] shadow-2xl h-full z-10">
-            <button
-              onClick={() => setSidebarOpen(false)}
-              className="absolute top-4 right-4 p-2 text-gray-400 hover:text-white rounded-full hover:bg-white/10 transition-colors z-20"
-              aria-label="Close menu"
-            >
-              <X size={20} />
-            </button>
-            {renderSidebarContent(true)}
-          </aside>
-        </div>
-      )}
-
-      {/* ── Right Workspace ── */}
-      <div className="flex-grow flex flex-col min-w-0 bg-white dark:bg-[#070F1B]">
-        {/* Floating Pill Top Navigation Header (Matching Landing Page Top Bar in Image 2) */}
-        <header className="py-4 px-4 lg:px-6 shrink-0 sticky top-0 z-20">
-          <div className="w-full bg-white dark:bg-[#0B192C]/95 backdrop-blur-xl border border-black dark:border-slate-800 rounded-full px-6 py-3 shadow-md flex justify-between items-center">
-            {/* Left: Mobile Menu & Govt Badge */}
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setSidebarOpen(true)}
-                className="lg:hidden p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors text-[#0B192C] dark:text-white"
-              >
-                <Menu size={18} />
-              </button>
-              <span className="px-3.5 py-1 bg-[#E58C28]/15 text-[#E58C28] border border-black/20 dark:border-[#E58C28]/30 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5">
-                🇮🇳 Government Enterprise
+          {/* Desktop Attached Brand Logo & Title */}
+          <Link
+            to="/"
+            className="hidden lg:flex items-center gap-3 group cursor-pointer shrink-0"
+          >
+            <div className="flex items-center justify-center p-2 bg-white rounded-xl border border-blue-100 shadow-sm group-hover:border-[#0A4DA6]/60 transition-all">
+              <img
+                src="/logo/logo.png"
+                alt="Tirvona"
+                className="w-8 h-8 object-contain group-hover:scale-105 transition-transform"
+              />
+            </div>
+            <div className="flex flex-col">
+              <span className="font-black text-lg leading-tight tracking-tight text-[#0B192C] dark:text-white group-hover:text-[#0A4DA6] transition-colors">
+                Tirvona
               </span>
-              <h1 className="hidden sm:block text-xs font-black text-[#0B192C] dark:text-white tracking-tight uppercase">
-                {location.pathname.split("/").pop()?.replace(/-/g, " ") ||
-                  "Super Admin Console"}
-              </h1>
+              <span className="text-[10px] font-extrabold text-[#0A4DA6] tracking-wider leading-none">
+                {getFormattedRole(user?.role)}
+              </span>
             </div>
+          </Link>
+        </div>
 
-            {/* Right: Quick Search + Notifications + Blue Action Pill Button */}
-            <div className="flex items-center gap-3">
-              <div className="relative hidden md:block w-64">
-                <Search
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500"
-                  size={14}
-                />
-                <input
-                  type="text"
-                  placeholder="Search modules, ashrams..."
-                  className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-900 border border-black dark:border-slate-800 rounded-full text-xs font-medium focus:outline-none focus:border-[#0A4DA6]"
-                />
-              </div>
+        {/* Middle: Global search across console pages and records */}
+        <div className="flex-1 max-w-2xl mx-auto hidden md:block">
+          <GlobalSearch links={searchableLinks} />
+        </div>
 
-              {/* Active Notifications Bell */}
-              <NotificationDropdown />
+        {/* Right: Notifications + Public Portal Action Button */}
+        <div className="flex items-center gap-3 shrink-0">
+          {/* Notifications Dropdown */}
+          <NotificationDropdown />
 
-              {/* Solid Blue Action Pill (Matching Sign Up / Book Now Button in Landing Page Image 2) */}
-              <Link
-                to="/"
-                className="text-xs font-extrabold px-5 py-2 rounded-full bg-[#0A4DA6] hover:bg-[#083b80] text-white transition-all flex items-center gap-1.5 shadow-md shadow-[#0A4DA6]/25 cursor-pointer"
+          {/* Public Portal Action Button */}
+          <Link
+            to="/"
+            className="text-xs font-extrabold px-4 py-2 rounded-full bg-[#0A4DA6] hover:bg-[#083b80] text-white transition-all flex items-center gap-1.5 shadow-md shadow-[#0A4DA6]/20 cursor-pointer shrink-0"
+          >
+            <Globe size={14} className="text-[#E58C28]" /> Public Portal{" "}
+            <ArrowRight size={12} />
+          </Link>
+        </div>
+      </header>
+
+      {/* ── Main Layout Body (Sidebar + Content Workspace Attached Below Header) ── */}
+      <div className="flex flex-row flex-grow min-h-0">
+        {/* ── Desktop Left Sidebar ── */}
+        <aside className="hidden lg:flex flex-col w-64 bg-white dark:bg-[#0B192C] text-[#0B192C] dark:text-white border-r border-blue-100 dark:border-slate-800 shadow-sm shrink-0 h-[calc(100vh-61px)] sticky top-[61px]">
+          {renderSidebarContent(false)}
+        </aside>
+
+        {/* ── Mobile & Tablet Drawer ── */}
+        {sidebarOpen && (
+          <div className="fixed inset-0 z-50 lg:hidden flex">
+            <div
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+              onClick={() => setSidebarOpen(false)}
+            />
+            <aside className="relative flex flex-col w-72 max-w-[85vw] bg-white dark:bg-[#0B192C] text-[#0B192C] dark:text-white border-r border-blue-100 dark:border-slate-800 shadow-2xl h-full z-10">
+              <button
+                onClick={() => setSidebarOpen(false)}
+                className="absolute top-4 right-4 p-2 text-slate-500 hover:text-slate-800 rounded-full hover:bg-slate-100 transition-colors z-20"
+                aria-label="Close menu"
               >
-                <Globe size={14} className="text-[#E58C28]" /> Public Portal{" "}
-                <ArrowRight size={12} />
-              </Link>
-            </div>
+                <X size={20} />
+              </button>
+              {renderSidebarContent(true)}
+            </aside>
           </div>
-        </header>
+        )}
 
-        {/* Content Workspace */}
-        <main className="flex-grow p-4 lg:p-6 pb-12 lg:pb-16 overflow-y-auto w-full bg-white dark:bg-[#070F1B]">
+        {/* ── Main Workspace Area ── */}
+        <main className="flex-grow p-4 lg:p-6 pb-12 lg:pb-16 overflow-y-auto min-w-0 bg-[#F0F4F9] dark:bg-[#070F1B]">
           <Outlet />
         </main>
       </div>

@@ -191,7 +191,7 @@ export const ParkingMyBookingsPage: React.FC = () => {
                         },
                       ].map(({ icon: Icon, label, value, sub }) => (
                         <div key={label} className="space-y-0.5 min-w-0">
-                          <span className="inline-flex items-center gap-1 text-[9px] uppercase tracking-wider font-bold text-gray-400">
+                          <span className="inline-flex items-center gap-1 text-[9px] tracking-wider font-bold text-gray-400">
                             <Icon size={10} className="stroke-[2.5]" /> {label}
                           </span>
                           <p className="text-[11px] font-bold text-slate-700 dark:text-gray-200 truncate">

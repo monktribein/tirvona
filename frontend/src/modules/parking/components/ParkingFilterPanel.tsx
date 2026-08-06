@@ -87,7 +87,7 @@ export const ParkingFilterPanel: React.FC<ParkingFilterPanelProps> = ({
       <div className="space-y-2">
         <label
           htmlFor="parking-sort"
-          className="block text-[10px] uppercase tracking-wider font-bold text-gray-400"
+          className="block text-[10px] tracking-wider font-bold text-gray-400"
         >
           Sort By
         </label>
@@ -110,7 +110,7 @@ export const ParkingFilterPanel: React.FC<ParkingFilterPanelProps> = ({
         <div className="space-y-2">
           <label
             htmlFor="parking-radius"
-            className="flex items-center justify-between text-[10px] uppercase tracking-wider font-bold text-gray-400"
+            className="flex items-center justify-between text-[10px] tracking-wider font-bold text-gray-400"
           >
             <span className="inline-flex items-center gap-1">
               <Navigation size={11} className="stroke-[2.5]" />
@@ -135,7 +135,7 @@ export const ParkingFilterPanel: React.FC<ParkingFilterPanelProps> = ({
 
       {/* Quick toggles */}
       <div className="space-y-2">
-        <span className="block text-[10px] uppercase tracking-wider font-bold text-gray-400">
+        <span className="block text-[10px] tracking-wider font-bold text-gray-400">
           Quick Filters
         </span>
         <div className="flex flex-wrap gap-1.5">
@@ -168,7 +168,7 @@ export const ParkingFilterPanel: React.FC<ParkingFilterPanelProps> = ({
 
       {/* Rating */}
       <div className="space-y-2">
-        <span className="block text-[10px] uppercase tracking-wider font-bold text-gray-400">
+        <span className="block text-[10px] tracking-wider font-bold text-gray-400">
           Minimum Rating
         </span>
         <div className="flex flex-wrap gap-1.5">
@@ -205,7 +205,7 @@ export const ParkingFilterPanel: React.FC<ParkingFilterPanelProps> = ({
 
       {/* Amenities */}
       <div className="space-y-2">
-        <span className="block text-[10px] uppercase tracking-wider font-bold text-gray-400">
+        <span className="block text-[10px] tracking-wider font-bold text-gray-400">
           Amenities
         </span>
         <div className="space-y-1">

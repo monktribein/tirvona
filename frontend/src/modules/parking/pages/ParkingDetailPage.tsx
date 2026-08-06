@@ -300,11 +300,11 @@ export const ParkingDetailPage: React.FC = () => {
           line, large display title, then the address. */}
       <div className="flex flex-col items-center text-center gap-3 pb-4">
         <div className="flex flex-wrap items-center justify-center gap-2">
-          <span className="px-3 py-1 bg-[#0A4DA6] text-white text-[9px] font-extrabold rounded-full flex items-center gap-1 shadow-sm uppercase tracking-wider">
+          <span className="px-3 py-1 bg-[#0A4DA6] text-white text-[9px] font-extrabold rounded-full flex items-center gap-1 shadow-sm tracking-wider">
             <ShieldCheck size={12} />{" "}
             {parking.isVerified ? "Verified Parking" : "Parking"}
           </span>
-          <span className="text-xs text-gray-400 font-extrabold tracking-wider uppercase">
+          <span className="text-xs text-gray-400 font-extrabold tracking-wider">
             {[parking.address?.city, parking.address?.state]
               .filter(Boolean)
               .join(", ")}
@@ -496,7 +496,7 @@ export const ParkingDetailPage: React.FC = () => {
                 key={label}
                 className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-3 space-y-1 shadow-sm"
               >
-                <span className="inline-flex items-center gap-1 text-[9px] uppercase tracking-wider font-bold text-gray-400">
+                <span className="inline-flex items-center gap-1 text-[9px] tracking-wider font-bold text-gray-400">
                   <Icon size={11} className="stroke-[2.5]" /> {label}
                 </span>
                 <p className="text-[11px] font-black text-[#0B192C] dark:text-white line-clamp-1">
@@ -681,7 +681,7 @@ export const ParkingDetailPage: React.FC = () => {
                 <div>
                   <label
                     htmlFor="detail-entry"
-                    className="block text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-1"
+                    className="block text-[10px] tracking-wider font-bold text-gray-400 mb-1"
                   >
                     Entry
                   </label>
@@ -696,7 +696,7 @@ export const ParkingDetailPage: React.FC = () => {
                 <div>
                   <label
                     htmlFor="detail-exit"
-                    className="block text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-1"
+                    className="block text-[10px] tracking-wider font-bold text-gray-400 mb-1"
                   >
                     Exit
                   </label>
@@ -713,7 +713,7 @@ export const ParkingDetailPage: React.FC = () => {
 
               {/* Vehicle */}
               <div>
-                <span className="block text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-2">
+                <span className="block text-[10px] tracking-wider font-bold text-gray-400 mb-2">
                   Vehicle
                 </span>
                 <VehicleTypePicker
@@ -737,7 +737,7 @@ export const ParkingDetailPage: React.FC = () => {
 
               {/* Areas */}
               <div className="space-y-2">
-                <span className="flex items-center justify-between text-[10px] uppercase tracking-wider font-bold text-gray-400">
+                <span className="flex items-center justify-between text-[10px] tracking-wider font-bold text-gray-400">
                   Select an area
                   {checkingAvailability && (
                     <Loader2

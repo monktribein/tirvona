@@ -123,7 +123,7 @@ export const InventoryCalendarPage: React.FC = () => {
 
         {myRooms.length > 0 && (
           <div className="flex items-center gap-3 shrink-0">
-            <label className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider">
+            <label className="text-[10px] font-extrabold text-gray-400 tracking-wider">
               Active Category
             </label>
             <select
@@ -173,7 +173,7 @@ export const InventoryCalendarPage: React.FC = () => {
               </div>
 
               <div className="space-y-0.5">
-                <span className="text-[9px] text-gray-400 block uppercase font-bold">
+                <span className="text-[9px] text-gray-400 block font-bold">
                   Night Price
                 </span>
                 <span className="text-xs font-extrabold text-[#0B192C] dark:text-white">
@@ -181,7 +181,7 @@ export const InventoryCalendarPage: React.FC = () => {
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 gap-1.5 pt-2 border-t border-dashed border-gray-100 dark:border-slate-800 text-center text-[9px] font-bold uppercase tracking-wider">
+              <div className="grid grid-cols-2 gap-1.5 pt-2 border-t border-dashed border-gray-100 dark:border-slate-800 text-center text-[9px] font-bold tracking-wider">
                 <div className="p-1 bg-[#0A4DA6]/5 text-[#0A4DA6] rounded-md">
                   <span>{item.booked} Booked</span>
                 </div>

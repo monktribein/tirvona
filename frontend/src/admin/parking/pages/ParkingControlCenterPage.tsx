@@ -248,7 +248,7 @@ export const ParkingControlCenterPage: React.FC = () => {
 
   const card = "bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] shadow-sm";
   const th =
-    "text-left px-4 py-3 text-[11px] font-black uppercase tracking-wider text-gray-400";
+    "text-left px-4 py-3 text-[11px] font-black tracking-wider text-gray-400";
   const td = "px-4 py-3 text-sm text-[#0B192C] dark:text-slate-200";
 
   return (
@@ -257,7 +257,7 @@ export const ParkingControlCenterPage: React.FC = () => {
         title="Parking Control Center"
         subtitle="Partner approvals, location status, payouts and platform analytics. Listings and search live under Parking Management."
         icon={<Car size={22} />}
-        badgeText="SUPER ADMIN"
+        badgeText="Super admin"
         actions={
           <button
             onClick={load}
@@ -325,7 +325,7 @@ export const ParkingControlCenterPage: React.FC = () => {
                   value={totals.partners ?? 0}
                   description={`${pendingPartners} awaiting approval`}
                   icon={<Building2 size={19} />}
-                  badgeText={pendingPartners > 0 ? "ACTION" : undefined}
+                  badgeText={pendingPartners > 0 ? "Action needed" : undefined}
                   badgeColor="bg-amber-100 text-amber-800 border-amber-200"
                 />
                 <EnterpriseStatsCard
@@ -346,7 +346,7 @@ export const ParkingControlCenterPage: React.FC = () => {
 
               {analytics?.ledger && (
                 <div className={`${card} p-6 space-y-4`}>
-                  <h3 className="text-sm font-black uppercase tracking-wider text-gray-400">
+                  <h3 className="text-sm font-black tracking-wider text-gray-400">
                     Ledger by Transaction Type
                   </h3>
                   <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
@@ -356,7 +356,7 @@ export const ParkingControlCenterPage: React.FC = () => {
                           key={type}
                           className="p-4 rounded-2xl bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800"
                         >
-                          <span className="text-[11px] font-black uppercase tracking-wider text-gray-400 block">
+                          <span className="text-[11px] font-black tracking-wider text-gray-400 block">
                             {type}
                           </span>
                           <span className="text-lg font-black text-[#0B192C] dark:text-white">
@@ -500,8 +500,8 @@ export const ParkingControlCenterPage: React.FC = () => {
                                   }`}
                                 >
                                   {flag === "isVerified"
-                                    ? "VERIFIED"
-                                    : "FEATURED"}
+                                    ? "Verified"
+                                    : "Featured"}
                                 </button>
                               ),
                             )}
@@ -550,7 +550,7 @@ export const ParkingControlCenterPage: React.FC = () => {
           {tab === "commissions" && (
             <div className={`${card} overflow-hidden`}>
               <div className="p-5 border-b border-gray-100 dark:border-slate-800">
-                <h3 className="text-sm font-black uppercase tracking-wider text-gray-400">
+                <h3 className="text-sm font-black tracking-wider text-gray-400">
                   Pending Payouts by Partner
                 </h3>
                 <p className="text-xs text-gray-400 font-semibold mt-1">

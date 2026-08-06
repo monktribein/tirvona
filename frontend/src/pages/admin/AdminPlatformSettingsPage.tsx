@@ -145,7 +145,7 @@ export const AdminPlatformSettingsPage: React.FC = () => {
 
             {/* Pricing Model Selector */}
             <div className="space-y-2">
-              <label className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400">
+              <label className="text-[10px] font-extrabold tracking-wider text-gray-400">
                 Pricing Model
               </label>
               <div className="grid grid-cols-2 gap-3">
@@ -190,7 +190,7 @@ export const AdminPlatformSettingsPage: React.FC = () => {
             {/* Value & Label Inputs */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-semibold">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-extrabold uppercase text-gray-400">
+                <label className="text-[10px] font-extrabold text-gray-400">
                   {platformFee.type === "flat"
                     ? "Flat Fee Amount (₹) *"
                     : "Percentage Rate (%) *"}
@@ -212,7 +212,7 @@ export const AdminPlatformSettingsPage: React.FC = () => {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[10px] font-extrabold uppercase text-gray-400">
+                <label className="text-[10px] font-extrabold text-gray-400">
                   Display Label *
                 </label>
                 <input
@@ -229,7 +229,7 @@ export const AdminPlatformSettingsPage: React.FC = () => {
 
             {/* GST Rate */}
             <div className="space-y-1.5 text-xs font-semibold">
-              <label className="text-[10px] font-extrabold uppercase text-gray-400">
+              <label className="text-[10px] font-extrabold text-gray-400">
                 GST on platform fee (%)
               </label>
               <input

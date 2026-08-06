@@ -4,6 +4,7 @@ import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useNotifications } from "../contexts/NotificationContext";
 import NotificationDropdown from "../components/shared/NotificationDropdown";
+import CartDrawer, { CartButton } from "../components/shared/CartDrawer";
 import { setGuestPendingIntent } from "../utils/guestGate";
 import { getRoleDefaultDashboard, isParkingRole } from "../utils/roleRedirect";
 import {
@@ -25,6 +26,7 @@ import {
   Calendar,
   Sparkles,
   PhoneCall,
+  Package,
 } from "lucide-react";
 
 // ─── Accordion item for mobile footer ────────────────────────────────────────
@@ -41,7 +43,7 @@ const FooterAccordion: React.FC<{
         className="w-full flex justify-between items-center py-4 text-left"
       >
         <span
-          className={`text-xs font-extrabold uppercase tracking-wider ${titleColor}`}
+          className={`text-xs font-extrabold tracking-wider ${titleColor}`}
         >
           {title}
         </span>
@@ -273,6 +275,11 @@ export const PublicLayout: React.FC = () => {
               {/* User Auth / Action Buttons */}
               {user ? (
                 <div className="flex items-center gap-2">
+                  {/* Marketplace cart — a pilgrim-facing feature, so it is
+                        hidden from console roles alongside the rest of the
+                        visitor menu. */}
+                  {!hasOperationalDashboard() && <CartButton />}
+
                   {/* Notifications Active Bell Dropdown */}
                   <NotificationDropdown />
 
@@ -347,44 +354,65 @@ export const PublicLayout: React.FC = () => {
                             </Link>
                           )}
 
-                          <Link
-                            to="/profile"
-                            onClick={() => setProfileDropdownOpen(false)}
-                            className="px-2.5 py-1.5 rounded-lg flex items-center gap-2.5 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
-                          >
-                            <div className="w-6 h-6 rounded-md bg-emerald-100/60 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-                              <User size={13} />
-                            </div>
-                            <span className="text-xs font-bold">
-                              My Profile
-                            </span>
-                          </Link>
+                          {/* Pilgrim-only destinations. An account that runs a
+                              console — owner, admin, reception, parking staff —
+                              has no stays, wishlist or personal profile of its
+                              own here, so showing them led to empty pages. */}
+                          {!hasOperationalDashboard() && (
+                            <>
+                              <Link
+                                to="/profile"
+                                onClick={() => setProfileDropdownOpen(false)}
+                                className="px-2.5 py-1.5 rounded-lg flex items-center gap-2.5 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+                              >
+                                <div className="w-6 h-6 rounded-md bg-emerald-100/60 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                                  <User size={13} />
+                                </div>
+                                <span className="text-xs font-bold">
+                                  My Profile
+                                </span>
+                              </Link>
 
-                          <Link
-                            to="/profile/bookings"
-                            onClick={() => setProfileDropdownOpen(false)}
-                            className="px-2.5 py-1.5 rounded-lg flex items-center gap-2.5 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
-                          >
-                            <div className="w-6 h-6 rounded-md bg-amber-100/60 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-                              <Calendar size={13} />
-                            </div>
-                            <span className="text-xs font-bold">
-                              My Bookings &amp; Stays
-                            </span>
-                          </Link>
+                              <Link
+                                to="/profile/bookings"
+                                onClick={() => setProfileDropdownOpen(false)}
+                                className="px-2.5 py-1.5 rounded-lg flex items-center gap-2.5 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+                              >
+                                <div className="w-6 h-6 rounded-md bg-amber-100/60 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                                  <Calendar size={13} />
+                                </div>
+                                <span className="text-xs font-bold">
+                                  My Bookings &amp; Stays
+                                </span>
+                              </Link>
 
-                          <Link
-                            to="/profile/wishlist"
-                            onClick={() => setProfileDropdownOpen(false)}
-                            className="px-2.5 py-1.5 rounded-lg flex items-center gap-2.5 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
-                          >
-                            <div className="w-6 h-6 rounded-md bg-rose-100/60 dark:bg-rose-950/60 text-rose-500 dark:text-rose-400 flex items-center justify-center shrink-0">
-                              <Heart size={13} />
-                            </div>
-                            <span className="text-xs font-bold">
-                              Wishlist &amp; Saved
-                            </span>
-                          </Link>
+                              <Link
+                                to="/profile/orders"
+                                onClick={() => setProfileDropdownOpen(false)}
+                                className="px-2.5 py-1.5 rounded-lg flex items-center gap-2.5 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+                              >
+                                <div className="w-6 h-6 rounded-md bg-blue-100/60 dark:bg-blue-950/60 text-[#0A4DA6] dark:text-blue-400 flex items-center justify-center shrink-0">
+                                  <Package size={13} />
+                                </div>
+                                <span className="text-xs font-bold">
+                                  My Orders
+                                </span>
+                              </Link>
+
+                              <Link
+                                to="/profile/wishlist"
+                                onClick={() => setProfileDropdownOpen(false)}
+                                className="px-2.5 py-1.5 rounded-lg flex items-center gap-2.5 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+                              >
+                                <div className="w-6 h-6 rounded-md bg-rose-100/60 dark:bg-rose-950/60 text-rose-500 dark:text-rose-400 flex items-center justify-center shrink-0">
+                                  <Heart size={13} />
+                                </div>
+                                <span className="text-xs font-bold">
+                                  Wishlist &amp; Saved
+                                </span>
+                              </Link>
+                            </>
+                          )}
                         </div>
 
                         {/* Sign Out */}
@@ -405,6 +433,9 @@ export const PublicLayout: React.FC = () => {
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
+                  {/* A signed-out visitor can still fill a basket; the sign-in
+                      prompt comes at checkout, not before browsing. */}
+                  <CartButton />
                   <Link
                     to={`/login?redirect=${encodeURIComponent(authReturnUrl)}`}
                     onClick={rememberCurrentPage}
@@ -589,6 +620,10 @@ export const PublicLayout: React.FC = () => {
         </div>
       </div>
 
+      {/* Cart slide-over. Mounted once at layout level so it stays open across
+          route changes and is reachable from any public page. */}
+      <CartDrawer />
+
       {/* ── Main Content ── */}
       <main className="flex-grow">
         <Outlet />
@@ -614,7 +649,7 @@ export const PublicLayout: React.FC = () => {
                       ™
                     </span>
                   </span>
-                  <span className="text-[8px] sm:text-[9px] font-extrabold tracking-widest text-[#E58C28] uppercase mt-1">
+                  <span className="text-[8px] sm:text-[9px] font-extrabold tracking-widest text-[#E58C28] mt-1">
                     One Nation, One Spiritual Stay
                   </span>
                 </div>
@@ -629,7 +664,7 @@ export const PublicLayout: React.FC = () => {
               {/* Need Help Box - Mobile friendly side-by-side buttons */}
               <div className="pt-1">
                 <div className="p-3.5 sm:p-4 rounded-2xl bg-slate-900/90 border border-slate-800/80 space-y-2.5">
-                  <span className="text-[10px] text-amber-400 font-extrabold uppercase tracking-wider block">
+                  <span className="text-[10px] text-amber-400 font-extrabold tracking-wider block">
                     24/7 Pilgrim Support
                   </span>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -659,7 +694,7 @@ export const PublicLayout: React.FC = () => {
             <div className="grid grid-cols-2 gap-5 sm:gap-8 lg:col-span-2">
               {/* Quick Links */}
               <div className="space-y-3">
-                <h4 className="text-xs sm:text-sm font-black text-white uppercase tracking-wider border-l-2 border-[#E58C28] pl-2.5">
+                <h4 className="text-xs sm:text-sm font-black text-white tracking-wider border-l-2 border-[#E58C28] pl-2.5">
                   Quick Links
                 </h4>
                 <ul className="text-xs space-y-2.5 text-slate-300 font-medium pt-1">
@@ -752,7 +787,7 @@ export const PublicLayout: React.FC = () => {
 
               {/* Popular Services */}
               <div className="space-y-3">
-                <h4 className="text-xs sm:text-sm font-black text-white uppercase tracking-wider border-l-2 border-[#0A4DA6] pl-2.5">
+                <h4 className="text-xs sm:text-sm font-black text-white tracking-wider border-l-2 border-[#0A4DA6] pl-2.5">
                   Popular Services
                 </h4>
                 <ul className="text-xs space-y-2.5 text-slate-300 font-medium pt-1">
@@ -834,7 +869,7 @@ export const PublicLayout: React.FC = () => {
 
             {/* Col 4: Newsletter & Social Connection */}
             <div className="space-y-4">
-              <h4 className="text-xs sm:text-sm font-black text-white uppercase tracking-wider border-l-2 border-emerald-500 pl-2.5">
+              <h4 className="text-xs sm:text-sm font-black text-white tracking-wider border-l-2 border-emerald-500 pl-2.5">
                 Stay Connected
               </h4>
               <p className="text-xs text-slate-300 font-medium leading-relaxed">
@@ -862,7 +897,7 @@ export const PublicLayout: React.FC = () => {
 
               {/* Social Media Links */}
               <div className="pt-1 space-y-2">
-                <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">
+                <span className="text-[10px] font-extrabold text-slate-400 tracking-wider block">
                   Follow Us
                 </span>
                 <div className="flex items-center gap-2.5">

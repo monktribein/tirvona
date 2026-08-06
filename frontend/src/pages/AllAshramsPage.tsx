@@ -219,7 +219,7 @@ export const AllAshramsPage: React.FC = () => {
       {/* Stats Summary Bar */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-1">
-          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+          <div className="text-xs font-bold text-gray-400 tracking-wider">
             Total Ashrams
           </div>
           <div className="text-2xl font-black text-[#0B192C] dark:text-white">
@@ -228,7 +228,7 @@ export const AllAshramsPage: React.FC = () => {
         </div>
 
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-1">
-          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+          <div className="text-xs font-bold text-gray-400 tracking-wider">
             Government Verified
           </div>
           <div className="text-2xl font-black text-emerald-600 flex items-center gap-1.5">
@@ -244,7 +244,7 @@ export const AllAshramsPage: React.FC = () => {
         </div>
 
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-1">
-          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+          <div className="text-xs font-bold text-gray-400 tracking-wider">
             Pilgrimage Cities
           </div>
           <div className="text-2xl font-black text-[#0A4DA6] dark:text-amber-400">
@@ -253,7 +253,7 @@ export const AllAshramsPage: React.FC = () => {
         </div>
 
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-1">
-          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+          <div className="text-xs font-bold text-gray-400 tracking-wider">
             Assigned Owner Accounts
           </div>
           <div className="text-2xl font-black text-amber-500">
@@ -470,7 +470,7 @@ export const AllAshramsPage: React.FC = () => {
             <form onSubmit={handleSaveEdit} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                  <label className="block text-[10px] font-black text-gray-400 mb-1">
                     Ashram Name
                   </label>
                   <input
@@ -485,7 +485,7 @@ export const AllAshramsPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                  <label className="block text-[10px] font-black text-gray-400 mb-1">
                     Reassign Owner Account
                   </label>
                   <select
@@ -508,7 +508,7 @@ export const AllAshramsPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                <label className="block text-[10px] font-black text-gray-400 mb-1">
                   Description / Bio
                 </label>
                 <textarea
@@ -525,7 +525,7 @@ export const AllAshramsPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                <label className="block text-[10px] font-black text-gray-400 mb-1">
                   Spiritual Heritage & History
                 </label>
                 <textarea
@@ -544,7 +544,7 @@ export const AllAshramsPage: React.FC = () => {
               {/* Address Fields */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div>
-                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                  <label className="block text-[10px] font-black text-gray-400 mb-1">
                     Street Address
                   </label>
                   <input
@@ -560,7 +560,7 @@ export const AllAshramsPage: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                  <label className="block text-[10px] font-black text-gray-400 mb-1">
                     City
                   </label>
                   <input
@@ -574,7 +574,7 @@ export const AllAshramsPage: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                  <label className="block text-[10px] font-black text-gray-400 mb-1">
                     State
                   </label>
                   <input
@@ -591,7 +591,7 @@ export const AllAshramsPage: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                  <label className="block text-[10px] font-black text-gray-400 mb-1">
                     Pincode
                   </label>
                   <input
@@ -611,7 +611,7 @@ export const AllAshramsPage: React.FC = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                  <label className="block text-[10px] font-black text-gray-400 mb-1">
                     Facilities & Amenities (comma separated)
                   </label>
                   <input
@@ -628,7 +628,7 @@ export const AllAshramsPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-1">
+                  <label className="block text-[10px] font-black text-gray-400 mb-1">
                     Government Verification Status
                   </label>
                   <select
@@ -654,7 +654,7 @@ export const AllAshramsPage: React.FC = () => {
               {/* ════════════ Image Gallery Manager ════════════ */}
               <div className="bg-gray-50/80 dark:bg-slate-900/80 border border-gray-100 dark:border-slate-800 rounded-2xl p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <label className="text-[10px] font-black uppercase text-gray-400 flex items-center gap-1.5">
+                  <label className="text-[10px] font-black text-gray-400 flex items-center gap-1.5">
                     <ImageIcon size={14} className="text-[#0A4DA6]" /> Ashram
                     Photo Gallery ({editFormData.images?.length || 0} Photos)
                   </label>

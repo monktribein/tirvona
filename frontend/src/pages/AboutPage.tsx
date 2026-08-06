@@ -178,7 +178,7 @@ const AboutPage: React.FC = () => {
         <div className="absolute bottom-0 left-1/3 w-80 h-80 bg-[#D4AF37]/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="max-w-5xl mx-auto text-center relative z-10 space-y-6">
-          <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#D4AF37] bg-[#D4AF37]/10 border border-[#D4AF37]/30 rounded-full px-4 py-1.5">
+          <div className="inline-flex items-center gap-2 text-xs font-bold tracking-widest text-[#D4AF37] bg-[#D4AF37]/10 border border-[#D4AF37]/30 rounded-full px-4 py-1.5">
             <ShieldCheck className="w-4 h-4 text-[#D4AF37]" />
             Enterprise Digital Infrastructure
           </div>
@@ -373,7 +373,7 @@ const AboutPage: React.FC = () => {
             <div className="absolute top-0 right-0 w-64 h-64 bg-[#D4AF37]/10 rounded-full blur-3xl pointer-events-none" />
 
             <div className="relative z-10 space-y-4 max-w-4xl">
-              <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#D4AF37]">
+              <div className="inline-flex items-center gap-2 text-xs font-bold tracking-widest text-[#D4AF37]">
                 <ShieldCheck className="w-4 h-4" />
                 Uncompromised Standards
               </div>
@@ -402,7 +402,7 @@ const AboutPage: React.FC = () => {
           className="bg-white dark:bg-[#0B192C] border border-slate-200 dark:border-slate-800 rounded-3xl p-8 sm:p-12 shadow-sm space-y-8"
         >
           <div className="space-y-4 max-w-3xl">
-            <div className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-[#0A4DA6] dark:text-[#D4AF37] bg-[#0A4DA6]/10 dark:bg-[#D4AF37]/10 px-3.5 py-1.5 rounded-full">
+            <div className="inline-flex items-center gap-2 text-xs font-extrabold tracking-wider text-[#0A4DA6] dark:text-[#D4AF37] bg-[#0A4DA6]/10 dark:bg-[#D4AF37]/10 px-3.5 py-1.5 rounded-full">
               <Building2 className="w-4 h-4" />
               Enterprise Technology Leadership
             </div>
@@ -424,7 +424,7 @@ const AboutPage: React.FC = () => {
           </div>
 
           <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4">
+            <h3 className="text-xs font-bold tracking-wider text-slate-500 dark:text-slate-400 mb-4">
               Core Technical Capabilities & Infrastructure Architecture
             </h3>
 

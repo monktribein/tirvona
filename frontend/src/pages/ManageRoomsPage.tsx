@@ -174,7 +174,7 @@ export const ManageRoomsPage: React.FC = () => {
                   <h3 className="font-bold text-sm text-[#0B192C] dark:text-white">
                     {room.name}
                   </h3>
-                  <span className="text-[9px] uppercase font-bold text-gray-400">
+                  <span className="text-[9px] font-bold text-gray-400">
                     {room.type.replace("_", " ")} • {room.acType}
                   </span>
                 </div>
@@ -188,7 +188,7 @@ export const ManageRoomsPage: React.FC = () => {
 
               <div className="grid grid-cols-3 gap-2 text-center text-xs">
                 <div className="p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-850 rounded-[12px]">
-                  <span className="text-[9px] text-gray-400 block uppercase font-bold">
+                  <span className="text-[9px] text-gray-400 block font-bold">
                     Max Capacity
                   </span>
                   <span className="font-semibold text-secondary dark:text-white">
@@ -196,7 +196,7 @@ export const ManageRoomsPage: React.FC = () => {
                   </span>
                 </div>
                 <div className="p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-850 rounded-[12px]">
-                  <span className="text-[9px] text-gray-400 block uppercase font-bold">
+                  <span className="text-[9px] text-gray-400 block font-bold">
                     Total Rooms
                   </span>
                   <span className="font-semibold text-secondary dark:text-white">
@@ -204,7 +204,7 @@ export const ManageRoomsPage: React.FC = () => {
                   </span>
                 </div>
                 <div className="p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-850 rounded-[12px]">
-                  <span className="text-[9px] text-gray-400 block uppercase font-bold">
+                  <span className="text-[9px] text-gray-400 block font-bold">
                     Status
                   </span>
                   <span className="font-semibold text-success flex items-center justify-center gap-0.5">
