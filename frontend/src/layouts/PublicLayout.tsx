@@ -288,7 +288,7 @@ export const PublicLayout: React.FC = () => {
   const isHomePage = location.pathname === "/";
 
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground transition-colors duration-300">
+    <div className="min-h-screen flex flex-col bg-gray-50/70 dark:bg-[#070F1B] text-foreground transition-colors duration-300">
       {/* ── Sticky Header (Floating Rounded Navbar - Hide on Scroll Down, Show on Scroll Up) ── */}
       <header
         className={`sticky top-0 z-50 pt-3 pb-3 ${isHomePage ? "-mb-20 lg:-mb-24" : "mb-0"} pointer-events-none transition-all duration-300 ease-in-out transform ${

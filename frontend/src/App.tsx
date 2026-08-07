@@ -133,6 +133,15 @@ const ParkingControlCenterPage = lazy(
 const ParkingStaffRolesPage = lazy(
   () => import("./admin/parking/pages/ParkingStaffRolesPage"),
 );
+const RefundRequestsPage = lazy(
+  () => import("./admin/refunds/pages/RefundRequestsPage"),
+);
+const RefundRequestDetailPage = lazy(
+  () => import("./admin/refunds/pages/RefundRequestDetailPage"),
+);
+const RefundPoliciesPage = lazy(
+  () => import("./admin/refunds/pages/RefundPoliciesPage"),
+);
 
 // Sacred Services Ecosystem & Media Hub Pages
 const namedPage = <T extends Record<string, React.ComponentType<any>>>(
@@ -179,6 +188,9 @@ const EventsFestivalsPage = lazy(() => import("./pages/EventsFestivalsPage"));
 const LocalServicesHubPage = lazy(() => import("./pages/LocalServicesHubPage"));
 const ServicesHubPage = lazy(() => import("./pages/ServicesHubPage"));
 const MarketplaceHubPage = lazy(() => import("./pages/MarketplaceHubPage"));
+const MarketplaceProductDetailPage = lazy(
+  () => import("./pages/MarketplaceProductDetailPage"),
+);
 const MarketplaceCheckoutPage = lazy(
   () => import("./pages/MarketplaceCheckoutPage"),
 );
@@ -288,6 +300,10 @@ const AppContent: React.FC = () => {
             <Route
               path="/marketplace/categories"
               element={<MarketplaceCategoriesPage />}
+            />
+            <Route
+              path="/marketplace/product/:idOrSlug"
+              element={<MarketplaceProductDetailPage />}
             />
             <Route
               path="/marketplace/category/:slug"
@@ -615,6 +631,10 @@ const AppContent: React.FC = () => {
           >
             <Route path="/admin/audit-logs" element={<AuditLogsPage />} />
             <Route
+              path="/admin/refunds/policies"
+              element={<RefundPoliciesPage />}
+            />
+            <Route
               path="/admin/settings/pricing"
               element={<AdminPlatformSettingsPage />}
             />
@@ -649,6 +669,30 @@ const AppContent: React.FC = () => {
             <Route
               path="/admin/manage/:moduleKey/:subKey?"
               element={<EnterpriseModulePage />}
+            />
+          </Route>
+
+          {/* Refund queue. Wider than the policy screen: finance and support
+            work the queue, but only the platform rewrites the rules. The
+            server re-checks every action regardless. */}
+          <Route
+            element={
+              <ProtectedRoute
+                allowedRoles={[
+                  "super_admin",
+                  "national_admin",
+                  "finance_manager",
+                  "support",
+                ]}
+              >
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/admin/refunds" element={<RefundRequestsPage />} />
+            <Route
+              path="/admin/refunds/:id"
+              element={<RefundRequestDetailPage />}
             />
           </Route>
 

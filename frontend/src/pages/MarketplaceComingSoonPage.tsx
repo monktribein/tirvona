@@ -100,7 +100,7 @@ export const MarketplaceComingSoonPage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-[#070F1B] pt-20 sm:pt-24 pb-16">
+    <div className="min-h-screen pt-20 sm:pt-24 pb-16">
       {/* Breadcrumb Bar */}
       <div className="bg-white dark:bg-[#0B192C] border-b border-gray-100 dark:border-slate-800/80 py-3 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto flex items-center gap-2 text-xs font-bold text-gray-500 dark:text-gray-400">

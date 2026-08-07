@@ -426,11 +426,56 @@ export class BookingsService {
       if (!booking) throw new NotFoundException("Booking not found");
       if (booking.paymentStatus === "fully_paid")
         throw new ConflictException("Booking is already paid");
-      if (
+
+      /**
+       * The hold may have lapsed while the pilgrim was on the gateway screen.
+       *
+       * This used to reject outright — but the signature has already been
+       * verified above, so the money is real and the gateway has captured it.
+       * Throwing here left the customer charged, the booking expired, and no
+       * record that anything was owed back; every booking on the platform sat
+       * in exactly that state.
+       *
+       * A lapsed hold is therefore recoverable, not fatal: the same nights are
+       * re-acquired, and only if the rooms have genuinely gone to someone else
+       * does the confirmation fail — which is the case a refund exists for.
+       */
+      const holdLapsed =
         booking.status !== "pending" ||
-        booking.reservationExpiresAt < new Date()
-      )
-        throw new BadRequestException("Reservation hold has expired");
+        (booking.reservationExpiresAt &&
+          booking.reservationExpiresAt < new Date());
+
+      if (holdLapsed) {
+        if (["cancelled", "refunded"].includes(booking.status))
+          throw new BadRequestException(
+            "This booking was cancelled; the payment will be refunded",
+          );
+        await this.repository.holdInventory({
+          ashramId: String(booking.ashramId),
+          roomId: String(booking.roomId),
+          dates: booking.occupiedDates,
+          count: booking.roomsBookedCount,
+          capacity: booking.roomsBookedCount,
+          session,
+        });
+        booking.status = "pending";
+        booking.reservationExpiresAt = new Date(Date.now() + 15 * 60_000);
+        await this.audits.create(
+          [
+            {
+              userId: user.id,
+              action: "BOOKING_HOLD_RECOVERED_ON_PAYMENT",
+              bookingId: booking._id,
+              ashramId: booking.ashramId,
+              details: {
+                note: "Payment verified after the hold lapsed; inventory re-acquired",
+              },
+            },
+          ],
+          { session },
+        );
+      }
+
       await this.repository.confirmInventory({
         roomId: String(booking.roomId),
         dates: booking.occupiedDates,

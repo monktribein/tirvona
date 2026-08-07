@@ -512,6 +512,30 @@ export class AshramsService {
     );
   }
 
+  /**
+   * The same calendar a visitor may see, without the operational breakdown.
+   *
+   * A pilgrim needs the nightly price and whether a room is free; how that
+   * splits between held, booked and maintenance is the owner's business. This
+   * exists because the detail page has no other readable source — the
+   * owner-only `calendar()` 403s for a visitor — and without it the page fell
+   * back to a calendar generated with Math.random(), which showed genuinely
+   * free nights as "Sold Out".
+   */
+  async publicCalendar(
+    roomId: string,
+    startDate?: string,
+    endDate?: string,
+  ): Promise<any[]> {
+    const rows = await this.buildCalendar(roomId, startDate, endDate);
+    return rows.map((row) => ({
+      date: row.date,
+      price: row.price,
+      available: row.available,
+      isClosed: row.isClosed,
+    }));
+  }
+
   async calendar(
     user: AuthenticatedUser,
     roomId: string,
@@ -522,6 +546,16 @@ export class AshramsService {
     if (!room) throw new NotFoundException("Room not found");
     const ashram = await this.ashrams.findById(room.ashramId);
     this.assertScope(user, ashram);
+    return this.buildCalendar(roomId, startDate, endDate);
+  }
+
+  private async buildCalendar(
+    roomId: string,
+    startDate?: string,
+    endDate?: string,
+  ): Promise<any[]> {
+    const room = await this.rooms.findById(roomId);
+    if (!room) throw new NotFoundException("Room not found");
     const start = startDate ? new Date(startDate) : new Date();
     start.setUTCHours(0, 0, 0, 0);
     const end = endDate

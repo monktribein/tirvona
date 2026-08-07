@@ -45,7 +45,7 @@ export const MarketplaceCategoriesPage: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 pb-20 space-y-10">
+    <div className="min-h-screen pb-20 space-y-10">
       {/* Header Banner */}
       <div className="bg-gradient-to-r from-[#0B192C] via-[#0A4DA6] to-[#0B192C] text-white py-14 px-4 sm:px-8 shadow-xl">
         <div className="max-w-6xl mx-auto space-y-4">

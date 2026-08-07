@@ -63,6 +63,11 @@ export const roomService = {
     api.post(`/rooms/${id}/availability`, data),
   calendar: (id: string, startDate: string, endDate: string) =>
     api.get(`/rooms/${id}/calendar`, { params: { startDate, endDate } }),
+  /** Public availability for the detail page: price + free count per night. */
+  availabilityCalendar: (id: string, startDate: string, endDate: string) =>
+    api.get(`/rooms/${id}/availability-calendar`, {
+      params: { startDate, endDate },
+    }),
 };
 
 // ── Bookings ─────────────────────────────────────────────────────────────────
@@ -104,6 +109,50 @@ export const reviewService = {
   /** Whether the signed-in caller may review this ashram. */
   eligibility: (ashramId: string) =>
     api.get(`/reviews/eligibility/${ashramId}`),
+  remove: (id: string) => api.delete(`/reviews/${id}`),
+};
+
+// ── Refunds ──────────────────────────────────────────────────────────────────
+/**
+ * Refund management.
+ *
+ * The server decides what each caller may see and do — a pilgrim, an ashram
+ * owner and a finance admin all hit these same URLs and get different estates
+ * back — so nothing here filters by role. The `status`/`module` filters are the
+ * only ones the list endpoint understands; anything finer is refined on the
+ * client over the loaded page.
+ */
+export const refundService = {
+  list: (params: Record<string, unknown> = {}) =>
+    api.get("/refunds", { params }),
+  summary: () => api.get("/refunds/summary"),
+  get: (id: string) => api.get(`/refunds/${id}`),
+  create: (data: {
+    module: string;
+    sourceId: string;
+    reason: string;
+    customerNote?: string;
+  }) => api.post("/refunds", data),
+  review: (id: string, note = "") =>
+    api.post(`/refunds/${id}/review`, { note }),
+  approve: (id: string, note = "") =>
+    api.post(`/refunds/${id}/approve`, { note }),
+  reject: (id: string, reason: string) =>
+    api.post(`/refunds/${id}/reject`, { reason }),
+  cancel: (id: string, note = "") =>
+    api.post(`/refunds/${id}/cancel`, { note }),
+  /** Releases money. Finance and platform roles only, enforced server-side. */
+  process: (id: string) => api.post(`/refunds/${id}/process`, {}),
+};
+
+export const refundPolicyService = {
+  list: (module?: string) =>
+    api.get("/refund-policies", { params: module ? { module } : {} }),
+  get: (id: string) => api.get(`/refund-policies/${id}`),
+  create: (data: Record<string, unknown>) => api.post("/refund-policies", data),
+  update: (id: string, data: Record<string, unknown>) =>
+    api.put(`/refund-policies/${id}`, data),
+  remove: (id: string) => api.delete(`/refund-policies/${id}`),
 };
 
 // ── Support ──────────────────────────────────────────────────────────────────

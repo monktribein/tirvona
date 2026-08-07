@@ -444,7 +444,7 @@ export const ProfileMainPage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50/70 dark:bg-[#070F1B] pb-24 text-left">
+    <div className="min-h-screen pb-24 text-left">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-1 sm:pt-3 space-y-6">
         {/* User Hero Card */}
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 sm:p-7 shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-5">

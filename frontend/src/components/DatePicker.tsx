@@ -76,15 +76,25 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   }, []);
 
   const minDate = parseYMD(min);
+  const today = new Date();
+  const todayMidnight = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate(),
+  );
+
   const minMidnight = minDate
     ? new Date(minDate.getFullYear(), minDate.getMonth(), minDate.getDate())
-    : null;
-  const today = new Date();
+    : todayMidnight;
 
   const year = view.getFullYear();
   const month = view.getMonth();
   const firstWeekday = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  const isPrevMonthDisabled =
+    year < minMidnight.getFullYear() ||
+    (year === minMidnight.getFullYear() && month <= minMidnight.getMonth());
 
   const cells: Array<{ date: Date; current: boolean }> = [];
   for (let i = firstWeekday - 1; i >= 0; i--)
@@ -99,7 +109,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     });
   }
 
-  const isDisabled = (d: Date) => (minMidnight ? d < minMidnight : false);
+  const isDisabled = (d: Date) => d < minMidnight;
   const pick = (d: Date) => {
     if (isDisabled(d)) return;
     onChange(toYMD(d));
@@ -133,8 +143,13 @@ export const DatePicker: React.FC<DatePickerProps> = ({
               <div className="flex items-center gap-1">
                 <button
                   type="button"
+                  disabled={isPrevMonthDisabled}
                   onClick={() => setView(new Date(year, month - 1, 1))}
-                  className="w-7 h-7 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 flex items-center justify-center text-gray-500 cursor-pointer"
+                  className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${
+                    isPrevMonthDisabled
+                      ? "text-gray-300 dark:text-slate-700 cursor-not-allowed"
+                      : "text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800 cursor-pointer"
+                  }`}
                 >
                   <ChevronLeft size={15} />
                 </button>

@@ -8,8 +8,12 @@ import {
   ThumbsUp,
   X,
   MessageSquareQuote,
+  Trash2,
 } from "lucide-react";
 import { VerifiedBadge } from "./VerifiedBadge";
+import { useAuth } from "../../contexts/AuthContext";
+import { useNotifications } from "../../contexts/NotificationContext";
+import { reviewService } from "../../services";
 
 interface ReviewItem {
   _id: string;
@@ -32,12 +36,16 @@ interface ReviewItem {
 interface GuestReviewsCarouselProps {
   reviews: ReviewItem[];
   ashramName?: string;
+  onReviewDeleted?: (reviewId: string) => void;
 }
 
 export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
   reviews,
   ashramName,
+  onReviewDeleted,
 }) => {
+  const { user } = useAuth();
+  const { addNotification } = useNotifications();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
@@ -48,6 +56,41 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
 
   // Responsive cards per view: 1 mobile, 2 tablet, 3 desktop
   const [itemsPerPage, setItemsPerPage] = useState(3);
+
+  const handleDeleteReview = async (reviewId: string) => {
+    if (!window.confirm("Are you sure you want to remove this review?")) return;
+    try {
+      if (onReviewDeleted) {
+        onReviewDeleted(reviewId);
+      } else {
+        await reviewService.remove(reviewId);
+        addNotification(
+          "Review Removed",
+          "The review has been deleted successfully.",
+          "success",
+        );
+        window.location.reload();
+      }
+    } catch (err: any) {
+      console.error("Remove review error:", err);
+      addNotification(
+        "Error",
+        err.response?.data?.message || "Failed to remove review.",
+        "error",
+      );
+    }
+  };
+
+  const canUserDelete = (rev: ReviewItem) => {
+    if (!user) return false;
+    const authorId = rev.customerId?._id || (rev.customerId as any);
+    const userId = user.id || (user as any)._id;
+    const isAuthor = Boolean(authorId && String(authorId) === String(userId));
+    const isAdminOrOwner = ["super_admin", "owner", "manager"].includes(
+      user.role,
+    );
+    return isAuthor || isAdminOrOwner;
+  };
 
   useEffect(() => {
     const updateItemsPerPage = () => {
@@ -119,9 +162,10 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
     return `Stayed in ${date.toLocaleString("en-IN", { month: "long", year: "numeric" })}`;
   };
 
-  // Compute slice of reviews to display in current window
+  // Compute slice of reviews to display in current window (prevent duplicate looping when <= itemsPerPage)
   const getVisibleReviews = () => {
     if (reviews.length === 0) return [];
+    if (reviews.length <= itemsPerPage) return reviews;
     const visible = [];
     for (let i = 0; i < itemsPerPage; i++) {
       const idx = (currentIndex + i) % reviews.length;
@@ -241,15 +285,30 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
                         </div>
                       </div>
 
-                      {/* Rating Stars */}
-                      <div className="flex items-center gap-0.5 bg-white dark:bg-slate-850 px-2 py-1 rounded-full border border-gray-150 dark:border-slate-800 shadow-2xs shrink-0">
-                        <Star
-                          size={11}
-                          className="fill-[#D4AF37] text-[#D4AF37]"
-                        />
-                        <span className="text-[10px] font-black text-[#0B192C] dark:text-white tabular-nums">
-                          {ratingVal}.0
-                        </span>
+                      {/* Rating Stars & Delete Option */}
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <div className="flex items-center gap-0.5 bg-white dark:bg-slate-850 px-2 py-1 rounded-full border border-gray-150 dark:border-slate-800 shadow-2xs">
+                          <Star
+                            size={11}
+                            className="fill-[#D4AF37] text-[#D4AF37]"
+                          />
+                          <span className="text-[10px] font-black text-[#0B192C] dark:text-white tabular-nums">
+                            {ratingVal}.0
+                          </span>
+                        </div>
+                        {canUserDelete(rev) && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteReview(rev._id);
+                            }}
+                            className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
+                            title="Delete this review"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        )}
                       </div>
                     </div>
 
@@ -400,12 +459,27 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-0.5 px-2 py-0.5 bg-white dark:bg-slate-800 border border-gray-150 dark:border-slate-700 rounded-full text-[10px] font-extrabold">
-                          <Star
-                            size={10}
-                            className="fill-[#D4AF37] text-[#D4AF37]"
-                          />{" "}
-                          {ratingVal} / 5
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <div className="flex items-center gap-0.5 px-2 py-0.5 bg-white dark:bg-slate-800 border border-gray-150 dark:border-slate-700 rounded-full text-[10px] font-extrabold">
+                            <Star
+                              size={10}
+                              className="fill-[#D4AF37] text-[#D4AF37]"
+                            />{" "}
+                            {ratingVal} / 5
+                          </div>
+                          {canUserDelete(rev) && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteReview(rev._id);
+                              }}
+                              className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
+                              title="Delete this review"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          )}
                         </div>
                       </div>
 

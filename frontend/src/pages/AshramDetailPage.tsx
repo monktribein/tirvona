@@ -32,6 +32,7 @@ import WriteReviewCard from "../components/shared/WriteReviewCard";
 import { VerifiedBadge } from "../components/shared/VerifiedBadge";
 import { useBookingSearch } from "../contexts/BookingSearchContext";
 import TirvonaMap from "../components/TirvonaMap";
+import { DatePicker } from "../components/DatePicker";
 import { hasValidCoordinates } from "../utils/geo";
 import { useAutoScroll } from "../hooks/useAutoScroll";
 import {
@@ -67,16 +68,11 @@ import { useProfileAutoFill } from "../hooks/useProfileAutoFill";
 
 export const AshramDetailPage: React.FC = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
-  const autoFill = useProfileAutoFill();
-  const navigate = useNavigate();
-
-  const {
-    searchState,
-    updateBookingSearch,
-    totalGuests: searchTotalGuests,
-  } = useBookingSearch();
+  const { addNotification } = useNotifications();
+  const { searchState, updateBookingSearch } = useBookingSearch();
 
   const qCheckIn = searchParams.get("checkIn");
   const qCheckOut = searchParams.get("checkOut");
@@ -93,6 +89,29 @@ export const AshramDetailPage: React.FC = () => {
       ? parseInt(qChildren)
       : searchState.children || 0;
 
+  const getTodayYMD = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  };
+
+  const getTomorrowYMD = (baseYMD?: string) => {
+    let startDate = new Date();
+    if (baseYMD) {
+      const [y, m, d] = baseYMD.split("-").map(Number);
+      if (y && m && d) startDate = new Date(y, m - 1, d);
+    }
+    const nextDate = new Date(startDate.getTime() + 86400000);
+    return `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, "0")}-${String(nextDate.getDate()).padStart(2, "0")}`;
+  };
+
+  const todayYMD = getTodayYMD();
+  const validInitialCheckIn =
+    initialCheckIn && initialCheckIn >= todayYMD ? initialCheckIn : todayYMD;
+  const validInitialCheckOut =
+    initialCheckOut && initialCheckOut > validInitialCheckIn
+      ? initialCheckOut
+      : getTomorrowYMD(validInitialCheckIn);
+
   const [ashram, setAshram] = useState<any>(null);
   const [rooms, setRooms] = useState<any[]>([]);
   const [volunteerJobs, setVolunteerJobs] = useState<VolunteerJobItem[]>([]);
@@ -100,8 +119,8 @@ export const AshramDetailPage: React.FC = () => {
   const [detailError, setDetailError] = useState("");
 
   // Booking Flow parameters
-  const [checkIn, setCheckIn] = useState(initialCheckIn);
-  const [checkOut, setCheckOut] = useState(initialCheckOut);
+  const [checkIn, setCheckIn] = useState(validInitialCheckIn);
+  const [checkOut, setCheckOut] = useState(validInitialCheckOut);
   const [selectedRoom, setSelectedRoom] = useState<any>(null);
   const [roomsCount, setRoomsCount] = useState(initialRooms);
 
@@ -301,8 +320,6 @@ export const AshramDetailPage: React.FC = () => {
     const c = Math.max(0, val);
     setChildren(c);
   };
-
-  const { addNotification } = useNotifications();
 
   const handleApplyCoupon = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -1604,25 +1621,30 @@ export const AshramDetailPage: React.FC = () => {
                     <label className="text-[10px] font-bold text-gray-400">
                       Check In
                     </label>
-                    <input
-                      type="date"
-                      required
-                      value={checkIn}
-                      onChange={(e) => setCheckIn(e.target.value)}
-                      className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none"
-                    />
+                    <div className="p-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs font-semibold">
+                      <DatePicker
+                        value={checkIn}
+                        onChange={(v) => {
+                          setCheckIn(v);
+                          if (checkOut && v >= checkOut) {
+                            setCheckOut(getTomorrowYMD(v));
+                          }
+                        }}
+                        min={todayYMD}
+                      />
+                    </div>
                   </div>
                   <div className="space-y-1">
                     <label className="text-[10px] font-bold text-gray-400">
                       Check Out
                     </label>
-                    <input
-                      type="date"
-                      required
-                      value={checkOut}
-                      onChange={(e) => setCheckOut(e.target.value)}
-                      className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none"
-                    />
+                    <div className="p-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs font-semibold">
+                      <DatePicker
+                        value={checkOut}
+                        onChange={setCheckOut}
+                        min={getTomorrowYMD(checkIn)}
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -2185,7 +2207,11 @@ export const AshramDetailPage: React.FC = () => {
           loyalty, payment badges) plus the location map stacked between the
           reviews and the related stays, pushing them far apart. */}
       <div className="pt-10 border-t border-gray-100 dark:border-slate-800 space-y-6">
-        <GuestReviewsCarousel reviews={reviews} ashramName={ashram?.name} />
+        <GuestReviewsCarousel
+          reviews={reviews}
+          ashramName={ashram?.name}
+          onReviewDeleted={() => id && fetchReviews(id)}
+        />
         {id && (
           <div className="max-w-2xl">
             <WriteReviewCard

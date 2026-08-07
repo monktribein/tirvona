@@ -69,7 +69,7 @@ export const VideoDetailPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-[#070F1B] pt-32 text-center">
+      <div className="min-h-screen pt-32 text-center">
         <div className="w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
         <p className="text-xs font-bold text-gray-500">
           Loading Sacred Video...
@@ -80,7 +80,7 @@ export const VideoDetailPage: React.FC = () => {
 
   if (!data?.post) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-[#070F1B] pt-32 text-center">
+      <div className="min-h-screen pt-32 text-center">
         <h2 className="text-xl font-black text-gray-700 dark:text-gray-200 mb-4">
           Video Not Found
         </h2>
@@ -115,7 +115,7 @@ export const VideoDetailPage: React.FC = () => {
   const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1&rel=0`;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-[#070F1B] pb-16">
+    <div className="min-h-screen pb-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-1 sm:pt-3 space-y-8">
         {/* 2. Embedded 16:9 Responsive Video Player Container */}
         <div className="relative rounded-[32px] overflow-hidden shadow-2xl bg-black border border-gray-800 aspect-video w-full">

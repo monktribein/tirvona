@@ -224,7 +224,7 @@ export const MarketplaceCheckoutPage: React.FC = () => {
 
   if (placed)
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-[#070F1B] flex items-center justify-center p-6">
+      <div className="min-h-screen flex items-center justify-center p-6">
         <div className="bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 rounded-2xl p-8 max-w-md w-full text-center space-y-4 shadow-sm">
           <CheckCircle2 size={44} className="mx-auto text-emerald-500" />
           <h1 className="text-xl font-black text-[#0B192C] dark:text-white">
@@ -258,7 +258,7 @@ export const MarketplaceCheckoutPage: React.FC = () => {
 
   if (!lines.length)
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-[#070F1B] flex items-center justify-center p-6">
+      <div className="min-h-screen flex items-center justify-center p-6">
         <div className="text-center space-y-3">
           <p className="text-sm font-bold text-[#0B192C] dark:text-white">
             Your cart is empty
@@ -294,7 +294,7 @@ export const MarketplaceCheckoutPage: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-[#070F1B] pb-16">
+    <div className="min-h-screen pb-16">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-6 space-y-6">
         <button
           onClick={() => navigate("/marketplace")}

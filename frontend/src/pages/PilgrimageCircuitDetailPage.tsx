@@ -37,9 +37,9 @@ export const PilgrimageCircuitDetailPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-[#070F1B] pt-32 text-center">
+      <div className="min-h-screen pt-32 text-center">
         <div className="w-12 h-12 border-4 border-[#0A4DA6] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-        <p className="text-xs font-bold text-gray-500">
+        <p className="text-xs font-bold text-gray-50">
           Loading Pilgrimage Itinerary...
         </p>
       </div>
@@ -48,7 +48,7 @@ export const PilgrimageCircuitDetailPage: React.FC = () => {
 
   if (!circuit) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-[#070F1B] pt-32 text-center">
+      <div className="min-h-screen pt-32 text-center">
         <h2 className="text-xl font-black text-gray-700 dark:text-gray-200 mb-4">
           Circuit Not Found
         </h2>
@@ -63,7 +63,7 @@ export const PilgrimageCircuitDetailPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-[#070F1B] pt-24 sm:pt-28 pb-16">
+    <div className="min-h-screen pt-24 sm:pt-28 pb-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-8">
         {/* Top Back Link */}
         <button

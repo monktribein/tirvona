@@ -2,6 +2,7 @@ import { ForbiddenException, Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import type { Model } from "mongoose";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
+import { PARKING_MODEL } from "../../parking/domain/parking.constants";
 import type { AnalyticsRange } from "../presentation/dtos/analytics.dto";
 
 /**
@@ -80,7 +81,22 @@ export class AnalyticsService {
     @InjectModel("User") private readonly users: Model<any>,
     @InjectModel("BookingAuditLog") private readonly audits: Model<any>,
     @InjectModel("AuditLog") private readonly platformAudits: Model<any>,
+    @InjectModel(PARKING_MODEL.Booking)
+    private readonly parkingBookings: Model<any>,
   ) {}
+
+  /**
+   * Whether parking belongs in this caller's figures.
+   *
+   * A parking booking references a partner and a location, never an ashram, so
+   * there is no honest way to attribute it to a state or district. Only
+   * national-scope callers — whose ashram filter is empty — see it; a district
+   * officer's numbers stay ashram-only rather than being inflated with revenue
+   * from a car park that may sit outside their jurisdiction.
+   */
+  private includesParking(ashramFilter: Record<string, any>): boolean {
+    return Object.keys(ashramFilter).length === 0;
+  }
   private async scope(
     user: AuthenticatedUser,
     requested?: string,
@@ -202,7 +218,8 @@ export class AnalyticsService {
     const ashramFilter = this.jurisdictionFilter(user);
     const bookingFilter = await this.bookingScope(ashramFilter);
 
-    const [ashramFacet, bookingFacet] = await Promise.all([
+    const withParking = this.includesParking(ashramFilter);
+    const [ashramFacet, bookingFacet, parkingFacet] = await Promise.all([
       this.ashrams.aggregate([
         { $match: ashramFilter },
         {
@@ -267,6 +284,21 @@ export class AnalyticsService {
           },
         },
       ]),
+      withParking
+        ? this.parkingBookings.aggregate([
+            {
+              $group: {
+                _id: null,
+                totalBookings: { $sum: 1 },
+                revenue: { $sum: { $ifNull: ["$pricing.amountPaid", 0] } },
+                grossValue: { $sum: { $ifNull: ["$pricing.totalAmount", 0] } },
+                cancellations: {
+                  $sum: { $cond: [{ $eq: ["$status", "cancelled"] }, 1, 0] },
+                },
+              },
+            },
+          ])
+        : Promise.resolve([]),
     ]);
 
     const statusCounts = new Map<string, number>(
@@ -283,8 +315,13 @@ export class AnalyticsService {
     const rejected = countOf("rejected");
 
     const totals = bookingFacet[0]?.totals?.[0] ?? {};
-    const totalBookings = Number(totals.totalBookings ?? 0);
-    const cancellations = Number(totals.cancellations ?? 0);
+    const parking = (parkingFacet as any[])[0] ?? {};
+    // Platform financials, not stay financials. Parking revenue is real money
+    // the platform collected and belongs in the same totals.
+    const totalBookings =
+      Number(totals.totalBookings ?? 0) + Number(parking.totalBookings ?? 0);
+    const cancellations =
+      Number(totals.cancellations ?? 0) + Number(parking.cancellations ?? 0);
 
     return {
       ashrams: { total, approved, pending, rejected },
@@ -293,8 +330,12 @@ export class AnalyticsService {
         owners: Number(ashramFacet[0]?.owners?.[0]?.count ?? 0),
       },
       financials: {
-        revenue: round2(Number(totals.revenue ?? 0)),
-        grossValue: round2(Number(totals.grossValue ?? 0)),
+        revenue: round2(
+          Number(totals.revenue ?? 0) + Number(parking.revenue ?? 0),
+        ),
+        grossValue: round2(
+          Number(totals.grossValue ?? 0) + Number(parking.grossValue ?? 0),
+        ),
         cancellationRate: percent(cancellations, totalBookings),
         totalBookings,
         approvalRate: percent(approved, approved + rejected),
@@ -330,7 +371,10 @@ export class AnalyticsService {
       $cond: [{ $eq: ["$paymentMode", "online"] }, "online", "desk"],
     };
 
-    const [seriesRows, facet, topAshrams] = await Promise.all([
+    const withParking = this.includesParking(ashramFilter);
+
+    const [seriesRows, facet, topAshrams, parkingSeries, parkingTotals] =
+      await Promise.all([
       this.bookings.aggregate([
         { $match: { ...bookingFilter, createdAt: { $gte: windowStart } } },
         {
@@ -411,7 +455,60 @@ export class AnalyticsService {
           },
         },
       ]),
+      // Parking settles in its own collection, so it is aggregated separately
+      // and merged below rather than joined — the two domains share no key.
+      withParking
+        ? this.parkingBookings.aggregate([
+            { $match: { createdAt: { $gte: windowStart } } },
+            {
+              $group: {
+                _id: { $dateTrunc: { date: "$createdAt", unit } },
+                bookings: { $sum: 1 },
+                revenue: { $sum: { $ifNull: ["$pricing.amountPaid", 0] } },
+                gross: { $sum: { $ifNull: ["$pricing.totalAmount", 0] } },
+              },
+            },
+          ])
+        : Promise.resolve([]),
+      withParking
+        ? this.parkingBookings.aggregate([
+            {
+              $facet: {
+                window: [
+                  { $match: { createdAt: { $gte: windowStart } } },
+                  {
+                    $group: {
+                      _id: null,
+                      bookings: { $sum: 1 },
+                      revenue: { $sum: { $ifNull: ["$pricing.amountPaid", 0] } },
+                      gross: { $sum: { $ifNull: ["$pricing.totalAmount", 0] } },
+                    },
+                  },
+                ],
+                allTime: [
+                  {
+                    $group: {
+                      _id: null,
+                      bookings: { $sum: 1 },
+                      revenue: { $sum: { $ifNull: ["$pricing.amountPaid", 0] } },
+                      gross: { $sum: { $ifNull: ["$pricing.totalAmount", 0] } },
+                    },
+                  },
+                ],
+              },
+            },
+          ])
+        : Promise.resolve([]),
     ]);
+
+    // Parking contributions indexed by bucket, so the series below can add them
+    // to the matching night without a second pass over the data.
+    const parkingByBucket = new Map<string, any>(
+      (parkingSeries as any[]).map((row) => [
+        new Date(row._id).toISOString(),
+        row,
+      ]),
+    );
 
     // Index the sparse aggregation result so empty buckets render as real
     // zeroes rather than collapsing the x-axis onto whichever days had traffic.
@@ -436,18 +533,31 @@ export class AnalyticsService {
       const entry = byBucket.get(bucket.toISOString());
       const online = entry?.online ?? emptyChannel();
       const desk = entry?.desk ?? emptyChannel();
+      // Parking is a gateway-settled stream, so it joins the "online" series;
+      // the module split below is what keeps the two distinguishable.
+      const parking = parkingByBucket.get(bucket.toISOString()) ?? {
+        bookings: 0,
+        revenue: 0,
+        gross: 0,
+      };
       return {
         bucket: bucket.toISOString(),
         label: bucketLabel(bucket, unit),
-        onlineBookings: online.bookings,
+        onlineBookings: online.bookings + Number(parking.bookings ?? 0),
         deskBookings: desk.bookings,
-        onlineRevenue: round2(online.revenue),
+        onlineRevenue: round2(online.revenue + Number(parking.revenue ?? 0)),
         deskRevenue: round2(desk.revenue),
-        onlineGross: round2(online.gross),
+        onlineGross: round2(online.gross + Number(parking.gross ?? 0)),
         deskGross: round2(desk.gross),
-        bookings: online.bookings + desk.bookings,
-        revenue: round2(online.revenue + desk.revenue),
-        gross: round2(online.gross + desk.gross),
+        stayBookings: online.bookings + desk.bookings,
+        parkingBookings: Number(parking.bookings ?? 0),
+        parkingRevenue: round2(Number(parking.revenue ?? 0)),
+        bookings:
+          online.bookings + desk.bookings + Number(parking.bookings ?? 0),
+        revenue: round2(
+          online.revenue + desk.revenue + Number(parking.revenue ?? 0),
+        ),
+        gross: round2(online.gross + desk.gross + Number(parking.gross ?? 0)),
       };
     });
 
@@ -499,12 +609,24 @@ export class AnalyticsService {
       );
 
     const windowTotals = facet[0]?.window?.[0] ?? {};
-    const windowBookings = Number(windowTotals.bookings ?? 0);
-    const windowRevenue = round2(Number(windowTotals.revenue ?? 0));
+    const parkingWindow = (parkingTotals as any[])[0]?.window?.[0] ?? {};
+    const parkingAllTime = (parkingTotals as any[])[0]?.allTime?.[0] ?? {};
+
+    // Platform totals span every revenue stream. Parking used to be omitted
+    // entirely, so a platform that had collected real money through car parks
+    // reported zero.
+    const stayBookings = Number(windowTotals.bookings ?? 0);
+    const stayRevenue = round2(Number(windowTotals.revenue ?? 0));
+    const parkingBookingCount = Number(parkingWindow.bookings ?? 0);
+    const parkingRevenue = round2(Number(parkingWindow.revenue ?? 0));
+    const windowBookings = stayBookings + parkingBookingCount;
+    const windowRevenue = round2(stayRevenue + parkingRevenue);
     // Booked value and collected cash are different numbers, and on a platform
     // where stays are paid at the counter they can differ by everything. The
     // dashboard needs both or a fully unpaid ledger reads as "no activity".
-    const windowGrossValue = round2(Number(windowTotals.nightsValue ?? 0));
+    const windowGrossValue = round2(
+      Number(windowTotals.nightsValue ?? 0) + Number(parkingWindow.gross ?? 0),
+    );
 
     // Compare the latest bucket against the one before it. When the prior
     // bucket is empty there is no baseline, so the change is reported as
@@ -541,6 +663,24 @@ export class AnalyticsService {
         revenue: round2(Number(row.revenue ?? 0)),
         gross: round2(Number(row.gross ?? 0)),
       })),
+      // Which stream the money came from. The headline figures are the
+      // platform total; this is what keeps stays and parking legible.
+      modules: [
+        {
+          module: "ashram_booking",
+          label: "Ashram stays",
+          bookings: stayBookings,
+          revenue: stayRevenue,
+        },
+        {
+          module: "parking_booking",
+          label: "Parking",
+          bookings: parkingBookingCount,
+          revenue: parkingRevenue,
+          allTimeBookings: Number(parkingAllTime.bookings ?? 0),
+          allTimeRevenue: round2(Number(parkingAllTime.revenue ?? 0)),
+        },
+      ],
       totals: {
         windowBookings,
         windowRevenue,

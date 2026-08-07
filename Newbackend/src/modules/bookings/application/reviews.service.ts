@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
@@ -174,5 +175,26 @@ export class ReviewsService {
       .sort({ verifiedStay: -1, createdAt: -1 })
       .limit(20)
       .lean();
+  }
+
+  async remove(user: AuthenticatedUser, id: string): Promise<any> {
+    const review = await this.reviews.findById(id);
+    if (!review) throw new NotFoundException("Review not found");
+
+    const isAuthor = String(review.customerId) === user.id;
+    const isAdminOrOwner = ["super_admin", "owner", "manager"].includes(
+      user.role,
+    );
+
+    if (!isAuthor && !isAdminOrOwner) {
+      throw new ForbiddenException(
+        "You are not authorized to remove this review",
+      );
+    }
+
+    const ashramId = String(review.ashramId);
+    await this.reviews.deleteOne({ _id: id });
+    await this.recalculateRating(ashramId);
+    return { success: true, message: "Review deleted successfully" };
   }
 }
