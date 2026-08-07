@@ -33,7 +33,6 @@ export const OffersPage: React.FC = () => {
     "Festival Offer",
     "Mahakumbh Offer",
     "Weekend Offer",
-    "Meditation Camp",
     "Yoga Camp",
     "Room Upgrade",
     "Food Offer",
@@ -46,7 +45,86 @@ export const OffersPage: React.FC = () => {
     "Haridwar",
     "Vrindavan",
     "Varanasi",
-    "Kedarnath",
+    "Prayagraj",
+  ];
+
+  const DEFAULT_OFFERS = [
+    {
+      _id: "default-1",
+      offerType: "MAHAKUMBH OFFER",
+      discountPercentage: 20,
+      offerTitle: "Mahakumbh Sacred Stay Special",
+      description:
+        "Experience the holy Kumbh Mela 2026 with 20% OFF accommodation & VIP Ganga Aarti pass.",
+      promoCode: "KUMBH2026",
+      image: "/banner/upcominglogo.png",
+      validity: "31 Dec 2026",
+      ashramId: {
+        address: { city: "Prayagraj" },
+        name: "Tirvona Sacred Stay",
+      },
+    },
+    {
+      _id: "default-2",
+      offerType: "WEEKEND OFFER",
+      discountValue: 500,
+      discountType: "FixedAmount",
+      offerTitle: "Weekend Spiritual Yoga & Retreat",
+      description:
+        "Recharge your mind & soul with our weekend spiritual retreat package in Haridwar.",
+      promoCode: "WEEKEND500",
+      image: "/banner/ashram_rishikesh.png",
+      validity: "30 Jun 2026",
+      ashramId: {
+        address: { city: "Haridwar" },
+        name: "Prem Nagar Ashram",
+      },
+    },
+    {
+      _id: "default-3",
+      offerType: "FESTIVAL OFFER",
+      discountPercentage: 15,
+      offerTitle: "Festival Season Kashi Discount",
+      description:
+        "Get 15% instant savings on top verified ashrams across Kashi & Haridwar.",
+      promoCode: "FESTIVAL2026",
+      image: "/banner/ashram_varanasi.png",
+      validity: "31 Dec 2026",
+      ashramId: {
+        address: { city: "Varanasi" },
+        name: "Kashi Vishwanath Ashram",
+      },
+    },
+    {
+      _id: "default-4",
+      offerType: "SPECIAL OFFER",
+      discountPercentage: 25,
+      offerTitle: "Vrindavan Dham Yatra Deal",
+      description:
+        "Exclusive 25% discount on serene dharamshala stays in holy Vrindavan.",
+      promoCode: "VRINDAVAN25",
+      image: "/banner/ashram_vrindavan.png",
+      validity: "31 Dec 2026",
+      ashramId: {
+        address: { city: "Vrindavan" },
+        name: "Bhagwat Dham Ashram",
+      },
+    },
+    {
+      _id: "default-5",
+      offerType: "YOGA CAMP",
+      discountPercentage: 18,
+      offerTitle: "Rishikesh Yoga & Meditation Retreat",
+      description:
+        "Immerse yourself in authentic Vedic yoga sessions along holy Ganga at 18% OFF.",
+      promoCode: "YOGA2026",
+      image: "/banner/ashram_rishikesh.png",
+      validity: "30 Sep 2026",
+      ashramId: {
+        address: { city: "Rishikesh" },
+        name: "Parmarth Niketan Ashram",
+      },
+    },
   ];
 
   useEffect(() => {
@@ -65,11 +143,18 @@ export const OffersPage: React.FC = () => {
       }
 
       const res = await api.get(url);
-      if (res.data.success) {
+      if (
+        res.data.success &&
+        Array.isArray(res.data.data) &&
+        res.data.data.length > 0
+      ) {
         setOffers(res.data.data);
+      } else {
+        setOffers(DEFAULT_OFFERS);
       }
     } catch (err) {
       console.error("Fetch public offers error:", err);
+      setOffers(DEFAULT_OFFERS);
     } finally {
       setLoading(false);
     }
@@ -89,7 +174,7 @@ export const OffersPage: React.FC = () => {
   const handleBookWithOffer = (offer: any) => {
     const ashram =
       offer.ashramId || (offer.applicableAshrams && offer.applicableAshrams[0]);
-    if (ashram?._id) {
+    if (ashram?._id && !String(ashram._id).startsWith("default-") && !String(ashram._id).startsWith("ashram-")) {
       navigate(
         `/ashram/${ashram._id}?promoCode=${encodeURIComponent(offer.promoCode)}`,
       );
@@ -98,13 +183,32 @@ export const OffersPage: React.FC = () => {
     }
   };
 
-  const filteredOffers = offers.filter(
-    (o) =>
-      o.offerTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      o.promoCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (o.description &&
-        o.description.toLowerCase().includes(searchQuery.toLowerCase())),
-  );
+  const filteredOffers = offers.filter((o) => {
+    const q = searchQuery.toLowerCase().trim();
+    const titleMatch = (o.offerTitle || o.title || "").toLowerCase().includes(q);
+    const codeMatch = (o.promoCode || "").toLowerCase().includes(q);
+    const descMatch = (o.description || o.bannerText || "").toLowerCase().includes(q);
+    const matchesSearch = !q || titleMatch || codeMatch || descMatch;
+
+    const offerCat = (o.offerType || o.category || "").toLowerCase();
+    const matchesCategory =
+      selectedCategory === "All" ||
+      offerCat.includes(selectedCategory.toLowerCase()) ||
+      selectedCategory.toLowerCase().includes(offerCat);
+
+    const offerCity = (
+      o.ashramId?.address?.city ||
+      o.city ||
+      (o.applicableCities && o.applicableCities[0]) ||
+      ""
+    ).toLowerCase();
+    const matchesCity =
+      selectedCity === "All" ||
+      offerCity.includes(selectedCity.toLowerCase()) ||
+      selectedCity.toLowerCase().includes(offerCity);
+
+    return matchesSearch && matchesCategory && matchesCity;
+  });
 
   return (
     <div className="min-h-screen pb-20 space-y-10">

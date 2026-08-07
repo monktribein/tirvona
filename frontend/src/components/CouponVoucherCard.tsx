@@ -55,6 +55,62 @@ export const CouponVoucherCard: React.FC<CouponVoucherCardProps> = ({
         ? "Kashi Vishwanath Ashram"
         : "Shantikunj Gayatri Pariwar Ashram");
 
+  // Validity text & Expiry check
+  const rawValid =
+    offer.validUntil || offer.validity || offer.expiryDate || offer.validTill;
+  const validityText = rawValid
+    ? typeof rawValid === "string"
+      ? rawValid
+      : new Date(rawValid).toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        })
+    : offer.offerType === "WEEKEND OFFER" ||
+        offer.promoCode === "WEEKEND500"
+      ? "30 Jun 2026"
+      : "31 Dec 2026";
+
+  const checkIsExpired = (): boolean => {
+    if (offer.status === "expired" || offer.status === "disabled") return true;
+
+    if (!rawValid && (offer.offerType === "WEEKEND OFFER" || offer.promoCode === "WEEKEND500")) {
+      const junDate = new Date("2026-06-30T23:59:59");
+      return junDate.getTime() < Date.now();
+    }
+
+    if (!rawValid) return false;
+
+    if (rawValid instanceof Date) {
+      return rawValid.getTime() < Date.now();
+    }
+
+    if (typeof rawValid === "string") {
+      const parsed = new Date(rawValid);
+      if (!isNaN(parsed.getTime())) {
+        parsed.setHours(23, 59, 59, 999);
+        return parsed.getTime() < Date.now();
+      }
+
+      // Format like "30 Jun 2026" or "31 Dec 2026"
+      const parts = rawValid.trim().split(/\s+/);
+      if (parts.length === 3) {
+        const day = parseInt(parts[0], 10);
+        const monthStr = parts[1];
+        const year = parseInt(parts[2], 10);
+        const dateObj = new Date(`${monthStr} ${day}, ${year}`);
+        if (!isNaN(dateObj.getTime())) {
+          dateObj.setHours(23, 59, 59, 999);
+          return dateObj.getTime() < Date.now();
+        }
+      }
+    }
+
+    return false;
+  };
+
+  const isExpired = checkIsExpired();
+
   // Determine theme: Green for Weekend/Retreat/FixedAmount, Orange for Mahakumbh/Percentage
   const lowerType = offerType.toLowerCase();
   const isGreenTheme =
@@ -63,35 +119,49 @@ export const CouponVoucherCard: React.FC<CouponVoucherCardProps> = ({
     offer.discountType === "FixedAmount" ||
     promoCode.toLowerCase().includes("weekend");
 
-  const theme = isGreenTheme
+  const theme = isExpired
     ? {
-        stubBg: "bg-gradient-to-br from-[#2D7A3E] via-[#236832] to-[#185026]",
-        stubPillBorder: "border-white/40 bg-white/10",
-        badgeBg: "bg-[#236832]",
-        badgeText: "HURRY UP!",
-        pinColor: "text-[#236832] dark:text-[#4ADE80]",
-        codeBoxBg: "bg-[#F0FDF4] dark:bg-[#14381C]/40",
-        codeBoxBorder:
-          "border-dashed border-[#236832]/40 dark:border-[#4ADE80]/40",
-        codeLabel: "text-[#236832] dark:text-[#4ADE80]",
-        btnBg: "bg-[#236832] hover:bg-[#1B5226]",
-        btnShadow: "shadow-[#236832]/25",
-        subtext: "ON RETREAT PACKAGES",
+        stubBg: "bg-gradient-to-br from-slate-600 via-gray-600 to-slate-700",
+        stubPillBorder: "border-white/20 bg-white/10",
+        badgeBg: "bg-red-600 dark:bg-red-700",
+        badgeText: "EXPIRED",
+        pinColor: "text-gray-500 dark:text-gray-400",
+        codeBoxBg: "bg-gray-100 dark:bg-slate-800/60",
+        codeBoxBorder: "border-dashed border-gray-300 dark:border-slate-700",
+        codeLabel: "text-gray-400",
+        btnBg: "bg-gray-400 dark:bg-slate-700 cursor-not-allowed",
+        btnShadow: "shadow-none",
+        subtext: "OFFER EXPIRED",
       }
-    : {
-        stubBg: "bg-gradient-to-br from-[#F95400] via-[#E65100] to-[#C2410C]",
-        stubPillBorder: "border-white/40 bg-white/10",
-        badgeBg: "bg-[#E65100]",
-        badgeText: "LIMITED TIME",
-        pinColor: "text-[#E65100] dark:text-[#FB923C]",
-        codeBoxBg: "bg-[#FFF5ED] dark:bg-[#3D1D0F]/40",
-        codeBoxBorder:
-          "border-dashed border-[#E65100]/40 dark:border-[#FB923C]/40",
-        codeLabel: "text-[#E65100] dark:text-[#FB923C]",
-        btnBg: "bg-[#E65100] hover:bg-[#C2410C]",
-        btnShadow: "shadow-[#E65100]/25",
-        subtext: "ON ALL PACKAGES",
-      };
+    : isGreenTheme
+      ? {
+          stubBg: "bg-gradient-to-br from-[#2D7A3E] via-[#236832] to-[#185026]",
+          stubPillBorder: "border-white/40 bg-white/10",
+          badgeBg: "bg-[#236832]",
+          badgeText: "HURRY UP!",
+          pinColor: "text-[#236832] dark:text-[#4ADE80]",
+          codeBoxBg: "bg-[#F0FDF4] dark:bg-[#14381C]/40",
+          codeBoxBorder:
+            "border-dashed border-[#236832]/40 dark:border-[#4ADE80]/40",
+          codeLabel: "text-[#236832] dark:text-[#4ADE80]",
+          btnBg: "bg-[#236832] hover:bg-[#1B5226]",
+          btnShadow: "shadow-[#236832]/25",
+          subtext: "ON RETREAT PACKAGES",
+        }
+      : {
+          stubBg: "bg-gradient-to-br from-[#F95400] via-[#E65100] to-[#C2410C]",
+          stubPillBorder: "border-white/40 bg-white/10",
+          badgeBg: "bg-[#E65100]",
+          badgeText: "LIMITED TIME",
+          pinColor: "text-[#E65100] dark:text-[#FB923C]",
+          codeBoxBg: "bg-[#FFF5ED] dark:bg-[#3D1D0F]/40",
+          codeBoxBorder:
+            "border-dashed border-[#E65100]/40 dark:border-[#FB923C]/40",
+          codeLabel: "text-[#E65100] dark:text-[#FB923C]",
+          btnBg: "bg-[#E65100] hover:bg-[#C2410C]",
+          btnShadow: "shadow-[#E65100]/25",
+          subtext: "ON ALL PACKAGES",
+        };
 
   // Discount formatting
   const discountValue = offer.discountValue || offer.discountPercentage || 20;
@@ -100,18 +170,11 @@ export const CouponVoucherCard: React.FC<CouponVoucherCardProps> = ({
     (!offer.discountType && offer.discountPercentage) ||
     !offer.discountValue;
 
-  // Validity text
-  const rawValid = offer.validUntil || offer.validity || offer.expiryDate;
-  const validityText = rawValid
-    ? rawValid
-    : isGreenTheme
-      ? "30 Jun 2026"
-      : "31 Dec 2026";
-
   const isCopied = copiedCode ? copiedCode === promoCode : internalCopied;
 
   const handleCopy = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (isExpired) return;
     if (onCopyCode) {
       onCopyCode(promoCode);
     } else {
@@ -122,6 +185,7 @@ export const CouponVoucherCard: React.FC<CouponVoucherCardProps> = ({
   };
 
   const handleCardClick = (e: React.MouseEvent) => {
+    if (isExpired) return;
     if (onBookNow) {
       onBookNow(offer);
     }
@@ -130,7 +194,7 @@ export const CouponVoucherCard: React.FC<CouponVoucherCardProps> = ({
   return (
     <div
       onClick={handleCardClick}
-      className={`relative group cursor-pointer transition-all duration-300 hover:-translate-y-1 flex flex-row bg-[#FAF9F6] dark:bg-[#0B192C] rounded-2xl sm:rounded-3xl border border-gray-200/80 dark:border-slate-800 shadow-md hover:shadow-xl overflow-hidden ${
+      className={`relative group ${isExpired ? "cursor-not-allowed opacity-85" : "cursor-pointer hover:-translate-y-1"} transition-all duration-300 flex flex-row bg-[#FAF9F6] dark:bg-[#0B192C] rounded-2xl sm:rounded-3xl border border-gray-200/80 dark:border-slate-800 shadow-md ${isExpired ? "" : "hover:shadow-xl"} overflow-hidden ${
         isCarouselItem
           ? "w-[290px] xs:w-[330px] sm:w-[450px] md:w-[560px] lg:w-[590px] shrink-0"
           : "w-full max-w-[640px]"
@@ -308,27 +372,51 @@ export const CouponVoucherCard: React.FC<CouponVoucherCardProps> = ({
 
           {/* Right Action: Book Button & Valid Till Subtext */}
           <div className="flex flex-col items-end gap-0.5 sm:gap-1 shrink-0">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleCardClick(e);
-              }}
-              className={`px-3 sm:px-6 py-1.5 sm:py-2.5 rounded-xl sm:rounded-2xl ${theme.btnBg} text-white font-extrabold text-[10px] sm:text-xs md:text-sm shadow-md ${theme.btnShadow} hover:shadow-lg transition-all flex items-center justify-center gap-1 sm:gap-2 cursor-pointer active:scale-95`}
-            >
-              <span>Book Now</span>
-              <ArrowRight
-                size={12}
-                className="group-hover:translate-x-1 transition-transform sm:w-3.5 sm:h-3.5"
-              />
-            </button>
+            {isExpired ? (
+              <button
+                type="button"
+                disabled
+                className="px-3 sm:px-6 py-1.5 sm:py-2.5 rounded-xl sm:rounded-2xl bg-gray-400 dark:bg-slate-700 text-white font-extrabold text-[10px] sm:text-xs md:text-sm shadow-none cursor-not-allowed flex items-center justify-center gap-1 sm:gap-2 opacity-80"
+              >
+                <span>Expired</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCardClick(e);
+                }}
+                className={`px-3 sm:px-6 py-1.5 sm:py-2.5 rounded-xl sm:rounded-2xl ${theme.btnBg} text-white font-extrabold text-[10px] sm:text-xs md:text-sm shadow-md ${theme.btnShadow} hover:shadow-lg transition-all flex items-center justify-center gap-1 sm:gap-2 cursor-pointer active:scale-95`}
+              >
+                <span>Book Now</span>
+                <ArrowRight
+                  size={12}
+                  className="group-hover:translate-x-1 transition-transform sm:w-3.5 sm:h-3.5"
+                />
+              </button>
+            )}
 
-            <div className="flex items-center gap-0.5 sm:gap-1 text-[8px] sm:text-[10px] md:text-[11px] font-semibold text-gray-500 dark:text-gray-400">
+            <div
+              className={`flex items-center gap-0.5 sm:gap-1 text-[8px] sm:text-[10px] md:text-[11px] font-semibold ${
+                isExpired
+                  ? "text-red-500 dark:text-red-400"
+                  : "text-gray-500 dark:text-gray-400"
+              }`}
+            >
               <Clock
                 size={9}
-                className="text-gray-400 shrink-0 sm:w-3 sm:h-3"
+                className={`shrink-0 sm:w-3 sm:h-3 ${
+                  isExpired
+                    ? "text-red-500 dark:text-red-400"
+                    : "text-gray-400"
+                }`}
               />
-              <span>Valid till {validityText}</span>
+              <span>
+                {isExpired
+                  ? `Expired on ${validityText}`
+                  : `Valid till ${validityText}`}
+              </span>
             </div>
           </div>
         </div>

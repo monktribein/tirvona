@@ -109,6 +109,7 @@ export const reviewService = {
   /** Whether the signed-in caller may review this ashram. */
   eligibility: (ashramId: string) =>
     api.get(`/reviews/eligibility/${ashramId}`),
+  remove: (id: string) => api.delete(`/reviews/${id}`),
 };
 
 // ── Refunds ──────────────────────────────────────────────────────────────────

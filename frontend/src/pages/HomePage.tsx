@@ -2077,7 +2077,7 @@ export const HomePage: React.FC = () => {
             className="flex gap-4 sm:gap-6 overflow-x-auto pb-6 pt-2 scrollbar-none -mx-4 sm:mx-0 px-4 sm:px-0 justify-start"
             style={{ scrollbarWidth: "none" }}
           >
-            {[...customerFeedbacks, ...customerFeedbacks].map((fb, idx) => (
+            {customerFeedbacks.map((fb, idx) => (
               <div
                 key={idx}
                 className="flex-shrink-0 relative group cursor-pointer"

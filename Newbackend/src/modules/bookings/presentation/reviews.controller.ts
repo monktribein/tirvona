@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Post } from "@nestjs/common";
 import {
   CurrentUser,
   type AuthenticatedUser,
@@ -20,6 +20,17 @@ export class ReviewsController {
       data: await this.service.create(user, dto),
     };
   }
+
+  @Delete(":id") async remove(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("id") id: string,
+  ) {
+    return {
+      success: true,
+      data: await this.service.remove(user, id),
+    };
+  }
+
   /**
    * Whether the signed-in caller may review this ashram, and the verified-stay
    * status the badge would carry. Declared before `ashram/:ashramId` so the
