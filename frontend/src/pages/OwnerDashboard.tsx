@@ -188,7 +188,7 @@ export const OwnerDashboard: React.FC = () => {
       if (res.data?.success) {
         addNotification(
           "Request Rejected",
-          "Feedback has been sent back to BannerBoy.",
+          "Feedback has been sent back to Content Manager.",
           "warning",
         );
         setRejectionModalId(null);
@@ -317,7 +317,7 @@ export const OwnerDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* ── Pending Content Approvals (BannerBoy Workflow Console) ── */}
+      {/* ── Pending Content Approvals (CMS Workflow Console) ── */}
       <div className="bg-white dark:bg-[#0B192C] border border-amber-200 dark:border-amber-900/50 p-6 rounded-[24px] shadow-sm space-y-4">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-4">
           <div>
@@ -325,7 +325,7 @@ export const OwnerDashboard: React.FC = () => {
               Pending Content Approvals (CMS Workflow)
             </h3>
             <p className="text-xs text-gray-400">
-              Review proposed banner & homepage changes submitted by BannerBoy.
+              Review proposed banner & homepage changes submitted by Content Managers.
             </p>
           </div>
 
@@ -354,7 +354,7 @@ export const OwnerDashboard: React.FC = () => {
                     <div className="text-[11px] text-gray-500 flex items-center gap-2">
                       <span>
                         Submitted by:{" "}
-                        <strong>{req.userId?.name || "BannerBoy"}</strong> (
+                        <strong>{req.userId?.name || "Content Manager"}</strong> (
                         {req.userId?.email})
                       </span>
                       <span>•</span>
@@ -390,7 +390,7 @@ export const OwnerDashboard: React.FC = () => {
                   <div className="p-3 bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 rounded-xl space-y-2">
                     <div className="flex justify-between items-center">
                       <span className="text-[10px] font-extrabold text-emerald-700 dark:text-emerald-300 tracking-wider block">
-                        Proposed BannerBoy Version (New)
+                        Proposed Content Version (New)
                       </span>
                       {req.newValue?.bannerWidth && (
                         <span className="px-2 py-0.5 bg-emerald-200 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-100 rounded text-[9px] font-mono font-bold">

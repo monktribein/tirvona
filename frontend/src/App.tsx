@@ -69,7 +69,6 @@ const MarketplaceCategoryDetailPage = lazy(
 const StaffManagementPage = lazy(() => import("./pages/StaffManagementPage"));
 const ReceptionCheckinPage = lazy(() => import("./pages/ReceptionCheckinPage"));
 const HousekeepingPage = lazy(() => import("./pages/HousekeepingPage"));
-const BannerBoyDashboard = lazy(() => import("./pages/BannerBoyDashboard"));
 // Parking System — a self-contained module. Lazy-loaded so it ships as its own
 // chunk and adds nothing to the initial bundle of any existing route.
 const ParkingHubPage = lazy(
@@ -546,25 +545,7 @@ const AppContent: React.FC = () => {
             <Route path="/owner/offers" element={<OwnerOffersPage />} />
           </Route>
 
-          {/* BannerBoy CMS Portal using Shared Enterprise DashboardLayout */}
-          <Route
-            element={
-              <ProtectedRoute
-                allowedRoles={[
-                  "banner_manager",
-                  "content_manager",
-                  "super_admin",
-                ]}
-              >
-                <DashboardLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route
-              path="/bannerboy/dashboard"
-              element={<BannerBoyDashboard />}
-            />
-          </Route>
+
 
           {/* Support Tickets shared across Roles */}
           <Route
@@ -665,6 +646,14 @@ const AppContent: React.FC = () => {
             <Route
               path="/admin/approvals/:moduleType?"
               element={<CentralApprovalCenterPage />}
+            />
+            <Route
+              path="/admin/manage/ashrams/add"
+              element={<AddAshramWizardPage />}
+            />
+            <Route
+              path="/admin/manage/ashrams/edit/:id"
+              element={<AddAshramWizardPage />}
             />
             <Route
               path="/admin/manage/:moduleKey/:subKey?"

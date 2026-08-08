@@ -190,7 +190,6 @@ export class EnterpriseNotificationsController {
   "govt_admin",
   "district_officer",
   "inspector",
-  "banner_manager",
   "content_manager",
   "offer_manager",
   "blog_manager",

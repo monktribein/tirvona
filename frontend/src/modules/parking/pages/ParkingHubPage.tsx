@@ -8,6 +8,7 @@ import {
   Loader2,
   LayoutGrid,
   Map as MapIcon,
+  Sparkles,
 } from "lucide-react";
 import { getErrorMessage } from "../../../lib/api";
 import { parkingDiscoveryService } from "../services/parking.service";
@@ -224,56 +225,26 @@ export const ParkingHubPage: React.FC = () => {
 
   return (
     <div className="pb-16 lg:pb-24 overflow-x-hidden">
-      {/* Hero Banner Container matching Navbar Layout Width */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-1 sm:pt-3">
-        <section className="relative bg-[#0B192C] text-white rounded-3xl p-6 sm:p-8 lg:p-10 overflow-hidden min-h-[220px] sm:min-h-[260px] flex flex-col justify-between items-center text-center border border-gray-100 dark:border-slate-800">
-          {/* Background Banner Image & Dark Overlay */}
-          <div className="absolute inset-0 z-0">
-            <img
-              src="/banner/parking.png"
-              alt="Tirvona Parking Hero Banner"
-              className="w-full h-full object-cover object-center"
+      {/* Clean Text Header (Matching all other section headers on the site) */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6">
+        <div className="text-center space-y-2 max-w-3xl mx-auto py-2">
+          <p className="font-['Kalam'] text-base sm:text-4xl font-bold text-[#E58C28]">
+            Sacred Parking Facilities
+          </p>
+          {/* Decorative Saffron Underline Divider */}
+          <div className="flex items-center justify-center gap-2.5 my-1.5">
+            <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
+            <Sparkles
+              size={14}
+              className="text-[#E58C28] fill-[#E58C28] shrink-0"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/60 to-black/45" />
+            <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
           </div>
-
-          <div className="absolute right-0 top-0 w-[28rem] h-[28rem] bg-[#E58C28]/15 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -left-20 bottom-0 w-80 h-80 bg-[#D4AF37]/10 rounded-full blur-3xl pointer-events-none" />
-
-          <div className="max-w-3xl space-y-3 relative z-10 mx-auto text-center my-auto py-4">
-            <motion.h1
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.05 }}
-              className="text-2xl sm:text-3xl md:text-4xl lg:text-[44px] font-black text-white drop-shadow-md leading-[1.15]"
-              style={{
-                fontFamily:
-                  "Satoshi, 'General Sans', Manrope, Inter, sans-serif",
-                letterSpacing: "-0.03em",
-              }}
-            >
-              Reserve Your Parking,
-              <span className="block text-[#D4AF37] mt-1">
-                Park With Peace of Mind.
-              </span>
-            </motion.h1>
-
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.15, duration: 0.4 }}
-              className="text-[#E2E8F0] text-xs sm:text-sm leading-relaxed max-w-2xl mx-auto"
-              style={{
-                fontFamily:
-                  "Satoshi, 'General Sans', Manrope, Inter, sans-serif",
-                fontWeight: 500,
-              }}
-            >
-              Verified, secure parking near India&rsquo;s holiest destinations.
-              Book ahead, pay online, and enter with a single QR scan.
-            </motion.p>
-          </div>
-        </section>
+          <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-xl mx-auto leading-relaxed">
+            Verified, secure parking near India&rsquo;s holiest destinations.
+            Book ahead, pay online, and enter with a single QR scan.
+          </p>
+        </div>
       </div>
 
       {/* Search panel below the hero banner */}

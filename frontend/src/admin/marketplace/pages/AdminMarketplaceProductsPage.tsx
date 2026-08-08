@@ -29,6 +29,7 @@ import {
   EnterpriseModal,
   EnterpriseButton,
   EnterpriseStatusBadge,
+  EnterprisePageHeader,
 } from "../../shared";
 
 export const AdminMarketplaceProductsPage: React.FC = () => {
@@ -105,7 +106,7 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
 
   useEffect(() => {
     fetchProducts();
-  }, []);
+  }, [categoryFilter, statusFilter, searchTerm]);
 
   const fetchProducts = async () => {
     setLoading(true);
@@ -407,17 +408,47 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
     }
   };
 
+  const handleToggleStock = async (product: MarketplaceProductItem) => {
+    const isOut = product.status === "out_of_stock" || (product.stock !== undefined && Number(product.stock) <= 0);
+    const nextStatus = isOut ? "active" : "out_of_stock";
+    const nextStock = isOut ? (product.stock > 0 ? product.stock : 50) : 0;
+
+    try {
+      const res = await marketplaceService.updateProduct(product._id, {
+        status: nextStatus,
+        stock: nextStock,
+      });
+      if (res.data?.success) {
+        addNotification(
+          "Stock Updated",
+          `Product "${product.name}" marked as ${isOut ? "In Stock" : "Out of Stock"}.`,
+          "success",
+        );
+        window.dispatchEvent(new Event("marketplace_updated"));
+        fetchProducts();
+      }
+    } catch (err) {
+      addNotification(
+        "Stock Update Failed",
+        getErrorMessage(err, "Could not update stock status."),
+        "error",
+      );
+    }
+  };
+
   const filteredProducts = products.filter((p) => {
     const matchesSearch =
       !searchTerm ||
       p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (p.templeSource &&
         p.templeSource.toLowerCase().includes(searchTerm.toLowerCase()));
-
     const matchesCategory =
-      categoryFilter === "all" || p.category === categoryFilter;
-    const matchesStatus = statusFilter === "all" || p.status === statusFilter;
-
+      categoryFilter === "all" || !categoryFilter || p.category === categoryFilter;
+    const matchesStatus =
+      statusFilter === "all" ||
+      !statusFilter ||
+      p.status === statusFilter ||
+      (!p.status && statusFilter === "active");
     return matchesSearch && matchesCategory && matchesStatus;
   });
 
@@ -434,43 +465,31 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 pb-20 text-left">
+    <div className="space-y-6 text-left w-full">
       {/* ── Page Header (Tirvona Blue Theme) ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-[#0B192C] p-6 rounded-3xl border border-gray-100 dark:border-slate-800 shadow-sm">
-        <div className="space-y-1">
+      <EnterprisePageHeader
+        title="Marketplace Product Catalog"
+        subtitle="Manage live products, pricing, inventory & multi-image gallery."
+        icon={<ShoppingBag size={22} />}
+        badgeText="Catalog Live"
+        actions={
           <div className="flex items-center gap-2">
-            <span className="p-2 bg-blue-50 dark:bg-blue-950/50 text-[#0A4DA6] dark:text-blue-300 rounded-xl">
-              <ShoppingBag size={22} />
-            </span>
-            <h1 className="text-xl sm:text-2xl font-black text-[#0B192C] dark:text-white">
-              Marketplace Product Catalog & Image Management
-            </h1>
+            <button
+              onClick={handleCreateOpen}
+              className="px-5 py-2.5 bg-[#0A4DA6] hover:bg-[#083b80] text-white rounded-full text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-[#0A4DA6]/20 cursor-pointer"
+            >
+              <Plus size={16} /> Add New Product
+            </button>
+            <button
+              onClick={fetchProducts}
+              className="p-2.5 bg-gray-50 dark:bg-slate-900 hover:bg-gray-100 dark:hover:bg-slate-800 border border-gray-100 dark:border-slate-800 rounded-full text-gray-500 cursor-pointer transition-colors"
+              title="Refresh List"
+            >
+              <RefreshCw size={16} className={loading ? "animate-spin text-[#0A4DA6]" : ""} />
+            </button>
           </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-            Super Admin → Marketplace → Products • Manage live products,
-            pricing, inventory & multi-image gallery.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={fetchProducts}
-            className="p-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 text-gray-700 dark:text-gray-300 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
-            title="Refresh List"
-          >
-            <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-            <span>Refresh</span>
-          </button>
-
-          <button
-            onClick={handleCreateOpen}
-            className="px-5 py-2.5 bg-[#0A4DA6] hover:bg-blue-900 text-white rounded-xl text-xs font-extrabold flex items-center gap-2 shadow-md shadow-[#0A4DA6]/20 transition-all cursor-pointer"
-          >
-            <Plus size={16} />
-            <span>Add New Product</span>
-          </button>
-        </div>
-      </div>
+        }
+      />
 
       {/* ── Filters & Search Toolbar ── */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-white dark:bg-[#0B192C] p-4 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm">
@@ -639,11 +658,17 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
 
                       {/* Stock */}
                       <td className="py-3 px-4">
-                        <span
-                          className={`font-bold ${p.stock < 10 ? "text-rose-500" : "text-gray-700 dark:text-gray-300"}`}
-                        >
-                          {p.stock} units
-                        </span>
+                        {p.status === "out_of_stock" || p.stock <= 0 ? (
+                          <span className="px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 font-extrabold text-[10px] border border-red-200 dark:border-red-900 inline-block">
+                            Out of Stock ({p.stock || 0})
+                          </span>
+                        ) : (
+                          <span
+                            className={`font-bold ${p.stock < 10 ? "text-amber-600" : "text-gray-700 dark:text-gray-300"}`}
+                          >
+                            {p.stock} units
+                          </span>
+                        )}
                       </td>
 
                       {/* Images count */}
@@ -667,6 +692,22 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
                       {/* Actions */}
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => handleToggleStock(p)}
+                            className={`px-2 py-1 rounded-xl text-[10px] font-black transition-colors cursor-pointer ${p.status === "out_of_stock" || p.stock <= 0
+                              ? "bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400"
+                              : "bg-red-50 hover:bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-400"
+                              }`}
+                            title={
+                              p.status === "out_of_stock" || p.stock <= 0
+                                ? "Mark product as In Stock"
+                                : "Mark product as Out of Stock"
+                            }
+                          >
+                            {p.status === "out_of_stock" || p.stock <= 0
+                              ? "Mark In Stock"
+                              : "Mark Out of Stock"}
+                          </button>
                           <button
                             onClick={() => handleEditOpen(p)}
                             className="p-2 bg-blue-50 hover:bg-blue-100 text-[#0A4DA6] rounded-xl transition-colors cursor-pointer"
@@ -696,6 +737,7 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
       <EnterpriseModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+        maxWidth="5xl"
         title={
           editingProduct
             ? `Edit Product: ${editingProduct.name}`
@@ -713,8 +755,8 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
               <ShoppingBag size={14} /> Product Overview
             </h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div className="space-y-1">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3.5">
+              <div className="space-y-1 lg:col-span-2">
                 <label className="text-gray-700 dark:text-gray-300">
                   Product Name *
                 </label>
@@ -730,7 +772,7 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
                 />
               </div>
 
-              <div className="space-y-1">
+              <div className="space-y-1 lg:col-span-2">
                 <label className="text-gray-700 dark:text-gray-300">
                   Category *
                 </label>
@@ -750,10 +792,8 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
                     ))}
                 </select>
               </div>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div className="space-y-1">
+              <div className="space-y-1 lg:col-span-2">
                 <label className="text-gray-700 dark:text-gray-300">
                   Temple Source / Vendor
                 </label>
@@ -768,7 +808,7 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
                 />
               </div>
 
-              <div className="space-y-1">
+              <div className="space-y-1 lg:col-span-2">
                 <label className="text-gray-700 dark:text-gray-300">
                   Authenticity Guarantee
                 </label>
@@ -785,21 +825,21 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
                   className="w-full p-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold text-gray-800 dark:text-white"
                 />
               </div>
-            </div>
 
-            <div className="space-y-1">
-              <label className="text-gray-700 dark:text-gray-300">
-                Description
-              </label>
-              <textarea
-                rows={2}
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
-                }
-                placeholder="Write detailed product description..."
-                className="w-full p-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold text-gray-800 dark:text-white"
-              />
+              <div className="space-y-1 col-span-full">
+                <label className="text-gray-700 dark:text-gray-300">
+                  Description
+                </label>
+                <textarea
+                  rows={2}
+                  value={formData.description}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
+                  placeholder="Write detailed product description..."
+                  className="w-full p-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold text-gray-800 dark:text-white"
+                />
+              </div>
             </div>
           </div>
 
@@ -997,7 +1037,7 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5">
                 {formData.images.map((imgUrl, idx) => {
                   const isCover = idx === 0;
                   const filename = getCleanFileName(imgUrl);
@@ -1006,11 +1046,10 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
                   return (
                     <div
                       key={idx}
-                      className={`relative bg-white dark:bg-slate-900 rounded-2xl border ${
-                        isCover
-                          ? "border-2 border-[#0A4DA6] shadow-md shadow-[#0A4DA6]/15"
-                          : "border-gray-200 dark:border-slate-800"
-                      } overflow-hidden flex flex-col justify-between group transition-all`}
+                      className={`relative bg-white dark:bg-slate-900 rounded-2xl border ${isCover
+                        ? "border-2 border-[#0A4DA6] shadow-md shadow-[#0A4DA6]/15"
+                        : "border-gray-200 dark:border-slate-800"
+                        } overflow-hidden flex flex-col justify-between group transition-all`}
                     >
                       {/* Image Thumbnail & Badge Header */}
                       <div className="relative aspect-[4/3] w-full bg-gray-100 dark:bg-slate-800 overflow-hidden">

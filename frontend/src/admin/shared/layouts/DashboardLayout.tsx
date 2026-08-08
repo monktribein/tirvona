@@ -51,8 +51,6 @@ const getFormattedRole = (role?: string): string => {
     case "owner":
     case "stay_admin":
       return "Stay Admin";
-    case "banner_manager":
-      return "BannerBoy";
     case "support":
       return "Support";
     case "reception":
@@ -158,50 +156,12 @@ export const DashboardLayout: React.FC = () => {
   // Super Admin Categorized Navigation Groups
   const superAdminGroups: NavGroup[] = [
     {
-      groupName: "Approval center",
-      icon: <FileCheck size={15} />,
-      links: [
-        { label: "📥 All Requests", path: "/admin/approvals/all" },
-        { label: "🏨 Ashram Requests", path: "/admin/approvals/ashram" },
-        {
-          label: "🛏 Room Category Requests",
-          path: "/admin/approvals/room-category",
-        },
-        { label: "🏠 Room Requests", path: "/admin/approvals/room" },
-        {
-          label: "🛁 Amenities & Facilities",
-          path: "/admin/approvals/amenities",
-        },
-        {
-          label: "💰 Pricing Change Requests",
-          path: "/admin/approvals/pricing",
-        },
-        { label: "🎁 Offers & Coupons", path: "/admin/approvals/offer" },
-        { label: "🖼 Gallery & Media", path: "/admin/approvals/gallery" },
-        { label: "🙋 Volunteer & Careers", path: "/admin/approvals/volunteer" },
-        {
-          label: "🛍 Marketplace Products",
-          path: "/admin/approvals/marketplace",
-        },
-        { label: "🚕 Local Services", path: "/admin/approvals/service" },
-        { label: "📰 Blogs & Articles", path: "/admin/approvals/blog" },
-        { label: "🎉 Events & Festivals", path: "/admin/approvals/event" },
-        { label: "🛕 Temple Directory", path: "/admin/approvals/temple" },
-        { label: "📢 Banner & CMS", path: "/admin/approvals/banner" },
-        { label: "⚙ Other Requests", path: "/admin/approvals/other" },
-      ],
-    },
-    {
       groupName: "User management",
       icon: <Users size={15} />,
       links: [
         { label: "Users & IAM", path: "/admin/users" },
         { label: "Pilgrims", path: "/admin/manage/users/pilgrims" },
         { label: "Owners", path: "/admin/manage/users/owners" },
-        {
-          label: "Banner Managers",
-          path: "/admin/manage/users/banner-managers",
-        },
         {
           label: "Content Managers",
           path: "/admin/manage/users/content-managers",
@@ -238,9 +198,6 @@ export const DashboardLayout: React.FC = () => {
         { label: "Pending Verification", path: "/admin/verifications" },
         { label: "Approved Ashrams", path: "/admin/manage/ashrams/approved" },
         { label: "Rejected Ashrams", path: "/admin/manage/ashrams/rejected" },
-        { label: "Amenities", path: "/admin/manage/ashrams/amenities" },
-        { label: "Categories", path: "/admin/manage/ashrams/categories" },
-        { label: "Facilities", path: "/admin/manage/ashrams/facilities" },
         {
           label: "Room Categories",
           path: "/admin/manage/ashrams/room-categories",
@@ -263,7 +220,6 @@ export const DashboardLayout: React.FC = () => {
         { label: "Availability", path: "/admin/manage/rooms/availability" },
         { label: "Pricing", path: "/admin/manage/rooms/pricing" },
         { label: "Platform Pricing", path: "/admin/settings/pricing" },
-        { label: "Season Pricing", path: "/admin/manage/rooms/season-pricing" },
         { label: "Inventory", path: "/admin/manage/rooms/inventory" },
       ],
     },
@@ -370,20 +326,7 @@ export const DashboardLayout: React.FC = () => {
       groupName: "Banner management",
       icon: <Image size={15} />,
       links: [
-        { label: "Homepage Banner", path: "/admin/manage/banner/homepage" },
-        { label: "Hero Slider", path: "/admin/manage/banner/hero-slider" },
-        { label: "Offers Banner", path: "/admin/manage/banner/offers" },
-        { label: "Blog Banner", path: "/admin/manage/banner/blog" },
-        {
-          label: "Marketplace Banner",
-          path: "/admin/manage/banner/marketplace",
-        },
-        {
-          label: "Destination Banner",
-          path: "/admin/manage/banner/destination",
-        },
-        { label: "Upload Media", path: "/admin/manage/banner/upload" },
-        { label: "Approval Queue", path: "/admin/manage/banner/approval" },
+        { label: "Banner Management", path: "/admin/manage/banner/homepage" },
       ],
     },
     {
@@ -480,27 +423,7 @@ export const DashboardLayout: React.FC = () => {
     },
   ];
 
-  const bannerBoyGroups: NavGroup[] = [
-    {
-      groupName: "Banner management",
-      icon: <Image size={15} />,
-      links: [
-        { label: "Banner Management", path: "/bannerboy/dashboard" },
-        { label: "Homepage CMS", path: "/bannerboy/dashboard" },
-        { label: "Media Library", path: "/bannerboy/dashboard" },
-      ],
-    },
-    {
-      groupName: "Communications & approvals",
-      icon: <Bell size={15} />,
-      links: [
-        { label: "Announcements", path: "/bannerboy/dashboard" },
-        { label: "Pending Approvals", path: "/bannerboy/dashboard" },
-        { label: "My Activity", path: "/bannerboy/dashboard" },
-        { label: "CMS Profile", path: "/bannerboy/dashboard" },
-      ],
-    },
-  ];
+
 
   const districtAdminGroups: NavGroup[] = [
     {
@@ -625,16 +548,6 @@ export const DashboardLayout: React.FC = () => {
           icon: <Bed size={16} className="text-[#E58C28]" />,
         },
         groups: [],
-      };
-    }
-    if (["banner_manager", "content_manager"].includes(user?.role || "")) {
-      return {
-        topLink: {
-          label: "CMS Dashboard",
-          path: "/bannerboy/dashboard",
-          icon: <LayoutDashboard size={16} className="text-[#E58C28]" />,
-        },
-        groups: bannerBoyGroups,
       };
     }
     if (user?.role === "offer_manager") {
@@ -836,6 +749,33 @@ export const DashboardLayout: React.FC = () => {
 
           {/* Categorized Dropdown Groups (All Collapsed By Default) */}
           {navData.groups.map((group) => {
+            if (
+              group.links.length === 1 &&
+              (group.links[0].label === "Banner Management" ||
+                group.links[0].label === group.groupName)
+            ) {
+              const singleLink = group.links[0];
+              const isActive =
+                location.pathname === singleLink.path ||
+                (singleLink.path !== navData.topLink.path &&
+                  location.pathname.startsWith(singleLink.path));
+
+              return (
+                <Link
+                  key={group.groupName}
+                  to={singleLink.path}
+                  onClick={isMobile ? () => setSidebarOpen(false) : undefined}
+                  className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-black transition-all ${isActive
+                    ? "bg-[#0A4DA6] text-white shadow-md shadow-[#0A4DA6]/20 border-l-4 border-[#0A4DA6]"
+                    : "text-slate-600 dark:text-gray-300 hover:bg-[#EBF2FA] dark:hover:bg-slate-800 hover:text-[#0A4DA6]"
+                    }`}
+                >
+                  {group.icon}
+                  <span>{group.groupName}</span>
+                </Link>
+              );
+            }
+
             const isOpen = openGroups[group.groupName] ?? false;
             const hasActiveLink = group.links.some(
               (l) => location.pathname === l.path,

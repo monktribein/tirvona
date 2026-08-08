@@ -88,8 +88,8 @@ export const corsOriginsFromEnvironment = (): string[] =>
   csv(
     process.env.CORS_ORIGINS,
     process.env.FRONTEND_URL ??
-      process.env.CLIENT_URL ??
-      "http://localhost:5173",
+    process.env.CLIENT_URL ??
+    "http://localhost:5173",
   );
 
 export const parkingQrSecretFromEnvironment = (): string =>
@@ -256,10 +256,6 @@ export function validateEnvironment(
       throw new Error(
         "PARKING_QR_SECRET must contain at least 32 characters in production",
       );
-    // Without a key secret the payment services fall back to a demo mode that
-    // skips signature verification entirely — in production that confirms
-    // bookings for free. `requireTogether` above only enforces "both or
-    // neither", so absent keys would otherwise sail through.
     for (const name of ["RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET"]) {
       if (!String(input[name] ?? "").trim())
         throw new Error(

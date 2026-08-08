@@ -20,7 +20,9 @@ import {
   Search,
   Table2,
   Users,
+  LayoutDashboard,
 } from "lucide-react";
+import { EnterprisePageHeader } from "../../shared";
 
 /**
  * Chart ink, as CSS custom properties.
@@ -804,7 +806,7 @@ export const AdminDashboard: React.FC = () => {
   const hasWindowData = (overview?.totals.windowBookings ?? 0) > 0;
 
   return (
-    <div className="tv-viz space-y-6 text-left w-full pb-12 font-sans bg-white dark:bg-[#070F1B] p-2 sm:p-4 rounded-3xl">
+    <div className="tv-viz space-y-6 text-left w-full font-sans">
       <style>{VIZ_TOKENS}</style>
 
       {errors.length > 0 && (
@@ -825,52 +827,39 @@ export const AdminDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Filter row — one control set above everything it scopes. */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-gray-200 dark:border-slate-800 pb-4">
-        <div>
-          <h2 className="text-xl font-bold text-[#0B192C] dark:text-white tracking-tight">
-            Dashboard
-          </h2>
-          <span className="text-xs text-gray-500 font-medium">
-            Live platform telemetry for{" "}
-            <strong className="text-[#0A4DA6] dark:text-blue-400 font-extrabold">
-              {user?.name || "Super Admin"}
-            </strong>{" "}
-            · {RANGE_LABEL[range]}
-          </span>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="flex items-center gap-5 text-xs font-bold tracking-wider">
-            {(["daily", "weekly", "monthly", "yearly"] as const).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setRange(tab)}
-                className={`pb-1 transition-all cursor-pointer relative ${
-                  range === tab
-                    ? "text-[#FF5722] font-black"
-                    : "text-gray-400 hover:text-gray-700 dark:hover:text-white"
-                }`}
-              >
-                {tab}
-                {range === tab && (
-                  <motion.div
-                    layoutId="tabUnderline"
-                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#FF5722]"
-                  />
-                )}
-              </button>
-            ))}
+      {/* Enterprise Page Header */}
+      <EnterprisePageHeader
+        title="Executive Dashboard"
+        subtitle={`Live platform telemetry for ${user?.name || "Super Admin"} · ${RANGE_LABEL[range]}`}
+        icon={<LayoutDashboard size={22} />}
+        badgeText={RANGE_LABEL[range]}
+        actions={
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-1.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 p-1 rounded-2xl text-xs font-bold">
+              {(["daily", "weekly", "monthly", "yearly"] as const).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setRange(tab)}
+                  className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer capitalize ${
+                    range === tab
+                      ? "bg-[#0A4DA6] text-white shadow-sm font-black"
+                      : "text-gray-500 hover:text-[#0A4DA6] dark:hover:text-white"
+                  }`}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => load(range, false)}
+              className="p-2.5 bg-gray-50 dark:bg-slate-900 hover:bg-gray-100 dark:hover:bg-slate-800 border border-gray-100 dark:border-slate-800 rounded-2xl text-gray-500 cursor-pointer transition-colors"
+              title="Refresh Telemetry"
+            >
+              <RefreshCw size={16} className={refreshing ? "animate-spin text-[#0A4DA6]" : ""} />
+            </button>
           </div>
-          <button
-            onClick={() => load(range, false)}
-            className="text-gray-400 hover:text-[#0A4DA6] transition-colors p-1.5 rounded-lg border border-gray-200 dark:border-slate-700 cursor-pointer"
-            title="Refresh"
-          >
-            <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
-          </button>
-        </div>
-      </div>
+        }
+      />
 
       {/* Hold the previous render at reduced opacity while refetching. */}
       <div

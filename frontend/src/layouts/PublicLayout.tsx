@@ -232,7 +232,6 @@ export const PublicLayout: React.FC = () => {
       return user.role === "super_admin" ? "Admin Dashboard" : "Parking Dashboard";
     if (["district_officer", "govt_admin", "super_admin"].includes(user.role))
       return "Admin Dashboard";
-    if (user.role === "banner_manager") return "Banner CMS";
     if (["owner", "stay_admin"].includes(user.role))
       return "Stay Admin Dashboard";
     if (user.role === "support") return "Support Console";
@@ -258,7 +257,6 @@ export const PublicLayout: React.FC = () => {
       "manager",
       "reception",
       "housekeeping",
-      "banner_manager",
       "support",
     ].includes(user.role);
   };
@@ -269,7 +267,6 @@ export const PublicLayout: React.FC = () => {
     if (user.role === "govt_admin") return "Govt Admin";
     if (user.role === "district_officer") return "District Admin";
     if (["owner", "stay_admin"].includes(user.role)) return "Stay Admin";
-    if (user.role === "banner_manager") return "BannerBoy";
     if (isParkingRole(user.parkingRoles, user.role, user.email))
       return "Parking Partner";
     if (user.role === "volunteer") return "Volunteer";

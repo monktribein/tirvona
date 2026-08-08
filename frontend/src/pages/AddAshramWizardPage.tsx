@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { ashramService } from "../services";
 import { FileUploader } from "../components/FileUploader";
 import TirvonaMap from "../components/TirvonaMap";
+import { ImageGalleryManager } from "../admin/shared/components/ImageGalleryManager";
 import {
   ChevronRight,
   ChevronLeft,
@@ -181,9 +182,10 @@ const BASIC_STEPS = [
   { id: 2, label: "Trust & Reg.", icon: ShieldCheck, value: 1 },
   { id: 3, label: "Address & GPS", icon: MapPin, value: 2 },
   { id: 4, label: "Contact", icon: Phone, value: 3 },
-  { id: 5, label: "Documents", icon: FileCheck, value: 16 },
-  { id: 6, label: "Preview", icon: Eye, value: 18 },
-  { id: 7, label: "Submit", icon: Send, value: 19 },
+  { id: 5, label: "Ashram Photos", icon: Image, value: 4 },
+  { id: 6, label: "Documents", icon: FileCheck, value: 16 },
+  { id: 7, label: "Preview", icon: Eye, value: 18 },
+  { id: 8, label: "Submit", icon: Send, value: 19 },
 ];
 
 const CONFIG_STEPS = [
@@ -431,6 +433,9 @@ const SectionHeader: React.FC<{
 
 const AddAshramWizardPage: React.FC = () => {
   const navigate = useNavigate();
+  const backPath = window.location.pathname.startsWith("/admin")
+    ? "/admin/manage/ashrams/all"
+    : "/owner/ashrams";
   const [searchParams] = useSearchParams();
   const editId = searchParams.get("edit");
   const STEPS = editId ? CONFIG_STEPS : BASIC_STEPS;
@@ -1214,37 +1219,6 @@ const AddAshramWizardPage: React.FC = () => {
               title="Cover Image & Gallery"
               subtitle="High-quality images that showcase the ashram on the public listing page."
             />
-            <Field
-              label="Cover / Hero Image"
-              required
-              hint="Upload an image, or paste a URL. This is the main image shown at the top of the listing."
-            >
-              <div className="mb-2">
-                <FileUploader
-                  folder="ashrams"
-                  label="Upload Cover Image"
-                  currentUrl={formData.coverImageUrl}
-                  onUploaded={(url) => set("coverImageUrl", url)}
-                />
-              </div>
-              <Input
-                placeholder="…or paste an image URL"
-                value={formData.coverImageUrl}
-                onChange={(e) => set("coverImageUrl", e.target.value)}
-              />
-              {formData.coverImageUrl && (
-                <div className="mt-3 rounded-2xl overflow-hidden h-48 border border-gray-100 dark:border-slate-800">
-                  <img
-                    src={formData.coverImageUrl}
-                    alt="Cover"
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.currentTarget.style.display = "none";
-                    }}
-                  />
-                </div>
-              )}
-            </Field>
 
             <div className="space-y-3">
               <label className="text-xs font-bold text-gray-500 dark:text-gray-400 tracking-wider">
@@ -2634,7 +2608,7 @@ const AddAshramWizardPage: React.FC = () => {
               </div>
               <div className="flex gap-3 pt-4">
                 <button
-                  onClick={() => navigate("/owner/ashrams")}
+                  onClick={() => navigate(backPath)}
                   className="px-6 py-3 bg-[#0A4DA6] text-white rounded-full font-bold text-sm hover:bg-[#0A4DA6]/90 transition-colors"
                 >
                   Back to My Ashrams
@@ -2776,7 +2750,7 @@ const AddAshramWizardPage: React.FC = () => {
               </div>
               <div className="flex gap-3 pt-4">
                 <button
-                  onClick={() => navigate("/owner/ashrams")}
+                  onClick={() => navigate(backPath)}
                   className="px-6 py-3 bg-[#0A4DA6] text-white rounded-full font-bold text-sm hover:bg-[#0A4DA6]/90 transition-colors"
                 >
                   Back to My Ashrams
@@ -2846,46 +2820,47 @@ const AddAshramWizardPage: React.FC = () => {
   // ─── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen">
-      {/* ── Sticky Header ── */}
-      <div className="sticky top-0 z-30 bg-white dark:bg-[#0B192C] border-b border-gray-100 dark:border-slate-800 shadow-sm">
-        <div className="max-w-5xl mx-auto px-4 md:px-8 py-4 flex items-center justify-between gap-4">
+    <div className="space-y-6 text-left max-w-7xl mx-auto pb-12">
+      {/* ── Page Module Banner Header ── */}
+      <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[28px] shadow-sm mb-6">
+        <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
             <button
-              onClick={() => navigate("/owner/ashrams")}
-              className="flex-shrink-0 p-2 rounded-full border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+              onClick={() => navigate(backPath)}
+              className="flex-shrink-0 p-2.5 rounded-2xl bg-[#0A4DA6]/10 hover:bg-[#0A4DA6]/20 transition-colors text-[#0A4DA6]"
+              title="Back"
             >
-              <ChevronLeft size={16} className="text-gray-500" />
+              <ChevronLeft size={18} />
             </button>
             <div className="min-w-0">
-              <h1 className="text-sm font-extrabold text-[#0B192C] dark:text-white truncate">
+              <h1 className="text-xl font-black text-[#0B192C] dark:text-white tracking-tight truncate">
                 {formData.name || "New Ashram Listing"}
               </h1>
-              <p className="text-[10px] text-gray-400 font-semibold">
+              <p className="text-xs text-gray-400 font-semibold mt-0.5">
                 Step {step + 1} of {STEPS.length} — {STEPS[step].label}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <span className="hidden sm:flex items-center gap-1.5 text-[10px] font-bold text-success bg-success/10 px-3 py-1.5 rounded-full border border-success/20">
-              <Save size={10} /> Draft Autosaved
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <span className="hidden sm:flex items-center gap-1.5 text-xs font-extrabold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-3.5 py-1.5 rounded-full border border-emerald-200 dark:border-emerald-800/40">
+              <Save size={12} /> Draft Autosaved
             </span>
-            <span className="text-xs font-extrabold text-[#0A4DA6]">
+            <span className="text-sm font-black text-[#0A4DA6] bg-[#0A4DA6]/10 px-3.5 py-1.5 rounded-full">
               {Math.round(progressPercent)}%
             </span>
           </div>
         </div>
 
         {/* Progress bar */}
-        <div className="h-1 bg-gray-100 dark:bg-slate-800">
+        <div className="h-1.5 bg-gray-100 dark:bg-slate-800 rounded-full overflow-hidden mt-4">
           <div
-            className="h-full bg-gradient-to-r from-[#0A4DA6] to-[#1D6AE5] transition-all duration-500"
+            className="h-full bg-gradient-to-r from-[#0A4DA6] to-[#1D6AE5] transition-all duration-500 rounded-full"
             style={{ width: `${progressPercent}%` }}
           />
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 md:px-8 py-6 flex gap-8">
+      <div className="flex gap-8">
         {/* ── Sidebar Step Navigator ── */}
         <aside className="hidden xl:block w-56 flex-shrink-0">
           <div className="sticky top-28 space-y-1 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-3 shadow-sm">

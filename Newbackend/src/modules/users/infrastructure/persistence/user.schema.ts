@@ -12,7 +12,6 @@ export const USER_ROLES = [
   "manager",
   "reception",
   "housekeeping",
-  "banner_manager",
   "content_manager",
   "offer_manager",
   "blog_manager",

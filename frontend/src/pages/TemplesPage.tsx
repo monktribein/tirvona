@@ -112,8 +112,7 @@ export const TemplesPage: React.FC = () => {
                 history:
                   "The sacred birthplace of Lord Ram, newly consecrated grand pink sandstone mandir designed by Sompura family.",
                 darshanTimings: "06:30 AM - 12:00 PM & 02:00 PM - 10:00 PM",
-                coverImage:
-                  "https://images.unsplash.com/photo-1627894483216-2138af692e32?auto=format&fit=crop&w=1200&q=80",
+                coverImage: "",
                 rating: 5.0,
                 reviewsCount: 2400,
               },
@@ -127,8 +126,7 @@ export const TemplesPage: React.FC = () => {
                 history:
                   "One of the twelve Jyotirlingas, famous for its unique south-facing idol (Dakshinamurti) and world-renowned Bhasma Aarti.",
                 darshanTimings: "04:00 AM - 11:00 PM",
-                coverImage:
-                  "https://images.unsplash.com/photo-1608958416801-9c60e3a6a908?auto=format&fit=crop&w=1200&q=80",
+                coverImage: "",
                 rating: 4.9,
                 reviewsCount: 980,
               },
@@ -142,8 +140,7 @@ export const TemplesPage: React.FC = () => {
                 history:
                   "One of the most famous Hindu temples dedicated to Lord Shiva, located on the western bank of holy River Ganga.",
                 darshanTimings: "03:00 AM - 11:00 PM",
-                coverImage:
-                  "https://images.unsplash.com/photo-1561361058-c24e36e56336?auto=format&fit=crop&w=1200&q=80",
+                coverImage: "",
                 rating: 4.9,
                 reviewsCount: 1250,
               },
@@ -157,8 +154,7 @@ export const TemplesPage: React.FC = () => {
                 history:
                   "Ancient Himalayan shrine of Lord Shiva located near Mandakini river amidst snow-capped peaks.",
                 darshanTimings: "05:00 AM - 09:00 PM",
-                coverImage:
-                  "https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=1200&q=80",
+                coverImage: "",
                 rating: 5.0,
                 reviewsCount: 3100,
               },
@@ -172,8 +168,7 @@ export const TemplesPage: React.FC = () => {
                 history:
                   "Sacred Char Dham shrine dedicated to Lord Vishnu, situated along the Alaknanda river in Chamoli district.",
                 darshanTimings: "04:30 AM - 09:00 PM",
-                coverImage:
-                  "https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=1200&q=80",
+                coverImage: "",
                 rating: 4.9,
                 reviewsCount: 1850,
               },
@@ -187,44 +182,14 @@ export const TemplesPage: React.FC = () => {
                 history:
                   "Holy Krishna temple in Vrindavan established by Swami Haridas, famous for its divine curtain darshan (Parda Seva).",
                 darshanTimings: "07:45 AM - 12:00 PM & 05:30 PM - 09:30 PM",
-                coverImage:
-                  "https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?auto=format&fit=crop&w=1200&q=80",
+                coverImage: "",
                 rating: 4.9,
                 reviewsCount: 1620,
               },
             ];
 
-            const getTempleCoverImage = (item: any, idx: number) => {
-              const name = item?.name || "";
-              if (name.includes("Mahakal") || name.includes("Ujjain")) {
-                return "/banner/ashram_himalayas.png";
-              }
-              if (
-                name.includes("Kashi") ||
-                name.includes("Vishwanath") ||
-                name.includes("Varanasi")
-              ) {
-                return "/banner/ashram_varanasi.png";
-              }
-              if (name.includes("Ram") || name.includes("Ayodhya")) {
-                return "/banner/ashram_vrindavan.png";
-              }
-              if (name.includes("Kedar")) {
-                return "/banner/ashram_himalayas.png";
-              }
-              if (name.includes("Badri")) {
-                return "/banner/ashram_rishikesh.png";
-              }
-              if (name.includes("Bankey") || name.includes("Vrindavan")) {
-                return "/banner/ashram_vrindavan.png";
-              }
-              const defaultBanners = [
-                "/banner/ashram_vrindavan.png",
-                "/banner/ashram_himalayas.png",
-                "/banner/ashram_varanasi.png",
-                "/banner/ashram_rishikesh.png",
-              ];
-              return defaultBanners[idx % defaultBanners.length];
+            const getTempleCoverImage = (item: any) => {
+              return item?.coverImage || item?.image || item?.bannerImage || "";
             };
 
             const listToRender =
@@ -243,7 +208,7 @@ export const TemplesPage: React.FC = () => {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {listToRender.map((item, idx) => {
-                  const validImg = getTempleCoverImage(item, idx);
+                  const validImg = getTempleCoverImage(item);
 
                   return (
                     <div
@@ -254,16 +219,13 @@ export const TemplesPage: React.FC = () => {
                       <div>
                         {/* Image Header with location & rating badges */}
                         <div className="relative h-60 overflow-hidden bg-slate-900">
-                          <img
-                            src={validImg}
-                            alt={item.name}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                            onError={(e) => {
-                              e.currentTarget.onerror = null;
-                              e.currentTarget.src =
-                                "/banner/ashram_varanasi.png";
-                            }}
-                          />
+                          {validImg ? (
+                            <img
+                              src={validImg}
+                              alt={item.name}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            />
+                          ) : null}
                           <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20 pointer-events-none" />
                           <span className="absolute top-4 left-4 bg-[#0A4DA6]/90 backdrop-blur-md text-white text-[11px] font-black px-3.5 py-1 rounded-full shadow-md border border-white/10 flex items-center gap-1">
                             <MapPin size={11} className="text-amber-400" />

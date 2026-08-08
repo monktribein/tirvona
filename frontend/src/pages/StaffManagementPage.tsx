@@ -125,7 +125,7 @@ export const StaffManagementPage: React.FC = () => {
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
   return (
-    <div className="space-y-6 text-left">
+    <div className="space-y-6 text-left w-full">
       {/* Wraps on phones: the title block plus the action button cannot share
           a 320px row, and without flex-wrap the button is squeezed until its
           label clips. shrink-0 keeps it from being compressed once wrapped. */}
@@ -231,16 +231,16 @@ export const StaffManagementPage: React.FC = () => {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <form
             onSubmit={handleCreate}
-            className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-md w-full rounded-[28px] p-6 space-y-4 max-h-[88vh] overflow-y-auto"
+            className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-4xl w-full rounded-[28px] p-6 sm:p-8 space-y-5 max-h-[88vh] overflow-y-auto text-left"
           >
             <div className="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-3">
-              <h3 className="font-bold text-sm text-[#0B192C] dark:text-white flex items-center gap-1.5">
-                <Users size={16} className="text-[#0A4DA6]" /> Add Staff Member
+              <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white flex items-center gap-1.5">
+                <Users size={18} className="text-[#0A4DA6]" /> Add Staff Member
               </h3>
               <button
                 type="button"
                 onClick={() => setShowCreate(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="p-1.5 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
               >
                 <X size={18} />
               </button>
@@ -252,7 +252,7 @@ export const StaffManagementPage: React.FC = () => {
               </div>
             )}
 
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <input
                 required
                 placeholder="Full name"

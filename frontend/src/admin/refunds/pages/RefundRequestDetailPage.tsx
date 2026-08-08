@@ -179,7 +179,7 @@ export const RefundRequestDetailPage: React.FC = () => {
   const breakdown = calc?.breakdown ?? {};
 
   return (
-    <div className="space-y-6 text-left">
+    <div className="space-y-6 text-left w-full">
       <EnterprisePageHeader
         title={request.refundNumber}
         subtitle={`${humanizeLabel(request.module)} · raised ${formatDateTimeIN(request.createdAt)}`}

@@ -8,6 +8,7 @@ import {
 import { useNotifications } from "../../../contexts/NotificationContext";
 import { getErrorMessage } from "../../../lib/api";
 import { RecordFieldList } from "../../shared/components/RecordValue";
+import { EnterprisePageHeader } from "../../shared";
 import { humanizeLabel } from "../../../utils/labels";
 import {
   FileCheck,
@@ -192,28 +193,14 @@ export const CentralApprovalCenterPage: React.FC = () => {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-left w-full">
       {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-[#0B192C] p-6 rounded-[28px] border border-gray-100 dark:border-slate-800 shadow-sm">
-        <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-[#0A4DA6]/10 text-[#0A4DA6] flex items-center justify-center border border-[#0A4DA6]/20 shrink-0">
-            <FileCheck size={24} />
-          </div>
-          <div>
-            <h1 className="text-xl sm:text-2xl font-black text-[#0B192C] dark:text-white tracking-tight flex items-center gap-2">
-              Central Approval Center
-            </h1>
-            <p className="text-xs text-gray-400 font-semibold mt-0.5">
-              Master control panel for reviewing, validating, and approving
-              every structural platform modification request.
-            </p>
-          </div>
-        </div>
-
-        <span className="px-3.5 py-1.5 bg-[#0A4DA6] text-white rounded-full text-xs font-black tracking-wider shadow-sm">
-          Master Approval Queue
-        </span>
-      </div>
+      <EnterprisePageHeader
+        title="Central Approval Center"
+        subtitle="Master control panel for reviewing, validating, and approving every structural platform modification request."
+        icon={<FileCheck size={22} />}
+        badgeText="Master Approval Queue"
+      />
 
       {/* KPI Dashboard Widgets */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">

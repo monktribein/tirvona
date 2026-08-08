@@ -148,14 +148,13 @@ export const OfferDetailPage: React.FC = () => {
       {/* Hero Section */}
       <div className="relative bg-black text-white min-h-[420px] flex items-center overflow-hidden">
         {/* Background Image with Dark Gradient Overlay */}
-        <img
-          src={offer.bannerImage || "/banner/ashram_rishikesh.png"}
-          alt={offer.offerTitle}
-          className="absolute inset-0 w-full h-full object-cover opacity-50 filter brightness-75"
-          onError={(e: any) => {
-            e.target.src = "/banner/ashram_rishikesh.png";
-          }}
-        />
+        {offer.bannerImage ? (
+          <img
+            src={offer.bannerImage}
+            alt={offer.offerTitle}
+            className="absolute inset-0 w-full h-full object-cover opacity-50 filter brightness-75"
+          />
+        ) : null}
         <div className="absolute inset-0 bg-gradient-to-t from-[#0B192C] via-[#0B192C]/60 to-transparent" />
 
         <div className="relative max-w-6xl mx-auto px-4 sm:px-8 py-12 space-y-6 z-10 w-full">

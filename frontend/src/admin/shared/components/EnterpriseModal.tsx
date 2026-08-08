@@ -9,7 +9,7 @@ interface EnterpriseModalProps {
   icon?: React.ReactNode;
   children: React.ReactNode;
   footer?: React.ReactNode;
-  maxWidth?: "sm" | "md" | "lg" | "xl" | "2xl";
+  maxWidth?: "sm" | "md" | "lg" | "xl" | "2xl" | "3xl" | "4xl" | "5xl" | "6xl" | "7xl" | "full";
 }
 
 export const EnterpriseModal: React.FC<EnterpriseModalProps> = ({
@@ -33,7 +33,19 @@ export const EnterpriseModal: React.FC<EnterpriseModalProps> = ({
           ? "max-w-xl"
           : maxWidth === "2xl"
             ? "max-w-2xl"
-            : "max-w-md";
+            : maxWidth === "3xl"
+              ? "max-w-3xl"
+              : maxWidth === "4xl"
+                ? "max-w-4xl"
+                : maxWidth === "5xl"
+                  ? "max-w-5xl"
+                  : maxWidth === "6xl"
+                    ? "max-w-6xl"
+                    : maxWidth === "7xl"
+                      ? "max-w-7xl"
+                      : maxWidth === "full"
+                        ? "max-w-full"
+                        : "max-w-md";
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">

@@ -64,10 +64,10 @@ export const OwnerOffersPage: React.FC = () => {
     discountValue: 20,
     maximumDiscount: 500,
     minimumBookingAmount: 1000,
-    bannerImage: "/banner/ashram_rishikesh.png",
-    thumbnailImage: "/banner/ashram_rishikesh.png",
-    desktopBanner: "/banner/ashram_rishikesh.png",
-    mobileBanner: "/banner/ashram_rishikesh.png",
+    bannerImage: "",
+    thumbnailImage: "",
+    desktopBanner: "",
+    mobileBanner: "",
     galleryImages: [],
     validFrom: new Date().toISOString().split("T")[0],
     validTill: new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0],
@@ -149,13 +149,10 @@ export const OwnerOffersPage: React.FC = () => {
         discountValue: offerToEdit.discountValue || 20,
         maximumDiscount: offerToEdit.maximumDiscount || 0,
         minimumBookingAmount: offerToEdit.minimumBookingAmount || 0,
-        bannerImage: offerToEdit.bannerImage || "/banner/ashram_rishikesh.png",
-        thumbnailImage:
-          offerToEdit.thumbnailImage || "/banner/ashram_rishikesh.png",
-        desktopBanner:
-          offerToEdit.desktopBanner || "/banner/ashram_rishikesh.png",
-        mobileBanner:
-          offerToEdit.mobileBanner || "/banner/ashram_rishikesh.png",
+        bannerImage: offerToEdit.bannerImage || "",
+        thumbnailImage: offerToEdit.thumbnailImage || "",
+        desktopBanner: offerToEdit.desktopBanner || "",
+        mobileBanner: offerToEdit.mobileBanner || "",
         galleryImages: offerToEdit.galleryImages || [],
         validFrom: offerToEdit.validFrom
           ? new Date(offerToEdit.validFrom).toISOString().split("T")[0]
@@ -188,10 +185,10 @@ export const OwnerOffersPage: React.FC = () => {
         discountValue: 20,
         maximumDiscount: 500,
         minimumBookingAmount: 1000,
-        bannerImage: "/banner/ashram_rishikesh.png",
-        thumbnailImage: "/banner/ashram_rishikesh.png",
-        desktopBanner: "/banner/ashram_rishikesh.png",
-        mobileBanner: "/banner/ashram_rishikesh.png",
+        bannerImage: "",
+        thumbnailImage: "",
+        desktopBanner: "",
+        mobileBanner: "",
         galleryImages: [],
         validFrom: new Date().toISOString().split("T")[0],
         validTill: new Date(Date.now() + 30 * 86400000)
@@ -304,7 +301,7 @@ export const OwnerOffersPage: React.FC = () => {
   });
 
   return (
-    <div className="space-y-8 pb-12">
+    <div className="space-y-8 text-left w-full pb-12">
       {/* Header Banner */}
       <div className="bg-gradient-to-r from-[#0B192C] via-[#0A4DA6] to-[#0B192C] rounded-[28px] p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-2">
@@ -443,14 +440,13 @@ export const OwnerOffersPage: React.FC = () => {
             >
               <div>
                 <div className="relative aspect-video bg-black">
-                  <img
-                    src={offer.bannerImage || "/banner/ashram_rishikesh.png"}
-                    alt={offer.offerTitle}
-                    className="w-full h-full object-cover opacity-90"
-                    onError={(e: any) => {
-                      e.target.src = "/banner/ashram_rishikesh.png";
-                    }}
-                  />
+                  {offer.bannerImage ? (
+                    <img
+                      src={offer.bannerImage}
+                      alt={offer.offerTitle}
+                      className="w-full h-full object-cover opacity-90"
+                    />
+                  ) : null}
                   <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-[#0A4DA6] text-white text-[10px] font-black">
                     {offer.offerType}
                   </span>

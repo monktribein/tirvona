@@ -69,8 +69,6 @@ const ALL_ROLES = [
   { id: "manager", label: "Ashram Manager" },
   { id: "reception", label: "Receptionist" },
   { id: "housekeeping", label: "Housekeeping" },
-  { id: "banner_manager", label: "Banner Manager" },
-  { id: "content_manager", label: "Content Manager" },
   { id: "offer_manager", label: "Offer Manager" },
   { id: "blog_manager", label: "Blog Manager" },
   { id: "local_manager", label: "Local Hub Manager" },
@@ -444,7 +442,7 @@ export const UserManagementPage: React.FC = () => {
   }, [users, searchTerm, filterStatus]);
 
   return (
-    <div className="space-y-6 text-left max-w-7xl mx-auto pb-12">
+    <div className="space-y-6 text-left w-full">
       {/* ── Page Header & Create Button ── */}
       <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[28px] shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="flex items-center gap-3.5">
@@ -722,13 +720,13 @@ export const UserManagementPage: React.FC = () => {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <form
             onSubmit={handleCreateAccountSubmit}
-            className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-2xl w-full rounded-[28px] p-6 space-y-5 text-left shadow-2xl animate-in zoom-in-95 duration-150"
+            className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-5xl w-full rounded-[28px] p-6 sm:p-8 space-y-6 text-left shadow-2xl animate-in zoom-in-95 duration-150"
           >
             {/* Header */}
             <div className="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-4">
               <div>
-                <h3 className="font-extrabold text-lg text-[#0B192C] dark:text-white flex items-center gap-2">
-                  <UserPlus size={20} className="text-[#0A4DA6]" /> IAM
+                <h3 className="font-extrabold text-lg sm:text-xl text-[#0B192C] dark:text-white flex items-center gap-2">
+                  <UserPlus size={22} className="text-[#0A4DA6]" /> IAM
                   Onboarding — Create New Enterprise Account
                 </h3>
                 <span className="text-xs text-gray-400 font-semibold">
@@ -738,7 +736,7 @@ export const UserManagementPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setIsCreateOpen(false)}
-                className="text-gray-400 hover:text-gray-600 cursor-pointer"
+                className="p-1.5 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 cursor-pointer"
               >
                 <X size={18} />
               </button>
@@ -746,7 +744,7 @@ export const UserManagementPage: React.FC = () => {
 
             {/* Step 1: Personal Details */}
             {createStep === 1 && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
                 <div className="space-y-1 sm:col-span-2">
                   <label className="font-bold text-gray-700 dark:text-gray-300">
                     Full Name *

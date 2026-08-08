@@ -346,7 +346,7 @@ export const ParkingRoleDashboardPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen pt-20 sm:pt-24 pb-20 px-4 sm:px-6 lg:px-8 space-y-6 text-left">
+    <div className="space-y-6 text-left w-full">
       {/* ── Top Header Banner ── */}
       <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 shadow-xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />

@@ -197,7 +197,7 @@ export const ManageAshramsPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 text-left w-full">
       {/* Top Banner Header */}
       <div className="bg-gradient-to-r from-[#0B192C] via-[#0A4DA6] to-[#0B192C] rounded-[28px] p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-2">
@@ -444,7 +444,7 @@ export const ManageAshramsPage: React.FC = () => {
             className="fixed inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => setEditAshram(null)}
           />
-          <div className="relative w-full max-w-2xl bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl z-10 space-y-6 max-h-[90vh] overflow-y-auto">
+          <div className="relative w-full max-w-5xl bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl z-10 space-y-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-gray-100 dark:border-slate-800 pb-4">
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-full bg-[#0A4DA6]/10 text-[#0A4DA6] flex items-center justify-center font-bold">
@@ -574,9 +574,6 @@ export const ManageAshramsPage: React.FC = () => {
                           src={imgUrl}
                           alt={`Ashram photo ${idx + 1}`}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                          onError={(e: any) => {
-                            e.target.src = "/banner/ashram_rishikesh.png";
-                          }}
                         />
                         <button
                           type="button"

@@ -108,7 +108,7 @@ export const ReceptionCheckinPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 text-left">
+    <div className="space-y-6 text-left w-full">
       {/* min-w-0 on the text block lets it actually shrink — a flex child
           defaults to min-width:auto and refuses to go below its content width,
           which is what pushes the refresh button off a narrow screen. */}

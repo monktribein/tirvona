@@ -169,12 +169,15 @@ export class AshramsService {
             available.set(String(room.ashramId), Math.min(prior, average));
           }
         }
-        candidates = candidates
+        const dateFiltered = candidates
           .filter((a: any) => available.has(String(a._id)))
           .map((a: any) => ({
             ...a,
             lowestNightPrice: available.get(String(a._id)),
           }));
+        if (dateFiltered.length > 0) {
+          candidates = dateFiltered;
+        }
       }
     }
     // For candidates without a date-derived price (the common browse case),

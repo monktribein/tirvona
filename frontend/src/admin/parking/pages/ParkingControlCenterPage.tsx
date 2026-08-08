@@ -252,24 +252,20 @@ export const ParkingControlCenterPage: React.FC = () => {
   const td = "px-4 py-3 text-sm text-[#0B192C] dark:text-slate-200";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-left w-full">
       <EnterprisePageHeader
         title="Parking Control Center"
         subtitle="Partner approvals, location status, payouts and platform analytics. Listings and search live under Parking Management."
         icon={<Car size={22} />}
-        badgeText="Super admin"
+        badgeText="Super Admin"
         actions={
           <button
             onClick={load}
             disabled={loading}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0A4DA6] text-white text-sm font-bold hover:bg-[#083d85] disabled:opacity-60"
+            className="p-2.5 bg-gray-50 dark:bg-slate-900 hover:bg-gray-100 dark:hover:bg-slate-800 border border-gray-100 dark:border-slate-800 rounded-full text-gray-500 cursor-pointer transition-colors"
+            title="Refresh"
           >
-            {loading ? (
-              <Loader2 size={15} className="animate-spin" />
-            ) : (
-              <RefreshCw size={15} />
-            )}
-            Refresh
+            <RefreshCw size={16} className={loading ? "animate-spin text-[#0A4DA6]" : ""} />
           </button>
         }
       />

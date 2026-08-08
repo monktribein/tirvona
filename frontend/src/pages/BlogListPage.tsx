@@ -39,21 +39,27 @@ export const BlogListPage: React.FC = () => {
   const fetchPosts = async () => {
     setLoading(true);
     try {
+      const blogParams: Record<string, any> = {};
+      const visitorParams: Record<string, any> = {};
+
+      if (selectedCategory && selectedCategory.toLowerCase() !== "all") {
+        blogParams.category = selectedCategory;
+        visitorParams.category = selectedCategory;
+      }
+      if (selectedType && selectedType.toLowerCase() !== "all") {
+        blogParams.contentType = selectedType;
+      }
+      if (searchTerm && searchTerm.trim() !== "") {
+        blogParams.search = searchTerm.trim();
+        visitorParams.search = searchTerm.trim();
+      }
+
       const [blogRes, visitorRes] = await Promise.all([
         api
-          .get("/blog/posts", {
-            params: {
-              category: selectedCategory,
-              contentType: selectedType,
-              search: searchTerm,
-            },
-          })
+          .get("/blog/posts", { params: blogParams })
           .catch(() => ({ data: { success: false, data: [] } })),
         visitorArticleService
-          .getPublicArticles({
-            category: selectedCategory,
-            search: searchTerm,
-          })
+          .getPublicArticles(visitorParams)
           .catch(() => ({ data: { success: false, data: [] } })),
       ]);
 

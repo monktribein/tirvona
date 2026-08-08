@@ -12,7 +12,6 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
-  FileSpreadsheet,
   Info,
   Clock,
   Activity,
@@ -21,9 +20,68 @@ import {
   ToggleLeft,
   ToggleRight,
   Sparkles,
+  Image as ImageIcon,
 } from "lucide-react";
 import { RecordValue } from "./RecordValue";
+import { ImageGalleryManager } from "./ImageGalleryManager";
 import { formatInline, humanizeKey } from "../utils/recordFormat";
+
+function extractAllImages(item: any): string[] {
+  if (!item || typeof item !== "object") return [];
+  const foundUrls: string[] = [];
+
+  const addIfImage = (val: any) => {
+    if (!val) return;
+    if (typeof val === "string") {
+      const trimmed = val.trim();
+      if (
+        trimmed.startsWith("http://") ||
+        trimmed.startsWith("https://") ||
+        trimmed.startsWith("data:image/") ||
+        trimmed.startsWith("/uploads/") ||
+        /\.(jpg|jpeg|png|webp|gif|svg|avif)($|\?)/i.test(trimmed)
+      ) {
+        foundUrls.push(trimmed);
+      } else if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+        try {
+          const parsed = JSON.parse(trimmed);
+          if (Array.isArray(parsed)) parsed.forEach(addIfImage);
+        } catch { }
+      }
+    } else if (Array.isArray(val)) {
+      val.forEach(addIfImage);
+    } else if (typeof val === "object") {
+      Object.values(val).forEach(addIfImage);
+    }
+  };
+
+  const primaryKeys = [
+    "coverImageUrl",
+    "coverImage",
+    "image",
+    "imageUrl",
+    "images",
+    "gallery",
+    "galleryUrls",
+    "photos",
+    "media",
+    "virtualTour360",
+    "trustDeedUrl",
+    "fireSafetyCertificateUrl",
+    "landOwnershipUrl",
+    "documents",
+  ];
+
+  primaryKeys.forEach((key) => {
+    if (item[key]) addIfImage(item[key]);
+  });
+
+  if (foundUrls.length === 0) {
+    Object.values(item).forEach(addIfImage);
+  }
+
+  return Array.from(new Set(foundUrls));
+}
 
 export interface TableColumn {
   key: string;
@@ -38,6 +96,7 @@ export interface EnterpriseDataTableProps {
   data: any[];
   isLoading?: boolean;
   loading?: boolean;
+  hideAddButton?: boolean;
   onSave?: (item: any) => void;
   onManage?: (item: any) => void;
   onDelete?: (id: string) => void;
@@ -61,6 +120,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
   onToggleStatus,
   isLoading = false,
   loading = false,
+  hideAddButton = false,
 }) => {
   const tableLoading = isLoading || loading;
   const [searchTerm, setSearchTerm] = useState("");
@@ -176,54 +236,25 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
 
   const openEditModal = (item: any) => {
     setEditItem(item);
-    setFormData({ ...item });
+    const initial: Record<string, any> = { ...item };
+    if (!initial.city && item.address?.city) {
+      initial.city = item.address.city;
+    }
+    if (
+      initial.isVerified === true ||
+      initial.isVerified === "true" ||
+      initial.isVerified === "Verified" ||
+      initial.isVerified === "verified"
+    ) {
+      initial.isVerified = true;
+    } else if (initial.isVerified === false || initial.isVerified === "false" || initial.isVerified === "Unverified") {
+      initial.isVerified = false;
+    }
+    setFormData(initial);
   };
 
   return (
-    <div className="space-y-6 text-left">
-      {/* Module Title Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[24px] shadow-sm">
-        <div>
-          <h2 className="text-lg font-extrabold text-[#0B192C] dark:text-white flex items-center gap-2">
-            <Tag size={20} className="text-[#0A4DA6]" /> {title}
-          </h2>
-          {subtitle && (
-            <p className="text-xs text-gray-400 font-semibold mt-1">
-              {subtitle}
-            </p>
-          )}
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={handleExportCSV}
-            className="px-3.5 py-2 rounded-full border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900 text-gray-700 dark:text-gray-200 text-xs font-bold flex items-center gap-1.5 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-          >
-            <Download size={14} /> Export CSV
-          </button>
-          <button
-            onClick={handleExportCSV}
-            className="px-3.5 py-2 rounded-full border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900 text-gray-700 dark:text-gray-200 text-xs font-bold flex items-center gap-1.5 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-          >
-            <FileSpreadsheet size={14} /> Excel
-          </button>
-          <button
-            onClick={handlePrint}
-            className="px-3.5 py-2 rounded-full border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900 text-gray-700 dark:text-gray-200 text-xs font-bold flex items-center gap-1.5 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-          >
-            <Printer size={14} /> Print
-          </button>
-          {onSave && (
-            <button
-              onClick={openCreateModal}
-              className="px-4 py-2 rounded-full bg-[#0A4DA6] text-white hover:bg-[#083b80] text-xs font-black flex items-center gap-1.5 shadow-md shadow-[#0A4DA6]/20 cursor-pointer"
-            >
-              <Plus size={14} /> Add New Record
-            </button>
-          )}
-        </div>
-      </div>
-
+    <div className="space-y-6 text-left w-full">
       {/* Controls & Search Toolbar */}
       <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-4 rounded-[20px] shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
         {/* Search Input */}
@@ -375,9 +406,8 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                     return (
                       <tr
                         key={id}
-                        className={`border-b border-gray-50 dark:border-slate-850 hover:bg-gray-50/40 dark:hover:bg-slate-800/30 transition-colors ${
-                          isSelected ? "bg-blue-50/30 dark:bg-slate-800/50" : ""
-                        }`}
+                        className={`border-b border-gray-50 dark:border-slate-850 hover:bg-gray-50/40 dark:hover:bg-slate-800/30 transition-colors ${isSelected ? "bg-blue-50/30 dark:bg-slate-800/50" : ""
+                          }`}
                       >
                         <td className="py-3.5 px-4 text-center">
                           <input
@@ -399,15 +429,14 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                         ))}
                         <td className="py-3.5 px-4">
                           <span
-                            className={`px-2.5 py-0.5 rounded-full text-[9px] font-black tracking-wide ${
-                              ["active", "approved"].includes(statusStr)
-                                ? "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400"
-                                : ["pending"].includes(statusStr)
-                                  ? "bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400"
-                                  : "bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400"
-                            }`}
+                            className={`px-2.5 py-0.5 rounded-full text-[9px] font-black tracking-wide ${["active", "approved"].includes(statusStr)
+                              ? "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400"
+                              : ["pending"].includes(statusStr)
+                                ? "bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400"
+                                : "bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400"
+                              }`}
                           >
-                            {statusStr}
+                            {statusStr === "approved" ? "active" : statusStr}
                           </span>
                         </td>
                         <td className="py-3.5 px-4 text-gray-400 text-[11px] font-mono whitespace-nowrap">
@@ -522,14 +551,26 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-2xl w-full rounded-[28px] p-6 space-y-6 text-left shadow-2xl animate-in zoom-in-95 duration-150">
             {/* Header */}
-            <div className="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-4">
-              <div>
-                <h3 className="font-extrabold text-lg text-[#0B192C] dark:text-white flex items-center gap-2">
-                  <Info size={18} className="text-[#0A4DA6]" /> Record Details
-                </h3>
-                <span className="text-xs text-gray-400 font-mono">
-                  ID: {detailItem._id || detailItem.id}
-                </span>
+            <div className="flex justify-between items-start border-b border-gray-100 dark:border-slate-800 pb-4">
+              <div className="space-y-1 text-left">
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <h3 className="font-black text-xl text-[#0B192C] dark:text-white tracking-tight">
+                    {detailItem.name || detailItem.title || "Record Details"}
+                  </h3>
+                  {detailItem.status && (
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
+                      {detailItem.status}
+                    </span>
+                  )}
+                  {(detailItem.isVerified || detailItem.status === "approved") && (
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-blue-100 text-[#0A4DA6] dark:bg-blue-950/60 dark:text-blue-300 flex items-center gap-1">
+                      <CheckCircle size={10} /> Verified
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-gray-400 font-mono">
+                  ID: {detailItem._id || detailItem.id} {detailItem.ashramCode ? `· Code: ${detailItem.ashramCode}` : ""}
+                </p>
               </div>
               <button
                 onClick={() => setDetailItem(null)}
@@ -543,51 +584,46 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
             <div className="flex border-b border-gray-100 dark:border-slate-800 gap-4 text-xs font-bold text-gray-400">
               <button
                 onClick={() => setActiveTab("overview")}
-                className={`pb-2 border-b-2 transition-all cursor-pointer flex items-center gap-1.5 ${
-                  activeTab === "overview"
-                    ? "border-[#0A4DA6] text-[#0A4DA6] dark:text-amber-400"
-                    : "border-transparent"
-                }`}
+                className={`pb-2 border-b-2 transition-all cursor-pointer flex items-center gap-1.5 ${activeTab === "overview"
+                  ? "border-[#0A4DA6] text-[#0A4DA6] dark:text-amber-400"
+                  : "border-transparent"
+                  }`}
               >
                 <Info size={14} /> Overview
               </button>
               <button
                 onClick={() => setActiveTab("info")}
-                className={`pb-2 border-b-2 transition-all cursor-pointer flex items-center gap-1.5 ${
-                  activeTab === "info"
-                    ? "border-[#0A4DA6] text-[#0A4DA6] dark:text-amber-400"
-                    : "border-transparent"
-                }`}
+                className={`pb-2 border-b-2 transition-all cursor-pointer flex items-center gap-1.5 ${activeTab === "info"
+                  ? "border-[#0A4DA6] text-[#0A4DA6] dark:text-amber-400"
+                  : "border-transparent"
+                  }`}
               >
                 <Tag size={14} /> Information
               </button>
               <button
                 onClick={() => setActiveTab("timeline")}
-                className={`pb-2 border-b-2 transition-all cursor-pointer flex items-center gap-1.5 ${
-                  activeTab === "timeline"
-                    ? "border-[#0A4DA6] text-[#0A4DA6] dark:text-amber-400"
-                    : "border-transparent"
-                }`}
+                className={`pb-2 border-b-2 transition-all cursor-pointer flex items-center gap-1.5 ${activeTab === "timeline"
+                  ? "border-[#0A4DA6] text-[#0A4DA6] dark:text-amber-400"
+                  : "border-transparent"
+                  }`}
               >
                 <Clock size={14} /> Timeline
               </button>
               <button
                 onClick={() => setActiveTab("activity")}
-                className={`pb-2 border-b-2 transition-all cursor-pointer flex items-center gap-1.5 ${
-                  activeTab === "activity"
-                    ? "border-[#0A4DA6] text-[#0A4DA6] dark:text-amber-400"
-                    : "border-transparent"
-                }`}
+                className={`pb-2 border-b-2 transition-all cursor-pointer flex items-center gap-1.5 ${activeTab === "activity"
+                  ? "border-[#0A4DA6] text-[#0A4DA6] dark:text-amber-400"
+                  : "border-transparent"
+                  }`}
               >
                 <Activity size={14} /> Activity
               </button>
               <button
                 onClick={() => setActiveTab("logs")}
-                className={`pb-2 border-b-2 transition-all cursor-pointer flex items-center gap-1.5 ${
-                  activeTab === "logs"
-                    ? "border-[#0A4DA6] text-[#0A4DA6] dark:text-amber-400"
-                    : "border-transparent"
-                }`}
+                className={`pb-2 border-b-2 transition-all cursor-pointer flex items-center gap-1.5 ${activeTab === "logs"
+                  ? "border-[#0A4DA6] text-[#0A4DA6] dark:text-amber-400"
+                  : "border-transparent"
+                  }`}
               >
                 <History size={14} /> Audit Logs
               </button>
@@ -596,22 +632,125 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
             {/* Tab Content */}
             <div className="space-y-4 max-h-[360px] overflow-y-auto pr-1">
               {activeTab === "overview" && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                  {Object.entries(detailItem)
-                    .filter(([k]) => k !== "__v")
-                    .map(([k, v]) => (
-                      <div
-                        key={k}
-                        className="p-3 bg-gray-50 dark:bg-slate-900 rounded-xl space-y-1"
-                      >
-                        <span className="text-[10px] text-gray-400 font-bold tracking-wider">
-                          {humanizeKey(k)}
-                        </span>
-                        <div className="font-semibold text-[#0B192C] dark:text-white">
-                          <RecordValue value={v} />
+                <div className="space-y-5">
+                  {/* Photo & Media Showcase */}
+                  {(() => {
+                    const gallery = extractAllImages(detailItem);
+
+                    return (
+                      <div className="space-y-3 p-4 bg-gray-50 dark:bg-slate-900/60 rounded-2xl border border-gray-100 dark:border-slate-800">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-black uppercase text-gray-400 tracking-wider flex items-center gap-1.5">
+                            <ImageIcon size={14} className="text-[#0A4DA6]" /> Photos & Media Gallery ({gallery.length})
+                          </span>
+                          {onSave && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const target = detailItem;
+                                setDetailItem(null);
+                                openEditModal(target);
+                              }}
+                              className="text-[11px] font-extrabold text-[#0A4DA6] hover:underline cursor-pointer"
+                            >
+                              + Manage Photos & Edit
+                            </button>
+                          )}
                         </div>
+
+                        {gallery.length > 0 ? (
+                          <div className="space-y-2">
+                            {/* Main Cover Image Preview */}
+                            <div className="h-40 rounded-xl overflow-hidden relative border border-gray-200 dark:border-slate-800 bg-slate-950">
+                              <img
+                                src={gallery[0]}
+                                alt={detailItem.name || "Cover"}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = "none";
+                                }}
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex items-end p-3">
+                                <span className="text-white text-xs font-extrabold">
+                                  {detailItem.name || "Ashram Listing"} · Cover Photo
+                                </span>
+                              </div>
+                            </div>
+                            {/* Thumbnails */}
+                            {gallery.length > 1 && (
+                              <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 pt-1">
+                                {gallery.slice(1).map((imgUrl, idx) => (
+                                  <a
+                                    key={idx}
+                                    href={imgUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="group relative h-16 rounded-lg overflow-hidden bg-slate-950 border border-gray-200 dark:border-slate-800"
+                                  >
+                                    <img
+                                      src={imgUrl}
+                                      alt={`Gallery Photo ${idx + 2}`}
+                                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                      onError={(e) => {
+                                        e.currentTarget.style.display = "none";
+                                      }}
+                                    />
+                                  </a>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="py-6 text-center text-gray-400 text-xs font-medium space-y-2 border border-dashed border-gray-200 dark:border-slate-800 rounded-xl bg-white/50 dark:bg-slate-900/50">
+                            <ImageIcon size={28} className="mx-auto text-gray-300 dark:text-slate-700" />
+                            <p>No photos uploaded for this listing yet.</p>
+                            {onSave && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const target = detailItem;
+                                  setDetailItem(null);
+                                  openEditModal(target);
+                                }}
+                                className="px-4 py-2 bg-[#0A4DA6] text-white rounded-full text-xs font-extrabold inline-flex items-center gap-1.5 shadow-md shadow-[#0A4DA6]/25 cursor-pointer hover:bg-[#083b80] mt-1"
+                              >
+                                <Plus size={14} /> Add / Upload Photos Now
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </div>
-                    ))}
+                    );
+                  })()}
+
+                  {/* Formatted Information Cards */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    {Object.entries(detailItem)
+                      .filter(
+                        ([k]) =>
+                          ![
+                            "__v",
+                            "images",
+                            "gallery",
+                            "coverImage",
+                            "coverImageUrl",
+                            "imageUrl",
+                          ].includes(k),
+                      )
+                      .map(([k, v]) => (
+                        <div
+                          key={k}
+                          className="p-3 bg-gray-50 dark:bg-slate-900/60 rounded-xl space-y-1 border border-gray-100/80 dark:border-slate-800/80"
+                        >
+                          <span className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider">
+                            {humanizeKey(k)}
+                          </span>
+                          <div className="font-semibold text-[#0B192C] dark:text-white">
+                            <RecordValue value={v} />
+                          </div>
+                        </div>
+                      ))}
+                  </div>
                 </div>
               )}
 
@@ -661,13 +800,25 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
               )}
             </div>
 
-            <div className="pt-4 border-t border-gray-100 dark:border-slate-800 flex justify-end">
+            <div className="pt-4 border-t border-gray-100 dark:border-slate-800 flex justify-end gap-3">
               <button
                 onClick={() => setDetailItem(null)}
-                className="px-6 py-2.5 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-200 rounded-full text-xs font-bold cursor-pointer"
+                className="px-6 py-2.5 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-200 rounded-full text-xs font-bold cursor-pointer hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors"
               >
                 Close
               </button>
+              {onSave && (
+                <button
+                  onClick={() => {
+                    const targetItem = detailItem;
+                    setDetailItem(null);
+                    openEditModal(targetItem);
+                  }}
+                  className="px-6 py-2.5 bg-[#0A4DA6] text-white rounded-full text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-[#0A4DA6]/25 cursor-pointer hover:bg-[#083b80] transition-colors"
+                >
+                  <Edit size={14} /> Edit Record
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -697,20 +848,73 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
             </div>
 
             <div className="space-y-4 max-h-[360px] overflow-y-auto pr-1">
+              <ImageGalleryManager
+                coverImage={
+                  formData.coverImage ||
+                  formData.image ||
+                  formData.imageUrl ||
+                  (Array.isArray(formData.images) ? formData.images[0] : "")
+                }
+                onCoverImageChange={(url) =>
+                  setFormData({
+                    ...formData,
+                    coverImage: url,
+                    image: url,
+                    imageUrl: url,
+                    images: [
+                      url,
+                      ...(Array.isArray(formData.images) ? formData.images : []).filter(
+                        (x: string) => x !== url,
+                      ),
+                    ],
+                  })
+                }
+                gallery={
+                  Array.isArray(formData.images)
+                    ? formData.images
+                    : formData.gallery || []
+                }
+                onGalleryChange={(urls) =>
+                  setFormData({ ...formData, images: urls, gallery: urls })
+                }
+              />
               {columns.map((col) => (
                 <div key={col.key} className="space-y-1">
                   <label className="text-xs font-bold text-gray-400">
                     {col.label}
                   </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData[col.key] || ""}
-                    onChange={(e) =>
-                      setFormData({ ...formData, [col.key]: e.target.value })
-                    }
-                    className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none text-[#0B192C] dark:text-white"
-                  />
+                  {col.key === "isVerified" ? (
+                    <select
+                      value={
+                        formData[col.key] === true ||
+                          formData[col.key] === "true" ||
+                          formData[col.key] === "Verified" ||
+                          formData[col.key] === "verified"
+                          ? "Verified"
+                          : "Unverified"
+                      }
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          [col.key]: e.target.value === "Verified" ? true : false,
+                        })
+                      }
+                      className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none text-[#0B192C] dark:text-white font-bold cursor-pointer"
+                    >
+                      <option value="Verified">Verified</option>
+                      <option value="Unverified">Unverified</option>
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      required
+                      value={formData[col.key] || ""}
+                      onChange={(e) =>
+                        setFormData({ ...formData, [col.key]: e.target.value })
+                      }
+                      className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none text-[#0B192C] dark:text-white"
+                    />
+                  )}
                 </div>
               ))}
               <div className="space-y-1">

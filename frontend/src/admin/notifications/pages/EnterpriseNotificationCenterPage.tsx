@@ -15,12 +15,13 @@ import {
   FileCheck,
   RefreshCw,
   Calendar,
-  FileSpreadsheet,
+  Printer,
 } from "lucide-react";
 import { enterpriseNotificationService } from "../../../services";
 import { useNotifications } from "../../../contexts/NotificationContext";
 import { getErrorMessage } from "../../../lib/api";
 import { humanizeLabel } from "../../../utils/labels";
+import { EnterprisePageHeader } from "../../shared";
 
 export const EnterpriseNotificationCenterPage: React.FC = () => {
   const { subSection } = useParams<{ subSection?: string }>();
@@ -210,46 +211,43 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 text-left max-w-7xl mx-auto pb-12">
+    <div className="space-y-6 text-left w-full">
       {/* Header Banner */}
-      <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[28px] shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-3 bg-[#0A4DA6]/10 text-[#0A4DA6] rounded-2xl">
-            <Radio size={24} className="animate-pulse" />
+      <EnterprisePageHeader
+        title="Enterprise Telemetry & Activity Center"
+        subtitle="Real-time platform telemetry, authentication logs, security events, and live Socket.IO feeds."
+        icon={<Radio size={22} className="animate-pulse" />}
+        badgeText="Telemetry Live"
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={handleExportCSV}
+              className="px-3.5 py-2 rounded-full border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900 text-gray-700 dark:text-gray-200 text-xs font-bold flex items-center gap-1.5 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            >
+              <Download size={14} /> Export CSV
+            </button>
+            <button
+              onClick={() => window.print()}
+              className="px-3.5 py-2 rounded-full border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900 text-gray-700 dark:text-gray-200 text-xs font-bold flex items-center gap-1.5 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            >
+              <Printer size={14} /> Print
+            </button>
+            <button
+              onClick={handleSeed}
+              className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-full text-xs font-extrabold flex items-center gap-1.5 shadow-md cursor-pointer transition-all"
+            >
+              <Sparkles size={14} /> Seed Telemetry
+            </button>
+            <button
+              onClick={fetchCenterData}
+              className="p-2.5 bg-gray-50 dark:bg-slate-900 hover:bg-gray-100 dark:hover:bg-slate-800 border border-gray-100 dark:border-slate-800 rounded-full text-gray-500 cursor-pointer transition-colors"
+              title="Refresh"
+            >
+              <RefreshCw size={16} className={loading ? "animate-spin text-[#0A4DA6]" : ""} />
+            </button>
           </div>
-          <div>
-            <h2 className="text-xl font-black text-[#0B192C] dark:text-white tracking-tight flex items-center gap-2">
-              Enterprise Notification & Activity Monitoring Console
-            </h2>
-            <p className="text-xs text-gray-400 font-semibold mt-0.5">
-              Real-time platform telemetry, authentication logs, security
-              events, and live Socket.IO feeds.
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={fetchCenterData}
-            className="px-4 py-2 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 text-gray-700 dark:text-gray-200 rounded-full text-xs font-bold flex items-center gap-1.5 cursor-pointer"
-          >
-            <RefreshCw size={14} className={loading ? "animate-spin" : ""} />{" "}
-            Refresh
-          </button>
-          <button
-            onClick={handleExportCSV}
-            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-emerald-600/20 cursor-pointer"
-          >
-            <Download size={14} /> Export CSV
-          </button>
-          <button
-            onClick={handleSeed}
-            className="px-4 py-2 bg-[#0A4DA6] hover:bg-[#083b80] text-white rounded-full text-xs font-extrabold flex items-center gap-1.5 shadow-md cursor-pointer"
-          >
-            <Sparkles size={14} /> Seed Telemetry
-          </button>
-        </div>
-      </div>
+        }
+      />
 
       {/* Real-time Dashboard Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">

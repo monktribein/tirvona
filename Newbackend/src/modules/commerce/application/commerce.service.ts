@@ -94,7 +94,7 @@ export class CommerceService {
       "templeSource",
       "category",
     ]);
-    if (!query.status) filter.status = "active";
+    if (!query.status) filter.status = { $ne: "suspended" };
     if (query.status === "all") delete filter.status;
     if (query.templeSource)
       filter.templeSource = {

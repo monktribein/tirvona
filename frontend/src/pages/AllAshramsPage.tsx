@@ -172,15 +172,15 @@ export const AllAshramsPage: React.FC = () => {
     }
   };
 
-  // Filter logic
-  const cities = [
-    "All",
-    "Rishikesh",
-    "Haridwar",
-    "Vrindavan",
-    "Varanasi",
-    "Kedarnath",
-  ];
+  // Dynamic city filter options from fetched ashrams
+  const cities = React.useMemo(() => {
+    const set = new Set<string>();
+    ashrams.forEach((a) => {
+      const city = a.address?.city || a.address?.district;
+      if (city) set.add(city);
+    });
+    return ["All", ...Array.from(set)];
+  }, [ashrams]);
   const filteredAshrams = ashrams.filter((a) => {
     const matchesSearch =
       a.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -675,9 +675,6 @@ export const AllAshramsPage: React.FC = () => {
                           src={imgUrl}
                           alt={`Ashram photo ${idx + 1}`}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                          onError={(e: any) => {
-                            e.target.src = "/banner/ashram_rishikesh.png";
-                          }}
                         />
                         <button
                           type="button"
