@@ -151,11 +151,10 @@ export const AdminPlatformSettingsPage: React.FC = () => {
                   onClick={() =>
                     setPlatformFee((p) => ({ ...p, type: "flat" }))
                   }
-                  className={`p-4 rounded-2xl border text-xs font-extrabold flex flex-col items-center gap-1.5 transition-all cursor-pointer ${
-                    platformFee.type === "flat"
-                      ? "bg-[#0A4DA6] text-white border-[#0A4DA6] shadow-md"
-                      : "bg-gray-50 dark:bg-slate-900 border-gray-200 dark:border-slate-800 text-[#0B192C] dark:text-gray-300"
-                  }`}
+                  className={`p-4 rounded-2xl border text-xs font-extrabold flex flex-col items-center gap-1.5 transition-all cursor-pointer ${platformFee.type === "flat"
+                    ? "bg-[#0A4DA6] text-white border-[#0A4DA6] shadow-md"
+                    : "bg-gray-50 dark:bg-slate-900 border-gray-200 dark:border-slate-800 text-[#0B192C] dark:text-gray-300"
+                    }`}
                 >
                   <DollarSign size={18} />
                   <span>Flat Fee (₹)</span>
@@ -169,11 +168,10 @@ export const AdminPlatformSettingsPage: React.FC = () => {
                   onClick={() =>
                     setPlatformFee((p) => ({ ...p, type: "percentage" }))
                   }
-                  className={`p-4 rounded-2xl border text-xs font-extrabold flex flex-col items-center gap-1.5 transition-all cursor-pointer ${
-                    platformFee.type === "percentage"
-                      ? "bg-[#0A4DA6] text-white border-[#0A4DA6] shadow-md"
-                      : "bg-gray-50 dark:bg-slate-900 border-gray-200 dark:border-slate-800 text-[#0B192C] dark:text-gray-300"
-                  }`}
+                  className={`p-4 rounded-2xl border text-xs font-extrabold flex flex-col items-center gap-1.5 transition-all cursor-pointer ${platformFee.type === "percentage"
+                    ? "bg-[#0A4DA6] text-white border-[#0A4DA6] shadow-md"
+                    : "bg-gray-50 dark:bg-slate-900 border-gray-200 dark:border-slate-800 text-[#0B192C] dark:text-gray-300"
+                    }`}
                 >
                   <Percent size={18} />
                   <span>Percentage (%)</span>

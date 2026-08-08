@@ -185,7 +185,7 @@ export const VideoDetailPage: React.FC = () => {
                   <img
                     src={
                       author.photo ||
-                      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=300&h=300&q=80"
+                      "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E"
                     }
                     alt={author.name}
                     className="w-12 h-12 rounded-full object-cover border-2 border-red-600 shadow-sm"
@@ -243,7 +243,7 @@ export const VideoDetailPage: React.FC = () => {
               <img
                 src={
                   author.photo ||
-                  "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=300&h=300&q=80"
+                  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E"
                 }
                 alt={author.name}
                 className="w-20 h-20 rounded-full object-cover border-4 border-red-600 shadow-md shrink-0"

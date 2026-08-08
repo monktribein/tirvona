@@ -106,6 +106,9 @@ const UserManagementPage = lazy(
   () => import("./admin/users/pages/UserManagementPage"),
 );
 const AuditLogsPage = lazy(() => import("./admin/reports/pages/AuditLogsPage"));
+const AdminOffersPage = lazy(
+  () => import("./admin/offers/AdminOffersPage"),
+);
 const EnterpriseModulePage = lazy(
   () => import("./admin/shared/components/EnterpriseModulePage"),
 );
@@ -209,6 +212,7 @@ const ProfileMainPage = lazy(() => import("./pages/profile/ProfileMainPage"));
 
 import { hasRoleAccess } from "./utils/roleRedirect";
 import { setGuestPendingIntent } from "./utils/guestGate";
+import { smoothScrollEngine } from "./utils/smoothScroll";
 
 // Protected Route Wrapper Component
 const ProtectedRoute: React.FC<{
@@ -254,6 +258,13 @@ const ScrollToTop: React.FC = () => {
 };
 
 const AppContent: React.FC = () => {
+  useEffect(() => {
+    smoothScrollEngine.init();
+    return () => {
+      smoothScrollEngine.destroy();
+    };
+  }, []);
+
   return (
     <BrowserRouter>
       <ScrollToTop />
@@ -316,6 +327,16 @@ const AppContent: React.FC = () => {
             />
             <Route
               path="/pilgrimage-circuits/:slug"
+              element={<PilgrimageCircuitDetailPage />}
+            />
+            <Route path="/circuits" element={<PilgrimageCircuitsPage />} />
+            <Route
+              path="/circuits/:slug"
+              element={<PilgrimageCircuitDetailPage />}
+            />
+            <Route path="/destinations" element={<PilgrimageCircuitsPage />} />
+            <Route
+              path="/destinations/:slug"
               element={<PilgrimageCircuitDetailPage />}
             />
             <Route path="/temples" element={<TemplesPage />} />
@@ -697,6 +718,26 @@ const AppContent: React.FC = () => {
             <Route
               path="/admin/manage/marketplace/products"
               element={<AdminMarketplaceProductsPage />}
+            />
+          </Route>
+
+          <Route
+            element={
+              <ProtectedRoute
+                allowedRoles={[
+                  "offer_manager",
+                  "content_manager",
+                  "super_admin",
+                  "national_admin",
+                ]}
+              >
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route
+              path="/admin/manage/offers/:subKey?"
+              element={<AdminOffersPage />}
             />
           </Route>
 

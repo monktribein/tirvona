@@ -371,10 +371,18 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
       };
 
       if (editingProduct) {
-        const res = await marketplaceService.updateProduct(
-          editingProduct._id,
-          payload,
-        );
+        let res;
+        try {
+          res = await marketplaceService.updateProduct(
+            editingProduct._id,
+            payload,
+          );
+        } catch {
+          res = await marketplaceService.createProduct({
+            ...payload,
+            slug: editingProduct.slug || payload.slug,
+          });
+        }
         if (res.data?.success) {
           addNotification(
             "Saved",
@@ -409,15 +417,26 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
   };
 
   const handleToggleStock = async (product: MarketplaceProductItem) => {
-    const isOut = product.status === "out_of_stock" || (product.stock !== undefined && Number(product.stock) <= 0);
+    const isOut =
+      product.status === "out_of_stock" ||
+      (product.stock !== undefined && Number(product.stock) <= 0);
     const nextStatus = isOut ? "active" : "out_of_stock";
     const nextStock = isOut ? (product.stock > 0 ? product.stock : 50) : 0;
 
     try {
-      const res = await marketplaceService.updateProduct(product._id, {
-        status: nextStatus,
-        stock: nextStock,
-      });
+      let res;
+      try {
+        res = await marketplaceService.updateProduct(product._id, {
+          status: nextStatus,
+          stock: nextStock,
+        });
+      } catch {
+        res = await marketplaceService.createProduct({
+          ...product,
+          status: nextStatus,
+          stock: nextStock,
+        });
+      }
       if (res.data?.success) {
         addNotification(
           "Stock Updated",
@@ -579,7 +598,7 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
                 {filteredProducts.map((p) => {
                   const coverImg =
                     p.images?.[0] ||
-                    "https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?auto=format&fit=crop&w=300&q=80";
+                    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E";
                   const imgCount = p.images?.length || 0;
 
                   return (
@@ -600,7 +619,7 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                             onError={(e) => {
                               (e.target as HTMLImageElement).src =
-                                "https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?auto=format&fit=crop&w=300&q=80";
+                                "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E";
                             }}
                           />
                           <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
@@ -1001,7 +1020,7 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
                   type="url"
                   value={urlInput}
                   onChange={(e) => setUrlInput(e.target.value)}
-                  placeholder="Paste image URL (e.g. https://images.unsplash.com/...)"
+                  placeholder="Paste image URL (e.g. https://domain.com/photo.jpg)"
                   className="flex-1 p-2 bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-lg text-xs font-mono text-gray-800 dark:text-white"
                 />
                 <button
@@ -1059,7 +1078,7 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
                           className="w-full h-full object-cover"
                           onError={(e) => {
                             (e.target as HTMLImageElement).src =
-                              "https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?auto=format&fit=crop&w=300&q=80";
+                              "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E";
                           }}
                         />
 

@@ -123,8 +123,12 @@ export const HomePage: React.FC = () => {
   const fetchOffers = async () => {
     try {
       const res = await api.get("/offers?status=active");
-      if (res.data.success) {
-        setOffers(res.data.data);
+      if (res.data?.success && Array.isArray(res.data.data)) {
+        const homepageOffers = res.data.data.filter((o: any) => {
+          const route = o.targetRoute || o.category || "homepage";
+          return route === "homepage" || route === "all";
+        });
+        setOffers(homepageOffers.length > 0 ? homepageOffers : res.data.data);
       }
     } catch (err) {
       console.error("Fetch active offers error:", err);
@@ -140,203 +144,270 @@ export const HomePage: React.FC = () => {
     }
   };
 
-  // Continuous silky smooth 60 FPS auto-scroll for all carousels (Destinations, Prasad, Accommodations, Offers, Blogs, Feedback)
-  useEffect(() => {
-    const rows = [
-      carouselRef.current,
-      prashadRef.current,
-      featuredRef.current,
-      offersRef.current,
-      blogRef.current,
-      feedbackRef.current,
-    ].filter(Boolean) as HTMLDivElement[];
-    if (rows.length === 0) return;
-    const SPEED = 36;
+  const ensureLoopItems = <T,>(arr: T[], minCount = 6): T[] => {
+    if (!arr || arr.length === 0) return [];
+    let base = [...arr];
+    while (base.length < minCount) {
+      base = [...base, ...arr];
+    }
+    return base;
+  };
 
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  // Reusable 60FPS GPU-Accelerated translate3d Marquee Slider Component
+  interface MarqueeSliderProps<T> {
+    items: T[];
+    renderItem: (item: T, index: number) => React.ReactNode;
+    speed?: number;
+    className?: string;
+    gapClass?: string;
+    minItems?: number;
+  }
 
-    type RowState = {
-      pos: number;
-      period: number;
-      visible: boolean;
-      hovered: boolean;
-      dragging: boolean;
-      touching: boolean;
-      didDrag: boolean;
-      startX: number;
-      startScroll: number;
-    };
-    const st = new Map<HTMLDivElement, RowState>();
-    const disposers: Array<() => void> = [];
+  function MarqueeSlider<T>({
+    items,
+    renderItem,
+    speed = 30,
+    className = "",
+    gapClass = "gap-4 sm:gap-6",
+    minItems = 6,
+  }: MarqueeSliderProps<T>) {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const trackRef = useRef<HTMLDivElement>(null);
+    const posRef = useRef(0);
+    const halfWidthRef = useRef(0);
+    const isPausedRef = useRef(false);
+    const isDraggingRef = useRef(false);
+    const dragStartRef = useRef({ x: 0, pos: 0, didDrag: false });
+    const momentumVelRef = useRef(0);
+    const lastPointerRef = useRef({ x: 0, time: 0 });
+    const isVisibleRef = useRef(false);
+    const [isGrabbing, setIsGrabbing] = useState(false);
 
-    rows.forEach((c) => {
-      const previousScrollBehavior = c.style.scrollBehavior;
-      c.style.scrollBehavior = "auto";
-      disposers.push(() => {
-        c.style.scrollBehavior = previousScrollBehavior;
-      });
+    const baseList = useMemo(() => ensureLoopItems(items, minItems), [items, minItems]);
+    const loopList = useMemo(() => {
+      if (baseList.length === 0) return [];
+      return [...baseList, ...baseList];
+    }, [baseList]);
 
-      const s: RowState = {
-        pos: c.scrollLeft,
-        period: 0,
-        visible: true,
-        hovered: false,
-        dragging: false,
-        touching: false,
-        didDrag: false,
-        startX: 0,
-        startScroll: 0,
-      };
-      st.set(c, s);
-      const measure = () => {
-        const kids = c.children;
-        s.period =
-          kids.length >= 2 && kids.length % 2 === 0
-            ? (kids[kids.length / 2] as HTMLElement).offsetLeft -
-            (kids[0] as HTMLElement).offsetLeft
-            : 0;
-      };
+    useEffect(() => {
+      const container = containerRef.current;
+      if (!container) return;
 
-      const resizeObserver = new ResizeObserver(measure);
-      const observeAll = () => {
-        resizeObserver.disconnect();
-        resizeObserver.observe(c);
-        for (const child of Array.from(c.children)) resizeObserver.observe(child);
-        measure();
-      };
-      observeAll();
-
-      // Cards arrive after fetch, and adding children never changes the
-      // container's own border box, so ResizeObserver alone would not re-fire.
-      const mutationObserver = new MutationObserver(observeAll);
-      mutationObserver.observe(c, { childList: true });
-
-      // An off-screen marquee burns battery and would have drifted somewhere
-      // arbitrary by the time the visitor scrolls down to it.
-      const visibilityObserver = new IntersectionObserver(
+      const observer = new IntersectionObserver(
         ([entry]) => {
-          s.visible = entry.isIntersecting;
+          isVisibleRef.current = entry.isIntersecting;
         },
-        { threshold: 0 },
+        { threshold: 0 }
       );
-      visibilityObserver.observe(c);
+      observer.observe(container);
 
-      disposers.push(() => {
-        resizeObserver.disconnect();
-        mutationObserver.disconnect();
-        visibilityObserver.disconnect();
-      });
-
-      const onEnter = () => {
-        s.hovered = true;
+      return () => {
+        observer.disconnect();
       };
-      const onLeave = () => {
-        s.hovered = false;
-      };
+    }, []);
 
-      // Mouse drag-to-scroll (touch uses native scrolling)
-      const onPointerDown = (e: PointerEvent) => {
-        if (e.pointerType !== "mouse") return;
-        s.dragging = true;
-        s.didDrag = false;
-        s.startX = e.pageX;
-        s.startScroll = c.scrollLeft;
-        c.style.userSelect = "none";
-        const onMove = (ev: PointerEvent) => {
-          const dx = ev.pageX - s.startX;
-          if (Math.abs(dx) > 5) s.didDrag = true;
-          c.scrollLeft = s.startScroll - dx;
-          s.pos = c.scrollLeft;
-          ev.preventDefault();
-        };
-        const onUp = () => {
-          s.dragging = false;
-          s.pos = c.scrollLeft;
-          c.style.userSelect = "";
-          document.removeEventListener("pointermove", onMove);
-          document.removeEventListener("pointerup", onUp);
-        };
-        document.addEventListener("pointermove", onMove);
-        document.addEventListener("pointerup", onUp);
-      };
+    useEffect(() => {
+      if (loopList.length === 0) return;
+      const track = trackRef.current;
+      if (!track) return;
 
-      // Swallow the click that follows a real drag so a card doesn't navigate.
-      const onClickCapture = (e: MouseEvent) => {
-        if (s.didDrag) {
-          e.preventDefault();
-          e.stopPropagation();
-          s.didDrag = false;
+      const measure = () => {
+        const kids = track.children;
+        const halfIdx = baseList.length;
+        if (kids.length >= halfIdx * 2 && halfIdx > 0) {
+          const firstChild = kids[0] as HTMLElement;
+          const halfChild = kids[halfIdx] as HTMLElement;
+          if (firstChild && halfChild) {
+            halfWidthRef.current = halfChild.offsetLeft - firstChild.offsetLeft;
+          }
         }
       };
 
-      const onTouchStart = () => {
-        s.touching = true;
+      measure();
+      const ro = new ResizeObserver(measure);
+      ro.observe(track);
+      for (const kid of Array.from(track.children)) {
+        ro.observe(kid);
+      }
+      const mo = new MutationObserver(measure);
+      mo.observe(track, { childList: true, subtree: true });
+
+      return () => {
+        ro.disconnect();
+        mo.disconnect();
       };
-      const onTouchEnd = () => {
-        s.touching = false;
-        s.pos = c.scrollLeft;
-      };
+    }, [baseList, loopList]);
 
-      c.addEventListener("mouseenter", onEnter);
-      c.addEventListener("mouseleave", onLeave);
-      c.addEventListener("pointerdown", onPointerDown as EventListener);
-      c.addEventListener("click", onClickCapture as EventListener, true);
-      c.addEventListener("touchstart", onTouchStart, { passive: true });
-      c.addEventListener("touchend", onTouchEnd, { passive: true });
-      c.addEventListener("touchcancel", onTouchEnd, { passive: true });
+    useEffect(() => {
+      if (loopList.length === 0) return;
+      const track = trackRef.current;
+      if (!track) return;
 
-      disposers.push(() => {
-        c.removeEventListener("mouseenter", onEnter);
-        c.removeEventListener("mouseleave", onLeave);
-        c.removeEventListener("pointerdown", onPointerDown as EventListener);
-        c.removeEventListener("click", onClickCapture as EventListener, true);
-        c.removeEventListener("touchstart", onTouchStart);
-        c.removeEventListener("touchend", onTouchEnd);
-        c.removeEventListener("touchcancel", onTouchEnd);
-      });
-    });
+      let animId: number;
+      let lastTime = performance.now();
 
-    let animationFrameId: number;
-    let lastTime = 0;
-    const step = (now: number) => {
-      animationFrameId = requestAnimationFrame(step);
-      // Clamped so returning to a backgrounded tab does not apply one enormous
-      // delta and teleport every row.
-      const delta = lastTime ? Math.min(now - lastTime, 50) : 0;
-      lastTime = now;
-      if (reduceMotion.matches) return;
+      const step = (now: number) => {
+        animId = requestAnimationFrame(step);
+        if (!isVisibleRef.current) return;
+        const dt = Math.min((now - lastTime) / 1000, 0.05);
+        lastTime = now;
 
-      rows.forEach((c) => {
-        const s = st.get(c);
-        if (!s || s.period <= 0 || !s.visible) return;
-        if (s.hovered || s.dragging || s.touching) {
-          // Paused — mirror any manual scroll so we resume from here (no jump).
-          s.pos = c.scrollLeft;
-          return;
+        if (halfWidthRef.current <= 0 || isDraggingRef.current) return;
+
+        // Apply smooth cursor drag momentum decay
+        if (Math.abs(momentumVelRef.current) > 1) {
+          posRef.current += momentumVelRef.current * dt;
+          momentumVelRef.current *= Math.pow(0.92, dt * 60);
+          if (Math.abs(momentumVelRef.current) < 2) {
+            momentumVelRef.current = 0;
+          }
+        } else if (!isPausedRef.current) {
+          posRef.current += speed * dt;
         }
-        let pos = s.pos + (SPEED * delta) / 1000;
-        // Wrap onto the identical second copy → seamless.
-        while (pos >= s.period) pos -= s.period;
-        while (pos < 0) pos += s.period;
-        s.pos = pos;
-        c.scrollLeft = pos;
-      });
-    };
-    animationFrameId = requestAnimationFrame(step);
 
-    return () => {
-      cancelAnimationFrame(animationFrameId);
-      disposers.forEach((d) => d());
+        const W = halfWidthRef.current;
+        if (W > 0) {
+          while (posRef.current >= W) posRef.current -= W;
+          while (posRef.current < 0) posRef.current += W;
+        }
+
+        track.style.transform = `translate3d(${-posRef.current}px, 0, 0)`;
+      };
+
+      animId = requestAnimationFrame(step);
+      return () => cancelAnimationFrame(animId);
+    }, [loopList, speed]);
+
+    const handleMouseEnter = () => {
+      if (!isDraggingRef.current) isPausedRef.current = true;
     };
-  }, [
-    loading,
-    feedbacks.length,
-    offers.length,
-    homePosts.length,
-    ashrams.length,
-    marketplaceProducts.length,
-    marketplaceCategories.length,
-  ]);
+    const handleMouseLeave = () => {
+      if (!isDraggingRef.current) isPausedRef.current = false;
+    };
+
+    const wheelTimerRef = useRef<any>(null);
+
+    useEffect(() => {
+      const container = containerRef.current;
+      if (!container) return;
+
+      const handleWheel = (e: WheelEvent) => {
+        const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : (e.shiftKey ? e.deltaY : 0);
+        if (Math.abs(delta) > 1) {
+          posRef.current += delta;
+          const W = halfWidthRef.current;
+          if (W > 0) {
+            while (posRef.current >= W) posRef.current -= W;
+            while (posRef.current < 0) posRef.current += W;
+          }
+          if (trackRef.current) {
+            trackRef.current.style.transform = `translate3d(${-posRef.current}px, 0, 0)`;
+          }
+
+          isPausedRef.current = true;
+          if (wheelTimerRef.current) clearTimeout(wheelTimerRef.current);
+          wheelTimerRef.current = setTimeout(() => {
+            isPausedRef.current = false;
+          }, 600);
+        }
+      };
+
+      container.addEventListener("wheel", handleWheel, { passive: true });
+      return () => {
+        container.removeEventListener("wheel", handleWheel);
+        if (wheelTimerRef.current) clearTimeout(wheelTimerRef.current);
+      };
+    }, []);
+
+    const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+      if (e.pointerType === "mouse" && e.button !== 0) return;
+      isDraggingRef.current = true;
+      setIsGrabbing(true);
+      momentumVelRef.current = 0;
+      const now = performance.now();
+      dragStartRef.current = { x: e.clientX, pos: posRef.current, didDrag: false };
+      lastPointerRef.current = { x: e.clientX, time: now };
+
+      const onPointerMove = (ev: PointerEvent) => {
+        if (!isDraggingRef.current) return;
+        const dx = ev.clientX - dragStartRef.current.x;
+        if (Math.abs(dx) > 3) {
+          dragStartRef.current.didDrag = true;
+        }
+
+        const moveTime = performance.now();
+        const deltaT = (moveTime - lastPointerRef.current.time) / 1000;
+        if (deltaT > 0.005) {
+          const moveDx = lastPointerRef.current.x - ev.clientX;
+          momentumVelRef.current = moveDx / deltaT;
+          lastPointerRef.current = { x: ev.clientX, time: moveTime };
+        }
+
+        let nextPos = dragStartRef.current.pos - dx;
+        const W = halfWidthRef.current;
+        if (W > 0) {
+          while (nextPos >= W) nextPos -= W;
+          while (nextPos < 0) nextPos += W;
+        }
+        posRef.current = nextPos;
+        if (trackRef.current) {
+          trackRef.current.style.transform = `translate3d(${-nextPos}px, 0, 0)`;
+        }
+      };
+
+      const cleanupPointer = () => {
+        isDraggingRef.current = false;
+        setIsGrabbing(false);
+        const elapsed = performance.now() - lastPointerRef.current.time;
+        if (elapsed > 60) {
+          momentumVelRef.current = 0;
+        } else {
+          momentumVelRef.current = Math.max(-1800, Math.min(1800, momentumVelRef.current));
+        }
+        window.removeEventListener("pointermove", onPointerMove);
+        window.removeEventListener("pointerup", cleanupPointer);
+        window.removeEventListener("pointercancel", cleanupPointer);
+      };
+
+      window.addEventListener("pointermove", onPointerMove);
+      window.addEventListener("pointerup", cleanupPointer);
+      window.addEventListener("pointercancel", cleanupPointer);
+    };
+
+    const handleClickCapture = (e: React.MouseEvent) => {
+      if (dragStartRef.current.didDrag) {
+        e.preventDefault();
+        e.stopPropagation();
+        dragStartRef.current.didDrag = false;
+      }
+    };
+
+    if (loopList.length === 0) return null;
+
+    return (
+      <div
+        ref={containerRef}
+        className={`overflow-hidden w-full relative select-none touch-pan-y py-4 -my-2 ${isGrabbing ? "cursor-grabbing" : "cursor-grab"} ${className}`}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        onPointerDown={handlePointerDown}
+        onClickCapture={handleClickCapture}
+        onDragStart={(e) => e.preventDefault()}
+      >
+        <div
+          ref={trackRef}
+          className={`flex ${gapClass} w-max will-change-transform select-none py-2 px-1`}
+          style={{ transform: "translate3d(0, 0, 0)" }}
+        >
+          {loopList.map((item, idx) => (
+            <React.Fragment key={idx}>
+              {renderItem(item, idx)}
+            </React.Fragment>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   // Products when they exist, category tiles as the stand-in until they do.
   const prasadItems =
@@ -501,7 +572,7 @@ export const HomePage: React.FC = () => {
   const serviceHighlights = [
     {
       title: publishedCms.destinations_banner?.title || "Destinations",
-      href: "/circuits",
+      href: "/pilgrimage-circuits",
       cta: publishedCms.destinations_banner?.ctaText || "Explore Holy Places",
       description:
         publishedCms.destinations_banner?.description ||
@@ -660,7 +731,7 @@ export const HomePage: React.FC = () => {
     img: r.ashramId?.images?.[0] || "",
   }));
 
-  // Service icons strip aligned with Tirvona Theme & Routing
+  // Service icons strip aligned with Tirvona Theme & Routing with Parking in the center & highlighted
   const serviceIcons = [
     {
       id: "circuits",
@@ -668,6 +739,7 @@ export const HomePage: React.FC = () => {
       icon: MapPin,
       category: "circuits",
       target: "/pilgrimage-circuits",
+      isHighlight: false,
     },
     {
       id: "events",
@@ -675,13 +747,7 @@ export const HomePage: React.FC = () => {
       icon: Sparkles,
       category: "events",
       target: "/events",
-    },
-    {
-      id: "parking",
-      label: "Parking",
-      icon: CircleParking,
-      category: "parking",
-      target: "/parking",
+      isHighlight: false,
     },
     {
       id: "food",
@@ -689,6 +755,7 @@ export const HomePage: React.FC = () => {
       icon: Utensils,
       category: "food",
       target: "/restaurants",
+      isHighlight: false,
     },
     {
       id: "prasad",
@@ -696,6 +763,15 @@ export const HomePage: React.FC = () => {
       icon: Activity,
       category: "prasad",
       target: "#prashad",
+      isHighlight: false,
+    },
+    {
+      id: "parking",
+      label: "Parking",
+      icon: CircleParking,
+      category: "parking",
+      target: "/parking",
+      isHighlight: true,
     },
     {
       id: "shops",
@@ -703,6 +779,7 @@ export const HomePage: React.FC = () => {
       icon: LayoutGrid,
       category: "shops",
       target: "/shops",
+      isHighlight: false,
     },
     {
       id: "pooja",
@@ -710,6 +787,7 @@ export const HomePage: React.FC = () => {
       icon: Flame,
       category: "pooja",
       target: "/temples",
+      isHighlight: false,
     },
     {
       id: "aarti",
@@ -717,6 +795,7 @@ export const HomePage: React.FC = () => {
       icon: Heart,
       category: "aarti",
       target: "/temples",
+      isHighlight: false,
     },
     {
       id: "volunteer",
@@ -724,6 +803,7 @@ export const HomePage: React.FC = () => {
       icon: HeartHandshake,
       category: "volunteer",
       target: "/volunteer",
+      isHighlight: false,
     },
   ];
 
@@ -1055,7 +1135,7 @@ export const HomePage: React.FC = () => {
           >
             {serviceIcons.map((item, i) => {
               const IconComponent = item.icon;
-              const isActive = activeService === i;
+              const isHighlight = item.isHighlight;
               return (
                 <button
                   key={i}
@@ -1069,12 +1149,28 @@ export const HomePage: React.FC = () => {
                       navigate(`${item.target}?category=${item.category}`);
                     }
                   }}
-                  className="flex-1 min-w-[78px] sm:min-w-[88px] lg:min-w-0 flex flex-col items-center justify-center gap-1.5 py-2.5 sm:py-3 px-1 text-center rounded-2xl transition-all cursor-pointer group shrink-0 lg:shrink hover:bg-blue-50/60 dark:hover:bg-slate-800/60"
+                  className={`flex-1 min-w-[78px] sm:min-w-[88px] lg:min-w-0 flex flex-col items-center justify-center gap-1.5 py-2.5 sm:py-3 px-1 text-center rounded-2xl transition-all cursor-pointer group shrink-0 lg:shrink ${
+                    isHighlight
+                      ? "bg-gradient-to-b from-blue-50/90 to-blue-100/70 dark:from-blue-950/60 dark:to-[#0A4DA6]/40 border border-[#0A4DA6]/30 dark:border-amber-400/50 shadow-sm transform -translate-y-0.5"
+                      : "hover:bg-blue-50/60 dark:hover:bg-slate-800/60"
+                  }`}
                 >
-                  <div className="p-2 sm:p-2.5 rounded-full bg-blue-50 dark:bg-blue-900/30 text-[#0A4DA6] dark:text-blue-400 group-hover:bg-[#0A4DA6] group-hover:text-white transition-colors">
+                  <div
+                    className={`p-2 sm:p-2.5 rounded-full transition-all ${
+                      isHighlight
+                        ? "bg-[#0A4DA6] text-white shadow-md ring-2 ring-[#E58C28] ring-offset-1 ring-offset-white dark:ring-offset-[#0B192C]"
+                        : "bg-blue-50 dark:bg-blue-900/30 text-[#0A4DA6] dark:text-blue-400 group-hover:bg-[#0A4DA6] group-hover:text-white"
+                    }`}
+                  >
                     <IconComponent size={16} className="stroke-[2.5]" />
                   </div>
-                  <span className="text-[9px] font-extrabold whitespace-pre-line text-center leading-tight text-[#0B192C] dark:text-gray-200 group-hover:text-[#0A4DA6] transition-colors">
+                  <span
+                    className={`text-[9px] font-black whitespace-pre-line text-center leading-tight transition-colors ${
+                      isHighlight
+                        ? "text-[#0A4DA6] dark:text-amber-400 font-extrabold"
+                        : "text-[#0B192C] dark:text-gray-200 group-hover:text-[#0A4DA6]"
+                    }`}
+                  >
                     {item.label}
                   </span>
                 </button>
@@ -1191,51 +1287,50 @@ export const HomePage: React.FC = () => {
         </div>
 
         {/* Modern Rounded Rectangle Cards Grid/Carousel */}
-        <div
-          ref={carouselRef}
-          className="flex gap-4 sm:gap-6 overflow-x-auto pb-6 pt-2 scrollbar-none -mx-4 sm:mx-0 px-4 sm:px-0 justify-start"
-          style={{ scrollbarWidth: "none" }}
-        >
-          {[...sacredDestinations, ...sacredDestinations].map((item, idx) => (
-            <div
-              key={`${item.name}-${idx}`}
-              onClick={() =>
-                navigate(
-                  `/search?destination=${encodeURIComponent(item.name)}${checkIn ? `&checkIn=${checkIn}` : ""}${checkOut ? `&checkOut=${checkOut}` : ""}${totalGuests ? `&guests=${totalGuests}` : ""}`,
-                )
-              }
-              className="flex-shrink-0 relative group cursor-pointer"
-              style={{ width: "clamp(200px, 48vw, 220px)" }}
-            >
-              {/* Modern Rounded Rectangle Card */}
-              <div className="w-full bg-white dark:bg-[#0B192C] rounded-3xl overflow-hidden border border-gray-100 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col hover:-translate-y-1">
-                {/* Image Container */}
-                <div
-                  className="relative overflow-hidden bg-gray-100 dark:bg-slate-900"
-                  style={{ height: "clamp(170px, 40vw, 190px)" }}
-                >
-                  {item.img ? (
-                    <img
-                      src={item.img}
-                      alt={item.name}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
-                  ) : null}
-                </div>
+        <div className="pt-2 pb-6">
+          <MarqueeSlider
+            items={sacredDestinations}
+            speed={30}
+            renderItem={(item: any, idx: number) => (
+              <div
+                onClick={() =>
+                  navigate(
+                    `/search?destination=${encodeURIComponent(item.name)}${checkIn ? `&checkIn=${checkIn}` : ""}${checkOut ? `&checkOut=${checkOut}` : ""}${totalGuests ? `&guests=${totalGuests}` : ""}`,
+                  )
+                }
+                className="flex-shrink-0 relative group cursor-pointer"
+                style={{ width: "clamp(200px, 48vw, 220px)" }}
+              >
+                {/* Modern Rounded Rectangle Card */}
+                <div className="w-full bg-white dark:bg-[#0B192C] rounded-3xl overflow-hidden border border-gray-100 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col hover:-translate-y-1">
+                  {/* Image Container */}
+                  <div
+                    className="relative overflow-hidden bg-gray-100 dark:bg-slate-900"
+                    style={{ height: "clamp(170px, 40vw, 190px)" }}
+                  >
+                    {item.img ? (
+                      <img
+                        src={item.img}
+                        alt={item.name}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    ) : null}
+                  </div>
 
-                {/* Centered Bottom Info Area */}
-                <div className="p-4 text-center flex flex-col items-center justify-center min-h-[72px]">
-                  <h4 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight line-clamp-1 text-center">
-                    {item.name}
-                  </h4>
-                  <p className="text-[11px] text-gray-400 font-bold mt-1 text-center">
-                    {item.state}
-                  </p>
+                  {/* Centered Bottom Info Area */}
+                  <div className="p-4 text-center flex flex-col items-center justify-center min-h-[72px]">
+                    <h4 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight line-clamp-1 text-center">
+                      {item.name}
+                    </h4>
+                    <p className="text-[11px] text-gray-400 font-bold mt-1 text-center">
+                      {item.state}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )}
+          />
         </div>
       </section>
 
@@ -1291,7 +1386,7 @@ export const HomePage: React.FC = () => {
             >
               {publishedFestival.heading ||
                 publishedFestival.title ||
-                "Upcoming Ardh Kumbh Festival"}
+                "Upcoming Aradh Kumbh Festival"}
             </motion.h2>
 
             <motion.p
@@ -1329,13 +1424,13 @@ export const HomePage: React.FC = () => {
 
       {/* ══════════════════════ POPULAR PRASHAD FROM ASHRAMS ══════════════════════ */}
       <section
-        id="prashad-section"
+        id="prashad"
         className="max-w-7xl mx-auto px-4 sm:px-6 space-y-8 mb-12 lg:mb-20"
       >
         {/* Clean Text Header (No Background Wallpaper) */}
         <div className="text-center space-y-2 max-w-3xl mx-auto py-2">
           <p className="font-['Kalam'] text-base sm:text-4xl font-bold text-[#E58C28]">
-            Prasad &amp; Puja Essentials
+            Sacred Prasad
           </p>
           {/* Decorative Saffron Underline Divider */}
           <div className="flex items-center justify-center gap-2.5 my-1.5">
@@ -1347,7 +1442,7 @@ export const HomePage: React.FC = () => {
             <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
           </div>
           <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-xl mx-auto leading-relaxed">
-            Authentic Mahaprasad, puja items, and spiritual goods delivered
+            Authentic Mahaprasad delivered
             directly from famous holy temples.
           </p>
           <button
@@ -1355,162 +1450,165 @@ export const HomePage: React.FC = () => {
             onClick={() => navigate("/marketplace")}
             className="mt-2 inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-[#083b80] text-white text-xs font-extrabold shadow-md transition-all cursor-pointer"
           >
-            Explore Sacred Marketplace <ArrowRight size={14} />
+            Explore Sacred Prasad <ArrowRight size={14} />
           </button>
         </div>
 
         {/* Dynamic Database-Driven Marketplace Product Cards Carousel */}
-        <div
-          ref={prashadRef}
-          className="flex gap-4 sm:gap-6 overflow-x-auto pb-6 pt-2 scrollbar-none -mx-4 sm:mx-0 px-4 sm:px-0 justify-start"
-          style={{ scrollbarWidth: "none" }}
-        >
-          {(() => {
-            const defaultPrasadList = [
-              {
-                _id: "prasad-1",
-                name: "neelkanth mahadev prasad",
-                templeSource: "Heritage Brass Guild",
-                price: 799,
-                rating: 4.8,
-                images: [
-                  "https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?auto=format&fit=crop&w=600&q=80",
-                ],
-              },
-              {
-                _id: "prasad-2",
-                name: "ganga arti prasad",
-                templeSource: "Haridwar Ganga Sabha Trust",
-                price: 899,
-                rating: 5.0,
-                images: [
-                  "https://images.unsplash.com/photo-1609840114035-3c981b782dfe?auto=format&fit=crop&w=600&q=80",
-                ],
-              },
-              {
-                _id: "prasad-3",
-                name: "Nitya Puja prasad",
-                templeSource: "Tirvona Spiritual Foundation",
-                price: 499,
-                rating: 4.9,
-                images: [
-                  "https://images.unsplash.com/photo-1614082242765-7c98ca0f3df3?auto=format&fit=crop&w=600&q=80",
-                ],
-              },
-              {
-                _id: "prasad-4",
-                name: "Vrindavan prasad",
-                templeSource: "ISKCON Vrindavan Artisans",
-                price: 199,
-                rating: 4.9,
-                images: [
-                  "https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=600&q=80",
-                ],
-              },
-            ];
-
-            const list =
+        <div className="pt-2 pb-6">
+          <MarqueeSlider
+            items={
               marketplaceProducts.length > 0
                 ? marketplaceProducts
                 : marketplaceCategories.length > 0
                   ? marketplaceCategories
-                  : defaultPrasadList;
+                  : [
+                    {
+                      _id: "prasad-1",
+                      name: "neelkanth mahadev prasad",
+                      templeSource: "Heritage Brass Guild",
+                      price: 799,
+                      rating: 4.8,
+                      images: [
+                        "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E",
+                      ],
+                    },
+                    {
+                      _id: "prasad-2",
+                      name: "ganga arti prasad",
+                      templeSource: "Haridwar Ganga Sabha Trust",
+                      price: 899,
+                      rating: 5.0,
+                      images: [
+                        "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E",
+                      ],
+                    },
+                    {
+                      _id: "prasad-3",
+                      name: "Nitya Puja prasad",
+                      templeSource: "Tirvona Spiritual Foundation",
+                      price: 499,
+                      rating: 4.9,
+                      images: [
+                        "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E",
+                      ],
+                    },
+                    {
+                      _id: "prasad-4",
+                      name: "Vrindavan prasad",
+                      templeSource: "ISKCON Vrindavan Artisans",
+                      price: 199,
+                      rating: 4.9,
+                      images: [
+                        "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E",
+                      ],
+                    },
+                  ]
+            }
+            speed={30}
+            renderItem={(item: any, idx: number) => {
+              const isProduct =
+                !!item.price || Array.isArray(item.images) || item.salePrice;
+              const fallbackImg =
+                "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E";
+              const imgUrl = isProduct
+                ? item.images?.[0] || item.img || fallbackImg
+                : item.coverImage ||
+                item.thumbnail ||
+                item.img ||
+                fallbackImg;
+              const name = item.name || item.title || "Sacred Prasad";
+              const subtitle =
+                item.templeSource ||
+                item.subtitle ||
+                (item.originCity
+                  ? `${item.originCity}, ${item.originState}`
+                  : "Sanctified Prasad");
+              const rawPrice = item.price || item.salePrice || 199;
+              const isItemOutOfStock =
+                item.status === "out_of_stock" ||
+                (item.stock !== undefined && Number(item.stock) <= 0) ||
+                (item.stockCount !== undefined && Number(item.stockCount) <= 0);
+              const discountPct =
+                isProduct && item.price && item.salePrice && item.salePrice < item.price
+                  ? Math.round(((item.price - item.salePrice) / item.price) * 100)
+                  : 0;
 
-            return [...list, ...list];
-          })().map((item: any, idx: number) => {
-            const isProduct =
-              !!item.price || Array.isArray(item.images) || item.salePrice;
-            const fallbackImg =
-              "https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?auto=format&fit=crop&w=600&q=80";
-            const imgUrl = isProduct
-              ? item.images?.[0] || item.img || fallbackImg
-              : item.coverImage ||
-              item.thumbnail ||
-              item.img ||
-              fallbackImg;
-            const name = item.name || item.title || "Sacred Prasad";
-            const subtitle =
-              item.templeSource ||
-              item.subtitle ||
-              (item.originCity
-                ? `${item.originCity}, ${item.originState}`
-                : "Sanctified Prasad");
-            const rawPrice = item.price || item.salePrice || 199;
-            const isItemOutOfStock =
-              item.status === "out_of_stock" ||
-              (item.stock !== undefined && Number(item.stock) <= 0) ||
-              (item.stockCount !== undefined && Number(item.stockCount) <= 0);
-            const discountPct =
-              isProduct && item.price && item.salePrice && item.salePrice < item.price
-                ? Math.round(((item.price - item.salePrice) / item.price) * 100)
-                : 0;
+              return (
+                <div
+                  onClick={() => {
+                    const targetId = item.slug || item._id;
+                    if (targetId) {
+                      if (isProduct) {
+                        navigate(`/marketplace/product/${targetId}`);
+                      } else {
+                        navigate(`/marketplace/category/${targetId}`);
+                      }
+                    } else {
+                      navigate("/marketplace");
+                    }
+                  }}
+                  className="flex-shrink-0 relative group cursor-pointer"
+                  style={{ width: "clamp(210px, 48vw, 230px)" }}
+                >
+                  {/* Modern Rounded Rectangle Card */}
+                  <div className="w-full bg-white dark:bg-[#0B192C] rounded-3xl overflow-hidden border border-gray-100 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col hover:-translate-y-1">
+                    {/* Image Container */}
+                    <div
+                      className="relative overflow-hidden bg-gray-100 dark:bg-slate-900"
+                      style={{ height: "clamp(170px, 40vw, 190px)" }}
+                    >
+                      <img
+                        src={imgUrl}
+                        alt={name}
+                        className="w-full h-full object-cover opacity-90"
+                        loading="lazy"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src = fallbackImg;
+                        }}
+                      />
+                      {isItemOutOfStock ? (
+                        <span className="absolute top-3 left-3 bg-red-600/90 backdrop-blur-md text-white text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-md tracking-wider">
+                          OUT OF STOCK
+                        </span>
+                      ) : discountPct > 0 ? (
+                        <span className="absolute top-3 left-3 bg-rose-500/90 backdrop-blur-md text-white text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-md tracking-wider">
+                          {discountPct}% OFF
+                        </span>
+                      ) : null}
 
-            return (
-              <div
-                // Index is part of the key because the list is deliberately
-                // doubled — `_id` alone repeats across the two copies.
-                key={`${item._id ?? "item"}-${idx}`}
-                onClick={() => navigate("/marketplace")}
-                className="flex-shrink-0 relative group cursor-pointer"
-                style={{ width: "clamp(210px, 48vw, 230px)" }}
-              >
-                {/* Modern Rounded Rectangle Card */}
-                <div className="w-full bg-white dark:bg-[#0B192C] rounded-3xl overflow-hidden border border-gray-100 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col hover:-translate-y-1">
-                  {/* Image Container */}
-                  <div
-                    className="relative overflow-hidden bg-gray-100 dark:bg-slate-900"
-                    style={{ height: "clamp(170px, 40vw, 190px)" }}
-                  >
-                    <img
-                      src={imgUrl}
-                      alt={name}
-                      className="w-full h-full object-cover opacity-90"
-                      loading="lazy"
-                      onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).src = fallbackImg;
-                      }}
-                    />
-                    {isItemOutOfStock ? (
-                      <span className="absolute top-3 left-3 bg-red-600/90 backdrop-blur-md text-white text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-md tracking-wider">
-                        OUT OF STOCK
-                      </span>
-                    ) : discountPct > 0 ? (
-                      <span className="absolute top-3 left-3 bg-rose-500/90 backdrop-blur-md text-white text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-md tracking-wider">
-                        {discountPct}% OFF
-                      </span>
-                    ) : null}
-
-                    {(item.rating || isProduct) && (
-                      <span className="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-amber-400 text-[10px] font-black uppercase px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1">
-                        <Star size={10} className="fill-amber-400" />{" "}
-                        {item.rating || 4.9}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Centered Bottom Title & Out of Stock / Price Area */}
-                  <div className="p-4 text-center flex flex-col items-center justify-center min-h-[84px]">
-                    <h4 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight line-clamp-1 text-center group-hover:text-[#0A4DA6] transition-colors">
-                      {name}
-                    </h4>
-                    <p className="text-[11px] text-gray-400 font-bold mt-0.5 text-center line-clamp-1">
-                      {subtitle}
-                    </p>
-                    <div className="mt-1 flex items-center justify-center gap-2">
-                      <span className="font-black text-xs text-[#0B192C] dark:text-gray-300">
-                        {formatCurrency(rawPrice)}
-                      </span>
-                      {isItemOutOfStock && (
-                        <span className="text-[9px] font-extrabold text-red-500 uppercase bg-red-50 dark:bg-red-950/40 px-2 py-0.5 rounded-md border border-red-200/50 dark:border-red-900/30">
-                          Out of Stock
+                      {(item.rating || isProduct) && (
+                        <span className="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-amber-400 text-[10px] font-black uppercase px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1">
+                          <Star size={10} className="fill-amber-400" />{" "}
+                          {item.rating || 4.9}
                         </span>
                       )}
                     </div>
+
+                    {/* Centered Bottom Title & Out of Stock / Price Area */}
+                    <div className="p-4 text-center flex flex-col items-center justify-center min-h-[84px]">
+                      <h4 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight line-clamp-1 text-center group-hover:text-[#0A4DA6] transition-colors">
+                        {name}
+                      </h4>
+                      <p className="text-[11px] text-gray-400 font-bold mt-0.5 text-center line-clamp-1">
+                        {subtitle}
+                      </p>
+                      <div className="mt-1 flex items-center justify-center gap-2">
+                        <span className="font-black text-xs text-[#0B192C] dark:text-gray-300">
+                          {formatCurrency(rawPrice)}
+                        </span>
+                        {isItemOutOfStock && (
+                          <span className="text-[9px] font-extrabold text-red-500 uppercase bg-red-50 dark:bg-red-950/40 px-2 py-0.5 rounded-md border border-red-200/50 dark:border-red-900/30">
+                            Out of Stock
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            }}
+          />
         </div>
       </section>
 
@@ -1582,16 +1680,12 @@ export const HomePage: React.FC = () => {
             ))}
           </div>
         ) : (
-          <div
-            ref={featuredRef}
-            className="flex gap-4 sm:gap-6 overflow-x-auto pb-6 pt-2 scrollbar-none -mx-4 sm:mx-0 px-4 sm:px-0 justify-start"
-            style={{ scrollbarWidth: "none" }}
-          >
-            {[...getTabbedAshrams(), ...getTabbedAshrams()].map(
-              (ashram, idx) => (
-                <motion.div
-                  key={`${ashram._id}-${idx}`}
-                  layout
+          <div className="pt-2 pb-6">
+            <MarqueeSlider
+              items={getTabbedAshrams()}
+              speed={30}
+              renderItem={(ashram: any, idx: number) => (
+                <div
                   onClick={() =>
                     navigate(
                       `/ashram/${ashram._id}${checkIn || checkOut ? `?checkIn=${checkIn}&checkOut=${checkOut}&guests=${totalGuests}` : ""}`,
@@ -1610,7 +1704,7 @@ export const HomePage: React.FC = () => {
                       <img
                         src={
                           ashram.images?.[0] ||
-                          "https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?auto=format&fit=crop&w=500&q=80"
+                          "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E"
                         }
                         alt={ashram.name}
                         className="w-full h-full object-cover"
@@ -1618,7 +1712,7 @@ export const HomePage: React.FC = () => {
                         onError={(e) => {
                           e.currentTarget.onerror = null;
                           e.currentTarget.src =
-                            "https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?auto=format&fit=crop&w=500&q=80";
+                            "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E";
                         }}
                       />
                       {/* Royal Navy Blue Price Badge */}
@@ -1665,9 +1759,9 @@ export const HomePage: React.FC = () => {
                       )}
                     </div>
                   </div>
-                </motion.div>
-              ),
-            )}
+                </div>
+              )}
+            />
           </div>
         )}
       </section>
@@ -1702,134 +1796,132 @@ export const HomePage: React.FC = () => {
           </button>
         </div>
 
-        {/* Horizontal Carousel (Exact same container & scroll layout as all other sections on the page) */}
-        <div
-          ref={offersRef}
-          className="flex gap-4 sm:gap-6 overflow-x-auto pb-6 pt-2 scrollbar-none -mx-4 sm:mx-0 px-4 sm:px-0 justify-start"
-          style={{ scrollbarWidth: "none" }}
-        >
-          {(() => {
-            const defaultList = [
-              {
-                _id: "default-1",
-                offerType: "MAHAKUMBH OFFER",
-                discountPercentage: 20,
-                offerTitle: "Mahakumbh Sacred Stay Special",
-                description:
-                  "Experience the holy Kumbh Mela 2026 with 20% OFF accommodation & VIP pass.",
-                promoCode: "KUMBH2026",
-                image: "",
-                ashramId: {
-                  address: { city: "Prayagraj" },
-                  name: "Shantikunj Gayatri Pariwar",
-                },
-              },
-              {
-                _id: "default-2",
-                offerType: "WEEKEND OFFER",
-                discountPercentage: 10,
-                discountValue: 500,
-                discountType: "FixedAmount",
-                offerTitle: "Weekend Spiritual Yoga & Retreat",
-                description:
-                  "Recharge your mind & soul with our weekend spiritual retreat package in Haridwar.",
-                promoCode: "WEEKEND500",
-                image: "",
-                ashramId: {
-                  address: { city: "Haridwar" },
-                  name: "Prem Nagar Ashram",
-                },
-              },
-              {
-                _id: "default-3",
-                offerType: "FESTIVAL OFFER",
-                discountPercentage: 15,
-                offerTitle: "Festival Season Kashi Discount",
-                description:
-                  "Get 15% instant savings on top verified ashrams across Kashi & Haridwar.",
-                promoCode: "FESTIVAL2026",
-                image: "",
-                ashramId: {
-                  address: { city: "Varanasi" },
-                  name: "Kashi Vishwanath Ashram",
-                },
-              },
-              {
-                _id: "default-4",
-                offerType: "SPECIAL OFFER",
-                discountPercentage: 25,
-                offerTitle: "Vrindavan Dham Yatra Deal",
-                description:
-                  "Exclusive 25% discount on serene dharamshala stays in holy Vrindavan.",
-                promoCode: "VRINDAVAN25",
-                image: "",
-                ashramId: {
-                  address: { city: "Vrindavan" },
-                  name: "Bhagwat Dham Ashram",
-                },
-              },
-            ];
+        <div className="pt-2 pb-6">
+          <MarqueeSlider
+            items={
+              offers.length > 0
+                ? offers
+                : [
+                  {
+                    _id: "default-1",
+                    offerType: "MAHAKUMBH OFFER",
+                    discountPercentage: 20,
+                    offerTitle: "Mahakumbh Sacred Stay Special",
+                    description:
+                      "Experience the holy Kumbh Mela 2026 with 20% OFF accommodation & VIP pass.",
+                    promoCode: "KUMBH2026",
+                    image: "",
+                    ashramId: {
+                      address: { city: "Prayagraj" },
+                      name: "Shantikunj Gayatri Pariwar",
+                    },
+                  },
+                  {
+                    _id: "default-2",
+                    offerType: "WEEKEND OFFER",
+                    discountPercentage: 10,
+                    discountValue: 500,
+                    discountType: "FixedAmount",
+                    offerTitle: "Weekend Spiritual Yoga & Retreat",
+                    description:
+                      "Recharge your mind & soul with our weekend spiritual retreat package in Haridwar.",
+                    promoCode: "WEEKEND500",
+                    image: "",
+                    ashramId: {
+                      address: { city: "Haridwar" },
+                      name: "Prem Nagar Ashram",
+                    },
+                  },
+                  {
+                    _id: "default-3",
+                    offerType: "FESTIVAL OFFER",
+                    discountPercentage: 15,
+                    offerTitle: "Festival Season Kashi Discount",
+                    description:
+                      "Get 15% instant savings on top verified ashrams across Kashi & Haridwar.",
+                    promoCode: "FESTIVAL2026",
+                    image: "",
+                    ashramId: {
+                      address: { city: "Varanasi" },
+                      name: "Kashi Vishwanath Ashram",
+                    },
+                  },
+                  {
+                    _id: "default-4",
+                    offerType: "SPECIAL OFFER",
+                    discountPercentage: 25,
+                    offerTitle: "Vrindavan Dham Yatra Deal",
+                    description:
+                      "Exclusive 25% discount on serene dharamshala stays in holy Vrindavan.",
+                    promoCode: "VRINDAVAN25",
+                    image: "",
+                    ashramId: {
+                      address: { city: "Vrindavan" },
+                      name: "Bhagwat Dham Ashram",
+                    },
+                  },
+                ]
+            }
+            speed={30}
+            renderItem={(offer: any, idx: number) => {
+              const cardImg =
+                offer.bannerImage ||
+                offer.thumbnailImage ||
+                offer.image ||
+                "";
+              const cardTitle =
+                offer.offerTitle || offer.title || "Special Ashram Offer";
+              const cardDesc =
+                offer.description ||
+                offer.bannerText ||
+                "Book early to get exclusive room rate discounts and complimentary Satvik meals.";
+              const offerBadge =
+                offer.offerType || offer.category || "FESTIVAL OFFER";
 
-            const list = offers.length > 0 ? offers : defaultList;
-            return [...list, ...list];
-          })().map((offer: any, idx: number) => {
-            const cardImg =
-              offer.bannerImage ||
-              offer.thumbnailImage ||
-              offer.image ||
-              "";
-            const cardTitle =
-              offer.offerTitle || offer.title || "Special Ashram Offer";
-            const cardDesc =
-              offer.description ||
-              offer.bannerText ||
-              "Book early to get exclusive room rate discounts and complimentary Satvik meals.";
-            const offerBadge =
-              offer.offerType || offer.category || "FESTIVAL OFFER";
+              const targetAshram = offer.ashramId?._id
+                ? offer.ashramId
+                : offer.applicableAshrams && offer.applicableAshrams[0];
+              const city =
+                offer.ashramId?.address?.city ||
+                targetAshram?.address?.city ||
+                (idx === 0 ? "Prayagraj" : "Haridwar");
 
-            const targetAshram = offer.ashramId?._id
-              ? offer.ashramId
-              : offer.applicableAshrams && offer.applicableAshrams[0];
-            const city =
-              offer.ashramId?.address?.city ||
-              targetAshram?.address?.city ||
-              (idx === 0 ? "Prayagraj" : "Haridwar");
+              const handleCardClick = () => {
+                if (targetAshram?._id) {
+                  navigate(
+                    `/ashram/${targetAshram._id}?promoCode=${encodeURIComponent(offer.promoCode || "")}`,
+                  );
+                } else if (
+                  offer._id &&
+                  typeof offer._id === "string" &&
+                  offer._id.length > 10 &&
+                  !offer._id.startsWith("default")
+                ) {
+                  navigate(`/offers/${offer._id}`);
+                } else {
+                  navigate(
+                    `/search?promoCode=${encodeURIComponent(offer.promoCode || "KUMBH2026")}`,
+                  );
+                }
+              };
 
-            const handleCardClick = () => {
-              if (targetAshram?._id) {
-                navigate(
-                  `/ashram/${targetAshram._id}?promoCode=${encodeURIComponent(offer.promoCode || "")}`,
-                );
-              } else if (
-                offer._id &&
-                typeof offer._id === "string" &&
-                offer._id.length > 10 &&
-                !offer._id.startsWith("default")
-              ) {
-                navigate(`/offers/${offer._id}`);
-              } else {
-                navigate(
-                  `/search?promoCode=${encodeURIComponent(offer.promoCode || "KUMBH2026")}`,
-                );
-              }
-            };
-
-            return (
-              <CouponVoucherCard
-                key={`${offer._id || "offer"}-${idx}`}
-                offer={{
-                  ...offer,
-                  image: cardImg,
-                  offerTitle: cardTitle,
-                  description: cardDesc,
-                  offerType: offerBadge,
-                  ashramId: { address: { city }, name: targetAshram?.name },
-                }}
-                onBookNow={handleCardClick}
-                isCarouselItem={true}
-              />
-            );
-          })}
+              return (
+                <CouponVoucherCard
+                  key={`${offer._id || "offer"}-${idx}`}
+                  offer={{
+                    ...offer,
+                    image: cardImg,
+                    offerTitle: cardTitle,
+                    description: cardDesc,
+                    offerType: offerBadge,
+                    ashramId: { address: { city }, name: targetAshram?.name },
+                  }}
+                  onBookNow={handleCardClick}
+                  isCarouselItem={true}
+                />
+              );
+            }}
+          />
         </div>
       </section>
 
@@ -1861,92 +1953,91 @@ export const HomePage: React.FC = () => {
             Explore Knowledge Hub <ArrowRight size={14} />
           </button>
         </div>
-        <div
-          ref={blogRef}
-          className="flex gap-4 sm:gap-6 overflow-x-auto pb-6 pt-2 scrollbar-none max-w-7xl mx-auto mt-6 relative z-10 -mx-4 sm:mx-0 px-4 sm:px-0 justify-start"
-          style={{ scrollbarWidth: "none" }}
-        >
-          {[...homePosts, ...homePosts].map((item, idx) => {
-            const isVideo = item.contentType === "video";
-            const targetUrl = isVideo
-              ? `/video/${item.slug}`
-              : `/blog/${item.slug}`;
-            const author = item.author || {};
+        <div className="pt-2 pb-6">
+          <MarqueeSlider
+            items={homePosts}
+            speed={30}
+            renderItem={(item: any, idx: number) => {
+              const isVideo = item.contentType === "video";
+              const targetUrl = isVideo
+                ? `/video/${item.slug}`
+                : `/blog/${item.slug}`;
+              const author = item.author || {};
 
-            return (
-              <div
-                key={`${item._id}-${idx}`}
-                onClick={() => navigate(targetUrl)}
-                className="shrink-0 w-[280px] sm:w-[320px] bg-white dark:bg-[#0B192C] rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 flex flex-col justify-between border border-gray-100 dark:border-slate-800 group hover:-translate-y-1 cursor-pointer h-full"
-              >
-                <div className="flex flex-col flex-1">
-                  <div className="h-44 sm:h-48 overflow-hidden bg-slate-900 relative shrink-0">
-                    <img
-                      src={item.coverImage}
-                      alt={item.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      loading="lazy"
-                      onError={(e) => {
-                        e.currentTarget.onerror = null;
-                        e.currentTarget.src =
-                          "/blogs/rishikesh_ashram_1785404729056.png";
-                      }}
-                    />
-                    {isVideo && (
-                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                        <div className="w-12 h-12 rounded-full bg-red-600/90 text-white flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform">
-                          <Play size={20} className="fill-white ml-1" />
+              return (
+                <div
+                  onClick={() => navigate(targetUrl)}
+                  className="shrink-0 w-[280px] sm:w-[320px] bg-white dark:bg-[#0B192C] rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 flex flex-col justify-between border border-gray-100 dark:border-slate-800 group hover:-translate-y-1 cursor-pointer h-full"
+                >
+                  <div className="flex flex-col flex-1">
+                    <div className="h-44 sm:h-48 overflow-hidden bg-slate-900 relative shrink-0">
+                      <img
+                        src={item.coverImage}
+                        alt={item.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        loading="lazy"
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src =
+                            "/blogs/rishikesh_ashram_1785404729056.png";
+                        }}
+                      />
+                      {isVideo && (
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                          <div className="w-12 h-12 rounded-full bg-red-600/90 text-white flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform">
+                            <Play size={20} className="fill-white ml-1" />
+                          </div>
                         </div>
+                      )}
+                    </div>
+                    <div className="p-5 space-y-2.5 flex-1 flex flex-col justify-between">
+                      <div className="flex items-center gap-4 text-[11px] font-bold text-gray-400">
+                        <span className="flex items-center gap-1.5">
+                          <Calendar size={13} className="text-[#0A4DA6]" />{" "}
+                          {new Date(item.createdAt).toLocaleDateString("en-IN", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <BookOpen size={13} className="text-[#0A4DA6]" />{" "}
+                          {item.views} Views
+                        </span>
                       </div>
-                    )}
+                      <h3 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-snug line-clamp-2 h-11 sm:h-12 flex items-start group-hover:text-[#0A4DA6] transition-colors">
+                        {item.title}
+                      </h3>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed h-9 overflow-hidden">
+                        {item.excerpt}
+                      </p>
+                    </div>
                   </div>
-                  <div className="p-5 space-y-2.5 flex-1 flex flex-col justify-between">
-                    <div className="flex items-center gap-4 text-[11px] font-bold text-gray-400">
-                      <span className="flex items-center gap-1.5">
-                        <Calendar size={13} className="text-[#0A4DA6]" />{" "}
-                        {new Date(item.createdAt).toLocaleDateString("en-IN", {
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                        })}
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <BookOpen size={13} className="text-[#0A4DA6]" />{" "}
-                        {item.views} Views
+                  <div className="px-5 py-3 flex items-center justify-between border-t border-gray-50 dark:border-slate-800/60 mt-auto shrink-0 h-16">
+                    <div className="flex items-center gap-2 min-w-0 flex-1 pr-2">
+                      <img
+                        src={author.photo || author.avatar || item.coverImage}
+                        alt={author.name || "Author"}
+                        className="w-7 h-7 rounded-full object-cover border border-[#0A4DA6] shrink-0"
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src =
+                            "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E";
+                        }}
+                      />
+                      <span className="text-xs font-bold text-gray-600 dark:text-gray-300 truncate">
+                        {author.name || "Verified Author"}
                       </span>
                     </div>
-                    <h3 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-snug line-clamp-2 h-11 sm:h-12 flex items-start group-hover:text-[#0A4DA6] transition-colors">
-                      {item.title}
-                    </h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed h-9 overflow-hidden">
-                      {item.excerpt}
-                    </p>
+                    <button className="px-3.5 py-1.5 bg-[#F0F5FC] dark:bg-blue-950/40 text-gray-700 dark:text-blue-300 group-hover:bg-[#0A4DA6] group-hover:text-white text-xs font-bold rounded-full flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0">
+                      <span>{isVideo ? "Watch Video" : "Read Article"}</span>
+                      <ArrowRight size={12} />
+                    </button>
                   </div>
                 </div>
-                <div className="px-5 py-3 flex items-center justify-between border-t border-gray-50 dark:border-slate-800/60 mt-auto shrink-0 h-16">
-                  <div className="flex items-center gap-2 min-w-0 flex-1 pr-2">
-                    <img
-                      src={author.photo || author.avatar || item.coverImage}
-                      alt={author.name || "Author"}
-                      className="w-7 h-7 rounded-full object-cover border border-[#0A4DA6] shrink-0"
-                      onError={(e) => {
-                        e.currentTarget.onerror = null;
-                        e.currentTarget.src =
-                          "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80";
-                      }}
-                    />
-                    <span className="text-xs font-bold text-gray-600 dark:text-gray-300 truncate">
-                      {author.name || "Verified Author"}
-                    </span>
-                  </div>
-                  <button className="px-3.5 py-1.5 bg-[#F0F5FC] dark:bg-blue-950/40 text-gray-700 dark:text-blue-300 group-hover:bg-[#0A4DA6] group-hover:text-white text-xs font-bold rounded-full flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0">
-                    <span>{isVideo ? "Watch Video" : "Read Article"}</span>
-                    <ArrowRight size={12} />
-                  </button>
-                </div>
-              </div>
-            );
-          })}
+              );
+            }}
+          />
         </div>
       </section>
 
@@ -1974,78 +2065,77 @@ export const HomePage: React.FC = () => {
           </div>
 
           {/* Smooth 60FPS Sliding Gallery Carousel (Matching Reference Screenshot) */}
-          <div
-            ref={feedbackRef}
-            className="flex gap-4 sm:gap-6 overflow-x-auto pb-6 pt-2 scrollbar-none -mx-4 sm:mx-0 px-4 sm:px-0 justify-start"
-            style={{ scrollbarWidth: "none" }}
-          >
-            {[...customerFeedbacks, ...customerFeedbacks].map((fb, idx) => (
-              <div
-                key={`${fb.reviewer || "fb"}-${idx}`}
-                className="flex-shrink-0 relative group cursor-pointer"
-                style={{ width: "clamp(240px, 50vw, 280px)" }}
-              >
-                {/* Rounded Image Card Container (Matching Reference Screenshot Aspect & Border Radius) */}
-                <div className="w-full bg-white dark:bg-[#0B192C] rounded-[28px] overflow-hidden border border-gray-100 dark:border-slate-800 shadow-md hover:shadow-2xl transition-all duration-500 flex flex-col hover:-translate-y-1.5 h-[340px] sm:h-[380px] relative">
-                  {/* Full Height Background Image */}
-                  {fb.img ? (
-                    <img
-                      src={fb.img}
-                      alt={fb.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                      loading="lazy"
-                    />
-                  ) : null}
+          <div className="pt-2 pb-6">
+            <MarqueeSlider
+              items={customerFeedbacks}
+              speed={30}
+              renderItem={(fb: any, idx: number) => (
+                <div
+                  className="flex-shrink-0 relative group cursor-pointer"
+                  style={{ width: "clamp(240px, 50vw, 280px)" }}
+                >
+                  {/* Rounded Image Card Container (Matching Reference Screenshot Aspect & Border Radius) */}
+                  <div className="w-full bg-white dark:bg-[#0B192C] rounded-[28px] overflow-hidden border border-gray-100 dark:border-slate-800 shadow-md hover:shadow-2xl transition-all duration-500 flex flex-col hover:-translate-y-1.5 h-[340px] sm:h-[380px] relative">
+                    {/* Full Height Background Image */}
+                    {fb.img ? (
+                      <img
+                        src={fb.img}
+                        alt={fb.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                        loading="lazy"
+                      />
+                    ) : null}
 
-                  {/* Dark Gradient Overlay for Text Readability */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+                    {/* Dark Gradient Overlay for Text Readability */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
 
-                  {/* Overlay Card Content — fixed layout: rating top, review middle, user bottom */}
-                  <div className="absolute inset-0 p-5 flex flex-col justify-between text-white z-10">
-                    {/* Top: Star Rating Badge (Centered at Top) */}
-                    <div className="flex items-center gap-1 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full w-fit mx-auto text-[#FFD700] text-xs font-bold border border-white/20 shadow-xs">
-                      {[...Array(fb.rating)].map((_, i) => (
-                        <Star
-                          key={i}
-                          size={11}
-                          className="fill-[#FFD700] text-[#FFD700]"
-                        />
-                      ))}
-                      <span className="text-white text-[10px] ml-1 font-extrabold">
-                        {fb.ratingValue}
-                      </span>
-                    </div>
+                    {/* Overlay Card Content — fixed layout: rating top, review middle, user bottom */}
+                    <div className="absolute inset-0 p-5 flex flex-col justify-between text-white z-10">
+                      {/* Top: Star Rating Badge (Centered at Top) */}
+                      <div className="flex items-center gap-1 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full w-fit mx-auto text-[#FFD700] text-xs font-bold border border-white/20 shadow-xs">
+                        {[...Array(fb.rating)].map((_, i) => (
+                          <Star
+                            key={i}
+                            size={11}
+                            className="fill-[#FFD700] text-[#FFD700]"
+                          />
+                        ))}
+                        <span className="text-white text-[10px] ml-1 font-extrabold">
+                          {fb.ratingValue}
+                        </span>
+                      </div>
 
-                    {/* Bottom: review text (fixed height) + user info */}
-                    <div className="space-y-3">
-                      <p className="text-xs text-gray-100 font-medium leading-relaxed italic line-clamp-4 min-h-[4.5rem] drop-shadow-xs">
-                        "{fb.comment}"
-                      </p>
+                      {/* Bottom: review text (fixed height) + user info */}
+                      <div className="space-y-3">
+                        <p className="text-xs text-gray-100 font-medium leading-relaxed italic line-clamp-4 min-h-[4.5rem] drop-shadow-xs">
+                          "{fb.comment}"
+                        </p>
 
-                      <div className="pt-3 border-t border-white/20 flex items-center justify-between gap-2">
-                        <div className="min-w-0">
-                          <h4 className="font-extrabold text-sm text-white leading-none truncate flex items-center gap-1.5">
-                            {fb.reviewer}
-                            {fb.verifiedStay && (
-                              <span
-                                title="Stayed at this ashram"
-                                className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-emerald-500/25 border border-emerald-400/40 text-emerald-200 text-[9px] font-black shrink-0"
-                              >
-                                <CheckCircle size={9} /> Verified stay
-                              </span>
-                            )}
-                          </h4>
-                          <p className="text-[10px] text-gray-300 font-semibold mt-1 truncate">
-                            {fb.name}
-                            {fb.location ? ` · ${fb.location}` : ""}
-                          </p>
+                        <div className="pt-3 border-t border-white/20 flex items-center justify-between gap-2">
+                          <div className="min-w-0">
+                            <h4 className="font-extrabold text-sm text-white leading-none truncate flex items-center gap-1.5">
+                              {fb.reviewer}
+                              {fb.verifiedStay && (
+                                <span
+                                  title="Stayed at this ashram"
+                                  className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-emerald-500/25 border border-emerald-400/40 text-emerald-200 text-[9px] font-black shrink-0"
+                                >
+                                  <CheckCircle size={9} /> Verified stay
+                                </span>
+                              )}
+                            </h4>
+                            <p className="text-[10px] text-gray-300 font-semibold mt-1 truncate">
+                              {fb.name}
+                              {fb.location ? ` · ${fb.location}` : ""}
+                            </p>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              )}
+            />
           </div>
         </section>
       )}

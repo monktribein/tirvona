@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import api from "../lib/api";
 import {
   Compass,
@@ -13,6 +13,50 @@ import {
 
 export const TemplesPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const categoryParam = searchParams.get("category");
+
+  const getCategoryHeader = (cat: string) => {
+    const lower = cat.toLowerCase();
+    if (lower.includes("pooja") || lower.includes("puja")) {
+      return {
+        title: "Divine Pooja & Seva Services",
+        subtitle: "Book authentic Vedic Poojas, Special Sevas, and Archana online from sacred temples.",
+      };
+    }
+    if (lower.includes("arati") || lower.includes("aarti")) {
+      return {
+        title: "Aarti Booking & Passes",
+        subtitle: "Reserve Ganga Aarti passes, Bhasma Aarti entries, and Mangala Aarti passes.",
+      };
+    }
+    if (lower.includes("darshan")) {
+      return {
+        title: "VIP Darshan & Entry Passes",
+        subtitle: "Book hassle-free priority Darshan tickets and queue passes for holy temples.",
+      };
+    }
+    const formattedName = cat
+      .replace(/_/g, " ")
+      .replace(/-/g, " ")
+      .split(" ")
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" ");
+
+    return {
+      title: `${formattedName} Booking`,
+      subtitle: `Explore upcoming ${formattedName.toLowerCase()} services and divine offerings.`,
+    };
+  };
+
+  const headerInfo = categoryParam
+    ? getCategoryHeader(categoryParam)
+    : {
+        title: "Holy Temples of India",
+        subtitle:
+          "Explore authentic Darshan timings, Aarti schedules, temple rules, history, dress code, and official trust details.",
+      };
+
   const [temples, setTemples] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -48,7 +92,7 @@ export const TemplesPage: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6">
         <div className="text-center space-y-2.5 max-w-3xl mx-auto py-2">
           <p className="font-['Kalam'] text-2xl sm:text-4xl lg:text-5xl font-bold text-[#E58C28]">
-            Holy Temples of India
+            {headerInfo.title}
           </p>
           {/* Decorative Saffron Underline Divider */}
           <div className="flex items-center justify-center gap-2.5 my-1.5">
@@ -60,8 +104,7 @@ export const TemplesPage: React.FC = () => {
             <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
           </div>
           <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-xl mx-auto leading-relaxed">
-            Explore authentic Darshan timings, Aarti schedules, temple rules,
-            history, dress code, and official trust details.
+            {headerInfo.subtitle}
           </p>
           {/* Centered Search Bar */}
           <form
@@ -88,9 +131,18 @@ export const TemplesPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Temple Cards Grid */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-10">
-        {loading ? (
+      {/* Temple Cards Grid or Coming Soon Image for Categories */}
+      {categoryParam ? (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 my-6 flex flex-col items-center justify-center">
+          <img
+            src="/banner/coming%20soon/marketplace.png"
+            alt="Coming Soon"
+            className="w-full max-w-3xl h-auto object-contain max-h-[550px] mx-auto drop-shadow-md"
+          />
+        </div>
+      ) : (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-10">
+          {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[1, 2, 3, 4, 5, 6].map((i) => (
               <div
@@ -283,7 +335,8 @@ export const TemplesPage: React.FC = () => {
             );
           })()
         )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

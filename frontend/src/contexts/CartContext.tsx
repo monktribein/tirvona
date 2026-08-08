@@ -26,7 +26,11 @@ interface CartContextValue {
   lines: CartLine[];
   count: number;
   displaySubtotal: number;
-  add: (line: Omit<CartLine, "quantity">, quantity?: number) => void;
+  add: (
+    line: Omit<CartLine, "quantity">,
+    quantity?: number,
+    openDrawer?: boolean,
+  ) => void;
   setQuantity: (productId: string, quantity: number) => void;
   remove: (productId: string) => void;
   clear: () => void;
@@ -89,7 +93,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
     );
 
   const add = useCallback(
-    (incoming: Omit<CartLine, "quantity">, quantity = 1) => {
+    (
+      incoming: Omit<CartLine, "quantity">,
+      quantity = 1,
+      openDrawer = true,
+    ) => {
       setLines((prev) => {
         const existing = prev.find((l) => l.productId === incoming.productId);
         if (!existing)
@@ -109,7 +117,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
             : l,
         );
       });
-      setIsOpen(true);
+      if (openDrawer) {
+        setIsOpen(true);
+      }
     },
     [],
   );

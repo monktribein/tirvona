@@ -130,6 +130,7 @@ export class SaveOfferDto {
   @IsOptional() @IsString() mobileBanner?: string;
   @IsOptional() @IsArray() galleryImages?: string[];
   @IsOptional() @IsString() validFrom?: string;
+  @IsOptional() @IsString() targetRoute?: string;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) perUserLimit?: number;
   @IsOptional() @Type(() => Number) @IsInt() priority?: number;
   @IsOptional() featured?: boolean;

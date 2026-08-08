@@ -79,7 +79,7 @@ export const VisitorArticlesTab: React.FC = () => {
   const [shortDescription, setShortDescription] = useState("");
   const [content, setContent] = useState("");
   const [featuredImage, setFeaturedImage] = useState(
-    "https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=800&q=80",
+    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E",
   );
   const [galleryImagesStr, setGalleryImagesStr] = useState("");
   const [tagsStr, setTagsStr] = useState("Rishikesh, AshramStay, SatvikLiving");
@@ -584,7 +584,7 @@ export const VisitorArticlesTab: React.FC = () => {
                 required
                 value={featuredImage}
                 onChange={(e) => setFeaturedImage(e.target.value)}
-                placeholder="https://images.unsplash.com/..."
+                placeholder="https://domain.com/photo.jpg"
                 className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold focus:outline-none focus:border-[#0A4DA6]"
               />
             </div>

@@ -79,10 +79,12 @@
   --ring: rgba(10, 77, 166, 0.3);
 }
 
-/* Custom Base Styles & Smooth Scrolling */
+/* Custom Base Styles */
 html {
-  scroll-behavior: smooth;
-  scroll-padding-top: 5rem;
+  scroll-padding-top: 5.5rem;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
@@ -91,34 +93,24 @@ body {
   font-family: var(--font-sans);
   transition: background-color 0.3s ease, color 0.3s ease;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: auto;
 }
 
-/* Sideways-scroll safety net.
- *
- * `overflow-x: clip` — NOT `hidden`. `hidden` turns the element into a scroll
- * container, which silently disables `position: sticky` for every descendant
- * (this app has sticky headers and sidebars in six layouts). `clip` suppresses
- * the same horizontal overflow without creating a scroll container, so sticky
- * keeps working.
- *
- * This is a backstop, not a fix: an element that genuinely overflows is still
- * a bug worth tracking down, because clipping hides content rather than
- * reflowing it. Anything that must scroll sideways (wide tables, code blocks)
- * should own an `overflow-x-auto` wrapper so it scrolls independently. */
+/* Anchor targets scroll offset */
+[id] {
+  scroll-margin-top: 5.5rem;
+}
+
+/* Sideways-scroll safety net */
 html,
 body {
   max-width: 100%;
   overflow-x: clip;
 }
 
-/* Long unbreakable strings — emails, URLs, booking IDs, Cloudinary links —
- * are the other common cause of a phone-width page scrolling sideways. */
+/* Long unbreakable strings break safely */
 body {
   overflow-wrap: break-word;
-}
-
-*, *::before, *::after {
-  scroll-behavior: smooth;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -126,16 +118,17 @@ h1, h2, h3, h4, h5, h6 {
   letter-spacing: -0.025em;
 }
 
-/* Smooth, GPU-friendly default transitions for interactive elements.
-   Explicit Tailwind transition-* classes still win where they're set. */
+/* Smooth, GPU-friendly default transitions for interactive elements */
 a,
 button,
 [role="button"] {
-  transition: color 0.2s ease, background-color 0.2s ease,
-    border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  transition: color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Brand-colour native form controls (select dropdown highlight, checkboxes, etc.) */
+/* Brand-colour native form controls */
 select,
 input[type="checkbox"],
 input[type="radio"],
@@ -148,39 +141,64 @@ option:hover {
   color: #ffffff;
 }
 
-/* Hint the compositor for elements that animate transform/opacity a lot */
+/* Hint the compositor for elements that animate transform/opacity */
 .gpu {
-  will-change: transform;
-  transform: translateZ(0);
+  will-change: transform, opacity;
+  transform: translate3d(0, 0, 0);
   backface-visibility: hidden;
+}
+
+/* Lightweight Scroll-Reveal Animations (GPU accelerated, 0 layout shift) */
+@keyframes fadeInUpSmooth {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 16px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUpSmooth 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
 }
 
 /* Respect users who prefer reduced motion (accessibility) */
 @media (prefers-reduced-motion: reduce) {
   html {
-    scroll-behavior: auto;
+    scroll-behavior: auto !important;
   }
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
-/* Custom scrollbars */
+/* Premium, subtle custom scrollbars */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 4px;
+  background: rgba(10, 77, 166, 0.2);
+  border-radius: 999px;
+  transition: background-color 0.2s ease;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--primary);
+  background: rgba(10, 77, 166, 0.45);
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(229, 140, 40, 0.25);
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(229, 140, 40, 0.5);
 }
 
 /* Elegant glassmorphism class for premium styling */

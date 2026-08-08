@@ -1,7 +1,8 @@
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import type { Model } from "mongoose";
+import { Model, Types } from "mongoose";
 import type { CommerceRepository } from "../../domain/commerce.repository";
+
 @Injectable()
 export class MongooseCommerceRepository implements CommerceRepository {
   private readonly models: Record<string, Model<any>>;
@@ -50,16 +51,33 @@ export class MongooseCommerceRepository implements CommerceRepository {
   create(name: string, payload: Record<string, unknown>): Promise<any> {
     return this.model(name).create(payload);
   }
-  update(
+  async update(
     name: string,
     id: string,
     payload: Record<string, unknown>,
   ): Promise<any | null> {
-    return this.model(name)
-      .findByIdAndUpdate(id, payload, { new: true, runValidators: true })
+    const isObjectId = Types.ObjectId.isValid(id);
+    const filter = isObjectId
+      ? { _id: id }
+      : { $or: [{ _id: id }, { slug: id }] };
+    let doc = await this.model(name)
+      .findOneAndUpdate(filter, payload, { new: true, runValidators: true })
       .lean();
+    if (!doc && !isObjectId) {
+      doc = await this.model(name)
+        .findOneAndUpdate(
+          { slug: id },
+          { ...payload, slug: id },
+          { new: true, upsert: true, runValidators: true },
+        )
+        .lean();
+    }
+    return doc;
   }
   remove(name: string, id: string): Promise<any | null> {
-    return this.model(name).findByIdAndDelete(id).lean();
+    const filter = Types.ObjectId.isValid(id)
+      ? { _id: id }
+      : { $or: [{ _id: id }, { slug: id }] };
+    return this.model(name).findOneAndDelete(filter).lean();
   }
 }

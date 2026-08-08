@@ -1,30 +1,33 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import React from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Sparkles, ArrowRight, Home } from "lucide-react";
-import api from "../lib/api";
 
 export const EventsFestivalsPage: React.FC = () => {
   const navigate = useNavigate();
-  const [bannerImage, setBannerImage] = useState<string>("");
+  const [searchParams] = useSearchParams();
+  const categoryParam = searchParams.get("category");
 
-  useEffect(() => {
-    const fetchCms = async () => {
-      try {
-        const res = await api.get("/cms/published");
-        if (res.data?.success) {
-          const cms = res.data.data || {};
-          const img =
-            cms.festival_banner?.bannerImage ||
-            cms.events_banner?.bannerImage ||
-            "";
-          setBannerImage(img);
-        }
-      } catch (err) {
-        console.warn("Failed to fetch CMS banner:", err);
-      }
+  const getCategoryHeader = (cat: string) => {
+    const formattedName = cat
+      .replace(/_/g, " ")
+      .replace(/-/g, " ")
+      .split(" ")
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" ");
+
+    return {
+      title: `${formattedName} Events & Festivals`,
+      subtitle: `Explore upcoming ${formattedName.toLowerCase()} schedules, Snan passes, and cultural event registrations.`,
     };
-    fetchCms();
-  }, []);
+  };
+
+  const headerInfo = categoryParam
+    ? getCategoryHeader(categoryParam)
+    : {
+        title: "Events & Sacred Festivals",
+        subtitle:
+          "Live festival schedules, Shahi Snan passes, and Mahotsav event registrations.",
+      };
 
   return (
     <div className="min-h-screen pb-16">
@@ -32,7 +35,7 @@ export const EventsFestivalsPage: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8">
         <div className="text-center space-y-2.5 max-w-3xl mx-auto py-2">
           <p className="font-['Kalam'] text-3xl sm:text-5xl font-bold text-[#E58C28]">
-            Events &amp; Sacred Festivals
+            {headerInfo.title}
           </p>
           {/* Decorative Saffron Underline Divider */}
           <div className="flex items-center justify-center gap-2.5 my-1.5">
@@ -44,23 +47,18 @@ export const EventsFestivalsPage: React.FC = () => {
             <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
           </div>
           <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-xl mx-auto leading-relaxed">
-            Live festival schedules, Shahi Snan passes, and Mahotsav event
-            registrations are launching soon on Tirvona!
+            {headerInfo.subtitle}
           </p>
         </div>
       </div>
 
       {/* Feature Showcase Banner */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 mt-4 space-y-8">
-        {bannerImage ? (
-          <div className="flex justify-center">
-            <img
-              src={bannerImage}
-              alt="Events & Festivals Banner"
-              className="w-full h-auto max-h-[500px] object-contain drop-shadow-md rounded-2xl"
-            />
-          </div>
-        ) : null}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 mt-4 flex flex-col items-center justify-center">
+        <img
+          src="/banner/coming%20soon/marketplace.png"
+          alt="Coming Soon"
+          className="w-full max-w-3xl h-auto object-contain max-h-[550px] mx-auto drop-shadow-md"
+        />
 
         {/* Action Buttons */}
         <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
