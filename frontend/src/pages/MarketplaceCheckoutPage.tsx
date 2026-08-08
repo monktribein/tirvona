@@ -10,7 +10,6 @@ import { getErrorMessage } from "../lib/api";
 import { openRazorpayCheckout } from "../lib/razorpay";
 import {
   AlertTriangle,
-  ArrowLeft,
   CheckCircle2,
   Loader2,
   MapPin,
@@ -69,14 +68,6 @@ export const MarketplaceCheckoutPage: React.FC = () => {
   const { addNotification } = useNotifications();
   const { lines, clear } = useCart();
 
-  if (!user) {
-    setGuestPendingIntent({
-      type: "marketplace_cart",
-      returnUrl: "/marketplace/checkout",
-    });
-    return <Navigate to="/login?redirect=%2Fmarketplace%2Fcheckout" replace />;
-  }
-
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState("");
   const [showForm, setShowForm] = useState(false);
@@ -98,6 +89,7 @@ export const MarketplaceCheckoutPage: React.FC = () => {
   // Re-price whenever the basket changes. This is the authoritative total: the
   // cart's own subtotal is indicative only.
   useEffect(() => {
+    if (!user) return;
     if (!cartPayload.length) {
       setQuote(null);
       setLoadingQuote(false);
@@ -126,7 +118,7 @@ export const MarketplaceCheckoutPage: React.FC = () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cartKey]);
+  }, [cartKey, user]);
 
   const loadAddresses = useCallback(async () => {
     try {
@@ -145,6 +137,14 @@ export const MarketplaceCheckoutPage: React.FC = () => {
   useEffect(() => {
     if (user) loadAddresses();
   }, [user, loadAddresses]);
+
+  if (!user) {
+    setGuestPendingIntent({
+      type: "marketplace_cart",
+      returnUrl: "/marketplace/checkout",
+    });
+    return <Navigate to="/login?redirect=%2Fmarketplace%2Fcheckout" replace />;
+  }
 
   const removeAddress = async (id: string) => {
     try {

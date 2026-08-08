@@ -116,8 +116,6 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
         ).toFixed(1)
       : "4.8";
 
-  const totalPages = Math.ceil(reviews.length / itemsPerPage);
-
   // Auto-slide every 5 seconds (pauses on hover)
   useEffect(() => {
     if (reviews.length <= itemsPerPage || isHovered) return;

@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   FileText,
   Plus,
   CheckCircle2,
   Clock,
   XCircle,
-  Calendar,
   MapPin,
   Sparkles,
   Eye,
@@ -14,7 +13,6 @@ import {
   BookOpen,
   ArrowRight,
   ShieldCheck,
-  Globe,
   AlertCircle,
 } from "lucide-react";
 import { EnterpriseModal } from "../../admin/shared";
@@ -86,11 +84,7 @@ export const VisitorArticlesTab: React.FC = () => {
   const [language, setLanguage] = useState("English");
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    fetchMyArticles();
-  }, [activeSubTab]);
-
-  const fetchMyArticles = async () => {
+  const fetchMyArticles = useCallback(async () => {
     setLoading(true);
     try {
       const res = await visitorArticleService.getMyArticles(
@@ -105,7 +99,11 @@ export const VisitorArticlesTab: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeSubTab]);
+
+  useEffect(() => {
+    fetchMyArticles();
+  }, [fetchMyArticles]);
 
   const handleOpenWizard = async () => {
     setIsWizardOpen(true);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../lib/api";
 import {
@@ -11,10 +11,7 @@ import {
   Camera,
   Bed,
   Sparkles,
-  ChevronRight,
-  Star,
   ArrowRight,
-  BookOpen,
   Loader2,
 } from "lucide-react";
 
@@ -38,11 +35,7 @@ export const LocalServicesHubPage: React.FC = () => {
     { id: "events", label: "Aartis & Events", icon: Sparkles },
   ];
 
-  useEffect(() => {
-    fetchLocalServices();
-  }, [selectedCity, selectedCategory]);
-
-  const fetchLocalServices = async () => {
+  const fetchLocalServices = useCallback(async () => {
     setLoading(true);
     try {
       const res = await api.get("/local", {
@@ -59,7 +52,11 @@ export const LocalServicesHubPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedCategory, selectedCity]);
+
+  useEffect(() => {
+    fetchLocalServices();
+  }, [fetchLocalServices]);
 
   return (
     <div className="min-h-screen pb-16 space-y-6">

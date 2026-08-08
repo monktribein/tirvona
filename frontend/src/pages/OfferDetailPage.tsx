@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import api from "../lib/api";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   Clock,
-  Sparkles,
   MapPin,
   Building,
   CheckCircle2,
@@ -13,8 +12,6 @@ import {
   ChevronRight,
   Gift,
   FileText,
-  Sun,
-  HeartHandshake,
 } from "lucide-react";
 import { useNotifications } from "../contexts/NotificationContext";
 
@@ -24,7 +21,6 @@ export const OfferDetailPage: React.FC = () => {
   const navigate = useNavigate();
 
   const [offer, setOffer] = useState<any | null>(null);
-  const [relatedOffers, setRelatedOffers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
 
@@ -41,46 +37,23 @@ export const OfferDetailPage: React.FC = () => {
     seconds: 0,
   });
 
-  useEffect(() => {
-    fetchOfferDetail();
-  }, [offerId]);
-
-  useEffect(() => {
-    if (!offer?.validTill) return;
-    const interval = setInterval(() => {
-      const distance =
-        new Date(offer.validTill).getTime() - new Date().getTime();
-      if (distance < 0) {
-        clearInterval(interval);
-        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-      } else {
-        setTimeLeft({
-          days: Math.floor(distance / (1000 * 60 * 60 * 24)),
-          hours: Math.floor(
-            (distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
-          ),
-          minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
-          seconds: Math.floor((distance % (1000 * 60)) / 1000),
-        });
-      }
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [offer]);
-
-  const fetchOfferDetail = async () => {
+  const fetchOfferDetail = useCallback(async () => {
     setLoading(true);
     try {
       const res = await api.get(`/offers/${offerId}`);
       if (res.data.success) {
         setOffer(res.data.data);
-        setRelatedOffers(res.data.relatedOffers || []);
       }
     } catch (err) {
       console.error("Fetch offer detail error:", err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [offerId]);
+
+  useEffect(() => {
+    fetchOfferDetail();
+  }, [fetchOfferDetail]);
 
   const handleCopyCode = () => {
     if (!offer) return;

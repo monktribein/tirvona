@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../lib/api";
 import { visitorArticleService } from "../services/visitorArticleService";
@@ -12,10 +12,7 @@ import {
   Printer,
   ShieldCheck,
   MessageSquare,
-  ChevronRight,
-  BookOpen,
   Sparkles,
-  ThumbsUp,
 } from "lucide-react";
 
 export const BlogDetailPage: React.FC = () => {
@@ -33,12 +30,7 @@ export const BlogDetailPage: React.FC = () => {
   const [commentText, setCommentText] = useState("");
   const [submittingComment, setSubmittingComment] = useState(false);
 
-  useEffect(() => {
-    setSelectedImage(null);
-    fetchPostDetail();
-  }, [slug]);
-
-  const fetchPostDetail = async () => {
+  const fetchPostDetail = useCallback(async () => {
     setLoading(true);
     try {
       const res = await api.get(`/blog/posts/${slug}`).catch(() => null);
@@ -88,7 +80,12 @@ export const BlogDetailPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [slug]);
+
+  useEffect(() => {
+    setSelectedImage(null);
+    fetchPostDetail();
+  }, [fetchPostDetail]);
 
   const handleLike = async () => {
     if (hasLiked) return;

@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import {
   ArrowLeft,
   Download,
-  CheckCircle2,
 } from "lucide-react";
 import { EnterpriseButton } from "../../admin/shared";
 

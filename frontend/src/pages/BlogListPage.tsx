@@ -17,26 +17,11 @@ export const BlogListPage: React.FC = () => {
   const navigate = useNavigate();
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState("All");
-  const [selectedType, setSelectedType] = useState("All"); // All, article, video
+  const selectedCategory = "All";
+  const selectedType = "All";
   const [searchTerm, setSearchTerm] = useState("");
 
-  const categories = [
-    "All",
-    "Temple History",
-    "Travel Guide",
-    "Festival",
-    "Ashram News",
-    "Pilgrim Story",
-    "Prasad",
-    "Videos",
-  ];
-
-  useEffect(() => {
-    fetchPosts();
-  }, [selectedCategory, selectedType]);
-
-  const fetchPosts = async () => {
+  const fetchPosts = useCallback(async () => {
     setLoading(true);
     try {
       const blogParams: Record<string, any> = {};
@@ -92,7 +77,11 @@ export const BlogListPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchTerm, selectedCategory, selectedType]);
+
+  useEffect(() => {
+    fetchPosts();
+  }, [fetchPosts]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();

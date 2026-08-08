@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import api from "../lib/api";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useCart } from "../contexts/CartContext";
 import {
   ShoppingBag,
@@ -11,8 +11,6 @@ import {
   Award,
   BookOpen,
   ChevronRight,
-  Plus,
-  ShoppingCart,
   HelpCircle,
   Flame,
   Zap,
@@ -21,15 +19,13 @@ import { useNotifications } from "../contexts/NotificationContext";
 import { useAuth } from "../contexts/AuthContext";
 import {
   clearGuestPendingIntent,
-  currentReturnUrl,
   getGuestPendingIntent,
-  setGuestPendingIntent,
 } from "../utils/guestGate";
 
 export const MarketplaceCategoryDetailPage: React.FC = () => {
   const { slug } = useParams();
-  const { addNotification } = useNotifications();
   const navigate = useNavigate();
+  const { addNotification } = useNotifications();
   const { user } = useAuth();
   const { add, close } = useCart();
 
@@ -39,13 +35,8 @@ export const MarketplaceCategoryDetailPage: React.FC = () => {
   // Filters state
   const [selectedPrice, setSelectedPrice] = useState("All");
   const [filterOrganic, setFilterOrganic] = useState(false);
-  const [filterVeg, setFilterVeg] = useState(true);
 
-  useEffect(() => {
-    fetchCategoryDetail();
-  }, [slug]);
-
-  const fetchCategoryDetail = async () => {
+  const fetchCategoryDetail = useCallback(async () => {
     setLoading(true);
     try {
       const res = await api.get(`/marketplace/category/${slug}`);
@@ -57,28 +48,11 @@ export const MarketplaceCategoryDetailPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [slug]);
 
-  const handleAddToCart = (product: any) => {
-    if (!user) {
-      const returnUrl = currentReturnUrl();
-      setGuestPendingIntent({
-        type: "marketplace_cart",
-        returnUrl,
-        data: {
-          productId: product._id,
-          productName: product.productName,
-        },
-      });
-      navigate(`/login?redirect=${encodeURIComponent(returnUrl)}`);
-      return;
-    }
-    addNotification(
-      "Added to Cart!",
-      `"${product.productName}" added to your sacred cart.`,
-      "success",
-    );
-  };
+  useEffect(() => {
+    fetchCategoryDetail();
+  }, [fetchCategoryDetail]);
 
   useEffect(() => {
     if (!user || !categoryData) return;
@@ -130,9 +104,7 @@ export const MarketplaceCategoryDetailPage: React.FC = () => {
     category,
     products,
     trustedSellers,
-    reviews,
     faqs,
-    relatedCategories,
   } = categoryData;
 
   const filteredProducts = (products || []).filter((p: any) => {

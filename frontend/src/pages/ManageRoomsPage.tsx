@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Bed, Plus, ClipboardCheck, X } from "lucide-react";
 import { useNotifications } from "../contexts/NotificationContext";
 import { ashramService, roomService } from "../services";
@@ -21,18 +21,7 @@ export const ManageRoomsPage: React.FC = () => {
   const [basePrice, setBasePrice] = useState("800");
   const [amenities, setAmenities] = useState("Attached Bath, WiFi, Cooler");
 
-  useEffect(() => {
-    fetchAshrams();
-  }, []);
-
-  // Rooms follow whichever ashram is selected — an owner with several
-  // properties needs to reach all of them, not just the first.
-  useEffect(() => {
-    if (selectedAshramId) fetchRooms(selectedAshramId);
-    else setRooms([]);
-  }, [selectedAshramId]);
-
-  const fetchAshrams = async () => {
+  const fetchAshrams = useCallback(async () => {
     setLoading(true);
     try {
       const ashramsRes = await ashramService.myListings();
@@ -55,9 +44,9 @@ export const ManageRoomsPage: React.FC = () => {
       setRooms([]);
       setLoading(false);
     }
-  };
+  }, [addNotification]);
 
-  const fetchRooms = async (ashramId: string) => {
+  const fetchRooms = useCallback(async (ashramId: string) => {
     setLoading(true);
     try {
       const roomsRes = await ashramService.getManagedById(ashramId);
@@ -74,7 +63,18 @@ export const ManageRoomsPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [addNotification]);
+
+  useEffect(() => {
+    fetchAshrams();
+  }, [fetchAshrams]);
+
+  // Rooms follow whichever ashram is selected — an owner with several
+  // properties needs to reach all of them, not just the first.
+  useEffect(() => {
+    if (selectedAshramId) fetchRooms(selectedAshramId);
+    else setRooms([]);
+  }, [selectedAshramId, fetchRooms]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ArrowLeft, Lock, Bell } from "lucide-react";
+import { Lock } from "lucide-react";
 import { useNotifications } from "../../contexts/NotificationContext";
 import { EnterpriseButton } from "../../admin/shared";
 

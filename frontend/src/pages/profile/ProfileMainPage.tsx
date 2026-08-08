@@ -22,8 +22,6 @@ import {
   Lock,
   Download,
   Trash2,
-  KeyRound,
-  AlertCircle,
   Star,
   RefreshCw,
   BookOpen,
