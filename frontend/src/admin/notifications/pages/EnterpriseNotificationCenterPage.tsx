@@ -1,20 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
-  Activity,
-  AlertTriangle,
   Clock,
   Search,
   Download,
   Trash2,
-  RotateCcw,
   Sparkles,
   Radio,
-  Key,
-  Building,
-  FileCheck,
   RefreshCw,
-  Calendar,
   Printer,
 } from "lucide-react";
 import { enterpriseNotificationService } from "../../../services";
@@ -38,16 +31,12 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
 
   // Filter States
   const [searchTerm, setSearchTerm] = useState("");
-  const [moduleFilter, setModuleFilter] = useState("all");
+  const moduleFilter = "all";
   const [severityFilter, setSeverityFilter] = useState("all");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<"table" | "timeline">("table");
 
-  useEffect(() => {
-    fetchCenterData();
-  }, [activeSection, moduleFilter, severityFilter]);
-
-  const fetchCenterData = async () => {
+  const fetchCenterData = useCallback(async () => {
     setLoading(true);
     try {
       const [statsRes, actRes, notifRes] = await Promise.all([
@@ -81,7 +70,11 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeSection, moduleFilter, searchTerm, severityFilter]);
+
+  useEffect(() => {
+    fetchCenterData();
+  }, [fetchCenterData]);
 
   const handleSeed = async () => {
     try {
@@ -96,20 +89,6 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
       addNotification(
         "Seed Error",
         getErrorMessage(err, "Unable to seed telemetry."),
-        "error",
-      );
-    }
-  };
-
-  const handleMarkRead = async (id: string) => {
-    try {
-      await enterpriseNotificationService.markRead(id);
-      addNotification("Marked Read", "Notification updated.", "info");
-      fetchCenterData();
-    } catch (err) {
-      addNotification(
-        "Action Error",
-        getErrorMessage(err, "Could not mark read."),
         "error",
       );
     }

@@ -19,13 +19,21 @@ export class OffersService {
     @InjectModel("Ashram") private readonly ashrams: Model<any>,
   ) {}
   active(query: Record<string, string> = {}): Promise<any[]> {
-    const filter: any = {
-      status: query.status || "active",
-      validTill: { $gte: new Date() },
-      remainingRedemptions: { $gt: 0 },
-    };
+    const filter: any = {};
+    if (query.status !== "all") {
+      filter.status = query.status || "active";
+      filter.validTill = { $gte: new Date() };
+      filter.remainingRedemptions = { $gt: 0 };
+    }
     if (query.category)
       filter.offerType = { $regex: query.category, $options: "i" };
+    if (query.targetRoute) {
+      filter.$or = [
+        { targetRoute: query.targetRoute },
+        { targetRoute: "all" },
+        { targetRoute: { $exists: false } },
+      ];
+    }
     if (query.city)
       filter.applicableCities = { $regex: query.city, $options: "i" };
     return this.offers

@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import api from "../lib/api";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { useCart } from "../contexts/CartContext";
 import {
   ShoppingBag,
   MapPin,
@@ -10,25 +11,23 @@ import {
   Award,
   BookOpen,
   ChevronRight,
-  Plus,
-  ShoppingCart,
   HelpCircle,
   Flame,
+  Zap,
 } from "lucide-react";
 import { useNotifications } from "../contexts/NotificationContext";
 import { useAuth } from "../contexts/AuthContext";
 import {
   clearGuestPendingIntent,
-  currentReturnUrl,
   getGuestPendingIntent,
-  setGuestPendingIntent,
 } from "../utils/guestGate";
 
 export const MarketplaceCategoryDetailPage: React.FC = () => {
   const { slug } = useParams();
-  const { addNotification } = useNotifications();
   const navigate = useNavigate();
+  const { addNotification } = useNotifications();
   const { user } = useAuth();
+  const { add, close } = useCart();
 
   const [categoryData, setCategoryData] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
@@ -36,13 +35,8 @@ export const MarketplaceCategoryDetailPage: React.FC = () => {
   // Filters state
   const [selectedPrice, setSelectedPrice] = useState("All");
   const [filterOrganic, setFilterOrganic] = useState(false);
-  const [filterVeg, setFilterVeg] = useState(true);
 
-  useEffect(() => {
-    fetchCategoryDetail();
-  }, [slug]);
-
-  const fetchCategoryDetail = async () => {
+  const fetchCategoryDetail = useCallback(async () => {
     setLoading(true);
     try {
       const res = await api.get(`/marketplace/category/${slug}`);
@@ -54,28 +48,11 @@ export const MarketplaceCategoryDetailPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [slug]);
 
-  const handleAddToCart = (product: any) => {
-    if (!user) {
-      const returnUrl = currentReturnUrl();
-      setGuestPendingIntent({
-        type: "marketplace_cart",
-        returnUrl,
-        data: {
-          productId: product._id,
-          productName: product.productName,
-        },
-      });
-      navigate(`/login?redirect=${encodeURIComponent(returnUrl)}`);
-      return;
-    }
-    addNotification(
-      "Added to Cart!",
-      `"${product.productName}" added to your sacred cart.`,
-      "success",
-    );
-  };
+  useEffect(() => {
+    fetchCategoryDetail();
+  }, [fetchCategoryDetail]);
 
   useEffect(() => {
     if (!user || !categoryData) return;
@@ -127,9 +104,7 @@ export const MarketplaceCategoryDetailPage: React.FC = () => {
     category,
     products,
     trustedSellers,
-    reviews,
     faqs,
-    relatedCategories,
   } = categoryData;
 
   const filteredProducts = (products || []).filter((p: any) => {
@@ -287,11 +262,10 @@ export const MarketplaceCategoryDetailPage: React.FC = () => {
                 <button
                   key={p}
                   onClick={() => setSelectedPrice(p)}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-black cursor-pointer whitespace-nowrap transition-all ${
-                    selectedPrice === p
-                      ? "bg-[#0A4DA6] text-white shadow-sm"
-                      : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200"
-                  }`}
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-black cursor-pointer whitespace-nowrap transition-all ${selectedPrice === p
+                    ? "bg-[#0A4DA6] text-white shadow-sm"
+                    : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200"
+                    }`}
                 >
                   {p}
                 </button>
@@ -299,11 +273,10 @@ export const MarketplaceCategoryDetailPage: React.FC = () => {
 
               <button
                 onClick={() => setFilterOrganic(!filterOrganic)}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-black cursor-pointer whitespace-nowrap transition-all ${
-                  filterOrganic
-                    ? "bg-emerald-600 text-white"
-                    : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300"
-                }`}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-black cursor-pointer whitespace-nowrap transition-all ${filterOrganic
+                  ? "bg-emerald-600 text-white"
+                  : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300"
+                  }`}
               >
                 100% Organic
               </button>
@@ -315,20 +288,18 @@ export const MarketplaceCategoryDetailPage: React.FC = () => {
             {filteredProducts.map((prod: any) => (
               <div
                 key={prod._id}
-                className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[32px] overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group"
+                onClick={() => navigate(`/marketplace/product/${prod.slug || prod._id}`)}
+                className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[32px] overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group cursor-pointer"
               >
                 <div>
                   <div className="relative aspect-video bg-black overflow-hidden">
                     {prod.images?.[0] || category.coverImage ? (
                       <img
                         src={prod.images?.[0] || category.coverImage}
-                        alt={prod.productName}
+                        alt={prod.productName || prod.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90"
                       />
                     ) : null}
-                    <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-red-600/90 text-white text-[10px] font-black uppercase tracking-wider">
-                      OUT OF STOCK
-                    </span>
                     <span className="absolute top-3 right-3 px-3 py-1 rounded-full bg-amber-500 text-white text-xs font-black">
                       ₹{prod.price} ({prod.weight || "500g"})
                     </span>
@@ -336,7 +307,7 @@ export const MarketplaceCategoryDetailPage: React.FC = () => {
 
                   <div className="p-6 space-y-3">
                     <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white group-hover:text-[#0A4DA6] transition-colors">
-                      {prod.productName}
+                      {prod.productName || prod.name}
                     </h3>
                     <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed font-semibold">
                       {prod.description}
@@ -357,10 +328,42 @@ export const MarketplaceCategoryDetailPage: React.FC = () => {
 
                 <div className="p-6 pt-0 flex items-center gap-2 border-t border-gray-100 dark:border-slate-800/80 pt-4">
                   <button
-                    disabled
-                    className="flex-1 py-3 bg-gray-200 dark:bg-slate-800 text-gray-500 dark:text-gray-400 font-black text-xs rounded-full cursor-not-allowed flex items-center justify-center gap-1.5"
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      add({
+                        productId: prod._id,
+                        name: prod.productName || prod.name,
+                        slug: prod.slug,
+                        image: prod.images?.[0] || category.coverImage,
+                        displayPrice: prod.price,
+                      });
+                    }}
+                    className="flex-1 py-3 bg-[#0A4DA6]/10 hover:bg-[#0A4DA6] text-[#0A4DA6] hover:text-white font-extrabold text-xs rounded-full cursor-pointer transition-all flex items-center justify-center gap-1.5"
                   >
-                    Out of Stock
+                    <ShoppingBag size={14} /> Add to cart
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      add(
+                        {
+                          productId: prod._id,
+                          name: prod.productName || prod.name,
+                          slug: prod.slug,
+                          image: prod.images?.[0] || category.coverImage,
+                          displayPrice: prod.price,
+                        },
+                        1,
+                        false,
+                      );
+                      close();
+                      navigate("/marketplace/checkout");
+                    }}
+                    className="flex-1 py-3 bg-[#E58C28] hover:bg-amber-600 text-white font-extrabold text-xs rounded-full cursor-pointer transition-all flex items-center justify-center gap-1.5 shadow-md"
+                  >
+                    <Zap size={14} /> Buy now
                   </button>
                 </div>
               </div>

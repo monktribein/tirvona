@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import api from "../lib/api";
 import { useNavigate, Link } from "react-router-dom";
 import {
@@ -7,8 +7,6 @@ import {
   MapPin,
   Star,
   ChevronRight,
-  Award,
-  CheckCircle2,
   Clock,
   ArrowRight,
 } from "lucide-react";
@@ -19,11 +17,7 @@ export const MarketplaceCategoriesPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     setLoading(true);
     try {
       const res = await api.get("/marketplace/categories");
@@ -35,7 +29,11 @@ export const MarketplaceCategoriesPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
 
   const filteredCategories = categories.filter(
     (c) =>

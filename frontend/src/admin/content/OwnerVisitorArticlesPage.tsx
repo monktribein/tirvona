@@ -1,13 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   FileText,
   CheckCircle2,
-  Clock,
   ShieldCheck,
-  Calendar,
-  Eye,
   Loader2,
-  MessageSquare,
 } from "lucide-react";
 import {
   EnterpriseModal,
@@ -43,11 +39,7 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
   const [rejectionReason, setRejectionReason] = useState("");
   const [processing, setProcessing] = useState(false);
 
-  useEffect(() => {
-    fetchOwnerArticles();
-  }, [activeTab]);
-
-  const fetchOwnerArticles = async () => {
+  const fetchOwnerArticles = useCallback(async () => {
     setLoading(true);
     try {
       const res = await visitorArticleService.getOwnerArticles(activeTab);
@@ -60,7 +52,11 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeTab]);
+
+  useEffect(() => {
+    fetchOwnerArticles();
+  }, [fetchOwnerArticles]);
 
   const handleApprove = async (article: VisitorArticle) => {
     setProcessing(true);

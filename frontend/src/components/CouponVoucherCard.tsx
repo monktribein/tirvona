@@ -8,6 +8,7 @@ interface CouponVoucherCardProps {
   copiedCode?: string | null;
   className?: string;
   isCarouselItem?: boolean;
+  adminToolbar?: React.ReactNode;
 }
 
 export const CouponVoucherCard: React.FC<CouponVoucherCardProps> = ({
@@ -17,6 +18,7 @@ export const CouponVoucherCard: React.FC<CouponVoucherCardProps> = ({
   copiedCode,
   className = "",
   isCarouselItem = false,
+  adminToolbar,
 }) => {
   const [internalCopied, setInternalCopied] = useState(false);
 
@@ -197,7 +199,7 @@ export const CouponVoucherCard: React.FC<CouponVoucherCardProps> = ({
     >
       {/* 🎟️ LEFT TICKET STUB - ALWAYS ON LEFT IN BOTH MOBILE AND DESKTOP */}
       <div
-        className={`relative shrink-0 w-24 xs:w-28 sm:w-36 md:w-44 ${theme.stubBg} text-white p-2.5 sm:p-4 md:p-5 flex flex-col items-center justify-between text-center overflow-hidden border-r-2 border-dashed border-white/30`}
+        className={`relative shrink-0 w-24 xs:w-28 sm:w-32 md:w-36 max-w-[145px] ${theme.stubBg} text-white p-2 sm:p-4 flex flex-col items-center justify-between text-center overflow-hidden border-r-2 border-dashed border-white/30`}
       >
         {/* Top Pill Badge */}
         <div
@@ -302,7 +304,7 @@ export const CouponVoucherCard: React.FC<CouponVoucherCardProps> = ({
         </div>
 
         {/* Content Container */}
-        <div className="relative z-10 space-y-1 sm:space-y-1.5 pr-10 sm:pr-24 pt-0.5 sm:pt-1">
+        <div className="relative z-10 space-y-1 sm:space-y-1.5 pr-2 sm:pr-16 pt-0.5 sm:pt-1">
           {/* Location & Ashram */}
           <div className="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-xs md:text-sm font-bold text-gray-700 dark:text-gray-300">
             <MapPin
@@ -332,7 +334,7 @@ export const CouponVoucherCard: React.FC<CouponVoucherCardProps> = ({
         </div>
 
         {/* Bottom Row: Coupon Code Box (Left) & Book Now CTA with Validity (Right) */}
-        <div className="relative z-10 flex flex-row items-center justify-between gap-1.5 sm:gap-3 pt-1.5 sm:pt-3">
+        <div className="relative z-10 flex flex-wrap sm:flex-nowrap items-center justify-between gap-1.5 sm:gap-3 pt-1.5 sm:pt-2">
           {/* Coupon Code Box */}
           <div
             onClick={handleCopy}
@@ -414,6 +416,15 @@ export const CouponVoucherCard: React.FC<CouponVoucherCardProps> = ({
             </div>
           </div>
         </div>
+
+        {adminToolbar && (
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative z-10 pt-2.5 mt-1 border-t border-gray-200/70 dark:border-slate-800 flex items-center justify-between gap-2"
+          >
+            {adminToolbar}
+          </div>
+        )}
       </div>
     </div>
   );

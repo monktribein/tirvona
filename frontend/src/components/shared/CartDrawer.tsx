@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useCart } from "../../contexts/CartContext";
 import { useAuth } from "../../contexts/AuthContext";
 import { formatCurrency } from "../../utils/format";
@@ -7,7 +7,7 @@ import { setGuestPendingIntent } from "../../utils/guestGate";
 import { Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
 
 const FALLBACK_IMAGE =
-  "https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?auto=format&fit=crop&w=200&q=80";
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E";
 
 /** Header cart trigger with a live item-count badge. */
 export const CartButton: React.FC = () => {
@@ -42,6 +42,16 @@ export const CartDrawer: React.FC = () => {
     useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (
+      location.pathname.startsWith("/login") ||
+      location.pathname.startsWith("/register")
+    ) {
+      close();
+    }
+  }, [location.pathname, close]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -72,7 +82,7 @@ export const CartDrawer: React.FC = () => {
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex justify-end bg-black/50 backdrop-blur-sm"
+      className="fixed inset-0 z-40 flex justify-end bg-black/50 backdrop-blur-sm"
       onClick={close}
       role="dialog"
       aria-modal="true"

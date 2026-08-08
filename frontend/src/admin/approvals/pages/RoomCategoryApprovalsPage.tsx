@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { approvalService } from "../../../services";
 import type { RoomCategoryRequestItem } from "../../../services/approval.service";
 import { useNotifications } from "../../../contexts/NotificationContext";
@@ -7,12 +7,8 @@ import { humanizeLabel } from "../../../utils/labels";
 import { EnterprisePageHeader } from "../../shared";
 import {
   Bed,
-  XCircle,
-  Clock,
   Search,
   Eye,
-  ShieldCheck,
-  User,
   Layers,
 } from "lucide-react";
 
@@ -28,11 +24,7 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
   const [reviewComment, setReviewComment] = useState("");
   const [processing, setProcessing] = useState(false);
 
-  useEffect(() => {
-    fetchRequests();
-  }, [statusFilter]);
-
-  const fetchRequests = async () => {
+  const fetchRequests = useCallback(async () => {
     setLoading(true);
     try {
       const res = await approvalService.getRoomCategoryRequests({
@@ -51,7 +43,11 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [addNotification, statusFilter]);
+
+  useEffect(() => {
+    fetchRequests();
+  }, [fetchRequests]);
 
   const handleReviewAction = async (
     action: "approve" | "reject" | "request_changes",

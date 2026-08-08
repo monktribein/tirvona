@@ -207,16 +207,13 @@ export const SacredDirectoryModulePage: React.FC = () => {
         </div>
 
         {/* Feature Showcase Banner */}
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 mt-4 space-y-8">
-          {cmsBanner ? (
-            <div className="flex justify-center">
-              <img
-                src={cmsBanner}
-                alt="Sacred Directory Banner"
-                className="w-full h-auto max-h-[500px] object-contain drop-shadow-md rounded-2xl"
-              />
-            </div>
-          ) : null}
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 mt-4 flex flex-col items-center justify-center">
+          <img
+            src="/banner/coming%20soon/marketplace.png"
+            alt="Coming Soon"
+            className="w-full max-w-3xl h-auto object-contain max-h-[550px] mx-auto drop-shadow-md"
+          />
+        </div>
 
           {/* Action Buttons */}
           <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
@@ -235,9 +232,8 @@ export const SacredDirectoryModulePage: React.FC = () => {
             </button>
           </div>
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
   return (
     <div className="min-h-screen pb-16">

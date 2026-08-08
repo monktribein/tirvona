@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   Car,
   ShieldCheck,
@@ -8,29 +7,18 @@ import {
   QrCode,
   Search,
   CheckCircle2,
-  XCircle,
   Clock,
   AlertCircle,
   IndianRupee,
   TrendingUp,
   MapPin,
   Plus,
-  Edit3,
   RefreshCw,
   Sliders,
-  Check,
   X,
-  ChevronRight,
-  Sparkles,
-  Zap,
-  Radio,
   Layers,
-  Wrench,
-  Camera,
   LogOut,
   LogIn,
-  UserCheck,
-  ShieldAlert,
 } from "lucide-react";
 import { useAuth } from "../../../contexts/AuthContext";
 import { useNotifications } from "../../../contexts/NotificationContext";
@@ -39,7 +27,6 @@ import {
   parkingPartnerService,
   parkingScanService,
   parkingBookingService,
-  parkingAdminService,
 } from "../services/parking.service";
 import type {
   ParkingBooking,
@@ -97,7 +84,7 @@ export const ParkingRoleDashboardPage: React.FC = () => {
   const [manualDriverName, setManualDriverName] = useState("");
   const [manualDriverPhone, setManualDriverPhone] = useState("");
   const [manualVehicleType, setManualVehicleType] = useState("car");
-  const [manualSlotTypeId, setManualSlotTypeId] = useState("");
+  const [manualSlotTypeId] = useState("");
 
   // ── Guard Scanner View State ──
   const [qrTokenInput, setQrTokenInput] = useState("");

@@ -17,6 +17,7 @@ import {
   Sparkles,
   Star,
   X,
+  Zap,
 } from "lucide-react";
 
 interface Product {
@@ -47,7 +48,7 @@ interface Category {
 
 const PAGE_SIZE = 24;
 const FALLBACK_IMAGE =
-  "https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?auto=format&fit=crop&w=600&q=80";
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E";
 
 const SORTS = [
   { value: "featured", label: "Featured" },
@@ -69,12 +70,13 @@ const ProductCard: React.FC<{
   product: Product;
   onOpen: (product: Product) => void;
   onAdd: (product: Product) => void;
-}> = ({ product, onOpen, onAdd }) => {
+  onBuyNow: (product: Product) => void;
+}> = ({ product, onOpen, onAdd, onBuyNow }) => {
   const discount = discountOf(product);
   const outOfStock =
-    product.status === "out_of_stock" ||
-    (product.stock !== undefined && Number(product.stock) <= 0) ||
-    ((product as any).stockCount !== undefined && Number((product as any).stockCount) <= 0);
+    product.status === "out_of_stock" &&
+    product.stock !== undefined &&
+    Number(product.stock) <= 0;
   return (
     <button
       type="button"
@@ -138,31 +140,53 @@ const ProductCard: React.FC<{
           </span>
         )}
 
-        {/* Nested inside a card that is itself a button, so the click must be
-            stopped from also opening the detail view. */}
-        <span
-          role="button"
-          tabIndex={0}
-          aria-disabled={outOfStock}
-          onClick={(e) => {
-            e.stopPropagation();
-            if (!outOfStock) onAdd(product);
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
+        <div className="mt-2.5 grid grid-cols-2 gap-1.5 pt-1">
+          <span
+            role="button"
+            tabIndex={0}
+            aria-disabled={outOfStock}
+            onClick={(e) => {
               e.stopPropagation();
               if (!outOfStock) onAdd(product);
-            }
-          }}
-          className={`mt-2 w-full py-2 rounded-full text-[11px] font-extrabold flex items-center justify-center gap-1.5 transition-all ${outOfStock
-            ? "bg-gray-100 dark:bg-slate-800 text-gray-400 cursor-not-allowed"
-            : "bg-[#0A4DA6] hover:bg-blue-900 text-white cursor-pointer"
-            }`}
-        >
-          <ShoppingBag size={12} />
-          {outOfStock ? "Out of stock" : "Add to cart"}
-        </span>
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!outOfStock) onAdd(product);
+              }
+            }}
+            className={`py-2 px-1.5 rounded-full text-[10px] sm:text-[11px] font-black flex items-center justify-center gap-1 transition-all ${outOfStock
+              ? "bg-gray-100 dark:bg-slate-800 text-gray-400 cursor-not-allowed"
+              : "bg-[#0A4DA6]/10 hover:bg-[#0A4DA6] text-[#0A4DA6] hover:text-white dark:bg-blue-950/60 dark:text-blue-300 dark:hover:bg-[#0A4DA6] dark:hover:text-white cursor-pointer"
+              }`}
+          >
+            Add to cart
+          </span>
+
+          <span
+            role="button"
+            tabIndex={0}
+            aria-disabled={outOfStock}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!outOfStock) onBuyNow(product);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!outOfStock) onBuyNow(product);
+              }
+            }}
+            className={`py-2 px-1.5 rounded-full text-[10px] sm:text-[11px] font-black flex items-center justify-center gap-1 transition-all ${outOfStock
+              ? "bg-gray-100 dark:bg-slate-800 text-gray-400 cursor-not-allowed"
+              : "bg-[#E58C28] hover:bg-amber-600 text-white cursor-pointer shadow-sm"
+              }`}
+          >
+            Buy now
+          </span>
+        </div>
       </div>
     </button>
   );
@@ -180,6 +204,7 @@ const ProductModal: React.FC<{
   onClose: () => void;
   onAdd: (product: Product) => void;
 }> = ({ product, onClose, onAdd }) => {
+  const navigate = useNavigate();
   const [detail, setDetail] = useState<Product>(product);
   const [loading, setLoading] = useState(true);
 
@@ -337,20 +362,32 @@ const ProductModal: React.FC<{
               </p>
             )}
 
-            <button
-              type="button"
-              disabled={detail.stock !== undefined && detail.stock <= 0}
-              onClick={() => {
-                onAdd(detail);
-                onClose();
-              }}
-              className="w-full py-3 rounded-full bg-[#0A4DA6] hover:bg-blue-900 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white text-xs font-extrabold flex items-center justify-center gap-2 shadow-md cursor-pointer transition-all"
-            >
-              <ShoppingBag size={14} />
-              {detail.stock !== undefined && detail.stock <= 0
-                ? "Out of stock"
-                : "Add to cart"}
-            </button>
+            <div className="space-y-2">
+              <button
+                type="button"
+                disabled={detail.stock !== undefined && detail.stock <= 0}
+                onClick={() => {
+                  onAdd(detail);
+                  onClose();
+                }}
+                className="w-full py-3 rounded-full bg-[#0A4DA6] hover:bg-blue-900 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white text-xs font-extrabold flex items-center justify-center gap-2 shadow-md cursor-pointer transition-all"
+              >
+                {detail.stock !== undefined && detail.stock <= 0
+                  ? "Out of stock"
+                  : "Add to cart"}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  navigate(`/marketplace/product/${detail.slug || detail._id}`);
+                }}
+                className="w-full py-2.5 rounded-full border border-gray-200 dark:border-slate-700 text-[#0B192C] dark:text-white hover:bg-gray-50 dark:hover:bg-slate-800 text-xs font-extrabold flex items-center justify-center gap-2 cursor-pointer transition-all"
+              >
+                View Full Product Details & Checkout <ArrowRight size={14} />
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -391,7 +428,7 @@ export const MarketplaceHubPage: React.FC = () => {
     useState<(typeof SORTS)[number]["value"]>("featured");
   const [selected, setSelected] = useState<Product | null>(null);
 
-  const { add: addLineToCart } = useCart();
+  const { add: addLineToCart, close: closeCart } = useCart();
   const requestId = useRef(0);
 
   /**
@@ -411,6 +448,33 @@ export const MarketplaceHubPage: React.FC = () => {
       });
     },
     [addLineToCart],
+  );
+
+  const buyNow = useCallback(
+    (product: Product) => {
+      addLineToCart(
+        {
+          productId: product._id,
+          name: product.name,
+          slug: product.slug,
+          image: product.images?.[0],
+          displayPrice: priceOf(product),
+          maxQuantity: product.stock,
+        },
+        1,
+        false,
+      );
+      closeCart();
+      navigate("/marketplace/checkout");
+    },
+    [addLineToCart, closeCart, navigate],
+  );
+
+  const openProductDetail = useCallback(
+    (product: Product) => {
+      navigate(`/marketplace/product/${product.slug || product._id}`);
+    },
+    [navigate],
   );
 
   useEffect(() => {
@@ -489,7 +553,7 @@ export const MarketplaceHubPage: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8">
         <div className="text-center space-y-2.5 max-w-3xl mx-auto py-2">
           <p className="font-['Kalam'] text-3xl sm:text-5xl font-bold text-[#E58C28]">
-            Shops &amp; Sacred Marketplace
+            Explore Sacred Prasad
           </p>
           <div className="flex items-center justify-center gap-2.5 my-1.5">
             <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
@@ -500,8 +564,7 @@ export const MarketplaceHubPage: React.FC = () => {
             <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
           </div>
           <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-xl mx-auto leading-relaxed">
-            Authentic temple prasad, lab-certified rudraksha, tulsi mala and
-            puja samagri from verified sacred vendors.
+            Authentic temple prasad, from verified sacred vendors.
           </p>
         </div>
       </div>
@@ -518,7 +581,7 @@ export const MarketplaceHubPage: React.FC = () => {
               type="text"
               value={term}
               onChange={(e) => setTerm(e.target.value)}
-              placeholder="Search prasad, rudraksha, mala, puja items..."
+              placeholder="Search sacred prasad..."
               aria-label="Search marketplace"
               className="w-full pl-10 pr-9 py-2.5 rounded-full border border-gray-200 dark:border-slate-800 bg-white dark:bg-[#0B192C] text-xs font-medium text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-[#0A4DA6] focus:ring-2 focus:ring-[#0A4DA6]/15"
             />
@@ -593,7 +656,7 @@ export const MarketplaceHubPage: React.FC = () => {
           <div className="text-center py-16 space-y-3">
             <PackageSearch size={34} className="mx-auto text-gray-300" />
             <p className="text-sm font-bold text-[#0B192C] dark:text-white">
-              The marketplace could not be loaded
+              The Sacred Prasad could not be loaded
             </p>
             <button
               onClick={() => load(1, false)}
@@ -610,7 +673,7 @@ export const MarketplaceHubPage: React.FC = () => {
               <>
                 <PackageSearch size={34} className="mx-auto text-gray-300" />
                 <p className="text-sm font-bold text-[#0B192C] dark:text-white">
-                  Nothing matched your filters
+                  Nothing matched your Sacred Prasad
                 </p>
                 <button
                   onClick={() => {
@@ -655,8 +718,9 @@ export const MarketplaceHubPage: React.FC = () => {
                 <ProductCard
                   key={product._id}
                   product={product}
-                  onOpen={setSelected}
+                  onOpen={openProductDetail}
                   onAdd={addToCart}
+                  onBuyNow={buyNow}
                 />
               ))}
             </div>

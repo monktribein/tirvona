@@ -1,14 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import api from "../lib/api";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   Search,
   Sparkles,
-  Building,
-  Copy,
-  Filter,
-  Flame,
-  ChevronRight,
   Gift,
 } from "lucide-react";
 import { useNotifications } from "../contexts/NotificationContext";
@@ -22,31 +17,9 @@ export const OffersPage: React.FC = () => {
   const [offers, setOffers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState(
-    urlCategory || "All",
-  );
-  const [selectedCity, setSelectedCity] = useState(urlCity || "All");
+  const selectedCategory = urlCategory || "All";
+  const selectedCity = urlCity || "All";
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
-
-  const categories = [
-    "All",
-    "Festival Offer",
-    "Mahakumbh Offer",
-    "Weekend Offer",
-    "Yoga Camp",
-    "Room Upgrade",
-    "Food Offer",
-    "Senior Citizen Offer",
-  ];
-
-  const cities = [
-    "All",
-    "Rishikesh",
-    "Haridwar",
-    "Vrindavan",
-    "Varanasi",
-    "Prayagraj",
-  ];
 
   const DEFAULT_OFFERS = [
     {
@@ -127,11 +100,7 @@ export const OffersPage: React.FC = () => {
     },
   ];
 
-  useEffect(() => {
-    fetchOffers();
-  }, [selectedCategory, selectedCity]);
-
-  const fetchOffers = async () => {
+  const fetchOffers = useCallback(async () => {
     setLoading(true);
     try {
       let url = "/offers?status=active";
@@ -158,7 +127,11 @@ export const OffersPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedCategory, selectedCity]);
+
+  useEffect(() => {
+    fetchOffers();
+  }, [fetchOffers]);
 
   const handleCopyCode = (code: string) => {
     navigator.clipboard.writeText(code);

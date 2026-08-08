@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../lib/api";
 import {
@@ -17,26 +17,11 @@ export const BlogListPage: React.FC = () => {
   const navigate = useNavigate();
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState("All");
-  const [selectedType, setSelectedType] = useState("All"); // All, article, video
+  const selectedCategory = "All";
+  const selectedType = "All";
   const [searchTerm, setSearchTerm] = useState("");
 
-  const categories = [
-    "All",
-    "Temple History",
-    "Travel Guide",
-    "Festival",
-    "Ashram News",
-    "Pilgrim Story",
-    "Prasad",
-    "Videos",
-  ];
-
-  useEffect(() => {
-    fetchPosts();
-  }, [selectedCategory, selectedType]);
-
-  const fetchPosts = async () => {
+  const fetchPosts = useCallback(async () => {
     setLoading(true);
     try {
       const blogParams: Record<string, any> = {};
@@ -82,7 +67,7 @@ export const BlogListPage: React.FC = () => {
           name: va.visitorId?.name || "Verified Visitor",
           photo:
             va.visitorId?.avatar ||
-            "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&h=100&q=80",
+            "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E",
         },
       }));
 
@@ -92,7 +77,11 @@ export const BlogListPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchTerm, selectedCategory, selectedType]);
+
+  useEffect(() => {
+    fetchPosts();
+  }, [fetchPosts]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -243,7 +232,7 @@ export const BlogListPage: React.FC = () => {
                       <img
                         src={
                           author.photo ||
-                          "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&h=100&q=80"
+                          "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E"
                         }
                         alt={author.name}
                         className="w-7 h-7 rounded-full object-cover border border-[#0A4DA6] shrink-0"

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../lib/api";
 import {
@@ -11,10 +11,7 @@ import {
   Camera,
   Bed,
   Sparkles,
-  ChevronRight,
-  Star,
   ArrowRight,
-  BookOpen,
   Loader2,
 } from "lucide-react";
 
@@ -38,11 +35,7 @@ export const LocalServicesHubPage: React.FC = () => {
     { id: "events", label: "Aartis & Events", icon: Sparkles },
   ];
 
-  useEffect(() => {
-    fetchLocalServices();
-  }, [selectedCity, selectedCategory]);
-
-  const fetchLocalServices = async () => {
+  const fetchLocalServices = useCallback(async () => {
     setLoading(true);
     try {
       const res = await api.get("/local", {
@@ -59,7 +52,11 @@ export const LocalServicesHubPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedCategory, selectedCity]);
+
+  useEffect(() => {
+    fetchLocalServices();
+  }, [fetchLocalServices]);
 
   return (
     <div className="min-h-screen pb-16 space-y-6">
@@ -158,7 +155,7 @@ export const LocalServicesHubPage: React.FC = () => {
                     <img
                       src={
                         item.image ||
-                        "https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=600&q=80"
+                        "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E"
                       }
                       alt={item.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"

@@ -75,7 +75,6 @@ export const PublicLayout: React.FC = () => {
   const [darkMode, setDarkMode] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
 
-  const [showHeader, setShowHeader] = useState(true);
   const [activeCurrency, setCurrencyState] = useState<"INR" | "USD">(() =>
     getActiveCurrency(),
   );
@@ -147,25 +146,6 @@ export const PublicLayout: React.FC = () => {
   const authReturnUrl = `${location.pathname}${location.search}${location.hash}`;
   const rememberCurrentPage = () =>
     setGuestPendingIntent({ type: "generic", returnUrl: authReturnUrl });
-
-  // Hide header on scroll down, show on scroll up
-  useEffect(() => {
-    let lastScrollY = window.scrollY;
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      if (currentScrollY <= 40) {
-        setShowHeader(true);
-      } else if (currentScrollY > lastScrollY && currentScrollY > 80) {
-        setShowHeader(false);
-      } else if (currentScrollY < lastScrollY) {
-        setShowHeader(true);
-      }
-      lastScrollY = currentScrollY;
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   // Close drawer on route change
   useEffect(() => {
@@ -274,49 +254,57 @@ export const PublicLayout: React.FC = () => {
     return "Pilgrim";
   };
 
-  const navLinks = [
-    { label: "Stay", to: "/search", hasDropdown: false },
-    { label: "Offers & Deals", to: "/offers", hasDropdown: false },
-    { label: "Darshan & Seva", to: "/temples", hasDropdown: false },
-    { label: "Tirvona Services", to: "/local", hasDropdown: false },
-    { label: "Events", to: "/events", hasDropdown: false },
+  const navLinks: { label: string; to: string; isHighlighted?: boolean }[] = [
+    { label: "Destinations", to: "/pilgrimage-circuits" },
+    { label: "Parking", to: "/parking" },
+    { label: "Marketplace", to: "/marketplace" },
+    { label: "Arti Booking", to: "/arti-booking" },
+    { label: "Live Pooja", to: "/live-pooja" },
+    { label: "Offers", to: "/offers" },
   ];
 
   const isHomePage = location.pathname === "/";
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50/70 dark:bg-[#070F1B] text-foreground transition-colors duration-300">
-      {/* ── Sticky Header (Floating Rounded Navbar - Hide on Scroll Down, Show on Scroll Up) ── */}
+      {/* ── Sticky Header (Floating Rounded Navbar) ── */}
       <header
-        className={`sticky top-0 z-50 pt-3 pb-3 ${isHomePage ? "-mb-20 lg:-mb-24" : "mb-0"} pointer-events-none transition-all duration-300 ease-in-out transform ${
-          showHeader || drawerOpen
-            ? "translate-y-0 opacity-100"
-            : "-translate-y-full opacity-0"
-        }`}
+        className={`sticky top-0 z-50 pt-3 pb-3 ${isHomePage ? "-mb-20 lg:-mb-24" : "mb-0"} pointer-events-none`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pointer-events-auto">
           {/* Simple Clean Single Floating Navbar Container */}
-          <div className="bg-white/95 dark:bg-[#0B192C]/95 backdrop-blur-md border border-gray-200/90 dark:border-slate-800 rounded-full px-5 lg:px-6 py-2.5 flex items-center justify-between w-full shadow-sm hover:shadow-md transition-shadow">
+          <div className="bg-white/95 dark:bg-[#0B192C]/95 backdrop-blur-md border border-gray-200/90 dark:border-slate-800 rounded-full px-4 lg:px-6 py-2 flex items-center justify-between w-full shadow-sm hover:shadow-md transition-shadow">
             {/* Left Brand Logo Image */}
             <Link to="/" className="flex items-center gap-2 group shrink-0">
               <img
                 src="/logo/logo.png"
                 alt="Tirvona Sacred Destinations"
-                className="h-8 sm:h-9 lg:h-10 w-auto object-contain group-hover:scale-105 transition-transform"
+                className="h-8 sm:h-9 lg:h-9.5 w-auto object-contain group-hover:scale-105 transition-transform"
               />
             </Link>
 
             {/* Desktop nav links */}
-            <nav className="hidden lg:flex items-center justify-center gap-1 xl:gap-2 text-xs xl:text-sm font-medium text-[#1E293B] dark:text-gray-200">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.label}
-                  to={link.to}
-                  className="px-3 xl:px-3.5 py-1.5 rounded-full font-bold text-slate-700 dark:text-slate-200 hover:text-[#0A4DA6] dark:hover:text-[#E58C28] hover:bg-slate-100/90 dark:hover:bg-slate-800/70 transition-all text-center whitespace-nowrap text-xs xl:text-[13px] tracking-tight"
-                >
-                  <span>{link.label}</span>
-                </Link>
-              ))}
+            <nav className="hidden lg:flex items-center justify-center gap-0.5 xl:gap-1.5 text-xs font-medium text-[#1E293B] dark:text-gray-200">
+              {navLinks.map((link) => {
+                const isActive =
+                  location.pathname === link.to ||
+                  (link.to !== "/" && location.pathname.startsWith(link.to));
+                const isSpecial = link.isHighlighted;
+                return (
+                  <Link
+                    key={link.label}
+                    to={link.to}
+                    className={`px-3 xl:px-3.5 py-1.5 rounded-full font-bold transition-all text-center whitespace-nowrap text-xs xl:text-[13px] tracking-tight ${isSpecial
+                      ? "bg-[#0A4DA6] text-white hover:bg-[#083D85] shadow-xs font-black ring-2 ring-[#E58C28]/60 ring-offset-1 ring-offset-white dark:ring-offset-[#0B192C] transform -translate-y-0.5"
+                      : isActive
+                        ? "text-[#0A4DA6] dark:text-[#E58C28] bg-blue-50/90 dark:bg-slate-800 shadow-2xs font-extrabold"
+                        : "text-slate-700 dark:text-slate-200 hover:text-[#0A4DA6] dark:hover:text-[#E58C28] hover:bg-slate-100/90 dark:hover:bg-slate-800/70"
+                      }`}
+                  >
+                    <span>{link.label}</span>
+                  </Link>
+                );
+              })}
             </nav>
 
             {/* Mobile spacer / menu title */}
@@ -345,11 +333,10 @@ export const PublicLayout: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => handleSelectCurrency("INR")}
-                      className={`w-full text-left px-3 py-2 text-xs font-bold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer ${
-                        activeCurrency === "INR"
-                          ? "text-[#0A4DA6] dark:text-amber-400 bg-blue-50/50 dark:bg-slate-800/50"
-                          : "text-gray-700 dark:text-gray-200"
-                      }`}
+                      className={`w-full text-left px-3 py-2 text-xs font-bold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer ${activeCurrency === "INR"
+                        ? "text-[#0A4DA6] dark:text-amber-400 bg-blue-50/50 dark:bg-slate-800/50"
+                        : "text-gray-700 dark:text-gray-200"
+                        }`}
                     >
                       <span>₹ INR</span>
                       <span className="text-[10px] font-semibold text-gray-400">Rupee</span>
@@ -357,11 +344,10 @@ export const PublicLayout: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => handleSelectCurrency("USD")}
-                      className={`w-full text-left px-3 py-2 text-xs font-bold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer ${
-                        activeCurrency === "USD"
-                          ? "text-[#0A4DA6] dark:text-amber-400 bg-blue-50/50 dark:bg-slate-800/50"
-                          : "text-gray-700 dark:text-gray-200"
-                      }`}
+                      className={`w-full text-left px-3 py-2 text-xs font-bold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer ${activeCurrency === "USD"
+                        ? "text-[#0A4DA6] dark:text-amber-400 bg-blue-50/50 dark:bg-slate-800/50"
+                        : "text-gray-700 dark:text-gray-200"
+                        }`}
                     >
                       <span>$ USD</span>
                       <span className="text-[10px] font-semibold text-gray-400">Dollar</span>
@@ -389,11 +375,10 @@ export const PublicLayout: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => handleSelectLang("en")}
-                      className={`w-full text-left px-3 py-2 text-xs font-bold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer ${
-                        activeLang === "en"
-                          ? "text-[#0A4DA6] dark:text-amber-400 bg-blue-50/50 dark:bg-slate-800/50"
-                          : "text-gray-700 dark:text-gray-200"
-                      }`}
+                      className={`w-full text-left px-3 py-2 text-xs font-bold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer ${activeLang === "en"
+                        ? "text-[#0A4DA6] dark:text-amber-400 bg-blue-50/50 dark:bg-slate-800/50"
+                        : "text-gray-700 dark:text-gray-200"
+                        }`}
                     >
                       <span>English</span>
                       <span className="text-[10px] font-semibold text-gray-400">EN</span>
@@ -401,11 +386,10 @@ export const PublicLayout: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => handleSelectLang("hi")}
-                      className={`w-full text-left px-3 py-2 text-xs font-bold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer ${
-                        activeLang === "hi"
-                          ? "text-[#0A4DA6] dark:text-amber-400 bg-blue-50/50 dark:bg-slate-800/50"
-                          : "text-gray-700 dark:text-gray-200"
-                      }`}
+                      className={`w-full text-left px-3 py-2 text-xs font-bold flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer ${activeLang === "hi"
+                        ? "text-[#0A4DA6] dark:text-amber-400 bg-blue-50/50 dark:bg-slate-800/50"
+                        : "text-gray-700 dark:text-gray-200"
+                        }`}
                     >
                       <span>हिंदी</span>
                       <span className="text-[10px] font-semibold text-gray-400">HI</span>
@@ -452,11 +436,10 @@ export const PublicLayout: React.FC = () => {
                       aria-haspopup="menu"
                       aria-expanded={profileDropdownOpen}
                       title={user.name}
-                      className={`w-9 h-9 shrink-0 rounded-full bg-[#0A4DA6] text-white flex items-center justify-center cursor-pointer transition-all hover:bg-[#083D85] ring-2 ring-offset-2 ring-offset-white dark:ring-offset-[#0B192C] ${
-                        profileDropdownOpen
-                          ? "ring-[#0A4DA6]/40"
-                          : "ring-transparent"
-                      }`}
+                      className={`w-9 h-9 shrink-0 rounded-full bg-[#0A4DA6] text-white flex items-center justify-center cursor-pointer transition-all hover:bg-[#083D85] ring-2 ring-offset-2 ring-offset-white dark:ring-offset-[#0B192C] ${profileDropdownOpen
+                        ? "ring-[#0A4DA6]/40"
+                        : "ring-transparent"
+                        }`}
                     >
                       <User size={18} />
                     </button>
@@ -666,18 +649,33 @@ export const PublicLayout: React.FC = () => {
           )}
 
           {/* Nav links */}
-          <nav className="space-y-0.5">
-            {navLinks.map((link) => (
-              <Link
-                key={link.label}
-                to={link.to}
-                onClick={() => setDrawerOpen(false)}
-                className="flex items-center justify-between py-3.5 px-3 rounded-xl text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-900 transition-colors"
-              >
-                {link.label}
-                <ChevronRight size={14} className="text-gray-300" />
-              </Link>
-            ))}
+          <nav className="space-y-1">
+            {navLinks.map((link) => {
+              const isActive =
+                location.pathname === link.to ||
+                (link.to !== "/" && location.pathname.startsWith(link.to));
+              return (
+                <Link
+                  key={link.label}
+                  to={link.to}
+                  onClick={() => setDrawerOpen(false)}
+                  className={`flex items-center justify-between py-3 px-3.5 rounded-xl text-sm font-bold transition-colors ${isActive
+                    ? "bg-blue-50 dark:bg-slate-800 text-[#0A4DA6] dark:text-[#E58C28]"
+                    : "text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-900"
+                    }`}
+                >
+                  <span>{link.label}</span>
+                  <ChevronRight
+                    size={14}
+                    className={
+                      isActive
+                        ? "text-[#0A4DA6] dark:text-[#E58C28]"
+                        : "text-gray-300"
+                    }
+                  />
+                </Link>
+              );
+            })}
 
             {/* Dashboard / profile link if logged in.
                 Kept for every role, unlike the desktop button: this drawer has
@@ -723,22 +721,20 @@ export const PublicLayout: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => handleSelectCurrency("INR")}
-                  className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
-                    activeCurrency === "INR"
-                      ? "bg-white dark:bg-[#0A4DA6] text-[#0A4DA6] dark:text-white shadow-xs"
-                      : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
-                  }`}
+                  className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${activeCurrency === "INR"
+                    ? "bg-white dark:bg-[#0A4DA6] text-[#0A4DA6] dark:text-white shadow-xs"
+                    : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
+                    }`}
                 >
                   ₹ INR
                 </button>
                 <button
                   type="button"
                   onClick={() => handleSelectCurrency("USD")}
-                  className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
-                    activeCurrency === "USD"
-                      ? "bg-white dark:bg-[#0A4DA6] text-[#0A4DA6] dark:text-white shadow-xs"
-                      : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
-                  }`}
+                  className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${activeCurrency === "USD"
+                    ? "bg-white dark:bg-[#0A4DA6] text-[#0A4DA6] dark:text-white shadow-xs"
+                    : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
+                    }`}
                 >
                   $ USD
                 </button>
@@ -753,22 +749,20 @@ export const PublicLayout: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => handleSelectLang("en")}
-                  className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
-                    activeLang === "en"
-                      ? "bg-white dark:bg-[#0A4DA6] text-[#0A4DA6] dark:text-white shadow-xs"
-                      : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
-                  }`}
+                  className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${activeLang === "en"
+                    ? "bg-white dark:bg-[#0A4DA6] text-[#0A4DA6] dark:text-white shadow-xs"
+                    : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
+                    }`}
                 >
                   English
                 </button>
                 <button
                   type="button"
                   onClick={() => handleSelectLang("hi")}
-                  className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
-                    activeLang === "hi"
-                      ? "bg-white dark:bg-[#0A4DA6] text-[#0A4DA6] dark:text-white shadow-xs"
-                      : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
-                  }`}
+                  className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${activeLang === "hi"
+                    ? "bg-white dark:bg-[#0A4DA6] text-[#0A4DA6] dark:text-white shadow-xs"
+                    : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
+                    }`}
                 >
                   हिंदी
                 </button>

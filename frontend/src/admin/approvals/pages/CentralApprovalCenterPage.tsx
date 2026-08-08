@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import {
   approvalService,
@@ -12,11 +12,8 @@ import { EnterprisePageHeader } from "../../shared";
 import { humanizeLabel } from "../../../utils/labels";
 import {
   FileCheck,
-  XCircle,
-  Clock,
   Search,
   Eye,
-  ShieldCheck,
   Building2,
   Bed,
   DollarSign,
@@ -29,7 +26,6 @@ import {
   Calendar,
   Landmark,
   Sparkles,
-  AlertCircle,
 } from "lucide-react";
 
 const MODULE_ICON_MAP: Record<string, React.ReactNode> = {
@@ -71,12 +67,7 @@ export const CentralApprovalCenterPage: React.FC = () => {
     setActiveModule(moduleType);
   }, [moduleType]);
 
-  useEffect(() => {
-    fetchStats();
-    fetchRequests();
-  }, [activeModule, statusFilter, priorityFilter]);
-
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       const res = await approvalService.getStats();
       if (res.success) {
@@ -85,9 +76,9 @@ export const CentralApprovalCenterPage: React.FC = () => {
     } catch (err) {
       console.error("Error fetching approval stats:", err);
     }
-  };
+  }, []);
 
-  const fetchRequests = async () => {
+  const fetchRequests = useCallback(async () => {
     setLoading(true);
     try {
       const res = await approvalService.getRequests({
@@ -102,16 +93,18 @@ export const CentralApprovalCenterPage: React.FC = () => {
       console.error("Error fetching approval requests:", err);
       addNotification(
         "Load Error",
-        getErrorMessage(
-          err,
-          "Failed to load Central Approval Center requests.",
-        ),
+        getErrorMessage(err, "Failed to load approval requests."),
         "error",
       );
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeModule, addNotification, priorityFilter, statusFilter]);
+
+  useEffect(() => {
+    fetchStats();
+    fetchRequests();
+  }, [fetchStats, fetchRequests]);
 
   const handleReviewAction = async (
     action: "approve" | "reject" | "request_changes" | "under_review",

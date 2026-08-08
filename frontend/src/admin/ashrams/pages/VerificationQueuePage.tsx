@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { FileCheck, ShieldAlert, FileText, X, ShieldCheck } from "lucide-react";
 import { useNotifications } from "../../../contexts/NotificationContext";
 import { useAuth } from "../../../contexts/AuthContext";
@@ -26,11 +26,7 @@ export const VerificationQueuePage: React.FC = () => {
 
   const canMakeFinalDecision = user?.role !== "inspector";
 
-  useEffect(() => {
-    fetchPending();
-  }, []);
-
-  const fetchPending = async () => {
+  const fetchPending = useCallback(async () => {
     setLoading(true);
     try {
       const res = await verificationService.pending();
@@ -48,7 +44,11 @@ export const VerificationQueuePage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [addNotification]);
+
+  useEffect(() => {
+    fetchPending();
+  }, [fetchPending]);
 
   const handleDecision = async (e: React.FormEvent) => {
     e.preventDefault();

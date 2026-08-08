@@ -1,15 +1,15 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { marketplaceService } from "../services/marketplace.service";
 import { useCart } from "../contexts/CartContext";
 import { useAuth } from "../contexts/AuthContext";
+import { setGuestPendingIntent } from "../utils/guestGate";
 import { useNotifications } from "../contexts/NotificationContext";
 import { formatCurrency } from "../utils/format";
 import { getErrorMessage } from "../lib/api";
 import { openRazorpayCheckout } from "../lib/razorpay";
 import {
   AlertTriangle,
-  ArrowLeft,
   CheckCircle2,
   Loader2,
   MapPin,
@@ -89,6 +89,7 @@ export const MarketplaceCheckoutPage: React.FC = () => {
   // Re-price whenever the basket changes. This is the authoritative total: the
   // cart's own subtotal is indicative only.
   useEffect(() => {
+    if (!user) return;
     if (!cartPayload.length) {
       setQuote(null);
       setLoadingQuote(false);
@@ -117,7 +118,7 @@ export const MarketplaceCheckoutPage: React.FC = () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cartKey]);
+  }, [cartKey, user]);
 
   const loadAddresses = useCallback(async () => {
     try {
@@ -136,6 +137,14 @@ export const MarketplaceCheckoutPage: React.FC = () => {
   useEffect(() => {
     if (user) loadAddresses();
   }, [user, loadAddresses]);
+
+  if (!user) {
+    setGuestPendingIntent({
+      type: "marketplace_cart",
+      returnUrl: "/marketplace/checkout",
+    });
+    return <Navigate to="/login?redirect=%2Fmarketplace%2Fcheckout" replace />;
+  }
 
   const removeAddress = async (id: string) => {
     try {
@@ -280,7 +289,7 @@ export const MarketplaceCheckoutPage: React.FC = () => {
     required = true,
   ) => (
     <div>
-      <label className="text-[10px] font-black text-gray-500 block mb-1">
+      <label className="text-[11px] font-extrabold text-gray-700 dark:text-gray-300 block mb-1.5">
         {label}
         {required && <span className="text-rose-500"> *</span>}
       </label>
@@ -288,44 +297,52 @@ export const MarketplaceCheckoutPage: React.FC = () => {
         value={form[name]}
         onChange={(e) => setForm({ ...form, [name]: e.target.value })}
         placeholder={placeholder}
-        className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6]"
+        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 focus:border-[#0A4DA6] transition-all"
       />
     </div>
   );
 
   return (
     <div className="min-h-screen pb-16">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-6 space-y-6">
-        <button
-          onClick={() => navigate("/marketplace")}
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-500 hover:text-[#0A4DA6] cursor-pointer"
-        >
-          <ArrowLeft size={14} /> Back to marketplace
-        </button>
-
-        <h1 className="text-2xl font-black text-[#0B192C] dark:text-white">
-          Checkout
-        </h1>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 space-y-6">
+        {/* Top Header matching Global Layout */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-gray-100 dark:border-slate-800">
+          <div className="space-y-1">
+            {/* <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#0A4DA6]/10 text-[#0A4DA6] dark:text-blue-400 text-[10px] font-black uppercase tracking-wider">
+              <ShieldCheck size={12} className="text-emerald-500" />
+              Sacred Marketplace • Express Checkout
+            </span> */}
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-[#0B192C] dark:text-white tracking-tight">
+              Checkout
+            </h1>
+          </div>
+          {/* <button
+            onClick={() => navigate("/marketplace")}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-gray-200 dark:border-slate-800 bg-white dark:bg-[#0B192C] text-xs font-extrabold text-[#0B192C] dark:text-white hover:border-[#0A4DA6] hover:text-[#0A4DA6] dark:hover:text-blue-400 transition-all cursor-pointer self-start sm:self-auto shadow-xs"
+          >
+            <ArrowLeft size={14} /> Back to marketplace
+          </button> */}
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Delivery address */}
           <div className="lg:col-span-2 space-y-4">
-            <div className="bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 rounded-2xl p-5 space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-sm font-black text-[#0B192C] dark:text-white flex items-center gap-2">
-                  <MapPin size={16} className="text-[#0A4DA6] shrink-0" />
+            <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-5 shadow-sm">
+              <div className="flex items-center justify-between border-b border-gray-100 dark:border-slate-800/80 pb-3">
+                <h2 className="text-base font-extrabold text-[#0B192C] dark:text-white flex items-center gap-2">
+                  <MapPin size={18} className="text-[#0A4DA6] shrink-0" />
                   Delivery address
                 </h2>
                 {addresses.length > 0 && (
                   <button
                     onClick={() => setShowForm((v) => !v)}
-                    className="text-[11px] font-bold text-[#0A4DA6] hover:underline cursor-pointer flex items-center gap-1"
+                    className="text-xs font-extrabold text-[#0A4DA6] dark:text-blue-400 hover:underline cursor-pointer flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/40"
                   >
                     {showForm ? (
                       "Use a saved address"
                     ) : (
                       <>
-                        <Plus size={12} /> Add new
+                        <Plus size={13} /> Add new address
                       </>
                     )}
                   </button>
@@ -333,15 +350,14 @@ export const MarketplaceCheckoutPage: React.FC = () => {
               </div>
 
               {!showForm ? (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {addresses.map((address) => (
                     <label
                       key={address._id}
-                      className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${
-                        selectedAddressId === address._id
-                          ? "border-[#0A4DA6] bg-blue-50/60 dark:bg-blue-950/30"
-                          : "border-gray-200 dark:border-slate-800 hover:border-[#0A4DA6]/50"
-                      }`}
+                      className={`flex items-start gap-3.5 p-4 rounded-2xl border cursor-pointer transition-all duration-200 ${selectedAddressId === address._id
+                        ? "border-2 border-[#0A4DA6] bg-blue-50/50 dark:bg-blue-950/20 shadow-xs ring-2 ring-[#0A4DA6]/10"
+                        : "border-gray-200 dark:border-slate-800 hover:border-[#0A4DA6]/50 bg-gray-50/30 dark:bg-slate-900/30"
+                        }`}
                     >
                       <input
                         type="radio"
@@ -351,22 +367,22 @@ export const MarketplaceCheckoutPage: React.FC = () => {
                         className="mt-1 accent-[#0A4DA6]"
                       />
                       <span className="flex-1 min-w-0 text-xs">
-                        <span className="flex items-center gap-2">
-                          <strong className="text-[#0B192C] dark:text-white">
+                        <span className="flex items-center gap-2 flex-wrap">
+                          <strong className="text-[#0B192C] dark:text-white font-extrabold text-sm">
                             {address.fullName}
                           </strong>
                           {address.label && (
-                            <span className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-slate-800 text-[9px] font-black text-gray-600 dark:text-gray-300">
+                            <span className="px-2 py-0.5 rounded-full bg-gray-100 dark:bg-slate-800 text-[10px] font-black text-gray-600 dark:text-gray-300">
                               {address.label}
                             </span>
                           )}
                           {address.isDefault && (
-                            <span className="text-[9px] font-black text-emerald-600">
-                              Default
+                            <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-[10px] font-black text-emerald-600 dark:text-emerald-400">
+                              Default Address
                             </span>
                           )}
                         </span>
-                        <span className="block text-gray-500 mt-0.5 leading-relaxed">
+                        <span className="block text-gray-500 dark:text-gray-400 mt-1 leading-relaxed font-medium">
                           {[
                             address.line1,
                             address.line2,
@@ -378,8 +394,8 @@ export const MarketplaceCheckoutPage: React.FC = () => {
                             .filter(Boolean)
                             .join(", ")}
                         </span>
-                        <span className="block text-gray-400 mt-0.5">
-                          {address.phone}
+                        <span className="block text-gray-400 font-semibold mt-1">
+                          Phone: {address.phone}
                         </span>
                       </span>
                       <button
@@ -389,36 +405,36 @@ export const MarketplaceCheckoutPage: React.FC = () => {
                           removeAddress(address._id);
                         }}
                         aria-label="Remove address"
-                        className="p-1 text-gray-400 hover:text-rose-500 cursor-pointer shrink-0"
+                        className="p-1.5 text-gray-400 hover:text-rose-500 rounded-lg cursor-pointer shrink-0 transition-colors"
                       >
-                        <Trash2 size={13} />
+                        <Trash2 size={14} />
                       </button>
                     </label>
                   ))}
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {field("fullName", "Full name", "Ramesh Kumar")}
-                  {field("phone", "Phone", "9876543210")}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                  {field("fullName", "Full name", "Satyam Pandey")}
+                  {field("phone", "Phone number", "9936968762")}
                   <div className="sm:col-span-2">
-                    {field("line1", "Address line 1", "House / street")}
+                    {field("line1", "Flat, House no., Building, Apartment", "002, Nagrik Niwas")}
                   </div>
                   <div className="sm:col-span-2">
-                    {field("line2", "Address line 2", "Area", false)}
+                    {field("line2", "Area, Street, Sector, Village", "Moregaon, Nalasopara East", false)}
                   </div>
-                  {field("landmark", "Landmark", "Near temple", false)}
-                  {field("city", "City", "Haridwar")}
-                  {field("state", "State", "Uttarakhand")}
-                  {field("pincode", "Pincode", "249401")}
+                  {field("landmark", "Landmark", "Near Durga Devi Mandir", false)}
+                  {field("city", "City", "Palghar")}
+                  {field("state", "State", "Maharashtra")}
+                  {field("pincode", "Pincode", "401209")}
                   <div className="sm:col-span-2">
-                    {field("label", "Save as", "Home / Work", false)}
+                    {field("label", "Save address as", "Home / Office", false)}
                   </div>
-                  <label className="sm:col-span-2 flex items-center gap-2 text-xs font-bold text-gray-600 dark:text-gray-300 cursor-pointer">
+                  <label className="sm:col-span-2 flex items-center gap-2 text-xs font-bold text-gray-600 dark:text-gray-300 cursor-pointer pt-1">
                     <input
                       type="checkbox"
                       checked={saveAddress}
                       onChange={(e) => setSaveAddress(e.target.checked)}
-                      className="accent-[#0A4DA6]"
+                      className="accent-[#0A4DA6] w-4 h-4 rounded"
                     />
                     Save this address for future orders
                   </label>
@@ -428,71 +444,71 @@ export const MarketplaceCheckoutPage: React.FC = () => {
           </div>
 
           {/* Order summary */}
-          <div className="bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 rounded-2xl p-5 space-y-4 h-fit">
-            <h2 className="text-sm font-black text-[#0B192C] dark:text-white">
+          <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-5 h-fit shadow-sm">
+            <h2 className="text-base font-extrabold text-[#0B192C] dark:text-white border-b border-gray-100 dark:border-slate-800/80 pb-3">
               Order summary
             </h2>
 
             {quoteError && (
-              <div className="flex items-start gap-2 text-[11px] text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-xl p-2.5">
-                <AlertTriangle size={13} className="mt-0.5 shrink-0" />
+              <div className="flex items-start gap-2 text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-2xl p-3">
+                <AlertTriangle size={15} className="mt-0.5 shrink-0" />
                 <span>{quoteError}</span>
               </div>
             )}
 
             {loadingQuote ? (
-              <p className="text-xs text-gray-400 flex items-center gap-1.5">
-                <Loader2 size={12} className="animate-spin" /> Confirming prices
+              <p className="text-xs text-gray-400 flex items-center gap-2 py-4 justify-center font-bold">
+                <Loader2 size={14} className="animate-spin text-[#0A4DA6]" /> Confirming prices...
               </p>
             ) : quote ? (
               <>
-                <div className="space-y-2 text-xs">
+                <div className="space-y-3 text-xs">
                   {quote.items.map((item) => (
                     <div
                       key={item.productId}
-                      className="flex justify-between gap-3"
+                      className="flex justify-between gap-3 pb-2 border-b border-gray-50 dark:border-slate-800/50"
                     >
-                      <span className="text-gray-600 dark:text-gray-300 min-w-0">
-                        <span className="block truncate">{item.name}</span>
-                        <span className="text-gray-400">
+                      <span className="text-gray-700 dark:text-gray-300 min-w-0 font-medium">
+                        <span className="block truncate font-bold text-[#0B192C] dark:text-white">{item.name}</span>
+                        <span className="text-gray-400 font-semibold">
                           {formatCurrency(item.unitPrice)} × {item.quantity}
                         </span>
                       </span>
-                      <span className="font-bold tabular-nums shrink-0">
+                      <span className="font-extrabold text-[#0B192C] dark:text-white tabular-nums shrink-0">
                         {formatCurrency(item.lineTotal)}
                       </span>
                     </div>
                   ))}
                 </div>
 
-                <dl className="space-y-1.5 text-xs border-t border-gray-100 dark:border-slate-800 pt-3">
+                <dl className="space-y-2 text-xs pt-1">
                   <div className="flex justify-between">
-                    <dt className="text-gray-500">Items</dt>
-                    <dd className="font-bold tabular-nums">
+                    <dt className="text-gray-500 dark:text-gray-400 font-medium">Items</dt>
+                    <dd className="font-bold text-[#0B192C] dark:text-white tabular-nums">
                       {formatCurrency(quote.pricing.itemsTotal)}
                     </dd>
                   </div>
                   <div className="flex justify-between">
-                    <dt className="text-gray-500">Shipping</dt>
-                    <dd className="font-bold tabular-nums">
+                    <dt className="text-gray-500 dark:text-gray-400 font-medium">Shipping</dt>
+                    <dd className="font-bold text-[#0B192C] dark:text-white tabular-nums">
                       {quote.pricing.shippingFee === 0
                         ? "Free"
                         : formatCurrency(quote.pricing.shippingFee)}
                     </dd>
                   </div>
                   <div className="flex justify-between">
-                    <dt className="text-gray-500">
+                    <dt className="text-gray-500 dark:text-gray-400 font-medium">
                       GST ({quote.pricing.gstPercent}%)
                     </dt>
-                    <dd className="font-bold tabular-nums">
+                    <dd className="font-bold text-[#0B192C] dark:text-white tabular-nums">
                       {formatCurrency(quote.pricing.gstAmount)}
                     </dd>
                   </div>
-                  <div className="flex justify-between border-t border-gray-100 dark:border-slate-800 pt-2 mt-1">
-                    <dt className="font-black text-[#0B192C] dark:text-white text-sm">
+                  <div className="flex justify-between border-t border-gray-100 dark:border-slate-800 pt-3 mt-2">
+                    <dt className="font-black text-[#0B192C] dark:text-white text-base">
                       Total
                     </dt>
-                    <dd className="font-black text-[#0A4DA6] dark:text-blue-400 text-sm tabular-nums">
+                    <dd className="font-black text-[#0A4DA6] dark:text-blue-400 text-lg tabular-nums">
                       {formatCurrency(quote.pricing.totalAmount)}
                     </dd>
                   </div>
@@ -501,20 +517,20 @@ export const MarketplaceCheckoutPage: React.FC = () => {
                 <button
                   onClick={placeOrder}
                   disabled={!canPlace}
-                  className="w-full py-3 rounded-full bg-[#0A4DA6] hover:bg-blue-900 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed text-white text-xs font-extrabold flex items-center justify-center gap-2 shadow-md cursor-pointer transition-all"
+                  className="w-full py-3.5 rounded-full bg-[#0A4DA6] hover:bg-blue-900 active:scale-[0.99] disabled:bg-gray-200 dark:disabled:bg-slate-800 disabled:text-gray-400 disabled:cursor-not-allowed text-white text-xs font-extrabold flex items-center justify-center gap-2 shadow-md cursor-pointer transition-all"
                 >
                   {placing ? (
                     <>
-                      <Loader2 size={14} className="animate-spin" /> Processing
+                      <Loader2 size={15} className="animate-spin" /> Processing order...
                     </>
                   ) : (
                     <>Pay {formatCurrency(quote.pricing.totalAmount)}</>
                   )}
                 </button>
 
-                <p className="text-[10px] text-gray-400 flex items-center gap-1.5 justify-center">
-                  <ShieldCheck size={11} className="text-emerald-600" />
-                  Secured by Razorpay
+                <p className="text-[11px] text-gray-400 flex items-center gap-1.5 justify-center font-semibold pt-1">
+                  <ShieldCheck size={13} className="text-emerald-600" />
+                  Secured by Razorpay Encryption
                 </p>
               </>
             ) : (

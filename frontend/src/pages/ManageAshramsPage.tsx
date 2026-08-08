@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import api from "../lib/api";
 import { useNavigate, Link } from "react-router-dom";
 import {
@@ -14,7 +14,6 @@ import {
   Edit3,
   CheckCircle2,
   FileCheck,
-  Coffee,
   Sun,
   BookOpen,
   Info,
@@ -52,11 +51,7 @@ export const ManageAshramsPage: React.FC = () => {
   const [landOwnershipUrl, setLandOwnershipUrl] = useState("");
   const [submittingDocs, setSubmittingDocs] = useState(false);
 
-  useEffect(() => {
-    fetchMyAshrams();
-  }, []);
-
-  const fetchMyAshrams = async () => {
+  const fetchMyAshrams = useCallback(async () => {
     setLoading(true);
     try {
       const res = await ashramService.myListings();
@@ -64,17 +59,21 @@ export const ManageAshramsPage: React.FC = () => {
         setAshrams(res.data.data);
       }
     } catch (err) {
-      console.error("Fetch my listings error:", err);
+      console.error("Fetch listings error:", err);
       addNotification(
         "Load Failed",
-        getErrorMessage(err, "Unable to load your ashrams."),
+        getErrorMessage(err, "Unable to load ashram listings."),
         "error",
       );
       setAshrams([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [addNotification]);
+
+  useEffect(() => {
+    fetchMyAshrams();
+  }, [fetchMyAshrams]);
 
   const handleOpenEdit = (ashram: any) => {
     setEditAshram(ashram);

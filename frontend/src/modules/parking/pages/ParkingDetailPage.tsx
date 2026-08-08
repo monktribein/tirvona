@@ -291,7 +291,7 @@ export const ParkingDetailPage: React.FC = () => {
   }
 
   const FALLBACK_IMAGE =
-    "https://images.unsplash.com/photo-1506521781263-d8422e82f27a?auto=format&fit=crop&w=1200&q=80";
+    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E";
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2 pb-16 space-y-10">
@@ -383,11 +383,10 @@ export const ParkingDetailPage: React.FC = () => {
                 key={img + idx}
                 onClick={() => setActiveImage(idx)}
                 aria-label={`Show image ${idx + 1}`}
-                className={`relative shrink-0 w-24 h-16 sm:w-28 sm:h-20 rounded-2xl overflow-hidden cursor-pointer border-2 transition-all snap-start group ${
-                  idx === activeImage
-                    ? "border-[#0A4DA6] ring-2 ring-[#0A4DA6]/20"
-                    : "border-transparent opacity-70 hover:opacity-100"
-                }`}
+                className={`relative shrink-0 w-24 h-16 sm:w-28 sm:h-20 rounded-2xl overflow-hidden cursor-pointer border-2 transition-all snap-start group ${idx === activeImage
+                  ? "border-[#0A4DA6] ring-2 ring-[#0A4DA6]/20"
+                  : "border-transparent opacity-70 hover:opacity-100"
+                  }`}
               >
                 <img
                   src={img}
@@ -764,13 +763,12 @@ export const ParkingDetailPage: React.FC = () => {
                             type="button"
                             disabled={disabled}
                             onClick={() => setSelectedSlotType(slot.slotTypeId)}
-                            className={`w-full text-left rounded-2xl border p-3 transition-all cursor-pointer ${
-                              isSelected
-                                ? "border-[#0A4DA6] bg-blue-50/70 dark:bg-slate-800 ring-2 ring-[#0A4DA6]/20"
-                                : disabled
-                                  ? "border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900 opacity-60 cursor-not-allowed"
-                                  : "border-gray-200 dark:border-slate-700 bg-white dark:bg-[#0B192C] hover:border-[#0A4DA6]"
-                            }`}
+                            className={`w-full text-left rounded-2xl border p-3 transition-all cursor-pointer ${isSelected
+                              ? "border-[#0A4DA6] bg-blue-50/70 dark:bg-slate-800 ring-2 ring-[#0A4DA6]/20"
+                              : disabled
+                                ? "border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900 opacity-60 cursor-not-allowed"
+                                : "border-gray-200 dark:border-slate-700 bg-white dark:bg-[#0B192C] hover:border-[#0A4DA6]"
+                              }`}
                           >
                             <div className="flex items-start justify-between gap-2">
                               <div className="min-w-0 space-y-0.5">
