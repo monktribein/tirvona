@@ -5,7 +5,8 @@ import { ashramService } from "../services";
 import { SearchResultStatus } from "../components/shared/SearchResultStatus";
 import { GuestRoomSelector } from "../components/shared/GuestRoomSelector";
 import { VerifiedBadge } from "../components/shared/VerifiedBadge";
-import { useBookingSearch } from "../contexts/BookingSearchContext";
+import { DatePicker } from "../components/DatePicker";
+import { useBookingSearch, getTodayYMD, getTomorrowYMD } from "../contexts/BookingSearchContext";
 import {
   Filter,
   MapPin,
@@ -42,13 +43,13 @@ export const SearchPage: React.FC = () => {
   const navigate = useNavigate();
   const { searchState, updateBookingSearch, totalGuests } = useBookingSearch();
 
-  const [destination, setDestination] = useState(
-    activeKeyword || searchState.destination,
-  );
+  const [destination, setDestination] = useState(activeKeyword);
   const [stayType, setStayType] = useState(typeQuery);
-  const [checkIn, setCheckIn] = useState(checkInQuery || searchState.checkIn);
+  const [checkIn, setCheckIn] = useState(
+    checkInQuery || searchState.checkIn || ""
+  );
   const [checkOut, setCheckOut] = useState(
-    checkOutQuery || searchState.checkOut,
+    checkOutQuery || searchState.checkOut || ""
   );
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -103,10 +104,13 @@ export const SearchPage: React.FC = () => {
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
 
+    const effIn = checkInQuery || searchState.checkIn || "";
+    const effOut = checkOutQuery || searchState.checkOut || "";
+
     const updates: any = {};
     if (activeKeyword) updates.destination = activeKeyword;
-    if (checkInQuery) updates.checkIn = checkInQuery;
-    if (checkOutQuery) updates.checkOut = checkOutQuery;
+    if (effIn) updates.checkIn = effIn;
+    if (effOut) updates.checkOut = effOut;
     if (roomsQuery) updates.rooms = Number(roomsQuery);
     if (adultsQuery) updates.adults = Number(adultsQuery);
     if (childrenQuery !== null && childrenQuery !== undefined)
@@ -115,10 +119,17 @@ export const SearchPage: React.FC = () => {
       updateBookingSearch(updates);
     }
 
-    setDestination(activeKeyword || searchState.destination);
+    setDestination(activeKeyword);
     setStayType(typeQuery);
-    setCheckIn(checkInQuery || searchState.checkIn);
-    setCheckOut(checkOutQuery || searchState.checkOut);
+    if (typeQuery) {
+      const lower = typeQuery.toLowerCase();
+      if (lower.includes("ashram")) setAshramFilter(true);
+      if (lower.includes("dharamshala")) setDharamshalaFilter(true);
+      if (lower.includes("homestay") || lower.includes("temple"))
+        setHomestayFilter(true);
+    }
+    setCheckIn(effIn);
+    setCheckOut(effOut);
   }, [
     activeKeyword,
     typeQuery,
@@ -137,20 +148,38 @@ export const SearchPage: React.FC = () => {
     checkInQuery,
     checkOutQuery,
     guestsQuery,
+    ashramFilter,
+    dharamshalaFilter,
+    homestayFilter,
     acFilter,
     foodFilter,
     riverViewFilter,
   ]);
 
+  const todayYMD = new Date().toISOString().split("T")[0];
+
   const fetchAshrams = async () => {
     setLoading(true);
     try {
       const params: Record<string, string> = { verified: "true" };
-      if (activeKeyword) params.destination = activeKeyword;
-      if (typeQuery) params.type = typeQuery;
+      const searchKey = destination.trim() || activeKeyword.trim();
+      if (searchKey) params.destination = searchKey;
       if (checkInQuery) params.checkIn = checkInQuery;
       if (checkOutQuery) params.checkOut = checkOutQuery;
       if (guestsQuery) params.guests = guestsQuery;
+
+      const selectedTypes: string[] = [];
+      if (ashramFilter) selectedTypes.push("ashram");
+      if (dharamshalaFilter) selectedTypes.push("dharamshala");
+      if (homestayFilter) selectedTypes.push("homestay");
+
+      // Only pass params.type if a specific subset (1 or 2) is checked.
+      // If all 3 are checked or 0 checked, do not restrict params.type so all properties show.
+      if (selectedTypes.length > 0 && selectedTypes.length < 3) {
+        params.type = selectedTypes.join(",");
+      } else if (selectedTypes.length === 0 && typeQuery) {
+        params.type = typeQuery;
+      }
 
       const amenities = [];
       if (acFilter) amenities.push("AC");
@@ -160,7 +189,24 @@ export const SearchPage: React.FC = () => {
 
       const res = await ashramService.search(params);
       if (res.data.success) {
-        setResults(res.data.data);
+        let fetchedData = res.data.data || [];
+
+        if (selectedTypes.length > 0 && selectedTypes.length < 3) {
+          fetchedData = fetchedData.filter((a: any) => {
+            const ashramType = (
+              a.type ||
+              a.category ||
+              a.propertyType ||
+              "ashram"
+            ).toLowerCase();
+            const ashramName = (a.name || "").toLowerCase();
+            return selectedTypes.some(
+              (t) => ashramType.includes(t) || ashramName.includes(t),
+            );
+          });
+        }
+
+        setResults(fetchedData);
       }
     } catch (err) {
       console.error("Search API error:", err);
@@ -187,6 +233,7 @@ export const SearchPage: React.FC = () => {
     params.children = String(searchState.children);
     params.guests = String(totalGuests);
     setSearchParams(params);
+    fetchAshrams();
   };
 
   // Landmark distance calculation for Spatial Map Grid
@@ -253,17 +300,14 @@ export const SearchPage: React.FC = () => {
     }
 
     const valueLower = val.toLowerCase();
-    const matches: Set<string> = new Set();
-
-    const cities = ["Haridwar", "Rishikesh", "Vrindavan"];
-    cities.forEach((city) => {
-      if (city.toLowerCase().startsWith(valueLower)) {
-        matches.add(city);
-      }
-    });
+    const matches = new Set<string>();
 
     allAshrams.forEach((ashram) => {
-      if (ashram.name.toLowerCase().includes(valueLower)) {
+      const city = ashram.address?.city || ashram.address?.district;
+      if (city && city.toLowerCase().includes(valueLower)) {
+        matches.add(city);
+      }
+      if (ashram.name && ashram.name.toLowerCase().includes(valueLower)) {
         matches.add(ashram.name);
       }
     });
@@ -369,17 +413,23 @@ export const SearchPage: React.FC = () => {
             <label className="text-[10px] font-extrabold tracking-wider text-gray-400">
               Check In Date
             </label>
-            <div className="relative">
-              <input
-                type="date"
-                value={checkIn}
-                onChange={(e) => setCheckIn(e.target.value)}
-                className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl pl-9 pr-3 py-3 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6] cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
-              />
-              <Calendar
-                className="absolute left-3 top-3.5 text-gray-400"
-                size={14}
-              />
+            <div className="relative flex items-center bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2.5 min-h-[42px]">
+              <Calendar className="text-gray-400 mr-2 shrink-0" size={14} />
+              <div className="min-w-0 flex-1">
+                <DatePicker
+                  value={checkIn}
+                  onChange={(val) => {
+                    setCheckIn(val);
+                    updateBookingSearch({ checkIn: val });
+                    if (val && checkOut && checkOut <= val) {
+                      const nextOut = getTomorrowYMD(val);
+                      setCheckOut(nextOut);
+                      updateBookingSearch({ checkOut: nextOut });
+                    }
+                  }}
+                  placeholder="Add Date"
+                />
+              </div>
             </div>
           </div>
 
@@ -388,17 +438,20 @@ export const SearchPage: React.FC = () => {
             <label className="text-[10px] font-extrabold tracking-wider text-gray-400">
               Check Out Date
             </label>
-            <div className="relative">
-              <input
-                type="date"
-                value={checkOut}
-                onChange={(e) => setCheckOut(e.target.value)}
-                className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl pl-9 pr-3 py-3 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6] cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
-              />
-              <Calendar
-                className="absolute left-3 top-3.5 text-gray-400"
-                size={14}
-              />
+            <div className="relative flex items-center bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2.5 min-h-[42px]">
+              <Calendar className="text-gray-400 mr-2 shrink-0" size={14} />
+              <div className="min-w-0 flex-1">
+                <DatePicker
+                  value={checkOut}
+                  onChange={(val) => {
+                    setCheckOut(val);
+                    updateBookingSearch({ checkOut: val });
+                  }}
+                  min={checkIn}
+                  placeholder="Add Date"
+                  align="right"
+                />
+              </div>
             </div>
           </div>
 
@@ -428,10 +481,10 @@ export const SearchPage: React.FC = () => {
               <Filter size={16} className="text-[#0A4DA6]" /> Filters
             </h3>
 
-            {/* Property Type Section */}
+            {/* Stay Type Section */}
             <div className="space-y-4">
               <h4 className="text-[10px] uppercase font-extrabold text-gray-400 tracking-wider">
-                Property Type
+                Stay Type
               </h4>
               <div className="space-y-3.5">
                 <label className="flex items-center gap-3 text-xs font-semibold cursor-pointer select-none">
@@ -619,23 +672,21 @@ export const SearchPage: React.FC = () => {
                           "https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?auto=format&fit=crop&w=400&q=80";
                       }}
                     />
-                    <span className="absolute top-3.5 left-3.5">
-                      <VerifiedBadge
-                        isVerified={
-                          ashram.isVerified ?? ashram.status === "approved"
-                        }
-                        text="Verified"
-                        size="sm"
-                      />
-                    </span>
                   </div>
 
                   {/* Info details */}
                   <div className="flex-grow flex flex-col justify-between space-y-4">
                     <div className="space-y-2">
                       <div className="flex justify-between items-start gap-2">
-                        <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white leading-tight">
-                          {ashram.name}
+                        <h3 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight flex items-center gap-2">
+                          <span>{ashram.name}</span>
+                          {(ashram.isVerified ?? ashram.status === "approved") && (
+                            <img
+                              src="/Verified badge/verified.png"
+                              alt="Verified"
+                              className="h-9 sm:h-11 w-auto object-contain inline-block shrink-0 align-middle max-w-[140px]"
+                            />
+                          )}
                         </h3>
                         <div className="flex items-center gap-1 text-xs font-bold text-[#0B192C] dark:text-accent">
                           <Star

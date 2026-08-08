@@ -12,6 +12,7 @@ import {
   ToggleRight,
   Info,
 } from "lucide-react";
+import { EnterprisePageHeader } from "../../admin/shared/components/EnterprisePageHeader";
 
 interface PlatformFeeConfig {
   enabled: boolean;
@@ -96,18 +97,14 @@ export const AdminPlatformSettingsPage: React.FC = () => {
   );
 
   return (
-    <div className="p-6 space-y-6 max-w-5xl mx-auto text-left">
+    <div className="space-y-6 text-left w-full">
       {/* Header */}
-      <div className="bg-white dark:bg-[#0B192C] p-6 rounded-[28px] border border-gray-100 dark:border-slate-800 shadow-sm">
-        <h1 className="text-xl font-black text-[#0B192C] dark:text-white flex items-center gap-2">
-          <DollarSign className="text-[#0A4DA6]" size={22} /> Platform Pricing &
-          Fee Settings
-        </h1>
-        <p className="text-xs text-gray-400 mt-1 font-semibold">
-          Configure the Tirvona Platform Fee (Flat ₹ or Percentage %) and tax
-          rates applied across all booking checkouts.
-        </p>
-      </div>
+      <EnterprisePageHeader
+        title="Platform Pricing & Fee Settings"
+        subtitle="Configure the Tirvona Platform Fee (Flat ₹ or Percentage %) and tax rates applied across all booking checkouts."
+        icon={<DollarSign size={22} />}
+        badgeText="Fee Engine"
+      />
 
       {loading ? (
         <div className="h-64 bg-gray-50 dark:bg-slate-900 rounded-3xl animate-pulse" />

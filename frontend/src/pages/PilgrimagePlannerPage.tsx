@@ -127,11 +127,10 @@ export const PilgrimagePlannerPage: React.FC = () => {
                       key={dest}
                       type="button"
                       onClick={() => setDestination(dest)}
-                      className={`p-4 rounded-2xl border text-xs font-black text-left transition-all ${
-                        destination === dest
+                      className={`p-4 rounded-2xl border text-xs font-black text-left transition-all ${destination === dest
                           ? "bg-[#0A4DA6] text-white border-[#0A4DA6] shadow-md"
                           : "bg-gray-50 dark:bg-slate-900 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-slate-800 hover:bg-gray-100"
-                      }`}
+                        }`}
                     >
                       {dest}
                     </button>
@@ -159,11 +158,10 @@ export const PilgrimagePlannerPage: React.FC = () => {
                       key={p}
                       type="button"
                       onClick={() => setPurpose(p)}
-                      className={`p-4 rounded-2xl border text-xs font-black text-center transition-all ${
-                        purpose === p
+                      className={`p-4 rounded-2xl border text-xs font-black text-center transition-all ${purpose === p
                           ? "bg-[#0A4DA6] text-white border-[#0A4DA6] shadow-md"
                           : "bg-gray-50 dark:bg-slate-900 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-slate-800 hover:bg-gray-100"
-                      }`}
+                        }`}
                     >
                       {p}
                     </button>

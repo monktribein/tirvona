@@ -61,7 +61,7 @@ export class GovernanceService {
    */
   private static readonly ADMIN_LIST_PROJECTIONS: Record<string, string> = {
     Admin_ashrams:
-      "name status isVerified rating slug ashramCode ownerId email phone contact.email contact.phone address.city address.state address.district createdAt updatedAt",
+      "name status isVerified rating slug ashramCode ownerId email phone contact.email contact.phone address.city address.state address.district images coverImageUrl gallery galleryUrls documents createdAt updatedAt",
     Admin_rooms:
       "name type acType capacity totalInventory basePrice status ashramId createdAt updatedAt",
     Admin_users:
@@ -724,12 +724,42 @@ export class GovernanceService {
       typeof body._id === "string" && Types.ObjectId.isValid(body._id)
         ? body._id
         : undefined;
-    const data = id
-      ? await this.repository.update(name, { _id: id }, { $set: payload })
-      : await this.repository.create(
+
+    let data;
+    if (name === "banners" || moduleKey === "banner") {
+      const sec = (payload.category || payload.section || subKey) as string;
+      const existing = id
+        ? await this.repository.one(name, { _id: id })
+        : sec
+          ? await this.repository.one(name, {
+              $or: [{ category: sec }, { section: sec }],
+            })
+          : null;
+
+      if (existing) {
+        data = await this.repository.update(
           name,
-          await this.withCreationDefaults(user, name, payload),
+          { _id: existing._id },
+          { $set: { ...payload, category: sec, section: sec } },
         );
+      } else {
+        data = await this.repository.create(
+          name,
+          await this.withCreationDefaults(user, name, {
+            ...payload,
+            category: sec,
+            section: sec,
+          }),
+        );
+      }
+    } else {
+      data = id
+        ? await this.repository.update(name, { _id: id }, { $set: payload })
+        : await this.repository.create(
+            name,
+            await this.withCreationDefaults(user, name, payload),
+          );
+    }
     if (!data) throw new NotFoundException("Record not found");
     return {
       success: true,
@@ -806,6 +836,17 @@ export class GovernanceService {
       throw new BadRequestException("Invalid record id");
     const removed = await this.repository.remove(name, { _id: id });
     if (!removed) throw new NotFoundException("Record not found");
+    if (name === "banners" || moduleKey === "banner") {
+      const sec = removed.category || removed.section;
+      if (sec) {
+        await Promise.all([
+          this.repository.removeMany("requests", { section: sec }),
+          this.repository.removeMany("banners", {
+            $or: [{ category: sec }, { section: sec }],
+          }),
+        ]);
+      }
+    }
     return { success: true, message: "Record deleted successfully" };
   }
 
@@ -959,7 +1000,6 @@ export class GovernanceService {
         filter.role = {
           $in: ["manager", "reception", "housekeeping", "staff"],
         };
-      else if (section === "banner_managers") filter.role = "banner_manager";
       else if (section === "content_managers") filter.role = "content_manager";
       // `roles` is the whole directory grouped by role in the UI — no filter.
       return;
@@ -977,7 +1017,24 @@ export class GovernanceService {
     }
 
     if (moduleName === "banner" && !this.adminStatusSubKeys[section]) {
-      filter.category = section;
+      const bannerCategories = [
+        "homepage",
+        "hero_banner",
+        "festival_banner",
+        "offer_banner",
+        "announcement",
+        "destinations_banner",
+        "parking_banner",
+        "marketplace_banner",
+      ];
+      if (section === "homepage") {
+        filter.$or = [
+          { category: { $in: bannerCategories } },
+          { section: { $in: bannerCategories } },
+        ];
+      } else {
+        filter.$or = [{ category: section }, { section: section }];
+      }
       return;
     }
 
@@ -1068,7 +1125,6 @@ export class GovernanceService {
 
     const key = this.adminLogicalKey(moduleKey, subKey);
     const roleModules: Record<string, string[]> = {
-      banner_manager: ["banner"],
       content_manager: [
         "banner",
         "blogs",
@@ -1181,31 +1237,38 @@ export class GovernanceService {
     // Roles and permissions stay a user-module concern regardless of who asks.
     if (!superAdmin || model !== "Admin_users")
       ["role", "permissions"].forEach((key) => blocked.add(key));
-    // Moderation flags are a Super Admin lever; other admin roles edit content
-    // only. Modules with their own state machine never accept them here.
-    if (!superAdmin || GovernanceService.ADMIN_STATUS_LOCKED.has(model))
+    // Modules with their own state machine never accept status/isVerified here.
+    if (GovernanceService.ADMIN_STATUS_LOCKED.has(model))
       ["status", "isVerified"].forEach((key) => blocked.add(key));
 
     const payload = Object.fromEntries(
       Object.entries(input).filter(([key]) => !blocked.has(key)),
     );
 
-    if (model === "Admin_ashrams" && typeof payload.status === "string") {
-      const requested = payload.status.trim().toLowerCase();
-      // An untouched select submits "" — leave the record's status alone
-      // rather than rejecting the whole save.
-      if (!requested) {
-        delete payload.status;
-        delete payload.isVerified;
-        return payload;
+    if (model === "Admin_ashrams") {
+      if (typeof input.isVerified === "boolean") {
+        payload.isVerified = input.isVerified;
+      } else if (typeof input.isVerified === "string") {
+        const lower = (input.isVerified as string).toLowerCase();
+        payload.isVerified = lower === "true" || lower === "verified" || lower === "yes";
       }
-      const mapped = GovernanceService.ASHRAM_STATUS_ALIASES[requested];
-      if (!mapped)
-        throw new BadRequestException(
-          "An ashram can only be set to approved, rejected, suspended, pending_docs, or pending_inspection",
-        );
-      payload.status = mapped;
-      delete payload.isVerified;
+
+      if (typeof payload.status === "string") {
+        const requested = payload.status.trim().toLowerCase();
+        if (!requested) {
+          delete payload.status;
+          return payload;
+        }
+        const mapped = GovernanceService.ASHRAM_STATUS_ALIASES[requested];
+        if (!mapped)
+          throw new BadRequestException(
+            "An ashram can only be set to approved, rejected, suspended, pending_docs, or pending_inspection",
+          );
+        payload.status = mapped;
+        if (mapped === "approved" && payload.isVerified === undefined) {
+          payload.isVerified = true;
+        }
+      }
     }
     return payload;
   }

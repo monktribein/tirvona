@@ -31,16 +31,11 @@ export const CouponVoucherCard: React.FC<CouponVoucherCardProps> = ({
   const promoCode = offer.promoCode || "KUMBH2026";
 
   // Dynamic image
-  const defaultImages = [
-    "/banner/upcominglogo.png",
-    "/banner/ashram_varanasi.png",
-    "/banner/ashram_rishikesh.png",
-  ];
   const imageSrc =
     offer.bannerImage ||
     offer.thumbnailImage ||
     offer.image ||
-    defaultImages[0];
+    "";
 
   // Dynamic location & Ashram
   const targetAshram =
@@ -287,17 +282,16 @@ export const CouponVoucherCard: React.FC<CouponVoucherCardProps> = ({
       {/* 🎟️ RIGHT MAIN TICKET BODY */}
       <div className="relative flex-1 p-3 sm:p-5 md:p-6 flex flex-col justify-between space-y-1.5 sm:space-y-3 bg-[#FAF9F6] dark:bg-[#0B192C] overflow-hidden">
         {/* Faded Background Image Overlay */}
-        <div className="absolute right-0 top-0 bottom-0 w-1/2 sm:w-5/12 overflow-hidden pointer-events-none opacity-25 dark:opacity-20">
-          <img
-            src={imageSrc}
-            alt=""
-            className="w-full h-full object-cover object-right"
-            onError={(e) => {
-              e.currentTarget.src = defaultImages[0];
-            }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#FAF9F6] via-[#FAF9F6]/85 to-transparent dark:from-[#0B192C] dark:via-[#0B192C]/85" />
-        </div>
+        {imageSrc ? (
+          <div className="absolute right-0 top-0 bottom-0 w-1/2 sm:w-5/12 overflow-hidden pointer-events-none opacity-25 dark:opacity-20">
+            <img
+              src={imageSrc}
+              alt=""
+              className="w-full h-full object-cover object-right"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#FAF9F6] via-[#FAF9F6]/85 to-transparent dark:from-[#0B192C] dark:via-[#0B192C]/85" />
+          </div>
+        ) : null}
 
         {/* Floating Top Right Badge */}
         <div

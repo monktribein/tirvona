@@ -232,50 +232,52 @@ export const SupportTicketsPage: React.FC = () => {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <form
             onSubmit={handleCreateTicket}
-            className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-md w-full rounded-[28px] p-6 space-y-4"
+            className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-4xl w-full rounded-[28px] p-6 sm:p-8 space-y-5 text-left shadow-2xl"
           >
             <div className="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-3">
-              <h3 className="font-bold text-sm text-[#0B192C] dark:text-white">
+              <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white">
                 File a Support Request
               </h3>
               <button
                 type="button"
                 onClick={() => setShowCreate(false)}
-                className="text-gray-400 hover:text-gray-655"
+                className="p-1.5 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-gray-400">
-                Subject Title
-              </label>
-              <input
-                type="text"
-                required
-                placeholder="e.g. Booking failed transaction lock"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none"
-              />
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-400">
+                  Subject Title
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Booking failed transaction lock"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none"
+                />
+              </div>
 
-            <div className="grid grid-cols-1 gap-1">
-              <label className="text-xs font-bold text-gray-400">
-                Category
-              </label>
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none cursor-pointer"
-              >
-                <option value="booking_issue">Booking Issue</option>
-                <option value="payment_failed">Payment Failed</option>
-                <option value="refund_request">Refund Request</option>
-                <option value="ashram_complaint">Ashram Complaint</option>
-                <option value="other">Other Query</option>
-              </select>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-400">
+                  Category
+                </label>
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none cursor-pointer"
+                >
+                  <option value="booking_issue">Booking Issue</option>
+                  <option value="payment_failed">Payment Failed</option>
+                  <option value="refund_request">Refund Request</option>
+                  <option value="ashram_complaint">Ashram Complaint</option>
+                  <option value="other">Other Query</option>
+                </select>
+              </div>
             </div>
 
             <div className="space-y-1">

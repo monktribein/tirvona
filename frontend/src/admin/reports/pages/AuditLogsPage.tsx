@@ -31,7 +31,7 @@ export const AuditLogsPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 text-left">
+    <div className="space-y-6 text-left w-full">
       <EnterprisePageHeader
         title="Security & System Audit Logs"
         subtitle="Track real-time logins, RBAC transitions, system overrides, and counter check-in events."

@@ -257,35 +257,30 @@ export const ParkingStaffRolesPage: React.FC = () => {
     "text-[11px] font-black tracking-wider text-gray-400 block mb-1.5";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-left w-full">
       <EnterprisePageHeader
         title="Parking Staff & Roles"
         subtitle="Parking permissions are grants against a partner, not account roles — they do not appear in user management."
         icon={<ShieldCheck size={22} />}
-        badgeText="Super admin"
+        badgeText="Super Admin"
         actions={
-          <div className="flex gap-2">
-            <button
-              onClick={load}
-              disabled={loading}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 dark:border-slate-700 text-sm font-bold disabled:opacity-60"
-            >
-              {loading ? (
-                <Loader2 size={15} className="animate-spin" />
-              ) : (
-                <RefreshCw size={15} />
-              )}
-              Refresh
-            </button>
+          <div className="flex items-center gap-2">
             <button
               onClick={() => {
                 resetForm();
                 setIsModalOpen(true);
               }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0A4DA6] text-white text-sm font-bold hover:bg-[#083d85]"
+              className="px-5 py-2.5 bg-[#0A4DA6] hover:bg-[#083b80] text-white rounded-full text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-[#0A4DA6]/20 cursor-pointer"
             >
-              <UserPlus size={15} />
-              Assign Role
+              <UserPlus size={16} /> Assign Role
+            </button>
+            <button
+              onClick={load}
+              disabled={loading}
+              className="p-2.5 bg-gray-50 dark:bg-slate-900 hover:bg-gray-100 dark:hover:bg-slate-800 border border-gray-100 dark:border-slate-800 rounded-full text-gray-500 cursor-pointer transition-colors"
+              title="Refresh"
+            >
+              <RefreshCw size={16} className={loading ? "animate-spin text-[#0A4DA6]" : ""} />
             </button>
           </div>
         }
@@ -419,7 +414,7 @@ export const ParkingStaffRolesPage: React.FC = () => {
 
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white dark:bg-[#0B192C] rounded-[28px] w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
+          <div className="bg-white dark:bg-[#0B192C] rounded-[28px] w-full max-w-5xl max-h-[90vh] overflow-y-auto shadow-2xl">
             <div className="sticky top-0 bg-white dark:bg-[#0B192C] p-6 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between">
               <h3 className="text-lg font-black text-[#0B192C] dark:text-white">
                 Assign Parking Role

@@ -104,10 +104,6 @@ export const getRoleDefaultDashboard = (
     case "volunteer_coordinator":
       return "/volunteer";
 
-    case "banner_manager":
-    case "content_manager":
-      return "/bannerboy/dashboard";
-
     case "parking_partner":
     case "parking_manager":
     case "security_guard":

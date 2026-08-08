@@ -15,7 +15,7 @@ export class VerificationService {
     @InjectModel("Ashram") private readonly ashrams: Model<any>,
     @InjectModel("User") private readonly users: Model<any>,
     @InjectModel("AuditLog") private readonly audits: Model<any>,
-  ) {}
+  ) { }
   private jurisdiction(user: AuthenticatedUser): Record<string, unknown> {
     if (["district_officer", "inspector"].includes(user.role)) {
       if (!user.district || !user.state)

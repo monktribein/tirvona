@@ -24,9 +24,9 @@ export class ContentService {
 
   async blogPosts(query: Record<string, string>): Promise<any> {
     const filter: Record<string, any> = { status: "published" };
-    if (query.category && query.category !== "All")
+    if (query.category && query.category.toLowerCase() !== "all")
       filter.category = query.category;
-    if (query.contentType && query.contentType !== "All")
+    if (query.contentType && query.contentType.toLowerCase() !== "all")
       filter.contentType = query.contentType;
     if (query.search) {
       const term = escapeRegex(query.search.slice(0, 100));
@@ -151,16 +151,38 @@ export class ContentService {
       request.newValue &&
       typeof request.newValue === "object"
     ) {
-      await this.repository.create("banners", {
-        title: request.newValue.title ?? request.title,
-        imageUrl:
-          request.newValue.imageUrl ??
-          request.newValue.bannerImage ??
-          "/banner/ashram_rishikesh.png",
-        linkUrl: request.newValue.linkUrl ?? "/",
-        status: "active",
-        createdBy: request.userId,
+      const bannerImg =
+        request.newValue.imageUrl ??
+        request.newValue.bannerImage ??
+        "/banner/ashram_rishikesh.png";
+      const existing = await this.repository.one("banners", {
+        $or: [{ category: request.section }, { section: request.section }],
       });
+      if (existing) {
+        await this.repository.update(
+          "banners",
+          { _id: existing._id },
+          {
+            title: request.newValue.title ?? request.title,
+            imageUrl: bannerImg,
+            image: bannerImg,
+            status: "active",
+            category: request.section,
+            section: request.section,
+          },
+        );
+      } else {
+        await this.repository.create("banners", {
+          title: request.newValue.title ?? request.title,
+          imageUrl: bannerImg,
+          image: bannerImg,
+          linkUrl: request.newValue.linkUrl ?? "/",
+          status: "active",
+          createdBy: request.userId,
+          category: request.section,
+          section: request.section,
+        });
+      }
     }
     await this.audit(
       user.id,
@@ -177,14 +199,64 @@ export class ContentService {
   }
 
   async published(): Promise<any> {
-    const requests = await this.repository.list(
-      "requests",
-      { status: "approved" },
-      { sort: { updatedAt: -1 }, limit: 100 },
-    );
+    const [requests, banners] = await Promise.all([
+      this.repository.list(
+        "requests",
+        { status: "approved" },
+        { sort: { updatedAt: -1 }, limit: 100 },
+      ),
+      this.repository.list(
+        "banners",
+        { status: { $ne: "inactive" } },
+        { sort: { updatedAt: -1 }, limit: 100 },
+      ),
+    ]);
+
+    const BANNER_SECTIONS = new Set([
+      "hero_banner",
+      "festival_banner",
+      "offer_banner",
+      "announcement",
+      "destinations_banner",
+      "parking_banner",
+      "marketplace_banner",
+      "homepage",
+    ]);
+
     const data: Record<string, unknown> = {};
-    for (const request of requests)
-      if (!(request.section in data)) data[request.section] = request.newValue;
+
+    for (const b of banners) {
+      const candidateCategory = b.category && BANNER_SECTIONS.has(b.category) ? b.category : null;
+      const candidateSection = b.section && BANNER_SECTIONS.has(b.section) ? b.section : null;
+      const sec = candidateSection || candidateCategory || b.category || b.section;
+      if (sec && !(sec in data)) {
+        data[sec] = {
+          title: b.title || "",
+          heading: b.title || b.heading || "",
+          subtitle: b.subtitle || b.description || b.caption || "",
+          description: b.description || b.subtitle || b.caption || "",
+          bannerImage: b.imageUrl || b.bannerImage || b.image || "",
+          image: b.imageUrl || b.bannerImage || b.image || "",
+          imageUrl: b.imageUrl || b.bannerImage || b.image || "",
+          targetUrl: b.targetUrl || b.linkUrl || "",
+          ctaText: b.ctaText || "",
+          deviceType: b.deviceType || "both",
+          updatedAt: b.updatedAt,
+        };
+      }
+    }
+
+    for (const request of requests) {
+      if (
+        request.section &&
+        request.newValue &&
+        !BANNER_SECTIONS.has(request.section) &&
+        !(request.section in data)
+      ) {
+        data[request.section] = request.newValue;
+      }
+    }
+
     return { success: true, data };
   }
 
@@ -199,9 +271,13 @@ export class ContentService {
   }
 
   async resetSection(section: string, user: AuthenticatedUser): Promise<any> {
-    const deletedCount = await this.repository.removeMany("requests", {
-      section,
-    });
+    const [deletedRequests, deletedBanners] = await Promise.all([
+      this.repository.removeMany("requests", { section }),
+      this.repository.removeMany("banners", {
+        $or: [{ category: section }, { section: section }],
+      }),
+    ]);
+    const deletedCount = (deletedRequests || 0) + (deletedBanners || 0);
     await this.audit(user.id, "CMS_SECTION_RESET", { section, deletedCount });
     return {
       success: true,

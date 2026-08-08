@@ -148,18 +148,13 @@ export const MarketplaceCategoryDetailPage: React.FC = () => {
     <div className="min-h-screen pb-28 space-y-10">
       {/* Hero Banner Section */}
       <div className="relative bg-black text-white min-h-[460px] flex items-center overflow-hidden">
-        <img
-          src={
-            category.bannerImage ||
-            category.coverImage ||
-            "/banner/ashram_rishikesh.png"
-          }
-          alt={category.name}
-          className="absolute inset-0 w-full h-full object-cover opacity-50 filter brightness-75"
-          onError={(e: any) => {
-            e.target.src = "/banner/ashram_rishikesh.png";
-          }}
-        />
+        {category.bannerImage || category.coverImage ? (
+          <img
+            src={category.bannerImage || category.coverImage}
+            alt={category.name}
+            className="absolute inset-0 w-full h-full object-cover opacity-50 filter brightness-75"
+          />
+        ) : null}
         <div className="absolute inset-0 bg-gradient-to-t from-[#0B192C] via-[#0B192C]/65 to-transparent" />
 
         <div className="relative max-w-6xl mx-auto px-4 sm:px-8 py-12 space-y-6 z-10 w-full">
@@ -324,18 +319,13 @@ export const MarketplaceCategoryDetailPage: React.FC = () => {
               >
                 <div>
                   <div className="relative aspect-video bg-black overflow-hidden">
-                    <img
-                      src={
-                        prod.images?.[0] ||
-                        category.coverImage ||
-                        "/banner/ashram_rishikesh.png"
-                      }
-                      alt={prod.productName}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90"
-                      onError={(e: any) => {
-                        e.target.src = "/banner/ashram_rishikesh.png";
-                      }}
-                    />
+                    {prod.images?.[0] || category.coverImage ? (
+                      <img
+                        src={prod.images?.[0] || category.coverImage}
+                        alt={prod.productName}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90"
+                      />
+                    ) : null}
                     <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-red-600/90 text-white text-[10px] font-black uppercase tracking-wider">
                       OUT OF STOCK
                     </span>

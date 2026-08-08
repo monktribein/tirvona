@@ -280,7 +280,6 @@ describe("role-based acceptance matrix", () => {
     ["staff", `/api/analytics/dashboard?ashramId=${"__ASHRAM__"}`],
     ["reception", `/api/housekeeping?ashramId=${"__ASHRAM__"}`],
     ["housekeeping", `/api/housekeeping?ashramId=${"__ASHRAM__"}`],
-    ["banner_manager", "/api/admin/crud/banner"],
     ["content_manager", "/api/admin/crud/blogs"],
     ["offer_manager", "/api/offers/my-offers"],
     ["blog_manager", "/api/admin/crud/blogs"],

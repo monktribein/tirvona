@@ -57,7 +57,7 @@ export const OffersPage: React.FC = () => {
       description:
         "Experience the holy Kumbh Mela 2026 with 20% OFF accommodation & VIP Ganga Aarti pass.",
       promoCode: "KUMBH2026",
-      image: "/banner/upcominglogo.png",
+      image: "",
       validity: "31 Dec 2026",
       ashramId: {
         address: { city: "Prayagraj" },
@@ -73,7 +73,7 @@ export const OffersPage: React.FC = () => {
       description:
         "Recharge your mind & soul with our weekend spiritual retreat package in Haridwar.",
       promoCode: "WEEKEND500",
-      image: "/banner/ashram_rishikesh.png",
+      image: "",
       validity: "30 Jun 2026",
       ashramId: {
         address: { city: "Haridwar" },
@@ -88,7 +88,7 @@ export const OffersPage: React.FC = () => {
       description:
         "Get 15% instant savings on top verified ashrams across Kashi & Haridwar.",
       promoCode: "FESTIVAL2026",
-      image: "/banner/ashram_varanasi.png",
+      image: "",
       validity: "31 Dec 2026",
       ashramId: {
         address: { city: "Varanasi" },
@@ -103,7 +103,7 @@ export const OffersPage: React.FC = () => {
       description:
         "Exclusive 25% discount on serene dharamshala stays in holy Vrindavan.",
       promoCode: "VRINDAVAN25",
-      image: "/banner/ashram_vrindavan.png",
+      image: "",
       validity: "31 Dec 2026",
       ashramId: {
         address: { city: "Vrindavan" },
@@ -118,7 +118,7 @@ export const OffersPage: React.FC = () => {
       description:
         "Immerse yourself in authentic Vedic yoga sessions along holy Ganga at 18% OFF.",
       promoCode: "YOGA2026",
-      image: "/banner/ashram_rishikesh.png",
+      image: "",
       validity: "30 Sep 2026",
       ashramId: {
         address: { city: "Rishikesh" },

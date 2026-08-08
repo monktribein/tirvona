@@ -113,7 +113,7 @@ export const ManageRoomsPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-left w-full">
       <div className="flex flex-wrap justify-between items-start sm:items-center gap-3 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-4 sm:p-6 rounded-[24px] shadow-sm">
         <div className="min-w-0">
           <h2 className="text-base font-extrabold text-[#0B192C] dark:text-white">
@@ -222,22 +222,22 @@ export const ManageRoomsPage: React.FC = () => {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <form
             onSubmit={handleCreate}
-            className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-md w-full rounded-[28px] p-6 space-y-4 max-h-[85vh] overflow-y-auto text-left"
+            className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-4xl w-full rounded-[28px] p-6 sm:p-8 space-y-5 max-h-[85vh] overflow-y-auto text-left"
           >
             <div className="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-3">
-              <h3 className="font-bold text-sm text-[#0B192C] dark:text-white flex items-center gap-1.5">
-                <Bed size={16} className="text-[#0A4DA6]" /> Add Room Category
+              <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white flex items-center gap-1.5">
+                <Bed size={18} className="text-[#0A4DA6]" /> Add Room Category
               </h3>
               <button
                 type="button"
                 onClick={() => setShowCreate(false)}
-                className="text-gray-400 hover:text-gray-650"
+                className="p-1.5 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <label className="text-xs font-bold text-gray-400">
                   Select Ashram

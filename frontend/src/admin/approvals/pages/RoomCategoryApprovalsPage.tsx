@@ -4,6 +4,7 @@ import type { RoomCategoryRequestItem } from "../../../services/approval.service
 import { useNotifications } from "../../../contexts/NotificationContext";
 import { getErrorMessage } from "../../../lib/api";
 import { humanizeLabel } from "../../../utils/labels";
+import { EnterprisePageHeader } from "../../shared";
 import {
   Bed,
   XCircle,
@@ -101,28 +102,14 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-left w-full">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-[#0B192C] p-6 rounded-[28px] border border-gray-100 dark:border-slate-800 shadow-sm">
-        <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-[#0A4DA6]/10 text-[#0A4DA6] flex items-center justify-center border border-[#0A4DA6]/20 shrink-0">
-            <Layers size={24} />
-          </div>
-          <div>
-            <h1 className="text-xl sm:text-2xl font-black text-[#0B192C] dark:text-white tracking-tight">
-              Room Category Approval Engine
-            </h1>
-            <p className="text-xs text-gray-400 font-semibold mt-0.5">
-              Review and validate structural room category additions requested
-              by Stay Admins across ashrams.
-            </p>
-          </div>
-        </div>
-
-        <span className="px-3.5 py-1.5 bg-[#0A4DA6]/10 text-[#0A4DA6] border border-[#0A4DA6]/20 rounded-full text-xs font-black tracking-wider">
-          Super Admin Console
-        </span>
-      </div>
+      <EnterprisePageHeader
+        title="Room Category Approval Engine"
+        subtitle="Review and validate structural room category additions requested by Stay Admins across ashrams."
+        icon={<Layers size={22} />}
+        badgeText="Super Admin Console"
+      />
 
       {/* Filters Bar */}
       <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white dark:bg-[#0B192C] p-4 rounded-[20px] border border-gray-100 dark:border-slate-800 shadow-sm">

@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import {
   EnterpriseModal,
+  EnterprisePageHeader,
 } from "../shared";
 import {
   visitorArticleService,
@@ -130,20 +131,14 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
   };
 
   return (
-    <div className="p-6 space-y-6 text-left">
+    <div className="space-y-6 text-left w-full">
       {/* Page Title */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-black text-[#0B192C] dark:text-white flex items-center gap-2">
-            <FileText className="text-[#0A4DA6]" size={24} />
-            <span>Visitor Articles & Stories</span>
-          </h1>
-          <p className="text-xs text-gray-400 font-semibold">
-            Review and manage experience articles submitted by verified ashram
-            visitors.
-          </p>
-        </div>
-      </div>
+      <EnterprisePageHeader
+        title="Visitor Articles & Stories"
+        subtitle="Review and manage experience articles submitted by verified ashram visitors."
+        icon={<FileText size={22} />}
+        badgeText="Community Content"
+      />
 
       {/* Tabs Bar */}
       <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-2 shadow-sm flex items-center gap-2 overflow-x-auto text-xs font-extrabold">

@@ -194,11 +194,6 @@ export const ImageGalleryManager: React.FC<ImageGalleryManagerProps> = ({
                 <img
                   src={imgUrl}
                   alt={`Photo Asset ${idx + 1}`}
-                  onError={(e) => {
-                    // Fallback to placeholder if image fails to render
-                    (e.target as HTMLImageElement).src =
-                      "https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=600&q=80";
-                  }}
                   className="w-full h-full object-cover"
                 />
 

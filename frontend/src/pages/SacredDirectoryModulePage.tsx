@@ -131,6 +131,24 @@ export const SacredDirectoryModulePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
 
+  const [cmsBanner, setCmsBanner] = useState<string>("");
+
+  useEffect(() => {
+    const fetchCmsBanner = async () => {
+      try {
+        const res = await api.get("/cms/published");
+        if (res.data?.success) {
+          setCmsBanner(
+            res.data.data?.destinations_banner?.bannerImage || "",
+          );
+        }
+      } catch (err) {
+        console.warn("CMS load error:", err);
+      }
+    };
+    fetchCmsBanner();
+  }, []);
+
   useEffect(() => {
     fetchDirectoryItems();
   }, [pathnameModule]);
@@ -190,13 +208,15 @@ export const SacredDirectoryModulePage: React.FC = () => {
 
         {/* Feature Showcase Banner */}
         <div className="max-w-4xl mx-auto px-4 sm:px-6 mt-4 space-y-8">
-          <div className="flex justify-center">
-            <img
-              src="/banner/coming soon/marketplace.png"
-              alt="Coming Soon Feature"
-              className="w-full h-auto max-h-[500px] object-contain drop-shadow-md"
-            />
-          </div>
+          {cmsBanner ? (
+            <div className="flex justify-center">
+              <img
+                src={cmsBanner}
+                alt="Sacred Directory Banner"
+                className="w-full h-auto max-h-[500px] object-contain drop-shadow-md rounded-2xl"
+              />
+            </div>
+          ) : null}
 
           {/* Action Buttons */}
           <div className="flex flex-wrap items-center justify-center gap-4 pt-2">

@@ -18,6 +18,23 @@ interface BookingSearchContextType {
 
 const STORAGE_KEY = "tirvona_booking_search";
 
+export const getTodayYMD = (): string => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+
+export const getTomorrowYMD = (baseYMD?: string): string => {
+  let d = new Date();
+  if (baseYMD) {
+    const [y, m, day] = baseYMD.split("-").map(Number);
+    if (y && m && day) {
+      d = new Date(y, m - 1, day);
+    }
+  }
+  d.setDate(d.getDate() + 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+
 export const getStoredBookingSearch = (): BookingSearchState => {
   try {
     const cached = localStorage.getItem(STORAGE_KEY);
@@ -90,9 +107,16 @@ export const BookingSearchProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const updateBookingSearch = (partial: Partial<BookingSearchState>) => {
     setSearchState((prev) => {
+      const nextIn = partial.checkIn !== undefined ? partial.checkIn : prev.checkIn;
+      let nextOut = partial.checkOut !== undefined ? partial.checkOut : prev.checkOut;
+      if (nextIn && nextOut && nextOut <= nextIn) {
+        nextOut = getTomorrowYMD(nextIn);
+      }
       const next = {
         ...prev,
         ...partial,
+        checkIn: nextIn,
+        checkOut: nextOut,
         rooms:
           partial.rooms !== undefined ? Math.max(1, partial.rooms) : prev.rooms,
         adults:

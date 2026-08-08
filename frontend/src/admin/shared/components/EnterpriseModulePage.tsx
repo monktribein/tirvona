@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import EnterpriseDataTable, { type TableColumn } from "./EnterpriseDataTable";
 import ImageGalleryManager from "./ImageGalleryManager";
 import { RecordFieldList } from "./RecordValue";
 import LocalHubEnterpriseDrawer from "./LocalHubEnterpriseDrawer";
+import { EnterprisePageHeader } from "./EnterprisePageHeader";
 import { useNotifications } from "../../../contexts/NotificationContext";
 import api, { getErrorMessage } from "../../../lib/api";
 import { humanizeLabel } from "../../../utils/labels";
@@ -16,12 +17,13 @@ import {
   Users,
   ShieldCheck,
   X,
-  Plus,
-  Sparkles,
   XCircle,
   CheckCircle,
-  Key,
   Car,
+  Download,
+  Printer,
+  Sparkles,
+  Plus,
 } from "lucide-react";
 
 interface CmsRequest {
@@ -41,6 +43,7 @@ export const EnterpriseModulePage: React.FC<{
   defaultColumns?: TableColumn[];
 }> = ({ moduleName, defaultColumns }) => {
   const params = useParams<{ moduleKey?: string; subKey?: string }>();
+  const navigate = useNavigate();
   const activeModule = moduleName || params.moduleKey || "users";
   const activeSubKey = params.subKey || "";
 
@@ -48,7 +51,6 @@ export const EnterpriseModulePage: React.FC<{
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
-  const [isCredentialsListOpen, setIsCredentialsListOpen] = useState(true);
 
   // Pending CMS Approval Requests State
   const [pendingCmsRequests, setPendingCmsRequests] = useState<CmsRequest[]>(
@@ -128,7 +130,7 @@ export const EnterpriseModulePage: React.FC<{
       if (res.data?.success) {
         addNotification(
           "Request Rejected",
-          "Feedback has been sent back to BannerBoy.",
+          "Feedback has been sent back to Content Manager.",
           "warning",
         );
         setRejectionModalId(null);
@@ -221,15 +223,12 @@ export const EnterpriseModulePage: React.FC<{
             { key: "title", label: "Banner Title" },
             { key: "category", label: "Placement Category" },
             { key: "deviceType", label: "Device Target" },
-            { key: "priorityOrder", label: "Priority" },
-            { key: "status", label: "Approval Status" },
           ],
           fields: [
             {
               name: "title",
               label: "Banner Title",
               type: "text",
-              required: true,
             },
             { name: "subtitle", label: "Subtitle / Caption", type: "text" },
             {
@@ -237,34 +236,20 @@ export const EnterpriseModulePage: React.FC<{
               label: "Placement Category",
               type: "select",
               options: [
-                "homepage",
-                "hero_slider",
-                "offers",
-                "blog",
-                "marketplace",
-                "destination",
-                "festival",
-                "mobile",
-                "desktop",
+                "hero_banner",
+                "destinations_banner",
+                "parking_banner",
+                "marketplace_banner",
+                "festival_banner",
+                "offer_banner",
+                "announcement",
               ],
             },
-            { name: "targetUrl", label: "Target Action Link", type: "text" },
             {
-              name: "priorityOrder",
-              label: "Display Order Priority",
-              type: "number",
-            },
-            {
-              name: "status",
-              label: "Status",
+              name: "deviceType",
+              label: "Target Device",
               type: "select",
-              options: [
-                "active",
-                "pending",
-                "approved",
-                "rejected",
-                "scheduled",
-              ],
+              options: ["both", "desktop", "mobile"],
             },
           ],
         };
@@ -300,7 +285,6 @@ export const EnterpriseModulePage: React.FC<{
                 "manager",
                 "reception",
                 "housekeeping",
-                "banner_manager",
                 "super_admin",
               ],
             },
@@ -322,17 +306,40 @@ export const EnterpriseModulePage: React.FC<{
               key: "city",
               label: "Location City",
               render: (_: any, item: any) =>
-                item.address?.city || item.city || "N/A",
+                item.address?.city ||
+                item.address?.district ||
+                item.address?.state ||
+                item.city ||
+                "N/A",
             },
             {
               key: "rating",
               label: "Overall Rating",
-              render: (val: any) => `⭐ ${val || 4.8}`,
+              render: (val: any) => {
+                const num =
+                  typeof val === "number"
+                    ? val
+                    : typeof val === "object" && val?.average != null
+                      ? val.average
+                      : 4.8;
+                return `⭐ ${num}`;
+              },
             },
             {
               key: "isVerified",
               label: "Verification",
-              render: (val: any) => (val ? "Verified" : "Unverified"),
+              render: (val: any, item: any) =>
+                val === false || val === "false" || val === "Unverified"
+                  ? "Unverified"
+                  : val === true ||
+                    val === "true" ||
+                    val === "Verified" ||
+                    val === "verified" ||
+                    item?.isVerified === true ||
+                    item?.status === "approved" ||
+                    item?.status === "active"
+                    ? "Verified"
+                    : "Unverified",
             },
             { key: "status", label: "Status" },
           ],
@@ -342,6 +349,18 @@ export const EnterpriseModulePage: React.FC<{
               label: "Ashram Name",
               type: "text",
               required: true,
+            },
+            {
+              name: "city",
+              label: "Location City",
+              type: "text",
+              required: true,
+            },
+            {
+              name: "isVerified",
+              label: "Verification Status",
+              type: "select",
+              options: ["Verified", "Unverified"],
             },
             { name: "email", label: "Contact Email", type: "email" },
             { name: "phone", label: "Contact Phone", type: "text" },
@@ -363,18 +382,13 @@ export const EnterpriseModulePage: React.FC<{
               label: "Image",
               render: (val: any) => (
                 <div className="w-12 h-10 rounded-lg overflow-hidden border border-gray-200 dark:border-slate-800 bg-slate-900 shrink-0">
-                  <img
-                    src={
-                      val ||
-                      "https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=600&q=80"
-                    }
-                    alt="Service Thumbnail"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src =
-                        "https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=600&q=80";
-                    }}
-                    className="w-full h-full object-cover"
-                  />
+                  {val ? (
+                    <img
+                      src={val}
+                      alt="Service Thumbnail"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : null}
                 </div>
               ),
             },
@@ -944,37 +958,102 @@ export const EnterpriseModulePage: React.FC<{
 
   const handleEditOpen = (item: any) => {
     setEditingItem(item);
-    setFormData(item);
+    const initial = { ...item };
+    if (!initial.city && item.address?.city) {
+      initial.city = item.address.city;
+    }
+    setFormData(initial);
     setIsModalOpen(true);
   };
 
   const handleCreateOpen = () => {
     setEditingItem(null);
-    setFormData({});
+    const initialData: Record<string, any> = {};
+    if (activeModule === "banner") {
+      initialData.category = "hero_banner";
+      initialData.deviceType = "both";
+      initialData.status = "active";
+    }
+    setFormData(initialData);
     setIsModalOpen(true);
   };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const bannerCategory = formData.category || "hero_banner";
+      const bannerImage =
+        formData.image ||
+        formData.coverImage ||
+        formData.imageUrl ||
+        formData.bannerImage ||
+        "";
+
+      const cityVal = formData.city || formData.address?.city || "";
+
+      let isVerifiedVal = Boolean(formData.isVerified);
+      if (typeof formData.isVerified === "string") {
+        const lower = formData.isVerified.toLowerCase();
+        isVerifiedVal = lower === "true" || lower === "verified" || lower === "yes";
+      } else if (formData.isVerified === true) {
+        isVerifiedVal = true;
+      }
+
       const payload = {
         ...formData,
-        image:
-          formData.image ||
-          formData.coverImage ||
-          formData.imageUrl ||
-          "https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=600&q=80",
-        imageUrl:
-          formData.image ||
-          formData.coverImage ||
-          formData.imageUrl ||
-          "https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=600&q=80",
+        isVerified: isVerifiedVal,
+        ...(cityVal
+          ? {
+            city: cityVal,
+            address: {
+              ...(formData.address || {}),
+              city: cityVal,
+            },
+          }
+          : {}),
+        title: formData.title || "",
+        category: bannerCategory,
+        section: bannerCategory,
+        deviceType: formData.deviceType || "both",
+        status: formData.status || "active",
+        image: bannerImage,
+        imageUrl: bannerImage,
       };
+
       const endpoint = `/admin/crud/${activeModule}${activeSubKey ? `?subKey=${activeSubKey}` : ""}`;
       await api.post(endpoint, payload);
+
+      if (activeModule === "banner") {
+        try {
+          const reqRes = await api.post("/cms/request-change", {
+            page: "homepage",
+            section: bannerCategory,
+            title: payload.title,
+            oldValue: {},
+            newValue: {
+              heading: payload.title,
+              title: payload.title,
+              subtitle: formData.subtitle || formData.caption || "",
+              description: formData.subtitle || formData.description || "",
+              bannerImage: bannerImage,
+              targetUrl: "",
+              ctaText: formData.ctaText || "",
+              bannerWidth: formData.bannerWidth || 1920,
+              bannerHeight: formData.bannerHeight || 600,
+              updatedAt: new Date().toISOString(),
+            },
+          });
+          if (reqRes.data?.success && reqRes.data?.data?._id) {
+            await api.post(`/cms/approve/${reqRes.data.data._id}`, {});
+          }
+        } catch (cmsErr) {
+          console.warn("CMS auto-publish sync error:", cmsErr);
+        }
+      }
+
       addNotification(
-        "Saved Successfully",
-        `Record updated in ${title}.`,
+        "Saved & Published Live",
+        `Banner updated and published live on homepage.`,
         "success",
       );
       setIsModalOpen(false);
@@ -988,6 +1067,43 @@ export const EnterpriseModulePage: React.FC<{
     }
   };
 
+  const handleDirectSave = async (savedData: any) => {
+    try {
+      const cityVal = savedData.city || savedData.address?.city || "";
+      let isVerifiedVal = false;
+      if (
+        savedData.isVerified === true ||
+        savedData.isVerified === "true" ||
+        savedData.isVerified === "Verified" ||
+        savedData.isVerified === "verified"
+      ) {
+        isVerifiedVal = true;
+      }
+
+      const payload = {
+        ...savedData,
+        isVerified: isVerifiedVal,
+        ...(cityVal
+          ? {
+            city: cityVal,
+            address: {
+              ...(savedData.address || {}),
+              city: cityVal,
+            },
+          }
+          : {}),
+        status: savedData.status || "approved",
+      };
+
+      const endpoint = `/admin/crud/${activeModule}${activeSubKey ? `?subKey=${activeSubKey}` : ""}`;
+      await api.post(endpoint, payload);
+      addNotification("Saved Successfully", "Record has been updated.", "success");
+      fetchModuleData();
+    } catch (err) {
+      addNotification("Save Error", getErrorMessage(err, "Failed to save record."), "error");
+    }
+  };
+
   // The sub-key decides which collection a record lives in (blogs/authors,
   // marketplace/orders …), so a delete has to carry it too.
   const crudDeletePath = (id: string) =>
@@ -995,9 +1111,22 @@ export const EnterpriseModulePage: React.FC<{
 
   const handleDelete = async (id: string) => {
     try {
+      const itemToDelete = data.find((x) => (x._id || x.id) === id);
       await api.delete(crudDeletePath(id));
-      addNotification("Deleted", "Record removed.", "info");
+
+      if (activeModule === "banner") {
+        const targetSec =
+          itemToDelete?.category || itemToDelete?.section || "hero_banner";
+        try {
+          await api.post(`/cms/reset-section/${targetSec}`, {});
+        } catch (cmsResetErr) {
+          console.warn("CMS reset error:", cmsResetErr);
+        }
+      }
+
+      addNotification("Deleted", "Record removed and reset.", "info");
       setData((prev) => prev.filter((x) => (x._id || x.id) !== id));
+      fetchModuleData();
     } catch (err) {
       addNotification(
         "Delete Failed",
@@ -1119,164 +1248,75 @@ export const EnterpriseModulePage: React.FC<{
     }
   };
 
+  const handleExportCSV = () => {
+    if (data.length === 0) return;
+    const cols = moduleConfig.columns;
+    const keys = cols.map((c) => c.key);
+    const headers = cols.map((c) => c.label).join(",");
+    const rows = data.map((row) =>
+      keys
+        .map((k) => `"${(row[k] !== undefined && row[k] !== null ? String(row[k]) : "").replace(/"/g, '""')}"`)
+        .join(","),
+    );
+    const csvContent =
+      "data:text/csv;charset=utf-8," + [headers, ...rows].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute(
+      "download",
+      `${title.toLowerCase().replace(/\s+/g, "_")}_export.csv`,
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
-    <div className="space-y-6 text-left max-w-7xl mx-auto pb-12">
+    <div className="space-y-6 text-left w-full">
       {/* Page Module Banner Header */}
-      <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[28px] shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-3 bg-[#0A4DA6]/10 rounded-2xl">
-            {moduleConfig.icon}
+      <EnterprisePageHeader
+        title={title}
+        subtitle="Enterprise administration, lifecycle controls, and status monitoring console."
+        icon={moduleConfig.icon}
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={handleExportCSV}
+              className="px-3.5 py-2 rounded-full border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900 text-gray-700 dark:text-gray-200 text-xs font-bold flex items-center gap-1.5 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            >
+              <Download size={14} /> Export CSV
+            </button>
+            <button
+              onClick={handlePrint}
+              className="px-3.5 py-2 rounded-full border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900 text-gray-700 dark:text-gray-200 text-xs font-bold flex items-center gap-1.5 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            >
+              <Printer size={14} /> Print
+            </button>
+            {!isReadOnlyFinance && (
+              <button
+                onClick={
+                  activeModule === "ashrams" || activeModule === "ashram"
+                    ? () => navigate("/admin/manage/ashrams/add")
+                    : handleCreateOpen
+                }
+                className="px-5 py-2.5 bg-[#0A4DA6] hover:bg-[#083b80] text-white rounded-full text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-[#0A4DA6]/25 cursor-pointer"
+              >
+                <Plus size={16} />{" "}
+                {activeModule === "banner"
+                  ? "Add New Banner"
+                  : `Add New ${formatTitle(activeModule).replace(/s$/, "")}`}
+              </button>
+            )}
           </div>
-          <div>
-            <h2 className="text-xl font-black text-[#0B192C] dark:text-white tracking-tight">
-              {title}
-            </h2>
-            <p className="text-xs text-gray-400 font-semibold mt-0.5">
-              Enterprise administration, lifecycle controls, and status
-              monitoring console.
-            </p>
-          </div>
-        </div>
+        }
+      />
 
-        <button
-          onClick={handleCreateOpen}
-          className="px-5 py-2.5 bg-[#0A4DA6] hover:bg-[#083b80] text-white rounded-full text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-[#0A4DA6]/25 cursor-pointer"
-        >
-          <Plus size={16} /> Add New Entry
-        </button>
-      </div>
 
-      {/* ── Banner Management: Real-Time BannerBoy Pending Approvals Console ── */}
-      {activeModule === "banner" && (
-        <div className="bg-white dark:bg-[#0B192C] border border-amber-200 dark:border-amber-900/50 p-6 rounded-[28px] shadow-sm space-y-4">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center">
-                <Sparkles size={20} />
-              </div>
-              <div>
-                <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white flex items-center gap-2">
-                  BannerBoy CMS Pending Approvals Queue
-                </h3>
-                <p className="text-xs text-gray-400">
-                  Review proposed banner edits submitted by BannerBoy.
-                </p>
-              </div>
-            </div>
-
-            <span className="px-3 py-1 bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 rounded-full text-xs font-black">
-              {pendingCmsRequests.length} Request
-              {pendingCmsRequests.length === 1 ? "" : "s"} Pending
-            </span>
-          </div>
-
-          {pendingCmsRequests.length === 0 ? (
-            <div className="py-6 text-center text-xs text-gray-400 font-medium">
-              No pending banner change requests found.
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {pendingCmsRequests.map((req) => (
-                <div
-                  key={req._id}
-                  className="p-4 bg-amber-50/40 dark:bg-slate-900/60 border border-amber-200/60 dark:border-slate-800 rounded-2xl space-y-3"
-                >
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-xs">
-                    <div className="space-y-0.5">
-                      <span className="font-extrabold text-sm text-[#0B192C] dark:text-white">
-                        {req.title}
-                      </span>
-                      <div className="text-[11px] text-gray-500 flex items-center gap-2">
-                        <span>
-                          Submitted by:{" "}
-                          <strong>{req.userId?.name || "BannerBoy"}</strong> (
-                          {req.userId?.email})
-                        </span>
-                        <span>•</span>
-                        <span>
-                          Section:{" "}
-                          <code className="font-bold text-amber-700 dark:text-amber-300">
-                            {req.section}
-                          </code>
-                        </span>
-                      </div>
-                    </div>
-
-                    <span className="text-[10px] text-gray-400 font-mono">
-                      {new Date(req.createdAt).toLocaleString()}
-                    </span>
-                  </div>
-
-                  {/* Side-by-Side Old vs New Preview */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                    <div className="p-3 bg-white dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl space-y-1">
-                      <span className="text-[10px] font-extrabold text-gray-400 tracking-wider block">
-                        Current Live Version (Old)
-                      </span>
-                      <RecordFieldList
-                        data={req.oldValue}
-                        emptyLabel="Default system content"
-                        className="text-[11px] text-gray-600 dark:text-gray-400 overflow-y-auto max-h-32"
-                      />
-                    </div>
-
-                    <div className="p-3 bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 rounded-xl space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-[10px] font-extrabold text-emerald-700 dark:text-emerald-300 tracking-wider block">
-                          Proposed BannerBoy Version (New)
-                        </span>
-                        {req.newValue?.bannerWidth && (
-                          <span className="px-2 py-0.5 bg-emerald-200 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-100 rounded text-[9px] font-mono font-bold">
-                            {req.newValue.bannerWidth} ×{" "}
-                            {req.newValue.bannerHeight} px (
-                            {req.newValue.bannerSizePreset || "Custom"})
-                          </span>
-                        )}
-                      </div>
-
-                      {req.newValue?.bannerImage && (
-                        <div className="w-full h-28 rounded-lg overflow-hidden border border-emerald-200 dark:border-emerald-800 bg-gray-100 dark:bg-slate-900">
-                          <img
-                            src={req.newValue.bannerImage}
-                            alt="Proposed Banner"
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      )}
-
-                      <RecordFieldList
-                        data={req.newValue}
-                        emptyLabel="No changes proposed"
-                        className="text-[11px] text-emerald-900 dark:text-emerald-200 overflow-y-auto max-h-32"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex justify-end items-center gap-3 pt-2">
-                    <button
-                      onClick={() => {
-                        setRejectionModalId(req._id);
-                        setRejectionReason("");
-                      }}
-                      className="px-4 py-2 bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 hover:bg-rose-200 rounded-full text-xs font-bold transition-colors cursor-pointer flex items-center gap-1"
-                    >
-                      <XCircle size={14} /> Reject & Request Changes
-                    </button>
-
-                    <button
-                      onClick={() => handleApproveCms(req._id)}
-                      className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full text-xs font-black shadow-md transition-all cursor-pointer flex items-center gap-1"
-                    >
-                      <ShieldCheck size={14} /> Approve & Publish Live
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Rejection Modal */}
       {rejectionModalId && (
@@ -1320,110 +1360,6 @@ export const EnterpriseModulePage: React.FC<{
         </div>
       )}
 
-      {/* All Ashram Owners Master Credentials Toolbar */}
-      {(activeModule === "owners" || activeSubKey === "owners") && (
-        <div className="bg-gradient-to-r from-amber-50/80 to-orange-50/80 dark:from-slate-900 dark:to-slate-900 border border-amber-200/80 dark:border-amber-900/40 p-5 rounded-[24px] shadow-sm mb-6 text-left space-y-4 animate-in fade-in">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-amber-500/15 text-amber-700 dark:text-amber-400 rounded-2xl border border-amber-500/20">
-                <Key size={22} />
-              </div>
-              <div>
-                <h4 className="text-sm font-black text-[#0B192C] dark:text-white flex items-center gap-2">
-                  Ashram Owner Account Directory
-                </h4>
-                <p className="text-xs font-bold text-gray-500 dark:text-gray-400">
-                  Passwords are securely hashed and are never displayed.{" "}
-                  <code className="bg-amber-100 dark:bg-amber-950 px-2 py-0.5 rounded text-amber-700 font-mono font-bold">
-                    Protected
-                  </code>
-                </p>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setIsCredentialsListOpen(!isCredentialsListOpen)}
-              className="px-4 py-2 bg-[#0A4DA6] hover:bg-blue-700 text-white rounded-full text-xs font-black shadow transition-all flex items-center gap-1.5 cursor-pointer"
-            >
-              <ShieldCheck size={14} />{" "}
-              {isCredentialsListOpen
-                ? "Hide Account Directory"
-                : "Show Account Directory"}
-            </button>
-          </div>
-
-          {/* Expandable Master Credentials Directory Table */}
-          {isCredentialsListOpen && (
-            <div className="pt-3 border-t border-amber-200/60 dark:border-slate-800 animate-in fade-in duration-200">
-              {/* overflow-x-auto matters as much as -y here: the credentials
-                  table has more columns than fit a phone, and without it the
-                  whole page scrolls sideways instead of just the table. */}
-              <div className="max-h-[320px] overflow-y-auto overflow-x-auto rounded-2xl border border-amber-200/50 dark:border-slate-800 bg-white dark:bg-[#0B192C] shadow-inner">
-                <table className="w-full min-w-[520px] text-left text-xs">
-                  <thead className="bg-amber-50/80 dark:bg-slate-900 border-b border-amber-100 dark:border-slate-800 text-[10px] font-black text-amber-800 dark:text-amber-400 sticky top-0 backdrop-blur-md">
-                    <tr>
-                      <th className="py-3 px-4">Ashram / Owner Name</th>
-                      <th className="py-3 px-4">Login Email Address</th>
-                      <th className="py-3 px-4">Password</th>
-                      <th className="py-3 px-4 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 dark:divide-slate-800 font-bold">
-                    {data.length === 0 ? (
-                      <tr>
-                        <td
-                          colSpan={4}
-                          className="py-6 text-center text-gray-400"
-                        >
-                          No owner accounts loaded.
-                        </td>
-                      </tr>
-                    ) : (
-                      data.map((item) => (
-                        <tr
-                          key={item._id || item.email}
-                          className="hover:bg-amber-50/40 dark:hover:bg-slate-900/50 transition-colors"
-                        >
-                          <td className="py-2.5 px-4 text-[#0B192C] dark:text-white flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                            {item.name || "Ashram Trustee"}
-                          </td>
-                          <td className="py-2.5 px-4 font-mono text-blue-600 dark:text-blue-400">
-                            {item.email}
-                          </td>
-                          <td className="py-2.5 px-4 font-mono text-amber-600 dark:text-amber-400">
-                            Protected
-                          </td>
-                          <td className="py-2.5 px-4 text-right">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                navigator.clipboard.writeText(
-                                  `Email: ${item.email}`,
-                                );
-                                addNotification(
-                                  "Email Copied",
-                                  `Copied login email for ${item.name || item.email}`,
-                                  "success",
-                                );
-                              }}
-                              className="px-3 py-1 bg-amber-100 text-amber-800 hover:bg-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:hover:bg-amber-900/60 rounded-full text-[10px] font-black cursor-pointer transition-colors"
-                            >
-                              Copy Email
-                            </button>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
       {/* Module Table Data */}
       {loadError && (
         <div className="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-bold text-rose-700">
@@ -1435,13 +1371,14 @@ export const EnterpriseModulePage: React.FC<{
         columns={moduleConfig.columns}
         data={data}
         loading={loading}
-        onSave={isReadOnlyFinance ? undefined : (item) => handleEditOpen(item)}
+        hideAddButton={true}
+        onSave={isReadOnlyFinance ? undefined : (item) => handleDirectSave(item)}
         onManage={
           activeModule === "local"
             ? (item) => {
-                setManagingItem(item);
-                setIsDrawerOpen(true);
-              }
+              setManagingItem(item);
+              setIsDrawerOpen(true);
+            }
             : undefined
         }
         onDelete={isReadOnlyFinance ? undefined : (id) => handleDelete(id)}
@@ -1483,22 +1420,22 @@ export const EnterpriseModulePage: React.FC<{
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <form
             onSubmit={handleSave}
-            className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-lg w-full rounded-[28px] p-6 space-y-5 text-left shadow-2xl animate-in zoom-in-95 duration-150"
+            className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-5xl w-full rounded-[28px] p-6 space-y-5 text-left shadow-2xl animate-in zoom-in-95 duration-150"
           >
             <div className="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-3">
-              <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white">
+              <h3 className="font-extrabold text-base sm:text-lg text-[#0B192C] dark:text-white">
                 {editingItem ? `Edit ${title}` : `Create ${title}`}
               </h3>
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-white rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <div className="space-y-4 max-h-[450px] overflow-y-auto pr-1 text-xs">
+            <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1 text-xs">
               {/* Universal Image Gallery & Upload Manager */}
               <ImageGalleryManager
                 coverImage={
@@ -1532,51 +1469,56 @@ export const EnterpriseModulePage: React.FC<{
                 label={`${title} Image & Gallery Manager`}
               />
 
-              {moduleConfig.fields.map((f) => (
-                <div key={f.name} className="space-y-1">
-                  <label className="font-bold text-gray-700 dark:text-gray-300">
-                    {f.label}{" "}
-                    {f.required && <span className="text-rose-500">*</span>}
-                  </label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                {moduleConfig.fields.map((f) => (
+                  <div
+                    key={f.name}
+                    className={`space-y-1 ${f.type === "textarea" ? "md:col-span-2" : ""}`}
+                  >
+                    <label className="font-bold text-gray-700 dark:text-gray-300">
+                      {f.label}{" "}
+                      {f.required && <span className="text-rose-500">*</span>}
+                    </label>
 
-                  {f.type === "select" ? (
-                    <select
-                      value={
-                        formData[f.name] || (f.options ? f.options[0] : "")
-                      }
-                      onChange={(e) =>
-                        setFormData({ ...formData, [f.name]: e.target.value })
-                      }
-                      className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold text-[#0A4DA6]"
-                    >
-                      {f.options?.map((opt) => (
-                        <option key={opt} value={opt}>
-                          {humanizeLabel(opt)}
-                        </option>
-                      ))}
-                    </select>
-                  ) : f.type === "textarea" ? (
-                    <textarea
-                      rows={3}
-                      value={formData[f.name] || ""}
-                      onChange={(e) =>
-                        setFormData({ ...formData, [f.name]: e.target.value })
-                      }
-                      className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:outline-none"
-                    />
-                  ) : (
-                    <input
-                      type={f.type}
-                      required={f.required}
-                      value={formData[f.name] || ""}
-                      onChange={(e) =>
-                        setFormData({ ...formData, [f.name]: e.target.value })
-                      }
-                      className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:outline-none"
-                    />
-                  )}
-                </div>
-              ))}
+                    {f.type === "select" ? (
+                      <select
+                        value={
+                          formData[f.name] || (f.options ? f.options[0] : "")
+                        }
+                        onChange={(e) =>
+                          setFormData({ ...formData, [f.name]: e.target.value })
+                        }
+                        className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold text-[#0A4DA6]"
+                      >
+                        {f.options?.map((opt) => (
+                          <option key={opt} value={opt}>
+                            {humanizeLabel(opt)}
+                          </option>
+                        ))}
+                      </select>
+                    ) : f.type === "textarea" ? (
+                      <textarea
+                        rows={3}
+                        value={formData[f.name] || ""}
+                        onChange={(e) =>
+                          setFormData({ ...formData, [f.name]: e.target.value })
+                        }
+                        className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:outline-none font-semibold text-gray-800 dark:text-white"
+                      />
+                    ) : (
+                      <input
+                        type={f.type}
+                        required={f.required}
+                        value={formData[f.name] || ""}
+                        onChange={(e) =>
+                          setFormData({ ...formData, [f.name]: e.target.value })
+                        }
+                        className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:outline-none font-semibold text-gray-800 dark:text-white"
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div className="flex gap-3 pt-3 border-t border-gray-100 dark:border-slate-800">

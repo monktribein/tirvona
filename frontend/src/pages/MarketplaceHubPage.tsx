@@ -28,6 +28,7 @@ interface Product {
   price?: number;
   salePrice?: number;
   stock?: number;
+  status?: string;
   templeSource?: string;
   weight?: string;
   images?: string[];
@@ -70,7 +71,10 @@ const ProductCard: React.FC<{
   onAdd: (product: Product) => void;
 }> = ({ product, onOpen, onAdd }) => {
   const discount = discountOf(product);
-  const outOfStock = product.stock !== undefined && product.stock <= 0;
+  const outOfStock =
+    product.status === "out_of_stock" ||
+    (product.stock !== undefined && Number(product.stock) <= 0) ||
+    ((product as any).stockCount !== undefined && Number((product as any).stockCount) <= 0);
   return (
     <button
       type="button"
@@ -87,11 +91,15 @@ const ProductCard: React.FC<{
             (e.currentTarget as HTMLImageElement).src = FALLBACK_IMAGE;
           }}
         />
-        {discount > 0 && (
+        {outOfStock ? (
+          <span className="absolute top-2 left-2 px-2.5 py-0.5 rounded-full bg-red-600 text-white text-[10px] font-black uppercase tracking-wider shadow-md">
+            Out of stock
+          </span>
+        ) : discount > 0 ? (
           <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-black">
             {discount}% off
           </span>
-        )}
+        ) : null}
         {product.rating ? (
           <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-black/70 text-white text-[10px] font-black flex items-center gap-1">
             <Star size={9} className="fill-[#E58C28] text-[#E58C28]" />
@@ -147,11 +155,10 @@ const ProductCard: React.FC<{
               if (!outOfStock) onAdd(product);
             }
           }}
-          className={`mt-2 w-full py-2 rounded-full text-[11px] font-extrabold flex items-center justify-center gap-1.5 transition-all ${
-            outOfStock
-              ? "bg-gray-100 dark:bg-slate-800 text-gray-400 cursor-not-allowed"
-              : "bg-[#0A4DA6] hover:bg-blue-900 text-white cursor-pointer"
-          }`}
+          className={`mt-2 w-full py-2 rounded-full text-[11px] font-extrabold flex items-center justify-center gap-1.5 transition-all ${outOfStock
+            ? "bg-gray-100 dark:bg-slate-800 text-gray-400 cursor-not-allowed"
+            : "bg-[#0A4DA6] hover:bg-blue-900 text-white cursor-pointer"
+            }`}
         >
           <ShoppingBag size={12} />
           {outOfStock ? "Out of stock" : "Add to cart"}
@@ -354,6 +361,21 @@ const ProductModal: React.FC<{
 export const MarketplaceHubPage: React.FC = () => {
   const navigate = useNavigate();
 
+  const [cmsBanner, setCmsBanner] = useState<string>("");
+
+  useEffect(() => {
+    const fetchCms = async () => {
+      try {
+        const res = await api.get("/cms/published");
+        if (res.data?.success) {
+          setCmsBanner(res.data.data?.marketplace_banner?.bannerImage || "");
+        }
+      } catch (err) {
+        console.warn("CMS load error:", err);
+      }
+    };
+    fetchCms();
+  }, []);
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [total, setTotal] = useState(0);
@@ -602,11 +624,13 @@ export const MarketplaceHubPage: React.FC = () => {
               </>
             ) : (
               <>
-                <img
-                  src="/banner/coming soon/marketplace.png"
-                  alt="Marketplace coming soon"
-                  className="w-full max-w-2xl mx-auto h-auto max-h-[420px] object-contain drop-shadow-md"
-                />
+                {cmsBanner ? (
+                  <img
+                    src={cmsBanner}
+                    alt="Marketplace banner"
+                    className="w-full max-w-2xl mx-auto h-auto max-h-[420px] object-contain drop-shadow-md rounded-2xl"
+                  />
+                ) : null}
                 <div className="flex flex-wrap items-center justify-center gap-4">
                   <button
                     onClick={() => navigate("/")}

@@ -129,18 +129,13 @@ export const MarketplaceCategoriesPage: React.FC = () => {
                 <div>
                   {/* Category Thumbnail */}
                   <div className="relative aspect-video bg-black overflow-hidden">
-                    <img
-                      src={
-                        cat.coverImage ||
-                        cat.thumbnail ||
-                        "/banner/ashram_rishikesh.png"
-                      }
-                      alt={cat.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90"
-                      onError={(e: any) => {
-                        e.target.src = "/banner/ashram_rishikesh.png";
-                      }}
-                    />
+                    {cat.coverImage || cat.thumbnail ? (
+                      <img
+                        src={cat.coverImage || cat.thumbnail}
+                        alt={cat.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90"
+                      />
+                    ) : null}
                     <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-[#0A4DA6] text-white text-[10px] font-black shadow-lg">
                       {cat.trendingBadge || "POPULAR"}
                     </span>

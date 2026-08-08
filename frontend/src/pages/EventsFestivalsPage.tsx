@@ -1,9 +1,30 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Sparkles, ArrowRight, Home } from "lucide-react";
+import api from "../lib/api";
 
 export const EventsFestivalsPage: React.FC = () => {
   const navigate = useNavigate();
+  const [bannerImage, setBannerImage] = useState<string>("");
+
+  useEffect(() => {
+    const fetchCms = async () => {
+      try {
+        const res = await api.get("/cms/published");
+        if (res.data?.success) {
+          const cms = res.data.data || {};
+          const img =
+            cms.festival_banner?.bannerImage ||
+            cms.events_banner?.bannerImage ||
+            "";
+          setBannerImage(img);
+        }
+      } catch (err) {
+        console.warn("Failed to fetch CMS banner:", err);
+      }
+    };
+    fetchCms();
+  }, []);
 
   return (
     <div className="min-h-screen pb-16">
@@ -31,13 +52,15 @@ export const EventsFestivalsPage: React.FC = () => {
 
       {/* Feature Showcase Banner */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 mt-4 space-y-8">
-        <div className="flex justify-center">
-          <img
-            src="/banner/coming soon/marketplace.png"
-            alt="Events & Festivals Coming Soon"
-            className="w-full h-auto max-h-[500px] object-contain drop-shadow-md"
-          />
-        </div>
+        {bannerImage ? (
+          <div className="flex justify-center">
+            <img
+              src={bannerImage}
+              alt="Events & Festivals Banner"
+              className="w-full h-auto max-h-[500px] object-contain drop-shadow-md rounded-2xl"
+            />
+          </div>
+        ) : null}
 
         {/* Action Buttons */}
         <div className="flex flex-wrap items-center justify-center gap-4 pt-2">

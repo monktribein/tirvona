@@ -237,7 +237,7 @@ export const RefundPoliciesPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 text-left">
+    <div className="space-y-6 text-left w-full">
       <EnterprisePageHeader
         title="Refund policies"
         subtitle="Global, module and property rules that price every refund"
@@ -434,7 +434,7 @@ export const RefundPoliciesPage: React.FC = () => {
         title={draft?._id ? "Edit refund policy" : "New refund policy"}
         subtitle="Rules are applied at the moment a refund is raised"
         icon={<ScrollText size={18} />}
-        maxWidth="2xl"
+        maxWidth="5xl"
         footer={
           <div className="flex justify-end gap-2">
             <EnterpriseButton variant="ghost" onClick={() => setDraft(null)}>

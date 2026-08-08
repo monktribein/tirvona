@@ -178,14 +178,14 @@ export const VolunteerHubPage: React.FC = () => {
     }
   }, [autoFill]);
 
-  const cities = [
-    "all",
-    "Rishikesh",
-    "Haridwar",
-    "Varanasi",
-    "Vrindavan",
-    "Ayodhya",
-  ];
+  const cities = React.useMemo(() => {
+    const set = new Set<string>();
+    jobs.forEach((j: any) => {
+      const city = j.location?.city || j.city;
+      if (city) set.add(city);
+    });
+    return ["all", ...Array.from(set)];
+  }, [jobs]);
 
   const types = [
     { id: "all", label: "All Openings", icon: <Sparkles size={14} /> },

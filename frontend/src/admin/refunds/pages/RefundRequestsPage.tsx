@@ -241,7 +241,7 @@ export const RefundRequestsPage: React.FC = () => {
   const counts = summary?.counts ?? {};
 
   return (
-    <div className="space-y-6 text-left">
+    <div className="space-y-6 text-left w-full">
       <EnterprisePageHeader
         title="Refund requests"
         subtitle="Review, approve and settle refunds across every module"

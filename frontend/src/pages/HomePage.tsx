@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import api from "../lib/api";
@@ -8,9 +8,8 @@ import { formatCurrency } from "../utils/format";
 import { CouponVoucherCard } from "../components/CouponVoucherCard";
 import { DatePicker } from "../components/DatePicker";
 import { GuestRoomSelector } from "../components/shared/GuestRoomSelector";
-import { useBookingSearch } from "../contexts/BookingSearchContext";
+import { useBookingSearch, getTodayYMD, getTomorrowYMD } from "../contexts/BookingSearchContext";
 import { useAutoScroll } from "../hooks/useAutoScroll";
-import heroBg from "../assets/rishikesh-tera-manzil-temple.jpg";
 import {
   Search,
   MapPin,
@@ -39,21 +38,18 @@ import {
 export const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const { searchState, updateBookingSearch, totalGuests } = useBookingSearch();
-  const [destination, setDestination] = useState(searchState.destination || "");
+  const [destination, setDestination] = useState("");
   const [stayType, setStayType] = useState("");
   const [checkIn, setCheckIn] = useState(searchState.checkIn || "");
   const [checkOut, setCheckOut] = useState(searchState.checkOut || "");
-
-  useEffect(() => {
-    setDestination(searchState.destination || "");
-    setCheckIn(searchState.checkIn || "");
-    setCheckOut(searchState.checkOut || "");
-  }, [searchState.destination, searchState.checkIn, searchState.checkOut]);
 
   const [ashrams, setAshrams] = useState<any[]>([]);
   const [offers, setOffers] = useState<any[]>([]);
   const [feedbacks, setFeedbacks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [homePosts, setHomePosts] = useState<any[]>([]);
+  const [marketplaceCategories, setMarketplaceCategories] = useState<any[]>([]);
+  const [marketplaceProducts, setMarketplaceProducts] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<
     "top_rated" | "most_booked" | "recent" | "govt_recom"
   >("top_rated");
@@ -144,41 +140,23 @@ export const HomePage: React.FC = () => {
     }
   };
 
-  // Continuous silky smooth 60 FPS auto-scroll for all carousels (Destinations, Prasad, Accommodations, Feedback)
+  // Continuous silky smooth 60 FPS auto-scroll for all carousels (Destinations, Prasad, Accommodations, Offers, Blogs, Feedback)
   useEffect(() => {
-    // Infinite auto-scrolling marquee for every horizontal card row.
-    // - seamless loop (items are duplicated; we wrap by one copy's width)
-    // - pauses on hover
-    // - manual mouse drag / native touch swipe while paused
-    // - resumes smoothly from wherever the user left it
     const rows = [
       carouselRef.current,
       prashadRef.current,
       featuredRef.current,
-      feedbackRef.current,
+      offersRef.current,
       blogRef.current,
+      feedbackRef.current,
     ].filter(Boolean) as HTMLDivElement[];
     if (rows.length === 0) return;
-
-    // Pixels per SECOND, not per frame. The old constant was per-frame, so the
-    // marquee ran at double speed on a 120Hz display and visibly hitched
-    // whenever a frame came late — the motion was tied to how often rAF fired
-    // rather than to elapsed time.
     const SPEED = 36;
 
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
     type RowState = {
       pos: number;
-      /**
-       * Width of ONE copy of the duplicated items, including the gap that
-       * follows the last card.
-       *
-       * Not `scrollWidth / 2`: with `gap-6` between N doubled cards the track
-       * holds 2N-1 gaps, so half the scroll width lands half a gap short of the
-       * seam and every wrap jumped ~12px sideways. Measuring to the offset of
-       * the first card of the second copy is exact, whatever the gap.
-       */
       period: number;
       visible: boolean;
       hovered: boolean;
@@ -192,16 +170,6 @@ export const HomePage: React.FC = () => {
     const disposers: Array<() => void> = [];
 
     rows.forEach((c) => {
-      // index.css applies `scroll-behavior: smooth` to `*`. Under that rule the
-      // `c.scrollLeft = pos` write at the bottom of step() does not move the box
-      // directly — it starts an ANIMATED scroll towards `pos`. Doing that ~60
-      // times a second means each new animation pre-empts the one before it, so
-      // they cancel out and the row sits almost still. This is why these
-      // carousels looked like the marquee simply was not running.
-      // Force instant scrolling for the lifetime of the effect, and restore
-      // whatever was there on cleanup. The arrow buttons keep animating because
-      // scrollBy({ behavior: 'smooth' }) passes it explicitly, and the argument
-      // beats the CSS property.
       const previousScrollBehavior = c.style.scrollBehavior;
       c.style.scrollBehavior = "auto";
       disposers.push(() => {
@@ -220,18 +188,12 @@ export const HomePage: React.FC = () => {
         startScroll: 0,
       };
       st.set(c, s);
-
-      // Measured on resize and on content change only — never inside the frame
-      // loop. Reading scrollWidth/offsetLeft forces synchronous layout, and
-      // doing that for five rows on every frame interleaves reads with the
-      // scrollLeft writes below into classic layout thrash, which is what made
-      // the motion judder.
       const measure = () => {
         const kids = c.children;
         s.period =
           kids.length >= 2 && kids.length % 2 === 0
             ? (kids[kids.length / 2] as HTMLElement).offsetLeft -
-              (kids[0] as HTMLElement).offsetLeft
+            (kids[0] as HTMLElement).offsetLeft
             : 0;
       };
 
@@ -366,11 +328,15 @@ export const HomePage: React.FC = () => {
       cancelAnimationFrame(animationFrameId);
       disposers.forEach((d) => d());
     };
-  }, [loading, feedbacks.length]);
-
-  const [homePosts, setHomePosts] = useState<any[]>([]);
-  const [marketplaceCategories, setMarketplaceCategories] = useState<any[]>([]);
-  const [marketplaceProducts, setMarketplaceProducts] = useState<any[]>([]);
+  }, [
+    loading,
+    feedbacks.length,
+    offers.length,
+    homePosts.length,
+    ashrams.length,
+    marketplaceProducts.length,
+    marketplaceCategories.length,
+  ]);
 
   // Products when they exist, category tiles as the stand-in until they do.
   const prasadItems =
@@ -421,7 +387,7 @@ export const HomePage: React.FC = () => {
           coverImage: bp.coverImage,
           category: bp.category || "Spiritual Guide",
           createdAt: bp.createdAt,
-          views: bp.views || 3820,
+          views: bp.views || 0,
           readingTime: bp.readingTime || "6 min read",
           contentType: bp.contentType || "article",
           author: bp.authorId || {
@@ -441,7 +407,7 @@ export const HomePage: React.FC = () => {
         coverImage: va.featuredImage,
         category: va.category || "Pilgrim Story",
         createdAt: va.createdAt,
-        views: va.viewsCount || 1850,
+        views: va.viewsCount || 0,
         readingTime: "5 min read",
         isVerifiedStay: true,
         contentType: "article",
@@ -466,7 +432,7 @@ export const HomePage: React.FC = () => {
       if (res?.data?.success) {
         setMarketplaceCategories(res.data.data);
       }
-    } catch  {
+    } catch {
       // Silently ignore if marketplace categories endpoint is not active
     }
   };
@@ -513,71 +479,70 @@ export const HomePage: React.FC = () => {
     }
     const valueLower = val.toLowerCase();
     const matches: Set<string> = new Set();
-    ["Haridwar", "Rishikesh", "Vrindavan"].forEach((city) => {
-      if (city.toLowerCase().startsWith(valueLower)) matches.add(city);
-    });
-    ashrams.forEach((ashram) => {
-      if (ashram.name.toLowerCase().includes(valueLower))
+    ashrams.forEach((ashram: any) => {
+      const city = ashram.address?.city || ashram.address?.district;
+      if (city && city.toLowerCase().includes(valueLower)) {
+        matches.add(city);
+      }
+      if (ashram.name && ashram.name.toLowerCase().includes(valueLower)) {
         matches.add(ashram.name);
-    });
-    [
-      "Meditation Hall",
-      "River View",
-      "Cow Shelter",
-      "Yoga",
-      "Pure Vegetarian Food",
-    ].forEach((am) => {
-      if (am.toLowerCase().includes(valueLower)) matches.add(am);
+      }
+      if (Array.isArray(ashram.amenities)) {
+        ashram.amenities.forEach((am: string) => {
+          if (typeof am === "string" && am.toLowerCase().includes(valueLower)) {
+            matches.add(am);
+          }
+        });
+      }
     });
     setSuggestions(Array.from(matches).slice(0, 6));
     setShowSuggestions(true);
   };
-
-  // "What We Offer" cards. Extracted from three near-identical hardcoded blocks
-  // so the row can be mapped — and therefore duplicated, which the shared
-  // marquee needs in order to wrap seamlessly at scrollWidth/2.
   const serviceHighlights = [
     {
-      title: "Destinations",
-      href: "/destinations/planner",
-      cta: "Explore Destinations",
+      title: publishedCms.destinations_banner?.title || "Destinations",
+      href: "/circuits",
+      cta: publishedCms.destinations_banner?.ctaText || "Explore Holy Places",
       description:
+        publishedCms.destinations_banner?.description ||
+        publishedCms.destinations_banner?.subtitle ||
         "Explore sacred places, plan your trip and discover spiritual experiences.",
-      img: "https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=800&q=80",
-      imgFallback: "/banner/ashram_himalayas.png",
+      img: publishedCms.destinations_banner?.bannerImage || "",
       alt: "Sacred Destinations",
       overlay: "bg-gradient-to-t from-black/90 via-black/55 to-black/35",
       eyebrowClass: "text-[#E58C28]",
       descriptionClass: "text-gray-200",
-      ctaClass: "text-[#0B192C] hover:bg-[#0A4DA6] hover:text-white",
+      ctaClass: "bg-[#0A4DA6] text-white hover:bg-[#083D85]",
     },
     {
-      title: "Services",
-      href: "/local",
-      cta: "Explore Services",
+      title: publishedCms.parking_banner?.title || "Parking",
+      href: "/parking",
+      cta: publishedCms.parking_banner?.ctaText || "Explore Parking",
       description:
-        "Find verified services, guided tours, transport, food and more near you.",
-      img: "https://images.unsplash.com/photo-1606293926075-69a007f4e863?auto=format&fit=crop&w=800&q=80",
-      imgFallback: "/banner/ashram_rishikesh.png",
-      alt: "Spiritual Services",
+        publishedCms.parking_banner?.description ||
+        publishedCms.parking_banner?.subtitle ||
+        "Reserve hassle-free vehicle parking slots near ashrams, temples, and yatra circuits.",
+      img: publishedCms.parking_banner?.bannerImage || "",
+      alt: "Sacred Parking Facilities",
       overlay: "bg-gradient-to-t from-black/90 via-black/55 to-black/35",
       eyebrowClass: "text-[#E58C28]",
       descriptionClass: "text-gray-200",
-      ctaClass: "text-[#0B192C] hover:bg-[#0A4DA6] hover:text-white",
+      ctaClass: "bg-[#0A4DA6] text-white hover:bg-[#083D85]",
     },
     {
-      title: "Marketplace",
+      title: publishedCms.marketplace_banner?.title || "Marketplace",
       href: "/marketplace",
-      cta: "Visit Marketplace",
+      cta: publishedCms.marketplace_banner?.ctaText || "Visit Marketplace",
       description:
+        publishedCms.marketplace_banner?.description ||
+        publishedCms.marketplace_banner?.subtitle ||
         "Shop spiritual products, puja items, books, handicrafts and more.",
-      img: "https://images.unsplash.com/photo-1600618528240-fb9fc964b853?auto=format&fit=crop&w=800&q=80",
-      imgFallback: "/banner/prashadbanner.png",
+      img: publishedCms.marketplace_banner?.bannerImage || "",
       alt: "Spiritual Marketplace",
       overlay: "bg-gradient-to-t from-black/90 via-black/55 to-black/35",
       eyebrowClass: "text-[#E58C28]",
       descriptionClass: "text-gray-200",
-      ctaClass: "text-[#0B192C] hover:bg-[#0A4DA6] hover:text-white",
+      ctaClass: "bg-[#0A4DA6] text-white hover:bg-[#083D85]",
     },
   ];
 
@@ -610,155 +575,96 @@ export const HomePage: React.FC = () => {
     }
   };
 
-  // Destinations for carousel
-  const sacredDestinations = [
-    {
-      name: "Vrindavan",
-      state: "Uttar Pradesh",
-      rating: "4.9",
-      tours: "18 Ashrams",
-      img: "https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?auto=format&fit=crop&w=500&q=80",
-      fallback:
-        "https://images.unsplash.com/photo-1608958416801-9c60e3a6a908?auto=format&fit=crop&w=500&q=80",
-    },
-    {
-      name: "Mathura",
-      state: "Uttar Pradesh",
-      rating: "4.8",
-      tours: "15 Stays",
-      img: "https://images.unsplash.com/photo-1599420186946-7b6fb4e297f0?auto=format&fit=crop&w=500&q=80",
-      fallback:
-        "https://images.unsplash.com/photo-1608958416801-9c60e3a6a908?auto=format&fit=crop&w=500&q=80",
-    },
-    {
-      name: "Goverdhan",
-      state: "Uttar Pradesh",
-      rating: "4.8",
-      tours: "10 Stays",
-      img: "https://images.unsplash.com/photo-1609137144813-7d84b06385a7?auto=format&fit=crop&w=500&q=80",
-      fallback:
-        "https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?auto=format&fit=crop&w=500&q=80",
-    },
-    {
-      name: "Barsana",
-      state: "Uttar Pradesh",
-      rating: "4.8",
-      tours: "12 Stays",
-      img: "https://images.unsplash.com/photo-1598977123418-45f04b61582e?auto=format&fit=crop&w=500&q=80",
-      fallback:
-        "https://images.unsplash.com/photo-1608958416801-9c60e3a6a908?auto=format&fit=crop&w=500&q=80",
-    },
-    {
-      name: "Haridwar",
-      state: "Uttarakhand",
-      rating: "4.8",
-      tours: "15 Stays",
-      img: "https://images.unsplash.com/photo-1612438214708-f428a707dd4e?auto=format&fit=crop&w=500&q=80",
-      fallback:
-        "https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=500&q=80",
-    },
-    {
-      name: "Rishikesh",
-      state: "Uttarakhand",
-      rating: "4.9",
-      tours: "12 Stays",
-      img: "https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=500&q=80",
-      fallback:
-        "https://images.unsplash.com/photo-1598977123418-45f04b61582e?auto=format&fit=crop&w=500&q=80",
-    },
-    {
-      name: "Varanasi",
-      state: "Uttar Pradesh",
-      rating: "4.7",
-      tours: "20 Stays",
-      img: "https://images.unsplash.com/photo-1561361058-c24e36e56336?auto=format&fit=crop&w=500&q=80",
-      fallback:
-        "https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?auto=format&fit=crop&w=500&q=80",
-    },
-    {
-      name: "Kedarnath",
-      state: "Uttarakhand",
-      rating: "4.8",
-      tours: "08 Circuits",
-      img: "https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=500&q=80",
-      fallback:
-        "https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=500&q=80",
-    },
-    {
-      name: "Ayodhya",
-      state: "Uttar Pradesh",
-      rating: "4.7",
-      tours: "25 Stays",
-      img: "https://images.unsplash.com/photo-1609137144813-7d84b06385a7?auto=format&fit=crop&w=500&q=80",
-      fallback:
-        "https://images.unsplash.com/photo-1599420186946-7b6fb4e297f0?auto=format&fit=crop&w=500&q=80",
-    },
-    {
-      name: "Tirupati",
-      state: "Andhra Pradesh",
-      rating: "4.8",
-      tours: "14 Stays",
-      img: "https://images.unsplash.com/photo-1582555172866-f73bb12a2ab3?auto=format&fit=crop&w=500&q=80",
-      fallback:
-        "https://images.unsplash.com/photo-1506461883276-594a12b11db3?auto=format&fit=crop&w=500&q=85",
-    },
-    {
-      name: "Shirdi",
-      state: "Maharashtra",
-      rating: "4.6",
-      tours: "16 Stays",
-      img: "https://images.unsplash.com/photo-1566438480900-0609be27a4be?auto=format&fit=crop&w=500&q=80",
-      fallback:
-        "https://images.unsplash.com/photo-1617854818583-09e7f077a156?auto=format&fit=crop&w=500&q=80",
-    },
-    {
-      name: "Rameswaram",
-      state: "Tamil Nadu",
-      rating: "4.7",
-      tours: "10 Stays",
-      img: "https://images.unsplash.com/photo-1596402184320-417e7178b2cd?auto=format&fit=crop&w=500&q=80",
-      fallback:
-        "https://images.unsplash.com/photo-1612438214708-f428a707dd4e?auto=format&fit=crop&w=500&q=80",
-    },
-  ];
+  // Dynamically group database ashrams by destination city/location
+  const sacredDestinations = useMemo(() => {
+    if (!ashrams || ashrams.length === 0) return [];
 
-  // (demoFeedbacks removed — the Sacred Experiences band now renders real
-  // reviews only, and hides itself when there are none.)
+    const destMap = new Map<
+      string,
+      {
+        name: string;
+        state: string;
+        img: string;
+        count: number;
+        ratingSum: number;
+        ratingCount: number;
+      }
+    >();
 
-  const feedbackImages = [
-    "/banner/ashram_rishikesh.png",
-    "/banner/ashram_himalayas.png",
-    "/banner/ashram_varanasi.png",
-    "/banner/ashram_vrindavan.png",
-    "/banner/accomendation.png",
-    "/banner/popular.png",
-    "/banner/explore.png",
-    "/banner/Blogs.png",
-  ];
+    ashrams.forEach((a: any) => {
+      const city =
+        a.address?.city?.trim() ||
+        a.address?.district?.trim() ||
+        a.address?.state?.trim();
+      if (!city) return;
+
+      const key = city.toLowerCase();
+      const primaryImg =
+        (Array.isArray(a.images) &&
+          a.images.find(
+            (img: any) => typeof img === "string" && img.trim().length > 0,
+          )) ||
+        a.coverImage ||
+        a.thumbnail ||
+        a.img ||
+        "";
+
+      const ratingVal =
+        typeof a.rating === "number" ? a.rating : a.rating?.average || 0;
+
+      const existing = destMap.get(key);
+      if (!existing) {
+        destMap.set(key, {
+          name: city,
+          state: a.address?.state?.trim() || "",
+          img: primaryImg,
+          count: 1,
+          ratingSum: ratingVal,
+          ratingCount: ratingVal ? 1 : 0,
+        });
+      } else {
+        existing.count += 1;
+        if (!existing.img && primaryImg) {
+          existing.img = primaryImg;
+        }
+        if (ratingVal) {
+          existing.ratingSum += ratingVal;
+          existing.ratingCount += 1;
+        }
+      }
+    });
+
+    return Array.from(destMap.values()).map((d) => ({
+      name: d.name,
+      state: d.state,
+      rating: d.ratingCount > 0 ? (d.ratingSum / d.ratingCount).toFixed(1) : "4.8",
+      tours: `${d.count} ${d.count === 1 ? "Stay" : "Stays"}`,
+      img: d.img,
+    }));
+  }, [ashrams]);
 
   // Real reviews only. The section is hidden entirely when there are none
-  // rather than filled with sample testimonials — an invented quote attributed
-  // to a named pilgrim is not a placeholder, it is a fabricated endorsement.
+  // rather than filled with sample testimonials.
   const customerFeedbacks = feedbacks.map((r, i) => ({
     name: r.ashramId?.name || "Ashram stay",
     location: r.ashramId?.address
       ? [r.ashramId.address.city, r.ashramId.address.state]
-          .filter(Boolean)
-          .join(", ")
+        .filter(Boolean)
+        .join(", ")
       : "",
     reviewer: r.customerId?.name || "Guest",
     verifiedStay: Boolean(r.verifiedStay),
     rating: Math.max(1, Math.round(r.rating?.overall || 5)),
     ratingValue: (r.rating?.overall || 5).toFixed(1),
     comment: r.comment,
-    img: feedbackImages[i % feedbackImages.length],
+    img: r.ashramId?.images?.[0] || "",
   }));
 
   // Service icons strip aligned with Tirvona Theme & Routing
   const serviceIcons = [
     {
       id: "circuits",
-      label: "Pilgrimage Circuits",
+      label: "Pilgrimage",
       icon: MapPin,
       category: "circuits",
       target: "/pilgrimage-circuits",
@@ -825,29 +731,48 @@ export const HomePage: React.FC = () => {
   const publishedHero = publishedCms.hero_banner || {};
   const publishedFestival = publishedCms.festival_banner || {};
   const publishedOffer = publishedCms.offer_banner || {};
-  const activeHeroBg = publishedHero.bannerImage || heroBg;
+  /**
+   * Published banner values, with the bundled defaults as fallbacks.
+   *
+   * `activeHeroBg` used to be assigned `heroBg` outright, so an approved hero
+   * image never reached the page: the CMS published it, /cms/published served
+   * it, and the homepage rendered the bundled asset regardless. The heading,
+   * CTA and announcement were computed here and then never referenced in the
+   * JSX at all — which is why editing a banner in the admin panel appeared to
+   * do nothing.
+   */
+  const activeHeroBg = publishedHero.bannerImage || "";
+  // Split on the comma so an edited heading keeps the two-line treatment, with
+  // the second line in saffron, exactly as the static copy had it.
   const activeHeading =
     publishedHero.heading ||
+    publishedHero.title ||
     "Connecting Sacred Destinations, Empowering Communities.";
+  const [headingLead, ...headingRest] = String(activeHeading).split(/,\s*/);
+  const headingTail = headingRest.join(", ");
   const activeSubtitle =
     publishedHero.subtitle ||
     "Plan your pilgrimage, book stays, explore holy places, shop spiritual products and contribute to a greater cause.";
   const activeCtaText = publishedHero.ctaText || "Explore Sacred Stays";
   const activeAnnouncement =
-    publishedHero.announcement || publishedCms.announcement?.announcement || "";
+    publishedCms.announcement?.announcement ||
+    publishedCms.announcement?.text ||
+    "";
 
   return (
     <div className="pb-16 lg:pb-24 overflow-x-hidden">
       {/* ══════════════════════ HERO SECTION (Full Width with Rounded Bottom Corners) ══════════════════════ */}
-      <section className="relative pt-28 sm:pt-36 lg:pt-40 pb-40 sm:pb-52 lg:pb-60 min-h-[580px] sm:min-h-[640px] lg:min-h-[720px] flex items-center overflow-hidden rounded-b-[36px] sm:rounded-b-[48px] shadow-xl">
+      <section className="relative pt-28 sm:pt-36 lg:pt-40 pb-40 sm:pb-52 lg:pb-60 min-h-[580px] sm:min-h-[640px] lg:min-h-[720px] flex items-center overflow-hidden rounded-b-[36px] sm:rounded-b-[48px] shadow-xl bg-gradient-to-br from-[#0B192C] via-[#0D233E] to-[#0B192C]">
         {/* Background Image Container */}
         <div className="absolute inset-0 z-0">
-          <img
-            src={heroBg}
-            alt="Rishikesh Tera Manzil Temple"
-            className="w-full h-full object-cover object-[center_25%]"
-            loading="eager"
-          />
+          {activeHeroBg ? (
+            <img
+              src={activeHeroBg}
+              alt="Tirvona Hero Banner"
+              className="w-full h-full object-cover object-center"
+              loading="eager"
+            />
+          ) : null}
           {/* Subtle gradient overlay to enhance temple colors while ensuring sharp text contrast */}
           <div className="absolute inset-0 bg-gradient-to-r from-[#0B192C]/85 via-[#0B192C]/40 to-black/15 dark:from-[#070F1B]/95 dark:via-[#070F1B]/60 dark:to-transparent" />
         </div>
@@ -869,10 +794,15 @@ export const HomePage: React.FC = () => {
                 letterSpacing: "0.01em",
               }}
             >
-              <span className="block">Connecting Sacred Destinations,</span>
-              <span className="block text-[#E58C28] mt-1 sm:mt-1.5 font-bold">
-                Empowering Communities.
+              <span className="block">
+                {headingLead}
+                {headingTail ? "," : ""}
               </span>
+              {headingTail && (
+                <span className="block text-[#E58C28] mt-1 sm:mt-1.5 font-bold">
+                  {headingTail}
+                </span>
+              )}
             </motion.h1>
 
             {/* Body paragraph per requested specs: Satoshi 500 #6B6B6B / text-slate-200 */}
@@ -890,7 +820,40 @@ export const HomePage: React.FC = () => {
               {activeSubtitle}
             </motion.p>
 
+            {/* Both of these render only when the CMS supplies them, so an
+                unpublished banner adds nothing to the hero rather than showing
+                an empty button or an blank strip. */}
+            {activeAnnouncement && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.25, duration: 0.5 }}
+                className="mx-auto inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#E58C28]/20 border border-[#E58C28]/40 backdrop-blur-xs"
+              >
+                <Sparkles size={13} className="text-[#E58C28] shrink-0" />
+                <span className="text-xs font-bold text-white">
+                  {activeAnnouncement}
+                </span>
+              </motion.div>
+            )}
 
+            {activeCtaText && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.5 }}
+                className="flex justify-center pt-1"
+              >
+                <button
+                  type="button"
+                  onClick={() => navigate(publishedHero.targetUrl || "/search")}
+                  className="inline-flex items-center gap-2 px-7 py-3 rounded-full bg-[#0A4DA6] hover:bg-[#083b80] text-white text-sm font-extrabold shadow-lg transition-all cursor-pointer"
+                >
+                  {activeCtaText}
+                  <ArrowRight size={16} />
+                </button>
+              </motion.div>
+            )}
           </div>
         </div>
       </section>
@@ -927,11 +890,10 @@ export const HomePage: React.FC = () => {
                   key={tab.id}
                   onClick={() => setSearchTab(tab.id as any)}
                   whileTap={{ scale: 0.94 }}
-                  className={`relative flex items-center gap-2 px-3 sm:px-5 py-2.5 rounded-full text-xs font-bold cursor-pointer shrink-0 transition-colors duration-200 ${
-                    active
-                      ? "text-white"
-                      : "text-gray-600 dark:text-gray-300 hover:text-[#0A4DA6] dark:hover:text-white"
-                  }`}
+                  className={`relative flex items-center gap-2 px-3 sm:px-5 py-2.5 rounded-full text-xs font-bold cursor-pointer shrink-0 transition-colors duration-200 ${active
+                    ? "text-white"
+                    : "text-gray-600 dark:text-gray-300 hover:text-[#0A4DA6] dark:hover:text-white"
+                    }`}
                 >
                   {active && (
                     <motion.span
@@ -1023,7 +985,19 @@ export const HomePage: React.FC = () => {
                   <Calendar size={15} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <DatePicker value={checkIn} onChange={setCheckIn} />
+                  <DatePicker
+                    value={checkIn}
+                    onChange={(val) => {
+                      setCheckIn(val);
+                      updateBookingSearch({ checkIn: val });
+                      if (val && checkOut && checkOut <= val) {
+                        const nextOut = getTomorrowYMD(val);
+                        setCheckOut(nextOut);
+                        updateBookingSearch({ checkOut: nextOut });
+                      }
+                    }}
+                    placeholder="Add Date"
+                  />
                 </div>
               </div>
             </div>
@@ -1040,8 +1014,12 @@ export const HomePage: React.FC = () => {
                 <div className="min-w-0 flex-1">
                   <DatePicker
                     value={checkOut}
-                    onChange={setCheckOut}
+                    onChange={(val) => {
+                      setCheckOut(val);
+                      updateBookingSearch({ checkOut: val });
+                    }}
                     min={checkIn}
+                    placeholder="Add Date"
                     align="right"
                   />
                 </div>
@@ -1113,7 +1091,7 @@ export const HomePage: React.FC = () => {
         {/* Clean Text Header (No Background Wallpaper) */}
         <div className="text-center space-y-2 max-w-3xl mx-auto py-2">
           <p className="font-['Kalam'] text-base sm:text-4xl font-bold text-[#E58C28]">
-            Our Spiritual Services
+            Explore Tirvona
           </p>
           {/* Decorative Saffron Underline Divider */}
           <div className="flex items-center justify-center gap-2.5 my-1.5">
@@ -1125,22 +1103,16 @@ export const HomePage: React.FC = () => {
             <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
           </div>
           <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-xl mx-auto leading-relaxed">
-            Everything you need for a blessed journey — Verified stays, temple
-            tours, prasad, and sacred services.
+            Find verified ashram stays and authentic spiritual experiences with Tirvona.
           </p>
-          <button
+          {/* <button
             type="button"
             onClick={() => navigate("/search")}
             className="mt-2 inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-[#083b80] text-white text-xs font-extrabold shadow-md transition-all cursor-pointer"
           >
-            Explore All Services <ArrowRight size={14} />
-          </button>
+            Explore Tirvona <ArrowRight size={14} />
+          </button> */}
         </div>
-
-        {/* Service Cards: 1 col mobile, 2 col tablet, 3 col desktop */}
-        {/* Horizontal marquee carousel, matching the other featured sections.
-            Items are duplicated so the shared auto-scroll effect can wrap at
-            scrollWidth/2 for a seamless loop. */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-6 w-full pt-2 pb-6">
           {serviceHighlights.map((card, idx) => (
             <div
@@ -1149,16 +1121,14 @@ export const HomePage: React.FC = () => {
               style={{ height: "clamp(200px, 50vw, 260px)" }}
               onClick={() => navigate(card.href)}
             >
-              <img
-                src={card.img}
-                alt={card.alt}
-                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                loading="lazy"
-                onError={(e) => {
-                  e.currentTarget.onerror = null;
-                  e.currentTarget.src = card.imgFallback;
-                }}
-              />
+              {card.img ? (
+                <img
+                  src={card.img}
+                  alt={card.alt}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  loading="lazy"
+                />
+              ) : null}
               <div className={`absolute inset-0 ${card.overlay}`} />
               <div className="relative z-10 p-5 sm:p-6 h-full flex flex-col justify-between items-center text-center">
                 <div className="space-y-2 max-w-[90%] mx-auto flex flex-col items-center">
@@ -1177,7 +1147,7 @@ export const HomePage: React.FC = () => {
                   </p>
                 </div>
                 <button
-                  className={`self-center mx-auto px-6 py-2.5 min-h-[40px] bg-white font-extrabold text-xs rounded-full transition-all cursor-pointer shadow hover:scale-105 ${card.ctaClass}`}
+                  className={`self-center mx-auto px-6 py-2.5 min-h-[40px] font-extrabold text-xs rounded-full transition-all cursor-pointer shadow-md border border-white/20 ${card.ctaClass}`}
                   onClick={(e) => {
                     e.stopPropagation();
                     navigate(card.href);
@@ -1228,7 +1198,7 @@ export const HomePage: React.FC = () => {
         >
           {[...sacredDestinations, ...sacredDestinations].map((item, idx) => (
             <div
-              key={idx}
+              key={`${item.name}-${idx}`}
               onClick={() =>
                 navigate(
                   `/search?destination=${encodeURIComponent(item.name)}${checkIn ? `&checkIn=${checkIn}` : ""}${checkOut ? `&checkOut=${checkOut}` : ""}${totalGuests ? `&guests=${totalGuests}` : ""}`,
@@ -1244,16 +1214,14 @@ export const HomePage: React.FC = () => {
                   className="relative overflow-hidden bg-gray-100 dark:bg-slate-900"
                   style={{ height: "clamp(170px, 40vw, 190px)" }}
                 >
-                  <img
-                    src={item.img}
-                    alt={item.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    loading="lazy"
-                    onError={(e) => {
-                      e.currentTarget.onerror = null;
-                      e.currentTarget.src = item.fallback;
-                    }}
-                  />
+                  {item.img ? (
+                    <img
+                      src={item.img}
+                      alt={item.name}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  ) : null}
                 </div>
 
                 {/* Centered Bottom Info Area */}
@@ -1268,49 +1236,22 @@ export const HomePage: React.FC = () => {
               </div>
             </div>
           ))}
-
-          {/* View All Card at the End of Horizontal Scroll */}
-          <div
-            onClick={() => navigate("/search")}
-            className="flex-shrink-0 relative group cursor-pointer"
-            style={{ width: "clamp(200px, 48vw, 220px)" }}
-          >
-            <div className="w-full bg-[#0A4DA6] text-white rounded-3xl overflow-hidden border border-[#0A4DA6] shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between items-center p-6 text-center hover:-translate-y-1 h-full min-h-[266px]">
-              <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center my-auto">
-                <ArrowRight
-                  size={26}
-                  className="text-white group-hover:translate-x-1.5 transition-transform"
-                />
-              </div>
-              <div className="space-y-1 mb-2">
-                <h4 className="font-black text-lg text-white">View All</h4>
-                <p className="text-[11px] text-blue-100 font-medium">
-                  Explore All 50+ Sacred Destinations
-                </p>
-              </div>
-              <span className="px-5 py-2 rounded-full bg-white text-[#0A4DA6] font-black text-xs shadow-md">
-                Browse All →
-              </span>
-            </div>
-          </div>
         </div>
       </section>
 
       {/* ══════════════════════ UPCOMING ARDH KUMBH FESTIVAL BANNER (100% Full Width Edge-to-Edge Hero Banner) ══════════════════════ */}
-      <section className="relative w-full py-28 sm:py-36 lg:py-44 min-h-[540px] sm:min-h-[620px] lg:min-h-[700px] flex items-center justify-center overflow-hidden rounded-none shadow-2xl mb-14 lg:mb-24 group border-y border-white/10">
-        <img
-          src="/banner/upcominglogo.png"
-          alt="Upcoming Ardh Kumbh Festival"
-          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-          loading="lazy"
-          onError={(e) => {
-            e.currentTarget.onerror = null;
-            e.currentTarget.src =
-              "https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=1600&q=80";
-          }}
-        />
+      <section className="relative w-full aspect-[16/7] sm:aspect-[21/9] lg:aspect-[1920/540] min-h-[280px] sm:min-h-[360px] lg:min-h-[440px] flex items-center justify-center overflow-hidden rounded-none shadow-2xl mb-14 lg:mb-24">
+        {/* Published festival banner */}
+        {publishedFestival.bannerImage ? (
+          <img
+            src={publishedFestival.bannerImage}
+            alt={publishedFestival.heading || "Upcoming Ardh Kumbh Festival"}
+            className="absolute inset-0 w-full h-full object-cover"
+            loading="lazy"
+          />
+        ) : null}
         {/* Subtle gradient overlay for high contrast text readability */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0B192C]/90 via-[#0B192C]/65 to-black/40 dark:from-[#070F1B]/95 dark:via-[#070F1B]/70 dark:to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0B192C]/80 via-[#0B192C]/50 to-black/30 dark:from-[#070F1B]/90 dark:via-[#070F1B]/60 dark:to-transparent" />
 
         {/* Centered Hero Frame Banner Content Details */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full text-center flex flex-col items-center">
@@ -1348,7 +1289,9 @@ export const HomePage: React.FC = () => {
               transition={{ duration: 0.6 }}
               className="text-3xl sm:text-5xl lg:text-6xl font-black text-white drop-shadow-lg leading-tight"
             >
-              Upcoming Ardh Kumbh Festival
+              {publishedFestival.heading ||
+                publishedFestival.title ||
+                "Upcoming Ardh Kumbh Festival"}
             </motion.h2>
 
             <motion.p
@@ -1358,9 +1301,9 @@ export const HomePage: React.FC = () => {
               transition={{ delay: 0.2, duration: 0.5 }}
               className="text-[#E2E8F0] text-sm sm:text-base leading-relaxed max-w-2xl font-medium drop-shadow-md"
             >
-              Experience the divine spiritual gathering on the sacred banks of
-              Ganga in Haridwar. Secure your holy ashram stay today for peace
-              and divine blessings.
+              {publishedFestival.description ||
+                publishedFestival.subtitle ||
+                "Experience the divine spiritual gathering on the sacred banks of Ganga in Haridwar. Secure your holy ashram stay today for peace and divine blessings."}
             </motion.p>
 
             <motion.div
@@ -1431,7 +1374,7 @@ export const HomePage: React.FC = () => {
                 price: 799,
                 rating: 4.8,
                 images: [
-                  "https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?auto=format&fit=crop&w=500&q=80",
+                  "https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?auto=format&fit=crop&w=600&q=80",
                 ],
               },
               {
@@ -1441,7 +1384,7 @@ export const HomePage: React.FC = () => {
                 price: 899,
                 rating: 5.0,
                 images: [
-                  "https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=500&q=80",
+                  "https://images.unsplash.com/photo-1609840114035-3c981b782dfe?auto=format&fit=crop&w=600&q=80",
                 ],
               },
               {
@@ -1451,7 +1394,7 @@ export const HomePage: React.FC = () => {
                 price: 499,
                 rating: 4.9,
                 images: [
-                  "https://images.unsplash.com/photo-1561361058-c24e36e56336?auto=format&fit=crop&w=500&q=80",
+                  "https://images.unsplash.com/photo-1614082242765-7c98ca0f3df3?auto=format&fit=crop&w=600&q=80",
                 ],
               },
               {
@@ -1461,7 +1404,7 @@ export const HomePage: React.FC = () => {
                 price: 199,
                 rating: 4.9,
                 images: [
-                  "https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?auto=format&fit=crop&w=500&q=80",
+                  "https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=600&q=80",
                 ],
               },
             ];
@@ -1473,18 +1416,18 @@ export const HomePage: React.FC = () => {
                   ? marketplaceCategories
                   : defaultPrasadList;
 
-            return list;
+            return [...list, ...list];
           })().map((item: any, idx: number) => {
             const isProduct =
               !!item.price || Array.isArray(item.images) || item.salePrice;
+            const fallbackImg =
+              "https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?auto=format&fit=crop&w=600&q=80";
             const imgUrl = isProduct
-              ? item.images?.[0] ||
-                item.img ||
-                "https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?auto=format&fit=crop&w=500&q=80"
+              ? item.images?.[0] || item.img || fallbackImg
               : item.coverImage ||
-                item.thumbnail ||
-                item.img ||
-                "/banner/ashram_rishikesh.png";
+              item.thumbnail ||
+              item.img ||
+              fallbackImg;
             const name = item.name || item.title || "Sacred Prasad";
             const subtitle =
               item.templeSource ||
@@ -1493,6 +1436,14 @@ export const HomePage: React.FC = () => {
                 ? `${item.originCity}, ${item.originState}`
                 : "Sanctified Prasad");
             const rawPrice = item.price || item.salePrice || 199;
+            const isItemOutOfStock =
+              item.status === "out_of_stock" ||
+              (item.stock !== undefined && Number(item.stock) <= 0) ||
+              (item.stockCount !== undefined && Number(item.stockCount) <= 0);
+            const discountPct =
+              isProduct && item.price && item.salePrice && item.salePrice < item.price
+                ? Math.round(((item.price - item.salePrice) / item.price) * 100)
+                : 0;
 
             return (
               <div
@@ -1513,18 +1464,21 @@ export const HomePage: React.FC = () => {
                     <img
                       src={imgUrl}
                       alt={name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90"
+                      className="w-full h-full object-cover opacity-90"
                       loading="lazy"
                       onError={(e) => {
-                        e.currentTarget.onerror = null;
-                        e.currentTarget.src =
-                          "https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?auto=format&fit=crop&w=500&q=80";
+                        (e.currentTarget as HTMLImageElement).src = fallbackImg;
                       }}
                     />
-                    {/* Mandatory Out of Stock badge (NO offer or discount tags) */}
-                    <span className="absolute top-3 left-3 bg-red-600/90 backdrop-blur-md text-white text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-md tracking-wider">
-                      OUT OF STOCK
-                    </span>
+                    {isItemOutOfStock ? (
+                      <span className="absolute top-3 left-3 bg-red-600/90 backdrop-blur-md text-white text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-md tracking-wider">
+                        OUT OF STOCK
+                      </span>
+                    ) : discountPct > 0 ? (
+                      <span className="absolute top-3 left-3 bg-rose-500/90 backdrop-blur-md text-white text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-md tracking-wider">
+                        {discountPct}% OFF
+                      </span>
+                    ) : null}
 
                     {(item.rating || isProduct) && (
                       <span className="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-amber-400 text-[10px] font-black uppercase px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1">
@@ -1546,40 +1500,17 @@ export const HomePage: React.FC = () => {
                       <span className="font-black text-xs text-[#0B192C] dark:text-gray-300">
                         {formatCurrency(rawPrice)}
                       </span>
-                      <span className="text-[9px] font-extrabold text-red-500 uppercase bg-red-50 dark:bg-red-950/40 px-2 py-0.5 rounded-md border border-red-200/50 dark:border-red-900/30">
-                        Out of Stock
-                      </span>
+                      {isItemOutOfStock && (
+                        <span className="text-[9px] font-extrabold text-red-500 uppercase bg-red-50 dark:bg-red-950/40 px-2 py-0.5 rounded-md border border-red-200/50 dark:border-red-900/30">
+                          Out of Stock
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
               </div>
             );
           })}
-
-          {/* View All Card at the End of Horizontal Scroll */}
-          <div
-            onClick={() => navigate("/marketplace/categories")}
-            className="flex-shrink-0 relative group cursor-pointer"
-            style={{ width: "clamp(210px, 48vw, 230px)" }}
-          >
-            <div className="w-full bg-[#0A4DA6] text-white rounded-3xl overflow-hidden border border-[#0A4DA6] shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between items-center p-6 text-center hover:-translate-y-1 h-full min-h-[266px]">
-              <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center my-auto">
-                <ArrowRight
-                  size={26}
-                  className="text-white group-hover:translate-x-1.5 transition-transform"
-                />
-              </div>
-              <div className="space-y-1 mb-2">
-                <h4 className="font-black text-lg text-white">View All</h4>
-                <p className="text-[11px] text-blue-100 font-medium">
-                  Explore All 50+ Sacred Prashad & Categories
-                </p>
-              </div>
-              <span className="px-5 py-2 rounded-full bg-white text-[#0A4DA6] font-black text-xs shadow-md">
-                Browse All →
-              </span>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -1682,7 +1613,7 @@ export const HomePage: React.FC = () => {
                           "https://images.unsplash.com/photo-1590050752117-238cb0fb12b1?auto=format&fit=crop&w=500&q=80"
                         }
                         alt={ashram.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        className="w-full h-full object-cover"
                         loading="lazy"
                         onError={(e) => {
                           e.currentTarget.onerror = null;
@@ -1737,31 +1668,6 @@ export const HomePage: React.FC = () => {
                 </motion.div>
               ),
             )}
-
-            {/* View All Card at the End of Horizontal Scroll */}
-            <div
-              onClick={() => navigate("/search")}
-              className="flex-shrink-0 relative group cursor-pointer"
-              style={{ width: "clamp(200px, 48vw, 220px)" }}
-            >
-              <div className="w-full bg-[#0A4DA6] text-white rounded-3xl overflow-hidden border border-[#0A4DA6] shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between items-center p-6 text-center hover:-translate-y-1 h-full min-h-[266px]">
-                <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center my-auto">
-                  <ArrowRight
-                    size={26}
-                    className="text-white group-hover:translate-x-1.5 transition-transform"
-                  />
-                </div>
-                <div className="space-y-1 mb-2">
-                  <h4 className="font-black text-lg text-white">View All</h4>
-                  <p className="text-[11px] text-blue-100 font-medium">
-                    Explore All 100+ Verified Stays & Ashrams
-                  </p>
-                </div>
-                <span className="px-5 py-2 rounded-full bg-white text-[#0A4DA6] font-black text-xs shadow-md">
-                  Browse All →
-                </span>
-              </div>
-            </div>
           </div>
         )}
       </section>
@@ -1771,7 +1677,7 @@ export const HomePage: React.FC = () => {
         {/* Clean Text Header (No Background Wallpaper) */}
         <div className="text-center space-y-2 max-w-3xl mx-auto py-2">
           <p className="font-['Kalam'] text-base sm:text-4xl font-bold text-[#E58C28]">
-            Exclusive Offers
+            {publishedOffer.heading || publishedOffer.title || "Exclusive Offers"}
           </p>
           {/* Decorative Saffron Underline Divider */}
           <div className="flex items-center justify-center gap-2.5 my-1.5">
@@ -1783,8 +1689,9 @@ export const HomePage: React.FC = () => {
             <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
           </div>
           <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-xl mx-auto leading-relaxed">
-            Exclusive discounts, promo vouchers, and festival packages for your
-            sacred retreat.
+            {publishedOffer.description ||
+              publishedOffer.subtitle ||
+              "Exclusive discounts, promo vouchers, and festival packages for your sacred retreat."}
           </p>
           <button
             type="button"
@@ -1811,7 +1718,7 @@ export const HomePage: React.FC = () => {
                 description:
                   "Experience the holy Kumbh Mela 2026 with 20% OFF accommodation & VIP pass.",
                 promoCode: "KUMBH2026",
-                image: "/banner/upcominglogo.png",
+                image: "",
                 ashramId: {
                   address: { city: "Prayagraj" },
                   name: "Shantikunj Gayatri Pariwar",
@@ -1827,7 +1734,7 @@ export const HomePage: React.FC = () => {
                 description:
                   "Recharge your mind & soul with our weekend spiritual retreat package in Haridwar.",
                 promoCode: "WEEKEND500",
-                image: "/banner/ashram_rishikesh.png",
+                image: "",
                 ashramId: {
                   address: { city: "Haridwar" },
                   name: "Prem Nagar Ashram",
@@ -1841,7 +1748,7 @@ export const HomePage: React.FC = () => {
                 description:
                   "Get 15% instant savings on top verified ashrams across Kashi & Haridwar.",
                 promoCode: "FESTIVAL2026",
-                image: "/banner/ashram_varanasi.png",
+                image: "",
                 ashramId: {
                   address: { city: "Varanasi" },
                   name: "Kashi Vishwanath Ashram",
@@ -1855,7 +1762,7 @@ export const HomePage: React.FC = () => {
                 description:
                   "Exclusive 25% discount on serene dharamshala stays in holy Vrindavan.",
                 promoCode: "VRINDAVAN25",
-                image: "/banner/ashram_vrindavan.png",
+                image: "",
                 ashramId: {
                   address: { city: "Vrindavan" },
                   name: "Bhagwat Dham Ashram",
@@ -1863,19 +1770,14 @@ export const HomePage: React.FC = () => {
               },
             ];
 
-            return offers.length > 0 ? offers : defaultList;
+            const list = offers.length > 0 ? offers : defaultList;
+            return [...list, ...list];
           })().map((offer: any, idx: number) => {
-            const offerImages = [
-              "/banner/upcominglogo.png",
-              "/banner/ashram_rishikesh.png",
-              "/banner/ashram_varanasi.png",
-              "/banner/ashram_vrindavan.png",
-            ];
             const cardImg =
               offer.bannerImage ||
               offer.thumbnailImage ||
               offer.image ||
-              offerImages[idx % offerImages.length];
+              "";
             const cardTitle =
               offer.offerTitle || offer.title || "Special Ashram Offer";
             const cardDesc =
@@ -2077,25 +1979,23 @@ export const HomePage: React.FC = () => {
             className="flex gap-4 sm:gap-6 overflow-x-auto pb-6 pt-2 scrollbar-none -mx-4 sm:mx-0 px-4 sm:px-0 justify-start"
             style={{ scrollbarWidth: "none" }}
           >
-            {customerFeedbacks.map((fb, idx) => (
+            {[...customerFeedbacks, ...customerFeedbacks].map((fb, idx) => (
               <div
-                key={idx}
+                key={`${fb.reviewer || "fb"}-${idx}`}
                 className="flex-shrink-0 relative group cursor-pointer"
                 style={{ width: "clamp(240px, 50vw, 280px)" }}
               >
                 {/* Rounded Image Card Container (Matching Reference Screenshot Aspect & Border Radius) */}
                 <div className="w-full bg-white dark:bg-[#0B192C] rounded-[28px] overflow-hidden border border-gray-100 dark:border-slate-800 shadow-md hover:shadow-2xl transition-all duration-500 flex flex-col hover:-translate-y-1.5 h-[340px] sm:h-[380px] relative">
                   {/* Full Height Background Image */}
-                  <img
-                    src={fb.img}
-                    alt={fb.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                    loading="lazy"
-                    onError={(e) => {
-                      e.currentTarget.onerror = null;
-                      e.currentTarget.src = "/banner/ashram_rishikesh.png";
-                    }}
-                  />
+                  {fb.img ? (
+                    <img
+                      src={fb.img}
+                      alt={fb.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                      loading="lazy"
+                    />
+                  ) : null}
 
                   {/* Dark Gradient Overlay for Text Readability */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />

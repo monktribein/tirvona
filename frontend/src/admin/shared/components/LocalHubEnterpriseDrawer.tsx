@@ -91,8 +91,7 @@ export const LocalHubEnterpriseDrawer: React.FC<
         address: "",
         latitude: 25.3176,
         longitude: 82.9739,
-        image:
-          "https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=600&q=80",
+        image: "",
         gallery: [],
         price: "₹400 / transfer",
         discount: 0,
@@ -130,7 +129,7 @@ export const LocalHubEnterpriseDrawer: React.FC<
         image:
           formData.image ||
           (Array.isArray(formData.gallery) && formData.gallery[0]) ||
-          "https://images.unsplash.com/photo-1545205597-3d9d02c29597?auto=format&fit=crop&w=600&q=80",
+          "",
       };
       await onSave(payload);
       addNotification(

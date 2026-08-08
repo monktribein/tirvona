@@ -109,7 +109,7 @@ export const InventoryCalendarPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 text-left">
+    <div className="space-y-6 text-left w-full">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[24px] shadow-sm gap-4">
         <div>
           <h2 className="text-base font-extrabold text-[#0B192C] dark:text-white">

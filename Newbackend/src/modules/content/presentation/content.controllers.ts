@@ -48,12 +48,12 @@ export class CmsController {
     return this.content.published();
   }
   @Post("request-change")
-  @Roles("banner_manager", "content_manager", "super_admin", "owner", "manager")
+  @Roles("content_manager", "super_admin", "owner", "manager")
   submit(@CurrentUser() user: AuthenticatedUser, @Body() dto: CmsChangeDto) {
     return this.content.submitChange(user, dto);
   }
   @Get("my-requests")
-  @Roles("banner_manager", "content_manager", "super_admin", "owner", "manager")
+  @Roles("content_manager", "super_admin", "owner", "manager")
   mine(@CurrentUser() user: AuthenticatedUser) {
     return this.content.cmsRequests({ userId: user.id });
   }
@@ -80,7 +80,7 @@ export class CmsController {
     return this.content.publish(id, user, false, dto.reason);
   }
   @Delete("request/:id")
-  @Roles("banner_manager", "content_manager", "super_admin", "owner", "manager")
+  @Roles("content_manager", "super_admin", "owner", "manager")
   remove(@Param("id") id: string, @CurrentUser() user: AuthenticatedUser) {
     return this.content.deleteRequest(id, user);
   }

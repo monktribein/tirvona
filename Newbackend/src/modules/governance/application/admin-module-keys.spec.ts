@@ -98,7 +98,6 @@ const SIDEBAR: [string, string | undefined][] = [
   ["rooms", "inventory"],
   ["rooms", "pricing"],
   ["rooms", "season-pricing"],
-  ["users", "banner-managers"],
   ["users", "content-managers"],
   ["users", "owners"],
   ["users", "pilgrims"],
@@ -201,8 +200,8 @@ describe("admin console module resolution", () => {
 
   it("narrows a module view but never re-filters a redirected collection", () => {
     const narrowed: Record<string, any> = {};
-    service.applyAdminSubKeyFilter("users", "banner-managers", narrowed);
-    expect(narrowed).toEqual({ role: "banner_manager" });
+    service.applyAdminSubKeyFilter("users", "content-managers", narrowed);
+    expect(narrowed).toEqual({ role: "content_manager" });
 
     const redirected: Record<string, any> = {};
     service.applyAdminSubKeyFilter("reports", "bookings", redirected);

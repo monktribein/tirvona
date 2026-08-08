@@ -53,7 +53,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   value,
   onChange,
   min,
-  placeholder = "dd-mm-yyyy",
+  placeholder = "Add Date",
   align = "left",
 }) => {
   const [open, setOpen] = useState(false);

@@ -67,7 +67,7 @@ export const HousekeepingPage: React.FC = () => {
   );
 
   return (
-    <div className="space-y-6 text-left">
+    <div className="space-y-6 text-left w-full">
       <div className="flex justify-between items-start sm:items-center gap-3 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-4 sm:p-6 rounded-[24px] shadow-sm">
         <div className="min-w-0">
           <h2 className="text-base font-extrabold text-[#0B192C] dark:text-white">

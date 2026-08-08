@@ -443,7 +443,7 @@ export class CommunityService {
   async publicArticles(query: Record<string, string>): Promise<any> {
     const filter: Record<string, any> = {
       status: "approved",
-      ...(query.category && query.category !== "all"
+      ...(query.category && query.category.toLowerCase() !== "all"
         ? { category: query.category }
         : {}),
       ...(query.ashramId ? { ashramId: query.ashramId } : {}),
