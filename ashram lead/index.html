@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tirvona – Ashram Lead Field Verification System</title>
+  <meta name="description" content="Tirvona Ashram Onboarding: Field Lead Verification & Admin Approval System">
+
+  <!-- Inter Font Family (Primary Font) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Lenis Inertial Smooth Scroll Library -->
+  <script src="https://unpkg.com/lenis@1.1.18/dist/lenis.min.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/lenis@1.1.18/dist/lenis.css">
+
+  <!-- Tailwind CDN configured with Inter font -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', '"Plus Jakarta Sans"', 'system-ui', '-apple-system', 'sans-serif'],
+          },
+          colors: {
+            primary:   '#0A4DA6',
+            secondary: '#0B192C',
+            accent:    '#E58C28',
+            success:   '#10B981',
+            warning:   '#E58C28',
+            danger:    '#EF4444',
+          },
+          borderRadius: {
+            '2xl': '1rem',
+            '3xl': '1.5rem',
+            '4xl': '1.75rem',
+            '[28px]': '1.75rem',
+          },
+        }
+      }
+    }
+  </script>
+</head>
+<body class="font-sans antialiased" style="background:#F8FAFC; color:#0B192C;">
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+
+  <!-- Initialize Lenis Inertial Smooth Scrolling Engine -->
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      if (window.Lenis) {
+        const lenis = new Lenis({
+          duration: 1.2,
+          easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+          smoothWheel: true,
+          smoothTouch: false,
+          wheelMultiplier: 1.0,
+        });
+
+        window.lenisInstance = lenis;
+
+        function raf(time) {
+          lenis.raf(time);
+          requestAnimationFrame(raf);
+        }
+        requestAnimationFrame(raf);
+      }
+    });
+  </script>
+</body>
+</html>
