@@ -9,7 +9,7 @@ import {
   Copy,
   ArrowRight,
   Percent,
-  ChevronRight,
+  ChevronLeft,
   Gift,
   FileText,
 } from "lucide-react";
@@ -54,6 +54,43 @@ export const OfferDetailPage: React.FC = () => {
   useEffect(() => {
     fetchOfferDetail();
   }, [fetchOfferDetail]);
+
+  /**
+   * Tick the countdown down to the end of the offer's last valid day.
+   *
+   * `timeLeft` was declared and rendered but never computed, so the banner
+   * always read 0 : 0 : 0 : 0 no matter how long the offer had to run. The
+   * expiry is taken as the end of the day it names, matching the rule the
+   * server applies when it decides whether the code still redeems.
+   */
+  useEffect(() => {
+    if (!offer?.validTill) return;
+    const deadline = new Date(offer.validTill);
+    deadline.setHours(23, 59, 59, 999);
+
+    const tick = () => {
+      const remaining = deadline.getTime() - Date.now();
+      if (remaining <= 0) {
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+        return;
+      }
+      const seconds = Math.floor(remaining / 1000);
+      setTimeLeft({
+        days: Math.floor(seconds / 86400),
+        hours: Math.floor((seconds % 86400) / 3600),
+        minutes: Math.floor((seconds % 3600) / 60),
+        seconds: seconds % 60,
+      });
+    };
+
+    tick();
+    const timer = setInterval(tick, 1000);
+    return () => clearInterval(timer);
+  }, [offer?.validTill]);
+
+  const expiresAt = offer?.validTill ? new Date(offer.validTill) : null;
+  if (expiresAt) expiresAt.setHours(23, 59, 59, 999);
+  const hasExpired = Boolean(expiresAt && expiresAt.getTime() < Date.now());
 
   const handleCopyCode = () => {
     if (!offer) return;
@@ -117,100 +154,134 @@ export const OfferDetailPage: React.FC = () => {
     offer.ashramId || (offer.applicableAshrams && offer.applicableAshrams[0]);
 
   return (
-    <div className="min-h-screen pb-28 space-y-10">
-      {/* Hero Section */}
-      <div className="relative bg-black text-white min-h-[420px] flex items-center overflow-hidden">
-        {/* Background Image with Dark Gradient Overlay */}
-        {offer.bannerImage ? (
-          <img
-            src={offer.bannerImage}
-            alt={offer.offerTitle}
-            className="absolute inset-0 w-full h-full object-cover opacity-50 filter brightness-75"
-          />
-        ) : null}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0B192C] via-[#0B192C]/60 to-transparent" />
+    <div className="min-h-screen pt-24 pb-28 text-left space-y-8">
+      {/* Header. Card-based on the page background, matching the other detail
+        pages (volunteer, marketplace, blog) rather than the full-bleed dark
+        hero this page used to carry on its own. */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-2 text-xs font-extrabold text-gray-400 overflow-x-auto whitespace-nowrap">
+          <Link to="/" className="hover:text-[#0A4DA6] transition-colors">
+            Home
+          </Link>
+          <span>/</span>
+          <Link to="/offers" className="hover:text-[#0A4DA6] transition-colors">
+            Offers
+          </Link>
+          {primaryAshram?.address?.city && (
+            <>
+              <span>/</span>
+              <span className="text-[#0A4DA6]">
+                {primaryAshram.address.city}
+              </span>
+            </>
+          )}
+          <span>/</span>
+          <span className="text-[#0B192C] dark:text-white truncate max-w-xs">
+            {offer.shortTitle || offer.offerTitle}
+          </span>
+        </div>
 
-        <div className="relative max-w-6xl mx-auto px-4 sm:px-8 py-12 space-y-6 z-10 w-full">
-          {/* Breadcrumb */}
-          <div className="flex items-center gap-2 text-xs font-semibold text-gray-300">
-            <Link to="/" className="hover:text-white">
-              Home
-            </Link>
-            <ChevronRight size={12} />
-            <Link to="/offers" className="hover:text-white">
-              Offers
-            </Link>
-            <ChevronRight size={12} />
-            <span className="text-amber-400 font-bold">
-              {offer.shortTitle || offer.offerTitle}
-            </span>
-          </div>
+        <Link
+          to="/offers"
+          className="inline-flex items-center gap-1.5 text-xs font-black text-[#0A4DA6] hover:underline cursor-pointer"
+        >
+          <ChevronLeft size={14} /> View All Offers
+        </Link>
 
-          {/* Badges */}
-          <div className="flex flex-wrap items-center gap-3">
-            <span className="px-4 py-1.5 rounded-full bg-[#0A4DA6] text-white text-xs font-black tracking-wider shadow-lg">
-              {offer.offerType || "Special Promotion"}
-            </span>
-            <span className="px-4 py-1.5 rounded-full bg-amber-500 text-white text-xs font-black shadow-lg flex items-center gap-1.5">
-              <Percent size={14} />
-              {offer.discountType === "Percentage"
-                ? `${offer.discountValue}% OFF`
-                : `FLAT ₹${offer.discountValue} OFF`}
-            </span>
-          </div>
+        <div className="bg-white dark:bg-[#0B192C] border border-gray-150 dark:border-slate-800 rounded-[32px] shadow-sm overflow-hidden">
+          <div className="h-1.5 bg-gradient-to-r from-[#0A4DA6] via-[#E58C28] to-[#0A4DA6]" />
 
-          <h1 className="text-3xl sm:text-5xl font-black max-w-3xl leading-tight">
-            {offer.offerTitle}
-          </h1>
+          {offer.bannerImage && (
+            <img
+              src={offer.bannerImage}
+              alt={offer.offerTitle}
+              className="w-full h-48 sm:h-64 object-cover"
+            />
+          )}
 
-          <p className="text-sm sm:text-base text-gray-200 max-w-2xl font-medium leading-relaxed">
-            {offer.description}
-          </p>
-
-          {/* Countdown Timer */}
-          <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 inline-flex items-center gap-4 text-white">
-            <div className="flex items-center gap-2 text-xs font-bold text-amber-400 border-r border-white/20 pr-4">
-              <Clock size={16} /> Offer Ends In:
+          <div className="p-6 sm:p-8 space-y-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="px-3 py-1 rounded-full bg-blue-50 dark:bg-slate-800 text-[#0A4DA6] dark:text-blue-400 text-xs font-black tracking-wider">
+                {offer.offerType || "Special Promotion"}
+              </span>
+              <span className="px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 text-xs font-black flex items-center gap-1.5">
+                <Percent size={13} />
+                {offer.discountType === "Percentage"
+                  ? `${offer.discountValue}% OFF`
+                  : `FLAT ₹${offer.discountValue} OFF`}
+              </span>
+              <span
+                className={`px-3 py-1 rounded-full text-xs font-bold ${
+                  hasExpired
+                    ? "bg-rose-50 text-rose-600 dark:bg-rose-950/30"
+                    : "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30"
+                }`}
+              >
+                {hasExpired ? "● Offer Expired" : "● Offer Live"}
+              </span>
             </div>
-            <div className="flex items-center gap-3 font-mono font-black text-lg">
-              <div>
-                <span className="text-amber-400">{timeLeft.days}</span>
-                <span className="text-[10px] block font-sans text-gray-300">
-                  DAYS
-                </span>
+
+            <h1 className="text-2xl sm:text-4xl font-black text-[#0B192C] dark:text-white max-w-3xl leading-tight">
+              {offer.offerTitle}
+            </h1>
+
+            {offer.description && (
+              <p className="text-sm text-gray-600 dark:text-gray-300 max-w-2xl font-medium leading-relaxed">
+                {offer.description}
+              </p>
+            )}
+
+            {/* Countdown, shown only while it means something. An offer with
+              no expiry has nothing to count down, and an expired one says so
+              instead of displaying a row of zeros. */}
+            {expiresAt && !hasExpired && (
+              <div className="bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-800 rounded-2xl p-4 inline-flex flex-wrap items-center gap-4">
+                <div className="flex items-center gap-2 text-xs font-black text-[#E58C28] sm:border-r sm:border-gray-200 dark:sm:border-slate-700 sm:pr-4">
+                  <Clock size={15} /> Offer Ends In:
+                </div>
+                <div className="flex items-center gap-3 font-mono font-black text-lg text-[#0B192C] dark:text-white">
+                  {[
+                    { value: timeLeft.days, label: "DAYS" },
+                    { value: timeLeft.hours, label: "HRS" },
+                    { value: timeLeft.minutes, label: "MINS" },
+                    { value: timeLeft.seconds, label: "SECS" },
+                  ].map((unit, i) => (
+                    <React.Fragment key={unit.label}>
+                      {i > 0 && <span className="text-gray-300">:</span>}
+                      <div className="text-center">
+                        <span className="text-[#E58C28]">
+                          {String(unit.value).padStart(2, "0")}
+                        </span>
+                        <span className="text-[10px] block font-sans font-bold text-gray-400">
+                          {unit.label}
+                        </span>
+                      </div>
+                    </React.Fragment>
+                  ))}
+                </div>
               </div>
-              <span>:</span>
-              <div>
-                <span className="text-amber-400">{timeLeft.hours}</span>
-                <span className="text-[10px] block font-sans text-gray-300">
-                  HRS
-                </span>
-              </div>
-              <span>:</span>
-              <div>
-                <span className="text-amber-400">{timeLeft.minutes}</span>
-                <span className="text-[10px] block font-sans text-gray-300">
-                  MINS
-                </span>
-              </div>
-              <span>:</span>
-              <div>
-                <span className="text-amber-400">{timeLeft.seconds}</span>
-                <span className="text-[10px] block font-sans text-gray-300">
-                  SECS
-                </span>
-              </div>
-            </div>
+            )}
+            {expiresAt && hasExpired && (
+              <p className="inline-flex items-center gap-2 text-xs font-black text-rose-600 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 rounded-2xl px-4 py-3">
+                <Clock size={14} /> This offer expired on{" "}
+                {new Date(offer.validTill).toLocaleDateString("en-GB", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                })}
+              </p>
+            )}
           </div>
         </div>
       </div>
 
       {/* Main Content Body */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column: Overview, Highlights, Benefits, Terms */}
         <div className="lg:col-span-2 space-y-8">
           {/* Highlights & Included Benefits */}
-          <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-sm">
+          <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 sm:p-8 space-y-6 shadow-sm">
             <h2 className="text-xl font-black text-[#0B192C] dark:text-white">
               Offer Highlights & Included Perks
             </h2>
@@ -243,7 +314,7 @@ export const OfferDetailPage: React.FC = () => {
 
           {/* Applicable Ashrams */}
           {primaryAshram && (
-            <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 sm:p-8 space-y-4 shadow-sm">
+            <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 sm:p-8 space-y-4 shadow-sm">
               <h2 className="text-xl font-black text-[#0B192C] dark:text-white flex items-center gap-2">
                 <Building size={20} className="text-[#0A4DA6]" /> Applicable
                 Ashram Accommodation
@@ -274,7 +345,7 @@ export const OfferDetailPage: React.FC = () => {
           )}
 
           {/* Terms & Conditions */}
-          <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 sm:p-8 space-y-4 shadow-sm">
+          <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 sm:p-8 space-y-4 shadow-sm">
             <h2 className="text-xl font-black text-[#0B192C] dark:text-white flex items-center gap-2">
               <FileText size={20} className="text-gray-400" /> Terms &
               Guidelines
@@ -298,7 +369,7 @@ export const OfferDetailPage: React.FC = () => {
 
         {/* Right Column: Promo Box Sidebar & Booking Card */}
         <div className="space-y-6">
-          <div className="bg-white dark:bg-[#0B192C] border border-amber-500/30 rounded-3xl p-6 space-y-6 shadow-xl sticky top-24">
+          <div className="bg-white dark:bg-[#0B192C] border border-gray-150 dark:border-slate-800 rounded-[28px] p-6 space-y-6 shadow-sm sticky top-24">
             <div className="space-y-2 border-b border-gray-100 dark:border-slate-800 pb-4">
               <span className="text-[10px] font-black tracking-widest text-amber-500">
                 EXCLUSIVE PROMO CODE
@@ -341,11 +412,20 @@ export const OfferDetailPage: React.FC = () => {
               </div>
             </div>
 
+            {/* An expired coupon would be rejected the moment the booking page
+              tried to apply it, so the route is closed here instead. */}
             <button
               onClick={handleBookNow}
-              className="w-full py-4 bg-[#0A4DA6] hover:bg-[#083b80] text-white font-black text-sm rounded-full shadow-xl shadow-[#0A4DA6]/30 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95"
+              disabled={hasExpired}
+              className="w-full py-4 bg-[#0A4DA6] hover:bg-[#083b80] disabled:bg-gray-300 dark:disabled:bg-slate-700 disabled:shadow-none disabled:cursor-not-allowed text-white font-black text-sm rounded-full shadow-xl shadow-[#0A4DA6]/30 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95 disabled:active:scale-100"
             >
-              Book Offer Now <ArrowRight size={16} />
+              {hasExpired ? (
+                "Offer Expired"
+              ) : (
+                <>
+                  Book Offer Now <ArrowRight size={16} />
+                </>
+              )}
             </button>
           </div>
         </div>
@@ -365,9 +445,16 @@ export const OfferDetailPage: React.FC = () => {
 
           <button
             onClick={handleBookNow}
-            className="px-8 py-3 bg-[#0A4DA6] hover:bg-[#083b80] text-white font-black text-xs sm:text-sm rounded-full shadow-lg shadow-[#0A4DA6]/30 flex items-center gap-2 cursor-pointer active:scale-95"
+            disabled={hasExpired}
+            className="px-8 py-3 bg-[#0A4DA6] hover:bg-[#083b80] disabled:bg-gray-300 dark:disabled:bg-slate-700 disabled:shadow-none disabled:cursor-not-allowed text-white font-black text-xs sm:text-sm rounded-full shadow-lg shadow-[#0A4DA6]/30 flex items-center gap-2 cursor-pointer active:scale-95 disabled:active:scale-100 shrink-0"
           >
-            Book This Offer <ArrowRight size={16} />
+            {hasExpired ? (
+              "Offer Expired"
+            ) : (
+              <>
+                Book This Offer <ArrowRight size={16} />
+              </>
+            )}
           </button>
         </div>
       </div>

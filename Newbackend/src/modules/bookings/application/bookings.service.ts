@@ -5,6 +5,7 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  ServiceUnavailableException,
 } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { ConfigService } from "@nestjs/config";
@@ -144,6 +145,32 @@ export class BookingsService {
       throw new ForbiddenException(
         "You do not have access to this ashram booking.",
       );
+  }
+
+  /**
+   * The priced breakdown for a prospective booking, for display only.
+   *
+   * Delegates to the same `quote()` that `create()` uses below, so a page
+   * rendering this shows exactly what the booking will cost. Only the pricing
+   * and the applied coupon are returned — the room, policy and inventory rows
+   * it also resolves are internal and have no business on the wire.
+   */
+  async quote(dto: CreateBookingDto): Promise<any> {
+    const quote = await this.pricing.quote(dto);
+    return {
+      pricing: quote.pricing,
+      nights: quote.dates.length,
+      coupon: quote.coupon
+        ? {
+            _id: quote.coupon._id,
+            promoCode: quote.coupon.promoCode,
+            offerTitle: quote.coupon.offerTitle,
+            discountType: quote.coupon.discountType,
+            discountValue: quote.coupon.discountValue,
+            remainingRedemptions: quote.coupon.remainingRedemptions,
+          }
+        : null,
+    };
   }
 
   async create(user: AuthenticatedUser, dto: CreateBookingDto): Promise<any> {
@@ -320,7 +347,9 @@ export class BookingsService {
     const keyId = this.config.get<string>("razorpayKeyId");
     const keySecret = this.config.get<string>("razorpayKeySecret");
     if (!keyId || !keySecret)
-      return { demo: true, data: { amount: booking.pricing.totalAmount } };
+      throw new ServiceUnavailableException(
+        "Razorpay is not configured. Real payment is required for booking confirmation.",
+      );
     const gateway = new Razorpay({
       key_id: keyId,
       key_secret: keySecret,
@@ -361,8 +390,7 @@ export class BookingsService {
     // unverified confirmation would mark a booking paid for nothing — so it
     // refuses instead. Boot validation already demands the keys; this is the
     // second lock.
-    if (!keySecret)
-      return this.config.get<string>("nodeEnv") !== "production";
+    if (!keySecret) return false;
     if (
       !dto.razorpay_order_id ||
       !dto.razorpay_payment_id ||

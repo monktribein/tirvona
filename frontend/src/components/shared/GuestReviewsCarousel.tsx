@@ -37,12 +37,14 @@ interface GuestReviewsCarouselProps {
   reviews: ReviewItem[];
   ashramName?: string;
   onReviewDeleted?: (reviewId: string) => void;
+  compact?: boolean;
 }
 
 export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
   reviews,
   ashramName,
   onReviewDeleted,
+  compact = false,
 }) => {
   const { user } = useAuth();
   const { addNotification } = useNotifications();
@@ -99,13 +101,13 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
       } else if (window.innerWidth < 1024) {
         setItemsPerPage(2);
       } else {
-        setItemsPerPage(3);
+        setItemsPerPage(compact ? 2 : 3);
       }
     };
     updateItemsPerPage();
     window.addEventListener("resize", updateItemsPerPage);
     return () => window.removeEventListener("resize", updateItemsPerPage);
-  }, []);
+  }, [compact]);
 
   // Calculate Average Rating
   const averageRating =
@@ -239,7 +241,9 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 min-h-[220px]">
+        <div
+          className={`grid grid-cols-1 sm:grid-cols-2 ${compact ? "lg:grid-cols-2" : "lg:grid-cols-3"} gap-4 min-h-[220px]`}
+        >
           <AnimatePresence mode="popLayout">
             {visibleReviews.map((rev, idx) => {
               const reviewerName = rev.customerId?.name || "Verified Pilgrim";

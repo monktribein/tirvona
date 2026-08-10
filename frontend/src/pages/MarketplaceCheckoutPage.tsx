@@ -190,18 +190,8 @@ export const MarketplaceCheckoutPage: React.FC = () => {
 
       const payRes = await marketplaceService.paymentOrder(order._id);
 
-      // Demo mode: the server reports no gateway keys, so there is no payment
-      // to make. It confirms without a signature, which the server only accepts
-      // outside production.
       if (payRes.data?.demo) {
-        await marketplaceService.confirmPayment(order._id, {
-          razorpay_order_id: "",
-          razorpay_payment_id: "",
-          razorpay_signature: "",
-        });
-        clear();
-        setPlaced({ orderNumber: order.orderNumber });
-        return;
+        throw new Error("Razorpay is not configured. Real payment is required.");
       }
 
       // openRazorpayCheckout loads the script itself and takes the prefill

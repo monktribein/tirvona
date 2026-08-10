@@ -84,12 +84,18 @@ export const applyDnsServersFromEnvironment = (): string[] => {
   return servers;
 };
 
+/**
+ * The dev fallback covers both local apps — the main site on 5173 and the
+ * leadTirvona field app on 5174 — so a fresh checkout does not fail CORS on
+ * the lead login. Production ignores this entirely: CORS_ORIGINS is required
+ * there and validated against wildcards.
+ */
 export const corsOriginsFromEnvironment = (): string[] =>
   csv(
     process.env.CORS_ORIGINS,
     process.env.FRONTEND_URL ??
     process.env.CLIENT_URL ??
-    "http://localhost:5173",
+    "http://localhost:5173,http://localhost:5174",
   );
 
 export const parkingQrSecretFromEnvironment = (): string =>

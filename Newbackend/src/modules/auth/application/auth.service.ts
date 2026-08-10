@@ -64,12 +64,26 @@ export class AuthService {
   }
 
   async login(dto: LoginDto): Promise<Record<string, any>> {
-    const user = await this.users.findByEmail(dto.email, true);
+    const identifier = dto.email.trim();
+    const phoneDigits = identifier.replace(/\D/g, "");
+    const localPhone = phoneDigits.replace(/^91(?=\d{10}$)/, "");
+    const phoneCandidates = [
+      identifier,
+      localPhone,
+      localPhone ? `+91${localPhone}` : "",
+    ].filter(Boolean);
+    const user = identifier.includes("@")
+      ? await this.users.findByEmail(identifier.toLowerCase(), true)
+      : await this.userModel
+          .findOne({ phone: { $in: phoneCandidates } })
+          .select("+passwordHash");
     if (
       !user?.passwordHash ||
       !(await bcrypt.compare(dto.password, user.passwordHash))
     ) {
-      throw new UnauthorizedException("Invalid email or password");
+      throw new UnauthorizedException(
+        "Invalid email, phone number, or password",
+      );
     }
     if (user.status === "suspended" || user.isDeleted) {
       throw new UnauthorizedException(
@@ -80,13 +94,6 @@ export class AuthService {
     // The login OTP is a Guest Visitor mechanism. Holding an operational grant
     // makes an account staff, so it signs in with a password like every other
     // role — otherwise the code goes to an address the holder may never read.
-    if (user.role === "customer" && parkingRoles.length === 0)
-      return {
-        otpRequired: true,
-        challenge: await this.createChallenge("login", user.email, {
-          userId: String(user._id),
-        }),
-      };
     user.lastLoginAt = new Date();
     await user.save();
     return this.session(user, parkingRoles);
@@ -97,30 +104,23 @@ export class AuthService {
       throw new ConflictException("Email is already registered");
     if (await this.users.findByPhone(dto.phone))
       throw new ConflictException("Phone number is already registered");
-    if ((dto.role ?? "customer") === "customer")
-      return {
-        otpRequired: true,
-        challenge: await this.createChallenge("register", dto.phone, {
-          name: dto.name.trim(),
-          email: dto.email.trim().toLowerCase(),
-          phone: dto.phone,
-          passwordHash: await bcrypt.hash(dto.password, 12),
-          role: "customer",
-        }),
-      };
-    const user = await this.users.create({
-      name: dto.name.trim(),
-      email: dto.email.trim().toLowerCase(),
-      phone: dto.phone,
-      passwordHash: await bcrypt.hash(dto.password, 12),
-      role: dto.role ?? "customer",
-      status: dto.role === "owner" ? "pending_approval" : "active",
-      isVerified: dto.role !== "owner",
-      govtIdType: dto.role === "owner" ? dto.govtIdType?.trim() : undefined,
-      govtIdNumber: dto.role === "owner" ? dto.govtIdNumber?.trim() : undefined,
-      govtIdUrl: dto.role === "owner" ? dto.govtIdUrl?.trim() : undefined,
-    } as Partial<UserDocument>);
-    return this.session(user);
+    const role = dto.role ?? "customer";
+    const email = dto.email.trim().toLowerCase();
+    return {
+      otpRequired: true,
+      challenge: await this.createChallenge("register", email, {
+        name: dto.name.trim(),
+        email,
+        phone: dto.phone,
+        passwordHash: await bcrypt.hash(dto.password, 12),
+        role,
+        status: role === "owner" ? "pending_approval" : "active",
+        isVerified: role !== "owner",
+        govtIdType: role === "owner" ? dto.govtIdType?.trim() : undefined,
+        govtIdNumber: role === "owner" ? dto.govtIdNumber?.trim() : undefined,
+        govtIdUrl: role === "owner" ? dto.govtIdUrl?.trim() : undefined,
+      }),
+    };
   }
 
   /**
@@ -278,8 +278,8 @@ export class AuthService {
         throw new ConflictException("Email is already registered");
       user = await this.users.create({
         ...row.payload,
-        status: "active",
-        isVerified: true,
+        status: row.payload.status ?? "active",
+        isVerified: row.payload.isVerified ?? true,
       });
     } else {
       user = await this.users.findById(row.payload.userId);

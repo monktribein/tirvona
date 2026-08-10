@@ -11,6 +11,7 @@ import { NotificationProvider } from "./contexts/NotificationContext";
 import { UserMemoryProvider } from "./contexts/UserMemoryContext";
 import { BookingSearchProvider } from "./contexts/BookingSearchContext";
 import { CartProvider } from "./contexts/CartContext";
+import { ToastProvider } from "./contexts/ToastContext";
 
 // Layouts (eager — always needed)
 import PublicLayout from "./layouts/PublicLayout";
@@ -144,6 +145,12 @@ const RefundRequestDetailPage = lazy(
 const RefundPoliciesPage = lazy(
   () => import("./admin/refunds/pages/RefundPoliciesPage"),
 );
+
+// Lead Collection — console for the standalone leadTirvona field app.
+const LeadCollectionPage = lazy(
+  () => import("./admin/leads/pages/LeadCollectionPage"),
+);
+const LeadAgentsPage = lazy(() => import("./admin/leads/pages/LeadAgentsPage"));
 
 // Sacred Services Ecosystem & Media Hub Pages
 const namedPage = <T extends Record<string, React.ComponentType<any>>>(
@@ -632,6 +639,16 @@ const AppContent: React.FC = () => {
             }
           >
             <Route path="/admin/audit-logs" element={<AuditLogsPage />} />
+            {/* Lead Collection. Declared before /admin/manage/:moduleKey so
+              the generic console cannot shadow it. */}
+            <Route
+              path="/admin/lead-collection/leads"
+              element={<LeadCollectionPage />}
+            />
+            <Route
+              path="/admin/lead-collection/agents"
+              element={<LeadAgentsPage />}
+            />
             <Route
               path="/admin/refunds/policies"
               element={<RefundPoliciesPage />}
@@ -802,17 +819,19 @@ const AppContent: React.FC = () => {
 
 export const App: React.FC = () => {
   return (
-    <AuthProvider>
-      <NotificationProvider>
-        <UserMemoryProvider>
-          <BookingSearchProvider>
-            <CartProvider>
-              <AppContent />
-            </CartProvider>
-          </BookingSearchProvider>
-        </UserMemoryProvider>
-      </NotificationProvider>
-    </AuthProvider>
+    <ToastProvider>
+      <AuthProvider>
+        <NotificationProvider>
+          <UserMemoryProvider>
+            <BookingSearchProvider>
+              <CartProvider>
+                <AppContent />
+              </CartProvider>
+            </BookingSearchProvider>
+          </UserMemoryProvider>
+        </NotificationProvider>
+      </AuthProvider>
+    </ToastProvider>
   );
 };
 

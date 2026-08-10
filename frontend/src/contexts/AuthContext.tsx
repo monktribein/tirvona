@@ -111,13 +111,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       window.removeEventListener("tirvona:unauthorized", clearExpiredSession);
   }, []);
 
+  // Recover from legacy login responses that contained an OTP challenge but
+  // were mistakenly persisted as if they were a complete user session.
+  useEffect(() => {
+    if (user && (!token || (!user.id && !(user as any)._id))) {
+      localStorage.removeItem(TOKEN_KEY);
+      setToken(null);
+      setUser(null);
+      setLoading(false);
+    }
+  }, [token, user]);
+
   // Restore session from stored token on mount.
   useEffect(() => {
     const savedToken = localStorage.getItem(TOKEN_KEY);
-    if (savedToken) {
+    if (savedToken && savedToken !== "undefined" && savedToken !== "null") {
       setToken(savedToken);
       fetchUserProfile();
     } else {
+      localStorage.removeItem(TOKEN_KEY);
       setLoading(false);
     }
   }, []);
@@ -138,11 +150,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const persistSession = (data: any) => {
+  const persistSession = (data: any): boolean => {
+    if (!data?.token || (!data?.id && !data?._id)) return false;
     const { token: userToken, ...userData } = data;
     localStorage.setItem(TOKEN_KEY, userToken);
     setToken(userToken);
     setUser(userData);
+    return true;
   };
 
   const login = async (
@@ -153,16 +167,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       const res = await authService.login(email, password);
       // Guest Visitors get an OTP challenge instead of a session. No token is
       // stored here — the session only exists after the code is verified.
-      if (res.data.success && res.data.otpRequired) {
-        return {
-          success: true,
-          otpRequired: true,
-          challenge: res.data.data,
-          message: res.data.message,
-        };
-      }
       if (res.data.success) {
-        persistSession(res.data.data);
+        if (!persistSession(res.data.data)) {
+          return {
+            success: false,
+            message:
+              "A valid login session was not created. Restart the backend and try again.",
+          };
+        }
         return { success: true, user: res.data.data };
       }
       return {
@@ -295,7 +307,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
       if (res.data.success) {
         persistSession(res.data.data);
-        return { success: true, message: res.data.message };
+        return {
+          success: true,
+          message: res.data.message,
+          user: res.data.data,
+        };
       }
       return {
         success: false,

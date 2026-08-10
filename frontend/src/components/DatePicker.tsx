@@ -58,11 +58,22 @@ export const DatePicker: React.FC<DatePickerProps> = ({
 }) => {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const selected = parseYMD(value);
-  const [view, setView] = useState<Date>(() => selected || new Date());
+  const today = new Date();
+  const todayMidnight = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate(),
+  );
+  const requestedMin = parseYMD(min);
+  const minMidnight =
+    requestedMin && requestedMin > todayMidnight ? requestedMin : todayMidnight;
+  const parsedValue = parseYMD(value);
+  const selected =
+    parsedValue && parsedValue >= minMidnight ? parsedValue : null;
+  const [view, setView] = useState<Date>(() => selected || minMidnight);
 
   useEffect(() => {
-    if (open) setView(selected || new Date());
+    if (open) setView(selected || minMidnight);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
@@ -74,18 +85,6 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     document.addEventListener("mousedown", onDoc);
     return () => document.removeEventListener("mousedown", onDoc);
   }, []);
-
-  const minDate = parseYMD(min);
-  const today = new Date();
-  const todayMidnight = new Date(
-    today.getFullYear(),
-    today.getMonth(),
-    today.getDate(),
-  );
-
-  const minMidnight = minDate
-    ? new Date(minDate.getFullYear(), minDate.getMonth(), minDate.getDate())
-    : todayMidnight;
 
   const year = view.getFullYear();
   const month = view.getMonth();
@@ -123,7 +122,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
         onClick={() => setOpen((o) => !o)}
         className={`w-full text-left bg-transparent p-0 text-xs sm:text-sm font-bold focus:outline-none cursor-pointer truncate ${value ? "text-[#0B192C] dark:text-white" : "text-gray-400"}`}
       >
-        {value ? fmtDisplay(value) : placeholder}
+        {selected ? fmtDisplay(toYMD(selected)) : placeholder}
       </button>
 
       <AnimatePresence>
@@ -217,8 +216,13 @@ export const DatePicker: React.FC<DatePickerProps> = ({
               </button>
               <button
                 type="button"
+                disabled={todayMidnight < minMidnight}
                 onClick={() => pick(new Date())}
-                className="text-[11px] font-bold text-[#0A4DA6] hover:underline cursor-pointer"
+                className={`text-[11px] font-bold ${
+                  todayMidnight < minMidnight
+                    ? "text-gray-300 dark:text-slate-700 cursor-not-allowed"
+                    : "text-[#0A4DA6] hover:underline cursor-pointer"
+                }`}
               >
                 Today
               </button>

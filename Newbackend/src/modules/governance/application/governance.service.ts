@@ -874,17 +874,46 @@ export class GovernanceService {
         { _id: request.ashramId },
         { $set: { "pricing.basePrice": data.basePrice } },
       );
-    else if (request.module === "offer")
+    else if (request.module === "offer") {
+      // Written with the field names and enum values `booking_coupons`
+      // declares. The loose model would happily persist anything, and a row
+      // missing `offerTitle`/`promoCode`/`validTill` renders as a blank card
+      // and cannot be edited or redeemed afterwards.
+      const maximumRedemptions = Number(data.maximumRedemptions) || 100;
+      const discountType =
+        data.discountType === "Flat Amount" || data.discountType === "flat"
+          ? "Flat Amount"
+          : "Percentage";
+      const title = data.title ?? request.title ?? "Approved offer";
       await this.repository.create("GovernanceOffer", {
         ashramId: request.ashramId,
         ownerId: request.stayAdminId,
-        title: data.title ?? request.title,
-        promoCode:
+        offerTitle: title,
+        description: data.description ?? title,
+        offerType: data.offerType ?? "SPECIAL OFFER",
+        promoCode: String(
           data.promoCode ?? `SPECIAL-${Date.now().toString().slice(-4)}`,
-        discountType: data.discountType ?? "percentage",
-        discountValue: data.discountValue ?? 10,
+        ).toUpperCase(),
+        discountType,
+        discountValue: Number(data.discountValue) || 10,
+        validFrom: new Date(),
+        // Approvals carry no expiry of their own; default to 90 days so the
+        // offer is time-bounded rather than valid forever by accident.
+        validTill: data.validTill
+          ? new Date(data.validTill)
+          : new Date(Date.now() + 90 * 86_400_000),
+        maximumRedemptions,
+        remainingRedemptions: maximumRedemptions,
+        perUserLimit: 1,
+        featured: false,
+        viewsCount: 0,
+        clicksCount: 0,
+        redemptionsCount: 0,
+        revenueGenerated: 0,
+        deletedAt: null,
         status: "active",
       });
+    }
   }
   private async notify(
     recipientId: unknown,

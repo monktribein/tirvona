@@ -6,9 +6,12 @@ import { ashramService, reviewService, marketplaceService } from "../services";
 import { visitorArticleService } from "../services/visitorArticleService";
 import { formatCurrency } from "../utils/format";
 import { CouponVoucherCard } from "../components/CouponVoucherCard";
-import { DatePicker } from "../components/DatePicker";
+import { DateRangePicker } from "../components/DateRangePicker";
 import { GuestRoomSelector } from "../components/shared/GuestRoomSelector";
-import { useBookingSearch, getTodayYMD, getTomorrowYMD } from "../contexts/BookingSearchContext";
+import {
+  useBookingSearch,
+  normalizeBookingDates,
+} from "../contexts/BookingSearchContext";
 import { useAutoScroll } from "../hooks/useAutoScroll";
 import {
   Search,
@@ -40,8 +43,12 @@ export const HomePage: React.FC = () => {
   const { searchState, updateBookingSearch, totalGuests } = useBookingSearch();
   const [destination, setDestination] = useState("");
   const [stayType, setStayType] = useState("");
-  const [checkIn, setCheckIn] = useState(searchState.checkIn || "");
-  const [checkOut, setCheckOut] = useState(searchState.checkOut || "");
+  const initialDates = normalizeBookingDates(
+    searchState.checkIn,
+    searchState.checkOut,
+  );
+  const [checkIn, setCheckIn] = useState(initialDates.checkIn);
+  const [checkOut, setCheckOut] = useState(initialDates.checkOut);
 
   const [ashrams, setAshrams] = useState<any[]>([]);
   const [offers, setOffers] = useState<any[]>([]);
@@ -939,7 +946,7 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* ══════════════════════ FLOATING BOOKING & SEARCH CARD (Overlapping Hero 50%) ══════════════════════ */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 -mt-24 sm:-mt-32 lg:-mt-36 z-30 relative mb-12 sm:mb-16 lg:mb-20">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 -mt-20 sm:-mt-24 lg:-mt-24 z-30 relative mb-12 sm:mb-16 lg:mb-20">
         {/* Category Tabs Floating Bar (Centered Pill Container) */}
         {/* max-w-full + overflow-x-auto: the three labels plus icons measure
             ~364px, which is wider than a 390px phone once page padding is
@@ -999,37 +1006,30 @@ export const HomePage: React.FC = () => {
         </div>
 
         {/* Main Search Card */}
-        <div className="bg-white dark:bg-[#0B192C] rounded-[24px] sm:rounded-[32px] shadow-2xl shadow-[#0B192C]/10 border border-gray-100 dark:border-slate-800/80 p-2 sm:p-3 lg:p-3.5">
+        <div className="relative isolate overflow-visible bg-white dark:bg-[#0B192C] rounded-[28px] lg:rounded-full shadow-2xl shadow-[#0B192C]/10 border border-gray-200 dark:border-slate-800/80 p-1.5 sm:p-2">
           <form
             onSubmit={handleSearch}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[2fr_1.2fr_1.2fr_1.2fr_auto] gap-2 lg:gap-0 items-center"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.55fr_1.35fr_1.15fr_auto] gap-1 lg:gap-0 items-center"
           >
             {/* Field 1: DESTINATION (30% / 2fr ratio) */}
             <div
-              className="group cursor-pointer rounded-2xl p-3 sm:p-3.5 hover:bg-gray-50/80 dark:hover:bg-slate-800/50 transition-all flex flex-col justify-center min-h-[72px] lg:border-r border-gray-200/80 dark:border-slate-800/80 relative min-w-0"
+              className="group cursor-pointer rounded-2xl lg:rounded-full px-5 py-3 bg-white dark:bg-[#0B192C] hover:bg-gray-50/80 dark:hover:bg-slate-800/50 hover:shadow-lg transition-all flex flex-col justify-center min-h-[64px] lg:border-r border-gray-200/80 dark:border-slate-800/80 relative min-w-0 z-10 focus-within:z-[90]"
               ref={autocompleteRef}
             >
-              <label className="block text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-gray-400 dark:text-slate-400 mb-1 select-none">
-                Destination
+              <label className="block text-[11px] font-extrabold text-[#0B192C] dark:text-white mb-0.5 select-none">
+                Where
               </label>
               <div className="relative flex items-center gap-2.5 min-w-0 w-full">
-                <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-[#0A4DA6] dark:text-amber-400 flex items-center justify-center shrink-0">
-                  <MapPin size={16} />
-                </div>
                 <div className="min-w-0 flex-1 relative flex items-center">
                   <input
                     type="text"
-                    placeholder="Where to next..."
+                    placeholder="Search destinations"
                     value={destination}
                     onChange={handleInputChange}
                     onFocus={() => setShowSuggestions(true)}
                     className="w-full bg-transparent border-none p-0 text-xs sm:text-sm font-bold focus:outline-none text-[#0B192C] dark:text-white placeholder:text-gray-400 truncate"
                   />
                 </div>
-                <ChevronDown
-                  size={14}
-                  className="text-gray-400 pointer-events-none shrink-0"
-                />
               </div>
               <AnimatePresence>
                 {showSuggestions && suggestions.length > 0 && (
@@ -1055,69 +1055,33 @@ export const HomePage: React.FC = () => {
               </AnimatePresence>
             </div>
 
-            {/* Field 2: CHECK IN (18% / 1.2fr ratio) */}
-            <div className="group cursor-pointer rounded-2xl p-3 sm:p-3.5 hover:bg-gray-50/80 dark:hover:bg-slate-800/50 transition-all flex flex-col justify-center min-h-[72px] lg:border-r border-gray-200/80 dark:border-slate-800/80 relative min-w-0 lg:px-4">
-              <label className="block text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-gray-400 dark:text-slate-400 mb-1 select-none">
-                Check In
-              </label>
-              <div className="relative flex items-center gap-2.5 min-w-0 w-full">
-                <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-[#0A4DA6] dark:text-amber-400 flex items-center justify-center shrink-0">
-                  <Calendar size={15} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <DatePicker
-                    value={checkIn}
-                    onChange={(val) => {
-                      setCheckIn(val);
-                      updateBookingSearch({ checkIn: val });
-                      if (val && checkOut && checkOut <= val) {
-                        const nextOut = getTomorrowYMD(val);
-                        setCheckOut(nextOut);
-                        updateBookingSearch({ checkOut: nextOut });
-                      }
-                    }}
-                    placeholder="Add Date"
-                  />
-                </div>
-              </div>
+            {/* Date range: one cohesive interaction for arrival and departure. */}
+            <div className="group rounded-2xl lg:rounded-full px-5 py-3 bg-white dark:bg-[#0B192C] hover:bg-gray-50/80 dark:hover:bg-slate-800/50 hover:shadow-lg transition-all flex items-center min-h-[64px] lg:border-r border-gray-200/80 dark:border-slate-800/80 relative min-w-0 z-10 focus-within:z-[90]">
+              <DateRangePicker
+                checkIn={checkIn}
+                checkOut={checkOut}
+                onChange={(nextIn, nextOut) => {
+                  setCheckIn(nextIn);
+                  setCheckOut(nextOut);
+                  updateBookingSearch({ checkIn: nextIn, checkOut: nextOut });
+                }}
+                pill
+              />
             </div>
 
-            {/* Field 3: CHECK OUT (18% / 1.2fr ratio) */}
-            <div className="group cursor-pointer rounded-2xl p-3 sm:p-3.5 hover:bg-gray-50/80 dark:hover:bg-slate-800/50 transition-all flex flex-col justify-center min-h-[72px] lg:border-r border-gray-200/80 dark:border-slate-800/80 relative min-w-0 lg:px-4">
-              <label className="block text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider text-gray-400 dark:text-slate-400 mb-1 select-none">
-                Check Out
-              </label>
-              <div className="relative flex items-center gap-2.5 min-w-0 w-full">
-                <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-[#0A4DA6] dark:text-amber-400 flex items-center justify-center shrink-0">
-                  <Calendar size={15} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <DatePicker
-                    value={checkOut}
-                    onChange={(val) => {
-                      setCheckOut(val);
-                      updateBookingSearch({ checkOut: val });
-                    }}
-                    min={checkIn}
-                    placeholder="Add Date"
-                    align="right"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Field 4: GUESTS & ROOMS (18% / 1.2fr ratio) */}
-            <div className="group cursor-pointer rounded-2xl p-3 sm:p-3.5 hover:bg-gray-50/80 dark:hover:bg-slate-800/50 transition-all flex flex-col justify-center min-h-[72px] relative min-w-0 lg:px-4">
-              <GuestRoomSelector />
+            {/* Field 3: GUESTS */}
+            <div className="group cursor-pointer rounded-2xl lg:rounded-full px-5 py-3 bg-white dark:bg-[#0B192C] hover:bg-gray-50/80 dark:hover:bg-slate-800/50 hover:shadow-lg transition-all flex flex-col justify-center min-h-[64px] relative min-w-0 z-10 focus-within:z-[90]">
+              <GuestRoomSelector pill />
             </div>
 
             {/* Field 5: SEARCH BUTTON (16% / auto ratio) */}
-            <div className="flex items-center justify-center p-1.5 sm:p-2 col-span-1 sm:col-span-2 lg:col-span-1 min-h-[72px]">
+            <div className="flex items-center justify-center p-1 col-span-1 sm:col-span-2 lg:col-span-1 min-h-[64px]">
               <button
                 type="submit"
-                className="w-full lg:w-auto h-12 lg:h-14 px-6 sm:px-8 bg-[#0A4DA6] hover:bg-[#083D85] text-white font-bold text-xs sm:text-sm rounded-full flex items-center justify-center gap-2.5 shadow-md shadow-[#0A4DA6]/20 hover:shadow-lg hover:shadow-[#0A4DA6]/30 transition-all cursor-pointer shrink-0 active:scale-95"
+                aria-label="Search stays"
+                className="w-full lg:w-14 h-12 lg:h-14 px-5 lg:px-0 bg-[#0A4DA6] hover:bg-[#083D85] text-white font-bold text-xs sm:text-sm rounded-full flex items-center justify-center gap-2 shadow-md shadow-[#0A4DA6]/20 hover:shadow-lg hover:shadow-[#0A4DA6]/30 transition-all cursor-pointer shrink-0 active:scale-95"
               >
-                <span>Search</span>
+                <span className="lg:hidden">Search</span>
                 <Search size={16} className="stroke-[2.5]" />
               </button>
             </div>
@@ -1149,11 +1113,7 @@ export const HomePage: React.FC = () => {
                       navigate(`${item.target}?category=${item.category}`);
                     }
                   }}
-                  className={`flex-1 min-w-[78px] sm:min-w-[88px] lg:min-w-0 flex flex-col items-center justify-center gap-1.5 py-2.5 sm:py-3 px-1 text-center rounded-2xl transition-all cursor-pointer group shrink-0 lg:shrink ${
-                    isHighlight
-                      ? "bg-gradient-to-b from-blue-50/90 to-blue-100/70 dark:from-blue-950/60 dark:to-[#0A4DA6]/40 border border-[#0A4DA6]/30 dark:border-amber-400/50 shadow-sm transform -translate-y-0.5"
-                      : "hover:bg-blue-50/60 dark:hover:bg-slate-800/60"
-                  }`}
+                  className="flex-1 min-w-[78px] sm:min-w-[88px] lg:min-w-0 flex flex-col items-center justify-center gap-1.5 py-2.5 sm:py-3 px-1 text-center rounded-2xl transition-all cursor-pointer group shrink-0 lg:shrink hover:bg-blue-50/60 dark:hover:bg-slate-800/60"
                 >
                   <div
                     className={`p-2 sm:p-2.5 rounded-full transition-all ${
@@ -1767,6 +1727,12 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* ══════════════════════ FEATURED OFFERS & FESTIVAL SPECIALS BANNER ══════════════════════ */}
+      {/* Rendered only when real offers exist. This block used to fall back to
+        four invented campaigns — Mahakumbh/KUMBH2026, Vrindavan/VRINDAVAN25 and
+        two more — none of which were in the database. Visitors were shown promo
+        codes that could never be redeemed, and the section kept advertising
+        them after every offer had been deleted. */}
+      {offers.length > 0 && (
       <section className="max-w-7xl mx-auto px-4 sm:px-6 space-y-8 mb-12 lg:mb-20 mt-6">
         {/* Clean Text Header (No Background Wallpaper) */}
         <div className="text-center space-y-2 max-w-3xl mx-auto py-2">
@@ -1798,70 +1764,7 @@ export const HomePage: React.FC = () => {
 
         <div className="pt-2 pb-6">
           <MarqueeSlider
-            items={
-              offers.length > 0
-                ? offers
-                : [
-                  {
-                    _id: "default-1",
-                    offerType: "MAHAKUMBH OFFER",
-                    discountPercentage: 20,
-                    offerTitle: "Mahakumbh Sacred Stay Special",
-                    description:
-                      "Experience the holy Kumbh Mela 2026 with 20% OFF accommodation & VIP pass.",
-                    promoCode: "KUMBH2026",
-                    image: "",
-                    ashramId: {
-                      address: { city: "Prayagraj" },
-                      name: "Shantikunj Gayatri Pariwar",
-                    },
-                  },
-                  {
-                    _id: "default-2",
-                    offerType: "WEEKEND OFFER",
-                    discountPercentage: 10,
-                    discountValue: 500,
-                    discountType: "FixedAmount",
-                    offerTitle: "Weekend Spiritual Yoga & Retreat",
-                    description:
-                      "Recharge your mind & soul with our weekend spiritual retreat package in Haridwar.",
-                    promoCode: "WEEKEND500",
-                    image: "",
-                    ashramId: {
-                      address: { city: "Haridwar" },
-                      name: "Prem Nagar Ashram",
-                    },
-                  },
-                  {
-                    _id: "default-3",
-                    offerType: "FESTIVAL OFFER",
-                    discountPercentage: 15,
-                    offerTitle: "Festival Season Kashi Discount",
-                    description:
-                      "Get 15% instant savings on top verified ashrams across Kashi & Haridwar.",
-                    promoCode: "FESTIVAL2026",
-                    image: "",
-                    ashramId: {
-                      address: { city: "Varanasi" },
-                      name: "Kashi Vishwanath Ashram",
-                    },
-                  },
-                  {
-                    _id: "default-4",
-                    offerType: "SPECIAL OFFER",
-                    discountPercentage: 25,
-                    offerTitle: "Vrindavan Dham Yatra Deal",
-                    description:
-                      "Exclusive 25% discount on serene dharamshala stays in holy Vrindavan.",
-                    promoCode: "VRINDAVAN25",
-                    image: "",
-                    ashramId: {
-                      address: { city: "Vrindavan" },
-                      name: "Bhagwat Dham Ashram",
-                    },
-                  },
-                ]
-            }
+            items={offers}
             speed={30}
             renderItem={(offer: any, idx: number) => {
               const cardImg =
@@ -1869,39 +1772,30 @@ export const HomePage: React.FC = () => {
                 offer.thumbnailImage ||
                 offer.image ||
                 "";
-              const cardTitle =
-                offer.offerTitle || offer.title || "Special Ashram Offer";
-              const cardDesc =
-                offer.description ||
-                offer.bannerText ||
-                "Book early to get exclusive room rate discounts and complimentary Satvik meals.";
-              const offerBadge =
-                offer.offerType || offer.category || "FESTIVAL OFFER";
 
               const targetAshram = offer.ashramId?._id
                 ? offer.ashramId
                 : offer.applicableAshrams && offer.applicableAshrams[0];
               const city =
-                offer.ashramId?.address?.city ||
-                targetAshram?.address?.city ||
-                (idx === 0 ? "Prayagraj" : "Haridwar");
+                offer.ashramId?.address?.city || targetAshram?.address?.city;
 
+              // A coupon bound to an ashram goes straight to that ashram's
+              // booking page with the code pre-applied. Anything unbound falls
+              // back to the offer's own page.
               const handleCardClick = () => {
-                if (targetAshram?._id) {
-                  navigate(
-                    `/ashram/${targetAshram._id}?promoCode=${encodeURIComponent(offer.promoCode || "")}`,
-                  );
-                } else if (
-                  offer._id &&
-                  typeof offer._id === "string" &&
-                  offer._id.length > 10 &&
-                  !offer._id.startsWith("default")
-                ) {
+                const boundAshramId = String(
+                  offer.ashramId?._id ??
+                    offer.ashramId ??
+                    targetAshram?._id ??
+                    "",
+                );
+                const promo = encodeURIComponent(offer.promoCode || "");
+                if (boundAshramId) {
+                  navigate(`/ashram/${boundAshramId}?promoCode=${promo}`);
+                } else if (offer._id) {
                   navigate(`/offers/${offer._id}`);
-                } else {
-                  navigate(
-                    `/search?promoCode=${encodeURIComponent(offer.promoCode || "KUMBH2026")}`,
-                  );
+                } else if (offer.promoCode) {
+                  navigate(`/search?promoCode=${promo}`);
                 }
               };
 
@@ -1911,10 +1805,12 @@ export const HomePage: React.FC = () => {
                   offer={{
                     ...offer,
                     image: cardImg,
-                    offerTitle: cardTitle,
-                    description: cardDesc,
-                    offerType: offerBadge,
-                    ashramId: { address: { city }, name: targetAshram?.name },
+                    // Only pass an ashram through when the offer names one;
+                    // an empty object would print a card with a blank pin.
+                    ashramId:
+                      city || targetAshram?.name
+                        ? { address: { city }, name: targetAshram?.name }
+                        : undefined,
                   }}
                   onBookNow={handleCardClick}
                   isCarouselItem={true}
@@ -1924,6 +1820,7 @@ export const HomePage: React.FC = () => {
           />
         </div>
       </section>
+      )}
 
       {/* ══════════════════════ SPIRITUAL MEDIA & KNOWLEDGE HUB SECTION ══════════════════════ */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 space-y-8 mb-12 lg:mb-20">

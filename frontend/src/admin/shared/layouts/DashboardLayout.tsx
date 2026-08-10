@@ -330,6 +330,14 @@ export const DashboardLayout: React.FC = () => {
       ],
     },
     {
+      groupName: "Lead Collection",
+      icon: <ClipboardList size={15} />,
+      links: [
+        { label: "All Leads", path: "/admin/lead-collection/leads" },
+        { label: "Field Agents", path: "/admin/lead-collection/agents" },
+      ],
+    },
+    {
       groupName: "Refund requests",
       icon: <Undo2 size={15} />,
       links: [
@@ -833,7 +841,7 @@ export const DashboardLayout: React.FC = () => {
       <div className="p-4 border-t border-blue-100 dark:border-slate-800 space-y-3 shrink-0 bg-[#F8FAFC] dark:bg-[#0B192C]">
         <div className="flex items-center gap-3 px-2">
           <div className="w-9 h-9 rounded-full bg-[#0A4DA6]/10 border border-[#0A4DA6]/30 flex items-center justify-center font-black text-[#0A4DA6] text-xs">
-            {user.name.charAt(0).toUpperCase()}
+            {(user.name || user.email || "U").charAt(0).toUpperCase()}
           </div>
           <div className="flex flex-col">
             <span className="text-xs font-extrabold truncate max-w-[140px] text-[#0B192C] dark:text-white">

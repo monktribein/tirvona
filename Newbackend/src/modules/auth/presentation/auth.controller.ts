@@ -43,15 +43,7 @@ export class AuthController {
   @Public()
   @Post("login")
   async login(@Body() dto: LoginDto) {
-    const result = await this.auth.login(dto);
-    return result.otpRequired
-      ? {
-          success: true,
-          otpRequired: true,
-          message: "Verification code sent.",
-          data: result.challenge,
-        }
-      : { success: true, data: result };
+    return { success: true, data: await this.auth.login(dto) };
   }
 
   @Public()
@@ -62,7 +54,7 @@ export class AuthController {
       ? {
           success: true,
           otpRequired: true,
-          message: "Verification code sent.",
+          message: "Verification code sent to your email.",
           data: result.challenge,
         }
       : { success: true, data: result };

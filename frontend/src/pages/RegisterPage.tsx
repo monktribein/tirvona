@@ -91,7 +91,7 @@ export const RegisterPage: React.FC = () => {
     const res = await registerUser(payload);
     setLoading(false);
     if (res.success) {
-      // Guest Visitors must confirm the OTP sent to their mobile first.
+      // New accounts confirm the OTP sent to their email before creation.
       if (res.otpRequired && res.challenge) {
         setChallenge(res.challenge);
         return;
@@ -219,12 +219,8 @@ export const RegisterPage: React.FC = () => {
               /* OTP step — same card, same styling, form swapped out. */
               <OtpChallengeForm
                 challenge={challenge}
-                destination={challenge.channel === "email" ? email : phone}
-                title={
-                  challenge.channel === "email"
-                    ? "Verify Email"
-                    : "Verify Mobile"
-                }
+                destination={email}
+                title="Verify Email"
                 onVerify={(otp) =>
                   verifyRegistrationOtp(challenge.otpToken, otp)
                 }

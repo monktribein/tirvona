@@ -26,6 +26,10 @@ import { useNotifications } from "../contexts/NotificationContext";
 import { useMemory } from "../contexts/UserMemoryContext";
 import { useAuth } from "../contexts/AuthContext";
 import {
+  getTodayYMD,
+  normalizeBookingDates,
+} from "../contexts/BookingSearchContext";
+import {
   clearGuestPendingIntent,
   currentReturnUrl,
   getGuestPendingIntent,
@@ -108,7 +112,8 @@ export const ServicesHubPage: React.FC = () => {
     );
     if (!service) return;
     setSelectedService(service);
-    setBookingDate(String(intent.data.bookingDate ?? ""));
+    const restoredDate = String(intent.data.bookingDate ?? "");
+    setBookingDate(normalizeBookingDates(restoredDate, "").checkIn);
     setBookingTime(String(intent.data.bookingTime ?? "10:00 AM"));
     setGuestsCount(Number(intent.data.guestsCount ?? 1));
     setSpecialNotes(String(intent.data.specialNotes ?? ""));
@@ -556,6 +561,7 @@ export const ServicesHubPage: React.FC = () => {
                 type="date"
                 required
                 value={bookingDate}
+                min={getTodayYMD()}
                 onChange={(e) => setBookingDate(e.target.value)}
                 className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl"
               />

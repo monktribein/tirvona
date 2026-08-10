@@ -5,6 +5,10 @@ import type {
   ParkingVehicleTypeCode,
 } from "../types/parking.types";
 import VehicleTypePicker from "./VehicleTypePicker";
+import {
+  getMinimumParkingEntry,
+  getMinimumParkingExit,
+} from "../utils/parkingFormat";
 
 interface ParkingSearchBarProps {
   destination: string;
@@ -39,6 +43,9 @@ export const ParkingSearchBar: React.FC<ParkingSearchBarProps> = ({
   onChange,
   onSubmit,
 }) => {
+  const minimumEntry = getMinimumParkingEntry();
+  const minimumExit = getMinimumParkingExit(entryAt || minimumEntry);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit();
@@ -91,7 +98,17 @@ export const ParkingSearchBar: React.FC<ParkingSearchBarProps> = ({
               id="parking-entry"
               type="datetime-local"
               value={entryAt}
-              onChange={(e) => onChange({ entryAt: e.target.value })}
+              min={minimumEntry}
+              onChange={(e) => {
+                const nextEntry = e.target.value;
+                const nextMinimumExit = getMinimumParkingExit(nextEntry);
+                onChange({
+                  entryAt: nextEntry,
+                  ...(exitAt < nextMinimumExit
+                    ? { exitAt: nextMinimumExit }
+                    : {}),
+                });
+              }}
               className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl pl-10 pr-3 py-2.5 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 focus:border-[#0A4DA6] transition-all"
             />
           </div>
@@ -114,7 +131,7 @@ export const ParkingSearchBar: React.FC<ParkingSearchBarProps> = ({
               id="parking-exit"
               type="datetime-local"
               value={exitAt}
-              min={entryAt}
+              min={minimumExit}
               onChange={(e) => onChange({ exitAt: e.target.value })}
               className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl pl-10 pr-3 py-2.5 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 focus:border-[#0A4DA6] transition-all"
             />

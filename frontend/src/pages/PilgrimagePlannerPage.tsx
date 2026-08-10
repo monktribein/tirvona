@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 
 import api from "../lib/api";
+import { toast } from "../lib/toast";
+import { getTodayYMD } from "../contexts/BookingSearchContext";
 
 export const PilgrimagePlannerPage: React.FC = () => {
   const navigate = useNavigate();
@@ -25,7 +27,7 @@ export const PilgrimagePlannerPage: React.FC = () => {
   const [destination, setDestination] = useState("Kedarnath & Char Dham");
   const [purpose, setPurpose] = useState("Pilgrimage & Darshan");
   const [startCity, setStartCity] = useState("Haridwar");
-  const [travelDate, setTravelDate] = useState("2026-05-15");
+  const [travelDate, setTravelDate] = useState(getTodayYMD);
   const [durationDays, setDurationDays] = useState(7);
   const [adults, setAdults] = useState(2);
   const [seniorCitizens, setSeniorCitizens] = useState(1);
@@ -191,6 +193,7 @@ export const PilgrimagePlannerPage: React.FC = () => {
                   <input
                     type="date"
                     value={travelDate}
+                    min={getTodayYMD()}
                     onChange={(e) => setTravelDate(e.target.value)}
                     className="w-full p-3 rounded-xl bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-xs font-bold"
                   />
@@ -306,13 +309,21 @@ export const PilgrimagePlannerPage: React.FC = () => {
 
                 <div className="flex gap-2">
                   <button
-                    onClick={() => alert("PDF downloading...")}
+                    onClick={() =>
+                      toast.info("Your pilgrimage PDF is being prepared.", {
+                        title: "Preparing itinerary",
+                      })
+                    }
                     className="px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-bold flex items-center gap-1.5 backdrop-blur-md"
                   >
                     <Download size={14} /> PDF
                   </button>
                   <button
-                    onClick={() => alert("Itinerary link copied")}
+                    onClick={() =>
+                      toast.success("Itinerary link copied to clipboard.", {
+                        title: "Ready to share",
+                      })
+                    }
                     className="px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-bold flex items-center gap-1.5 backdrop-blur-md"
                   >
                     <Share2 size={14} /> Share

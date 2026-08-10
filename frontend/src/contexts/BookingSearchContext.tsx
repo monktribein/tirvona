@@ -35,15 +35,48 @@ export const getTomorrowYMD = (baseYMD?: string): string => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
 
+const isYMD = (value: unknown): value is string => {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value))
+    return false;
+  const [year, month, day] = value.split("-").map(Number);
+  const parsed = new Date(year, month - 1, day);
+  return (
+    parsed.getFullYear() === year &&
+    parsed.getMonth() === month - 1 &&
+    parsed.getDate() === day
+  );
+};
+
+/**
+ * Removes stale/invalid search dates before they reach a calendar or API call.
+ * Check-in may be today; check-out must be at least the following day.
+ */
+export const normalizeBookingDates = (
+  checkIn?: string,
+  checkOut?: string,
+): Pick<BookingSearchState, "checkIn" | "checkOut"> => {
+  const today = getTodayYMD();
+  const normalizedCheckIn =
+    isYMD(checkIn) && checkIn >= today ? checkIn : "";
+  const earliestCheckOut = getTomorrowYMD(normalizedCheckIn || today);
+  const normalizedCheckOut =
+    isYMD(checkOut) && checkOut >= earliestCheckOut ? checkOut : "";
+
+  return {
+    checkIn: normalizedCheckIn,
+    checkOut: normalizedCheckOut,
+  };
+};
+
 export const getStoredBookingSearch = (): BookingSearchState => {
   try {
     const cached = localStorage.getItem(STORAGE_KEY);
     if (cached) {
       const parsed = JSON.parse(cached);
+      const dates = normalizeBookingDates(parsed.checkIn, parsed.checkOut);
       return {
         destination: parsed.destination || "",
-        checkIn: parsed.checkIn || "",
-        checkOut: parsed.checkOut || "",
+        ...dates,
         rooms: Math.max(1, Number(parsed.rooms) || 1),
         adults: Math.max(1, Number(parsed.adults) || 2),
         children: Math.max(0, Number(parsed.children) || 0),
@@ -71,12 +104,9 @@ export const formatBookingSummary = (
   const a = Math.max(1, adults || 1);
   const c = Math.max(0, children || 0);
 
-  const parts: string[] = [];
+  const guestCount = a + c;
+  const parts = [`${guestCount} Guest${guestCount > 1 ? "s" : ""}`];
   parts.push(`${r} Room${r > 1 ? "s" : ""}`);
-  parts.push(`${a} Adult${a > 1 ? "s" : ""}`);
-  if (c > 0) {
-    parts.push(`${c} Child${c > 1 ? "ren" : ""}`);
-  }
   return parts.join(" · ");
 };
 
@@ -107,9 +137,14 @@ export const BookingSearchProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const updateBookingSearch = (partial: Partial<BookingSearchState>) => {
     setSearchState((prev) => {
-      const nextIn = partial.checkIn !== undefined ? partial.checkIn : prev.checkIn;
-      let nextOut = partial.checkOut !== undefined ? partial.checkOut : prev.checkOut;
-      if (nextIn && nextOut && nextOut <= nextIn) {
+      const requestedIn =
+        partial.checkIn !== undefined ? partial.checkIn : prev.checkIn;
+      const requestedOut =
+        partial.checkOut !== undefined ? partial.checkOut : prev.checkOut;
+      const dates = normalizeBookingDates(requestedIn, requestedOut);
+      const nextIn = dates.checkIn;
+      let nextOut = dates.checkOut;
+      if (nextIn && requestedOut && !nextOut) {
         nextOut = getTomorrowYMD(nextIn);
       }
       const next = {

@@ -17,7 +17,11 @@ import type {
   ParkingVehicleType,
   ParkingVehicleTypeCode,
 } from "../types/parking.types";
-import { nextHalfHour, toLocalInputValue } from "../utils/parkingFormat";
+import {
+  nextHalfHour,
+  toLocalInputValue,
+  normalizeParkingWindow,
+} from "../utils/parkingFormat";
 import ParkingSearchBar from "../components/ParkingSearchBar";
 import ParkingFilterPanel from "../components/ParkingFilterPanel";
 import ParkingCard from "../components/ParkingCard";
@@ -41,16 +45,21 @@ export const ParkingHubPage: React.FC = () => {
     return { entry: toLocalInputValue(entry), exit: toLocalInputValue(exit) };
   }, []);
 
+  const initialWindow = useMemo(
+    () =>
+      normalizeParkingWindow(
+        searchParams.get("entryAt") || defaults.entry,
+        searchParams.get("exitAt") || defaults.exit,
+      ),
+    [defaults, searchParams],
+  );
+
   const [destination, setDestination] = useState(
     searchParams.get("destination") || "",
   );
   const [templeSlug] = useState(searchParams.get("temple") || "");
-  const [entryAt, setEntryAt] = useState(
-    searchParams.get("entryAt") || defaults.entry,
-  );
-  const [exitAt, setExitAt] = useState(
-    searchParams.get("exitAt") || defaults.exit,
-  );
+  const [entryAt, setEntryAt] = useState(initialWindow.entry);
+  const [exitAt, setExitAt] = useState(initialWindow.exit);
   const [vehicleType, setVehicleType] = useState<ParkingVehicleTypeCode | "">(
     (searchParams.get("vehicleType") as ParkingVehicleTypeCode) || "car",
   );

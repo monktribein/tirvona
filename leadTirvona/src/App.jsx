@@ -8,10 +8,15 @@ import CreateLeadPage from './pages/CreateLeadPage';
 import LeadsDashboardPage from './pages/LeadsDashboardPage';
 import ApprovedAshramsPage from './pages/ApprovedAshramsPage';
 import { useLeadStorage } from './hooks/useLeadStorage';
+import { useLeadAuth } from './hooks/useLeadAuth';
 
 export default function App() {
   const [activePage, setActivePage] = useState('create');
-  const { leads, approvedAshrams, toast, addLead, approveLead, removeLead } = useLeadStorage();
+  const { agent, isSignedIn, login, logout } = useLeadAuth();
+  // The session drives the data source: signed in reads the API, signed out
+  // falls back to the local demo set.
+  const { leads, approvedAshrams, toast, addLead, approveLead, removeLead } =
+    useLeadStorage(isSignedIn);
 
   const handlePageChange = (page) => {
     setActivePage(page);
@@ -29,6 +34,9 @@ export default function App() {
         setActivePage={handlePageChange}
         leadCount={leads.length}
         approvedCount={approvedAshrams.length}
+        agent={agent}
+        onLogin={login}
+        onLogout={logout}
       />
 
       <main className="flex-1 transition-opacity duration-300 ease-in-out">

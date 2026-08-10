@@ -1,0 +1,100 @@
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Put,
+  Query,
+  UseGuards,
+} from "@nestjs/common";
+import { ApiTags } from "@nestjs/swagger";
+import { Public } from "../../../common/decorators/public.decorator";
+import { LeadsService } from "../application/leads.service";
+import type { AuthenticatedLeadUser } from "../domain/lead-collection.types";
+import { CurrentLeadAgent } from "./decorators/current-lead-agent.decorator";
+import { LeadQueryDto, SaveLeadDto } from "./dtos/lead.dto";
+import { LeadAgentGuard } from "./guards/lead-agent.guard";
+
+/**
+ * What the leadTirvona field app talks to.
+ *
+ * Every route is scoped to the signed-in agent — the scope is applied inside
+ * the service, so no filter in the querystring can widen it to another
+ * agent's captures.
+ */
+@ApiTags("Lead Collection")
+@Public()
+@UseGuards(LeadAgentGuard)
+@Controller("lead-collection/agent/leads")
+export class LeadAgentController {
+  constructor(private readonly leads: LeadsService) {}
+
+  @Get()
+  async list(
+    @CurrentLeadAgent() agent: AuthenticatedLeadUser,
+    @Query() query: LeadQueryDto,
+  ) {
+    return {
+      success: true,
+      data: await this.leads.list(query, { capturedBy: agent.id }),
+    };
+  }
+
+  @Get("stats")
+  async stats(@CurrentLeadAgent() agent: AuthenticatedLeadUser) {
+    return {
+      success: true,
+      data: await this.leads.stats({ capturedBy: agent.id }),
+    };
+  }
+
+  @Get(":id")
+  async one(
+    @CurrentLeadAgent() agent: AuthenticatedLeadUser,
+    @Param("id") id: string,
+  ) {
+    return {
+      success: true,
+      data: await this.leads.findOne(id, { capturedBy: agent.id }),
+    };
+  }
+
+  @Post()
+  async create(
+    @CurrentLeadAgent() agent: AuthenticatedLeadUser,
+    @Body() dto: SaveLeadDto,
+  ) {
+    return {
+      success: true,
+      message: "Lead submitted for review",
+      data: await this.leads.create(dto, agent),
+    };
+  }
+
+  @Put(":id")
+  async update(
+    @CurrentLeadAgent() agent: AuthenticatedLeadUser,
+    @Param("id") id: string,
+    @Body() dto: SaveLeadDto,
+  ) {
+    return {
+      success: true,
+      message: "Lead updated",
+      data: await this.leads.update(id, dto, { capturedBy: agent.id }),
+    };
+  }
+
+  @Delete(":id")
+  async remove(
+    @CurrentLeadAgent() agent: AuthenticatedLeadUser,
+    @Param("id") id: string,
+  ) {
+    return {
+      success: true,
+      message: "Lead deleted",
+      data: await this.leads.remove(id, { capturedBy: agent.id }),
+    };
+  }
+}

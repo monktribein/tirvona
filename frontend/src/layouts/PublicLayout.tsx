@@ -635,14 +635,14 @@ export const PublicLayout: React.FC = () => {
           {user && (
             <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-slate-900 rounded-2xl mb-4">
               <div className="w-10 h-10 rounded-full bg-primary/10 text-primary border border-primary/20 flex items-center justify-center font-black text-sm flex-shrink-0">
-                {user.name.charAt(0).toUpperCase()}
+                {(user.name || user.email || "U").charAt(0).toUpperCase()}
               </div>
               <div className="min-w-0">
                 <span className="text-sm font-bold text-[#0B192C] dark:text-white block truncate">
-                  {user.name}
+                  {user.name || user.email || "Tirvona User"}
                 </span>
                 <span className="text-[10px] text-gray-400 capitalize">
-                  {user.role.replace(/_/g, " ")}
+                  {(user.role || "customer").replace(/_/g, " ")}
                 </span>
               </div>
             </div>

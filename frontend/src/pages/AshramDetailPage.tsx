@@ -30,9 +30,15 @@ import { GuestRoomSelector } from "../components/shared/GuestRoomSelector";
 import { GuestReviewsCarousel } from "../components/shared/GuestReviewsCarousel";
 import WriteReviewCard from "../components/shared/WriteReviewCard";
 import { VerifiedBadge } from "../components/shared/VerifiedBadge";
-import { useBookingSearch } from "../contexts/BookingSearchContext";
+import {
+  useBookingSearch,
+  getTodayYMD,
+  getTomorrowYMD,
+  normalizeBookingDates,
+} from "../contexts/BookingSearchContext";
 import TirvonaMap from "../components/TirvonaMap";
-import { DatePicker } from "../components/DatePicker";
+import { DateRangePicker } from "../components/DateRangePicker";
+import { RoomAvailabilityCalendar } from "../components/RoomAvailabilityCalendar";
 import { hasValidCoordinates } from "../utils/geo";
 import { useAutoScroll } from "../hooks/useAutoScroll";
 import {
@@ -80,29 +86,18 @@ export const AshramDetailPage: React.FC = () => {
   const qAdults = searchParams.get("adults");
   const qChildren = searchParams.get("children");
 
-  const initialCheckIn = qCheckIn || searchState.checkIn || "";
-  const initialCheckOut = qCheckOut || searchState.checkOut || "";
+  const initialDates = normalizeBookingDates(
+    qCheckIn || searchState.checkIn,
+    qCheckOut || searchState.checkOut,
+  );
+  const initialCheckIn = initialDates.checkIn;
+  const initialCheckOut = initialDates.checkOut;
   const initialRooms = qRooms ? parseInt(qRooms) : searchState.rooms || 1;
   const initialAdults = qAdults ? parseInt(qAdults) : searchState.adults || 2;
   const initialChildren =
     qChildren !== null && qChildren !== undefined
       ? parseInt(qChildren)
       : searchState.children || 0;
-
-  const getTodayYMD = () => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  };
-
-  const getTomorrowYMD = (baseYMD?: string) => {
-    let startDate = new Date();
-    if (baseYMD) {
-      const [y, m, d] = baseYMD.split("-").map(Number);
-      if (y && m && d) startDate = new Date(y, m - 1, d);
-    }
-    const nextDate = new Date(startDate.getTime() + 86400000);
-    return `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, "0")}-${String(nextDate.getDate()).padStart(2, "0")}`;
-  };
 
   const todayYMD = getTodayYMD();
   const validInitialCheckIn =
@@ -134,8 +129,10 @@ export const AshramDetailPage: React.FC = () => {
     const qCheckIn = searchParams.get("checkIn");
     const qCheckOut = searchParams.get("checkOut");
     const qPromo = searchParams.get("promoCode");
-    if (qCheckIn) setCheckIn(qCheckIn);
-    if (qCheckOut) setCheckOut(qCheckOut);
+    const dates = normalizeBookingDates(qCheckIn || "", qCheckOut || "");
+    if (qCheckIn) setCheckIn(dates.checkIn || todayYMD);
+    if (qCheckOut)
+      setCheckOut(dates.checkOut || getTomorrowYMD(dates.checkIn || todayYMD));
     if (qPromo) {
       setCouponCode(qPromo);
       handleValidatePromo(qPromo);
@@ -143,24 +140,60 @@ export const AshramDetailPage: React.FC = () => {
   }, [searchParams]);
 
   const [appliedOfferData, setAppliedOfferData] = useState<any>(null);
+  /** The code currently applied, so the saving can be recomputed on change. */
+  const [appliedPromo, setAppliedPromo] = useState<string | null>(null);
+  /** A code that arrived before the rooms did, applied once a total exists. */
+  const [pendingPromo, setPendingPromo] = useState<string | null>(null);
+  /** Latest full payable amount, readable from callbacks declared above it. */
+  const subtotalRef = useRef(0);
+  /** Whether a priced stay exists yet, so a coupon has something real to cut. */
+  const stayReadyRef = useRef(false);
+  /** The server's authoritative pricing for the current selection. */
+  const [serverQuote, setServerQuote] = useState<any>(null);
+  const [quoting, setQuoting] = useState(false);
 
   const handleValidatePromo = async (codeToTest?: string) => {
     const code = (codeToTest || couponCode).trim().toUpperCase();
     if (!code) return;
+    // The full payable figure — stay, add-ons, donation, extra guests, the
+    // platform fee and its GST — which is exactly what the server discounts.
+    // This used to send only the room rate, falling back to a literal 350 when
+    // no room was selected yet, so the saving was calculated against a number
+    // the guest was never charged. The ref carries the current render's figure
+    // without depending on where this function sits in the file.
+    const bookingAmount = subtotalRef.current;
+    if (!stayReadyRef.current) {
+      // Rooms have not loaded yet. Remember the code; the effect below applies
+      // it as soon as there is a real total to discount.
+      setPendingPromo(code);
+      return;
+    }
     try {
-      const currentBookingAmount =
-        (selectedRoom?.basePrice || 350) *
-        Math.max(1, roomsCount) *
-        calculateDays();
       const res = await offerService.validatePromo({
         promoCode: code,
-        bookingAmount: currentBookingAmount,
+        bookingAmount,
         ashramId: id,
       });
-      if (res.data?.success && res.data?.valid) {
-        const offerData = res.data.data;
-        setAppliedOfferData(offerData);
+      // `valid` sits inside the envelope's `data`, alongside the offer and the
+      // computed discount. Reading it from the top level made every code —
+      // including a valid one arriving via ?promoCode= — report as invalid.
+      const offerData = res.data?.data;
+      if (res.data?.success && offerData?.valid) {
+        // Flattened to the shape this page renders and submits: the API nests
+        // the coupon under `offer` and returns the computed saving alongside.
+        const offer = offerData.offer ?? {};
+        setAppliedOfferData({
+          offerId: offer._id,
+          offerName: offer.offerTitle || offer.shortTitle || "",
+          promoCode: offer.promoCode || code,
+          offerCategory: offer.offerType || "",
+          description: offer.description || "",
+          remainingRedemptions: offer.remainingRedemptions,
+          discountAmount: offerData.discountAmount,
+        });
         setAppliedDiscount(offerData.discountAmount);
+        setAppliedPromo(code);
+        setPendingPromo(null);
         setCouponMsg(
           res.data.message ||
             `Promo code ${code} applied! Saved ₹${offerData.discountAmount}`,
@@ -168,12 +201,16 @@ export const AshramDetailPage: React.FC = () => {
       } else {
         setAppliedOfferData(null);
         setAppliedDiscount(0);
+        setAppliedPromo(null);
+        setPendingPromo(null);
         setCouponMsg(res.data?.message || "Invalid promo code");
       }
     } catch (err: any) {
       console.error("Validate promo error:", err);
       setAppliedOfferData(null);
       setAppliedDiscount(0);
+      setAppliedPromo(null);
+      setPendingPromo(null);
       setCouponMsg(
         err.response?.data?.message || "Invalid or expired promo code",
       );
@@ -223,11 +260,6 @@ export const AshramDetailPage: React.FC = () => {
   // Related stays
   const [relatedStays, setRelatedStays] = useState<any[]>([]);
 
-  // Gentle horizontal drift for the related-stays row. A callback ref, not a
-  // RefObject: the row only renders once relatedStays has loaded, so a
-  // RefObject would be null on the effect's single run and never animate.
-  // Ping-pong scrolling means the items do NOT need duplicating, so each card
-  // keeps its unique `key={rel._id}`.
   const setRelatedRow = useAutoScroll<HTMLDivElement>({ speed: 30 });
 
   const [bookingError, setBookingError] = useState("");
@@ -258,10 +290,17 @@ export const AshramDetailPage: React.FC = () => {
 
     if (pb && id && (pb.ashramId === id || !pb.ashramId)) {
       try {
+        const draftDates = normalizeBookingDates(
+          pb.checkIn || pb.checkInDate || "",
+          pb.checkOut || pb.checkOutDate || "",
+        );
         if (pb.checkIn || pb.checkInDate)
-          setCheckIn(pb.checkIn || pb.checkInDate);
+          setCheckIn(draftDates.checkIn || todayYMD);
         if (pb.checkOut || pb.checkOutDate)
-          setCheckOut(pb.checkOut || pb.checkOutDate);
+          setCheckOut(
+            draftDates.checkOut ||
+              getTomorrowYMD(draftDates.checkIn || todayYMD),
+          );
         if (pb.adults !== undefined) setAdults(pb.adults);
         if (pb.children !== undefined) setChildren(pb.children);
         if (pb.roomsBookedCount) setRoomsCount(pb.roomsBookedCount);
@@ -308,6 +347,9 @@ export const AshramDetailPage: React.FC = () => {
     setDonation("");
     setCouponCode("");
     setAppliedDiscount(0);
+    setAppliedOfferData(null);
+    setAppliedPromo(null);
+    setPendingPromo(null);
     setSpecialRequests("");
   };
 
@@ -331,6 +373,10 @@ export const AshramDetailPage: React.FC = () => {
   const handleRemoveCoupon = () => {
     setAppliedOfferData(null);
     setAppliedDiscount(0);
+    // Clear both tracked codes, otherwise the re-validation effect would
+    // re-apply the coupon the moment anything changed the total.
+    setAppliedPromo(null);
+    setPendingPromo(null);
     setCouponCode("");
     setCouponMsg("");
     setTimerActive(false);
@@ -445,13 +491,6 @@ export const AshramDetailPage: React.FC = () => {
   const servicesCalc = dynamicAddOnsCalc + legacyServicesCalc;
   const donationCalc = parseFloat(donation) || 0;
   const subtotalCalc = basePriceCalc + servicesCalc + donationCalc;
-  const discountCalc =
-    appliedDiscount > 0
-      ? appliedDiscount <= 100
-        ? (subtotalCalc * appliedDiscount) / 100
-        : appliedDiscount
-      : 0;
-  const totalCalc = Math.max(0, subtotalCalc - discountCalc);
 
   // Reservation Timer (10 Minutes) & Loyalty Rewards State
   const [reservationSeconds, setReservationSeconds] = useState<number>(600);
@@ -539,13 +578,138 @@ export const AshramDetailPage: React.FC = () => {
   const gstRateCalc = platformGstRate;
   const gstCalc = roundMoney((platformFeeCalc * gstRateCalc) / 100);
 
-  const totalSavingsCalc = Math.round(discountCalc + loyaltyCalc);
+  /**
+   * Everything owed before a coupon, and the figure a discount comes off.
+   *
+   * Includes the platform fee and its GST: a coupon reduces the whole bill,
+   * not just the ashram's share. It also includes the extra-guest charge,
+   * which the server has always billed but this page used to leave out of the
+   * payable total — quoting less than checkout would take.
+   */
+  const grossPayableCalc = roundMoney(
+    subtotalCalc + extraGuestCalc + platformFeeCalc + gstCalc,
+  );
+  subtotalRef.current = grossPayableCalc;
+  // The platform fee applies from the first render, so `grossPayable` is
+  // non-zero even before a room exists. Readiness is judged on the stay itself,
+  // otherwise a coupon would be validated against the bare fee.
+  stayReadyRef.current = subtotalCalc > 0;
+
+  /**
+   * `appliedDiscount` is a rupee amount, always.
+   *
+   * It used to be reinterpreted by size — treated as a percentage when it was
+   * 100 or less and as rupees above that — so a ₹50 flat coupon silently took
+   * 50% off. The server returns the saving already computed against the amount
+   * we sent, so it is used verbatim and only capped at what is actually owed.
+   */
+  const localDiscountCalc = Math.min(
+    Math.max(0, appliedDiscount),
+    grossPayableCalc,
+  );
+
+  /**
+   * Prefer the server's quote for every figure it supplies.
+   *
+   * The local arithmetic above is a first-paint estimate only. Peak-season
+   * multipliers, per-ashram platform-fee policies and coupon rounding all live
+   * on the server, so a total computed here can differ from the one the
+   * payment order is built from — which is how the summary came to read ₹2.82
+   * while the gateway asked for ₹59.82. Whenever a quote has arrived it wins.
+   */
+  const q = serverQuote?.pricing;
+  const stayCostCalc = q ? q.basePrice : basePriceCalc;
+  const servicesShownCalc = q ? q.servicesPrice : servicesCalc;
+  const extraGuestShownCalc = q ? q.extraGuestAmount : extraGuestCalc;
+  const platformFeeShownCalc = q ? q.platformFee : platformFeeCalc;
+  const gstShownCalc = q ? q.gstAmount : gstCalc;
+  const discountCalc = q ? q.discountAmount : localDiscountCalc;
+  const totalSavingsCalc = roundMoney(discountCalc + loyaltyCalc);
   const finalPayableCalc = Math.max(
     0,
     roundMoney(
-      subtotalCalc - discountCalc - loyaltyCalc + platformFeeCalc + gstCalc,
+      q ? q.totalAmount - loyaltyCalc : grossPayableCalc - discountCalc - loyaltyCalc,
     ),
   );
+
+  /**
+   * Recompute the saving whenever the payable total moves.
+   *
+   * A percentage coupon is worth more once a guest adds meals, nights or
+   * guests, so a figure calculated at apply-time goes stale the moment
+   * anything changes. Re-validating also re-checks expiry and remaining
+   * redemptions, so the quote on screen keeps matching what checkout charges.
+   */
+  useEffect(() => {
+    const code = appliedPromo || pendingPromo;
+    if (!code || subtotalCalc <= 0) return;
+    const timer = setTimeout(() => handleValidatePromo(code), 400);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [grossPayableCalc, appliedPromo, pendingPromo]);
+
+  /**
+   * Re-price against the server whenever the selection changes.
+   *
+   * Debounced so dragging a quantity stepper issues one request, and guarded
+   * on having a room and dates because the endpoint needs both. A failure
+   * leaves the previous quote in place rather than flashing a wrong total; the
+   * server re-prices authoritatively at booking regardless.
+   */
+  useEffect(() => {
+    if (!id || !selectedRoom?._id || !checkIn || !checkOut) {
+      setServerQuote(null);
+      return;
+    }
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      setQuoting(true);
+      try {
+        const res = await bookingService.quote({
+          ashramId: id,
+          roomId: selectedRoom._id,
+          checkInDate: checkIn,
+          checkOutDate: checkOut,
+          guestsCount: Math.max(1, adults + children),
+          roomsBookedCount: Math.max(1, roomsCount),
+          services: {
+            prasad: { ordered: prasad },
+            meals: { ordered: meals },
+            parking: { ordered: parking },
+            locker: { ordered: locker },
+            donation: { amount: parseFloat(donation) || 0 },
+            selectedAddOns: activeAddOnsList,
+          },
+          ...(appliedPromo ? { promoCode: appliedPromo } : {}),
+        });
+        setServerQuote(res.data?.data ?? null);
+      } catch {
+        // Keep the last good quote; the estimate below it stays visible.
+      } finally {
+        setQuoting(false);
+      }
+    }, 450);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    id,
+    selectedRoom?._id,
+    checkIn,
+    checkOut,
+    adults,
+    children,
+    roomsCount,
+    prasad,
+    meals,
+    parking,
+    locker,
+    donation,
+    appliedPromo,
+    JSON.stringify(addOnQuantities),
+  ]);
 
   const fetchDetails = async () => {
     setLoading(true);
@@ -619,7 +783,7 @@ export const AshramDetailPage: React.FC = () => {
   };
 
   const fetchAvailability = async () => {
-    if (!selectedRoom || !localStorage.getItem("ab_token")) {
+    if (!selectedRoom) {
       generateSimulatedCalendar();
       return;
     }
@@ -630,12 +794,16 @@ export const AshramDetailPage: React.FC = () => {
         .toISOString()
         .split("T")[0];
 
-      const res = await roomService.calendar(selectedRoom._id, today, end);
+      const res = await roomService.availabilityCalendar(
+        selectedRoom._id,
+        today,
+        end,
+      );
       if (res.data.success) {
         setAvailabilityCalendar(res.data.data);
       }
     } catch (err) {
-      console.error("Error fetching calendar overrides:", err);
+      console.error("Error fetching public room availability:", err);
       generateSimulatedCalendar();
     } finally {
       setLoadingCalendar(false);
@@ -721,6 +889,8 @@ export const AshramDetailPage: React.FC = () => {
     specialRequests,
   ]);
 
+  const [paying, setPaying] = useState(false);
+
   const handleBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setBookingError("");
@@ -792,20 +962,35 @@ export const AshramDetailPage: React.FC = () => {
       appliedOfferId: appliedOfferData?.offerId || undefined,
     };
 
+    setPaying(true);
     try {
       const res = await bookingService.create(payload);
-      if (res.data.success) {
-        clearBookingDraft();
-        setBookingSuccess(res.data.data);
-      }
+      if (!res.data.success || !res.data.data?._id)
+        throw new Error("Could not create a secure reservation hold.");
+
+      const heldBooking = res.data.data;
+      const orderRes = await bookingService.createPaymentOrder(heldBooking._id);
+      if (orderRes.data.demo)
+        throw new Error("Razorpay is not configured. Real payment is required.");
+
+      const paymentResult = await openRazorpayCheckout(orderRes.data.data, {
+        name: user.name,
+        email: user.email,
+        contact: user.phone,
+      });
+      const paymentRes = await bookingService.pay(heldBooking._id, paymentResult);
+      if (!paymentRes.data.success) throw new Error("Payment verification failed.");
+
+      clearBookingDraft();
+      setBookingSuccess(paymentRes.data.data);
     } catch (err) {
       setBookingError(
-        getErrorMessage(err, "Error occurred completing booking lock"),
+        getErrorMessage(err, "Payment could not be completed. Your booking was not confirmed."),
       );
+    } finally {
+      setPaying(false);
     }
   };
-
-  const [paying, setPaying] = useState(false);
 
   const handleConfirmPayment = async () => {
     if (!bookingSuccess) return;
@@ -818,13 +1003,8 @@ export const AshramDetailPage: React.FC = () => {
       );
 
       if (orderRes.data.demo) {
+        throw new Error("Razorpay is not configured. Real payment is required.");
         // No gateway configured → demo confirmation path.
-        await bookingService.pay(bookingSuccess._id, {
-          method: "upi",
-          transactionId: `TXN-DEMO-${Date.now()}`,
-        });
-        navigate("/dashboard");
-        return;
       }
 
       // 2. Open Razorpay checkout with the real order.
@@ -920,16 +1100,6 @@ export const AshramDetailPage: React.FC = () => {
   }
 
   const galleryImages = ashram?.images || [];
-
-  /**
-   * The stay's position as [latitude, longitude], or null when none is set.
-   *
-   * Stored as GeoJSON, i.e. [longitude, latitude] — the reverse of what a map
-   * takes. The Ashram schema also DEFAULTS unset coordinates to New Delhi
-   * (77.209, 28.613), so a record that was never geocoded would otherwise be
-   * drawn confidently in Delhi. That exact pair is therefore treated as "not
-   * set" rather than shown, since a wrong pin is worse than no pin.
-   */
   const SCHEMA_DEFAULT_LNG_LAT = [77.209, 28.613];
   const ashramLatLng: [number, number] | null = (() => {
     const pair = ashram?.address?.coordinates?.coordinates;
@@ -966,12 +1136,6 @@ export const AshramDetailPage: React.FC = () => {
           <h2 className="text-3xl md:text-5xl font-extrabold text-[#0B192C] dark:text-white leading-tight">
             {ashram.name}
           </h2>
-
-          {/* Row 2: Address • PIN Code • Phone • Email (Visually Equalized Width) */}
-          {/* Stacks on phones. Inline-with-bullets only works once everything
-              fits on one line — as soon as the address wraps, a separator gets
-              pushed to the start of the next line and reads as a stray bullet
-              in front of the phone number. */}
           <div className="text-xs font-bold text-gray-600 dark:text-gray-300 flex flex-col sm:flex-row sm:flex-wrap items-center justify-center gap-y-2 sm:gap-x-2.5 leading-relaxed">
             {/* items-start + a nudge, so the pin sits on the FIRST line of a
                 wrapped address rather than centred against the whole block. */}
@@ -1275,6 +1439,7 @@ export const AshramDetailPage: React.FC = () => {
           </div>
 
           {/* Room Availability Calendar — weekday-aligned month view */}
+          {false && (
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-4 sm:p-6 space-y-4 sm:space-y-5 shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-50 dark:border-slate-850 pb-3">
               <h3 className="min-w-0 text-base font-extrabold text-[#0B192C] dark:text-white flex items-center gap-1.5">
@@ -1489,6 +1654,7 @@ export const AshramDetailPage: React.FC = () => {
               })()
             )}
           </div>
+          )}
 
           {/* Rules & Policies */}
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-5 shadow-sm">
@@ -1580,11 +1746,27 @@ export const AshramDetailPage: React.FC = () => {
               </div>
             </div>
           )}
+
+          <div className="space-y-5">
+            <GuestReviewsCarousel
+              compact
+              reviews={reviews}
+              ashramName={ashram?.name}
+              onReviewDeleted={() => id && fetchReviews(id)}
+            />
+            {id && (
+              <WriteReviewCard
+                ashramId={id}
+                ashramName={ashram?.name}
+                onSubmitted={() => fetchReviews(id)}
+              />
+            )}
+          </div>
         </div>
 
         {/* Right Column: Booking Sidecard & Contact Trust */}
         <div className="space-y-6">
-          <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 shadow-sm space-y-6 relative overflow-hidden">
+          <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 shadow-sm space-y-6 relative overflow-visible z-40">
             <div className="absolute top-0 inset-x-0 h-1 bg-[#0A4DA6]" />
             <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white">
               Stay Booking Engine
@@ -1616,37 +1798,35 @@ export const AshramDetailPage: React.FC = () => {
 
             {!bookingSuccess ? (
               <form onSubmit={handleBookingSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-gray-400">
-                      Check In
-                    </label>
-                    <div className="p-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs font-semibold">
-                      <DatePicker
-                        value={checkIn}
-                        onChange={(v) => {
-                          setCheckIn(v);
-                          if (checkOut && v >= checkOut) {
-                            setCheckOut(getTomorrowYMD(v));
-                          }
-                        }}
-                        min={todayYMD}
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-gray-400">
-                      Check Out
-                    </label>
-                    <div className="p-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs font-semibold">
-                      <DatePicker
-                        value={checkOut}
-                        onChange={setCheckOut}
-                        min={getTomorrowYMD(checkIn)}
-                      />
-                    </div>
-                  </div>
+                <div className="relative z-50 p-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl">
+                  <DateRangePicker
+                    checkIn={checkIn}
+                    checkOut={checkOut}
+                    align="right"
+                    onChange={(nextIn, nextOut) => {
+                      setCheckIn(nextIn);
+                      setCheckOut(nextOut);
+                      updateBookingSearch({
+                        checkIn: nextIn,
+                        checkOut: nextOut,
+                      });
+                    }}
+                  />
                 </div>
+
+                <RoomAvailabilityCalendar
+                  days={availabilityCalendar}
+                  loading={loadingCalendar}
+                  roomName={selectedRoom?.name}
+                  selectedDate={checkIn}
+                  onSelect={(date) => {
+                    const nextOut = getTomorrowYMD(date);
+                    setCheckIn(date);
+                    setCheckOut(nextOut);
+                    updateBookingSearch({ checkIn: date, checkOut: nextOut });
+                    setBookingError("");
+                  }}
+                />
 
                 <div className="p-3.5 bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-800 rounded-[20px] space-y-1 select-none">
                   <span className="text-[9px] text-gray-400 font-bold tracking-wider">
@@ -1809,7 +1989,9 @@ export const AshramDetailPage: React.FC = () => {
                         {appliedOfferData.offerCategory || "Festival Special"}
                       </span>
                       <span className="font-extrabold text-sm text-emerald-600 dark:text-emerald-400">
-                        You Saved ₹{appliedOfferData.discountAmount}
+                        {/* The quoted saving, so this panel cannot disagree
+                          with the breakdown directly beneath it. */}
+                        You Saved ₹{discountCalc}
                       </span>
                     </div>
 
@@ -1901,21 +2083,26 @@ export const AshramDetailPage: React.FC = () => {
                   />
                 </div>
 
-                {/* SECTION 7: Offer Information & Scarcity */}
+                {/* SECTION 7: Offer Information & Scarcity.
+                  The remaining count is printed only when the coupon actually
+                  reports one — it used to fall back to a literal 12, which
+                  told every visitor a scarcity figure that was made up. */}
                 {appliedOfferData && (
                   <div className="p-3 bg-gray-50 dark:bg-slate-900/60 rounded-2xl border border-gray-150 dark:border-slate-800 text-[10px] space-y-1 text-gray-500">
-                    <div className="flex justify-between font-bold text-gray-700 dark:text-gray-300">
-                      <span>🔥 Scarcity Alert:</span>
-                      <span className="text-rose-600 font-extrabold">
-                        Only {appliedOfferData.remainingRedemptions || 12}{" "}
-                        offers left today
-                      </span>
-                    </div>
-                    <p>
-                      •{" "}
-                      {appliedOfferData.description ||
-                        "Valid on direct website bookings only."}
-                    </p>
+                    {Number.isFinite(
+                      Number(appliedOfferData.remainingRedemptions),
+                    ) && (
+                      <div className="flex justify-between font-bold text-gray-700 dark:text-gray-300">
+                        <span>🔥 Scarcity Alert:</span>
+                        <span className="text-rose-600 font-extrabold">
+                          Only {appliedOfferData.remainingRedemptions} offers
+                          left
+                        </span>
+                      </div>
+                    )}
+                    {appliedOfferData.description && (
+                      <p>• {appliedOfferData.description}</p>
+                    )}
                   </div>
                 )}
 
@@ -1941,20 +2128,20 @@ export const AshramDetailPage: React.FC = () => {
                       Original Stay Cost ({daysCount} night
                       {daysCount > 1 ? "s" : ""}):
                     </span>
-                    <span>₹{basePriceCalc}</span>
+                    <span>₹{stayCostCalc}</span>
                   </div>
 
-                  {extraGuestCalc > 0 && (
+                  {extraGuestShownCalc > 0 && (
                     <div className="flex justify-between text-gray-600 dark:text-gray-300">
                       <span>Extra Guest Charges:</span>
-                      <span>₹{extraGuestCalc}</span>
+                      <span>₹{extraGuestShownCalc}</span>
                     </div>
                   )}
 
-                  {servicesCalc > 0 && (
+                  {servicesShownCalc > 0 && (
                     <div className="flex justify-between text-gray-600 dark:text-gray-300">
                       <span>Add-on Services:</span>
-                      <span>₹{servicesCalc}</span>
+                      <span>₹{servicesShownCalc}</span>
                     </div>
                   )}
 
@@ -1972,7 +2159,7 @@ export const AshramDetailPage: React.FC = () => {
                         {platformSettings.label || "Tirvona Platform Fee"}:
                       </span>
                       <span>
-                        ₹{platformFeeCalc}
+                        ₹{platformFeeShownCalc}
                         {platformSettings.type === "percentage" && (
                           <span className="text-[10px] text-gray-400 font-normal ml-1">
                             ({platformSettings.value}%)
@@ -1983,12 +2170,12 @@ export const AshramDetailPage: React.FC = () => {
                   )}
 
                   {/* 3. GST — on the platform fee only, never on the stay */}
-                  {gstCalc > 0 && (
+                  {gstShownCalc > 0 && (
                     <div className="flex justify-between text-gray-500 text-[11px]">
                       <span>
                         GST ({gstRateCalc}% on platform fee):
                       </span>
-                      <span>₹{gstCalc}</span>
+                      <span>₹{gstShownCalc}</span>
                     </div>
                   )}
 
@@ -2044,7 +2231,7 @@ export const AshramDetailPage: React.FC = () => {
                 {/* SECTION 8: Payment Confidence Badges */}
                 <div className="grid grid-cols-2 gap-2 text-[10px] font-bold text-gray-500 dark:text-gray-400 pt-1">
                   <span className="flex items-center gap-1">
-                    <ShieldCheck size={12} className="text-emerald-500" /> Govt
+                    <ShieldCheck size={12} className="text-emerald-500" /> Tirvona
                     Verified
                   </span>
                   <span className="flex items-center gap-1">
@@ -2060,11 +2247,19 @@ export const AshramDetailPage: React.FC = () => {
                   </span>
                 </div>
 
+                {/* Held while a fresh quote is in flight, so nobody can commit
+                  against a total that is about to change. */}
                 <button
                   type="submit"
-                  className="w-full py-3.5 bg-[#0A4DA6] hover:bg-[#083b80] text-white font-black rounded-full text-xs shadow-lg shadow-[#0A4DA6]/25 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-98"
+                  disabled={paying || quoting}
+                  className="w-full py-3.5 bg-[#0A4DA6] hover:bg-[#083b80] disabled:opacity-60 disabled:cursor-not-allowed text-white font-black rounded-full text-xs shadow-lg shadow-[#0A4DA6]/25 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-98"
                 >
-                  Book Stay <ArrowRight size={14} />
+                  {paying
+                    ? "Opening Secure Payment..."
+                    : quoting
+                      ? "Updating price..."
+                      : "Book & Pay"}
+                  {!paying && <ArrowRight size={14} />}
                 </button>
               </form>
             ) : (
@@ -2073,11 +2268,10 @@ export const AshramDetailPage: React.FC = () => {
                 <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl text-emerald-800 dark:text-emerald-300 space-y-1">
                   <div className="flex items-center gap-2 font-black text-sm text-emerald-700 dark:text-emerald-400">
                     <span className="text-lg">🎉</span>
-                    <span>Reservation Confirmed Successfully!</span>
+                    <span>Payment Successful — Booking Confirmed!</span>
                   </div>
                   <p className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
-                    Your room inventory has been locked. Payment is payable upon
-                    check-in at Ashram.
+                    Razorpay verified your payment and your room is confirmed.
                   </p>
                 </div>
 
@@ -2112,7 +2306,7 @@ export const AshramDetailPage: React.FC = () => {
                   <div className="flex justify-between items-center">
                     <span className="text-gray-400">Payment Status:</span>
                     <span className="px-2 py-0.5 bg-amber-500/10 text-amber-700 dark:text-amber-300 rounded text-[10px] font-bold">
-                      Pending (Pay at Ashram)
+                      Fully Paid
                     </span>
                   </div>
 
@@ -2198,14 +2392,7 @@ export const AshramDetailPage: React.FC = () => {
           </div>
         </div>
       </div>
-
-      {/* Enterprise Guest Reviews Carousel.
-          Moved out of the left column and promoted to a full-width band here,
-          directly above Related Stays. Inside the column it rendered at
-          two-thirds width on desktop, and on mobile — where the grid collapses
-          to one column — the entire booking sidecard (add-ons, coupons,
-          loyalty, payment badges) plus the location map stacked between the
-          reviews and the related stays, pushing them far apart. */}
+      {false && (
       <div className="pt-10 border-t border-gray-100 dark:border-slate-800 space-y-6">
         <GuestReviewsCarousel
           reviews={reviews}
@@ -2222,6 +2409,7 @@ export const AshramDetailPage: React.FC = () => {
           </div>
         )}
       </div>
+      )}
 
       {/* Related stays */}
       {relatedStays.length > 0 && (

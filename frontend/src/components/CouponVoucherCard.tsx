@@ -21,16 +21,10 @@ export const CouponVoucherCard: React.FC<CouponVoucherCardProps> = ({
   adminToolbar,
 }) => {
   const [internalCopied, setInternalCopied] = useState(false);
-
-  // Dynamic values
-  const offerTitle =
-    offer.offerTitle || offer.title || "Kumbh Mela 2026 Mahakumbh Special";
-  const description =
-    offer.description ||
-    offer.bannerText ||
-    "Experience the holy Kumbh Mela 2026 with discount accommodation, complimentary Satvik meals & VIP Ganga Aarti pass.";
-  const offerType = offer.offerType || offer.category || "MAHAKUMBH OFFER";
-  const promoCode = offer.promoCode || "KUMBH2026";
+  const offerTitle = offer.offerTitle || offer.title || "Untitled offer";
+  const description = offer.description || offer.bannerText || "";
+  const offerType = offer.offerType || offer.category || "OFFER";
+  const promoCode = offer.promoCode || "";
 
   // Dynamic image
   const imageSrc =
@@ -39,18 +33,12 @@ export const CouponVoucherCard: React.FC<CouponVoucherCardProps> = ({
     offer.image ||
     "";
 
-  // Dynamic location & Ashram
+  // Location & ashram, shown only when the offer is actually tied to one.
   const targetAshram =
     offer.ashramId || (offer.applicableAshrams && offer.applicableAshrams[0]);
   const city =
-    offer.ashramId?.address?.city || targetAshram?.address?.city || "Haridwar";
-  const ashramName =
-    targetAshram?.name ||
-    (city === "Prayagraj"
-      ? "Tirvona Sacred Stay"
-      : city === "Varanasi"
-        ? "Kashi Vishwanath Ashram"
-        : "Shantikunj Gayatri Pariwar Ashram");
+    offer.ashramId?.address?.city || targetAshram?.address?.city || "";
+  const ashramName = targetAshram?.name || "";
 
   // Validity text & Expiry check
   const rawValid =
@@ -63,18 +51,10 @@ export const CouponVoucherCard: React.FC<CouponVoucherCardProps> = ({
           month: "short",
           year: "numeric",
         })
-    : offer.offerType === "WEEKEND OFFER" ||
-        offer.promoCode === "WEEKEND500"
-      ? "30 Jun 2026"
-      : "31 Dec 2026";
+    : "";
 
   const checkIsExpired = (): boolean => {
     if (offer.status === "expired" || offer.status === "disabled") return true;
-
-    if (!rawValid && (offer.offerType === "WEEKEND OFFER" || offer.promoCode === "WEEKEND500")) {
-      const junDate = new Date("2026-06-30T23:59:59");
-      return junDate.getTime() < Date.now();
-    }
 
     if (!rawValid) return false;
 
@@ -110,10 +90,14 @@ export const CouponVoucherCard: React.FC<CouponVoucherCardProps> = ({
 
   // Determine theme: Green for Weekend/Retreat/FixedAmount, Orange for Mahakumbh/Percentage
   const lowerType = offerType.toLowerCase();
+  // "FixedAmount" is the retired spelling; the API's value is "Flat Amount".
+  // Both are matched so legacy rows keep the theme they have always rendered.
+  const isFlatDiscount =
+    offer.discountType === "Flat Amount" || offer.discountType === "FixedAmount";
   const isGreenTheme =
     lowerType.includes("weekend") ||
     lowerType.includes("retreat") ||
-    offer.discountType === "FixedAmount" ||
+    isFlatDiscount ||
     promoCode.toLowerCase().includes("weekend");
 
   const theme = isExpired
@@ -160,12 +144,12 @@ export const CouponVoucherCard: React.FC<CouponVoucherCardProps> = ({
           subtext: "ON ALL PACKAGES",
         };
 
-  // Discount formatting
-  const discountValue = offer.discountValue || offer.discountPercentage || 20;
-  const isPercentage =
-    offer.discountType === "Percentage" ||
-    (!offer.discountType && offer.discountPercentage) ||
-    !offer.discountValue;
+  // Discount formatting. No value means no discount is claimed — the stub
+  // renders its badge without a figure rather than defaulting to "20% OFF".
+  const rawDiscount = offer.discountValue ?? offer.discountPercentage;
+  const hasDiscount = rawDiscount !== undefined && rawDiscount !== null && rawDiscount !== "";
+  const discountValue = rawDiscount;
+  const isPercentage = !isFlatDiscount;
 
   const isCopied = copiedCode ? copiedCode === promoCode : internalCopied;
 
@@ -210,42 +194,52 @@ export const CouponVoucherCard: React.FC<CouponVoucherCardProps> = ({
 
         {/* Big Discount Section */}
         <div className="relative z-10 my-auto space-y-0.5 w-full">
-          {!isPercentage && (
-            <div className="text-[8px] sm:text-[10px] font-bold text-white/90 tracking-widest">
-              &mdash; FLAT &mdash;
+          {hasDiscount ? (
+            <>
+              {!isPercentage && (
+                <div className="text-[8px] sm:text-[10px] font-bold text-white/90 tracking-widest">
+                  &mdash; FLAT &mdash;
+                </div>
+              )}
+
+              <div className="flex items-baseline justify-center font-sans whitespace-nowrap leading-none drop-shadow-md my-0.5 sm:my-1">
+                {isPercentage ? (
+                  <>
+                    <span className="text-2xl sm:text-4xl md:text-5xl font-black text-white tracking-tight">
+                      {discountValue}
+                    </span>
+                    <span className="text-base sm:text-2xl font-black text-white ml-0.5">
+                      %
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-base sm:text-2xl font-black text-white mr-0.5">
+                      ₹
+                    </span>
+                    <span className="text-2xl sm:text-4xl md:text-5xl font-black text-white tracking-tight">
+                      {discountValue}
+                    </span>
+                  </>
+                )}
+              </div>
+
+              <div className="text-[9px] sm:text-xs md:text-sm font-black text-white/95 tracking-widest flex items-center justify-center gap-1 mt-0.5">
+                <span className="text-white/70">&rarr;</span> OFF{" "}
+                <span className="text-white/70">&larr;</span>
+              </div>
+
+              <div className="text-[7px] sm:text-[9px] font-extrabold text-white/80 tracking-wider pt-0.5 sm:pt-1">
+                {theme.subtext}
+              </div>
+            </>
+          ) : (
+            <div className="text-[9px] sm:text-xs font-black text-white/80 tracking-widest leading-snug">
+              NO DISCOUNT
+              <br />
+              CONFIGURED
             </div>
           )}
-
-          <div className="flex items-baseline justify-center font-sans whitespace-nowrap leading-none drop-shadow-md my-0.5 sm:my-1">
-            {isPercentage ? (
-              <>
-                <span className="text-2xl sm:text-4xl md:text-5xl font-black text-white tracking-tight">
-                  {discountValue}
-                </span>
-                <span className="text-base sm:text-2xl font-black text-white ml-0.5">
-                  %
-                </span>
-              </>
-            ) : (
-              <>
-                <span className="text-base sm:text-2xl font-black text-white mr-0.5">
-                  ₹
-                </span>
-                <span className="text-2xl sm:text-4xl md:text-5xl font-black text-white tracking-tight">
-                  {discountValue}
-                </span>
-              </>
-            )}
-          </div>
-
-          <div className="text-[9px] sm:text-xs md:text-sm font-black text-white/95 tracking-widest flex items-center justify-center gap-1 mt-0.5">
-            <span className="text-white/70">&rarr;</span> OFF{" "}
-            <span className="text-white/70">&larr;</span>
-          </div>
-
-          <div className="text-[7px] sm:text-[9px] font-extrabold text-white/80 tracking-wider pt-0.5 sm:pt-1">
-            {theme.subtext}
-          </div>
         </div>
 
         {/* Spiritual Watermark Silhouette at bottom of stub */}
@@ -305,22 +299,25 @@ export const CouponVoucherCard: React.FC<CouponVoucherCardProps> = ({
 
         {/* Content Container */}
         <div className="relative z-10 space-y-1 sm:space-y-1.5 pr-2 sm:pr-16 pt-0.5 sm:pt-1">
-          {/* Location & Ashram */}
-          <div className="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-xs md:text-sm font-bold text-gray-700 dark:text-gray-300">
-            <MapPin
-              size={12}
-              className={`${theme.pinColor} shrink-0 fill-current sm:w-3.5 sm:h-3.5`}
-            />
-            <span className={`${theme.pinColor} font-extrabold`}>{city}</span>
-            {ashramName && (
-              <>
-                <span className="text-gray-400">&bull;</span>
+          {/* Location & Ashram. Omitted entirely for a platform-wide offer that
+            names no ashram — inventing one would misstate where it applies. */}
+          {(city || ashramName) && (
+            <div className="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-xs md:text-sm font-bold text-gray-700 dark:text-gray-300">
+              <MapPin
+                size={12}
+                className={`${theme.pinColor} shrink-0 fill-current sm:w-3.5 sm:h-3.5`}
+              />
+              {city && (
+                <span className={`${theme.pinColor} font-extrabold`}>{city}</span>
+              )}
+              {city && ashramName && <span className="text-gray-400">&bull;</span>}
+              {ashramName && (
                 <span className="truncate text-gray-600 dark:text-gray-300 font-semibold">
                   {ashramName}
                 </span>
-              </>
-            )}
-          </div>
+              )}
+            </div>
+          )}
 
           {/* Offer Title */}
           <h3 className="font-black text-xs sm:text-base md:text-xl text-[#0B192C] dark:text-white leading-tight tracking-tight group-hover:text-[#E65100] transition-colors line-clamp-1">
@@ -335,36 +332,45 @@ export const CouponVoucherCard: React.FC<CouponVoucherCardProps> = ({
 
         {/* Bottom Row: Coupon Code Box (Left) & Book Now CTA with Validity (Right) */}
         <div className="relative z-10 flex flex-wrap sm:flex-nowrap items-center justify-between gap-1.5 sm:gap-3 pt-1.5 sm:pt-2">
-          {/* Coupon Code Box */}
-          <div
-            onClick={handleCopy}
-            className={`flex items-center justify-between gap-1.5 sm:gap-3 px-2 sm:px-4 py-1 sm:py-2 rounded-xl sm:rounded-2xl ${theme.codeBoxBg} ${theme.codeBoxBorder} hover:scale-[1.02] transition-all cursor-pointer group/code shadow-sm`}
-            title="Click to copy coupon code"
-          >
-            <div className="flex flex-col">
-              <span
-                className={`text-[7px] sm:text-[9px] md:text-[10px] font-black tracking-wider ${theme.codeLabel}`}
-              >
-                COUPON CODE
-              </span>
-              <span className="font-mono font-black text-xs sm:text-base md:text-lg text-[#0B192C] dark:text-white tracking-wider">
-                {promoCode}
-              </span>
-            </div>
-
+          {/* Coupon Code Box. Never rendered without a real code — offering a
+            fabricated one to copy would fail at checkout. */}
+          {promoCode ? (
             <div
-              className={`p-1 sm:p-1.5 rounded-lg ${theme.codeLabel} hover:bg-black/5 dark:hover:bg-white/10 transition-colors`}
+              onClick={handleCopy}
+              className={`flex items-center justify-between gap-1.5 sm:gap-3 px-2 sm:px-4 py-1 sm:py-2 rounded-xl sm:rounded-2xl ${theme.codeBoxBg} ${theme.codeBoxBorder} hover:scale-[1.02] transition-all cursor-pointer group/code shadow-sm`}
+              title="Click to copy coupon code"
             >
-              {isCopied ? (
-                <CheckCircle2
-                  size={14}
-                  className="text-emerald-600 dark:text-emerald-400 sm:w-4 sm:h-4"
-                />
-              ) : (
-                <Copy size={14} className="sm:w-4 sm:h-4" />
-              )}
+              <div className="flex flex-col">
+                <span
+                  className={`text-[7px] sm:text-[9px] md:text-[10px] font-black tracking-wider ${theme.codeLabel}`}
+                >
+                  COUPON CODE
+                </span>
+                <span className="font-mono font-black text-xs sm:text-base md:text-lg text-[#0B192C] dark:text-white tracking-wider">
+                  {promoCode}
+                </span>
+              </div>
+
+              <div
+                className={`p-1 sm:p-1.5 rounded-lg ${theme.codeLabel} hover:bg-black/5 dark:hover:bg-white/10 transition-colors`}
+              >
+                {isCopied ? (
+                  <CheckCircle2
+                    size={14}
+                    className="text-emerald-600 dark:text-emerald-400 sm:w-4 sm:h-4"
+                  />
+                ) : (
+                  <Copy size={14} className="sm:w-4 sm:h-4" />
+                )}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="flex items-center gap-1.5 px-2 sm:px-4 py-1 sm:py-2 rounded-xl sm:rounded-2xl bg-gray-100 dark:bg-slate-800/60 border border-dashed border-gray-300 dark:border-slate-700">
+              <span className="text-[9px] sm:text-[11px] font-black tracking-wider text-gray-400">
+                NO COUPON CODE
+              </span>
+            </div>
+          )}
 
           {/* Right Action: Book Button & Valid Till Subtext */}
           <div className="flex flex-col items-end gap-0.5 sm:gap-1 shrink-0">
@@ -393,6 +399,8 @@ export const CouponVoucherCard: React.FC<CouponVoucherCardProps> = ({
               </button>
             )}
 
+            {/* An offer with no expiry on record says so, rather than
+              borrowing a date from another campaign. */}
             <div
               className={`flex items-center gap-0.5 sm:gap-1 text-[8px] sm:text-[10px] md:text-[11px] font-semibold ${
                 isExpired
@@ -409,9 +417,11 @@ export const CouponVoucherCard: React.FC<CouponVoucherCardProps> = ({
                 }`}
               />
               <span>
-                {isExpired
-                  ? `Expired on ${validityText}`
-                  : `Valid till ${validityText}`}
+                {!validityText
+                  ? "No expiry set"
+                  : isExpired
+                    ? `Expired on ${validityText}`
+                    : `Valid till ${validityText}`}
               </span>
             </div>
           </div>

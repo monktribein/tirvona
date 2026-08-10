@@ -10,7 +10,8 @@ import {
 } from "class-validator";
 
 export class LoginDto {
-  @IsEmail() email: string;
+  // Wire name retained for existing clients; accepts email or phone.
+  @IsString() @IsNotEmpty() email: string;
   @IsString() @MinLength(6) password: string;
 }
 
