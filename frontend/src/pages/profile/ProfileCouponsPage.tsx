@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Copy } from "lucide-react";
 import { useNotifications } from "../../contexts/NotificationContext";
+import { formatCurrency } from "../../utils/format";
 
 export const ProfileCouponsPage: React.FC = () => {
   const { addNotification } = useNotifications();
@@ -15,8 +16,8 @@ export const ProfileCouponsPage: React.FC = () => {
     },
     {
       code: "BHAKTI500",
-      discount: "₹500 OFF",
-      description: "Flat ₹500 discount on bookings above ₹2,000.",
+      discount: `${formatCurrency(500)} OFF`,
+      description: `Flat ${formatCurrency(500)} discount on bookings above ${formatCurrency(2000)}.`,
       expiry: "Valid till Sep 15, 2026",
     },
     {

@@ -71,7 +71,7 @@ export class GovernanceService {
     Admin_parking_partners:
       "partnerCode businessName contactPerson contactEmail contactPhone status isVerified commissionPercent address.city address.state createdAt updatedAt",
     Admin_parking_locations:
-      "name slug status isVerified isFeatured totalCapacity partnerId address.city address.state rating.average contactPhone createdAt updatedAt",
+      "name slug status isVerified isFeatured totalCapacity partnerId address.city address.state rating.average contactPhone images coverImage createdAt updatedAt",
     Admin_parking_bookings:
       "bookingReference status paymentStatus vehicleType vehicleNumber assignedSlotNumber entryAt exitAt durationHours pricing.totalAmount locationId partnerId customerId slotTypeId createdAt updatedAt",
     Admin_parking_slot_types:
@@ -724,6 +724,25 @@ export class GovernanceService {
       typeof body._id === "string" && Types.ObjectId.isValid(body._id)
         ? body._id
         : undefined;
+
+    if (name === "Admin_parking_locations") {
+      const photos = new Set(
+        [
+          typeof payload.coverImage === "string"
+            ? payload.coverImage.trim()
+            : "",
+          ...(Array.isArray(payload.images)
+            ? payload.images.map((image) =>
+                typeof image === "string" ? image.trim() : "",
+              )
+            : []),
+        ].filter(Boolean),
+      );
+      if (photos.size < 3)
+        throw new BadRequestException(
+          "At least 3 unique parking photos are required. Map data does not count as a photo.",
+        );
+    }
 
     let data;
     if (name === "banners" || moduleKey === "banner") {

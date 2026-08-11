@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import api from "../lib/api";
+import { formatCurrency } from "../utils/format";
 import {
   Tag,
   Plus,
@@ -377,7 +378,7 @@ export const OwnerOffersPage: React.FC = () => {
             Revenue
           </div>
           <div className="text-xl font-black text-amber-500">
-            ₹{stats.revenueGenerated}
+            {formatCurrency(stats.revenueGenerated)}
           </div>
         </div>
       </div>
@@ -453,7 +454,7 @@ export const OwnerOffersPage: React.FC = () => {
                   <span className="absolute top-3 right-3 px-3 py-1 rounded-full bg-amber-500 text-white text-xs font-black">
                     {offer.discountType === "Percentage"
                       ? `${offer.discountValue}% OFF`
-                      : `₹${offer.discountValue} OFF`}
+                      : `${formatCurrency(offer.discountValue)} OFF`}
                   </span>
                 </div>
 

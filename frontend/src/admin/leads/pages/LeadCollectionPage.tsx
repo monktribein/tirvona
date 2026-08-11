@@ -8,6 +8,7 @@ import {
 } from "../../../services/leadCollection.service";
 import { getErrorMessage } from "../../../lib/api";
 import { toast } from "../../../lib/toast";
+import { getFormattingLocale } from "../../../utils/format";
 import {
   EnterpriseButton,
   EnterpriseModal,
@@ -152,7 +153,7 @@ const toPayload = (form: LeadForm) => ({
 
 const formatDate = (value?: string | null): string =>
   value
-    ? new Date(value).toLocaleString("en-IN", {
+    ? new Date(value).toLocaleString(getFormattingLocale(), {
         day: "2-digit",
         month: "short",
         year: "numeric",

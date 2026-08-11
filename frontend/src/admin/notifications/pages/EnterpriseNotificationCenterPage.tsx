@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { getFormattingLocale } from "../../../utils/format";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Clock,
@@ -400,7 +401,7 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
                     <span className="text-[10px] text-gray-400 font-semibold">
                       {new Date(
                         item.timestamp || item.createdAt,
-                      ).toLocaleString()}
+                      ).toLocaleString(getFormattingLocale())}
                     </span>
                   </div>
 
@@ -444,7 +445,7 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
                     <td className="py-4 px-6 font-mono text-gray-400 whitespace-nowrap">
                       {new Date(
                         item.timestamp || item.createdAt,
-                      ).toLocaleString()}
+                      ).toLocaleString(getFormattingLocale())}
                     </td>
                     <td className="py-4 px-6">
                       <div className="flex flex-col">

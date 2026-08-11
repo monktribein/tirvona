@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { getErrorMessage } from "../../lib/api";
 import { ashramService, offerService } from "../../services";
+import { formatCurrency, getFormattingLocale } from "../../utils/format";
 import {
   Tag,
   Plus,
@@ -16,6 +17,7 @@ import {
   Power,
   RefreshCw,
 } from "lucide-react";
+import { useAuth } from "../../contexts/AuthContext";
 import { useNotifications } from "../../contexts/NotificationContext";
 import FileUploader from "../../components/FileUploader";
 import { CouponVoucherCard } from "../../components/CouponVoucherCard";
@@ -81,8 +83,21 @@ const isOfferExpired = (offer: any): boolean =>
   offer?.status === "expired" ||
   Boolean(offer?.validTill && new Date(offer.validTill).getTime() < Date.now());
 
+/**
+ * Offers & coupons, for the platform and for ashram owners alike.
+ *
+ * One component serves both consoles deliberately. An owner used to get a
+ * separate page with its own wizard, which drifted from this one until the two
+ * behaved differently on discounts, expiry, deletion and ashram binding — the
+ * class of bug that is invisible until a guest is charged the wrong amount.
+ * The only thing that varies by role is scope: the platform may bind a coupon
+ * to any ashram or leave it global, an owner may bind only to their own and
+ * must pick one.
+ */
 export const AdminOffersPage: React.FC = () => {
   const { addNotification } = useNotifications();
+  const { user } = useAuth();
+  const isPlatformAdmin = user?.role === "super_admin";
 
   const [offers, setOffers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -121,10 +136,29 @@ export const AdminOffersPage: React.FC = () => {
   const [destinationAshrams, setDestinationAshrams] = useState<any[]>([]);
   const [loadingAshrams, setLoadingAshrams] = useState(false);
 
+  /**
+   * The ashrams an owner manages, loaded once and filtered locally.
+   *
+   * An owner's list is small and already scoped by the API, so paging it by
+   * destination would be a round trip for nothing — and would offer ashrams
+   * they do not manage.
+   */
+  const [myAshrams, setMyAshrams] = useState<any[]>([]);
+
   const loadDestinationAshrams = useCallback(
     async (city: string) => {
       if (!city) {
         setDestinationAshrams([]);
+        return;
+      }
+      if (!isPlatformAdmin) {
+        setDestinationAshrams(
+          myAshrams.filter(
+            (a) =>
+              String(a.address?.city || "").toLowerCase() ===
+              city.toLowerCase(),
+          ),
+        );
         return;
       }
       setLoadingAshrams(true);
@@ -142,7 +176,7 @@ export const AdminOffersPage: React.FC = () => {
         setLoadingAshrams(false);
       }
     },
-    [addNotification],
+    [addNotification, isPlatformAdmin, myAshrams],
   );
 
   const handleDestinationChange = (city: string) => {
@@ -181,18 +215,44 @@ export const AdminOffersPage: React.FC = () => {
     fetchOffers();
   }, [fetchOffers]);
 
+  // Destinations come from every published ashram for the platform, and from
+  // the caller's own listings for an owner — so the first dropdown can never
+  // offer a place they have nothing in.
   useEffect(() => {
-    ashramService
-      .destinations()
-      .then((res) => setDestinations(res.data?.data || []))
-      .catch((err) =>
-        addNotification(
-          "Error",
-          getErrorMessage(err, "Could not load destinations"),
-          "error",
-        ),
-      );
-  }, [addNotification]);
+    const load = isPlatformAdmin
+      ? ashramService.destinations().then((res) => {
+          setDestinations(res.data?.data || []);
+        })
+      : ashramService.myListings().then((res) => {
+          const rows: any[] = res.data?.data || [];
+          setMyAshrams(rows);
+          const byCity = new Map<string, any>();
+          for (const a of rows) {
+            const city = String(a.address?.city || "").trim();
+            if (!city) continue;
+            const key = city.toLowerCase();
+            const seen = byCity.get(key);
+            if (seen) seen.count += 1;
+            else
+              byCity.set(key, {
+                city,
+                state: a.address?.state || "",
+                count: 1,
+              });
+          }
+          setDestinations(
+            [...byCity.values()].sort((a, b) => a.city.localeCompare(b.city)),
+          );
+        });
+
+    load.catch((err) =>
+      addNotification(
+        "Error",
+        getErrorMessage(err, "Could not load destinations"),
+        "error",
+      ),
+    );
+  }, [addNotification, isPlatformAdmin]);
 
   // Derived from the rows on screen, so every action that changes a row moves
   // these tiles in the same render. No second source of truth to fall behind.
@@ -278,6 +338,17 @@ export const AdminOffersPage: React.FC = () => {
       addNotification(
         "Validation Error",
         "The expiry date cannot fall before the start date",
+        "error",
+      );
+      return;
+    }
+    // Only the platform may publish a coupon valid everywhere; an owner's must
+    // name one of their ashrams. The API enforces this too — this check just
+    // says so before the round trip.
+    if (!isPlatformAdmin && !formData.ashramId) {
+      addNotification(
+        "Validation Error",
+        "Select which of your ashrams this coupon applies to",
         "error",
       );
       return;
@@ -442,14 +513,19 @@ export const AdminOffersPage: React.FC = () => {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="px-3 py-1 rounded-full bg-[#0A4DA6]/10 text-[#0A4DA6] dark:text-blue-400 text-[10px] font-black uppercase tracking-wider flex items-center gap-1">
-              <Tag size={12} /> Super Admin Offers Module
+              <Tag size={12} />{" "}
+              {isPlatformAdmin
+                ? "Super Admin Offers Module"
+                : "Ashram Offers & Coupons"}
             </span>
           </div>
           <h1 className="text-2xl font-extrabold text-[#0B192C] dark:text-white">
             Exclusive Offers & Coupon Vouchers
           </h1>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            Create, schedule, and assign promotional offers across Homepage, Stays, Seva, Services, and Marketplace.
+            {isPlatformAdmin
+              ? "Create, schedule, and assign promotional offers across Homepage, Stays, Seva, Services, and Marketplace."
+              : "Create and schedule promotional offers for your ashrams. Guests who open a coupon land on that ashram's booking page with the code already applied."}
           </p>
         </div>
 
@@ -628,7 +704,7 @@ export const AdminOffersPage: React.FC = () => {
                         )}
                       </div>
 
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
                         <button
                           onClick={() => handleView(offer)}
                           disabled={isBusy(offer._id)}
@@ -714,27 +790,41 @@ export const AdminOffersPage: React.FC = () => {
 
       {/* Add / Edit Offer Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
-          <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] max-w-2xl w-full p-6 sm:p-8 space-y-6 shadow-2xl my-8">
-            <div className="flex items-center justify-between border-b border-gray-100 dark:border-slate-800 pb-4">
-              <div>
-                <h2 className="text-xl font-extrabold text-[#0B192C] dark:text-white">
+        /* Panel height is capped and the fields scroll inside it. Centring a
+          tall panel in a scrolling flex container clips its top out of reach —
+          which is why the dialog's own heading and its Publish button were both
+          cut off. Header and footer stay pinned; only the middle moves. */
+        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={editOfferId ? "Edit offer" : "Create new offer"}
+            className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] max-w-2xl w-full my-4 sm:my-8 shadow-2xl flex flex-col max-h-[calc(100dvh-2rem)] overflow-hidden"
+          >
+            <div className="shrink-0 flex items-start justify-between gap-3 border-b border-gray-100 dark:border-slate-800 px-5 sm:px-8 pt-5 sm:pt-6 pb-4">
+              <div className="min-w-0">
+                <h2 className="text-lg sm:text-xl font-extrabold text-[#0B192C] dark:text-white">
                   {editOfferId ? "Edit Offer" : "Create New Offer"}
                 </h2>
-                <p className="text-xs text-gray-400 font-semibold mt-0.5">
+                <p className="text-[11px] sm:text-xs text-gray-400 font-semibold mt-0.5">
                   Configure promotion title, discount code, validity, and category route placement.
                 </p>
               </div>
               <button
+                type="button"
                 onClick={() => setShowModal(false)}
-                className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-400 hover:text-gray-600 cursor-pointer"
+                aria-label="Close"
+                className="shrink-0 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-400 hover:text-gray-600 cursor-pointer"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleSave} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <form
+              onSubmit={handleSave}
+              className="flex flex-col min-h-0 flex-1"
+            >
+              <div className="flex-1 min-h-0 overflow-y-auto px-5 sm:px-8 py-5 grid grid-cols-1 sm:grid-cols-2 gap-4 content-start">
                 {/* Title */}
                 <div className="sm:col-span-2">
                   <label className="text-[11px] font-extrabold text-gray-700 dark:text-gray-300 block mb-1">
@@ -788,26 +878,37 @@ export const AdminOffersPage: React.FC = () => {
                   ashram is saved; the destination exists to make the second
                   list short and correct. */}
                 <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-gray-50/70 dark:bg-slate-900/40 border border-gray-100 dark:border-slate-800">
-                  <div className="sm:col-span-2 flex items-center gap-2">
+                  <div className="sm:col-span-2 flex items-center gap-2 flex-wrap">
                     <MapPin size={14} className="text-[#0A4DA6]" />
                     <p className="text-[11px] font-extrabold text-[#0B192C] dark:text-white">
                       Applies To
                     </p>
                     <span className="text-[10px] font-semibold text-gray-400">
-                      Leave blank to make this coupon valid across all ashrams
+                      {isPlatformAdmin
+                        ? "Leave blank to make this coupon valid across all ashrams"
+                        : "Choose which of your ashrams this coupon is redeemable at"}
                     </span>
                   </div>
 
                   <div>
                     <label className="text-[11px] font-extrabold text-gray-700 dark:text-gray-300 block mb-1">
-                      Destination / Area
+                      Destination / Area{" "}
+                      {!isPlatformAdmin && (
+                        <span className="text-rose-500">*</span>
+                      )}
                     </label>
                     <select
                       value={formData.destination}
                       onChange={(e) => handleDestinationChange(e.target.value)}
                       className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 text-xs font-bold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6] cursor-pointer"
                     >
-                      <option value="">All destinations</option>
+                      <option value="">
+                        {isPlatformAdmin
+                          ? "All destinations"
+                          : destinations.length === 0
+                            ? "No published ashrams yet"
+                            : "Select a destination"}
+                      </option>
                       {destinations.map((d) => (
                         <option key={d.city} value={d.city}>
                           {d.city}
@@ -820,7 +921,7 @@ export const AdminOffersPage: React.FC = () => {
                   <div>
                     <label className="text-[11px] font-extrabold text-gray-700 dark:text-gray-300 block mb-1">
                       Ashram{" "}
-                      {formData.destination && (
+                      {(formData.destination || !isPlatformAdmin) && (
                         <span className="text-rose-500">*</span>
                       )}
                     </label>
@@ -913,6 +1014,29 @@ export const AdminOffersPage: React.FC = () => {
                   />
                 </div>
 
+                {/* Redemption cap. Editable because the server recomputes the
+                  remaining balance from what has already been spent — raising
+                  the cap adds headroom, it does not refund used redemptions.
+                  Sits beside the discount so the two validity dates can share
+                  the row below rather than one of them standing alone. */}
+                <div>
+                  <label className="text-[11px] font-extrabold text-gray-700 dark:text-gray-300 block mb-1">
+                    Maximum Redemptions
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={formData.maximumRedemptions}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        maximumRedemptions: Number(e.target.value),
+                      })
+                    }
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6]"
+                  />
+                </div>
+
                 {/* Dates */}
                 <div>
                   <label className="text-[11px] font-extrabold text-gray-700 dark:text-gray-300 block mb-1">
@@ -993,42 +1117,27 @@ export const AdminOffersPage: React.FC = () => {
                   </select>
                 </div>
 
-                {/* Redemption cap. Editable because the server recomputes the
-                  remaining balance from what has already been spent — raising
-                  the cap adds headroom, it does not refund used redemptions. */}
-                <div>
-                  <label className="text-[11px] font-extrabold text-gray-700 dark:text-gray-300 block mb-1">
-                    Maximum Redemptions
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={formData.maximumRedemptions}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        maximumRedemptions: Number(e.target.value),
-                      })
-                    }
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6]"
-                  />
-                </div>
-
-                <div className="flex items-center pt-5 sm:col-span-2">
-                  <label className="flex items-center gap-2 text-xs font-extrabold text-[#0B192C] dark:text-white cursor-pointer">
+                {/* Pairs with Status on the same row, so no field is left
+                  stranded beside an empty half. */}
+                <div className="flex items-center sm:pt-6">
+                  <label className="flex items-start gap-2 text-xs font-extrabold text-[#0B192C] dark:text-white cursor-pointer">
                     <input
                       type="checkbox"
                       checked={formData.featured}
                       onChange={(e) => setFormData({ ...formData, featured: e.target.checked })}
-                      className="w-4 h-4 accent-[#0A4DA6] rounded"
+                      className="w-4 h-4 mt-0.5 shrink-0 accent-[#0A4DA6] rounded"
                     />
-                    Feature this offer on Homepage banner
+                    <span className="leading-snug">
+                      Feature this offer on Homepage banner
+                    </span>
                   </label>
                 </div>
               </div>
 
-              {/* Submit Buttons */}
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100 dark:border-slate-800">
+              {/* Pinned below the scroll area, so the primary action is
+                reachable without scrolling to the bottom of a long form.
+                Buttons go full-width and stack on a narrow screen. */}
+              <div className="shrink-0 flex flex-col-reverse sm:flex-row items-stretch sm:items-center sm:justify-end gap-2 sm:gap-3 px-5 sm:px-8 py-4 border-t border-gray-100 dark:border-slate-800 bg-white dark:bg-[#0B192C]">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
@@ -1039,7 +1148,7 @@ export const AdminOffersPage: React.FC = () => {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-6 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-blue-900 text-white text-xs font-extrabold shadow-md cursor-pointer transition-all flex items-center gap-2"
+                  className="px-6 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-blue-900 disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-extrabold shadow-md cursor-pointer transition-all flex items-center justify-center gap-2"
                 >
                   {submitting && <Loader2 size={13} className="animate-spin" />}
                   {submitting ? "Saving..." : editOfferId ? "Update Offer" : "Publish Offer"}
@@ -1053,7 +1162,7 @@ export const AdminOffersPage: React.FC = () => {
       {/* Read-only Offer Detail */}
       {viewOffer && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto"
+          className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm overflow-y-auto"
           onClick={() => setViewOffer(null)}
         >
           <div
@@ -1061,7 +1170,7 @@ export const AdminOffersPage: React.FC = () => {
             aria-modal="true"
             aria-label="Offer details"
             onClick={(e) => e.stopPropagation()}
-            className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] max-w-2xl w-full p-6 sm:p-8 space-y-5 shadow-2xl my-8"
+            className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] max-w-2xl w-full p-5 sm:p-8 space-y-5 shadow-2xl my-4 sm:my-8"
           >
             <div className="flex items-start justify-between border-b border-gray-100 dark:border-slate-800 pb-4 gap-4">
               <div className="min-w-0">
@@ -1122,18 +1231,18 @@ export const AdminOffersPage: React.FC = () => {
                   value:
                     viewOffer.discountType === "Percentage"
                       ? `${viewOffer.discountValue}%`
-                      : `₹${viewOffer.discountValue}`,
+                      : formatCurrency(viewOffer.discountValue),
                 },
                 {
                   label: "Valid From",
                   value: viewOffer.validFrom
-                    ? new Date(viewOffer.validFrom).toLocaleDateString("en-GB")
+                    ? new Date(viewOffer.validFrom).toLocaleDateString(getFormattingLocale())
                     : "—",
                 },
                 {
                   label: "Valid Till",
                   value: viewOffer.validTill
-                    ? new Date(viewOffer.validTill).toLocaleDateString("en-GB")
+                    ? new Date(viewOffer.validTill).toLocaleDateString(getFormattingLocale())
                     : "—",
                 },
                 {
@@ -1145,7 +1254,7 @@ export const AdminOffersPage: React.FC = () => {
                 {
                   label: "Minimum Booking",
                   value: viewOffer.minimumBookingAmount
-                    ? `₹${viewOffer.minimumBookingAmount}`
+                    ? formatCurrency(viewOffer.minimumBookingAmount)
                     : "—",
                 },
                 {
@@ -1179,7 +1288,7 @@ export const AdminOffersPage: React.FC = () => {
               />
             )}
 
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100 dark:border-slate-800">
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center sm:justify-end gap-2 sm:gap-3 pt-4 border-t border-gray-100 dark:border-slate-800">
               <button
                 onClick={() => setViewOffer(null)}
                 className="px-5 py-2.5 rounded-full border border-gray-200 dark:border-slate-700 text-xs font-extrabold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 cursor-pointer"
@@ -1192,7 +1301,7 @@ export const AdminOffersPage: React.FC = () => {
                   setViewOffer(null);
                   openEditModal(target);
                 }}
-                className="px-6 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-blue-900 text-white text-xs font-extrabold shadow-md cursor-pointer flex items-center gap-2"
+                className="px-6 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-blue-900 text-white text-xs font-extrabold shadow-md cursor-pointer flex items-center justify-center gap-2"
               >
                 <Edit3 size={13} /> Edit Offer
               </button>
@@ -1204,12 +1313,12 @@ export const AdminOffersPage: React.FC = () => {
       {/* Delete confirmation. Names the offer and its code, so an administrator
         working a filtered grid can see exactly which row is about to go. */}
       {confirmDelete && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
           <div
             role="alertdialog"
             aria-modal="true"
             aria-label="Confirm delete offer"
-            className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] max-w-md w-full p-6 space-y-5 shadow-2xl"
+            className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] max-w-md w-full p-5 sm:p-6 space-y-5 shadow-2xl my-4 max-h-[calc(100dvh-2rem)] overflow-y-auto"
           >
             <div className="flex items-start gap-3">
               <div className="p-2.5 rounded-2xl bg-rose-50 dark:bg-rose-950/40 shrink-0">
@@ -1250,7 +1359,7 @@ export const AdminOffersPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-1">
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center sm:justify-end gap-2 sm:gap-3 pt-1">
               <button
                 onClick={() => setConfirmDelete(null)}
                 disabled={isBusy(confirmDelete._id, "delete")}
@@ -1261,7 +1370,7 @@ export const AdminOffersPage: React.FC = () => {
               <button
                 onClick={() => handleDelete(confirmDelete)}
                 disabled={isBusy(confirmDelete._id, "delete")}
-                className="px-6 py-2.5 rounded-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-extrabold shadow-md cursor-pointer flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="px-6 py-2.5 rounded-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-extrabold shadow-md cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {isBusy(confirmDelete._id, "delete") && (
                   <Loader2 size={13} className="animate-spin" />

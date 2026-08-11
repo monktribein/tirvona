@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { formatCurrency } from "../../../utils/format";
 import {
   ShoppingBag,
   Plus,
@@ -662,15 +663,15 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
                         {p.salePrice ? (
                           <div>
                             <span className="font-black text-emerald-600 dark:text-emerald-400 text-sm">
-                              ₹{p.salePrice}
+                              {formatCurrency(p.salePrice)}
                             </span>
                             <span className="text-[10px] text-gray-400 line-through block">
-                              ₹{p.price}
+                              {formatCurrency(p.price)}
                             </span>
                           </div>
                         ) : (
                           <span className="font-black text-gray-800 dark:text-gray-200 text-sm">
-                            ₹{p.price}
+                            {formatCurrency(p.price)}
                           </span>
                         )}
                       </td>

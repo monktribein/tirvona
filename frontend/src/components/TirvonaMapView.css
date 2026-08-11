@@ -14,6 +14,14 @@
   display: none !important;
 }
 
+/* Leaflet assigns high z-index values to panes and controls. Keep all of
+   those values local to the map so tiles, markers and zoom controls can never
+   render over Tirvona's sticky navigation. */
+.tirvona-map {
+  isolation: isolate;
+  z-index: 0;
+}
+
 /* Zoom buttons, restyled to match the platform's rounded controls. */
 .tirvona-map .leaflet-control-zoom {
   border: none !important;

@@ -14,6 +14,7 @@ import {
   FileText,
 } from "lucide-react";
 import { useNotifications } from "../contexts/NotificationContext";
+import { formatCurrency } from "../utils/format";
 
 export const OfferDetailPage: React.FC = () => {
   const { offerId } = useParams();
@@ -209,7 +210,7 @@ export const OfferDetailPage: React.FC = () => {
                 <Percent size={13} />
                 {offer.discountType === "Percentage"
                   ? `${offer.discountValue}% OFF`
-                  : `FLAT ₹${offer.discountValue} OFF`}
+                  : `FLAT ${formatCurrency(offer.discountValue)} OFF`}
               </span>
               <span
                 className={`px-3 py-1 rounded-full text-xs font-bold ${
@@ -393,14 +394,14 @@ export const OfferDetailPage: React.FC = () => {
                 <span className="text-emerald-600 font-black">
                   {offer.discountType === "Percentage"
                     ? `${offer.discountValue}% OFF`
-                    : `FLAT ₹${offer.discountValue} OFF`}
+                    : `FLAT ${formatCurrency(offer.discountValue)} OFF`}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span>Min Booking Amount:</span>
                 <span className="font-black text-[#0B192C] dark:text-white">
                   {offer.minimumBookingAmount > 0
-                    ? `₹${offer.minimumBookingAmount}`
+                    ? formatCurrency(offer.minimumBookingAmount)
                     : "No Minimum"}
                 </span>
               </div>

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ashramService } from "../services";
+import { formatCurrency } from "../utils/format";
 import { SearchResultStatus } from "../components/shared/SearchResultStatus";
 import { GuestRoomSelector } from "../components/shared/GuestRoomSelector";
 import { VerifiedBadge } from "../components/shared/VerifiedBadge";
@@ -10,6 +11,8 @@ import {
   useBookingSearch,
   normalizeBookingDates,
 } from "../contexts/BookingSearchContext";
+import { useLanguage } from "../contexts/LanguageContext";
+import { hiUi } from "../i18n/resources";
 import {
   Filter,
   MapPin,
@@ -26,6 +29,7 @@ import {
 } from "lucide-react";
 
 export const SearchPage: React.FC = () => {
+  const { language, t } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
   const rawDestination = searchParams.get("destination") || "";
   const rawCategory =
@@ -376,10 +380,10 @@ export const SearchPage: React.FC = () => {
             <div className="relative">
               <input
                 type="text"
-                value={destination}
+                value={language === "hi" && destination && hiUi[destination] ? hiUi[destination] : destination}
                 onChange={handleInputChange}
                 onFocus={() => setShowSuggestions(true)}
-                placeholder="Search destinations"
+                placeholder={t("Search destinations")}
                 className="w-full bg-transparent border-0 p-0 mt-0.5 text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-300 focus:outline-none"
               />
             </div>
@@ -400,7 +404,7 @@ export const SearchPage: React.FC = () => {
                       className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-slate-800 font-semibold flex items-center gap-2 border-b border-gray-50 dark:border-slate-850 last:border-b-0 cursor-pointer"
                     >
                       <Compass size={12} className="text-[#0A4DA6]" />
-                      <span>{sug}</span>
+                      <span>{t(sug)}</span>
                     </button>
                   ))}
                 </motion.div>
@@ -693,7 +697,7 @@ export const SearchPage: React.FC = () => {
                         Starts From
                       </span>
                       <span className="text-base font-extrabold text-[#0B192C] dark:text-white">
-                        ₹{ashram.lowestNightPrice ?? 150}
+                        {formatCurrency(ashram.lowestNightPrice ?? 150)}
                       </span>
                       <span className="text-[9px] text-gray-400 font-bold">
                         per night / bed
@@ -909,7 +913,7 @@ export const SearchPage: React.FC = () => {
                               {isSelected && (
                                 <div className="mt-3 pt-3 border-t border-dashed border-gray-150 flex justify-between items-center">
                                   <span className="text-[9px] font-bold text-gray-500">
-                                    From: ₹{item.lowestNightPrice ?? 150}/night
+                                    From: {formatCurrency(item.lowestNightPrice ?? 150)}/night
                                   </span>
                                   <Link
                                     to={buildDetailLink(item._id)}

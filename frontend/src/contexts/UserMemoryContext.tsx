@@ -69,7 +69,16 @@ export const UserMemoryProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       const res = await userMemoryService.getMemory();
       if (res.data?.success && res.data.data) {
-        const merged = { ...defaultMemory, ...res.data.data };
+        const {
+          _id: _discardedId,
+          __v: _discardedVersion,
+          createdAt: _discardedCreatedAt,
+          updatedAt: _discardedUpdatedAt,
+          sessionId: _discardedSessionId,
+          userId: _discardedUserId,
+          ...remoteMemory
+        } = res.data.data;
+        const merged = { ...defaultMemory, ...remoteMemory };
         setMemory(merged);
         localStorage.setItem("tirvona_user_memory", JSON.stringify(merged));
       }

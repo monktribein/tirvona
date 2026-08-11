@@ -16,6 +16,7 @@ import {
 import { EnterpriseButton, EnterpriseStatusBadge } from "../../admin/shared";
 import { useAuth } from "../../contexts/AuthContext";
 import { bookingService } from "../../services";
+import { formatCurrency } from "../../utils/format";
 import { parkingBookingService } from "../../modules/parking/services/parking.service";
 import { getErrorMessage } from "../../lib/api";
 import useMyBookings, {
@@ -376,7 +377,7 @@ export const ProfileBookingsPage: React.FC = () => {
                     {b.category === "cancelled" &&
                       (b.refundAmount ?? 0) > 0 && (
                         <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 pt-1">
-                          ₹{b.refundAmount?.toLocaleString("en-IN")} refunded
+                          {formatCurrency(b.refundAmount)} refunded
                         </p>
                       )}
                   </div>
@@ -388,11 +389,9 @@ export const ProfileBookingsPage: React.FC = () => {
                       {b.amountPaid > 0 ? "Paid" : "Payable at Ashram"}
                     </span>
                     <span className="text-lg font-black text-[#0A4DA6] dark:text-white">
-                      ₹
-                      {(b.amountPaid > 0
-                        ? b.amountPaid
-                        : b.amount
-                      ).toLocaleString("en-IN")}
+                      {formatCurrency(
+                        b.amountPaid > 0 ? b.amountPaid : b.amount,
+                      )}
                     </span>
                   </div>
 
@@ -573,7 +572,7 @@ export const ProfileBookingsPage: React.FC = () => {
                 <div className="flex justify-between pt-2 border-t border-dashed border-gray-200 dark:border-slate-800 text-sm font-black">
                   <span>Total Amount:</span>
                   <span className="text-[#0A4DA6]">
-                    ₹{selectedReceipt.amount?.toLocaleString("en-IN")}
+                    {formatCurrency(selectedReceipt.amount)}
                   </span>
                 </div>
               </div>

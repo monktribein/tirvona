@@ -16,6 +16,7 @@ interface ImageGalleryManagerProps {
   gallery?: string[];
   onGalleryChange?: (urls: string[]) => void;
   label?: string;
+  minimumImages?: number;
 }
 
 export const ImageGalleryManager: React.FC<ImageGalleryManagerProps> = ({
@@ -24,6 +25,7 @@ export const ImageGalleryManager: React.FC<ImageGalleryManagerProps> = ({
   gallery = [],
   onGalleryChange,
   label = "Photo & Image Management",
+  minimumImages = 0,
 }) => {
   const { addNotification } = useNotifications();
   const [uploading, setUploading] = useState(false);
@@ -138,6 +140,7 @@ export const ImageGalleryManager: React.FC<ImageGalleryManagerProps> = ({
         {allImages.length > 0 && (
           <span className="text-[10px] font-bold text-gray-400">
             {allImages.length} photo{allImages.length === 1 ? "" : "s"}
+            {minimumImages > 0 ? ` · minimum ${minimumImages}` : ""}
           </span>
         )}
       </div>
@@ -162,6 +165,13 @@ export const ImageGalleryManager: React.FC<ImageGalleryManagerProps> = ({
                 Supports JPG, PNG, WEBP, GIF files from your computer or mobile
                 phone
               </p>
+              {minimumImages > 0 && (
+                <p className={`text-[10px] font-extrabold ${allImages.length >= minimumImages ? "text-emerald-600" : "text-amber-600"}`}>
+                  {allImages.length >= minimumImages
+                    ? "Required photo count complete"
+                    : `${minimumImages - allImages.length} more parking photo${minimumImages - allImages.length === 1 ? "" : "s"} required`}
+                </p>
+              )}
             </div>
           </>
         )}

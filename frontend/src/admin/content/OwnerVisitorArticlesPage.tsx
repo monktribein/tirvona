@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { getFormattingLocale } from "../../utils/format";
 import {
   FileText,
   CheckCircle2,
@@ -247,7 +248,7 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
                     </span>
                     <span>
                       • Submitted:{" "}
-                      {new Date(art.createdAt).toLocaleDateString("en-IN")}
+                      {new Date(art.createdAt).toLocaleDateString(getFormattingLocale())}
                     </span>
                   </p>
                 </div>

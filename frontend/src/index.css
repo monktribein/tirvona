@@ -2,6 +2,15 @@
 
 @variant dark (&:where(.dark, .dark *));
 
+html[lang="hi"] body {
+  font-family: "Nirmala UI", "Noto Sans Devanagari", Mangal, "Plus Jakarta Sans", sans-serif;
+}
+
+html[lang="hi"] .tracking-wider,
+html[lang="hi"] .tracking-widest {
+  letter-spacing: normal;
+}
+
 @theme {
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);

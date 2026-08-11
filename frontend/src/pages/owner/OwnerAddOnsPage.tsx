@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { ashramService } from "../../services";
 import { useNotifications } from "../../contexts/NotificationContext";
+import { formatCurrency } from "../../utils/format";
 import {
   Sparkles,
   Plus,
@@ -263,7 +264,7 @@ export const OwnerAddOnsPage: React.FC = () => {
                     {item.name}
                   </h3>
                   <span className="text-[10px] font-extrabold text-[#0A4DA6] bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded-md mt-1 inline-block">
-                    ₹{item.price} / {item.unitLabel || "Unit"}
+                    {formatCurrency(item.price)} / {item.unitLabel || "Unit"}
                   </span>
                 </div>
 

@@ -16,6 +16,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useNotifications } from "../contexts/NotificationContext";
+import { formatCurrency } from "../utils/format";
 import { useAuth } from "../contexts/AuthContext";
 import {
   clearGuestPendingIntent,
@@ -109,10 +110,10 @@ export const MarketplaceCategoryDetailPage: React.FC = () => {
 
   const filteredProducts = (products || []).filter((p: any) => {
     let matchesPrice = true;
-    if (selectedPrice === "Under ₹350") matchesPrice = p.price <= 350;
-    if (selectedPrice === "₹350 - ₹600")
+    if (selectedPrice === "under-350") matchesPrice = p.price <= 350;
+    if (selectedPrice === "350-600")
       matchesPrice = p.price > 350 && p.price <= 600;
-    if (selectedPrice === "₹600+") matchesPrice = p.price > 600;
+    if (selectedPrice === "over-600") matchesPrice = p.price > 600;
 
     let matchesOrganic = !filterOrganic || p.organic;
 
@@ -258,16 +259,21 @@ export const MarketplaceCategoryDetailPage: React.FC = () => {
 
             {/* Filter Pills */}
             <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
-              {["All", "Under ₹350", "₹350 - ₹600", "₹600+"].map((p) => (
+              {[
+                { value: "All", label: "All" },
+                { value: "under-350", label: `Under ${formatCurrency(350)}` },
+                { value: "350-600", label: `${formatCurrency(350)} - ${formatCurrency(600)}` },
+                { value: "over-600", label: `${formatCurrency(600)}+` },
+              ].map((p) => (
                 <button
-                  key={p}
-                  onClick={() => setSelectedPrice(p)}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-black cursor-pointer whitespace-nowrap transition-all ${selectedPrice === p
+                  key={p.value}
+                  onClick={() => setSelectedPrice(p.value)}
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-black cursor-pointer whitespace-nowrap transition-all ${selectedPrice === p.value
                     ? "bg-[#0A4DA6] text-white shadow-sm"
                     : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200"
                     }`}
                 >
-                  {p}
+                  {p.label}
                 </button>
               ))}
 
@@ -301,7 +307,7 @@ export const MarketplaceCategoryDetailPage: React.FC = () => {
                       />
                     ) : null}
                     <span className="absolute top-3 right-3 px-3 py-1 rounded-full bg-amber-500 text-white text-xs font-black">
-                      ₹{prod.price} ({prod.weight || "500g"})
+                      {formatCurrency(prod.price)} ({prod.weight || "500g"})
                     </span>
                   </div>
 

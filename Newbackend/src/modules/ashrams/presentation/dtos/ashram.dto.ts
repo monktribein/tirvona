@@ -104,6 +104,22 @@ export class CreateRoomDto {
   @IsOptional() @IsArray() images?: string[];
 }
 
+/**
+ * Editing a room is a partial write.
+ *
+ * `CreateRoomDto` demands every field because a room without a capacity or a
+ * rate is meaningless. Reusing it for PUT forced the console to resend the
+ * whole record — including `ashramId` — to change a single price.
+ */
+export class UpdateRoomDto extends PartialType(CreateRoomDto) {
+  /**
+   * Rooms cannot be moved between ashrams. Availability, bookings, inventory
+   * and pricing rules are all keyed to the original ashram, so re-parenting a
+   * room would orphan every one of them.
+   */
+  ashramId?: never;
+}
+
 export class RoomAvailabilityDto {
   @IsString() date: string;
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) customPrice?: number;

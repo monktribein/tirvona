@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { formatCurrency } from "../utils/format";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Car,
@@ -496,7 +497,7 @@ export const ServicesHubPage: React.FC = () => {
                         Estimated Fare
                       </span>
                       <span className="text-base font-black text-[#0A4DA6] dark:text-white">
-                        ₹{item.pricing?.amount}{" "}
+                        {formatCurrency(item.pricing?.amount)}{" "}
                         <span className="text-[10px] text-gray-400 font-normal">
                           /{item.pricing?.unit}
                         </span>
@@ -549,7 +550,7 @@ export const ServicesHubPage: React.FC = () => {
                 </span>
               </div>
               <span className="text-sm font-black text-[#0A4DA6]">
-                ₹{selectedService.pricing.amount}
+                {formatCurrency(selectedService.pricing.amount)}
               </span>
             </div>
 
@@ -622,8 +623,9 @@ export const ServicesHubPage: React.FC = () => {
                 variant="primary"
                 loading={isSubmitting}
               >
-                Confirm & Pay ₹
-                {(selectedService.pricing.amount || 500) * guestsCount}
+                Confirm & Pay {formatCurrency(
+                  (selectedService.pricing.amount || 500) * guestsCount,
+                )}
               </EnterpriseButton>
             </div>
           </form>

@@ -29,6 +29,23 @@ import { ParkingAccessService } from "./parking-access.service";
 import { ParkingPricingService } from "./parking-pricing.service";
 import { ParkingReportService } from "./parking-report.service";
 
+const assertParkingPhotos = (images: unknown, coverImage: unknown): void => {
+  const unique = new Set(
+    [
+      typeof coverImage === "string" ? coverImage.trim() : "",
+      ...(Array.isArray(images)
+        ? images.map((image) =>
+            typeof image === "string" ? image.trim() : "",
+          )
+        : []),
+    ].filter(Boolean),
+  );
+  if (unique.size < 3)
+    throw new BadRequestException(
+      "At least 3 unique parking photos are required. Map data does not count as a photo.",
+    );
+};
+
 @Injectable()
 export class ParkingManagementService {
   constructor(
@@ -81,6 +98,7 @@ export class ParkingManagementService {
       );
     if (!String(body.name ?? "").trim())
       throw new ForbiddenException("A parking name is required.");
+    assertParkingPhotos(body.images, body.coverImage);
     const writable = [
       "name",
       "description",
@@ -133,6 +151,10 @@ export class ParkingManagementService {
     this.assert(access, id);
     const location = await this.locations.findById(id);
     if (!location) throw new NotFoundException("Parking not found.");
+    assertParkingPhotos(
+      body.images !== undefined ? body.images : location.images,
+      body.coverImage !== undefined ? body.coverImage : location.coverImage,
+    );
     const writable = [
       "name",
       "description",

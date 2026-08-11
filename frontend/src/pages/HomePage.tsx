@@ -12,6 +12,7 @@ import {
   useBookingSearch,
   normalizeBookingDates,
 } from "../contexts/BookingSearchContext";
+import { useLanguage } from "../contexts/LanguageContext";
 import { useAutoScroll } from "../hooks/useAutoScroll";
 import {
   Search,
@@ -39,6 +40,7 @@ import {
 } from "lucide-react";
 
 export const HomePage: React.FC = () => {
+  const { language, t } = useLanguage();
   const navigate = useNavigate();
   const { searchState, updateBookingSearch, totalGuests } = useBookingSearch();
   const [destination, setDestination] = useState("");
@@ -1140,8 +1142,6 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-
-
       {/* ══════════════════════ EVERYTHING YOU NEED ══════════════════════ */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 space-y-8 mb-10 lg:mb-20 mt-6 lg:mt-0">
         {/* Clean Text Header (No Background Wallpaper) */}
@@ -1161,13 +1161,6 @@ export const HomePage: React.FC = () => {
           <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-xl mx-auto leading-relaxed">
             Find verified ashram stays and authentic spiritual experiences with Tirvona.
           </p>
-          {/* <button
-            type="button"
-            onClick={() => navigate("/search")}
-            className="mt-2 inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-[#083b80] text-white text-xs font-extrabold shadow-md transition-all cursor-pointer"
-          >
-            Explore Tirvona <ArrowRight size={14} />
-          </button> */}
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-6 w-full pt-2 pb-6">
           {serviceHighlights.map((card, idx) => (
@@ -1402,8 +1395,7 @@ export const HomePage: React.FC = () => {
             <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
           </div>
           <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-xl mx-auto leading-relaxed">
-            Authentic Mahaprasad delivered
-            directly from famous holy temples.
+            Authentic Mahaprasad delivered directly from famous holy temples.
           </p>
           <button
             type="button"
@@ -1496,6 +1488,7 @@ export const HomePage: React.FC = () => {
 
               return (
                 <div
+                  key={idx}
                   onClick={() => {
                     const targetId = item.slug || item._id;
                     if (targetId) {
@@ -1511,9 +1504,7 @@ export const HomePage: React.FC = () => {
                   className="flex-shrink-0 relative group cursor-pointer"
                   style={{ width: "clamp(210px, 48vw, 230px)" }}
                 >
-                  {/* Modern Rounded Rectangle Card */}
                   <div className="w-full bg-white dark:bg-[#0B192C] rounded-3xl overflow-hidden border border-gray-100 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col hover:-translate-y-1">
-                    {/* Image Container */}
                     <div
                       className="relative overflow-hidden bg-gray-100 dark:bg-slate-900"
                       style={{ height: "clamp(170px, 40vw, 190px)" }}
@@ -1533,7 +1524,7 @@ export const HomePage: React.FC = () => {
                         </span>
                       ) : discountPct > 0 ? (
                         <span className="absolute top-3 left-3 bg-rose-500/90 backdrop-blur-md text-white text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-md tracking-wider">
-                          {discountPct}% OFF
+                          ${discountPct}% OFF
                         </span>
                       ) : null}
 
@@ -1545,13 +1536,12 @@ export const HomePage: React.FC = () => {
                       )}
                     </div>
 
-                    {/* Centered Bottom Title & Out of Stock / Price Area */}
                     <div className="p-4 text-center flex flex-col items-center justify-center min-h-[84px]">
                       <h4 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight line-clamp-1 text-center group-hover:text-[#0A4DA6] transition-colors">
-                        {name}
+                        {t(name)}
                       </h4>
                       <p className="text-[11px] text-gray-400 font-bold mt-0.5 text-center line-clamp-1">
-                        {subtitle}
+                        {t(subtitle)}
                       </p>
                       <div className="mt-1 flex items-center justify-center gap-2">
                         <span className="font-black text-xs text-[#0B192C] dark:text-gray-300">
@@ -1677,7 +1667,7 @@ export const HomePage: React.FC = () => {
                       />
                       {/* Royal Navy Blue Price Badge */}
                       <span className="absolute top-3 left-3 bg-[#0A4DA6] text-white text-[10px] sm:text-[11px] font-extrabold px-3 py-1 rounded-full shadow-sm">
-                        ₹{ashram.lowestNightPrice ?? 150} / night
+                        {formatCurrency(ashram.lowestNightPrice ?? 150)} / night
                       </span>
                       {/* Rating Badge — only when the ashram has real reviews */}
                       {ashram.rating?.count > 0 && (

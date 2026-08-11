@@ -1,4 +1,5 @@
 import React from "react";
+import { useLanguage } from "../../../contexts/LanguageContext";
 import {
   CheckCircle,
   Clock,
@@ -33,6 +34,7 @@ export const EnterpriseStatusBadge: React.FC<EnterpriseStatusBadgeProps> = ({
   label,
   size = "md",
 }) => {
+  const { t } = useLanguage();
   const normStatus = String(status || "").toLowerCase();
   const displayLabel = label || normStatus.replace(/_/g, " ");
 
@@ -98,7 +100,7 @@ export const EnterpriseStatusBadge: React.FC<EnterpriseStatusBadgeProps> = ({
       className={`inline-flex items-center gap-1.5 font-black tracking-wider rounded-full border shadow-2xs ${style.bg} ${sizeClasses}`}
     >
       {style.icon}
-      <span className="capitalize">{displayLabel}</span>
+      <span className="capitalize">{t(displayLabel)}</span>
     </span>
   );
 };

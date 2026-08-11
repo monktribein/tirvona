@@ -1,3 +1,6 @@
+import { tUi } from "../../../contexts/LanguageContext";
+import { getFormattingLocale } from "../../../utils/format";
+
 /**
  * Formatting helpers for record values coming back from the API.
  *
@@ -29,7 +32,7 @@ const ACRONYMS: Record<string, string> = {
 
 /** "ownerId" / "owner_id" / "address.city" -> "Owner ID" / "Address › City" */
 export const humanizeKey = (key: string): string =>
-  key
+  tUi(key
     .replace(/\./g, " › ")
     .replace(/_/g, " ")
     .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
@@ -41,7 +44,7 @@ export const humanizeKey = (key: string): string =>
         : (ACRONYMS[word.toLowerCase()] ??
           word.charAt(0).toUpperCase() + word.slice(1)),
     )
-    .join(" ");
+    .join(" "));
 
 export const ISO_DATE = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}|$)/;
 export const URL_LIKE = /^https?:\/\//i;
@@ -54,12 +57,13 @@ export const isEmptyValue = (value: unknown): boolean =>
 /** Single-line text for one scalar. */
 export const formatScalar = (value: unknown): string => {
   if (isEmptyValue(value)) return "—";
-  if (typeof value === "boolean") return value ? "Yes" : "No";
-  if (typeof value === "number") return value.toLocaleString();
-  if (value instanceof Date) return value.toLocaleString();
+  if (typeof value === "boolean") return tUi(value ? "Yes" : "No");
+  if (typeof value === "number") return value.toLocaleString(getFormattingLocale());
+  if (value instanceof Date) return value.toLocaleString(getFormattingLocale());
   if (typeof value === "string" && ISO_DATE.test(value)) {
     const parsed = new Date(value);
-    if (!Number.isNaN(parsed.getTime())) return parsed.toLocaleString();
+    if (!Number.isNaN(parsed.getTime()))
+      return parsed.toLocaleString(getFormattingLocale());
   }
   return String(value);
 };

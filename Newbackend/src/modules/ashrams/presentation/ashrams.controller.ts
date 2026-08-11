@@ -40,9 +40,16 @@ export class AshramsController {
   @Public() @Get() list(@Query() query: AshramQueryDto) {
     return this.service.publicList(query);
   }
+  /**
+   * `offer_manager` is included because the offers console builds its ashram
+   * picker from this list. The result stays scoped by `listForUser`, which
+   * gives a non-owner only their `scopedAshramIds` and `employerAshramId` —
+   * so the role grants visibility of the ashrams they already administer,
+   * nothing wider.
+   */
   @Get("my-listings/all")
   @ApiBearerAuth()
-  @Roles("owner", "manager", "super_admin")
+  @Roles("owner", "manager", "offer_manager", "super_admin")
   async mine(@CurrentUser() user: AuthenticatedUser) {
     const data = await this.service.listForUser(user);
     return { success: true, count: data.length, data };

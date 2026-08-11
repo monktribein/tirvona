@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { searchService } from "../../../services";
+import { useLanguage } from "../../../contexts/LanguageContext";
 import {
   Building,
   Car,
@@ -68,6 +69,7 @@ export const GlobalSearch: React.FC<{ links: SearchableLink[] }> = ({
   links,
 }) => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [term, setTerm] = useState("");
   const [debounced, setDebounced] = useState("");
   const [remote, setRemote] = useState<RemoteHit[]>([]);
@@ -238,8 +240,8 @@ export const GlobalSearch: React.FC<{ links: SearchableLink[] }> = ({
         }}
         onFocus={() => setOpen(true)}
         onKeyDown={onKeyDown}
-        placeholder="Search pages, ashrams, bookings, users..."
-        aria-label="Global search"
+        placeholder={t("Search pages, ashrams, bookings, users...")}
+        aria-label={t("Global Search")}
         aria-expanded={showPanel}
         role="combobox"
         aria-controls="global-search-results"
@@ -258,7 +260,7 @@ export const GlobalSearch: React.FC<{ links: SearchableLink[] }> = ({
               inputRef.current?.focus();
             }}
             className="text-slate-400 hover:text-[#0A4DA6] transition-colors cursor-pointer"
-            aria-label="Clear search"
+            aria-label={t("Clear search")}
           >
             <X size={13} />
           </button>
@@ -286,8 +288,8 @@ export const GlobalSearch: React.FC<{ links: SearchableLink[] }> = ({
                 {term.trim().length < MIN_QUERY
                   ? `Type at least ${MIN_QUERY} characters`
                   : searching
-                    ? "Searching..."
-                    : "No matches found"}
+                    ? t("Searching...")
+                    : t("No matches found")}
               </p>
               {failed && (
                 <p className="text-[11px] text-amber-600 mt-1">
@@ -309,7 +311,7 @@ export const GlobalSearch: React.FC<{ links: SearchableLink[] }> = ({
                 <div key={kind} className="px-2 pb-1">
                   <div className="flex items-center gap-1.5 px-2 py-1.5 text-[10px] font-black tracking-wider text-slate-400">
                     {SECTION[kind].icon}
-                    {SECTION[kind].label}
+                    {t(SECTION[kind].label)}
                   </div>
                   {section.map((row) => {
                     const index = rows.indexOf(row);

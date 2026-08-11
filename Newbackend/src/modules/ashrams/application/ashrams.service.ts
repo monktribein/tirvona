@@ -55,6 +55,8 @@ export class AshramsService {
   constructor(
     @InjectModel("Ashram") readonly ashrams: Model<any>,
     @InjectModel("Room") readonly rooms: Model<any>,
+    /** Read-only: guards a room category against removal while it is in use. */
+    @InjectModel("Booking") readonly bookings: Model<any>,
     @InjectModel("BookingInventory") readonly inventory: Model<any>,
     @InjectModel("BookingAddon") readonly addons: Model<any>,
   ) { }
@@ -529,13 +531,49 @@ export class AshramsService {
     id: string,
     dto: Partial<CreateRoomDto>,
   ): Promise<any> {
-    const room = await this.rooms.findById(id);
+    const room = await this.rooms.findOne({ _id: id, deletedAt: null });
     if (!room) throw new NotFoundException("Room not found");
     const ashram = await this.ashrams.findById(room.ashramId);
     this.assertScope(user, ashram);
-    Object.assign(room, dto);
+    // `ashramId` is never taken from the payload: a room's availability,
+    // bookings and inventory are all keyed to its ashram, so re-parenting it
+    // would orphan them. Everything else is applied as sent.
+    const { ashramId: _ignored, ...patch } = dto;
+    void _ignored;
+    Object.assign(room, patch);
     await room.save();
     return room;
+  }
+
+  /**
+   * Retire a room category.
+   *
+   * Soft delete, because bookings, inventory rows and availability records
+   * carry a required reference to the room and a printed invoice must still
+   * resolve what was booked. The room leaves every listing either way.
+   *
+   * Refused while a stay is still live against it — a guest holding a
+   * confirmed reservation would otherwise find their room category gone.
+   */
+  async deleteRoom(user: AuthenticatedUser, id: string): Promise<any> {
+    const room = await this.rooms.findOne({ _id: id, deletedAt: null });
+    if (!room) throw new NotFoundException("Room not found");
+    const ashram = await this.ashrams.findById(room.ashramId);
+    this.assertScope(user, ashram);
+
+    const liveBookings = await this.bookings.countDocuments({
+      roomId: room._id,
+      status: { $in: ["pending", "confirmed", "checked_in"] },
+    });
+    if (liveBookings > 0)
+      throw new ConflictException(
+        `This room has ${liveBookings} active booking(s). Cancel or complete them before removing it.`,
+      );
+
+    room.deletedAt = new Date();
+    room.status = "under_maintenance";
+    await room.save();
+    return { deleted: true, roomId: String(room._id) };
   }
 
   async setAvailability(

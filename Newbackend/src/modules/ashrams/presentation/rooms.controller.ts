@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Param, Post, Put, Query } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Put,
+  Query,
+} from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { Public } from "../../../common/decorators/public.decorator";
 import { Roles } from "../../../common/decorators/roles.decorator";
@@ -7,7 +16,11 @@ import {
   AuthenticatedUser,
 } from "../../../common/decorators/current-user.decorator";
 import { AshramsService } from "../application/ashrams.service";
-import { CreateRoomDto, RoomAvailabilityDto } from "./dtos/ashram.dto";
+import {
+  CreateRoomDto,
+  RoomAvailabilityDto,
+  UpdateRoomDto,
+} from "./dtos/ashram.dto";
 
 @ApiTags("Rooms")
 @ApiBearerAuth()
@@ -24,11 +37,22 @@ export class RoomsController {
   @Put(":id") async update(
     @CurrentUser() user: AuthenticatedUser,
     @Param("id") id: string,
-    @Body() dto: CreateRoomDto,
+    @Body() dto: UpdateRoomDto,
   ) {
     return {
       success: true,
+      message: "Room category updated successfully",
       data: await this.service.updateRoom(user, id, dto),
+    };
+  }
+  @Delete(":id") async remove(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("id") id: string,
+  ) {
+    return {
+      success: true,
+      message: "Room category removed successfully",
+      data: await this.service.deleteRoom(user, id),
     };
   }
   @Post(":id/availability") async availability(

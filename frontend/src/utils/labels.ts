@@ -22,7 +22,7 @@ export const humanizeLabel = (value?: string | null): string => {
     .split(/\s+/)
     .filter(Boolean);
   if (!words.length) return "";
-  return words
+  const label = words
     .map((word, index) => {
       // A token that is already mixed case is a proper name the author chose —
       // "McKinsey", "iPhone" — so it is left exactly as written.
@@ -31,6 +31,7 @@ export const humanizeLabel = (value?: string | null): string => {
       return index === 0 ? base.charAt(0).toUpperCase() + base.slice(1) : base;
     })
     .join(" ");
+  return tUi(label);
 };
 
 /** Title Case each word, for names and headings rather than enum values. */
@@ -41,3 +42,4 @@ export const titleizeLabel = (value?: string | null): string =>
     .join(" ");
 
 export default humanizeLabel;
+import { tUi } from "../contexts/LanguageContext";

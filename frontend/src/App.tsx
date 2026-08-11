@@ -12,6 +12,8 @@ import { UserMemoryProvider } from "./contexts/UserMemoryContext";
 import { BookingSearchProvider } from "./contexts/BookingSearchContext";
 import { CartProvider } from "./contexts/CartContext";
 import { ToastProvider } from "./contexts/ToastContext";
+import { CurrencyProvider, useCurrency } from "./contexts/CurrencyContext";
+import { LanguageProvider, useLanguage } from "./contexts/LanguageContext";
 
 // Layouts (eager — always needed)
 import PublicLayout from "./layouts/PublicLayout";
@@ -57,7 +59,6 @@ const InventoryCalendarPage = lazy(
 const OwnerVisitorArticlesPage = lazy(
   () => import("./admin/content/OwnerVisitorArticlesPage"),
 );
-const OwnerOffersPage = lazy(() => import("./pages/OwnerOffersPage"));
 const OwnerAddOnsPage = lazy(() => import("./pages/owner/OwnerAddOnsPage"));
 const OffersPage = lazy(() => import("./pages/OffersPage"));
 const OfferDetailPage = lazy(() => import("./pages/OfferDetailPage"));
@@ -265,6 +266,10 @@ const ScrollToTop: React.FC = () => {
 };
 
 const AppContent: React.FC = () => {
+  // Subscribing the route shell ensures every mounted module re-renders when
+  // either the selected currency or the live rate changes.
+  useCurrency();
+  useLanguage();
   useEffect(() => {
     smoothScrollEngine.init();
     return () => {
@@ -427,6 +432,7 @@ const AppContent: React.FC = () => {
             <Route path="/profile" element={<ProfileMainPage />} />
             <Route path="/profile/bookings" element={<ProfileMainPage />} />
             <Route path="/profile/history" element={<ProfileMainPage />} />
+            <Route path="/profile/volunteer" element={<ProfileMainPage />} />
             <Route path="/profile/articles" element={<ProfileMainPage />} />
             <Route path="/profile/blogs" element={<ProfileMainPage />} />
             <Route path="/profile/orders" element={<ProfileMainPage />} />
@@ -570,7 +576,12 @@ const AppContent: React.FC = () => {
               </ProtectedRoute>
             }
           >
-            <Route path="/owner/offers" element={<OwnerOffersPage />} />
+            {/* Owners and the platform share one offers console. The
+              owner-specific wizard at ./pages/OwnerOffersPage drifted from it
+              until the two disagreed on discounts, expiry and ashram binding;
+              that file is left in place, unused, so this is easy to revert.
+              Scope is role-aware inside the page. */}
+            <Route path="/owner/offers" element={<AdminOffersPage />} />
           </Route>
 
 
@@ -758,6 +769,20 @@ const AppContent: React.FC = () => {
             />
           </Route>
 
+          {/* Volunteer openings & applications for the whole platform. The same
+            page serves an owner at /owner/volunteer; scope is role-aware
+            inside, and the API already returns every ashram's openings to a
+            super admin while limiting an owner to their own. */}
+          <Route
+            element={
+              <ProtectedRoute allowedRoles={["super_admin", "national_admin"]}>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/admin/volunteer" element={<OwnerVolunteerPage />} />
+          </Route>
+
           <Route
             element={
               <ProtectedRoute
@@ -820,17 +845,21 @@ const AppContent: React.FC = () => {
 export const App: React.FC = () => {
   return (
     <ToastProvider>
-      <AuthProvider>
-        <NotificationProvider>
-          <UserMemoryProvider>
-            <BookingSearchProvider>
-              <CartProvider>
-                <AppContent />
-              </CartProvider>
-            </BookingSearchProvider>
-          </UserMemoryProvider>
-        </NotificationProvider>
-      </AuthProvider>
+      <LanguageProvider>
+        <CurrencyProvider>
+          <AuthProvider>
+            <NotificationProvider>
+              <UserMemoryProvider>
+                <BookingSearchProvider>
+                  <CartProvider>
+                    <AppContent />
+                  </CartProvider>
+                </BookingSearchProvider>
+              </UserMemoryProvider>
+            </NotificationProvider>
+          </AuthProvider>
+        </CurrencyProvider>
+      </LanguageProvider>
     </ToastProvider>
   );
 };

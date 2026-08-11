@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { getFormattingLocale } from "../../../utils/format";
 import {
   Search,
   RefreshCw,
@@ -1356,6 +1357,209 @@ export const UserManagementPage: React.FC = () => {
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* Account detail.
+        The eye button has always set `viewingUser`, but nothing ever rendered
+        it — so the click registered and the screen did not change. This is the
+        missing half. Read-only: every state change stays with the dedicated
+        suspend/restore/delete actions, which carry their own confirmations. */}
+      {viewingUser && (
+        <div
+          className="fixed inset-0 z-[70] flex items-start sm:items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm overflow-y-auto"
+          onClick={() => setViewingUser(null)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Account details"
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] max-w-2xl w-full my-4 sm:my-8 shadow-2xl flex flex-col max-h-[calc(100dvh-2rem)] overflow-hidden"
+          >
+            <div className="shrink-0 flex items-start justify-between gap-3 border-b border-gray-100 dark:border-slate-800 px-5 sm:px-7 pt-5 pb-4">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-11 h-11 shrink-0 rounded-full bg-[#0A4DA6]/10 text-[#0A4DA6] flex items-center justify-center font-black text-sm uppercase">
+                  {(viewingUser.name || "?").slice(0, 2)}
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-base sm:text-lg font-extrabold text-[#0B192C] dark:text-white truncate">
+                    {viewingUser.name}
+                  </h3>
+                  <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                    <span className="px-2 py-0.5 rounded-full bg-blue-50 dark:bg-slate-800 text-[#0A4DA6] dark:text-blue-400 text-[10px] font-black">
+                      {viewingUser.role}
+                    </span>
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                        viewingUser.isDeleted
+                          ? "bg-gray-100 dark:bg-slate-800 text-gray-500"
+                          : viewingUser.status === "active"
+                            ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600"
+                            : "bg-amber-50 dark:bg-amber-950/40 text-amber-600"
+                      }`}
+                    >
+                      {viewingUser.isDeleted ? "deleted" : viewingUser.status}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setViewingUser(null)}
+                aria-label="Close"
+                className="shrink-0 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-400 hover:text-gray-600 cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="flex-1 min-h-0 overflow-y-auto px-5 sm:px-7 py-5 space-y-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {[
+                  { label: "Email", value: viewingUser.email },
+                  { label: "Phone", value: viewingUser.phone },
+                  { label: "Employee ID", value: viewingUser.employeeId },
+                  { label: "Username", value: viewingUser.username },
+                  { label: "Designation", value: viewingUser.designation },
+                  { label: "Department", value: viewingUser.department },
+                  { label: "Gender", value: viewingUser.gender },
+                  {
+                    label: "Date of Birth",
+                    value: viewingUser.dob
+                      ? new Date(viewingUser.dob).toLocaleDateString(getFormattingLocale())
+                      : "",
+                  },
+                  {
+                    label: "Joined",
+                    value: viewingUser.joiningDate
+                      ? new Date(viewingUser.joiningDate).toLocaleDateString(
+                          getFormattingLocale(),
+                        )
+                      : "",
+                  },
+                  {
+                    label: "Account Created",
+                    value: viewingUser.createdAt
+                      ? new Date(viewingUser.createdAt).toLocaleDateString(
+                          getFormattingLocale(),
+                        )
+                      : "",
+                  },
+                  {
+                    label: "Assigned Ashram",
+                    value:
+                      viewingUser.assignedAshram?.name ||
+                      (typeof viewingUser.assignedAshram === "string"
+                        ? viewingUser.assignedAshram
+                        : ""),
+                  },
+                ]
+                  // Blank fields are omitted rather than rendered as "—" rows:
+                  // an account with few details should read short, not padded.
+                  .filter((f) => String(f.value ?? "").trim())
+                  .map((f) => (
+                    <div
+                      key={f.label}
+                      className="bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-800 rounded-2xl p-3"
+                    >
+                      <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">
+                        {f.label}
+                      </p>
+                      <p className="text-xs font-black text-[#0B192C] dark:text-white mt-0.5 break-words">
+                        {f.value}
+                      </p>
+                    </div>
+                  ))}
+              </div>
+
+              {viewingUser.permissions && viewingUser.permissions.length > 0 && (
+                <div>
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1.5">
+                    Permissions
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {viewingUser.permissions.map((p) => (
+                      <span
+                        key={p}
+                        className="px-2.5 py-1 rounded-full bg-blue-50 dark:bg-slate-800 text-[#0A4DA6] dark:text-blue-400 text-[10px] font-bold"
+                      >
+                        {p}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {(viewingUser.isSuspended || viewingUser.suspensionReason) && (
+                <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-2xl p-3.5 space-y-1">
+                  <p className="text-[10px] font-black text-amber-700 dark:text-amber-400 uppercase tracking-wider">
+                    Suspension
+                  </p>
+                  {viewingUser.suspensionReason && (
+                    <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">
+                      {viewingUser.suspensionReason}
+                    </p>
+                  )}
+                  <p className="text-[11px] font-semibold text-amber-700/80 dark:text-amber-400/80">
+                    {viewingUser.suspensionType || "suspended"}
+                    {viewingUser.suspendedAt &&
+                      ` · from ${new Date(viewingUser.suspendedAt).toLocaleDateString(getFormattingLocale())}`}
+                    {viewingUser.suspensionEndDate &&
+                      ` · until ${new Date(viewingUser.suspensionEndDate).toLocaleDateString(getFormattingLocale())}`}
+                  </p>
+                </div>
+              )}
+
+              {viewingUser.isDeleted && (
+                <div className="bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 rounded-2xl p-3.5">
+                  <p className="text-[10px] font-black text-rose-700 dark:text-rose-400 uppercase tracking-wider">
+                    Soft Deleted
+                  </p>
+                  <p className="text-xs font-semibold text-rose-800 dark:text-rose-300 mt-0.5">
+                    {viewingUser.deletedAt
+                      ? `Removed on ${new Date(viewingUser.deletedAt).toLocaleDateString(getFormattingLocale())}. The record is retained and can be restored.`
+                      : "The record is retained and can be restored."}
+                  </p>
+                </div>
+              )}
+
+              {(viewingUser.remarks || viewingUser.internalNotes) && (
+                <div className="space-y-2">
+                  {viewingUser.remarks && (
+                    <div>
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">
+                        Remarks
+                      </p>
+                      <p className="text-xs font-semibold text-gray-600 dark:text-gray-300 mt-0.5">
+                        {viewingUser.remarks}
+                      </p>
+                    </div>
+                  )}
+                  {viewingUser.internalNotes && (
+                    <div>
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">
+                        Internal Notes
+                      </p>
+                      <p className="text-xs font-semibold text-gray-600 dark:text-gray-300 mt-0.5">
+                        {viewingUser.internalNotes}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="shrink-0 flex justify-end px-5 sm:px-7 py-4 border-t border-gray-100 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => setViewingUser(null)}
+                className="px-6 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-blue-900 text-white text-xs font-extrabold shadow-md cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

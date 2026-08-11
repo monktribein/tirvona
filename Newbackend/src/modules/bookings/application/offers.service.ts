@@ -212,12 +212,19 @@ export class OffersService {
   }
   async save(user: AuthenticatedUser, dto: SaveOfferDto): Promise<any> {
     const scope = await this.ownerAshrams(user);
-    if (
-      dto.ashramId &&
-      user.role !== "super_admin" &&
-      !scope.includes(dto.ashramId)
-    )
-      throw new ForbiddenException("You do not manage this ashram");
+    if (user.role !== "super_admin") {
+      // Only the platform may publish a coupon that is valid everywhere.
+      // Without this an owner could omit `ashramId` and mint a discount
+      // redeemable against every ashram on the platform, including ones they
+      // have nothing to do with — the scope check below only fired when an
+      // ashram was named, so leaving it out bypassed authorisation entirely.
+      if (!dto.ashramId)
+        throw new ForbiddenException(
+          "Select which of your ashrams this coupon applies to",
+        );
+      if (!scope.includes(dto.ashramId))
+        throw new ForbiddenException("You do not manage this ashram");
+    }
     const ashram: any = dto.ashramId
       ? await this.ashrams.findById(dto.ashramId).lean()
       : null;
@@ -285,7 +292,13 @@ export class OffersService {
     const row = await this.loadForWrite(user, id);
     // Re-binding a coupon to a different ashram is a write against that
     // ashram; owning the coupon is not enough to point it somewhere else.
-    if (dto.ashramId && user.role !== "super_admin") {
+    // Clearing the binding is likewise reserved to the platform, otherwise an
+    // owner could widen their own coupon to every ashram by editing it.
+    if (dto.ashramId !== undefined && user.role !== "super_admin") {
+      if (!dto.ashramId)
+        throw new ForbiddenException(
+          "Select which of your ashrams this coupon applies to",
+        );
       const scope = await this.ownerAshrams(user);
       if (!scope.includes(dto.ashramId))
         throw new ForbiddenException("You do not manage this ashram");

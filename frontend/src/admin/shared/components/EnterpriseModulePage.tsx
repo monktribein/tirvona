@@ -8,6 +8,7 @@ import { EnterprisePageHeader } from "./EnterprisePageHeader";
 import { useNotifications } from "../../../contexts/NotificationContext";
 import api, { getErrorMessage } from "../../../lib/api";
 import { humanizeLabel } from "../../../utils/labels";
+import { formatCurrency, getFormattingLocale } from "../../../utils/format";
 import {
   Image,
   Tag as TagIcon,
@@ -607,12 +608,12 @@ export const EnterpriseModulePage: React.FC<{
               key: "entryAt",
               label: "Entry",
               render: (v: any) =>
-                v ? new Date(v).toLocaleString("en-IN") : "—",
+                v ? new Date(v).toLocaleString(getFormattingLocale()) : "—",
             },
             {
               key: "pricing",
               label: "Amount",
-              render: (v: any) => `₹${v?.totalAmount ?? 0}`,
+              render: (v: any) => formatCurrency(v?.totalAmount ?? 0),
             },
             { key: "paymentStatus", label: "Payment" },
             { key: "status", label: "Status" },
@@ -716,17 +717,17 @@ export const EnterpriseModulePage: React.FC<{
             {
               key: "baseFee",
               label: "Base Fee",
-              render: (v: any) => `₹${v ?? 0}`,
+              render: (v: any) => formatCurrency(v ?? 0),
             },
             {
               key: "hourlyRate",
               label: "Hourly",
-              render: (v: any) => `₹${v ?? 0}`,
+              render: (v: any) => formatCurrency(v ?? 0),
             },
             {
               key: "dailyRate",
               label: "Daily",
-              render: (v: any) => `₹${v ?? 0}`,
+              render: (v: any) => formatCurrency(v ?? 0),
             },
           ],
           fields: [
@@ -790,18 +791,18 @@ export const EnterpriseModulePage: React.FC<{
             {
               key: "grossAmount",
               label: "Gross",
-              render: (v: any) => `₹${v ?? 0}`,
+              render: (v: any) => formatCurrency(v ?? 0),
             },
             {
               key: "commissionAmount",
               label: "Commission",
               render: (v: any, item: any) =>
-                `₹${v ?? 0} (${item.commissionPercent ?? 0}%)`,
+                `${formatCurrency(v ?? 0)} (${item.commissionPercent ?? 0}%)`,
             },
             {
               key: "partnerEarning",
               label: "Partner Earning",
-              render: (v: any) => `₹${v ?? 0}`,
+              render: (v: any) => formatCurrency(v ?? 0),
             },
             { key: "settlementStatus", label: "Settlement" },
           ],
@@ -818,7 +819,7 @@ export const EnterpriseModulePage: React.FC<{
             {
               key: "amount",
               label: "Amount",
-              render: (v: any) => `₹${v ?? 0}`,
+              render: (v: any) => formatCurrency(v ?? 0),
             },
             {
               key: "partnerId",
@@ -829,7 +830,7 @@ export const EnterpriseModulePage: React.FC<{
               key: "occurredAt",
               label: "Occurred",
               render: (v: any) =>
-                v ? new Date(v).toLocaleString("en-IN") : "—",
+                v ? new Date(v).toLocaleString(getFormattingLocale()) : "—",
             },
           ],
           fields: [],
@@ -856,7 +857,7 @@ export const EnterpriseModulePage: React.FC<{
               key: "scannedAt",
               label: "Scanned At",
               render: (v: any) =>
-                v ? new Date(v).toLocaleString("en-IN") : "—",
+                v ? new Date(v).toLocaleString(getFormattingLocale()) : "—",
             },
           ],
           fields: [],
@@ -981,6 +982,27 @@ export const EnterpriseModulePage: React.FC<{
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      if (activeModule === "parking_locations") {
+        const parkingPhotos = Array.from(
+          new Set(
+            [
+              formData.coverImage,
+              ...(Array.isArray(formData.images) ? formData.images : []),
+            ].filter(
+              (value): value is string =>
+                typeof value === "string" && value.trim().length > 0,
+            ),
+          ),
+        );
+        if (parkingPhotos.length < 3) {
+          addNotification(
+            "Three Parking Photos Required",
+            `Upload ${3 - parkingPhotos.length} more real parking photo${3 - parkingPhotos.length === 1 ? "" : "s"}. The map does not count as a gallery image.`,
+            "warning",
+          );
+          return;
+        }
+      }
       const bannerCategory = formData.category || "hero_banner";
       const bannerImage =
         formData.image ||
@@ -1467,6 +1489,7 @@ export const EnterpriseModulePage: React.FC<{
                   }));
                 }}
                 label={`${title} Image & Gallery Manager`}
+                minimumImages={activeModule === "parking_locations" ? 3 : 0}
               />
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">

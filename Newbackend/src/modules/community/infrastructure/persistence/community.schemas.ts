@@ -78,6 +78,7 @@ export const COMMUNITY_MODELS = [
     name: "CommunityNotification",
     schema: loose("notifications", {
       recipientId: { type: SchemaTypes.ObjectId, ref: "User", index: true },
+      userId: { type: SchemaTypes.ObjectId, ref: "User", index: true },
     }),
   },
   {

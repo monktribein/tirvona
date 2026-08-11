@@ -25,7 +25,7 @@ import {
   type BookingDraftPayload,
 } from "../utils/bookingDraft";
 import { setGuestPendingIntent } from "../utils/guestGate";
-import { roundMoney } from "../utils/format";
+import { formatCurrency, roundMoney } from "../utils/format";
 import { GuestRoomSelector } from "../components/shared/GuestRoomSelector";
 import { GuestReviewsCarousel } from "../components/shared/GuestReviewsCarousel";
 import WriteReviewCard from "../components/shared/WriteReviewCard";
@@ -196,7 +196,7 @@ export const AshramDetailPage: React.FC = () => {
         setPendingPromo(null);
         setCouponMsg(
           res.data.message ||
-            `Promo code ${code} applied! Saved ₹${offerData.discountAmount}`,
+            `Promo code ${code} applied! Saved ${formatCurrency(offerData.discountAmount)}`,
         );
       } else {
         setAppliedOfferData(null);
@@ -1430,7 +1430,7 @@ export const AshramDetailPage: React.FC = () => {
                       Bed Rate
                     </span>
                     <span className="text-sm font-extrabold text-[#0B192C] dark:text-white">
-                      ₹{r.basePrice} / night
+                      {formatCurrency(r.basePrice)} / night
                     </span>
                   </div>
                 </div>
@@ -1607,7 +1607,7 @@ export const AshramDetailPage: React.FC = () => {
                               {dateObj.getDate()}
                             </span>
                             <span className="text-[8px] sm:text-[9px] font-semibold leading-tight mt-0.5">
-                              ₹{day.price}
+                              {formatCurrency(day.price)}
                             </span>
                             <span className="text-[7px] sm:text-[8px] font-extrabold leading-tight">
                               {status === "sold_out"
@@ -1836,7 +1836,7 @@ export const AshramDetailPage: React.FC = () => {
                     {selectedRoom?.name}
                   </span>
                   <span className="text-[10px] font-bold text-[#0A4DA6]">
-                    ₹{selectedRoom?.basePrice} / bed per night
+                    {formatCurrency(selectedRoom?.basePrice)} / bed per night
                   </span>
                 </div>
 
@@ -1885,7 +1885,7 @@ export const AshramDetailPage: React.FC = () => {
                                   </span>
                                 </div>
                                 <span className="text-[10px] font-bold text-[#0A4DA6] block">
-                                  ₹{item.price}{" "}
+                                  {formatCurrency(item.price)}{" "}
                                   <span className="text-gray-400 font-medium">
                                     / {item.unitLabel || "Unit"}
                                   </span>
@@ -1991,7 +1991,7 @@ export const AshramDetailPage: React.FC = () => {
                       <span className="font-extrabold text-sm text-emerald-600 dark:text-emerald-400">
                         {/* The quoted saving, so this panel cannot disagree
                           with the breakdown directly beneath it. */}
-                        You Saved ₹{discountCalc}
+                        You Saved {formatCurrency(discountCalc)}
                       </span>
                     </div>
 
@@ -2070,7 +2070,7 @@ export const AshramDetailPage: React.FC = () => {
                       </span>
                       <span className="text-[10px] text-gray-500">
                         {useLoyalty
-                          ? "Applied 100 points (-₹100)"
+                          ? `Applied 100 points (-${formatCurrency(100)})`
                           : `Earn ${Math.round(subtotalCalc * 0.05)} reward points after stay`}
                       </span>
                     </div>
@@ -2128,27 +2128,27 @@ export const AshramDetailPage: React.FC = () => {
                       Original Stay Cost ({daysCount} night
                       {daysCount > 1 ? "s" : ""}):
                     </span>
-                    <span>₹{stayCostCalc}</span>
+                    <span>{formatCurrency(stayCostCalc)}</span>
                   </div>
 
                   {extraGuestShownCalc > 0 && (
                     <div className="flex justify-between text-gray-600 dark:text-gray-300">
                       <span>Extra Guest Charges:</span>
-                      <span>₹{extraGuestShownCalc}</span>
+                      <span>{formatCurrency(extraGuestShownCalc)}</span>
                     </div>
                   )}
 
                   {servicesShownCalc > 0 && (
                     <div className="flex justify-between text-gray-600 dark:text-gray-300">
                       <span>Add-on Services:</span>
-                      <span>₹{servicesShownCalc}</span>
+                      <span>{formatCurrency(servicesShownCalc)}</span>
                     </div>
                   )}
 
                   {donationCalc > 0 && (
                     <div className="flex justify-between text-gray-600 dark:text-gray-300">
                       <span>Ashram Donation:</span>
-                      <span>₹{donationCalc}</span>
+                      <span>{formatCurrency(donationCalc)}</span>
                     </div>
                   )}
 
@@ -2159,7 +2159,7 @@ export const AshramDetailPage: React.FC = () => {
                         {platformSettings.label || "Tirvona Platform Fee"}:
                       </span>
                       <span>
-                        ₹{platformFeeShownCalc}
+                        {formatCurrency(platformFeeShownCalc)}
                         {platformSettings.type === "percentage" && (
                           <span className="text-[10px] text-gray-400 font-normal ml-1">
                             ({platformSettings.value}%)
@@ -2175,7 +2175,7 @@ export const AshramDetailPage: React.FC = () => {
                       <span>
                         GST ({gstRateCalc}% on platform fee):
                       </span>
-                      <span>₹{gstShownCalc}</span>
+                      <span>{formatCurrency(gstShownCalc)}</span>
                     </div>
                   )}
 
@@ -2183,7 +2183,7 @@ export const AshramDetailPage: React.FC = () => {
                   {discountCalc > 0 && (
                     <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-extrabold">
                       <span>Coupon Discount ({couponCode}):</span>
-                      <span>-₹{discountCalc}</span>
+                      <span>-{formatCurrency(discountCalc)}</span>
                     </div>
                   )}
 
@@ -2191,7 +2191,7 @@ export const AshramDetailPage: React.FC = () => {
                   {useLoyalty && (
                     <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-extrabold">
                       <span>Loyalty Discount:</span>
-                      <span>-₹100</span>
+                      <span>-{formatCurrency(100)}</span>
                     </div>
                   )}
 
@@ -2199,7 +2199,7 @@ export const AshramDetailPage: React.FC = () => {
                   <div className="pt-2 border-t border-gray-200 dark:border-slate-800 flex justify-between text-base font-black text-[#0B192C] dark:text-white">
                     <span>Final Payable Amount:</span>
                     <span className="text-[#0A4DA6] dark:text-blue-400">
-                      ₹{finalPayableCalc}
+                      {formatCurrency(finalPayableCalc)}
                     </span>
                   </div>
                 </div>
@@ -2214,16 +2214,16 @@ export const AshramDetailPage: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <span className="text-lg">💰</span>
                       <div>
-                        <span>Total Savings ₹{totalSavingsCalc}</span>
+                        <span>Total Savings {formatCurrency(totalSavingsCalc)}</span>
                         <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">
-                          You saved ₹{totalSavingsCalc} on this booking stay.
+                          You saved {formatCurrency(totalSavingsCalc)} on this booking stay.
                         </p>
                       </div>
                     </div>
                     {/* SECTION 6: Circular Savings Badge */}
                     <div className="w-11 h-11 rounded-full bg-emerald-500 text-white flex flex-col items-center justify-center font-black text-[9px] shadow-md shrink-0">
                       <span>SAVED</span>
-                      <span className="text-[10px]">₹{totalSavingsCalc}</span>
+                      <span className="text-[10px]">{formatCurrency(totalSavingsCalc)}</span>
                     </div>
                   </motion.div>
                 )}
@@ -2313,7 +2313,7 @@ export const AshramDetailPage: React.FC = () => {
                   <div className="flex justify-between items-center pt-2 border-t border-dashed border-gray-200 dark:border-slate-800 font-extrabold text-sm text-[#0B192C] dark:text-white">
                     <span>Total Amount Payable:</span>
                     <span className="text-[#0A4DA6]">
-                      ₹{bookingSuccess.pricing?.totalAmount}
+                      {formatCurrency(bookingSuccess.pricing?.totalAmount)}
                     </span>
                   </div>
                 </div>
@@ -2451,7 +2451,7 @@ export const AshramDetailPage: React.FC = () => {
                 </div>
                 <div className="px-4 py-3 border-t border-gray-100 dark:border-slate-800 flex justify-between items-center bg-gray-50/50 dark:bg-slate-900/10">
                   <span className="text-[10px] font-extrabold text-[#0B192C] dark:text-white">
-                    ₹{rel.lowestNightPrice ?? 150} / night
+                    {formatCurrency(rel.lowestNightPrice ?? 150)} / night
                   </span>
                   <span className="text-[9px] font-bold text-[#0A4DA6] flex items-center gap-0.5">
                     View <ChevronRight size={10} />
