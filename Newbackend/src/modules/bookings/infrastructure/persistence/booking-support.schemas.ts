@@ -65,6 +65,13 @@ export const BookingCouponSchema = new Schema(
     clicksCount: Number,
     redemptionsCount: Number,
     revenueGenerated: Number,
+    // An offer that has already been redeemed cannot be removed outright — a
+    // booking's `appliedOfferId` and every redemption row still point at it, and
+    // those references are immutable. Deleting one archives it instead: it
+    // leaves every listing, public and administrative, but the financial trail
+    // survives. Offers that were never redeemed are removed for real.
+    deletedAt: { type: Date, default: null, index: true },
+    deletedBy: id("User"),
     createdBy: id("User"),
     updatedBy: id("User"),
   },

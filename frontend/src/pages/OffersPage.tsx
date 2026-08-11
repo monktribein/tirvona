@@ -21,84 +21,12 @@ export const OffersPage: React.FC = () => {
   const selectedCity = urlCity || "All";
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
-  const DEFAULT_OFFERS = [
-    {
-      _id: "default-1",
-      offerType: "MAHAKUMBH OFFER",
-      discountPercentage: 20,
-      offerTitle: "Mahakumbh Sacred Stay Special",
-      description:
-        "Experience the holy Kumbh Mela 2026 with 20% OFF accommodation & VIP Ganga Aarti pass.",
-      promoCode: "KUMBH2026",
-      image: "",
-      validity: "31 Dec 2026",
-      ashramId: {
-        address: { city: "Prayagraj" },
-        name: "Tirvona Sacred Stay",
-      },
-    },
-    {
-      _id: "default-2",
-      offerType: "WEEKEND OFFER",
-      discountValue: 500,
-      discountType: "FixedAmount",
-      offerTitle: "Weekend Spiritual Yoga & Retreat",
-      description:
-        "Recharge your mind & soul with our weekend spiritual retreat package in Haridwar.",
-      promoCode: "WEEKEND500",
-      image: "",
-      validity: "30 Jun 2026",
-      ashramId: {
-        address: { city: "Haridwar" },
-        name: "Prem Nagar Ashram",
-      },
-    },
-    {
-      _id: "default-3",
-      offerType: "FESTIVAL OFFER",
-      discountPercentage: 15,
-      offerTitle: "Festival Season Kashi Discount",
-      description:
-        "Get 15% instant savings on top verified ashrams across Kashi & Haridwar.",
-      promoCode: "FESTIVAL2026",
-      image: "",
-      validity: "31 Dec 2026",
-      ashramId: {
-        address: { city: "Varanasi" },
-        name: "Kashi Vishwanath Ashram",
-      },
-    },
-    {
-      _id: "default-4",
-      offerType: "SPECIAL OFFER",
-      discountPercentage: 25,
-      offerTitle: "Vrindavan Dham Yatra Deal",
-      description:
-        "Exclusive 25% discount on serene dharamshala stays in holy Vrindavan.",
-      promoCode: "VRINDAVAN25",
-      image: "",
-      validity: "31 Dec 2026",
-      ashramId: {
-        address: { city: "Vrindavan" },
-        name: "Bhagwat Dham Ashram",
-      },
-    },
-    {
-      _id: "default-5",
-      offerType: "YOGA CAMP",
-      discountPercentage: 18,
-      offerTitle: "Rishikesh Yoga & Meditation Retreat",
-      description:
-        "Immerse yourself in authentic Vedic yoga sessions along holy Ganga at 18% OFF.",
-      promoCode: "YOGA2026",
-      image: "",
-      validity: "30 Sep 2026",
-      ashramId: {
-        address: { city: "Rishikesh" },
-        name: "Parmarth Niketan Ashram",
-      },
-    },
-  ];
+  // This page used to substitute five invented campaigns whenever the API
+  // returned nothing — or failed. Visitors were offered promo codes
+  // (KUMBH2026, VRINDAVAN25, YOGA2026 …) that no coupon backed, so every one
+  // of them was rejected at checkout. An empty catalogue now shows the empty
+  // state, and a failed request says so instead of quietly inventing stock.
+  const [loadFailed, setLoadFailed] = useState(false);
 
   const fetchOffers = useCallback(async () => {
     setLoading(true);
@@ -112,18 +40,14 @@ export const OffersPage: React.FC = () => {
       }
 
       const res = await api.get(url);
-      if (
-        res.data.success &&
-        Array.isArray(res.data.data) &&
-        res.data.data.length > 0
-      ) {
-        setOffers(res.data.data);
-      } else {
-        setOffers(DEFAULT_OFFERS);
-      }
+      setOffers(
+        res.data?.success && Array.isArray(res.data.data) ? res.data.data : [],
+      );
+      setLoadFailed(false);
     } catch (err) {
       console.error("Fetch public offers error:", err);
-      setOffers(DEFAULT_OFFERS);
+      setOffers([]);
+      setLoadFailed(true);
     } finally {
       setLoading(false);
     }
@@ -144,16 +68,25 @@ export const OffersPage: React.FC = () => {
     setTimeout(() => setCopiedCode(null), 2500);
   };
 
+  /**
+   * A coupon bound to one ashram opens that ashram's booking page with the
+   * code already in the query, where the detail page validates and applies it.
+   * Only an unbound, platform-wide coupon falls back to search.
+   */
   const handleBookWithOffer = (offer: any) => {
-    const ashram =
-      offer.ashramId || (offer.applicableAshrams && offer.applicableAshrams[0]);
-    if (ashram?._id && !String(ashram._id).startsWith("default-") && !String(ashram._id).startsWith("ashram-")) {
-      navigate(
-        `/ashram/${ashram._id}?promoCode=${encodeURIComponent(offer.promoCode)}`,
-      );
-    } else {
-      navigate(`/search?promoCode=${encodeURIComponent(offer.promoCode)}`);
-    }
+    const ashramId = String(
+      offer.ashramId?._id ??
+        offer.ashramId ??
+        offer.applicableAshrams?.[0]?._id ??
+        offer.applicableAshrams?.[0] ??
+        "",
+    );
+    const promo = encodeURIComponent(offer.promoCode || "");
+    navigate(
+      ashramId
+        ? `/ashram/${ashramId}?promoCode=${promo}`
+        : `/search?promoCode=${promo}`,
+    );
   };
 
   const filteredOffers = offers.filter((o) => {
@@ -242,11 +175,24 @@ export const OffersPage: React.FC = () => {
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-12 text-center space-y-4 shadow-sm">
             <Gift size={48} className="mx-auto text-amber-500/50" />
             <h3 className="text-xl font-black text-[#0B192C] dark:text-white">
-              No Offers Found
+              {loadFailed ? "Offers Unavailable" : "No Offers Found"}
             </h3>
             <p className="text-xs text-gray-400">
-              Try selecting another category or city filter.
+              {loadFailed
+                ? "We could not reach the offers service. Please try again shortly."
+                : offers.length === 0
+                  ? "There are no active offers right now. Please check back soon."
+                  : "Try selecting another category or city filter."}
             </p>
+            {loadFailed && (
+              <button
+                type="button"
+                onClick={fetchOffers}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-[#083b80] text-white text-xs font-extrabold cursor-pointer"
+              >
+                Try Again
+              </button>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">

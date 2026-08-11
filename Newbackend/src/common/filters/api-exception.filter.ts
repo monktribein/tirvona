@@ -7,12 +7,73 @@ import {
 } from "@nestjs/common";
 import type { Request, Response } from "express";
 
+/**
+ * Translate a database-layer failure into the status it actually deserves.
+ *
+ * Mongoose reports a rejected write as a plain `Error`, which this filter would
+ * otherwise report as 500 — telling an administrator the server broke when the
+ * truth is that their input was rejected, or that a code is already taken.
+ * Returns null for anything that is genuinely not a client error.
+ */
+const databaseFailure = (
+  exception: unknown,
+): { status: number; message: string } | null => {
+  const error = exception as {
+    name?: string;
+    code?: number;
+    message?: string;
+    errors?: Record<string, { message?: string }>;
+    path?: string;
+    keyValue?: Record<string, unknown>;
+  };
+  if (error?.name === "ValidationError") {
+    const first = Object.values(error.errors ?? {})[0]?.message;
+    return {
+      status: HttpStatus.BAD_REQUEST,
+      message: first ?? "The submitted record is not valid",
+    };
+  }
+  if (error?.name === "CastError")
+    return {
+      status: HttpStatus.BAD_REQUEST,
+      message: `"${error.path ?? "value"}" is not in a valid format`,
+    };
+  if (error?.name === "VersionError")
+    return {
+      status: HttpStatus.CONFLICT,
+      message: "This record changed while you were editing it. Reload and retry.",
+    };
+  if (error?.code === 11000) {
+    const field = Object.keys(error.keyValue ?? {})[0];
+    return {
+      status: HttpStatus.CONFLICT,
+      message: field
+        ? `That ${field} is already in use`
+        : "That record already exists",
+    };
+  }
+  return null;
+};
+
 @Catch()
 export class ApiExceptionFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
     const context = host.switchToHttp();
     const response = context.getResponse<Response>();
     const request = context.getRequest<Request & { id?: string }>();
+
+    const database =
+      exception instanceof HttpException ? null : databaseFailure(exception);
+    if (database) {
+      response.status(database.status).json({
+        success: false,
+        message: database.message,
+        requestId: request.id,
+        timestamp: new Date().toISOString(),
+        path: request.originalUrl,
+      });
+      return;
+    }
     // Errors raised outside Nest still carry a meaningful status — body-parser
     // reports 413 for an oversized payload, for instance. Reporting those as
     // 500 hides what the caller actually needs to fix.

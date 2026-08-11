@@ -5,8 +5,11 @@ import { ashramService } from "../services";
 import { SearchResultStatus } from "../components/shared/SearchResultStatus";
 import { GuestRoomSelector } from "../components/shared/GuestRoomSelector";
 import { VerifiedBadge } from "../components/shared/VerifiedBadge";
-import { DatePicker } from "../components/DatePicker";
-import { useBookingSearch, getTodayYMD, getTomorrowYMD } from "../contexts/BookingSearchContext";
+import { DateRangePicker } from "../components/DateRangePicker";
+import {
+  useBookingSearch,
+  normalizeBookingDates,
+} from "../contexts/BookingSearchContext";
 import {
   Filter,
   MapPin,
@@ -14,9 +17,8 @@ import {
   Compass,
   Wifi,
   Search,
-  Calendar,
   UtensilsCrossed,
-  Droplet,
+  Car,
   X,
   Building2,
   Landmark,
@@ -33,8 +35,12 @@ export const SearchPage: React.FC = () => {
   const activeKeyword = rawDestination || rawCategory || rawQuery || "";
 
   const typeQuery = searchParams.get("type") || "";
-  const checkInQuery = searchParams.get("checkIn") || "";
-  const checkOutQuery = searchParams.get("checkOut") || "";
+  const queryDates = normalizeBookingDates(
+    searchParams.get("checkIn") || "",
+    searchParams.get("checkOut") || "",
+  );
+  const checkInQuery = queryDates.checkIn;
+  const checkOutQuery = queryDates.checkOut;
   const roomsQuery = searchParams.get("rooms");
   const adultsQuery = searchParams.get("adults");
   const childrenQuery = searchParams.get("children");
@@ -45,12 +51,12 @@ export const SearchPage: React.FC = () => {
 
   const [destination, setDestination] = useState(activeKeyword);
   const [stayType, setStayType] = useState(typeQuery);
-  const [checkIn, setCheckIn] = useState(
-    checkInQuery || searchState.checkIn || ""
+  const initialDates = normalizeBookingDates(
+    checkInQuery || searchState.checkIn,
+    checkOutQuery || searchState.checkOut,
   );
-  const [checkOut, setCheckOut] = useState(
-    checkOutQuery || searchState.checkOut || ""
-  );
+  const [checkIn, setCheckIn] = useState(initialDates.checkIn);
+  const [checkOut, setCheckOut] = useState(initialDates.checkOut);
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -60,7 +66,7 @@ export const SearchPage: React.FC = () => {
   const [homestayFilter, setHomestayFilter] = useState(false);
   const [acFilter, setAcFilter] = useState(false);
   const [foodFilter, setFoodFilter] = useState(false);
-  const [riverViewFilter, setRiverViewFilter] = useState(false);
+  const [parkingFilter, setParkingFilter] = useState(false);
 
   // Spatial Map State
   const [showMapGrid, setShowMapGrid] = useState(false);
@@ -153,10 +159,8 @@ export const SearchPage: React.FC = () => {
     homestayFilter,
     acFilter,
     foodFilter,
-    riverViewFilter,
+    parkingFilter,
   ]);
-
-  const todayYMD = new Date().toISOString().split("T")[0];
 
   const fetchAshrams = async () => {
     setLoading(true);
@@ -184,7 +188,7 @@ export const SearchPage: React.FC = () => {
       const amenities = [];
       if (acFilter) amenities.push("AC");
       if (foodFilter) amenities.push("Pure Vegetarian Food");
-      if (riverViewFilter) amenities.push("River View");
+      if (parkingFilter) amenities.push("Parking");
       if (amenities.length > 0) params.amenities = amenities.join(",");
 
       const res = await ashramService.search(params);
@@ -356,18 +360,18 @@ export const SearchPage: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-1 pb-12 space-y-4 lg:pb-12 lg:h-[calc(100vh-5.5rem)] lg:flex lg:flex-col lg:overflow-hidden">
       {/* Search Filter Panel — stays fixed below the navbar */}
-      <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-5 rounded-[28px] shadow-sm shrink-0">
+      <div className="relative z-[100] isolate overflow-visible bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 p-1.5 sm:p-2 rounded-[28px] lg:rounded-full shadow-lg shadow-[#0B192C]/8 shrink-0">
         <form
           onSubmit={handleSearchSubmit}
-          className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.45fr_1.35fr_1.15fr_auto] gap-1 lg:gap-0 items-center"
         >
           {/* Destination */}
           <div
-            className="flex flex-col text-left space-y-1.5 relative"
+            className="flex flex-col justify-center text-left relative min-h-[62px] px-5 py-2 rounded-2xl lg:rounded-full lg:border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0B192C] hover:bg-slate-50 dark:hover:bg-slate-900/60 hover:shadow-lg z-10 focus-within:z-[90]"
             ref={autocompleteRef}
           >
-            <label className="text-[10px] font-extrabold tracking-wider text-gray-400">
-              Destination City / Ashram
+            <label className="text-[11px] font-extrabold text-[#0B192C] dark:text-white">
+              Where
             </label>
             <div className="relative">
               <input
@@ -375,12 +379,8 @@ export const SearchPage: React.FC = () => {
                 value={destination}
                 onChange={handleInputChange}
                 onFocus={() => setShowSuggestions(true)}
-                placeholder="e.g. Haridwar"
-                className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl pl-9 pr-3 py-3 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
-              />
-              <MapPin
-                className="absolute left-3 top-3.5 text-gray-400"
-                size={14}
+                placeholder="Search destinations"
+                className="w-full bg-transparent border-0 p-0 mt-0.5 text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-300 focus:outline-none"
               />
             </div>
 
@@ -390,7 +390,7 @@ export const SearchPage: React.FC = () => {
                   initial={{ opacity: 0, y: 5 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 5 }}
-                  className="absolute left-0 right-0 top-full mt-2 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden z-50 text-xs"
+                  className="absolute left-0 right-0 top-full mt-3 bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden z-50 text-xs"
                 >
                   {suggestions.map((sug, i) => (
                     <button
@@ -408,65 +408,29 @@ export const SearchPage: React.FC = () => {
             </AnimatePresence>
           </div>
 
-          {/* Check In */}
-          <div className="flex flex-col text-left space-y-1.5">
-            <label className="text-[10px] font-extrabold tracking-wider text-gray-400">
-              Check In Date
-            </label>
-            <div className="relative flex items-center bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2.5 min-h-[42px]">
-              <Calendar className="text-gray-400 mr-2 shrink-0" size={14} />
-              <div className="min-w-0 flex-1">
-                <DatePicker
-                  value={checkIn}
-                  onChange={(val) => {
-                    setCheckIn(val);
-                    updateBookingSearch({ checkIn: val });
-                    if (val && checkOut && checkOut <= val) {
-                      const nextOut = getTomorrowYMD(val);
-                      setCheckOut(nextOut);
-                      updateBookingSearch({ checkOut: nextOut });
-                    }
-                  }}
-                  placeholder="Add Date"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Check Out */}
-          <div className="flex flex-col text-left space-y-1.5">
-            <label className="text-[10px] font-extrabold tracking-wider text-gray-400">
-              Check Out Date
-            </label>
-            <div className="relative flex items-center bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2.5 min-h-[42px]">
-              <Calendar className="text-gray-400 mr-2 shrink-0" size={14} />
-              <div className="min-w-0 flex-1">
-                <DatePicker
-                  value={checkOut}
-                  onChange={(val) => {
-                    setCheckOut(val);
-                    updateBookingSearch({ checkOut: val });
-                  }}
-                  min={checkIn}
-                  placeholder="Add Date"
-                  align="right"
-                />
-              </div>
-            </div>
+          <div className="relative rounded-2xl lg:rounded-full px-5 py-2 min-h-[62px] flex items-center lg:border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0B192C] hover:bg-slate-50 dark:hover:bg-slate-900/60 hover:shadow-lg z-10 focus-within:z-[90]">
+            <DateRangePicker
+              checkIn={checkIn}
+              checkOut={checkOut}
+              compact
+              pill
+              onChange={(nextIn, nextOut) => {
+                setCheckIn(nextIn);
+                setCheckOut(nextOut);
+                updateBookingSearch({ checkIn: nextIn, checkOut: nextOut });
+              }}
+            />
           </div>
 
           {/* Guest & Room Count */}
-          <div className="flex flex-col text-left space-y-1.5">
-            <label className="text-[10px] font-extrabold tracking-wider text-gray-400">
-              Guests & Rooms
-            </label>
-            <GuestRoomSelector compact />
+          <div className="relative rounded-2xl lg:rounded-full px-5 py-2 min-h-[62px] flex items-center bg-white dark:bg-[#0B192C] hover:bg-slate-50 dark:hover:bg-slate-900/60 hover:shadow-lg z-10 focus-within:z-[90]">
+            <GuestRoomSelector compact pill />
           </div>
 
           {/* Search Action */}
           <button
             type="submit"
-            className="w-full py-3 bg-[#0A4DA6] hover:bg-opacity-95 text-white font-extrabold rounded-xl text-xs flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-[#0A4DA6]/10"
+            className="w-full lg:w-auto h-12 lg:h-14 px-6 bg-[#0A4DA6] hover:bg-opacity-95 text-white font-extrabold rounded-full text-xs flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-[#0A4DA6]/10"
           >
             <Search size={14} /> Modify Search
           </button>
@@ -561,13 +525,12 @@ export const SearchPage: React.FC = () => {
                 <label className="flex items-center gap-3 text-xs font-semibold cursor-pointer select-none">
                   <input
                     type="checkbox"
-                    checked={riverViewFilter}
-                    onChange={() => setRiverViewFilter(!riverViewFilter)}
+                    checked={parkingFilter}
+                    onChange={() => setParkingFilter(!parkingFilter)}
                     className="rounded border-gray-200 dark:border-slate-700 text-[#0A4DA6] focus:ring-[#0A4DA6]/20 cursor-pointer w-4 h-4"
                   />
                   <span className="flex items-center gap-1.5">
-                    <Droplet size={14} className="text-gray-400" /> Holy River
-                    View
+                    <Car size={14} className="text-gray-400" /> Parking
                   </span>
                 </label>
               </div>

@@ -41,6 +41,9 @@ import {
   toLocalInputValue,
   availabilityTone,
   vehicleLabel,
+  getMinimumParkingEntry,
+  getMinimumParkingExit,
+  normalizeParkingWindow,
 } from "../utils/parkingFormat";
 import ParkingAmenityList from "../components/ParkingAmenityList";
 import VehicleTypePicker from "../components/VehicleTypePicker";
@@ -68,12 +71,17 @@ export const ParkingDetailPage: React.FC = () => {
     };
   }, []);
 
-  const [entryAt, setEntryAt] = useState(
-    searchParams.get("entryAt") || defaults.entry,
+  const initialWindow = useMemo(
+    () =>
+      normalizeParkingWindow(
+        searchParams.get("entryAt") || defaults.entry,
+        searchParams.get("exitAt") || defaults.exit,
+      ),
+    [defaults, searchParams],
   );
-  const [exitAt, setExitAt] = useState(
-    searchParams.get("exitAt") || defaults.exit,
-  );
+
+  const [entryAt, setEntryAt] = useState(initialWindow.entry);
+  const [exitAt, setExitAt] = useState(initialWindow.exit);
   const [vehicleType, setVehicleType] = useState<ParkingVehicleTypeCode>(
     (searchParams.get("vehicleType") as ParkingVehicleTypeCode) || "car",
   );
@@ -688,7 +696,13 @@ export const ParkingDetailPage: React.FC = () => {
                     id="detail-entry"
                     type="datetime-local"
                     value={entryAt}
-                    onChange={(e) => setEntryAt(e.target.value)}
+                    min={getMinimumParkingEntry()}
+                    onChange={(e) => {
+                      const nextEntry = e.target.value;
+                      setEntryAt(nextEntry);
+                      const minimumExit = getMinimumParkingExit(nextEntry);
+                      if (exitAt < minimumExit) setExitAt(minimumExit);
+                    }}
                     className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30"
                   />
                 </div>
@@ -703,7 +717,7 @@ export const ParkingDetailPage: React.FC = () => {
                     id="detail-exit"
                     type="datetime-local"
                     value={exitAt}
-                    min={entryAt}
+                    min={getMinimumParkingExit(entryAt)}
                     onChange={(e) => setExitAt(e.target.value)}
                     className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30"
                   />

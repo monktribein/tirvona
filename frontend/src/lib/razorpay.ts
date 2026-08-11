@@ -1,5 +1,6 @@
 // Loads the Razorpay Checkout script once and opens the payment modal.
 // Used only when the backend reports a real (non-demo) order.
+import { toast } from "./toast";
 
 let scriptPromise: Promise<boolean> | null = null;
 
@@ -41,30 +42,44 @@ export const openRazorpayCheckout = (
   order: RazorpayOrder,
   prefill: { name?: string; email?: string; contact?: string },
 ): Promise<RazorpayResult> => {
-  return loadRazorpayScript().then((ok) => {
-    if (!ok)
-      throw new Error(
-        "Could not load the payment gateway. Check your connection.",
-      );
-    return new Promise<RazorpayResult>((resolve, reject) => {
-      const rzp = new (window as any).Razorpay({
-        key: order.keyId,
-        amount: order.amount,
-        currency: order.currency,
-        order_id: order.orderId,
-        name: "Tirvona (Ashray Bharat)",
-        description: "Sacred Stay Booking",
-        prefill,
-        theme: { color: "#0A4DA6" },
-        handler: (response: RazorpayResult) => resolve(response),
-        modal: {
-          ondismiss: () => reject(new Error("Payment cancelled.")),
-        },
+  return loadRazorpayScript()
+    .then((ok) => {
+      if (!ok)
+        throw new Error(
+          "Could not load the payment gateway. Check your connection.",
+        );
+      return new Promise<RazorpayResult>((resolve, reject) => {
+        const rzp = new (window as any).Razorpay({
+          key: order.keyId,
+          amount: order.amount,
+          currency: order.currency,
+          order_id: order.orderId,
+          name: "Tirvona (Ashray Bharat)",
+          description: "Secure Tirvona Payment",
+          prefill,
+          theme: { color: "#0A4DA6" },
+          handler: (response: RazorpayResult) => resolve(response),
+          modal: {
+            ondismiss: () => reject(new Error("Payment was cancelled. Nothing was confirmed.")),
+          },
+        });
+        rzp.on("payment.failed", (resp: any) =>
+          reject(
+            new Error(
+              resp?.error?.description ||
+                "Payment failed. Your booking was not confirmed.",
+            ),
+          ),
+        );
+        rzp.open();
       });
-      rzp.on("payment.failed", (resp: any) =>
-        reject(new Error(resp?.error?.description || "Payment failed.")),
-      );
-      rzp.open();
+    })
+    .catch((error: unknown) => {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Payment was not completed. Nothing was confirmed.";
+      toast.error(message, { title: "Payment not completed" });
+      throw error;
     });
-  });
 };

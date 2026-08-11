@@ -5,6 +5,7 @@ import {
   Get,
   HttpCode,
   Param,
+  Patch,
   Post,
   Put,
   Query,
@@ -16,7 +17,12 @@ import {
 import { Public } from "../../../common/decorators/public.decorator";
 import { Roles } from "../../../common/decorators/roles.decorator";
 import { OffersService } from "../application/offers.service";
-import { SaveOfferDto, ValidatePromoDto } from "./dtos/booking.dto";
+import {
+  SaveOfferDto,
+  UpdateOfferDto,
+  UpdateOfferStatusDto,
+  ValidatePromoDto,
+} from "./dtos/booking.dto";
 
 @Controller("offers")
 export class OffersController {
@@ -73,6 +79,23 @@ export class OffersController {
       data,
     };
   }
+  /**
+   * The administrative read of a single offer.
+   *
+   * Declared before the public `:id` route so it wins the match, and it does
+   * not count a view — an administrator opening the record in the console is
+   * not a pilgrim looking at the promotion.
+   */
+  @Get("manage/:id")
+  @Roles("owner", "manager", "offer_manager", "super_admin")
+  async manageOne(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("id") id: string,
+  ) {
+    const data = await this.service.one(id, false);
+    await this.service.assertReadable(user, data);
+    return { success: true, data };
+  }
   @Public() @Get("public/:id") async publicOne(@Param("id") id: string) {
     return { success: true, data: await this.service.one(id) };
   }
@@ -92,9 +115,26 @@ export class OffersController {
   async update(
     @CurrentUser() user: AuthenticatedUser,
     @Param("id") id: string,
-    @Body() dto: SaveOfferDto,
+    @Body() dto: UpdateOfferDto,
   ) {
-    return { success: true, data: await this.service.update(user, id, dto) };
+    return {
+      success: true,
+      message: "Offer updated successfully",
+      data: await this.service.update(user, id, dto),
+    };
+  }
+  @Patch(":id/status")
+  @Roles("owner", "manager", "offer_manager", "super_admin")
+  async status(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("id") id: string,
+    @Body() dto: UpdateOfferStatusDto,
+  ) {
+    return {
+      success: true,
+      message: `Offer marked as ${dto.status}`,
+      data: await this.service.setStatus(user, id, dto.status),
+    };
   }
   @Delete(":id")
   @Roles("owner", "manager", "offer_manager", "super_admin")
@@ -102,8 +142,16 @@ export class OffersController {
     @CurrentUser() user: AuthenticatedUser,
     @Param("id") id: string,
   ) {
-    await this.service.remove(user, id);
-    return { success: true, message: "Offer deleted successfully" };
+    const result = await this.service.remove(user, id);
+    return {
+      success: true,
+      // An archived offer keeps its financial trail. Saying so is the honest
+      // report — the row is gone from every listing either way.
+      message: result.archived
+        ? `Offer archived — it was redeemed ${result.redemptions} time(s), so its booking records are preserved`
+        : "Offer deleted successfully",
+      data: result,
+    };
   }
   @Post(":id/duplicate")
   @Roles("owner", "manager", "offer_manager", "super_admin")

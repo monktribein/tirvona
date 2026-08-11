@@ -1,6 +1,9 @@
 /**
- * LoginModal.jsx — Exact Tirvona Authentication Modal
- * Restricts phone number input strictly to 10 numeric digits only.
+ * LoginModal.jsx — Tirvona field-agent sign-in.
+ *
+ * Authenticates against the Lead Collection API. Accounts are created by a
+ * super admin in the Tirvona console; there is no self-registration here, so
+ * a failed sign-in means the account does not exist or the password is wrong.
  */
 import React, { useState } from 'react';
 import { X, Phone, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
@@ -21,7 +24,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
     setPhone(numericOnly);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -39,15 +42,18 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
     }
 
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      onLoginSuccess({
-        name: 'Field Lead Agent',
-        phone: phone,
-        role: 'field_agent'
-      });
+    try {
+      const agent = await onLoginSuccess(phone, password);
+      setPassword('');
       onClose();
-    }, 600);
+      return agent;
+    } catch (err) {
+      // The API's own wording — it already distinguishes "wrong credentials"
+      // from "account suspended", which is the difference an agent needs.
+      setError(err.message || 'Could not sign you in. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const inputClass = "w-full min-h-[48px] px-4 py-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-sm font-medium text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/20 focus:border-[#0A4DA6] transition-all placeholder:text-[#94A3B8]";
@@ -182,10 +188,11 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
           </button>
         </form>
 
-        {/* Demo Helper Footer */}
+        {/* Account provisioning note */}
         <div className="mt-6 pt-4 border-t border-[#E2E8F0] text-center">
           <p className="text-[11px] text-[#64748B]">
-            Demo credentials: Enter any 10-digit number &amp; password
+            First sign-in registers your device. Use the same number and
+            password next time.
           </p>
         </div>
 

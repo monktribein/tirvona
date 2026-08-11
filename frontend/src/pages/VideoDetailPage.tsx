@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../lib/api";
+import { toast } from "../lib/toast";
 import {
   Play,
   Eye,
@@ -63,7 +64,7 @@ export const VideoDetailPage: React.FC = () => {
       });
     } else {
       navigator.clipboard.writeText(window.location.href);
-      alert("Video link copied to clipboard!");
+      toast.success("Video link copied to clipboard.", { title: "Ready to share" });
     }
   };
 

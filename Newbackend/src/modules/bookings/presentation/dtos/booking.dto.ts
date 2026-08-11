@@ -1,3 +1,4 @@
+import { PartialType } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 import {
   IsArray,
@@ -100,7 +101,12 @@ export class SaveOfferDto {
   discountType: string;
   @Type(() => Number) @IsNumber() @Min(0) discountValue: number;
   @IsString() validTill: string;
-  @IsOptional() @IsMongoId() ashramId?: string;
+  /**
+   * The single ashram this coupon is redeemable at. Null clears the binding
+   * and makes the coupon platform-wide again — `@IsOptional()` passes both
+   * null and undefined, so the two cases stay distinguishable downstream.
+   */
+  @IsOptional() @IsMongoId() ashramId?: string | null;
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
@@ -137,6 +143,21 @@ export class SaveOfferDto {
   @IsOptional()
   @IsIn(["draft", "scheduled", "active", "expired", "disabled"])
   status?: string;
+}
+
+/**
+ * Editing an offer is a partial write.
+ *
+ * `SaveOfferDto` demands title, description, code, discount and expiry because
+ * creating an offer without them is meaningless. Reusing it for PUT forced the
+ * console to resend the entire record to flip one field, so a status toggle
+ * failed validation before it reached the service.
+ */
+export class UpdateOfferDto extends PartialType(SaveOfferDto) {}
+
+export class UpdateOfferStatusDto {
+  @IsIn(["draft", "scheduled", "active", "expired", "disabled"])
+  status: string;
 }
 
 export class ReviewRatingDto {

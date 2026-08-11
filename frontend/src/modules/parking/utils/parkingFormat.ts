@@ -66,6 +66,29 @@ export const nextHalfHour = (from = new Date()) => {
   return d;
 };
 
+/** Earliest valid value for a customer-facing parking datetime input. */
+export const getMinimumParkingEntry = () =>
+  toLocalInputValue(nextHalfHour());
+
+/** Parking exit must be at least thirty minutes after entry. */
+export const getMinimumParkingExit = (entryAt: string) => {
+  const entry = new Date(entryAt);
+  const validEntry = Number.isNaN(entry.getTime()) ? nextHalfHour() : entry;
+  return toLocalInputValue(new Date(validEntry.getTime() + 30 * 60_000));
+};
+
+/** Discard old URL/state values before a parking availability request is made. */
+export const normalizeParkingWindow = (entryAt?: string, exitAt?: string) => {
+  const minimumEntry = getMinimumParkingEntry();
+  const entry = entryAt && entryAt >= minimumEntry ? entryAt : minimumEntry;
+  const minimumExit = getMinimumParkingExit(entry);
+  const exit =
+    exitAt && exitAt >= minimumExit
+      ? exitAt
+      : toLocalInputValue(new Date(new Date(entry).getTime() + 3 * 3_600_000));
+  return { entry, exit };
+};
+
 export const VEHICLE_LABELS: Record<ParkingVehicleTypeCode, string> = {
   bike: "Bike",
   scooter: "Scooter",

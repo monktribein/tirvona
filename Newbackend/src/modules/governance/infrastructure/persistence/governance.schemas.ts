@@ -72,7 +72,12 @@ export const GOVERNANCE_MODELS = [
     }),
   },
   { name: "GovernanceRoom", schema: loose("rooms") },
-  { name: "GovernanceOffer", schema: loose("offers") },
+  // The offers API, the public site and checkout validation all read
+  // `booking_coupons`. This model used to point at a separate `offers`
+  // collection, so an offer created by approving an owner's request was
+  // written somewhere nothing else reads — it never appeared in the Offers
+  // module and its promo code never validated at checkout.
+  { name: "GovernanceOffer", schema: loose("booking_coupons") },
 ];
 const ADMIN_COLLECTIONS: Record<string, string> = {
   users: "users",

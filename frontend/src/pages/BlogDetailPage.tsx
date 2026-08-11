@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../lib/api";
 import { visitorArticleService } from "../services/visitorArticleService";
+import { toast } from "../lib/toast";
 import {
   Calendar,
   Clock,
@@ -108,7 +109,7 @@ export const BlogDetailPage: React.FC = () => {
       });
     } else {
       navigator.clipboard.writeText(window.location.href);
-      alert("Article link copied to clipboard!");
+      toast.success("Article link copied to clipboard.", { title: "Ready to share" });
     }
   };
 

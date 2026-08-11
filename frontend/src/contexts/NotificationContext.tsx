@@ -9,6 +9,7 @@ import { io, type Socket } from "socket.io-client";
 import { useAuth } from "./AuthContext";
 import { API_BASE_URL, TOKEN_KEY } from "../lib/api";
 import { humanizeLabel } from "../utils/labels";
+import { toast } from "../lib/toast";
 
 export interface Notification {
   id: string;
@@ -46,17 +47,40 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   const addNotification = (
     title: string,
     message: string,
-    type: Notification["type"] = "info",
+    type?: Notification["type"],
   ) => {
+    const notificationTypes: Notification["type"][] = [
+      "info",
+      "success",
+      "warning",
+      "error",
+    ];
+    const usesShortSignature =
+      type === undefined &&
+      notificationTypes.includes(message as Notification["type"]);
+    const resolvedType: Notification["type"] = usesShortSignature
+      ? (message as Notification["type"])
+      : type || "info";
+    const resolvedMessage = usesShortSignature ? title : message;
+    const resolvedTitle = usesShortSignature
+      ? {
+          success: "Success",
+          error: "Something went wrong",
+          warning: "Please note",
+          info: "Tirvona",
+        }[resolvedType]
+      : title;
+
     const newNotif: Notification = {
       id: Math.random().toString(36).substring(7),
-      title,
-      message,
-      type,
+      title: resolvedTitle,
+      message: resolvedMessage,
+      type: resolvedType,
       timestamp: new Date(),
       read: false,
     };
     setNotifications((prev) => [newNotif, ...prev]);
+    toast[resolvedType](resolvedMessage, { title: resolvedTitle });
   };
 
   // Seed a welcome notification when a user logs in.

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import api from "../lib/api";
+import { toast } from "../lib/toast";
 import {
   Search,
   Phone,
@@ -350,9 +351,10 @@ export const SacredDirectoryModulePage: React.FC = () => {
                   </div>
                   <button
                     onClick={() =>
-                      alert(
-                        `Contact details for ${item.title}: ${item.contactPhone}`,
-                      )
+                      toast.info(item.contactPhone || "Contact details unavailable", {
+                        title: item.title,
+                        duration: 7000,
+                      })
                     }
                     className="px-5 py-2.5 rounded-full bg-[#0A4DA6] text-white font-black text-xs flex items-center gap-1.5 shadow-md cursor-pointer hover:bg-blue-900 transition-colors"
                   >

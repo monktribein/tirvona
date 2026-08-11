@@ -13,6 +13,7 @@ import {
   CurrentUser,
   type AuthenticatedUser,
 } from "../../../common/decorators/current-user.decorator";
+import { Public } from "../../../common/decorators/public.decorator";
 import { Roles } from "../../../common/decorators/roles.decorator";
 import { BookingsService } from "../application/bookings.service";
 import {
@@ -29,6 +30,27 @@ import {
 @Controller("bookings")
 export class BookingsController {
   constructor(private readonly service: BookingsService) {}
+  /**
+   * Price a prospective booking without creating anything.
+   *
+   * The booking page used to re-implement the pricing rules client-side to
+   * show a total, which meant the figure a guest agreed to and the figure the
+   * gateway charged were computed by two different pieces of code. They drifted
+   * — peak-season multipliers, platform-fee settings and coupon rounding all
+   * live on the server — and the guest saw one number and paid another. This
+   * returns the same `quote()` the booking and payment-order paths use, so the
+   * amount displayed is by construction the amount charged.
+   *
+   * Read-only: it resolves the room, inventory, add-ons, policy and coupon, and
+   * writes nothing. Throttled because it is called as the guest edits a form.
+   */
+  @Post("quote")
+  @Public()
+  @HttpCode(200)
+  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  async quote(@Body() dto: CreateBookingDto) {
+    return { success: true, data: await this.service.quote(dto) };
+  }
   @Post("create") @Roles("customer") async create(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: CreateBookingDto,

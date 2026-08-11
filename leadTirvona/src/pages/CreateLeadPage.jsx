@@ -121,12 +121,15 @@ export default function CreateLeadPage({ onSubmitLead, onSuccessNavigate }) {
     handleChange('images', formData.images.filter((_, i) => i !== idx));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.name.trim()) return alert('Please enter Stay Name');
     if (!formData.city.trim()) return alert('Please enter City');
 
-    onSubmitLead({
+    // Awaited: when the submit goes to the API it can fail, and clearing the
+    // form before knowing that would lose everything the agent just captured
+    // on site.
+    const created = await onSubmitLead({
       name: formData.name.trim(),
       location: {
         address: formData.address.trim(),
@@ -154,6 +157,8 @@ export default function CreateLeadPage({ onSubmitLead, onSuccessNavigate }) {
       images: formData.images,
       status: 'pending'
     });
+
+    if (created === null) return;
 
     setFormData({ name: '', address: '', city: '', state: '',
       totalRooms: '', roomPrice: '', onlineRooms: '', offlineRooms: '',

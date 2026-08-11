@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useAuth, type OtpChallenge } from "../contexts/AuthContext";
 import OtpChallengeForm from "../components/OtpChallengeForm";
@@ -68,17 +68,31 @@ export const LoginPage: React.FC = () => {
   const [loginChallenge, setLoginChallenge] = useState<OtpChallenge | null>(
     null,
   );
+  const verifiedLoginUser = useRef<any>(null);
 
   // `parkingRoles` comes from the session: parking staff read `role: customer`,
   // so the grant list is the only thing that sends them to their own dashboard
   // rather than the pilgrim profile.
-  const goAfterAuthentication = (role?: string, parkingRoles?: string[]) => {
-    const target = getPostLoginRedirect(role, redirect, parkingRoles);
+  const goAfterAuthentication = (
+    role?: string,
+    parkingRoles?: string[],
+    userEmail?: string,
+  ) => {
+    const target = getPostLoginRedirect(
+      role,
+      redirect,
+      parkingRoles,
+      userEmail,
+    );
     navigate(target.url, { replace: true });
   };
 
   const google = useGoogleAuth((userArg) => {
-    goAfterAuthentication(userArg?.role, userArg?.parkingRoles);
+    goAfterAuthentication(
+      userArg?.role,
+      userArg?.parkingRoles,
+      userArg?.email,
+    );
   });
 
   const handleGoogle = async () => {
@@ -97,11 +111,11 @@ export const LoginPage: React.FC = () => {
     setLoading(false);
     if (res.success) {
       // Guest Visitors: password accepted, now confirm the OTP.
-      if (res.otpRequired && res.challenge) {
-        setLoginChallenge(res.challenge);
-        return;
-      }
-      goAfterAuthentication(res.user?.role, res.user?.parkingRoles);
+      goAfterAuthentication(
+        res.user?.role,
+        res.user?.parkingRoles,
+        res.user?.email,
+      );
     } else {
       if (res.isSuspended && res.suspensionData) {
         setSuspensionInfo(res.suspensionData);
@@ -176,7 +190,11 @@ export const LoginPage: React.FC = () => {
     if (res.success) {
       // From the response, not context: `setUser` has not committed yet, so
       // `user` here is still the pre-login value.
-      goAfterAuthentication(res.user?.role, res.user?.parkingRoles);
+      goAfterAuthentication(
+        res.user?.role,
+        res.user?.parkingRoles,
+        res.user?.email,
+      );
     } else {
       setError(res.message || "Invalid OTP");
     }
@@ -325,14 +343,28 @@ export const LoginPage: React.FC = () => {
                 /* The identifier they typed is also where the code was sent. */
                 destination={email}
                 title="Verify OTP"
-                onVerify={(otp) => verifyLoginOtp(loginChallenge.otpToken, otp)}
+                onVerify={async (otp) => {
+                  const result = await verifyLoginOtp(
+                    loginChallenge.otpToken,
+                    otp,
+                  );
+                  if (result.success) verifiedLoginUser.current = result.user;
+                  return result;
+                }}
                 onResend={async () => {
                   const res = await resendOtp(loginChallenge.otpToken);
                   if (res.challenge) setLoginChallenge(res.challenge);
                   return res;
                 }}
                 onCancel={() => setLoginChallenge(null)}
-                onVerified={() => goAfterAuthentication(user?.role, user?.parkingRoles)}
+                onVerified={() => {
+                  const authenticated = verifiedLoginUser.current || user;
+                  goAfterAuthentication(
+                    authenticated?.role,
+                    authenticated?.parkingRoles,
+                    authenticated?.email,
+                  );
+                }}
               />
             ) : (
               <>

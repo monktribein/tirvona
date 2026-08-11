@@ -260,6 +260,59 @@ export class AshramsService {
   }
 
   /**
+   * The distinct destinations that currently hold at least one live ashram.
+   *
+   * Aggregated from `address.city` instead of a hard-coded list so the picker
+   * can never offer a destination with nothing bookable in it. Grouped
+   * case-insensitively — "haridwar" and "Haridwar" are one destination — while
+   * the label keeps the spelling the listings actually use.
+   */
+  async destinations(): Promise<
+    { city: string; state: string; count: number }[]
+  > {
+    return this.ashrams.aggregate([
+      {
+        $match: {
+          deletedAt: null,
+          "address.city": { $nin: [null, ""] },
+        },
+      },
+      {
+        $group: {
+          _id: { $toLower: "$address.city" },
+          city: { $first: "$address.city" },
+          state: { $first: "$address.state" },
+          count: { $sum: 1 },
+        },
+      },
+      { $project: { _id: 0, city: 1, state: 1, count: 1 } },
+      { $sort: { city: 1 } },
+    ]);
+  }
+
+  /**
+   * The ashrams in one destination, projected to what a picker needs.
+   *
+   * Matched case-insensitively and anchored, so "Haridwar" cannot also pull in
+   * a differently-cased or partially-matching city.
+   */
+  async byDestination(city: string): Promise<any[]> {
+    const name = String(city ?? "").trim();
+    if (!name) return [];
+    return this.ashrams
+      .find({
+        deletedAt: null,
+        "address.city": {
+          $regex: `^${escapeRegex(name)}$`,
+          $options: "i",
+        },
+      })
+      .select("name slug address.city address.state status isVerified")
+      .sort({ name: 1 })
+      .lean();
+  }
+
+  /**
    * Every ashram the caller may operate on. Staff reach ashrams through either
    * `scopedAshramIds` or the single `employerAshramId`, so both are honoured —
    * the same pair `assertScope` accepts on a write.

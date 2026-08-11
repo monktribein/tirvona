@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../lib/api";
+import { toast } from "../lib/toast";
 import {
   MapPin,
   Car,
@@ -188,9 +189,10 @@ export const LocalServicesHubPage: React.FC = () => {
                   </span>
                   <button
                     onClick={() =>
-                      alert(
-                        `Contacting ${item.title}: ${item.phone || "+91 98765 00000"}`,
-                      )
+                      toast.info(item.phone || "+91 98765 00000", {
+                        title: `Contact ${item.title}`,
+                        duration: 7000,
+                      })
                     }
                     className="px-4 py-2 rounded-full bg-[#0A4DA6] hover:bg-blue-900 text-white font-black text-xs shadow-md transition-colors cursor-pointer"
                   >

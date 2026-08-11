@@ -149,9 +149,11 @@ export class MarketplaceOrderController {
     @Param("id") id: string,
     @Body() dto: ConfirmMarketplacePaymentDto,
   ) {
+    const order = await this.service.confirmPayment(user, id, dto);
     return {
       success: true,
-      data: await this.service.confirmPayment(user, id, dto),
+      message: "Payment verified successfully and marketplace order confirmed.",
+      data: order,
     };
   }
 }

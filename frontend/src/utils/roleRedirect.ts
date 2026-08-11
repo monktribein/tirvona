@@ -114,6 +114,9 @@ export const getRoleDefaultDashboard = (
     case "offer_manager":
       return "/owner/offers";
 
+    case "content_manager":
+      return "/admin/manage/blogs/all";
+
     case "marketplace_manager":
       return "/admin/manage/marketplace/products";
 
@@ -197,6 +200,16 @@ export const getPostLoginRedirect = (
   parkingRoles?: string[],
   userEmail?: string,
 ): { url: string; hasPendingIntent: boolean } => {
+  const dashboard = getRoleDefaultDashboard(userRole, parkingRoles, userEmail);
+
+  // Operational accounts always enter their role console. Public Login links
+  // include the current page as a redirect, but that must only be restored for
+  // customer/pilgrim accounts, never for staff or management roles.
+  if (dashboard !== "/profile") {
+    clearGuestPendingIntent();
+    return { url: dashboard, hasPendingIntent: false };
+  }
+
   // An explicit ?redirect= is deliberate — the visitor followed a link that
   // demanded a session — so it always wins.
   const explicit = safeLocalReturnUrl(requestedRedirect);
@@ -204,7 +217,6 @@ export const getPostLoginRedirect = (
 
   const intent = getGuestPendingIntent();
   const stored = safeLocalReturnUrl(intent?.returnUrl);
-  const dashboard = getRoleDefaultDashboard(userRole, parkingRoles, userEmail);
 
   // A stored intent exists to resume work in progress — a half-finished
   // booking, a cart. A "generic" one records only that some protected URL was

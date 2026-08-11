@@ -6,13 +6,22 @@ import { PlusCircle, LayoutDashboard, Building2, Menu, X, UserCheck, MapPin } fr
 import LoginModal from './LoginModal';
 import AttendanceModal from './AttendanceModal';
 
-export default function AppNavbar({ activePage, setActivePage, leadCount, approvedCount }) {
+export default function AppNavbar({
+  activePage,
+  setActivePage,
+  leadCount,
+  approvedCount,
+  agent,
+  onLogin,
+  onLogout
+}) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showHeader, setShowHeader] = useState(true);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isAttendanceModalOpen, setIsAttendanceModalOpen] = useState(false);
-  const [user, setUser] = useState(null);
   const [attendanceState, setAttendanceState] = useState(null);
+  // The session itself lives in App via useLeadAuth; the navbar only renders it.
+  const user = agent;
 
   // Exact Tirvona scroll listener logic
   useEffect(() => {
@@ -38,15 +47,18 @@ export default function AppNavbar({ activePage, setActivePage, leadCount, approv
     setMobileMenuOpen(false);
   };
 
-  // When user logs in successfully, immediately open the Attendance geotag popup
-  const handleLoginSuccess = (userData) => {
-    setUser(userData);
+  // Authenticate, then immediately open the Attendance geotag popup. Errors
+  // are thrown back to the modal, which is where they are shown.
+  const handleLoginSuccess = async (phone, password) => {
+    const signedIn = await onLogin(phone, password);
     setIsAttendanceModalOpen(true);
+    return signedIn;
   };
 
   const handleLogout = () => {
-    setUser(null);
+    onLogout();
     setAttendanceState(null);
+    setMobileMenuOpen(false);
   };
 
   return (
@@ -151,7 +163,7 @@ export default function AppNavbar({ activePage, setActivePage, leadCount, approv
                     title="Click to logout"
                   >
                     <UserCheck size={13} />
-                    <span>Agent</span>
+                    <span>{user.name?.split(' ')[0] || 'Agent'}</span>
                   </button>
                 </div>
               ) : (

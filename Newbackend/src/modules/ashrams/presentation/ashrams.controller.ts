@@ -47,6 +47,26 @@ export class AshramsController {
     const data = await this.service.listForUser(user);
     return { success: true, count: data.length, data };
   }
+  /**
+   * The destinations ashrams are actually located in, each with a count.
+   *
+   * Backs the two-step location picker: a destination is chosen first, then
+   * only the ashrams in it are offered. Derived from `address.city` rather
+   * than a fixed list, so a new city appears the moment its first ashram is
+   * published and an emptied one disappears. Declared before `:id` so the
+   * literal segment cannot be swallowed by the detail route.
+   */
+  @Public() @Get("destinations") async destinations() {
+    const data = await this.service.destinations();
+    return { success: true, count: data.length, data };
+  }
+  /** The ashrams in one destination, slimmed to what a picker renders. */
+  @Public() @Get("destinations/:city") async byDestination(
+    @Param("city") city: string,
+  ) {
+    const data = await this.service.byDestination(city);
+    return { success: true, count: data.length, data };
+  }
   @Get("manage/:id")
   @ApiBearerAuth()
   @Roles("owner", "manager", "super_admin")

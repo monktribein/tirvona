@@ -5,7 +5,7 @@ export const authService = {
   login: (email: string, password: string) =>
     api.post("/auth/login", { email, password }),
   register: (data: unknown) => api.post("/auth/register", data),
-  // OTP challenge (Guest Visitors). `otpToken` identifies the pending challenge.
+  // Email OTP challenge for new-account verification.
   verifyRegistrationOtp: (otpToken: string, otp: string) =>
     api.post("/auth/register/verify-otp", { otpToken, otp }),
   verifyLoginOtp: (otpToken: string, otp: string) =>
@@ -46,6 +46,11 @@ export const ashramService = {
   update: (id: string, data: unknown) => api.put(`/ashrams/${id}`, data),
   uploadDocuments: (id: string, data: unknown) =>
     api.post(`/ashrams/${id}/documents`, data),
+  /** Destinations that hold at least one live ashram, with counts. */
+  destinations: () => api.get("/ashrams/destinations"),
+  /** The ashrams in one destination, slimmed for a picker. */
+  byDestination: (city: string) =>
+    api.get(`/ashrams/destinations/${encodeURIComponent(city)}`),
   getAddOns: (ashramId: string) => api.get(`/ashrams/${ashramId}/add-ons`),
   createAddOn: (ashramId: string, data: unknown) =>
     api.post(`/ashrams/${ashramId}/add-ons`, data),
@@ -72,6 +77,16 @@ export const roomService = {
 
 // ── Bookings ─────────────────────────────────────────────────────────────────
 export const bookingService = {
+  /**
+   * Price a booking without creating it — the authoritative total.
+   *
+   * Returns the same figures `create` and the payment order use, so what a
+   * guest is shown is what the gateway charges. Toasts are suppressed because
+   * this fires as the form is edited, and an incomplete selection is not an
+   * error worth interrupting anyone over.
+   */
+  quote: (data: unknown) =>
+    api.post("/bookings/quote", data, { skipToast: true }),
   create: (data: unknown) => api.post("/bookings/create", data),
   getById: (id: string) => api.get(`/bookings/${id}`),
   createPaymentOrder: (id: string) =>
@@ -258,6 +273,20 @@ export const offerService = {
   }) => api.post("/offers/validate-promo", data),
   getPublicOffers: () => api.get("/offers/public/all"),
   getById: (id: string) => api.get(`/offers/public/${id}`),
+
+  // ── Administration ──
+  // `mine` is scoped server-side: a Super Admin sees every offer, an owner or
+  // offer manager only the ones their ashrams are in scope for.
+  mine: () => api.get("/offers/my-offers"),
+  /** Full record for the console. Does not count as a public view. */
+  manageById: (id: string) => api.get(`/offers/manage/${id}`),
+  create: (data: unknown) => api.post("/offers", data),
+  update: (id: string, data: unknown) => api.put(`/offers/${id}`, data),
+  /** Partial write, so flipping a status never resends the whole offer. */
+  setStatus: (id: string, status: string) =>
+    api.patch(`/offers/${id}/status`, { status }),
+  duplicate: (id: string) => api.post(`/offers/${id}/duplicate`, {}),
+  remove: (id: string) => api.delete(`/offers/${id}`),
 };
 
 // ── Platform Settings ────────────────────────────────────────────────────────
@@ -270,3 +299,4 @@ export { serviceEcosystemService } from "./service.service";
 export { marketplaceService } from "./marketplace.service";
 export { enterpriseNotificationService } from "./enterpriseNotification.service";
 export { approvalService } from "./approval.service";
+export { leadCollectionService } from "./leadCollection.service";
