@@ -38,8 +38,10 @@ const legacyRow = (extra: Record<string, unknown> = {}) => ({
 type SetUpdate = { $set: Record<string, any> };
 
 const build = (row: unknown = legacyRow()) => {
+  // Mirrors the query builder `mine()` walks: find → sort → populate → lean.
   const findChain: any = {
     sort: jest.fn(() => findChain),
+    populate: jest.fn(() => findChain),
     lean: jest.fn().mockResolvedValue([]),
   };
   const offers = {

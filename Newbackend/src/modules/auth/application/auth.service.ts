@@ -47,8 +47,7 @@ export class AuthService {
    * `User.role` — the enum has no parking entries at all — so a security guard
    * or parking partner still reads `role: "customer"`. Nothing downstream can
    * tell them apart from a pilgrim without this, which is why it travels on the
-   * session: the client uses it to route to the right dashboard, and login uses
-   * it to decide whether the OTP applies.
+   * session: the client uses it to route to the right dashboard.
    *
    * Only ACTIVE grants count; a revoked one leaves the account an ordinary
    * Visitor. Covered by `parking_staff`'s `{ userId: 1, status: 1 }` index.
@@ -90,10 +89,11 @@ export class AuthService {
         "Your account is suspended. Contact support.",
       );
     }
+    // Signing in is password-only. The email OTP belongs to registration,
+    // where it proves the address is reachable before an account exists.
+    // Parking grants are resolved because they ride on the session, not
+    // because they gate anything here.
     const parkingRoles = await this.activeParkingRoles(user._id);
-    // The login OTP is a Guest Visitor mechanism. Holding an operational grant
-    // makes an account staff, so it signs in with a password like every other
-    // role — otherwise the code goes to an address the holder may never read.
     user.lastLoginAt = new Date();
     await user.save();
     return this.session(user, parkingRoles);

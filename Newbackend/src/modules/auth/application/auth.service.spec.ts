@@ -43,9 +43,13 @@ describe("AuthService OTP challenge contracts", () => {
     expect(challenge).not.toHaveProperty("otpToken");
   });
 
-  it("continues returning otpToken for ordinary OTP flows", async () => {
+  it("returns otpToken for the registration email OTP", async () => {
+    // Registration is where the email OTP lives: it proves the address is
+    // reachable before the account is created. Password login issues no
+    // challenge at all, so "register" and "phone_login" are the only ordinary
+    // OTP purposes left.
     const challenge = await createService().createChallenge(
-      "login",
+      "register",
       "pilgrim@example.com",
       {},
     );
@@ -56,16 +60,28 @@ describe("AuthService OTP challenge contracts", () => {
 });
 
 /**
- * The login OTP is a Guest Visitor mechanism. Every role holder signs in with a
- * password alone — including the parking roles, which live in `parking_staff`
- * rather than on `User.role` and so leave the account reading `customer`.
+ * Signing in takes a password and nothing else, for every account.
+ *
+ * The email OTP belongs to registration: it proves the address is reachable
+ * before the account exists. Once it does, a correct password is sufficient —
+ * there is no second factor on login for any role.
+ *
+ * What login still resolves is the caller's parking grants. Those live in
+ * `parking_staff` rather than on `User.role`, so a guard or parking partner
+ * reads `role: "customer"` and nothing downstream could tell them apart from a
+ * pilgrim without the grants travelling on the session.
  */
-describe("AuthService login OTP applies to Guest Visitors only", () => {
+describe("AuthService login issues a session without a second factor", () => {
   const PASSWORD = "correct-horse";
   // Cheap rounds: this exercises the branch, not bcrypt's cost factor.
   const passwordHash = bcrypt.hashSync(PASSWORD, 4);
 
-  const login = async (role: string, grantedRoles: string[] = []) => {
+  const login = async (
+    role: string,
+    grantedRoles: string[] = [],
+    password: string = PASSWORD,
+    overrides: Record<string, unknown> = {},
+  ) => {
     const user = {
       _id: "user-1",
       email: "person@example.com",
@@ -78,6 +94,7 @@ describe("AuthService login OTP applies to Guest Visitors only", () => {
       tokenVersion: 0,
       passwordHash,
       save: jest.fn().mockResolvedValue(undefined),
+      ...overrides,
     };
     // Mirrors `.find().select().lean()` in AuthService.activeParkingRoles.
     const parkingStaff = {
@@ -99,24 +116,45 @@ describe("AuthService login OTP applies to Guest Visitors only", () => {
     );
     const result = await service.login({
       email: user.email,
-      password: PASSWORD,
+      password,
     } as never);
     return { result, parkingStaff, user };
   };
 
-  it("challenges a Guest Visitor with no operational grant", async () => {
-    const { result } = await login("customer");
-    expect(result.otpRequired).toBe(true);
-    expect(result.challenge).toHaveProperty("otpToken");
+  it("signs a Guest Visitor straight in on password alone", async () => {
+    const { result, user } = await login("customer");
+    // No challenge of any kind: the OTP a pilgrim answered belonged to signup.
+    expect(result.otpRequired).toBeUndefined();
+    expect(result).not.toHaveProperty("challenge");
+    expect(result.token).toBe("signed-jwt");
+    expect(user.save).toHaveBeenCalled();
   });
 
-  it("issues a session straight to a parking role holder", async () => {
-    // Regression guard: this account reads `role: "customer"`, so a role-only
-    // check would mail an OTP to an address the staff member may never read.
+  it("issues a session to a parking role holder", async () => {
     const { result, user } = await login("customer", ["security_guard"]);
     expect(result.otpRequired).toBeUndefined();
     expect(result.token).toBe("signed-jwt");
     expect(user.save).toHaveBeenCalled();
+  });
+
+  it("rejects a wrong password rather than issuing a session", async () => {
+    // The password is the only thing standing in front of an account now, so
+    // its rejection path is the one guarantee this suite cannot omit.
+    await expect(login("customer", [], "wrong-password")).rejects.toThrow(
+      /Invalid email, phone number, or password/,
+    );
+  });
+
+  it("refuses a suspended account that knows the password", async () => {
+    await expect(
+      login("customer", [], PASSWORD, { status: "suspended" }),
+    ).rejects.toThrow(/suspended/i);
+  });
+
+  it("refuses a deleted account that knows the password", async () => {
+    await expect(
+      login("customer", [], PASSWORD, { isDeleted: true }),
+    ).rejects.toThrow(/suspended/i);
   });
 
   it("carries the granted parking roles on the session", async () => {
@@ -143,7 +181,7 @@ describe("AuthService login OTP applies to Guest Visitors only", () => {
     expect(result.parkingRoles).toEqual(["security_guard"]);
   });
 
-  it("never challenges a super admin", async () => {
+  it("signs a super admin in the same way as everyone else", async () => {
     const { result } = await login("super_admin");
     expect(result.otpRequired).toBeUndefined();
     expect(result.token).toBe("signed-jwt");
