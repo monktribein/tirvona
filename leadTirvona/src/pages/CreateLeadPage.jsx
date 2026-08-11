@@ -2,9 +2,21 @@
  * CreateLeadPage.jsx — Clean Clean Design without Decorative Icons on Section Headers & Labels
  */
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Calendar, Navigation, ExternalLink, CheckCircle2, AlertCircle, Upload, X, Mic, MicOff } from 'lucide-react';
+import { Send, Calendar, Navigation, ExternalLink, CheckCircle2, AlertCircle, Upload, X, Mic, MicOff, Loader2 } from 'lucide-react';
 import { useGeolocation } from '../hooks/useGeolocation';
 import { buildGoogleMapsUrl } from '../utils/formatDate';
+import { compressMultipleImages } from '../utils/imageCompressor';
+
+const DRAFT_STORAGE_KEY = 'tirvona_create_lead_draft';
+
+const INITIAL_FORM = {
+  name: '', address: '', city: '', state: '',
+  totalRooms: '', roomPrice: '', onlineRooms: '', offlineRooms: '',
+  ownerName: '', phone: '', notes: '',
+  interest: 'Interested',
+  meetingRequested: true, meetingTime: '', meetingMode: 'Call',
+  coordinates: { lat: '', lng: '' }, images: []
+};
 
 export default function CreateLeadPage({ onSubmitLead, onSuccessNavigate }) {
   const [currentDateTime, setCurrentDateTime] = useState('');
@@ -12,14 +24,37 @@ export default function CreateLeadPage({ onSubmitLead, onSuccessNavigate }) {
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef(null);
 
-  const [formData, setFormData] = useState({
-    name: '', address: '', city: '', state: '',
-    totalRooms: '', roomPrice: '', onlineRooms: '', offlineRooms: '',
-    ownerName: '', phone: '', notes: '',
-    interest: 'Interested',
-    meetingRequested: true, meetingTime: '', meetingMode: 'Call',
-    coordinates: { lat: '', lng: '' }, images: []
+  const [isOptimizing, setIsOptimizing] = useState(false);
+  const [optimizationStatus, setOptimizationStatus] = useState('');
+
+  // Restore draft from localStorage if available
+  const [formData, setFormData] = useState(() => {
+    try {
+      const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
+      if (savedDraft) {
+        return { ...INITIAL_FORM, ...JSON.parse(savedDraft) };
+      }
+    } catch (e) {
+      console.warn('Failed to parse lead form draft:', e);
+    }
+    return INITIAL_FORM;
   });
+
+  // Auto-save form draft to localStorage whenever fields change
+  useEffect(() => {
+    try {
+      localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(formData));
+    } catch (e) {
+      console.warn('Failed to save lead form draft:', e);
+    }
+  }, [formData]);
+
+  const clearFormDraft = () => {
+    try {
+      localStorage.removeItem(DRAFT_STORAGE_KEY);
+    } catch (e) {}
+    setFormData(INITIAL_FORM);
+  };
 
   useEffect(() => {
     const update = () => {
@@ -99,22 +134,32 @@ export default function CreateLeadPage({ onSubmitLead, onSuccessNavigate }) {
     }
   };
 
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const files = Array.from(e.target.files);
     if (!files.length) return;
-    const newImages = [];
-    let processed = 0;
-    files.forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        newImages.push(event.target.result);
-        processed++;
-        if (processed === files.length) {
-          handleChange('images', [...formData.images, ...newImages]);
+
+    setIsOptimizing(true);
+    setOptimizationStatus(`Optimizing image (1/${files.length})...`);
+
+    try {
+      const optimizedImages = await compressMultipleImages(
+        files,
+        60000,
+        (current, total) => {
+          setOptimizationStatus(`Optimizing image (${current}/${total})...`);
         }
-      };
-      reader.readAsDataURL(file);
-    });
+      );
+
+      handleChange('images', [...formData.images, ...optimizedImages]);
+      setOptimizationStatus('Image ready');
+      setTimeout(() => setOptimizationStatus(''), 3000);
+    } catch (err) {
+      console.error('Failed to optimize images:', err);
+      alert('Failed to process selected image(s). Please try another file.');
+    } finally {
+      setIsOptimizing(false);
+      if (e.target) e.target.value = '';
+    }
   };
 
   const removeImage = (idx) => {
@@ -123,6 +168,9 @@ export default function CreateLeadPage({ onSubmitLead, onSuccessNavigate }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isOptimizing) {
+      return alert('Please wait until image optimization is completed before submitting.');
+    }
     if (!formData.name.trim()) return alert('Please enter Stay Name');
     if (!formData.city.trim()) return alert('Please enter City');
 
@@ -160,11 +208,7 @@ export default function CreateLeadPage({ onSubmitLead, onSuccessNavigate }) {
 
     if (created === null) return;
 
-    setFormData({ name: '', address: '', city: '', state: '',
-      totalRooms: '', roomPrice: '', onlineRooms: '', offlineRooms: '',
-      ownerName: '', phone: '', notes: '',
-      interest: 'Interested', meetingRequested: true, meetingTime: '', meetingMode: 'Call',
-      coordinates: { lat: '', lng: '' }, images: [] });
+    clearFormDraft();
     onSuccessNavigate();
   };
 
@@ -494,17 +538,41 @@ export default function CreateLeadPage({ onSubmitLead, onSuccessNavigate }) {
           <div className="space-y-3 pb-2">
             <span className="text-xs sm:text-sm font-extrabold text-[#0F172A] flex items-center justify-between gap-1.5">
               <span>7. Ashram Photos</span>
-              <span className="text-xs font-bold text-[#64748B]">{formData.images.length} photo(s)</span>
+              <div className="flex items-center gap-2">
+                {isOptimizing && (
+                  <span className="flex items-center gap-1.5 text-[11px] font-bold text-[#0A4DA6] bg-[#0A4DA6]/10 px-2.5 py-0.5 rounded-full border border-[#0A4DA6]/20">
+                    <Loader2 size={11} className="animate-spin text-[#0A4DA6]" />
+                    {optimizationStatus}
+                  </span>
+                )}
+                {!isOptimizing && optimizationStatus === 'Image ready' && (
+                  <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                    <CheckCircle2 size={11} className="text-emerald-600" />
+                    Image ready
+                  </span>
+                )}
+                <span className="text-xs font-bold text-[#64748B]">{formData.images.length} photo(s)</span>
+              </div>
             </span>
 
             <div
-              className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-[#E2E8F0] rounded-xl cursor-pointer hover:border-[#0A4DA6] hover:bg-[#0A4DA6]/5 transition-all text-center"
+              className={`flex flex-col items-center justify-center p-4 border-2 border-dashed border-[#E2E8F0] rounded-xl cursor-pointer hover:border-[#0A4DA6] hover:bg-[#0A4DA6]/5 transition-all text-center ${
+                isOptimizing ? 'opacity-60 pointer-events-none bg-[#F8FAFC]' : ''
+              }`}
               onClick={() => document.getElementById('mobile-file-input')?.click()}
             >
-              <Upload size={20} className="text-[#0A4DA6] mb-1" />
-              <p className="text-xs font-extrabold text-[#0F172A]">Click to upload photos</p>
-              <p className="text-[10px] text-[#64748B]">JPG, PNG, WEBP supported</p>
-              <input id="mobile-file-input" type="file" accept="image/*" multiple className="hidden" onChange={handleFileChange} />
+              {isOptimizing ? (
+                <Loader2 size={20} className="text-[#0A4DA6] mb-1 animate-spin" />
+              ) : (
+                <Upload size={20} className="text-[#0A4DA6] mb-1" />
+              )}
+              <p className="text-xs font-extrabold text-[#0F172A]">
+                {isOptimizing ? 'Optimizing images...' : 'Click to upload photos'}
+              </p>
+              <p className="text-[10px] text-[#64748B]">
+                {isOptimizing ? 'Please wait a moment' : 'JPG, PNG, WEBP supported'}
+              </p>
+              <input id="mobile-file-input" type="file" accept="image/*" multiple className="hidden" onChange={handleFileChange} disabled={isOptimizing} />
             </div>
 
             {formData.images.length > 0 && (
@@ -515,7 +583,8 @@ export default function CreateLeadPage({ onSubmitLead, onSuccessNavigate }) {
                     <button
                       type="button"
                       onClick={() => removeImage(idx)}
-                      className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center cursor-pointer"
+                      disabled={isOptimizing}
+                      className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center cursor-pointer disabled:opacity-50"
                     >
                       <X size={10} />
                     </button>
@@ -527,10 +596,19 @@ export default function CreateLeadPage({ onSubmitLead, onSuccessNavigate }) {
 
           {/* Submit Button */}
           <div className="pt-2">
-            <button type="submit"
-              className="w-full flex items-center justify-center gap-2 px-8 min-h-[46px] bg-[#0A4DA6] hover:bg-[#083D85] text-white font-extrabold rounded-full text-xs sm:text-sm shadow-sm transition-all cursor-pointer">
-              <Send size={16} />
-              Submit Lead Entry
+            <button type="submit" disabled={isOptimizing}
+              className="w-full flex items-center justify-center gap-2 px-8 min-h-[46px] bg-[#0A4DA6] hover:bg-[#083D85] text-white font-extrabold rounded-full text-xs sm:text-sm shadow-sm transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
+              {isOptimizing ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  <span>Optimizing Photos...</span>
+                </>
+              ) : (
+                <>
+                  <Send size={16} />
+                  <span>Submit Lead Entry</span>
+                </>
+              )}
             </button>
           </div>
         </form>

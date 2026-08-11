@@ -1,28 +1,40 @@
 /**
  * ImageUploader.jsx — Mobile & Tablet Responsive Photo Attachment Dropzone
  */
-import React from 'react';
-import { Upload, X } from 'lucide-react';
+import React, { useState } from 'react';
+import { Upload, X, Loader2, CheckCircle2 } from 'lucide-react';
+import { compressMultipleImages } from '../utils/imageCompressor';
 
 export default function ImageUploader({ images = [], onChange }) {
-  const handleFileChange = (e) => {
+  const [isOptimizing, setIsOptimizing] = useState(false);
+  const [optimizationStatus, setOptimizationStatus] = useState('');
+
+  const handleFileChange = async (e) => {
     const files = Array.from(e.target.files);
     if (!files.length) return;
 
-    const newImages = [];
-    let processed = 0;
+    setIsOptimizing(true);
+    setOptimizationStatus(`Optimizing image (1/${files.length})...`);
 
-    files.forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        newImages.push(event.target.result);
-        processed++;
-        if (processed === files.length) {
-          onChange([...images, ...newImages]);
+    try {
+      const optimizedImages = await compressMultipleImages(
+        files,
+        60000,
+        (current, total) => {
+          setOptimizationStatus(`Optimizing image (${current}/${total})...`);
         }
-      };
-      reader.readAsDataURL(file);
-    });
+      );
+
+      onChange([...images, ...optimizedImages]);
+      setOptimizationStatus('Image ready');
+      setTimeout(() => setOptimizationStatus(''), 3000);
+    } catch (err) {
+      console.error('Failed to optimize images:', err);
+      alert('Failed to process selected image(s). Please try another file.');
+    } finally {
+      setIsOptimizing(false);
+      if (e.target) e.target.value = '';
+    }
   };
 
   const removeImage = (idx) => {
@@ -38,9 +50,23 @@ export default function ImageUploader({ images = [], onChange }) {
           <h2 className="text-sm sm:text-base font-extrabold text-[#0F172A]">Ashram Photos Attachment</h2>
           <p className="text-[11px] sm:text-xs text-[#64748B] font-medium mt-0.5">Upload property entrance, rooms, or trustee documents</p>
         </div>
-        <span className="text-xs font-bold text-[#64748B] bg-[#F8FAFC] px-3 py-1 rounded-full border border-[#E2E8F0]">
-          {images.length} file(s)
-        </span>
+        <div className="flex items-center gap-2">
+          {isOptimizing && (
+            <span className="flex items-center gap-1.5 text-xs font-bold text-[#0A4DA6] bg-[#0A4DA6]/10 px-3 py-1 rounded-full border border-[#0A4DA6]/20">
+              <Loader2 size={12} className="animate-spin text-[#0A4DA6]" />
+              {optimizationStatus}
+            </span>
+          )}
+          {!isOptimizing && optimizationStatus === 'Image ready' && (
+            <span className="flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+              <CheckCircle2 size={12} className="text-emerald-600" />
+              Image ready
+            </span>
+          )}
+          <span className="text-xs font-bold text-[#64748B] bg-[#F8FAFC] px-3 py-1 rounded-full border border-[#E2E8F0]">
+            {images.length} file(s)
+          </span>
+        </div>
       </div>
 
       {/* Upload Dropzone */}
