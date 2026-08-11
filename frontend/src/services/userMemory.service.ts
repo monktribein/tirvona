@@ -16,17 +16,48 @@ export interface UserMemoryProfile {
   lastVisitedPage?: { path: string; timestamp: Date };
 }
 
+const MEMORY_KEYS: (keyof UserMemoryProfile)[] = [
+  "bookingDraft",
+  "plannerDraft",
+  "offerDraft",
+  "marketplaceCart",
+  "wishlist",
+  "recentSearches",
+  "recentCities",
+  "filters",
+  "dashboardState",
+  "profileProgress",
+  "preferences",
+  "recentlyViewed",
+  "lastVisitedPage",
+];
+
+/** Remove Mongo metadata before sending memory back through the strict DTO. */
+const toMemoryPayload = (
+  memoryData: Partial<UserMemoryProfile>,
+): Partial<UserMemoryProfile> => {
+  const payload: Partial<UserMemoryProfile> = {};
+  for (const key of MEMORY_KEYS) {
+    if (memoryData[key] !== undefined) {
+      (payload as Record<string, unknown>)[key] = memoryData[key];
+    }
+  }
+  return payload;
+};
+
 export const userMemoryService = {
   getMemory: async () => {
-    return api.get("/user-memory");
+    return api.get("/user-memory", { skipToast: true });
   },
 
   saveMemory: async (memoryData: Partial<UserMemoryProfile>) => {
-    return api.post("/user-memory", memoryData);
+    return api.post("/user-memory", toMemoryPayload(memoryData), {
+      skipToast: true,
+    });
   },
 
   clearCategory: async (category: string) => {
-    return api.delete(`/user-memory/${category}`);
+    return api.delete(`/user-memory/${category}`, { skipToast: true });
   },
 };
 

@@ -109,10 +109,16 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     // verified user (the server ignores any client-sent id).
     const token = localStorage.getItem(TOKEN_KEY);
     const socket = io(`${API_BASE_URL}/notifications`, {
-      transports: ["websocket", "polling"],
+      // Polling-first gives Socket.IO a stable handshake before upgrading to
+      // WebSocket. `autoConnect: false` also prevents React Strict Mode's
+      // discarded development mount from opening and immediately closing a
+      // half-established WebSocket.
+      transports: ["polling", "websocket"],
+      autoConnect: false,
       auth: { token },
     });
     socketRef.current = socket;
+    const connectTimer = window.setTimeout(() => socket.connect(), 50);
 
     // The NestJS gateway authenticates the handshake and joins the user's
     // private room; the browser cannot select another user's room.
@@ -121,6 +127,8 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       "checked_in",
       "checked_out",
       "cancelled",
+      "volunteer_application_submitted",
+      "volunteer_application_updated",
     ];
     const onLifecycleEvent = (
       event: string,
@@ -134,6 +142,14 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         checked_in: { title: "Guest Checked In", type: "info" },
         checked_out: { title: "Guest Checked Out", type: "info" },
         cancelled: { title: "Booking Cancelled", type: "warning" },
+        volunteer_application_submitted: {
+          title: "Application Submitted",
+          type: "success",
+        },
+        volunteer_application_updated: {
+          title: "Application Updated",
+          type: "info",
+        },
       };
       const meta = labels[event] || {
         title: payload.title || "Booking Update",
@@ -150,8 +166,9 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     );
 
     return () => {
+      window.clearTimeout(connectTimer);
       lifecycleEvents.forEach((event) => socket.off(event));
-      socket.disconnect();
+      if (socket.connected || socket.active) socket.disconnect();
       socketRef.current = null;
     };
   }, [user]);

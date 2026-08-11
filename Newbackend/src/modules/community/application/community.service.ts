@@ -124,12 +124,11 @@ export class CommunityService {
     user: AuthenticatedUser,
     dto: VolunteerApplicationDto,
   ): Promise<any> {
-    if (
-      !(await this.repository.one("jobs", {
-        _id: dto.jobId,
-        status: { $in: ["open", "closing_soon"] },
-      }))
-    )
+    const job = await this.repository.one("jobs", {
+      _id: dto.jobId,
+      status: { $in: ["open", "closing_soon"] },
+    });
+    if (!job)
       throw new NotFoundException("Volunteer opening is not available.");
     if (
       await this.repository.one("applications", {
@@ -144,11 +143,36 @@ export class CommunityService {
       userId: user.id,
       status: "applied",
     });
+    await this.repository.create("notifications", {
+      userId: user.id,
+      recipientId: user.id,
+      event: "volunteer_application_submitted",
+      title: "Volunteer application received",
+      message: `Your application for ${job.title} at ${job.ashramName} has been submitted successfully. We will email you when its status changes.`,
+      channel: "in_app",
+      status: "queued",
+      meta: { applicationId: data._id, jobId: dto.jobId },
+    });
     return {
       success: true,
       message: "Application submitted successfully!",
       data,
     };
+  }
+  async myApplications(
+    user: AuthenticatedUser,
+    query: Record<string, string>,
+  ): Promise<any> {
+    const filter: Record<string, unknown> = {
+      userId: user.id,
+      ...(query.jobId ? { jobId: query.jobId } : {}),
+      ...(query.status ? { status: query.status } : {}),
+    };
+    const data = await this.repository.list("applications", filter, {
+      populate: ["jobId"],
+      sort: { createdAt: -1 },
+    });
+    return { success: true, count: data.length, data };
   }
   async createJob(user: AuthenticatedUser, dto: VolunteerJobDto): Promise<any> {
     const data = await this.repository.create("jobs", {
@@ -227,6 +251,16 @@ export class CommunityService {
         },
       },
     );
+    await this.repository.create("notifications", {
+      userId: application.userId,
+      recipientId: application.userId,
+      event: "volunteer_application_updated",
+      title: "Volunteer application updated",
+      message: `Your application for ${application.jobId?.title || "a volunteer opportunity"} is now ${dto.status}.`,
+      channel: "in_app",
+      status: "queued",
+      meta: { applicationId: id, jobId: application.jobId?._id },
+    });
     return {
       success: true,
       message: `Application marked as ${dto.status}.`,

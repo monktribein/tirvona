@@ -5,6 +5,7 @@ import {
   Download,
 } from "lucide-react";
 import { EnterpriseButton } from "../../admin/shared";
+import { formatCurrency } from "../../utils/format";
 
 export const ProfilePaymentsPage: React.FC = () => {
   const transactions = [
@@ -83,7 +84,7 @@ export const ProfilePaymentsPage: React.FC = () => {
 
                 <div className="flex items-center gap-4">
                   <span className="text-base font-black text-[#0A4DA6] dark:text-white">
-                    ₹{t.amount}
+                    {formatCurrency(t.amount)}
                   </span>
                   <EnterpriseButton
                     variant="outline"

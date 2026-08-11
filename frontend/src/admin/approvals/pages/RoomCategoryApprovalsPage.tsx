@@ -4,6 +4,7 @@ import type { RoomCategoryRequestItem } from "../../../services/approval.service
 import { useNotifications } from "../../../contexts/NotificationContext";
 import { getErrorMessage } from "../../../lib/api";
 import { humanizeLabel } from "../../../utils/labels";
+import { formatCurrency, getFormattingLocale } from "../../../utils/format";
 import { EnterprisePageHeader } from "../../shared";
 import {
   Bed,
@@ -204,11 +205,11 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
                         {req.categoryData?.maxGuests} Guests
                       </span>
                       <span className="text-gray-400 block text-[10px]">
-                        ₹{req.categoryData?.suggestedBasePrice} / night
+                        {formatCurrency(req.categoryData?.suggestedBasePrice)} / night
                       </span>
                     </td>
                     <td className="py-3.5 px-4 text-gray-500 font-semibold">
-                      {new Date(req.createdAt).toLocaleDateString("en-IN", {
+                      {new Date(req.createdAt).toLocaleDateString(getFormattingLocale(), {
                         month: "short",
                         day: "numeric",
                         year: "numeric",
@@ -298,7 +299,7 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
                   Suggested Price
                 </span>
                 <span className="font-bold text-[#0A4DA6]">
-                  ₹{selectedRequest.categoryData?.suggestedBasePrice} / night
+                  {formatCurrency(selectedRequest.categoryData?.suggestedBasePrice)} / night
                 </span>
               </div>
               <div>
@@ -314,7 +315,7 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
                   Submitted Date
                 </span>
                 <span className="font-semibold text-gray-600 dark:text-gray-300">
-                  {new Date(selectedRequest.createdAt).toLocaleDateString()}
+                  {new Date(selectedRequest.createdAt).toLocaleDateString(getFormattingLocale())}
                 </span>
               </div>
             </div>

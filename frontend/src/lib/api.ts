@@ -1,5 +1,6 @@
 import axios from "axios";
 import { toast } from "./toast";
+import { tUi } from "../contexts/LanguageContext";
 
 declare module "axios" {
   export interface AxiosRequestConfig {
@@ -107,9 +108,12 @@ export const getErrorMessage = (
   fallback = "Something went wrong. Please try again.",
 ) => {
   if (axios.isAxiosError(err)) {
-    return err.response?.data?.message || err.message || fallback;
+    const message = err.response?.data?.message || err.message || fallback;
+    return Array.isArray(message)
+      ? message.map((item) => tUi(String(item))).join(" · ")
+      : tUi(String(message));
   }
-  return fallback;
+  return tUi(fallback);
 };
 
 export default api;

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { platformSettingsService } from "../../services";
-import { roundMoney } from "../../utils/format";
+import { formatCurrency, roundMoney } from "../../utils/format";
 import { useNotifications } from "../../contexts/NotificationContext";
 import {
   DollarSign,
@@ -261,18 +261,20 @@ export const AdminPlatformSettingsPage: React.FC = () => {
             <div className="p-4 bg-gray-50 dark:bg-slate-900 rounded-2xl border border-gray-150 dark:border-slate-800 space-y-2.5 text-xs font-semibold">
               <div className="flex justify-between text-gray-600 dark:text-gray-300">
                 <span>Original Stay Cost:</span>
-                <span>₹{sampleStayCost}</span>
+                <span>{formatCurrency(sampleStayCost)}</span>
               </div>
 
               <div className="flex justify-between text-gray-400 text-[11px]">
                 <span>GST ({platformFeeGstRate}% on platform fee):</span>
-                <span>₹{sampleGst}</span>
+                <span>{formatCurrency(sampleGst)}</span>
               </div>
 
               <div className="flex justify-between text-[#0A4DA6] font-extrabold">
                 <span>{platformFee.label || "Tirvona Platform Fee"}:</span>
                 <span>
-                  {!platformFee.enabled ? "₹0" : `₹${samplePlatformFee}`}
+                  {!platformFee.enabled
+                    ? formatCurrency(0)
+                    : formatCurrency(samplePlatformFee)}
                   {platformFee.enabled && platformFee.type === "percentage" && (
                     <span className="text-[10px] text-gray-400 font-normal ml-1">
                       ({platformFee.value}%)
@@ -284,7 +286,7 @@ export const AdminPlatformSettingsPage: React.FC = () => {
               <div className="pt-2 border-t border-gray-200 dark:border-slate-800 flex justify-between text-sm font-black text-[#0B192C] dark:text-white">
                 <span>Final Payable Amount:</span>
                 <span className="text-[#0A4DA6] dark:text-blue-400">
-                  ₹{sampleTotal}
+                  {formatCurrency(sampleTotal)}
                 </span>
               </div>
             </div>

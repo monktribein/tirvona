@@ -7,7 +7,7 @@ import { Resend } from "resend";
 import { ConfigService } from "@nestjs/config";
 import { NotificationsGateway } from "./notifications.gateway";
 export interface NotificationJob {
-  domain: "booking" | "parking";
+  domain: "booking" | "parking" | "community";
   notificationId: string;
   userId: string;
   event: string;
@@ -21,6 +21,7 @@ export class NotificationWorker extends WorkerHost {
   constructor(
     @InjectModel("BookingNotification") private readonly booking: Model<any>,
     @InjectModel("ParkingNotification") private readonly parking: Model<any>,
+    @InjectModel("CommunityNotification") private readonly community: Model<any>,
     @InjectModel("User") private readonly users: Model<any>,
     private readonly gateway: NotificationsGateway,
     private readonly config: ConfigService,
@@ -29,7 +30,12 @@ export class NotificationWorker extends WorkerHost {
   }
   async process(job: Job<NotificationJob>): Promise<void> {
     const data = job.data;
-    const model = data.domain === "booking" ? this.booking : this.parking;
+    const model =
+      data.domain === "booking"
+        ? this.booking
+        : data.domain === "parking"
+          ? this.parking
+          : this.community;
     try {
       const user = await this.users
         .findById(data.userId)
@@ -48,7 +54,14 @@ export class NotificationWorker extends WorkerHost {
         });
       const resendApiKey = this.config.get<string>("resendApiKey");
       const msg91AuthKey = this.config.get<string>("msg91AuthKey");
-      if (data.channel === "email" && resendApiKey && user?.email) {
+      // Every authoritative in-app lifecycle notification also receives an
+      // email copy. This keeps booking, payment, parking and volunteer updates
+      // consistent without requiring each domain to enqueue duplicate rows.
+      if (
+        (data.channel === "email" || data.channel === "in_app") &&
+        resendApiKey &&
+        user?.email
+      ) {
         const result: any = await new Resend(resendApiKey).emails.send({
           from: this.config.getOrThrow<string>("resendFromEmail"),
           replyTo: this.config.get<string>("resendReplyTo"),

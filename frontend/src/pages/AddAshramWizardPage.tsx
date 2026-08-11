@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ashramService } from "../services";
+import { formatCurrency } from "../utils/format";
 import { FileUploader } from "../components/FileUploader";
 import TirvonaMap from "../components/TirvonaMap";
 import { ImageGalleryManager } from "../admin/shared/components/ImageGalleryManager";
@@ -2479,7 +2480,7 @@ const AddAshramWizardPage: React.FC = () => {
                           Bed Rate
                         </span>
                         <span className="text-sm font-extrabold text-[#0B192C] dark:text-white">
-                          ₹{r.basePrice} / night
+                          {formatCurrency(r.basePrice)} / night
                         </span>
                       </div>
                     </div>

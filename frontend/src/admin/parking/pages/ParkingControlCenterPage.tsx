@@ -18,6 +18,7 @@ import { EnterpriseStatusBadge } from "../../shared/components/EnterpriseStatusB
 import { useNotifications } from "../../../contexts/NotificationContext";
 import { getErrorMessage } from "../../../lib/api";
 import { parkingAdminService } from "../../../modules/parking/services/parking.service";
+import { formatCurrency } from "../../../utils/format";
 
 /**
  * Parking Control Center.
@@ -40,7 +41,7 @@ const TABS: { key: Tab; label: string }[] = [
 ];
 
 const money = (value: unknown): string =>
-  `₹${Number(value ?? 0).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
+  formatCurrency(Number(value ?? 0));
 
 const PARTNER_ACTIONS: {
   status: string;

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { formatCurrency } from "../../utils/format";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   User,
@@ -25,8 +26,10 @@ import {
   Star,
   RefreshCw,
   BookOpen,
+  HandHeart,
 } from "lucide-react";
 import { VisitorArticlesTab } from "./VisitorArticlesTab";
+import { VolunteerApplicationsTab } from "./VolunteerApplicationsTab";
 import ProfileOrdersPage from "./ProfileOrdersPage";
 import { useAuth } from "../../contexts/AuthContext";
 import { useNotifications } from "../../contexts/NotificationContext";
@@ -90,6 +93,7 @@ export const ProfileMainPage: React.FC = () => {
   ):
     | "overview"
     | "bookings"
+    | "volunteer"
     | "articles"
     | "orders"
     | "wishlist"
@@ -100,6 +104,7 @@ export const ProfileMainPage: React.FC = () => {
       pathname.includes("/profile/history")
     )
       return "bookings";
+    if (pathname.includes("/profile/volunteer")) return "volunteer";
     if (
       pathname.includes("/profile/articles") ||
       pathname.includes("/profile/blogs")
@@ -406,6 +411,14 @@ export const ProfileMainPage: React.FC = () => {
       desc: "Verified stay experience stories",
       icon: <BookOpen size={18} />,
       iconBg: "bg-amber-50 dark:bg-amber-950/40 text-amber-600",
+    },
+    {
+      key: "volunteer",
+      path: "/profile/volunteer",
+      label: "My Seva Applications",
+      desc: "Volunteer application updates",
+      icon: <HandHeart size={18} />,
+      iconBg: "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600",
     },
     {
       key: "orders",
@@ -805,7 +818,7 @@ export const ProfileMainPage: React.FC = () => {
 
                           <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center w-full sm:w-auto gap-2 border-t sm:border-t-0 border-gray-100 dark:border-slate-800 pt-3 sm:pt-0 shrink-0">
                             <span className="text-base font-black text-[#0A4DA6] dark:text-white">
-                              ₹{b.amount}
+                              {formatCurrency(b.amount)}
                             </span>
 
                             <div className="flex items-center gap-2">
@@ -844,6 +857,8 @@ export const ProfileMainPage: React.FC = () => {
 
             {/* TAB: MY ARTICLES & BLOGS */}
             {activeTab === "articles" && <VisitorArticlesTab />}
+
+            {activeTab === "volunteer" && <VolunteerApplicationsTab />}
 
             {activeTab === "orders" && <ProfileOrdersPage />}
 
@@ -923,7 +938,7 @@ export const ProfileMainPage: React.FC = () => {
                               Starting from
                             </span>
                             <span className="text-sm font-black text-[#0A4DA6] dark:text-white">
-                              ₹{item.price}
+                              {formatCurrency(item.price)}
                               <span className="text-[10px] font-normal text-gray-400">
                                 /night
                               </span>
@@ -985,7 +1000,7 @@ export const ProfileMainPage: React.FC = () => {
 
                         <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
                           <span className="text-sm font-black text-[#0A4DA6] dark:text-white">
-                            ₹{t.amount}
+                            {formatCurrency(t.amount)}
                           </span>
                           <button
                             onClick={() =>

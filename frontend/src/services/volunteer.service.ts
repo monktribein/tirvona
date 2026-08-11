@@ -28,6 +28,35 @@ export interface VolunteerJobItem {
   isGovtVerified: boolean;
 }
 
+/**
+ * Fields accepted by the backend VolunteerJobDto when publishing an opening.
+ * Keep this separate from VolunteerJobItem because the latter also contains
+ * server-generated/display-only fields such as `_id` and `isGovtVerified`.
+ */
+export type VolunteerJobPayload = Pick<
+  VolunteerJobItem,
+  "ashramId" | "ashramName" | "city" | "title" | "department"
+> &
+  Partial<
+    Pick<
+      VolunteerJobItem,
+      | "state"
+      | "type"
+      | "openingsCount"
+      | "duration"
+      | "accommodation"
+      | "food"
+      | "stipend"
+      | "certificateProvided"
+      | "responsibilities"
+      | "requirements"
+      | "benefits"
+      | "contactPerson"
+      | "deadline"
+      | "status"
+    >
+  >;
+
 export interface ApplicationPayload {
   jobId: string;
   applicantName: string;
@@ -39,6 +68,17 @@ export interface ApplicationPayload {
   languages?: string;
   availability?: string;
   motivation: string;
+}
+
+export interface VolunteerApplicationItem
+  extends Omit<ApplicationPayload, "jobId"> {
+  _id: string;
+  userId: string;
+  status: "applied" | "shortlisted" | "interviewed" | "accepted" | "rejected";
+  createdAt: string;
+  updatedAt: string;
+  jobId: VolunteerJobItem | string;
+  interviewSchedule?: { notes?: string };
 }
 
 export const volunteerService = {
@@ -65,11 +105,18 @@ export const volunteerService = {
     return api.post("/volunteer/apply", payload);
   },
 
-  createJob: async (data: Partial<VolunteerJobItem>) => {
+  getMyApplications: async (params?: { jobId?: string; status?: string }) => {
+    return api.get("/volunteer/applications/mine", {
+      params,
+      skipToast: true,
+    });
+  },
+
+  createJob: async (data: VolunteerJobPayload) => {
     return api.post("/volunteer/jobs", data);
   },
 
-  updateJob: async (id: string, data: Partial<VolunteerJobItem>) => {
+  updateJob: async (id: string, data: Partial<VolunteerJobPayload>) => {
     return api.put(`/volunteer/jobs/${id}`, data);
   },
 

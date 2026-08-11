@@ -3,6 +3,7 @@ import { analyticsService, bookingService, approvalService } from "../services";
 import api, { getErrorMessage } from "../lib/api";
 import { RecordFieldList } from "../admin/shared/components/RecordValue";
 import { useNotifications } from "../contexts/NotificationContext";
+import { formatCurrency, getFormattingLocale } from "../utils/format";
 import {
   TrendingUp,
   Bed,
@@ -251,7 +252,7 @@ export const OwnerDashboard: React.FC = () => {
               Gross Revenue
             </span>
             <h3 className="text-2xl font-black text-[#0B192C] dark:text-white mt-0.5">
-              ₹{analytics?.revenue || "0"}
+              {formatCurrency(analytics?.revenue || 0)}
             </h3>
           </div>
         </div>
@@ -271,7 +272,7 @@ export const OwnerDashboard: React.FC = () => {
               Today's Revenue
             </span>
             <h3 className="text-2xl font-black text-[#0A4DA6] mt-0.5">
-              ₹{analytics?.todayRevenue || "0"}
+              {formatCurrency(analytics?.todayRevenue || 0)}
             </h3>
           </div>
         </div>
@@ -368,7 +369,7 @@ export const OwnerDashboard: React.FC = () => {
                   </div>
 
                   <span className="text-[10px] text-gray-400 font-mono">
-                    {new Date(req.createdAt).toLocaleString()}
+                    {new Date(req.createdAt).toLocaleString(getFormattingLocale())}
                   </span>
                 </div>
 
@@ -547,7 +548,7 @@ export const OwnerDashboard: React.FC = () => {
                       {req.categoryData?.maxGuests} Guests
                     </td>
                     <td className="py-3 px-3 font-bold">
-                      ₹{req.categoryData?.suggestedBasePrice}
+                      {formatCurrency(req.categoryData?.suggestedBasePrice)}
                     </td>
                     <td className="py-3 px-3">
                       <span
@@ -759,7 +760,7 @@ export const OwnerDashboard: React.FC = () => {
                     {bk.roomId?.name}
                   </td>
                   <td className="py-3.5 px-4 font-extrabold text-[#0B192C] dark:text-white">
-                    ₹{bk.pricing?.totalAmount}
+                    {formatCurrency(bk.pricing?.totalAmount)}
                   </td>
                   <td className="py-3.5 px-4">
                     <span
@@ -841,7 +842,7 @@ export const OwnerDashboard: React.FC = () => {
                   </div>
                   <div className="flex justify-between pt-1 border-t border-gray-50 dark:border-slate-850 items-center">
                     <span className="font-bold text-[#0B192C] dark:text-white">
-                      ₹{bk.pricing?.totalAmount}
+                      {formatCurrency(bk.pricing?.totalAmount)}
                     </span>
                     <span
                       className={`px-2 py-0.5 rounded text-[8.5px] font-bold capitalize ${

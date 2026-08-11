@@ -290,12 +290,12 @@ export const TirvonaMapView: React.FC<TirvonaMapProps> = ({
   }, [ready]);
 
   return (
-    <div className="w-full">
+    <div className="relative z-0 isolate w-full overflow-hidden rounded-[24px]">
       <div
         ref={containerRef}
         role="application"
         aria-label={ariaLabel}
-        className={`tirvona-map w-full rounded-[24px] overflow-hidden border border-gray-100 dark:border-slate-800 bg-gray-100 dark:bg-slate-900 ${className}`}
+        className={`tirvona-map relative z-0 isolate w-full rounded-[24px] overflow-hidden border border-gray-100 dark:border-slate-800 bg-gray-100 dark:bg-slate-900 ${className}`}
         style={{ height }}
       />
     </div>

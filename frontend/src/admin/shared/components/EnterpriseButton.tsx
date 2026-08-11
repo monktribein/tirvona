@@ -1,4 +1,5 @@
 import React from "react";
+import { useLanguage } from "../../../contexts/LanguageContext";
 
 interface EnterpriseButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?:
@@ -24,6 +25,7 @@ export const EnterpriseButton: React.FC<EnterpriseButtonProps> = ({
   disabled,
   ...props
 }) => {
+  const { t } = useLanguage();
   const baseClasses =
     "rounded-full font-extrabold inline-flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap";
 
@@ -60,7 +62,7 @@ export const EnterpriseButton: React.FC<EnterpriseButtonProps> = ({
       ) : (
         icon
       )}
-      <span>{children}</span>
+      <span>{typeof children === "string" ? t(children) : children}</span>
     </button>
   );
 };

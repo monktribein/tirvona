@@ -64,6 +64,11 @@ export const ashramService = {
 export const roomService = {
   create: (data: unknown) => api.post("/rooms", data),
   update: (id: string, data: unknown) => api.put(`/rooms/${id}`, data),
+  /**
+   * Retire a room category. The server soft-deletes it, and refuses while any
+   * booking is still live against it.
+   */
+  remove: (id: string) => api.delete(`/rooms/${id}`),
   setAvailability: (id: string, data: unknown) =>
     api.post(`/rooms/${id}/availability`, data),
   calendar: (id: string, startDate: string, endDate: string) =>

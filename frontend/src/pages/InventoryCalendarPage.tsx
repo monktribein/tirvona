@@ -3,6 +3,7 @@ import { Calendar as CalendarIcon, Sparkles, Edit2, X } from "lucide-react";
 import { useNotifications } from "../contexts/NotificationContext";
 import { ashramService, roomService } from "../services";
 import { getErrorMessage } from "../lib/api";
+import { formatCurrency } from "../utils/format";
 
 export const InventoryCalendarPage: React.FC = () => {
   const { addNotification } = useNotifications();
@@ -177,7 +178,7 @@ export const InventoryCalendarPage: React.FC = () => {
                   Night Price
                 </span>
                 <span className="text-xs font-extrabold text-[#0B192C] dark:text-white">
-                  ₹{item.price}
+                  {formatCurrency(item.price)}
                 </span>
               </div>
 

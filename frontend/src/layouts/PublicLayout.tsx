@@ -7,8 +7,9 @@ import NotificationDropdown from "../components/shared/NotificationDropdown";
 import CartDrawer, { CartButton } from "../components/shared/CartDrawer";
 import { setGuestPendingIntent } from "../utils/guestGate";
 import { getRoleDefaultDashboard, isParkingRole } from "../utils/roleRedirect";
-import { getActiveCurrency, setActiveCurrency } from "../utils/format";
-import { getActiveLanguage, setActiveLanguage } from "../utils/language";
+import { useCurrency } from "../contexts/CurrencyContext";
+import { useLanguage } from "../contexts/LanguageContext";
+import { getFormattingLocale } from "../utils/format";
 import {
   LogOut,
   Menu,
@@ -75,20 +76,15 @@ export const PublicLayout: React.FC = () => {
   const [darkMode, setDarkMode] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
 
-  const [activeCurrency, setCurrencyState] = useState<"INR" | "USD">(() =>
-    getActiveCurrency(),
-  );
+  const {
+    currency: activeCurrency,
+    setCurrency,
+    rate,
+    loadingRate,
+    refreshRate,
+  } = useCurrency();
   const [showCurrencyDropdown, setShowCurrencyDropdown] = useState(false);
   const currencyDropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleCurrencyChange = (e: any) => {
-      setCurrencyState(e.detail || getActiveCurrency());
-    };
-    window.addEventListener("currency_changed", handleCurrencyChange);
-    return () =>
-      window.removeEventListener("currency_changed", handleCurrencyChange);
-  }, []);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -104,25 +100,13 @@ export const PublicLayout: React.FC = () => {
   }, []);
 
   const handleSelectCurrency = (code: "INR" | "USD") => {
-    setActiveCurrency(code);
-    setCurrencyState(code);
+    setCurrency(code);
     setShowCurrencyDropdown(false);
   };
 
-  const [activeLang, setLangState] = useState<"en" | "hi">(() =>
-    getActiveLanguage(),
-  );
+  const { language: activeLang, setLanguage, t } = useLanguage();
   const [showLangDropdown, setShowLangDropdown] = useState(false);
   const langDropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleLangChange = (e: any) => {
-      setLangState(e.detail || getActiveLanguage());
-    };
-    window.addEventListener("language_changed", handleLangChange);
-    return () =>
-      window.removeEventListener("language_changed", handleLangChange);
-  }, []);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -138,8 +122,7 @@ export const PublicLayout: React.FC = () => {
   }, []);
 
   const handleSelectLang = (code: "en" | "hi") => {
-    setActiveLanguage(code);
-    setLangState(code);
+    setLanguage(code);
     setShowLangDropdown(false);
   };
 
@@ -301,7 +284,7 @@ export const PublicLayout: React.FC = () => {
                         : "text-slate-700 dark:text-slate-200 hover:text-[#0A4DA6] dark:hover:text-[#E58C28] hover:bg-slate-100/90 dark:hover:bg-slate-800/70"
                       }`}
                   >
-                    <span>{link.label}</span>
+                    <span>{t(link.label)}</span>
                   </Link>
                 );
               })}
@@ -309,7 +292,7 @@ export const PublicLayout: React.FC = () => {
 
             {/* Mobile spacer / menu title */}
             <div className="lg:hidden flex-1 pl-3 text-xs font-semibold text-gray-500">
-              Menu
+              {t("Menu")}
             </div>
 
             {/* Right Side Action & Utility Area */}
@@ -329,7 +312,7 @@ export const PublicLayout: React.FC = () => {
                 </button>
 
                 {showCurrencyDropdown && (
-                  <div className="absolute right-0 top-full mt-2 w-28 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-xl shadow-xl z-50 py-1 overflow-hidden">
+                  <div className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-xl shadow-xl z-50 py-1 overflow-hidden">
                     <button
                       type="button"
                       onClick={() => handleSelectCurrency("INR")}
@@ -352,6 +335,52 @@ export const PublicLayout: React.FC = () => {
                       <span>$ USD</span>
                       <span className="text-[10px] font-semibold text-gray-400">Dollar</span>
                     </button>
+                    <div className="border-t border-gray-100 dark:border-slate-800 px-3 py-2.5">
+                      {rate ? (
+                        <>
+                          <div className="flex items-center justify-between gap-3 text-[11px]">
+                            <span className="font-extrabold text-slate-700 dark:text-slate-200">
+                              1 USD = ₹{rate.usdToInr.toLocaleString(getFormattingLocale(), {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => void refreshRate()}
+                              disabled={loadingRate}
+                              className="font-bold text-[#0A4DA6] disabled:opacity-50"
+                            >
+                              {loadingRate ? "Updating…" : "Refresh"}
+                            </button>
+                          </div>
+                          <div className="mt-1 text-[10px] leading-4 text-gray-400">
+                            Live source: {" "}
+                            <a
+                              href={rate.sourceUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="font-semibold text-[#0A4DA6] hover:underline"
+                            >
+                              {rate.source}
+                            </a>
+                            <br />
+                            Updated {new Date(rate.updatedAt).toLocaleString(getFormattingLocale())}
+                          </div>
+                        </>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => void refreshRate()}
+                          disabled={loadingRate}
+                          className="w-full text-left text-[11px] font-bold text-[#0A4DA6] disabled:opacity-50"
+                        >
+                          {loadingRate
+                            ? "Loading live USD/INR rate…"
+                            : "Live rate unavailable — retry"}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
@@ -739,6 +768,23 @@ export const PublicLayout: React.FC = () => {
                   $ USD
                 </button>
               </div>
+            </div>
+            <div className="px-3 -mt-2 text-[10px] leading-4 text-gray-400">
+              {rate ? (
+                <>
+                  <span className="font-bold text-slate-600 dark:text-slate-300">
+                    1 USD = ₹{rate.usdToInr.toLocaleString(getFormattingLocale(), {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </span>{" "}
+                  · {rate.source}
+                </>
+              ) : loadingRate ? (
+                "Loading live exchange rate…"
+              ) : (
+                "Live exchange rate unavailable"
+              )}
             </div>
 
             <div className="flex items-center justify-between py-3 px-3 rounded-xl text-sm text-gray-500">

@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { Search, ChevronDown, ChevronUp } from "lucide-react";
+import { formatCurrency } from "../utils/format";
 
-const categories = [
+const getCategories = () => [
   {
     title: "Bookings & Reservations",
     items: [
@@ -28,7 +29,7 @@ const categories = [
     items: [
       {
         q: "What payment methods are accepted?",
-        a: "We accept all major UPI apps (GPay, PhonePe, Paytm), credit/debit cards (Visa, Mastercard, RuPay), net banking, and EMI options for bookings above ₹5,000.",
+        a: `We accept all major UPI apps (GPay, PhonePe, Paytm), credit/debit cards (Visa, Mastercard, RuPay), net banking, and EMI options for bookings above ${formatCurrency(5000)}.`,
       },
       {
         q: "Is it safe to pay on Tirvona?",
@@ -81,6 +82,7 @@ const categories = [
 ];
 
 const HelpCenterPage: React.FC = () => {
+  const categories = getCategories();
   const [search, setSearch] = useState("");
   const [openItem, setOpenItem] = useState<string | null>(null);
 

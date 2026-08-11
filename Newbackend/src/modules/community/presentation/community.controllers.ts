@@ -74,6 +74,14 @@ export class VolunteerController {
   ) {
     return this.community.apply(user, dto);
   }
+  @Get("applications/mine")
+  @Roles("customer", "volunteer", "owner", "manager", "super_admin")
+  myApplications(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() query: Record<string, string>,
+  ) {
+    return this.community.myApplications(user, query);
+  }
   @Post("jobs") @Roles("owner", "manager", "super_admin") create(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: VolunteerJobDto,

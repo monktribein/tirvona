@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { MapPin, Clock, Copy, CheckCircle2, ArrowRight } from "lucide-react";
+import { formatCurrency } from "../utils/format";
 
 interface CouponVoucherCardProps {
   offer: any;
@@ -213,14 +214,9 @@ export const CouponVoucherCard: React.FC<CouponVoucherCardProps> = ({
                     </span>
                   </>
                 ) : (
-                  <>
-                    <span className="text-base sm:text-2xl font-black text-white mr-0.5">
-                      ₹
-                    </span>
-                    <span className="text-2xl sm:text-4xl md:text-5xl font-black text-white tracking-tight">
-                      {discountValue}
-                    </span>
-                  </>
+                  <span className="text-2xl sm:text-4xl md:text-5xl font-black text-white tracking-tight">
+                    {formatCurrency(discountValue)}
+                  </span>
                 )}
               </div>
 

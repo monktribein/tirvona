@@ -468,7 +468,7 @@ export const MarketplaceProductDetailPage: React.FC = () => {
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <Truck size={13} className="text-[#0A4DA6]" /> Free delivery
-                over ₹999
+                over {formatCurrency(999)}
               </span>
             </div>
           </div>

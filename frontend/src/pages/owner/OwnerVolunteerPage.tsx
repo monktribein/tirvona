@@ -18,6 +18,8 @@ import {
   volunteerService,
   type VolunteerJobItem,
 } from "../../services/volunteer.service";
+import { ashramService } from "../../services";
+import { getErrorMessage } from "../../lib/api";
 import { useNotifications } from "../../contexts/NotificationContext";
 import { useAuth } from "../../contexts/AuthContext";
 import {
@@ -42,7 +44,14 @@ export const OwnerVolunteerPage: React.FC = () => {
   const [title, setTitle] = useState("");
   const [department, setDepartment] = useState("Event Management");
   const [type, setType] = useState("volunteer");
-  const [city, setCity] = useState("Rishikesh");
+  // City is chosen first, then the ashram within it — the opening belongs to a
+  // specific ashram, and `ashramId` is required by the API. The form used to
+  // send no id at all and pass the signed-in user's *name* as the ashram name,
+  // falling back to a hardcoded "Parmarth Niketan Ashram" when that was blank.
+  const [city, setCity] = useState("");
+  const [ashramId, setAshramId] = useState("");
+  const [cityAshrams, setCityAshrams] = useState<any[]>([]);
+  const [loadingAshrams, setLoadingAshrams] = useState(false);
   const [openingsCount, setOpeningsCount] = useState(5);
   const [duration, setDuration] = useState("1 Month");
   const [stipend, setStipend] = useState("Free Ashram Stay + Satvik Meals");
@@ -61,10 +70,68 @@ export const OwnerVolunteerPage: React.FC = () => {
   const [selectedJobForApps, setSelectedJobForApps] =
     useState<VolunteerJobItem | null>(null);
 
+  // Scope differs by role and nothing else: the platform sees every ashram,
+  // an owner only their own. Mirrors the offers console exactly.
+  const isPlatformAdmin = user?.role === "super_admin";
+  const [destinations, setDestinations] = useState<any[]>([]);
+  const [myAshrams, setMyAshrams] = useState<any[]>([]);
+
   useEffect(() => {
     fetchOwnerJobs();
     fetchOwnerApplications();
   }, []);
+
+  useEffect(() => {
+    const load = isPlatformAdmin
+      ? ashramService.destinations().then((res) => {
+          setDestinations(res.data?.data || []);
+        })
+      : ashramService.myListings().then((res) => {
+          const rows: any[] = res.data?.data || [];
+          setMyAshrams(rows);
+          const byCity = new Map<string, any>();
+          for (const a of rows) {
+            const name = String(a.address?.city || "").trim();
+            if (!name) continue;
+            const key = name.toLowerCase();
+            if (byCity.has(key)) byCity.get(key).count += 1;
+            else byCity.set(key, { city: name, count: 1 });
+          }
+          setDestinations(
+            [...byCity.values()].sort((a, b) => a.city.localeCompare(b.city)),
+          );
+        });
+    load.catch(() => setDestinations([]));
+  }, [isPlatformAdmin]);
+
+  /** Load the ashrams inside a city, and clear any stale selection. */
+  const handleCityChange = async (nextCity: string) => {
+    setCity(nextCity);
+    setAshramId("");
+    if (!nextCity) {
+      setCityAshrams([]);
+      return;
+    }
+    if (!isPlatformAdmin) {
+      setCityAshrams(
+        myAshrams.filter(
+          (a) =>
+            String(a.address?.city || "").toLowerCase() ===
+            nextCity.toLowerCase(),
+        ),
+      );
+      return;
+    }
+    setLoadingAshrams(true);
+    try {
+      const res = await ashramService.byDestination(nextCity);
+      setCityAshrams(res.data?.data || []);
+    } catch {
+      setCityAshrams([]);
+    } finally {
+      setLoadingAshrams(false);
+    }
+  };
 
   const fetchOwnerJobs = async () => {
     setLoading(true);
@@ -93,10 +160,23 @@ export const OwnerVolunteerPage: React.FC = () => {
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const ashram = cityAshrams.find((a) => a._id === ashramId);
+    if (!ashram) {
+      addNotification(
+        "Validation Error",
+        "Choose the city and the ashram this opening belongs to.",
+        "error",
+      );
+      return;
+    }
     setIsSaving(true);
     try {
       const resp = await volunteerService.createJob({
-        ashramName: user?.name || "Parmarth Niketan Ashram",
+        // Both taken from the selected ashram, so the public listing names the
+        // place a volunteer would actually report to.
+        ashramId: ashram._id,
+        ashramName: ashram.name,
+        state: ashram.address?.state,
         city,
         title,
         department,
@@ -109,7 +189,6 @@ export const OwnerVolunteerPage: React.FC = () => {
         responsibilities: responsibilities.split("\n").filter((r) => r.trim()),
         requirements: requirements.split("\n").filter((r) => r.trim()),
         status: "open",
-        isGovtVerified: true,
       });
 
       if (resp.data?.success) {
@@ -122,10 +201,19 @@ export const OwnerVolunteerPage: React.FC = () => {
         setTitle("");
         setResponsibilities("");
         setRequirements("");
+        setCity("");
+        setAshramId("");
+        setCityAshrams([]);
         fetchOwnerJobs();
       }
-    } catch  {
-      addNotification("Error", "Failed to publish opening.", "error");
+    } catch (err) {
+      // Surface what the API rejected — a blanket "failed to publish" left an
+      // owner with no idea which field was wrong.
+      addNotification(
+        "Error",
+        getErrorMessage(err, "Failed to publish opening."),
+        "error",
+      );
     } finally {
       setIsSaving(false);
     }
@@ -445,20 +533,58 @@ export const OwnerVolunteerPage: React.FC = () => {
                 />
               </div>
 
+              {/* City, then the ashram inside it. The list was a fixed five
+                cities regardless of where anything is actually published; it
+                is now derived from real ashrams, so a city can never be offered
+                with nothing in it. */}
               <div>
                 <label className="block text-xs font-extrabold text-gray-700 dark:text-gray-300 mb-1">
-                  City
+                  City <span className="text-rose-500">*</span>
                 </label>
                 <select
+                  required
                   value={city}
-                  onChange={(e) => setCity(e.target.value)}
+                  onChange={(e) => handleCityChange(e.target.value)}
                   className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold"
                 >
-                  <option value="Rishikesh">Rishikesh</option>
-                  <option value="Haridwar">Haridwar</option>
-                  <option value="Varanasi">Varanasi</option>
-                  <option value="Vrindavan">Vrindavan</option>
-                  <option value="Ayodhya">Ayodhya</option>
+                  <option value="">
+                    {destinations.length === 0
+                      ? "No published ashrams yet"
+                      : "Select a city"}
+                  </option>
+                  {destinations.map((d) => (
+                    <option key={d.city} value={d.city}>
+                      {d.city} ({d.count})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-extrabold text-gray-700 dark:text-gray-300 mb-1">
+                  Ashram <span className="text-rose-500">*</span>
+                </label>
+                <select
+                  required
+                  value={ashramId}
+                  disabled={!city || loadingAshrams}
+                  onChange={(e) => setAshramId(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <option value="">
+                    {!city
+                      ? "Select a city first"
+                      : loadingAshrams
+                        ? "Loading ashrams..."
+                        : cityAshrams.length === 0
+                          ? "No ashrams in this city"
+                          : "Select an ashram"}
+                  </option>
+                  {cityAshrams.map((a) => (
+                    <option key={a._id} value={a._id}>
+                      {a.name}
+                    </option>
+                  ))}
                 </select>
               </div>
 

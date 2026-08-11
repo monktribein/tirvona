@@ -2,13 +2,10 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import { getTodayYMD } from "../contexts/BookingSearchContext";
+import { useLanguage } from "../contexts/LanguageContext";
+import { getFormattingLocale } from "../utils/format";
 
 const WEEKDAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
-const MONTHS = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
-];
-
 const toYMD = (date: Date) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 
@@ -25,7 +22,7 @@ const parseYMD = (value?: string) => {
 const formatShort = (value?: string) => {
   const date = parseYMD(value);
   return date
-    ? date.toLocaleDateString("en-IN", { day: "numeric", month: "short" })
+    ? date.toLocaleDateString(getFormattingLocale(), { day: "numeric", month: "short" })
     : "Add date";
 };
 
@@ -63,6 +60,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
   align = "left",
   pill = false,
 }) => {
+  const { language, t } = useLanguage();
   const rootRef = useRef<HTMLDivElement>(null);
   const today = useMemo(() => parseYMD(getTodayYMD())!, []);
   const initial = parseYMD(checkIn) || today;
@@ -111,7 +109,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
         {index === 0 && (
           <button
             type="button"
-            aria-label="Previous month"
+            aria-label={t("Previous month")}
             disabled={previousDisabled}
             onClick={() => setView(new Date(view.getFullYear(), view.getMonth() - 1, 1))}
             className="absolute left-0 w-9 h-9 rounded-full flex items-center justify-center hover:bg-blue-50 text-[#0A4DA6] disabled:text-gray-300 disabled:hover:bg-transparent disabled:cursor-not-allowed"
@@ -120,12 +118,15 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
           </button>
         )}
         <span className="text-sm font-extrabold text-[#0B192C] dark:text-white">
-          {MONTHS[month.getMonth()]} {month.getFullYear()}
+          {month.toLocaleDateString(getFormattingLocale(), {
+            month: "long",
+            year: "numeric",
+          })}
         </span>
         {index === 1 && (
           <button
             type="button"
-            aria-label="Next month"
+            aria-label={t("Next month")}
             onClick={() => setView(new Date(view.getFullYear(), view.getMonth() + 1, 1))}
             className="absolute right-0 w-9 h-9 rounded-full flex items-center justify-center hover:bg-blue-50 text-[#0A4DA6]"
           >
@@ -134,7 +135,10 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
         )}
       </div>
       <div className="grid grid-cols-7 mb-1">
-        {WEEKDAYS.map((day) => (
+        {(language === "hi"
+          ? ["र", "सो", "मं", "बु", "गु", "शु", "श"]
+          : WEEKDAYS
+        ).map((day) => (
           <span key={day} className="text-[10px] font-bold text-center py-1.5 text-slate-400">{day}</span>
         ))}
       </div>

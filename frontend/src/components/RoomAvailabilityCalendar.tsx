@@ -1,4 +1,5 @@
 import { CalendarDays, Loader2 } from "lucide-react";
+import { formatCurrency } from "../utils/format";
 
 type AvailabilityDay = {
   date: string;
@@ -103,14 +104,14 @@ export function RoomAvailabilityCalendar({
               type="button"
               disabled={soldOut}
               onClick={() => onSelect(day.date)}
-              title={`${date.toLocaleDateString("en-IN", { dateStyle: "full" })} · ${soldOut ? "Sold out" : `${day.available} available`} · ₹${day.price}`}
+              title={`${date.toLocaleDateString("en-IN", { dateStyle: "full" })} · ${soldOut ? "Sold out" : `${day.available} available`} · ${formatCurrency(day.price)}`}
               aria-label={`${date.toLocaleDateString("en-IN", { dateStyle: "long" })}, ${soldOut ? "sold out" : `${day.available} available`}`}
               aria-pressed={selected}
               className={`relative flex h-9 w-9 flex-col items-center justify-center rounded-full border text-center transition-all ${color} ${soldOut ? "cursor-not-allowed opacity-70" : "cursor-pointer hover:-translate-y-0.5 hover:shadow-sm"} ${selected ? "ring-2 ring-[#0A4DA6] ring-offset-2 dark:ring-offset-[#0B192C]" : ""}`}
             >
               <span className="text-[10px] font-black leading-none">{date.getDate()}</span>
               <span className="mt-0.5 max-w-8 truncate text-[6px] font-extrabold leading-none">
-                {soldOut ? "FULL" : `₹${day.price}`}
+                {soldOut ? "FULL" : formatCurrency(day.price)}
               </span>
             </button>
           );

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { formatCurrency } from "../utils/format";
 import {
   Briefcase,
   MapPin,
@@ -53,16 +54,17 @@ const openings = [
   },
 ];
 
-const perks = [
+const getPerks = () => [
   "🏥 Health insurance for self & family",
   "🌿 Work from ashram — remote work supported",
-  "📚 ₹20,000 annual learning budget",
+  `📚 ${formatCurrency(20000)} annual learning budget`,
   "✈️ Spiritual travel expense reimbursement",
   "🎯 Performance bonuses every quarter",
   "🧘 Meditation & yoga sessions twice a week",
 ];
 
 const CareersPage: React.FC = () => {
+  const perks = getPerks();
   const [expanded, setExpanded] = useState<number | null>(null);
   const [selectedDept, setSelectedDept] = useState<string>("All");
   const depts = [

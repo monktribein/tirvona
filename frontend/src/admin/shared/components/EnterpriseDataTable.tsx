@@ -25,6 +25,8 @@ import {
 import { RecordValue } from "./RecordValue";
 import { ImageGalleryManager } from "./ImageGalleryManager";
 import { formatInline, humanizeKey } from "../utils/recordFormat";
+import { useLanguage } from "../../../contexts/LanguageContext";
+import { getFormattingLocale } from "../../../utils/format";
 
 function extractAllImages(item: any): string[] {
   if (!item || typeof item !== "object") return [];
@@ -122,6 +124,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
   loading = false,
   hideAddButton = false,
 }) => {
+  const { t } = useLanguage();
   const tableLoading = isLoading || loading;
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -265,7 +268,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
           />
           <input
             type="text"
-            placeholder="Search records..."
+            placeholder={t("Search records...")}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-full text-xs font-medium text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6]"
@@ -275,22 +278,22 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
         {/* Filter & Per-Page Controls */}
         <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
           <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-400 font-bold">Status:</span>
+            <span className="text-xs text-gray-400 font-bold">{t("Status")}:</span>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               className="px-3 py-1.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-full text-xs font-bold text-[#0B192C] dark:text-white focus:outline-none"
             >
-              <option value="all">All Statuses</option>
-              <option value="active">Active / Approved</option>
-              <option value="pending">Pending</option>
-              <option value="rejected">Rejected / Suspended</option>
-              <option value="cancelled">Cancelled</option>
+              <option value="all">{t("All Statuses")}</option>
+              <option value="active">{t("Active / Approved")}</option>
+              <option value="pending">{t("Pending")}</option>
+              <option value="rejected">{t("Rejected / Suspended")}</option>
+              <option value="cancelled">{t("Cancelled")}</option>
             </select>
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-400 font-bold">Show:</span>
+            <span className="text-xs text-gray-400 font-bold">{t("Show")}:</span>
             <select
               value={itemsPerPage}
               onChange={(e) => {
@@ -322,7 +325,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                 }}
                 className="px-3 py-1.5 rounded-full bg-emerald-600 text-white text-xs font-bold flex items-center gap-1 cursor-pointer hover:bg-emerald-700"
               >
-                <CheckCircle size={14} /> Bulk Approve
+                <CheckCircle size={14} /> {t("Bulk Approve")}
               </button>
             )}
             {onBulkReject && (
@@ -333,7 +336,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                 }}
                 className="px-3 py-1.5 rounded-full bg-orange-600 text-white text-xs font-bold flex items-center gap-1 cursor-pointer hover:bg-orange-700"
               >
-                <XCircle size={14} /> Bulk Reject
+                <XCircle size={14} /> {t("Bulk Reject")}
               </button>
             )}
             {onBulkDelete && (
@@ -344,7 +347,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                 }}
                 className="px-3 py-1.5 rounded-full bg-rose-600 text-white text-xs font-bold flex items-center gap-1 cursor-pointer hover:bg-rose-700"
               >
-                <Trash2 size={14} /> Bulk Delete
+                <Trash2 size={14} /> {t("Bulk Delete")}
               </button>
             )}
           </div>
@@ -355,7 +358,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
       <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] shadow-sm overflow-hidden">
         {tableLoading ? (
           <div className="h-64 flex items-center justify-center text-gray-400 text-xs font-bold animate-pulse">
-            Loading data records...
+            {t("Loading data records...")}
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -377,7 +380,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                   </th>
                   {columns.map((col) => (
                     <th key={col.key} className="py-4 px-4 font-bold">
-                      {col.label}
+                        {t(col.label)}
                     </th>
                   ))}
                   <th className="py-4 px-4">Status</th>
@@ -392,7 +395,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                       colSpan={columns.length + 4}
                       className="py-12 text-center text-gray-400 font-semibold"
                     >
-                      No records found.
+                      {t("No records found.")}
                     </td>
                   </tr>
                 ) : (
@@ -441,7 +444,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                         </td>
                         <td className="py-3.5 px-4 text-gray-400 text-[11px] font-mono whitespace-nowrap">
                           {item.createdAt
-                            ? new Date(item.createdAt).toLocaleDateString()
+                            ? new Date(item.createdAt).toLocaleDateString(getFormattingLocale())
                             : "—"}
                         </td>
                         <td className="py-3.5 px-4 text-right">
@@ -450,7 +453,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                               <button
                                 onClick={() => onManage(item)}
                                 className="px-3 py-1 bg-[#0A4DA6] hover:bg-blue-900 text-white rounded-full text-[11px] font-black shadow-sm transition-all cursor-pointer flex items-center gap-1"
-                                title="Open 7-Section Enterprise Manager"
+                                title={t("Open 7-Section Enterprise Manager")}
                               >
                                 <Sparkles size={12} /> Manage
                               </button>
@@ -459,7 +462,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                                 <button
                                   onClick={() => setDetailItem(item)}
                                   className="p-1.5 text-gray-400 hover:text-[#0A4DA6] hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer"
-                                  title="View Details"
+                                  title={t("View Details")}
                                 >
                                   <Eye size={14} />
                                 </button>
@@ -467,7 +470,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                                   <button
                                     onClick={() => openEditModal(item)}
                                     className="p-1.5 text-gray-400 hover:text-amber-500 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer"
-                                    title="Edit Record"
+                                    title={t("Edit Record")}
                                   >
                                     <Edit size={14} />
                                   </button>
@@ -478,7 +481,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                               <button
                                 onClick={() => onToggleStatus(item)}
                                 className="p-1.5 text-gray-400 hover:text-emerald-500 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer"
-                                title="Toggle Status"
+                                title={t("Toggle Status")}
                               >
                                 {["active", "approved"].includes(statusStr) ? (
                                   <ToggleRight
@@ -497,7 +500,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                               <button
                                 onClick={() => onDelete(id)}
                                 className="p-1.5 text-gray-400 hover:text-rose-500 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer"
-                                title="Delete Record"
+                                title={t("Delete Record")}
                               >
                                 <Trash2 size={14} />
                               </button>
@@ -773,13 +776,13 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                   <div className="flex gap-3 items-center text-gray-400">
                     <Clock size={14} className="text-[#0A4DA6]" /> Created:{" "}
                     {detailItem.createdAt
-                      ? new Date(detailItem.createdAt).toLocaleString()
+                      ? new Date(detailItem.createdAt).toLocaleString(getFormattingLocale())
                       : "N/A"}
                   </div>
                   <div className="flex gap-3 items-center text-gray-400">
                     <Clock size={14} className="text-emerald-500" /> Updated:{" "}
                     {detailItem.updatedAt
-                      ? new Date(detailItem.updatedAt).toLocaleString()
+                      ? new Date(detailItem.updatedAt).toLocaleString(getFormattingLocale())
                       : "N/A"}
                   </div>
                 </div>
@@ -881,7 +884,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
               {columns.map((col) => (
                 <div key={col.key} className="space-y-1">
                   <label className="text-xs font-bold text-gray-400">
-                    {col.label}
+                    {t(col.label)}
                   </label>
                   {col.key === "isVerified" ? (
                     <select

@@ -7,6 +7,7 @@ import {
 } from "../../../services/approval.service";
 import { useNotifications } from "../../../contexts/NotificationContext";
 import { getErrorMessage } from "../../../lib/api";
+import { getFormattingLocale } from "../../../utils/format";
 import { RecordFieldList } from "../../shared/components/RecordValue";
 import { EnterprisePageHeader } from "../../shared";
 import { humanizeLabel } from "../../../utils/labels";
@@ -438,7 +439,7 @@ export const CentralApprovalCenterPage: React.FC = () => {
                       </span>
                     </td>
                     <td className="py-3.5 px-4 text-gray-500 font-semibold">
-                      {new Date(req.createdAt).toLocaleDateString("en-IN", {
+                      {new Date(req.createdAt).toLocaleDateString(getFormattingLocale(), {
                         month: "short",
                         day: "numeric",
                         year: "numeric",
@@ -548,7 +549,7 @@ export const CentralApprovalCenterPage: React.FC = () => {
                       >
                         <div className="flex justify-between items-center text-[10px] font-bold text-gray-400">
                           <span>{c.userName || "User"}</span>
-                          <span>{new Date(c.timestamp).toLocaleString()}</span>
+                          <span>{new Date(c.timestamp).toLocaleString(getFormattingLocale())}</span>
                         </div>
                         <p className="text-gray-700 dark:text-gray-200 font-medium">
                           {c.text}

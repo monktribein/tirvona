@@ -6,6 +6,7 @@ import GlobalSearch, {
   type SearchableLink,
 } from "../components/GlobalSearch";
 import { isParkingRole } from "../../../utils/roleRedirect";
+import { useLanguage } from "../../../contexts/LanguageContext";
 import {
   LayoutDashboard,
   Bed,
@@ -90,6 +91,8 @@ export const DashboardLayout: React.FC = () => {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+  const [languageOpen, setLanguageOpen] = useState(false);
+  const { language, setLanguage, t } = useLanguage();
 
   // Auto-expand ONLY the single parent group that contains the current active route
   React.useEffect(() => {
@@ -335,6 +338,15 @@ export const DashboardLayout: React.FC = () => {
       links: [
         { label: "All Leads", path: "/admin/lead-collection/leads" },
         { label: "Field Agents", path: "/admin/lead-collection/agents" },
+      ],
+    },
+    {
+      // The platform manages every ashram's openings and applications from
+      // here; the same page scoped to one owner lives at /owner/volunteer.
+      groupName: "Volunteer",
+      icon: <Heart size={15} />,
+      links: [
+        { label: "Openings & Applications", path: "/admin/volunteer" },
       ],
     },
     {
@@ -675,12 +687,12 @@ export const DashboardLayout: React.FC = () => {
   // Flatten the same tree the sidebar renders, so global search can only ever
   // offer pages this role actually has — no second list to keep in sync.
   const searchableLinks: SearchableLink[] = [
-    { label: navData.topLink.label, path: navData.topLink.path, group: "Overview" },
+    { label: t(navData.topLink.label), path: navData.topLink.path, group: t("Overview") },
     ...navData.groups.flatMap((group) =>
       group.links.map((link) => ({
-        label: link.label,
+        label: t(link.label),
         path: link.path,
-        group: group.groupName,
+        group: t(group.groupName),
       })),
     ),
   ];
@@ -731,7 +743,7 @@ export const DashboardLayout: React.FC = () => {
               Tirvona
             </span>
             <span className="text-[10px] font-extrabold text-[#0A4DA6]">
-              {getFormattedRole(user?.role)}
+              {t(getFormattedRole(user?.role))}
             </span>
           </div>
         </div>
@@ -751,7 +763,7 @@ export const DashboardLayout: React.FC = () => {
                 }`}
             >
               {navData.topLink.icon}
-              <span>{navData.topLink.label}</span>
+              <span>{t(navData.topLink.label)}</span>
             </Link>
           )}
 
@@ -779,7 +791,7 @@ export const DashboardLayout: React.FC = () => {
                     }`}
                 >
                   {group.icon}
-                  <span>{group.groupName}</span>
+                  <span>{t(group.groupName)}</span>
                 </Link>
               );
             }
@@ -800,7 +812,7 @@ export const DashboardLayout: React.FC = () => {
                 >
                   <div className="flex items-center gap-2">
                     {group.icon}
-                    <span>{group.groupName}</span>
+                    <span>{t(group.groupName)}</span>
                   </div>
                   {isOpen ? (
                     <ChevronDown size={12} />
@@ -825,7 +837,7 @@ export const DashboardLayout: React.FC = () => {
                             : "text-slate-600 dark:text-gray-400 hover:text-[#0A4DA6] hover:bg-[#F0F5FA]"
                             }`}
                         >
-                          <span className="truncate">{link.label}</span>
+                          <span className="truncate">{t(link.label)}</span>
                         </Link>
                       );
                     })}
@@ -848,7 +860,7 @@ export const DashboardLayout: React.FC = () => {
               {user.name}
             </span>
             <span className="text-[10px] text-[#0A4DA6] font-black tracking-wider">
-              {getFormattedRole(user.role)}
+              {t(getFormattedRole(user.role))}
             </span>
           </div>
         </div>
@@ -857,7 +869,7 @@ export const DashboardLayout: React.FC = () => {
           className="w-full flex items-center justify-center gap-2 py-2.5 bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100 transition-all rounded-full text-xs font-black cursor-pointer"
         >
           <LogOut size={14} />
-          <span>Sign Out</span>
+          <span>{t("Sign Out")}</span>
         </button>
       </div>
     </>
@@ -872,7 +884,7 @@ export const DashboardLayout: React.FC = () => {
           <button
             onClick={() => setSidebarOpen(true)}
             className="lg:hidden p-2 rounded-full hover:bg-blue-50 text-[#0B192C] dark:text-white transition-colors"
-            aria-label="Open navigation menu"
+            aria-label={t("Open navigation menu")}
           >
             <Menu size={20} />
           </button>
@@ -894,7 +906,7 @@ export const DashboardLayout: React.FC = () => {
                 Tirvona
               </span>
               <span className="text-[10px] font-extrabold text-[#0A4DA6] tracking-wider leading-none">
-                {getFormattedRole(user?.role)}
+                {t(getFormattedRole(user?.role))}
               </span>
             </div>
           </Link>
@@ -907,6 +919,42 @@ export const DashboardLayout: React.FC = () => {
 
         {/* Right: Notifications + Public Portal Action Button */}
         <div className="flex items-center gap-3 shrink-0">
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setLanguageOpen((open) => !open)}
+              className="h-9 px-3 rounded-full border border-blue-100 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-black text-[#0A4DA6] dark:text-blue-300 flex items-center gap-1.5 hover:bg-blue-50 dark:hover:bg-slate-800"
+              aria-label={t("Language")}
+            >
+              <Globe size={14} /> {language === "hi" ? "हिंदी" : "EN"}
+              <ChevronDown size={12} />
+            </button>
+            {languageOpen && (
+              <div className="absolute right-0 top-full mt-2 w-36 rounded-xl border border-blue-100 dark:border-slate-700 bg-white dark:bg-[#0B192C] shadow-xl overflow-hidden z-50">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLanguage("en");
+                    setLanguageOpen(false);
+                  }}
+                  className={`w-full px-3 py-2.5 text-left text-xs font-bold ${language === "en" ? "bg-blue-50 text-[#0A4DA6] dark:bg-slate-800" : "text-slate-600 dark:text-slate-300"}`}
+                >
+                  English
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLanguage("hi");
+                    setLanguageOpen(false);
+                  }}
+                  className={`w-full px-3 py-2.5 text-left text-xs font-bold ${language === "hi" ? "bg-blue-50 text-[#0A4DA6] dark:bg-slate-800" : "text-slate-600 dark:text-slate-300"}`}
+                >
+                  हिंदी
+                </button>
+              </div>
+            )}
+          </div>
+
           {/* Notifications Dropdown */}
           <NotificationDropdown />
 
@@ -915,7 +963,7 @@ export const DashboardLayout: React.FC = () => {
             to="/"
             className="text-xs font-extrabold px-4 py-2 rounded-full bg-[#0A4DA6] hover:bg-[#083b80] text-white transition-all flex items-center gap-1.5 shadow-md shadow-[#0A4DA6]/20 cursor-pointer shrink-0"
           >
-            <Globe size={14} className="text-[#E58C28]" /> Public Portal{" "}
+            <Globe size={14} className="text-[#E58C28]" /> {t("Public Portal")}{" "}
             <ArrowRight size={12} />
           </Link>
         </div>
@@ -939,7 +987,7 @@ export const DashboardLayout: React.FC = () => {
               <button
                 onClick={() => setSidebarOpen(false)}
                 className="absolute top-4 right-4 p-2 text-slate-500 hover:text-slate-800 rounded-full hover:bg-slate-100 transition-colors z-20"
-                aria-label="Close menu"
+                aria-label={t("Close menu")}
               >
                 <X size={20} />
               </button>
