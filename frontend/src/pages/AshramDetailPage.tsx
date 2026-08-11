@@ -2392,24 +2392,10 @@ export const AshramDetailPage: React.FC = () => {
           </div>
         </div>
       </div>
-      {false && (
-      <div className="pt-10 border-t border-gray-100 dark:border-slate-800 space-y-6">
-        <GuestReviewsCarousel
-          reviews={reviews}
-          ashramName={ashram?.name}
-          onReviewDeleted={() => id && fetchReviews(id)}
-        />
-        {id && (
-          <div className="max-w-2xl">
-            <WriteReviewCard
-              ashramId={id}
-              ashramName={ashram?.name}
-              onSubmitted={() => fetchReviews(id)}
-            />
-          </div>
-        )}
-      </div>
-      )}
+      {/* The full-width reviews block that used to sit here was disabled with
+        `{false && …}`. Reviews render in the left column above, so this was a
+        dead duplicate — and being unreachable, TypeScript stopped narrowing
+        `id` inside it and failed the build. */}
 
       {/* Related stays */}
       {relatedStays.length > 0 && (
