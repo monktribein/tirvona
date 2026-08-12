@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { QrService } from "./application/qr.service";
 import { ContactCardService } from "./application/contact-card.service";
+import { IdCardService } from "./application/id-card.service";
 import { SmartContactAnalyticsService } from "./application/smart-contact-analytics.service";
 import { SmartContactAuditService } from "./application/smart-contact-audit.service";
 import { SmartContactProfilesService } from "./application/smart-contact-profiles.service";
@@ -49,6 +50,7 @@ import { SmartContactPublicController } from "./presentation/smart-contact-publi
     VcardService,
     QrService,
     ContactCardService,
+    IdCardService,
   ],
 })
 export class SmartContactModule {}

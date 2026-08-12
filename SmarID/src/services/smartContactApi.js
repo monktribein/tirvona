@@ -98,3 +98,14 @@ export const vcardUrl = (slug, source) => {
   const query = source ? `?src=${encodeURIComponent(source)}` : "";
   return `${API_ROOT}/${encodeURIComponent(slug)}/vcard${query}`;
 };
+
+/**
+ * The printable ID card — a CR80 badge (54 × 85.6mm) rendered as vector PDF.
+ *
+ * Generated per request from live profile data, like the vCard, so a card
+ * printed today reflects an edit made this morning.
+ */
+export const idCardUrl = (slug, source) => {
+  const query = source ? `?src=${encodeURIComponent(source)}` : "";
+  return `${API_ROOT}/${encodeURIComponent(slug)}/id-card${query}`;
+};

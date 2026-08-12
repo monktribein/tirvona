@@ -52,6 +52,10 @@ export const SMART_CONTACT_EVENT_TYPES = [
   "QR_SCAN",
   "SAVE_CONTACT",
   "VCARD_DOWNLOAD",
+  // Recorded server-side when the printable badge is served, alongside
+  // VCARD_DOWNLOAD — a click handler on a link that navigates away is not
+  // reliable enough to count.
+  "ID_CARD_DOWNLOAD",
   "CALL_CLICK",
   "WHATSAPP_CLICK",
   "EMAIL_CLICK",

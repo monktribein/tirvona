@@ -18,6 +18,7 @@ import { SmartContactAnalyticsService } from "../application/smart-contact-analy
 import { SmartContactProfilesService } from "../application/smart-contact-profiles.service";
 import { SmartContactQrCodesService } from "../application/smart-contact-qr-codes.service";
 import { VcardService } from "../application/vcard.service";
+import { IdCardService } from "../application/id-card.service";
 import type { SmartContactEventType } from "../domain/smart-contact.constants";
 import {
   LogSmartContactEventDto,
@@ -42,6 +43,7 @@ export class SmartContactPublicController {
     private readonly vcards: VcardService,
     private readonly analytics: SmartContactAnalyticsService,
     private readonly qrCodes: SmartContactQrCodesService,
+    private readonly idCards: IdCardService,
   ) {}
 
   /**
@@ -120,6 +122,52 @@ export class SmartContactPublicController {
     // which is the one failure mode the product exists to prevent.
     response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     response.send(Buffer.from(body, "utf8"));
+  }
+
+  /**
+   * The printable ID badge — CR80 portrait, vector PDF.
+   *
+   * Public, like the vCard, and for the same reason: it carries only the
+   * business details the page already shows to anyone who scans the code. It
+   * adds no field a visitor could not already read or screenshot.
+   *
+   * Inactive profiles get the same 410 as the vCard. An obsolete badge is
+   * exactly the artefact spec §22 exists to stop circulating.
+   */
+  @Get(":slug/id-card")
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
+  async idCard(
+    @Param("slug") slug: string,
+    @Query() query: PublicProfileQueryDto,
+    @Req() request: Request,
+    @Res() response: Response,
+  ): Promise<void> {
+    const doc = await this.profiles.findBySlug(slug);
+    const view = this.profiles.toPublicView(doc);
+
+    if (!view.isActive) {
+      response.status(410).json({
+        success: false,
+        message: "This Tirvona representative profile is no longer active.",
+      });
+      return;
+    }
+
+    const profile = await this.profiles.findById(String(doc._id));
+    const body = this.idCards.render(profile, profile.profileUrl);
+
+    const context = this.analytics.contextFrom(request, query.src);
+    const qrId = await this.qrCodes.resolveSource(String(doc._id), query.src);
+    void this.analytics.record(String(doc._id), "ID_CARD_DOWNLOAD", context, qrId);
+
+    response.setHeader("Content-Type", "application/pdf");
+    response.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${this.idCards.filename(view.slug)}"`,
+    );
+    // Same reasoning as the vCard: a cached badge would outlive an edit.
+    response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    response.send(body);
   }
 
   /**

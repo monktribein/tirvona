@@ -88,7 +88,10 @@ export const smartContactConfig = (): SmartContactConfig => ({
   ),
   qrDarkColor: process.env.SMART_CONTACT_QR_DARK_COLOR || "#0B192C",
   qrLightColor: process.env.SMART_CONTACT_QR_LIGHT_COLOR || "#FFFFFF",
-  qrAccentColor: process.env.SMART_CONTACT_QR_ACCENT_COLOR || "#D4AF37",
+  // Saffron Gold, matching --accent in frontend/src/index.css. Not the older
+  // #D4AF37: the brand palette moved and printed artwork has to agree with the
+  // website it sends people to.
+  qrAccentColor: process.env.SMART_CONTACT_QR_ACCENT_COLOR || "#E58C28",
   qrLogoUrl: process.env.SMART_CONTACT_QR_LOGO_URL || "",
   qrDefaultPngSize: positiveInt(process.env.SMART_CONTACT_QR_PNG_SIZE, 1000),
   qrPrintPngSize: positiveInt(process.env.SMART_CONTACT_QR_PRINT_PNG_SIZE, 2000),
@@ -119,7 +122,17 @@ export const smartContactConfig = (): SmartContactConfig => ({
 export const buildProfileUrl = (
   config: SmartContactConfig,
   slug: string,
-): string => `${config.publicBaseUrl}${config.publicPathPrefix}/${slug}`;
+): string =>
+  // The `replace` is deliberate belt-and-braces, not redundancy. A doubled
+  // slash here is uniquely expensive: `https://host//slug` is a different URL
+  // that 404s, and once it has been written into a QR row's immutable
+  // `destinationUrl` — or printed — it cannot be corrected. Collapsing runs of
+  // slashes in the path (never in the `https://` scheme) means no combination
+  // of base URL and prefix can produce one.
+  `${config.publicBaseUrl}${config.publicPathPrefix}/${slug}`.replace(
+    /([^:]\/)\/+/g,
+    "$1",
+  );
 
 /** The vCard download URL for a given slug (spec §9). */
 export const buildVcardUrl = (

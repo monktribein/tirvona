@@ -1,35 +1,49 @@
 /*
  * Tirvona Smart Contact — public page styling.
  *
- * Hand-written CSS rather than the Tailwind CDN the lead field app uses. That
- * script compiles utility classes in the browser on every load, which is a
- * ~100kb blocking request and a layout pass before first paint — affordable
- * for an internal tool, not for a page held to two seconds on mobile data
- * (spec §39).
+ * Tokens mirror `frontend/src/index.css` exactly, so this page reads as the
+ * same product as the main site: Royal Navy #0A4DA6, Deep Navy #0B192C,
+ * Saffron Gold #E58C28, and the Plus Jakarta Sans / Inter type stack.
  *
- * Brand tokens are declared once so an NEP-branded deployment (spec §43) can
- * restyle the whole page by overriding this block alone.
+ * Light-first, and light-only. The main site's dark theme is opt-in via a
+ * `.dark` class the user toggles; it does not follow `prefers-color-scheme`.
+ * An earlier version of this page did, which is why it rendered dark while the
+ * rest of Tirvona rendered light — the two no longer disagree.
+ *
+ * Hand-written rather than Tailwind: the main site compiles its utilities at
+ * build time, and pulling the CDN build in here would block first paint on a
+ * ~100kb script for a page held to two seconds on mobile data (spec §39).
  */
 
 :root {
-  --navy: #0b192c;
-  --navy-soft: #14243d;
-  --blue: #0a4da6;
-  --gold: #d4af37;
-  --ink: #0b192c;
+  /* Brand — identical values to frontend/src/index.css :root */
+  --primary: #0a4da6;
+  --secondary: #0b192c;
+  --accent: #e58c28;
+  --background: #ffffff;
+  --foreground: #0b192c;
   --muted: #64748b;
-  --line: #e2e8f0;
-  --surface: #ffffff;
-  --canvas: #f1f5f9;
-  --radius: 18px;
-  --font-display: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", sans-serif;
-  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --border: rgba(229, 140, 40, 0.35);
+  --surface-soft: #f8fafc;
+
+  /* Radii — frontend's --radius-xl / lg / md */
+  --radius-xl: 1.5rem;
+  --radius-lg: 1.25rem;
+  --radius-md: 0.75rem;
+
+  --font-sans: "Plus Jakarta Sans", "Inter", system-ui, -apple-system, sans-serif;
 }
 
 *,
 *::before,
 *::after {
   box-sizing: border-box;
+}
+
+html {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 html,
@@ -39,28 +53,24 @@ body {
 }
 
 body {
-  font-family: var(--font-body);
-  color: var(--ink);
-  /* A soft vertical wash rather than flat grey, so the white card reads as a
-     physical object the way a visiting card does. */
-  background:
-    radial-gradient(120% 60% at 50% 0%, #ffffff 0%, var(--canvas) 55%),
-    var(--canvas);
+  font-family: var(--font-sans);
+  color: var(--foreground);
+  /* A navy wash so the white ID card reads as a physical object held against
+     a surface, the way a real badge does. */
+  background: linear-gradient(170deg, #0b192c 0%, #102a4c 45%, #0a1a2f 100%);
+  background-attachment: fixed;
   min-height: 100vh;
-  -webkit-font-smoothing: antialiased;
   -webkit-text-size-adjust: 100%;
 }
 
 .page {
-  max-width: 460px;
+  max-width: 420px;
   margin: 0 auto;
-  padding: 20px 16px 32px;
+  padding: 24px 16px 28px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 18px;
   min-height: 100vh;
-  /* svh accounts for mobile browser chrome, which is where this page is
-     actually read; vh above is the fallback for browsers without it. */
   min-height: 100svh;
 }
 
@@ -71,154 +81,174 @@ body {
   justify-content: center;
 }
 
-/* ── Card ───────────────────────────────────────────────────────────────── */
+/* ── The ID card ────────────────────────────────────────────────────────── */
 
 .card {
-  background: var(--surface);
-  border-radius: var(--radius);
-  border: 1px solid var(--line);
-  box-shadow: 0 10px 30px -18px rgba(11, 25, 44, 0.45);
-  padding: 26px 20px 24px;
+  position: relative;
+  background: var(--background);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow:
+    0 24px 60px -24px rgba(3, 10, 20, 0.75),
+    0 2px 6px rgba(3, 10, 20, 0.25);
   display: flex;
   flex-direction: column;
-  gap: 18px;
 }
 
-.card-notice {
-  align-items: center;
-  text-align: center;
-  gap: 14px;
+/* The lanyard slot — the detail that makes it read as a badge rather than a
+   generic rounded rectangle. */
+.card::before {
+  content: "";
+  position: absolute;
+  top: 13px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 62px;
+  height: 7px;
+  border-radius: 4px;
+  background: #e2e8f0;
+  box-shadow: inset 0 1px 2px rgba(11, 25, 44, 0.35);
+  z-index: 2;
 }
 
-/* ── Brand ──────────────────────────────────────────────────────────────── */
-
-.brand {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
+/* Navy header band, matching the platform's dashboard headers. */
+.card-header {
+  padding: 30px 20px 16px;
+  background: linear-gradient(160deg, var(--secondary) 0%, #12305c 100%);
   text-align: center;
+  border-bottom: 3px solid var(--accent);
+}
+
+.brand-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 14px;
+  border-radius: 999px;
+  /* The logo file has a white ground, so it sits on a white chip rather than
+     fighting the navy band. */
+  background: #ffffff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
 }
 
 .brand-mark {
   display: block;
-  height: 28px;
   width: auto;
+  max-width: 150px;
 }
 
-/* The mark's colours live here rather than on `fill` attributes: presentation
-   attributes are not CSS declarations, so `fill="var(--navy)"` would not
-   resolve and the mark would render black. */
-.mark-disc {
-  fill: var(--navy);
-}
-
-.mark-flame {
-  fill: var(--gold);
-}
-
-.mark-word {
-  font-family: var(--font-display);
-  font-size: 22px;
-  font-weight: 800;
-  letter-spacing: 0.5px;
-  fill: var(--navy);
-}
-
-.brand-tagline {
-  margin: 0;
-  font-size: 10px;
+.card-header-tag {
+  margin: 10px 0 0;
+  font-size: 8.5px;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: rgba(255, 255, 255, 0.72);
 }
 
-/* ── Profile ────────────────────────────────────────────────────────────── */
-
-.profile-header {
+.card-body {
+  padding: 0 20px 22px;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 4px;
 }
 
+/* ── Photograph ─────────────────────────────────────────────────────────── */
+
 .avatar-wrap {
-  margin: 12px 0 6px;
-  /* The gold ring is a padded gradient border rather than an outline, so it
-     stays circular on browsers that square off outlines on rounded elements. */
-  padding: 3px;
+  margin-top: -46px;
+  padding: 4px;
   border-radius: 50%;
-  background: linear-gradient(140deg, var(--gold), #f3e3af 45%, var(--gold));
+  background: linear-gradient(140deg, var(--accent), #f3c07a 50%, var(--accent));
+  box-shadow: 0 8px 20px -8px rgba(11, 25, 44, 0.6);
 }
 
 .avatar {
   display: block;
-  width: 128px;
-  height: 128px;
+  width: 108px;
+  height: 108px;
   border-radius: 50%;
   object-fit: cover;
-  background: var(--canvas);
-  border: 3px solid var(--surface);
+  background: var(--surface-soft);
+  border: 4px solid #ffffff;
 }
 
 .avatar-fallback {
   display: grid;
   place-items: center;
-  font-family: var(--font-display);
-  font-size: 40px;
+  font-size: 34px;
   font-weight: 800;
-  color: var(--surface);
-  background: linear-gradient(150deg, var(--navy), var(--navy-soft));
+  color: #ffffff;
+  background: linear-gradient(150deg, var(--primary), var(--secondary));
 }
 
+/* ── Identity ───────────────────────────────────────────────────────────── */
+
 .profile-name {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: 25px;
+  margin: 14px 0 0;
+  font-size: 23px;
   font-weight: 800;
-  letter-spacing: -0.01em;
-  line-height: 1.2;
+  letter-spacing: -0.015em;
+  line-height: 1.15;
+  color: var(--secondary);
 }
 
 .profile-designation {
-  margin: 0;
-  font-size: 15px;
+  margin: 5px 0 0;
+  font-size: 13px;
   font-weight: 700;
-  color: var(--blue);
+  color: var(--primary);
 }
 
 .profile-role {
-  margin: 0;
-  font-size: 13px;
+  margin: 3px 0 0;
+  font-size: 11.5px;
+  font-weight: 500;
   color: var(--muted);
 }
 
 .profile-org {
-  margin: 6px 0 0;
-  font-size: 12px;
+  margin: 10px 0 0;
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(229, 140, 40, 0.09);
+  font-size: 9.5px;
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.11em;
   text-transform: uppercase;
-  color: var(--navy);
+  color: #9a5a12;
 }
 
 .profile-org sup {
-  font-size: 8px;
+  font-size: 7px;
+}
+
+/* Employee ID, set in a mono face like a real badge number. */
+.profile-id {
+  margin: 9px 0 0;
+  font-family: "Inter", ui-monospace, monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: var(--muted);
 }
 
 /* ── Actions ────────────────────────────────────────────────────────────── */
 
 .actions {
+  width: 100%;
+  margin-top: 18px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .btn {
-  /* 52px clears the 44px minimum touch target with room to spare — this page
-     is used one-handed, outdoors, often in a hurry. */
+  /* 52px clears the 44px minimum touch target — this page is used one-handed,
+     outdoors, often in a hurry. */
   min-height: 52px;
   display: flex;
   align-items: center;
@@ -226,9 +256,9 @@ body {
   gap: 8px;
   padding: 0 16px;
   border: 1px solid transparent;
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   font-family: inherit;
-  font-size: 15px;
+  font-size: 14.5px;
   font-weight: 700;
   text-decoration: none;
   cursor: pointer;
@@ -243,36 +273,36 @@ body {
 }
 
 .btn:focus-visible {
-  outline: 3px solid var(--gold);
+  outline: 3px solid var(--accent);
   outline-offset: 2px;
 }
 
 .btn-primary {
-  background: linear-gradient(140deg, var(--navy), var(--navy-soft));
+  background: linear-gradient(135deg, var(--primary) 0%, #0d61cf 100%);
   color: #fff;
-  box-shadow: 0 10px 22px -12px rgba(11, 25, 44, 0.9);
+  box-shadow: 0 10px 22px -12px rgba(10, 77, 166, 0.95);
 }
 
 .btn-secondary {
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
   min-height: 68px;
-  font-size: 12px;
-  background: var(--canvas);
-  border-color: var(--line);
-  color: var(--navy);
+  font-size: 11px;
+  background: var(--surface-soft);
+  border-color: #e2e8f0;
+  color: var(--secondary);
 }
 
-.btn-secondary span {
-  font-size: 19px;
+.btn-secondary .btn-icon {
+  font-size: 18px;
   line-height: 1;
 }
 
 .btn-ghost {
-  background: transparent;
-  border-color: var(--line);
-  color: var(--navy);
-  font-size: 14px;
+  background: #fff;
+  border-color: var(--border);
+  color: var(--primary);
+  font-size: 13px;
   min-height: 46px;
 }
 
@@ -280,19 +310,21 @@ body {
   display: grid;
   /* auto-fit rather than a fixed 4-up: a profile with no website or no email
      renders 3 or 2 evenly spaced buttons instead of leaving a hole. */
-  grid-template-columns: repeat(auto-fit, minmax(78px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(74px, 1fr));
+  gap: 8px;
 }
 
 /* ── Detail list ────────────────────────────────────────────────────────── */
 
 .details {
-  margin: 6px 0 0;
-  padding: 16px 0 0;
-  border-top: 1px solid var(--line);
+  width: 100%;
+  margin: 16px 0 0;
+  padding: 15px 0 0;
+  border-top: 1px dashed #e2e8f0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 9px;
+  text-align: left;
 }
 
 .detail-row {
@@ -303,9 +335,9 @@ body {
 }
 
 .detail-row dt {
-  font-size: 11px;
+  font-size: 9.5px;
   font-weight: 800;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
   flex: none;
@@ -313,7 +345,7 @@ body {
 
 .detail-row dd {
   margin: 0;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   text-align: right;
   /* Long emails and addresses break rather than forcing the card wide. */
@@ -321,50 +353,69 @@ body {
 }
 
 .detail-row a {
-  color: var(--blue);
+  color: var(--primary);
   text-decoration: none;
+}
+
+/* ── Card footer strip ──────────────────────────────────────────────────── */
+
+.card-strip {
+  margin-top: auto;
+  padding: 9px 16px;
+  background: var(--surface-soft);
+  border-top: 1px solid #e2e8f0;
+  text-align: center;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
 
 /* ── Notices ────────────────────────────────────────────────────────────── */
 
+.card-notice .card-body {
+  padding-top: 22px;
+  gap: 12px;
+}
+
 .notice-icon {
   display: grid;
   place-items: center;
-  width: 56px;
-  height: 56px;
-  margin-top: 6px;
+  width: 54px;
+  height: 54px;
   border-radius: 50%;
-  font-size: 26px;
+  font-size: 25px;
   font-weight: 800;
-  color: var(--navy);
-  background: var(--canvas);
-  border: 1px solid var(--line);
+  color: var(--primary);
+  background: var(--surface-soft);
+  border: 1px solid #e2e8f0;
 }
 
 .notice-name {
-  font-size: 21px;
+  font-size: 20px;
+  margin-top: 4px;
 }
 
 .notice-message {
   margin: 0;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   line-height: 1.5;
-  color: var(--ink);
 }
 
 .notice-help {
   margin: 0;
-  font-size: 13px;
+  font-size: 12px;
   color: var(--muted);
 }
 
 .notice-help code {
-  font-size: 12px;
+  font-size: 11.5px;
   padding: 1px 5px;
   border-radius: 5px;
-  background: var(--canvas);
-  border: 1px solid var(--line);
+  background: var(--surface-soft);
+  border: 1px solid #e2e8f0;
   overflow-wrap: anywhere;
 }
 
@@ -372,29 +423,27 @@ body {
   width: 100%;
 }
 
-/* ── Footer ─────────────────────────────────────────────────────────────── */
+/* ── Page footer ────────────────────────────────────────────────────────── */
 
 .footer {
-  margin-top: auto;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   text-align: center;
-  padding-top: 4px;
 }
 
 .footer-line {
   margin: 0;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
-  color: var(--muted);
+  color: rgba(255, 255, 255, 0.62);
 }
 
 .footer-link {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
-  color: var(--blue);
+  color: var(--accent);
   text-decoration: none;
 }
 
@@ -408,20 +457,20 @@ body {
 }
 
 .skeleton-avatar {
-  width: 128px;
-  height: 128px;
+  width: 108px;
+  height: 108px;
   border-radius: 50%;
-  align-self: center;
+  margin-top: -46px;
 }
 
 .skeleton-line {
   height: 15px;
-  align-self: center;
 }
 
 .skeleton-lg {
   width: 62%;
-  height: 24px;
+  height: 23px;
+  margin-top: 14px;
 }
 
 .skeleton-md {
@@ -429,9 +478,10 @@ body {
 }
 
 .skeleton-btn {
+  width: 100%;
   height: 52px;
-  border-radius: 14px;
-  margin-top: 8px;
+  border-radius: var(--radius-md);
+  margin-top: 10px;
 }
 
 @keyframes shimmer {
@@ -459,39 +509,5 @@ body {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
-  }
-}
-
-/* Dark mode. Worth having: this page is opened from a camera app, often
-   indoors, on a phone that is usually in dark mode by evening. */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --ink: #e8eef7;
-    --muted: #94a3b8;
-    --line: #23324a;
-    --surface: #101c30;
-    --canvas: #0a1425;
-    --navy: #e8eef7;
-    --blue: #7fb2ff;
-  }
-
-  body {
-    background:
-      radial-gradient(120% 60% at 50% 0%, #16263f 0%, var(--canvas) 55%),
-      var(--canvas);
-  }
-
-  .btn-primary {
-    background: linear-gradient(140deg, var(--blue), #0a4da6);
-    color: #fff;
-  }
-
-  .avatar-fallback {
-    background: linear-gradient(150deg, #1e3a63, #16263f);
-  }
-
-  .skeleton {
-    background: linear-gradient(90deg, #16243c 25%, #1d2f4c 37%, #16243c 63%);
-    background-size: 400% 100%;
   }
 }

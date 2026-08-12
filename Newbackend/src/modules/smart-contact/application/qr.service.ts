@@ -23,6 +23,21 @@ export interface RenderedQr {
 }
 
 /**
+ * A JPEG to embed in a PDF as an image XObject.
+ *
+ * JPEG specifically: PDF viewers decode it natively via `/DCTDecode`, so the
+ * bytes go in untouched. A PNG would have to be decoded to raw samples and
+ * re-deflated, which would mean an image library this module does not need.
+ */
+export interface PdfImage {
+  /** Resource name referenced from the content stream, e.g. `Im1`. */
+  name: string;
+  data: Buffer;
+  width: number;
+  height: number;
+}
+
+/**
  * Renders the permanent profile URL as printable artwork (spec §12–§16).
  *
  * The one rule the whole product depends on: this service encodes a URL and
@@ -327,22 +342,54 @@ export class QrService {
    * caption would otherwise shift every subsequent offset and produce a file
    * that readers reject.
    */
-  assemblePdf(content: string, width: number, height: number): Buffer {
-    const objects = [
+  assemblePdf(
+    content: string,
+    width: number,
+    height: number,
+    images: PdfImage[] = [],
+  ): Buffer {
+    // Objects 1–6 are fixed; images take 7 onward, and the page's resource
+    // dictionary has to name them before the bodies are written.
+    const imageRefs = images
+      .map((image, index) => `/${image.name} ${7 + index} 0 R`)
+      .join(" ");
+    const xobject = imageRefs ? ` /XObject << ${imageRefs} >>` : "";
+
+    const objects: (string | Buffer)[] = [
       "<< /Type /Catalog /Pages 2 0 R >>",
       "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
       `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${width.toFixed(2)} ${height.toFixed(2)}] ` +
-        "/Contents 4 0 R /Resources << /Font << /F1 5 0 R /F2 6 0 R >> >> >>",
+        `/Contents 4 0 R /Resources << /Font << /F1 5 0 R /F2 6 0 R >>${xobject} >> >>`,
       `<< /Length ${Buffer.byteLength(content, "latin1")} >>\nstream\n${content}\nendstream`,
       "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>",
       // F2 is the bold face the contact card sets names and headings in.
       "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>",
     ];
 
+    for (const image of images) {
+      // JPEG goes in verbatim under /DCTDecode — PDF viewers decode JPEG
+      // natively, so there is nothing to convert or re-compress. This is the
+      // whole reason the brand logo can be embedded without an image library.
+      objects.push(
+        Buffer.concat([
+          Buffer.from(
+            `<< /Type /XObject /Subtype /Image /Width ${image.width} ` +
+              `/Height ${image.height} /ColorSpace /DeviceRGB ` +
+              `/BitsPerComponent 8 /Filter /DCTDecode ` +
+              `/Length ${image.data.length} >>\nstream\n`,
+            "latin1",
+          ),
+          image.data,
+          Buffer.from("\nendstream", "latin1"),
+        ]),
+      );
+    }
+
     const chunks: Buffer[] = [];
     let offset = 0;
-    const push = (text: string): void => {
-      const buf = Buffer.from(text, "latin1");
+    const push = (text: string | Buffer): void => {
+      const buf =
+        typeof text === "string" ? Buffer.from(text, "latin1") : text;
       chunks.push(buf);
       offset += buf.length;
     };
@@ -351,7 +398,16 @@ export class QrService {
     const xref: number[] = [];
     objects.forEach((body, index) => {
       xref.push(offset);
-      push(`${index + 1} 0 obj\n${body}\nendobj\n`);
+      // Built as a Buffer, not a template string: an image body holds raw
+      // binary, and concatenating it into a JS string would mangle every byte
+      // above 0x7F and corrupt the stream.
+      push(
+        Buffer.concat([
+          Buffer.from(`${index + 1} 0 obj\n`, "latin1"),
+          typeof body === "string" ? Buffer.from(body, "latin1") : body,
+          Buffer.from("\nendobj\n", "latin1"),
+        ]),
+      );
     });
 
     const xrefStart = offset;
