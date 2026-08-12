@@ -41,11 +41,19 @@ if (!existsSync(resolve(smarIdRoot, "package.json"))) {
   process.exit(0);
 }
 
-// `npm.cmd` by name on Windows rather than `npm` with `shell: true` — the
-// shell form concatenates arguments unescaped (Node DEP0190) and is not needed
-// once the executable's real name is used.
-const npm = process.platform === "win32" ? "npm.cmd" : "npm";
-const run = (args, cwd) => execFileSync(npm, args, { cwd, stdio: "inherit" });
+/**
+ * Windows needs `shell: true`; Linux (where this actually deploys) must not
+ * have it.
+ *
+ * Node 20+ refuses to execFile a `.cmd` without a shell and throws EINVAL, so
+ * the shell is unavoidable for npm on Windows. It emits DEP0190 about
+ * unescaped arguments, which is harmless here — every argument below is a
+ * hardcoded literal, never anything derived from input.
+ */
+const isWindows = process.platform === "win32";
+const npm = isWindows ? "npm.cmd" : "npm";
+const run = (args, cwd) =>
+  execFileSync(npm, args, { cwd, stdio: "inherit", shell: isWindows });
 
 try {
   // `npm ci` when there is a lockfile and no node_modules; the host installs
