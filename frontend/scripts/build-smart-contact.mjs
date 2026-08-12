@@ -11,6 +11,14 @@
  *
  * The two codebases stay entirely separate; only the built assets meet.
  *
+ * Publishing the files is only half of it — the host also needs a rule sending
+ * `/c/*` to `/c/index.html`, declared BEFORE the SPA catch-all, or the
+ * catch-all swallows every scanned QR and serves the marketing homepage. Those
+ * rules live in `vercel.json` (`rewrites`) and `render.yaml` (`routes`), and
+ * the order of the entries is load-bearing in both. Note that `vercel.json`
+ * rejects unknown keys, so it cannot carry a comment saying so — which is why
+ * this warning is here instead.
+ *
  * Failure here is deliberately non-fatal. Some hosts check out only the
  * project's root directory, in which case `../SmarID` does not exist — and a
  * missing contact page must never take the whole marketing site down with it.

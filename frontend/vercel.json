@@ -32,7 +32,6 @@
   ],
   "rewrites": [
     {
-      "//": "Smart Contact QR. Printed cards encode /c/{slug} permanently, so this must resolve to the SmarID build in dist/c/ rather than falling through to the SPA below - which has no /c route and would redirect to the homepage. Declared FIRST: rewrites are evaluated in order and the catch-all would otherwise swallow it. Real files (/c/assets/*) are served from the filesystem before rewrites are consulted, so this only ever catches slugs.",
       "source": "/c/(.*)",
       "destination": "/c/index.html"
     },

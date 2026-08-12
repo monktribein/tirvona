@@ -52,6 +52,48 @@ const slugify = (value: string): string =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "") || "ashram";
 
+const normalizeAshramAddress = (
+  address: Record<string, any> = {},
+  legacy: Record<string, any> = {},
+): Record<string, any> => {
+  const text = (...values: unknown[]): string =>
+    String(values.find((value) => value !== undefined && value !== null && String(value).trim()) ?? "").trim();
+  return {
+    ...address,
+    street: text(
+      address.street,
+      address.streetAddress,
+      address.addressLine,
+      legacy.street,
+      legacy.streetAddress,
+      legacy.addressLine,
+    ),
+    city: text(address.city, legacy.city),
+    district: text(address.district, legacy.district),
+    state: text(address.state, legacy.state),
+    pincode: text(
+      address.pincode,
+      address.pinCode,
+      address.postalCode,
+      address.zipCode,
+      legacy.pincode,
+      legacy.pinCode,
+      legacy.postalCode,
+      legacy.zipCode,
+    ),
+  };
+};
+
+const assertCompleteAddress = (address: Record<string, any>): void => {
+  const missing = ["street", "city", "district", "state", "pincode"].filter(
+    (field) => !String(address[field] ?? "").trim(),
+  );
+  if (missing.length)
+    throw new BadRequestException(
+      `Ashram address is missing: ${missing.join(", ")}`,
+    );
+};
+
 @Injectable()
 export class AshramsService {
   constructor(
@@ -448,6 +490,8 @@ export class AshramsService {
   async create(user: AuthenticatedUser, dto: SaveAshramDto): Promise<any> {
     assertNoInlineMedia(dto);
     const { rooms = [], ...payload } = dto;
+    payload.address = normalizeAshramAddress(payload.address, payload as any);
+    assertCompleteAddress(payload.address);
     const legalIdentifiers = [
       ["trust.trustRegNo", payload.trust?.trustRegNo],
       ["trust.panNo", payload.trust?.panNo],
@@ -529,6 +573,13 @@ export class AshramsService {
     }
     const payload = { ...dto };
     delete payload.rooms;
+    if (payload.address) {
+      payload.address = normalizeAshramAddress(
+        payload.address,
+        ashram.address?.toObject?.() ?? ashram.address ?? {},
+      );
+      assertCompleteAddress(payload.address);
+    }
     Object.assign(ashram, payload, { updatedBy: user.id });
     await ashram.save();
     return ashram;
