@@ -32,6 +32,10 @@
   ],
   "rewrites": [
     {
+      "source": "/c/(.*)",
+      "destination": "/c/index.html"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

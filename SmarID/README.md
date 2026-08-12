@@ -48,23 +48,47 @@ development.
 ## Deployment — the one thing to get right
 
 The QR codes encode `https://www.tirvona.com/c/{slug}` and that URL is
-**permanent** (spec §2). This is a separate Vite build from the main SPA, so
-something has to route `/c/*` to this app's `dist/`. Two workable options:
+**permanent** (spec §2), so `/c/*` has to answer on the main host.
 
-1. **Path rewrite at the edge** (recommended) — publish this build and add a
-   rule on the `www.tirvona.com` host sending `/c/*` here, with an SPA
-   fallback to `index.html`. The printed URL stays exactly as specified.
-2. **Its own subdomain** — deploy to e.g. `contact.tirvona.com` and set
-   `SMART_CONTACT_PUBLIC_BASE_URL` on the API to match, so generated QR codes
-   encode that origin instead.
+**This is wired up already.** `frontend`'s `npm run build` runs
+[`scripts/build-smart-contact.mjs`](../frontend/scripts/build-smart-contact.mjs),
+which builds this app and copies its output into `frontend/dist/c/`. One
+deployment then serves both: no proxy hop, no second CORS origin, one
+certificate. `vite.config.js` sets `base: "/c/"` so the assets emit at
+`/c/assets/*` to match.
 
-Option 2 is only available *before* cards are printed. After that the origin
-is fixed in physical artwork and only option 1 remains, which is why
+The routing rule that makes it resolve is declared **before** the SPA catch-all
+in both host configs — order matters, or the catch-all swallows every scanned
+QR and renders the marketing homepage:
+
+- Vercel — [`frontend/vercel.json`](../frontend/vercel.json): `/c/(.*)` → `/c/index.html`
+- Render — [`render.yaml`](../render.yaml): `/c/*` → `/c/index.html`
+
+Real files are served from the filesystem before rewrites are consulted, so
+`/c/assets/*` resolves normally and only slugs hit the rule.
+
+`VITE_API_URL` is inherited from the parent build, and the main app already
+sets it — so there is nothing extra to configure.
+
+### Host setting to check
+
+On **Vercel**, if the project's Root Directory is `frontend`, enable
+**"Include source files outside of the Root Directory"**. Without it `../SmarID`
+is not in the checkout, the build script skips with a warning (it never fails
+the main build), and `/c/{slug}` falls through to the homepage — the exact
+symptom this section exists to prevent. On **Render**, build from the
+repository root.
+
+### Running it on its own host instead
+
+Deploy this app to e.g. `contact.tirvona.com`, set
+`SMART_CONTACT_PUBLIC_BASE_URL` on the API to that origin, add that origin to
+`CORS_ORIGINS`, and change `base` in `vite.config.js` to `"/"`.
+
+That choice is only available **before cards are printed**. Afterwards the
+origin is fixed in physical artwork. This is why
 `SMART_CONTACT_PUBLIC_BASE_URL` is a separate setting from `CLIENT_URL` on the
-API — moving the marketing site must not be able to invalidate printed cards.
-
-`vite.config.js` sets `base: "/c/"` for option 1. Change it to `"/"` for
-option 2.
+API — moving the marketing site must never be able to invalidate printed cards.
 
 ## Social previews (spec §41) — known limitation
 

@@ -61,7 +61,7 @@ export class GovernanceService {
    */
   private static readonly ADMIN_LIST_PROJECTIONS: Record<string, string> = {
     Admin_ashrams:
-      "name status isVerified rating slug ashramCode ownerId email phone contact.email contact.phone address.city address.state address.district images coverImageUrl gallery galleryUrls documents createdAt updatedAt",
+      "name status isVerified rating slug ashramCode ownerId email phone contact.email contact.phone address.street address.city address.state address.district address.pincode images coverImageUrl gallery galleryUrls documents createdAt updatedAt",
     Admin_rooms:
       "name type acType capacity totalInventory basePrice status ashramId createdAt updatedAt",
     Admin_room_inventory:

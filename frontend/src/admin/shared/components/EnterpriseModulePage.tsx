@@ -440,7 +440,7 @@ export const EnterpriseModulePage: React.FC<{
               type: "text",
               required: true,
             },
-            { name: "street", label: "Street Address", type: "text" },
+            { name: "street", label: "Street Address", type: "text", required: true },
             { name: "district", label: "District", type: "text", required: true },
             { name: "state", label: "State", type: "text", required: true },
             { name: "pincode", label: "Pincode", type: "text", required: true },
