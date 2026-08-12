@@ -14,10 +14,12 @@ export const LEAD_CONNECTION = "leadCollection";
 /** Model tokens, prefixed so they cannot collide with platform models. */
 export const LEAD_USER_MODEL = "LeadCollectionUser";
 export const LEAD_MODEL = "LeadCollectionLead";
+export const LEAD_REGION_MODEL = "LeadCollectionRegion";
 
 /** Physical collections inside the lead database. */
 export const LEAD_USER_COLLECTION = "lead_users";
 export const LEAD_COLLECTION_NAME = "leads";
+export const LEAD_REGION_COLLECTION = "lead_regions";
 
 /**
  * Roles inside the lead product. Deliberately disjoint from `USER_ROLES` —

@@ -44,7 +44,7 @@ export const humanizeKey = (key: string): string =>
         : (ACRONYMS[word.toLowerCase()] ??
           word.charAt(0).toUpperCase() + word.slice(1)),
     )
-    .join(" "));
+    .join(" ")).replace(/\s+URLs?$/i, "");
 
 export const ISO_DATE = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}|$)/;
 export const URL_LIKE = /^https?:\/\//i;
@@ -73,6 +73,12 @@ export const formatScalar = (value: unknown): string => {
  * block would break the row. Objects collapse to their most name-like field.
  */
 export const formatInline = (value: unknown): string => {
+  if (typeof value === "string" && URL_LIKE.test(value)) {
+    if (/\.(jpe?g|png|webp|gif|svg|avif|heic)($|\?)/i.test(value))
+      return "Image available";
+    if (/\.pdf($|\?)/i.test(value)) return "PDF available";
+    return "Document available";
+  }
   if (isEmptyValue(value)) return "—";
   if (Array.isArray(value)) {
     if (!value.length) return "—";
@@ -83,14 +89,14 @@ export const formatInline = (value: unknown): string => {
   if (typeof value === "object" && !(value instanceof Date)) {
     const record = value as Record<string, unknown>;
     for (const key of ["name", "title", "label", "city", "average", "url"])
-      if (!isEmptyValue(record[key])) return formatScalar(record[key]);
+      if (!isEmptyValue(record[key])) return formatInline(record[key]);
     const entries = Object.entries(record).filter(
       ([, item]) => !isEmptyValue(item),
     );
     if (!entries.length) return "—";
     return entries
       .slice(0, 3)
-      .map(([key, item]) => `${humanizeKey(key)}: ${formatScalar(item)}`)
+      .map(([key, item]) => `${humanizeKey(key)}: ${formatInline(item)}`)
       .join(" · ");
   }
   return formatScalar(value);

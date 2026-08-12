@@ -9,6 +9,8 @@ import { randomUUID } from "node:crypto";
 import { InjectModel } from "@nestjs/mongoose";
 import type { Model } from "mongoose";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
+import { PARKING_MODEL } from "../../parking/domain/parking.constants";
+import { parkingPartnerCode } from "../../parking/domain/parking.utils";
 import type {
   AshramDocumentsDto,
   AshramQueryDto,
@@ -59,7 +61,100 @@ export class AshramsService {
     @InjectModel("Booking") readonly bookings: Model<any>,
     @InjectModel("BookingInventory") readonly inventory: Model<any>,
     @InjectModel("BookingAddon") readonly addons: Model<any>,
+    @InjectModel(PARKING_MODEL.Partner) readonly parkingPartners: Model<any>,
+    @InjectModel(PARKING_MODEL.Staff) readonly parkingStaff: Model<any>,
   ) { }
+
+  async ownerParking(user: AuthenticatedUser): Promise<any> {
+    const partner = await this.parkingPartners
+      .findOne({ userId: user.id })
+      .select("-bankAccount.accountNumber")
+      .lean();
+    const grant = partner
+      ? await this.parkingStaff
+          .findOne({
+            userId: user.id,
+            partnerId: partner._id,
+            parkingRole: "parking_partner",
+          })
+          .lean()
+      : null;
+    return { partner, grant };
+  }
+
+  async onboardOwnerParking(
+    user: AuthenticatedUser,
+    body: Record<string, any>,
+  ): Promise<any> {
+    const businessName = String(body.businessName ?? "").trim();
+    if (!businessName)
+      throw new BadRequestException("A parking business name is required");
+
+    const ownedAshrams = await this.ashrams
+      .find({ ownerId: user.id, deletedAt: null })
+      .select("_id name address")
+      .lean();
+    if (!ownedAshrams.length)
+      throw new ForbiddenException(
+        "Create an ashram listing before adding its parking facility",
+      );
+
+    let partner = await this.parkingPartners.findOne({ userId: user.id });
+    if (!partner) {
+      partner = await this.parkingPartners.create({
+        userId: user.id,
+        partnerCode: parkingPartnerCode(),
+        businessName,
+        contactPerson: String(body.contactPerson ?? user.name ?? "").trim(),
+        contactEmail: String(body.contactEmail ?? "").trim().toLowerCase(),
+        contactPhone: String(body.contactPhone ?? "").trim(),
+        address: body.address ?? {},
+        status: "pending",
+        isVerified: false,
+        notes: "Self-service application from Stay Admin portal",
+      });
+    } else if (["pending", "rejected"].includes(partner.status)) {
+      partner.businessName = businessName;
+      partner.contactPerson = String(
+        body.contactPerson ?? partner.contactPerson ?? "",
+      ).trim();
+      partner.contactEmail = String(
+        body.contactEmail ?? partner.contactEmail ?? "",
+      )
+        .trim()
+        .toLowerCase();
+      partner.contactPhone = String(
+        body.contactPhone ?? partner.contactPhone ?? "",
+      ).trim();
+      partner.address = body.address ?? partner.address;
+      partner.status = "pending";
+      partner.rejectionReason = "";
+      await partner.save();
+    }
+
+    const grant = await this.parkingStaff.findOneAndUpdate(
+      {
+        userId: user.id,
+        partnerId: partner._id,
+        parkingRole: "parking_partner",
+      },
+      {
+        $set: {
+          status: "active",
+          locationIds: [],
+          assignedBy: user.id,
+          phone: String(body.contactPhone ?? "").trim(),
+        },
+        $setOnInsert: {
+          userId: user.id,
+          partnerId: partner._id,
+          parkingRole: "parking_partner",
+        },
+      },
+      { upsert: true, new: true },
+    );
+    return { partner, grant, ashrams: ownedAshrams };
+  }
 
   async publicList(query: AshramQueryDto): Promise<any> {
     const filter: Record<string, any> = { status: "approved", deletedAt: null };
@@ -150,7 +245,7 @@ export class AshramsService {
             if (
               day?.isClosed ||
               (day &&
-                day.totalInventory -
+                room.totalInventory -
                 day.bookedCount -
                 day.heldCount -
                 day.maintenanceCount <
@@ -540,8 +635,36 @@ export class AshramsService {
     // would orphan them. Everything else is applied as sent.
     const { ashramId: _ignored, ...patch } = dto;
     void _ignored;
+
+    if (patch.totalInventory !== undefined) {
+      const inventoryDays = await this.inventory
+        .find({ roomId: room._id })
+        .select("bookedCount heldCount maintenanceCount")
+        .lean();
+      const committed = inventoryDays.reduce(
+        (maximum: number, day: any) =>
+          Math.max(
+            maximum,
+            Number(day.bookedCount ?? 0) +
+              Number(day.heldCount ?? 0) +
+              Number(day.maintenanceCount ?? 0),
+          ),
+        0,
+      );
+      if (patch.totalInventory < committed)
+        throw new ConflictException(
+          `Total units cannot be below ${committed}; that many units are already booked, held, or blocked on an inventory date.`,
+        );
+    }
     Object.assign(room, patch);
     await room.save();
+    // Existing calendar rows snapshot capacity for atomic booking holds. Keep
+    // every snapshot aligned with the edited room category immediately.
+    if (patch.totalInventory !== undefined)
+      await this.inventory.updateMany(
+        { roomId: room._id },
+        { $set: { totalInventory: room.totalInventory } },
+      );
     return room;
   }
 
@@ -586,10 +709,18 @@ export class AshramsService {
     const ashram = await this.ashrams.findById(room.ashramId);
     this.assertScope(user, ashram);
     const date = new Date(`${dto.date}T00:00:00.000Z`);
+    const existing = await this.inventory.findOne({ roomId, date }).lean();
+    const committed =
+      Number(existing?.bookedCount ?? 0) + Number(existing?.heldCount ?? 0);
+    if (committed + dto.maintenanceCount > room.totalInventory)
+      throw new ConflictException(
+        `Only ${Math.max(0, room.totalInventory - committed)} unit(s) can be blocked; the rest are already booked or held.`,
+      );
     return this.inventory.findOneAndUpdate(
       { roomId, date },
       {
         $set: {
+          totalInventory: room.totalInventory,
           maintenanceCount: dto.maintenanceCount,
           customPrice: dto.customPrice,
         },

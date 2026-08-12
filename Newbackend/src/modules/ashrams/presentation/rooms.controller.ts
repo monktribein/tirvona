@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Header,
   Param,
   Post,
   Put,
@@ -73,6 +74,7 @@ export class RoomsController {
    */
   @Public()
   @Get(":id/availability-calendar")
+  @Header("Cache-Control", "no-store")
   async publicCalendar(
     @Param("id") id: string,
     @Query("startDate") startDate?: string,

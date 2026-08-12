@@ -60,6 +60,12 @@ const OwnerVisitorArticlesPage = lazy(
   () => import("./admin/content/OwnerVisitorArticlesPage"),
 );
 const OwnerAddOnsPage = lazy(() => import("./pages/owner/OwnerAddOnsPage"));
+const OwnerBookingCenterPage = lazy(
+  () => import("./pages/OwnerBookingCenterPage"),
+);
+const OwnerParkingSetupPage = lazy(
+  () => import("./pages/owner/OwnerParkingSetupPage"),
+);
 const OffersPage = lazy(() => import("./pages/OffersPage"));
 const OfferDetailPage = lazy(() => import("./pages/OfferDetailPage"));
 const MarketplaceCategoriesPage = lazy(
@@ -69,6 +75,7 @@ const MarketplaceCategoryDetailPage = lazy(
   () => import("./pages/MarketplaceCategoryDetailPage"),
 );
 const StaffManagementPage = lazy(() => import("./pages/StaffManagementPage"));
+const OwnerGuestsPage = lazy(() => import("./pages/OwnerGuestsPage"));
 const ReceptionCheckinPage = lazy(() => import("./pages/ReceptionCheckinPage"));
 const HousekeepingPage = lazy(() => import("./pages/HousekeepingPage"));
 // Parking System — a self-contained module. Lazy-loaded so it ships as its own
@@ -152,6 +159,18 @@ const LeadCollectionPage = lazy(
   () => import("./admin/leads/pages/LeadCollectionPage"),
 );
 const LeadAgentsPage = lazy(() => import("./admin/leads/pages/LeadAgentsPage"));
+
+// Smart Contact QR — console for the permanent QR contact profiles. The public
+// page those QR codes resolve to is a separate app in SmarID/.
+const SmartContactProfilesPage = lazy(
+  () => import("./admin/smart-contact/pages/SmartContactProfilesPage"),
+);
+const SmartContactProfileDetailPage = lazy(
+  () => import("./admin/smart-contact/pages/SmartContactProfileDetailPage"),
+);
+const SmartContactAnalyticsPage = lazy(
+  () => import("./admin/smart-contact/pages/SmartContactAnalyticsPage"),
+);
 
 // Sacred Services Ecosystem & Media Hub Pages
 const namedPage = <T extends Record<string, React.ComponentType<any>>>(
@@ -543,8 +562,24 @@ const AppContent: React.FC = () => {
               path="/owner/ashrams/add"
               element={<AddAshramWizardPage />}
             />
-            <Route path="/owner/users" element={<StaffManagementPage />} />
+            <Route path="/owner/users" element={<OwnerGuestsPage />} />
             <Route path="/owner/staff" element={<StaffManagementPage />} />
+            <Route
+              path="/owner/bookings"
+              element={
+                <OwnerBookingCenterPage key="owner-bookings" initialView="bookings" />
+              }
+            />
+            <Route
+              path="/owner/payments"
+              element={
+                <OwnerBookingCenterPage key="owner-payments" initialView="payments" />
+              }
+            />
+            <Route
+              path="/owner/parking"
+              element={<OwnerParkingSetupPage />}
+            />
           </Route>
 
           <Route
@@ -659,6 +694,20 @@ const AppContent: React.FC = () => {
             <Route
               path="/admin/lead-collection/agents"
               element={<LeadAgentsPage />}
+            />
+            {/* Smart Contact QR. `/analytics` is declared before the `:id`
+              route so the literal segment is not swallowed as a profile id. */}
+            <Route
+              path="/admin/smart-contacts"
+              element={<SmartContactProfilesPage />}
+            />
+            <Route
+              path="/admin/smart-contacts/analytics"
+              element={<SmartContactAnalyticsPage />}
+            />
+            <Route
+              path="/admin/smart-contacts/:id"
+              element={<SmartContactProfileDetailPage />}
             />
             <Route
               path="/admin/refunds/policies"

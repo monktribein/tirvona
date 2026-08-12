@@ -819,13 +819,17 @@ export class BookingsService {
     query: BookingDashboardQueryDto,
   ): Promise<any> {
     const scope = await this.scopedAshrams(user);
-    const filter: any = {
-      ...(query.status ? { status: query.status } : {}),
-      ...(query.ashramId ? { ashramId: query.ashramId } : {}),
-      ...(scope === null ? {} : { ashramId: { $in: scope } }),
-    };
     if (query.ashramId && scope !== null && !scope.includes(query.ashramId))
       throw new ForbiddenException("You do not have access to this ashram.");
+    const filter: any = {
+      ...(query.status ? { status: query.status } : {}),
+      ...(query.paymentStatus ? { paymentStatus: query.paymentStatus } : {}),
+      ...(query.ashramId
+        ? { ashramId: query.ashramId }
+        : scope === null
+          ? {}
+          : { ashramId: { $in: scope } }),
+    };
     if (query.search)
       filter.$or = [
         { bookingId: new RegExp(query.search, "i") },

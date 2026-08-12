@@ -36,6 +36,7 @@ import {
   Landmark,
   Car,
   Undo2,
+  ContactRound,
 } from "lucide-react";
 
 interface NavGroup {
@@ -159,12 +160,12 @@ export const DashboardLayout: React.FC = () => {
   // Super Admin Categorized Navigation Groups
   const superAdminGroups: NavGroup[] = [
     {
-      groupName: "User management",
+      groupName: "User & Access Management",
       icon: <Users size={15} />,
       links: [
-        { label: "Users & IAM", path: "/admin/users" },
-        { label: "Pilgrims", path: "/admin/manage/users/pilgrims" },
-        { label: "Owners", path: "/admin/manage/users/owners" },
+        { label: "All User Accounts", path: "/admin/users" },
+        { label: "Pilgrim Accounts", path: "/admin/manage/users/pilgrims" },
+        { label: "Ashram Owner Accounts", path: "/admin/manage/users/owners" },
         {
           label: "Content Managers",
           path: "/admin/manage/users/content-managers",
@@ -174,7 +175,7 @@ export const DashboardLayout: React.FC = () => {
       ],
     },
     {
-      groupName: "Institution master data",
+      groupName: "Institution Management",
       icon: <Landmark size={15} />,
       links: [
         { label: "Institution Profiles", path: "/admin/manage/institution" },
@@ -194,40 +195,32 @@ export const DashboardLayout: React.FC = () => {
       ],
     },
     {
-      groupName: "Ashram management",
+      groupName: "Ashram Management",
       icon: <Building size={15} />,
       links: [
         { label: "All Ashrams", path: "/admin/manage/ashrams/all" },
         { label: "Pending Verification", path: "/admin/verifications" },
         { label: "Approved Ashrams", path: "/admin/manage/ashrams/approved" },
         { label: "Rejected Ashrams", path: "/admin/manage/ashrams/rejected" },
-        {
-          label: "Room Categories",
-          path: "/admin/manage/ashrams/room-categories",
-        },
-        {
-          label: "Category Approvals",
-          path: "/admin/approvals/room-categories",
-        },
       ],
     },
     {
-      groupName: "Room management",
+      groupName: "Room & Inventory Management",
       icon: <Bed size={15} />,
       links: [
         {
-          label: "Category Approvals",
+          label: "Room Category Approvals",
           path: "/admin/approvals/room-categories",
         },
-        { label: "Rooms", path: "/admin/manage/rooms/all" },
-        { label: "Availability", path: "/admin/manage/rooms/availability" },
-        { label: "Pricing", path: "/admin/manage/rooms/pricing" },
-        { label: "Platform Pricing", path: "/admin/settings/pricing" },
-        { label: "Inventory", path: "/admin/manage/rooms/inventory" },
+        { label: "Room Categories", path: "/admin/manage/rooms/all" },
+        { label: "Room Availability", path: "/admin/manage/rooms/availability" },
+        { label: "Room Pricing", path: "/admin/manage/rooms/pricing" },
+        { label: "Platform Pricing Rules", path: "/admin/settings/pricing" },
+        { label: "Room Inventory", path: "/admin/manage/rooms/inventory" },
       ],
     },
     {
-      groupName: "Bookings",
+      groupName: "Booking Management",
       icon: <Calendar size={15} />,
       links: [
         { label: "All Bookings", path: "/admin/manage/bookings/all" },
@@ -236,49 +229,53 @@ export const DashboardLayout: React.FC = () => {
           label: "Confirmed Bookings",
           path: "/admin/manage/bookings/confirmed",
         },
+        { label: "Checked-in Stays", path: "/admin/manage/bookings/checked_in" },
+        { label: "Checked-out Stays", path: "/admin/manage/bookings/checked_out" },
         { label: "Completed Stays", path: "/admin/manage/bookings/completed" },
-        { label: "Cancelled", path: "/admin/manage/bookings/cancelled" },
-        { label: "Refund Requests", path: "/admin/manage/bookings/refunds" },
+        { label: "Cancelled Bookings", path: "/admin/manage/bookings/cancelled" },
+        { label: "Expired Bookings", path: "/admin/manage/bookings/expired" },
+        { label: "No-show Bookings", path: "/admin/manage/bookings/no_show" },
+        { label: "Refunded Bookings", path: "/admin/manage/bookings/refunded" },
       ],
     },
     {
       // Parking keeps one module key per collection rather than
       // parking/<section>: the console resolves a sub-key against a shared
       // alias table, where "bookings" already means ashram bookings.
-      groupName: "Parking management",
+      groupName: "Parking Management",
       icon: <Car size={15} />,
       links: [
-        { label: "⚡ Parking Console", path: "/parking/dashboard" },
-        { label: "Control Center", path: "/admin/parking/control" },
-        { label: "Staff & Roles", path: "/admin/parking/roles" },
-        { label: "Partners", path: "/admin/manage/parking_partners/all" },
+        { label: "Parking Operations Dashboard", path: "/parking/dashboard" },
+        { label: "Parking Control Center", path: "/admin/parking/control" },
+        { label: "Parking Staff & Roles", path: "/admin/parking/roles" },
+        { label: "Parking Partners", path: "/admin/manage/parking_partners/all" },
         {
-          label: "Pending Partners",
+          label: "Pending Parking Partners",
           path: "/admin/manage/parking_partners/pending",
         },
-        { label: "Locations", path: "/admin/manage/parking_locations/all" },
-        { label: "Bookings", path: "/admin/manage/parking_bookings/all" },
+        { label: "Parking Locations", path: "/admin/manage/parking_locations/all" },
+        { label: "Parking Bookings", path: "/admin/manage/parking_bookings/all" },
         {
           label: "Vehicles On-Site",
           path: "/admin/manage/parking_bookings/checked_in",
         },
-        { label: "Slot Types", path: "/admin/manage/parking_slot_types/all" },
-        { label: "Slots", path: "/admin/manage/parking_slots/all" },
-        { label: "Pricing Rules", path: "/admin/manage/parking_pricing/all" },
+        { label: "Parking Slot Types", path: "/admin/manage/parking_slot_types/all" },
+        { label: "Parking Slots", path: "/admin/manage/parking_slots/all" },
+        { label: "Parking Pricing Rules", path: "/admin/manage/parking_pricing/all" },
         {
-          label: "Commissions",
+          label: "Pending Parking Commissions",
           path: "/admin/manage/parking_commissions/pending",
         },
         {
-          label: "Transactions",
+          label: "Parking Transactions",
           path: "/admin/manage/parking_transactions/all",
         },
-        { label: "Scan Logs", path: "/admin/manage/parking_scan_logs/all" },
-        { label: "Reviews", path: "/admin/manage/parking_reviews/all" },
+        { label: "Parking Scan Logs", path: "/admin/manage/parking_scan_logs/all" },
+        { label: "Parking Reviews", path: "/admin/manage/parking_reviews/all" },
       ],
     },
     {
-      groupName: "Offers & blogs",
+      groupName: "Content & Promotions",
       icon: <Tag size={15} />,
       links: [
         { label: "All Offers", path: "/admin/manage/offers/all" },
@@ -289,7 +286,7 @@ export const DashboardLayout: React.FC = () => {
       ],
     },
     {
-      groupName: "Planner & circuits",
+      groupName: "Pilgrimage Planning",
       icon: <Compass size={15} />,
       links: [
         { label: "Spiritual Circuits", path: "/admin/manage/planner/circuits" },
@@ -300,40 +297,40 @@ export const DashboardLayout: React.FC = () => {
       ],
     },
     {
-      groupName: "Local hub",
+      groupName: "Local Services Management",
       icon: <Compass size={15} />,
       links: [
-        { label: "Transport", path: "/admin/manage/local/transport" },
-        { label: "Guides", path: "/admin/manage/local/guides" },
+        { label: "Local Transport Services", path: "/admin/manage/local/transport" },
+        { label: "Local Guides", path: "/admin/manage/local/guides" },
         { label: "Restaurants", path: "/admin/manage/local/restaurants" },
-        { label: "Medical", path: "/admin/manage/local/medical" },
-        { label: "Emergency", path: "/admin/manage/local/emergency" },
-        { label: "Shops", path: "/admin/manage/local/shops" },
-        { label: "Photography", path: "/admin/manage/local/photography" },
-        { label: "Events", path: "/admin/manage/local/events" },
+        { label: "Medical Services", path: "/admin/manage/local/medical" },
+        { label: "Emergency Services", path: "/admin/manage/local/emergency" },
+        { label: "Local Shops", path: "/admin/manage/local/shops" },
+        { label: "Photography Services", path: "/admin/manage/local/photography" },
+        { label: "Local Events", path: "/admin/manage/local/events" },
       ],
     },
     {
-      groupName: "Marketplace",
+      groupName: "Marketplace Management",
       icon: <ShoppingBag size={15} />,
       links: [
-        { label: "Products", path: "/admin/manage/marketplace/products" },
-        { label: "Categories", path: "/admin/manage/marketplace/categories" },
-        { label: "Vendors", path: "/admin/manage/marketplace/vendors" },
-        { label: "Orders", path: "/admin/manage/marketplace/orders" },
-        { label: "Waitlist", path: "/admin/manage/marketplace/waitlist" },
-        { label: "Newsletter", path: "/admin/manage/marketplace/newsletter" },
+        { label: "Marketplace Products", path: "/admin/manage/marketplace/products" },
+        { label: "Marketplace Categories", path: "/admin/manage/marketplace/categories" },
+        { label: "Marketplace Vendors", path: "/admin/manage/marketplace/vendors" },
+        { label: "Marketplace Orders", path: "/admin/manage/marketplace/orders" },
+        { label: "Marketplace Waitlist", path: "/admin/manage/marketplace/waitlist" },
+        { label: "Marketplace Newsletter", path: "/admin/manage/marketplace/newsletter" },
       ],
     },
     {
-      groupName: "Banner management",
+      groupName: "Homepage Banners",
       icon: <Image size={15} />,
       links: [
-        { label: "Banner Management", path: "/admin/manage/banner/homepage" },
+        { label: "Homepage Banner Management", path: "/admin/manage/banner/homepage" },
       ],
     },
     {
-      groupName: "Lead Collection",
+      groupName: "Lead Collection Management",
       icon: <ClipboardList size={15} />,
       links: [
         { label: "All Leads", path: "/admin/lead-collection/leads" },
@@ -341,16 +338,38 @@ export const DashboardLayout: React.FC = () => {
       ],
     },
     {
+      // Smart Contact QR — permanent QR profiles for representatives.
+      // The status filters are query strings on one page rather than separate
+      // routes, so the list keeps a single source of truth for its data.
+      groupName: "Smart Contact Profiles",
+      icon: <ContactRound size={15} />,
+      links: [
+        { label: "All Profiles", path: "/admin/smart-contacts" },
+        { label: "Active", path: "/admin/smart-contacts?status=ACTIVE" },
+        { label: "Disabled", path: "/admin/smart-contacts?status=SUSPENDED" },
+        {
+          label: "Employees",
+          path: "/admin/smart-contacts?category=employee",
+        },
+        { label: "Partners", path: "/admin/smart-contacts?category=partner" },
+        {
+          label: "District Partners",
+          path: "/admin/smart-contacts?category=district-partner",
+        },
+        { label: "QR Analytics", path: "/admin/smart-contacts/analytics" },
+      ],
+    },
+    {
       // The platform manages every ashram's openings and applications from
       // here; the same page scoped to one owner lives at /owner/volunteer.
-      groupName: "Volunteer",
+      groupName: "Volunteer Management",
       icon: <Heart size={15} />,
       links: [
         { label: "Openings & Applications", path: "/admin/volunteer" },
       ],
     },
     {
-      groupName: "Refund requests",
+      groupName: "Refund Management",
       icon: <Undo2 size={15} />,
       links: [
         { label: "Refund Queue", path: "/admin/refunds" },
@@ -358,7 +377,7 @@ export const DashboardLayout: React.FC = () => {
       ],
     },
     {
-      groupName: "Reports & audit",
+      groupName: "Reports & Audit",
       icon: <BarChart3 size={15} />,
       links: [
         { label: "Revenue Reports", path: "/admin/manage/reports/revenue" },
@@ -367,7 +386,7 @@ export const DashboardLayout: React.FC = () => {
       ],
     },
     {
-      groupName: "Enterprise notifications",
+      groupName: "Notification Center",
       icon: <Bell size={15} />,
       links: [
         {
@@ -441,6 +460,22 @@ export const DashboardLayout: React.FC = () => {
         { label: "Staff Management", path: "/owner/staff" },
       ],
     },
+    {
+      groupName: "Bookings & finance",
+      icon: <Calendar size={15} />,
+      links: [
+        { label: "All Bookings", path: "/owner/bookings" },
+        { label: "Payments & Payouts", path: "/owner/payments" },
+      ],
+    },
+    {
+      groupName: "Parking Management",
+      icon: <Car size={15} />,
+      links: [
+        { label: "My Ashram Parking", path: "/owner/parking" },
+        { label: "Parking Operations", path: "/parking/dashboard" },
+      ],
+    },
   ];
 
 
@@ -505,7 +540,10 @@ export const DashboardLayout: React.FC = () => {
         groups: superAdminGroups,
       };
     }
-    if (userHasParkingRole) {
+    if (
+      userHasParkingRole &&
+      !["owner", "stay_admin"].includes(user?.role || "")
+    ) {
       return {
         topLink: {
           label: "Parking Console",
@@ -532,12 +570,22 @@ export const DashboardLayout: React.FC = () => {
           path: "/owner/dashboard",
           icon: <LayoutDashboard size={16} className="text-[#E58C28]" />,
         },
-        groups: ownerGroups.map((group) => ({
-          ...group,
-          links: group.links.filter(
-            (link) => !["/owner/staff", "/owner/users"].includes(link.path),
-          ),
-        })),
+        groups: ownerGroups
+          .map((group) => ({
+            ...group,
+            links: group.links.filter(
+              (link) =>
+                ![
+                  "/owner/staff",
+                  "/owner/users",
+                  "/owner/bookings",
+                  "/owner/payments",
+                  "/owner/parking",
+                  "/parking/dashboard",
+                ].includes(link.path),
+            ),
+          }))
+          .filter((group) => group.links.length > 0),
       };
     }
     if (user?.role === "staff") {

@@ -64,6 +64,10 @@ export class GovernanceService {
       "name status isVerified rating slug ashramCode ownerId email phone contact.email contact.phone address.city address.state address.district images coverImageUrl gallery galleryUrls documents createdAt updatedAt",
     Admin_rooms:
       "name type acType capacity totalInventory basePrice status ashramId createdAt updatedAt",
+    Admin_room_inventory:
+      "ashramId roomId date totalInventory heldCount bookedCount maintenanceCount customPrice isClosed note createdAt updatedAt",
+    Admin_room_pricing:
+      "ashramId roomId name validFrom validUntil daysOfWeek multiplier overridePrice minStay taxPercent platformFeePercent priority isActive createdAt updatedAt",
     Admin_users:
       "name email phone role status isVerified district state employerAshramId createdAt updatedAt",
     // Parking rows nest pricing, history, and geo objects the table never
@@ -108,6 +112,11 @@ export class GovernanceService {
     confirmed: "confirmed",
     completed: "completed",
     cancelled: "cancelled",
+    checked_in: "checked_in",
+    checked_out: "checked_out",
+    expired: "expired",
+    no_show: "no_show",
+    refunded: "refunded",
     active: "active",
     draft: "draft",
     scheduled: "scheduled",
@@ -671,7 +680,7 @@ export class GovernanceService {
     if (query.status && query.status !== "all") filter.status = query.status;
     if (query.search) {
       const term = escapeRegex(query.search.slice(0, 100));
-      filter.$or = [
+      const searchFilter = [
         "name",
         "title",
         "email",
@@ -679,6 +688,12 @@ export class GovernanceService {
         "promoCode",
         "department",
       ].map((field) => ({ [field]: { $regex: term, $options: "i" } }));
+      if (filter.$or) {
+        filter.$and = [{ $or: filter.$or }, { $or: searchFilter }];
+        delete filter.$or;
+      } else {
+        filter.$or = searchFilter;
+      }
     }
     // Foreign keys render as a bare ObjectId unless they are resolved, which
     // makes a joined table (a parking booking names neither its location nor
@@ -1004,6 +1019,14 @@ export class GovernanceService {
     if (moduleName === "banner") return "banner";
     if (moduleName === "ashrams" && section === "room_categories")
       return "rooms";
+    if (moduleName === "rooms") {
+      if (section === "availability" || section === "inventory")
+        return "room_inventory";
+      if (section === "pricing" || section === "season_pricing")
+        return "room_pricing";
+    }
+    if (moduleName === "marketplace" && section === "categories")
+      return "categories";
     if (
       !section ||
       this.adminNeutralSubKeys.has(section) ||
@@ -1027,6 +1050,14 @@ export class GovernanceService {
     const moduleName = this.normalizeAdminKey(moduleKey) ?? moduleKey;
     const section = this.normalizeAdminKey(subKey);
     if (!section || section === "all") return;
+    if (moduleName === "planner" && ["routes", "rituals"].includes(section)) {
+      filter.$or = [
+        { type: section },
+        { category: section },
+        { templateType: section },
+      ];
+      return;
+    }
     // When the sub-key selected a collection of its own (blogs/authors,
     // marketplace/orders, reports/bookings …) the data set is already scoped
     // and narrowing it by the sub-key again would empty the result.
@@ -1049,7 +1080,21 @@ export class GovernanceService {
           $in: ["manager", "reception", "housekeeping", "staff"],
         };
       else if (section === "content_managers") filter.role = "content_manager";
+      else if (section === "roles") filter.role = { $ne: "customer" };
       // `roles` is the whole directory grouped by role in the UI — no filter.
+      return;
+    }
+
+    if (moduleName === "blogs" && section === "categories") {
+      filter.category = { $exists: true, $nin: [null, ""] };
+      return;
+    }
+
+    if (moduleName === "marketplace" && section === "vendors") {
+      filter.$or = [
+        { vendor: { $exists: true, $ne: null } },
+        { vendorId: { $exists: true, $ne: null } },
+      ];
       return;
     }
 

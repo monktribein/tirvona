@@ -1,5 +1,6 @@
 import { Body, Controller, Get, HttpCode, Post, UseGuards } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
+import { Throttle } from "@nestjs/throttler";
 import { Public } from "../../../common/decorators/public.decorator";
 import { LeadAuthService } from "../application/lead-auth.service";
 import type { AuthenticatedLeadUser } from "../domain/lead-collection.types";
@@ -21,6 +22,7 @@ export class LeadAuthController {
 
   @Post("login")
   @HttpCode(200)
+  @Throttle({ default: { limit: 8, ttl: 900_000 } })
   async login(@Body() dto: LeadLoginDto) {
     return { success: true, data: await this.auth.login(dto) };
   }

@@ -30,6 +30,8 @@ export const LeadUserSchema = new Schema(
       index: true,
     },
     region: { type: String, trim: true, default: "" },
+    state: { type: String, trim: true, default: "", index: true },
+    district: { type: String, trim: true, default: "", index: true },
     employeeCode: { type: String, trim: true, default: "" },
     notes: { type: String, trim: true, default: "" },
     lastLoginAt: { type: Date, default: null },
@@ -39,8 +41,13 @@ export const LeadUserSchema = new Schema(
     // A platform user id. Stored as a plain string, not a ref: the platform
     // `users` collection lives in another database and must not be populated
     // from here.
-    createdByAdminId: { type: String, default: "" },
-    createdByAdminName: { type: String, default: "" },
+    createdByAdminId: {
+      type: String,
+      required: true,
+      immutable: true,
+      trim: true,
+    },
+    createdByAdminName: { type: String, immutable: true, default: "" },
   },
   {
     timestamps: true,

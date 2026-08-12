@@ -118,6 +118,9 @@ export class UpdateRoomDto extends PartialType(CreateRoomDto) {
    * room would orphan every one of them.
    */
   ashramId?: never;
+  @IsOptional()
+  @IsIn(["active", "under_maintenance"])
+  status?: string;
 }
 
 export class RoomAvailabilityDto {

@@ -42,6 +42,9 @@ export const ashramService = {
   getById: (id: string) => api.get(`/ashrams/${id}`),
   getManagedById: (id: string) => api.get(`/ashrams/manage/${id}`),
   myListings: () => api.get("/ashrams/my-listings/all"),
+  ownerParking: () => api.get("/ashrams/owner-parking"),
+  onboardOwnerParking: (data: unknown) =>
+    api.post("/ashrams/owner-parking", data),
   create: (data: unknown) => api.post("/ashrams", data),
   update: (id: string, data: unknown) => api.put(`/ashrams/${id}`, data),
   uploadDocuments: (id: string, data: unknown) =>
@@ -109,6 +112,25 @@ export const bookingService = {
     api.put(`/bookings/${id}/room-number`, { roomNumber }),
   updateStatus: (id: string, status: string) =>
     api.put(`/bookings/${id}/status`, { status }),
+};
+
+export const bookingFinanceService = {
+  summary: (ashramId?: string) =>
+    api.get("/booking-finance/summary", {
+      params: ashramId ? { ashramId } : {},
+    }),
+  payments: (ashramId?: string) =>
+    api.get("/booking-finance/payments", {
+      params: ashramId ? { ashramId } : {},
+    }),
+  settlements: (ashramId?: string) =>
+    api.get("/booking-finance/settlements", {
+      params: ashramId ? { ashramId } : {},
+    }),
+  refunds: (ashramId?: string) =>
+    api.get("/booking-finance/refunds", {
+      params: ashramId ? { ashramId } : {},
+    }),
 };
 
 // ── Reviews ──────────────────────────────────────────────────────────────────

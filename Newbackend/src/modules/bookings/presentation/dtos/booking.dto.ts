@@ -43,6 +43,7 @@ export class ConfirmBookingPaymentDto {
 
 export class BookingDashboardQueryDto {
   @IsOptional() @IsString() status?: string;
+  @IsOptional() @IsString() paymentStatus?: string;
   @IsOptional() @IsMongoId() ashramId?: string;
   @IsOptional() @IsString() search?: string;
   @IsOptional() @IsString() date?: string;

@@ -85,9 +85,10 @@ export const applyDnsServersFromEnvironment = (): string[] => {
 };
 
 /**
- * The dev fallback covers both local apps — the main site on 5173 and the
- * leadTirvona field app on 5174 — so a fresh checkout does not fail CORS on
- * the lead login. Production ignores this entirely: CORS_ORIGINS is required
+ * The dev fallback covers all three local apps — the main site on 5173, the
+ * leadTirvona field app on 5174, and the SmarID Smart Contact page on 5175 —
+ * so a fresh checkout does not fail CORS on the lead login or on a scanned
+ * contact page. Production ignores this entirely: CORS_ORIGINS is required
  * there and validated against wildcards.
  */
 export const corsOriginsFromEnvironment = (): string[] =>
@@ -95,7 +96,7 @@ export const corsOriginsFromEnvironment = (): string[] =>
     process.env.CORS_ORIGINS,
     process.env.FRONTEND_URL ??
     process.env.CLIENT_URL ??
-    "http://localhost:5173,http://localhost:5174",
+    "http://localhost:5173,http://localhost:5174,http://localhost:5175",
   );
 
 export const parkingQrSecretFromEnvironment = (): string =>

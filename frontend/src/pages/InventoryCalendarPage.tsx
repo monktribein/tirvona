@@ -8,6 +8,8 @@ import { formatCurrency } from "../utils/format";
 export const InventoryCalendarPage: React.FC = () => {
   const { addNotification } = useNotifications();
 
+  const [myAshrams, setMyAshrams] = useState<any[]>([]);
+  const [selectedAshramId, setSelectedAshramId] = useState("");
   const [myRooms, setMyRooms] = useState<any[]>([]);
   const [selectedRoomId, setSelectedRoomId] = useState("");
   const [calendar, setCalendar] = useState<any[]>([]);
@@ -20,30 +22,39 @@ export const InventoryCalendarPage: React.FC = () => {
   const [maintenanceCount, setMaintenanceCount] = useState("0");
 
   useEffect(() => {
-    fetchRooms();
+    fetchAshrams();
   }, []);
+
+  useEffect(() => {
+    if (selectedAshramId) fetchRooms(selectedAshramId);
+    else {
+      setMyRooms([]);
+      setSelectedRoomId("");
+      setCalendar([]);
+      setLoading(false);
+    }
+  }, [selectedAshramId]);
 
   useEffect(() => {
     if (selectedRoomId) {
       fetchCalendar();
+    } else {
+      setCalendar([]);
+      setLoading(false);
     }
   }, [selectedRoomId]);
 
-  const fetchRooms = async () => {
+  const fetchAshrams = async () => {
     try {
       const ashramsRes = await ashramService.myListings();
       if (ashramsRes.data.success && ashramsRes.data.data.length > 0) {
-        const roomsRes = await ashramService.getManagedById(
-          ashramsRes.data.data[0]._id,
-        );
-        if (roomsRes.data.success && roomsRes.data.data.rooms.length > 0) {
-          setMyRooms(roomsRes.data.data.rooms);
-          setSelectedRoomId(roomsRes.data.data.rooms[0]._id);
-        } else {
-          setMyRooms([]);
-        }
+        setMyAshrams(ashramsRes.data.data);
+        setSelectedAshramId(ashramsRes.data.data[0]._id);
       } else {
+        setMyAshrams([]);
+        setSelectedAshramId("");
         setMyRooms([]);
+        setLoading(false);
       }
     } catch (err) {
       console.error("Fetch rooms error:", err);
@@ -52,7 +63,34 @@ export const InventoryCalendarPage: React.FC = () => {
         getErrorMessage(err, "Unable to load your rooms."),
         "error",
       );
+      setMyAshrams([]);
+      setSelectedAshramId("");
       setMyRooms([]);
+      setLoading(false);
+    }
+  };
+
+  const fetchRooms = async (ashramId: string) => {
+    setLoading(true);
+    setCalendar([]);
+    try {
+      const roomsRes = await ashramService.getManagedById(ashramId);
+      const rooms = roomsRes.data.success
+        ? roomsRes.data.data.rooms || []
+        : [];
+      setMyRooms(rooms);
+      setSelectedRoomId(rooms[0]?._id || "");
+      if (rooms.length === 0) setLoading(false);
+    } catch (err) {
+      console.error("Fetch rooms error:", err);
+      addNotification(
+        "Load Failed",
+        getErrorMessage(err, "Unable to load rooms for this ashram."),
+        "error",
+      );
+      setMyRooms([]);
+      setSelectedRoomId("");
+      setLoading(false);
     }
   };
 
@@ -98,6 +136,8 @@ export const InventoryCalendarPage: React.FC = () => {
           "success",
         );
         fetchCalendar();
+        localStorage.setItem("tirvona:rooms-updated", Date.now().toString());
+        window.dispatchEvent(new Event("tirvona:rooms-updated"));
       }
     } catch (err) {
       console.error("Override save error:", err);
@@ -122,22 +162,42 @@ export const InventoryCalendarPage: React.FC = () => {
           </p>
         </div>
 
-        {myRooms.length > 0 && (
-          <div className="flex items-center gap-3 shrink-0">
-            <label className="text-[10px] font-extrabold text-gray-400 tracking-wider">
-              Active Category
-            </label>
-            <select
-              value={selectedRoomId}
-              onChange={(e) => setSelectedRoomId(e.target.value)}
-              className="p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none"
-            >
-              {myRooms.map((room) => (
-                <option key={room._id} value={room._id}>
-                  {room.name}
-                </option>
-              ))}
-            </select>
+        {myAshrams.length > 0 && (
+          <div className="flex flex-wrap items-center justify-end gap-3 shrink-0">
+            <div className="flex items-center gap-2">
+              <label className="text-[10px] font-extrabold text-gray-400 tracking-wider">
+                Active Ashram
+              </label>
+              <select
+                value={selectedAshramId}
+                onChange={(e) => setSelectedAshramId(e.target.value)}
+                className="p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none"
+              >
+                {myAshrams.map((ashram) => (
+                  <option key={ashram._id} value={ashram._id}>
+                    {ashram.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-[10px] font-extrabold text-gray-400 tracking-wider">
+                Active Category
+              </label>
+              <select
+                value={selectedRoomId}
+                disabled={myRooms.length === 0}
+                onChange={(e) => setSelectedRoomId(e.target.value)}
+                className="p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none disabled:opacity-50"
+              >
+                {myRooms.length === 0 && <option value="">No room categories</option>}
+                {myRooms.map((room) => (
+                  <option key={room._id} value={room._id}>
+                    {room.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         )}
       </div>

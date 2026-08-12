@@ -41,6 +41,12 @@ export interface LeadStats {
   capturedLast7Days: number;
 }
 
+interface AgentLeadScope {
+  capturedBy: string;
+  state?: string;
+  district?: string;
+}
+
 /**
  * Read/write access to the `leads` collection.
  *
@@ -70,7 +76,10 @@ export class LeadsService {
    * so a partial fix (lat but no lng) yields no Point at all instead of an
    * index-breaking half-coordinate.
    */
-  private toDocument(dto: SaveLeadDto): Record<string, unknown> {
+  private toDocument(
+    dto: SaveLeadDto,
+    jurisdiction?: { state: string; district: string },
+  ): Record<string, unknown> {
     const lat = dto.location?.coordinates?.lat ?? null;
     const lng = dto.location?.coordinates?.lng ?? null;
     const hasFix = typeof lat === "number" && typeof lng === "number";
@@ -80,7 +89,9 @@ export class LeadsService {
       location: {
         address: dto.location?.address?.trim() ?? "",
         city: dto.location?.city?.trim() ?? "",
-        state: dto.location?.state?.trim() ?? "",
+        district:
+          jurisdiction?.district ?? dto.location?.district?.trim() ?? "",
+        state: jurisdiction?.state ?? dto.location?.state?.trim() ?? "",
         coordinates: { lat, lng },
       },
       geo: hasFix ? { type: "Point", coordinates: [lng, lat] } : undefined,
@@ -131,12 +142,16 @@ export class LeadsService {
 
   async list(
     query: LeadQueryDto,
-    scope?: { capturedBy: string },
+    scope?: AgentLeadScope,
   ): Promise<LeadListResult> {
     const filter = this.buildFilter(query);
     // An agent's own view is a hard scope, applied after the query filters so
     // a crafted `capturedBy` in the querystring cannot widen it.
-    if (scope) filter.capturedBy = this.objectId(scope.capturedBy);
+    if (scope) {
+      filter.capturedBy = this.objectId(scope.capturedBy);
+      if (scope.state) filter["location.state"] = scope.state;
+      if (scope.district) filter["location.district"] = scope.district;
+    }
 
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
@@ -152,11 +167,18 @@ export class LeadsService {
     return { items, total, page, limit };
   }
 
-  async findOne(id: string, scope?: { capturedBy: string }): Promise<LeadRecord> {
+  async findOne(id: string, scope?: AgentLeadScope): Promise<LeadRecord> {
     const row = await this.leads.findById(this.objectId(id)).lean<LeadRecord>();
     if (!row) throw new NotFoundException("Lead not found");
     if (scope && String(row.capturedBy ?? "") !== scope.capturedBy)
       throw new ForbiddenException("This lead belongs to another agent");
+    if (
+      scope?.state &&
+      scope?.district &&
+      (row.location.state !== scope.state ||
+        row.location.district !== scope.district)
+    )
+      throw new ForbiddenException("This lead is outside your assigned region");
     return row;
   }
 
@@ -166,7 +188,10 @@ export class LeadsService {
     agent: AuthenticatedLeadUser,
   ): Promise<LeadRecord> {
     const created = await this.leads.create({
-      ...this.toDocument(dto),
+      ...this.toDocument(dto, {
+        state: agent.state,
+        district: agent.district,
+      }),
       status: "pending",
       capturedBy: new Types.ObjectId(agent.id),
       capturedByName: agent.name,
@@ -189,7 +214,7 @@ export class LeadsService {
   async update(
     id: string,
     dto: SaveLeadDto,
-    scope?: { capturedBy: string },
+    scope?: AgentLeadScope,
   ): Promise<LeadRecord> {
     const existing = await this.findOne(id, scope);
     // An agent can correct a typo before anyone has looked at the lead; once
@@ -199,7 +224,12 @@ export class LeadsService {
         "This lead has already been reviewed and can no longer be edited",
       );
 
-    const update = this.toDocument(dto);
+    const update = this.toDocument(
+      dto,
+      scope?.state && scope?.district
+        ? { state: scope.state, district: scope.district }
+        : undefined,
+    );
     // `geo` is `undefined` when the fix was cleared — $set would store null and
     // break the sparse 2dsphere index, so unset it instead.
     const unset = update.geo === undefined ? { geo: "" } : undefined;
@@ -245,7 +275,7 @@ export class LeadsService {
 
   async remove(
     id: string,
-    scope?: { capturedBy: string },
+    scope?: AgentLeadScope,
   ): Promise<{ id: string }> {
     await this.findOne(id, scope);
     await this.leads.findByIdAndDelete(this.objectId(id));
@@ -256,10 +286,12 @@ export class LeadsService {
    * Counters for the console header. Computed in one aggregation rather than
    * eight `countDocuments` round trips.
    */
-  async stats(scope?: { capturedBy: string }): Promise<LeadStats> {
-    const match = scope
+  async stats(scope?: AgentLeadScope): Promise<LeadStats> {
+    const match: Record<string, unknown> = scope
       ? { capturedBy: this.objectId(scope.capturedBy) }
       : {};
+    if (scope?.state) match["location.state"] = scope.state;
+    if (scope?.district) match["location.district"] = scope.district;
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
     const [row] = await this.leads.aggregate<LeadStats>([

@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tirvona™ Smart Contact</title>
+
+    <!--
+      Spec §40. Thousands of representative pages should not become search
+      landing pages; `follow` still lets the links out to tirvona.com.
+    -->
+    <meta name="robots" content="noindex,follow" />
+
+    <!--
+      Spec §41 — Open Graph, for WhatsApp link previews.
+
+      These are static defaults. A social crawler does not execute JavaScript,
+      so it sees exactly what is below, not the per-representative title the
+      app sets at runtime. Per-profile previews need the HTML to be rendered
+      with the profile already in it — see README, "Social previews".
+    -->
+    <meta property="og:type" content="profile" />
+    <meta property="og:site_name" content="Tirvona" />
+    <meta property="og:title" content="Tirvona™ Smart Contact" />
+    <meta
+      property="og:description"
+      content="Tirvona™ — India's Digital Infrastructure for Religious Destinations"
+    />
+    <meta name="twitter:card" content="summary" />
+    <meta name="theme-color" content="#0B192C" />
+
+    <!--
+      Fonts are self-hosted by the platform brand elsewhere; here the stack
+      falls back to system faces rather than blocking first paint on a
+      third-party request. Spec §39 wants the page interactive in under 2s on
+      ordinary mobile internet, and a webfront round trip is the easiest 400ms
+      to give away.
+    -->
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>
+      <div style="padding: 24px; font-family: system-ui, sans-serif">
+        This Tirvona contact page needs JavaScript enabled. You can reach us at
+        <a href="mailto:partners@tirvona.com">partners@tirvona.com</a>.
+      </div>
+    </noscript>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

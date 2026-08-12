@@ -15,9 +15,11 @@ import {
 // still booked into it. This imports the schema, not BookingsModule, so no
 // module cycle is created — BookingsModule already imports this one.
 import { BookingSchema } from "../bookings/infrastructure/persistence/booking.schemas";
+import { ParkingModule } from "../parking/parking.module";
 
 @Module({
   imports: [
+    ParkingModule,
     MongooseModule.forFeature([
       { name: "Ashram", schema: AshramSchema },
       { name: "Room", schema: RoomSchema },

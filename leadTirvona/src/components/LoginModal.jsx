@@ -12,7 +12,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [remember, setRemember] = useState(true);
+  const [remember, setRemember] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -43,7 +43,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
 
     setLoading(true);
     try {
-      const agent = await onLoginSuccess(phone, password);
+      const agent = await onLoginSuccess(phone, password, remember);
       setPassword('');
       onClose();
       return agent;
@@ -191,8 +191,8 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
         {/* Account provisioning note */}
         <div className="mt-6 pt-4 border-t border-[#E2E8F0] text-center">
           <p className="text-[11px] text-[#64748B]">
-            First sign-in registers your device. Use the same number and
-            password next time.
+            Access is limited to accounts created by a Tirvona Super Admin.
+            Contact your supervisor if you do not have credentials.
           </p>
         </div>
 

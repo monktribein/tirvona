@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Header,
   Param,
   Post,
   Put,
@@ -37,7 +38,7 @@ const addOnBody = new ValidationPipe({ transform: true, whitelist: true });
 @Controller("ashrams")
 export class AshramsController {
   constructor(private readonly service: AshramsService) {}
-  @Public() @Get() list(@Query() query: AshramQueryDto) {
+  @Public() @Get() @Header("Cache-Control", "no-store") list(@Query() query: AshramQueryDto) {
     return this.service.publicList(query);
   }
   /**
@@ -53,6 +54,25 @@ export class AshramsController {
   async mine(@CurrentUser() user: AuthenticatedUser) {
     const data = await this.service.listForUser(user);
     return { success: true, count: data.length, data };
+  }
+  @Get("owner-parking")
+  @ApiBearerAuth()
+  @Roles("owner")
+  async ownerParking(@CurrentUser() user: AuthenticatedUser) {
+    return { success: true, data: await this.service.ownerParking(user) };
+  }
+  @Post("owner-parking")
+  @ApiBearerAuth()
+  @Roles("owner")
+  async onboardOwnerParking(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() body: Record<string, any>,
+  ) {
+    return {
+      success: true,
+      message: "Parking partner access created. New parking remains pending until Super Admin approval.",
+      data: await this.service.onboardOwnerParking(user, body),
+    };
   }
   /**
    * The destinations ashrams are actually located in, each with a count.
@@ -83,7 +103,7 @@ export class AshramsController {
   ) {
     return { success: true, data: await this.service.managedDetail(user, id) };
   }
-  @Public() @Get(":id") async detail(@Param("id") id: string) {
+  @Public() @Get(":id") @Header("Cache-Control", "no-store") async detail(@Param("id") id: string) {
     return { success: true, data: await this.service.detail(id) };
   }
   @Post() @ApiBearerAuth() @Roles("owner", "super_admin") async create(

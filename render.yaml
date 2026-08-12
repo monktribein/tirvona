@@ -98,6 +98,34 @@ services:
         sync: false
       - key: EMAIL_REPLY_TO
         value: support@tirvona.com
+      # ── Smart Contact QR ────────────────────────────────────────────────
+      # Its own database, so the module can later move to its own cluster
+      # without a migration. Leave the URI unset to reuse the platform
+      # cluster; the dbName below still keeps the collections separate.
+      - key: SMART_CONTACT_MONGODB_URI
+        sync: false
+      - key: SMART_CONTACT_MONGODB_DB_NAME
+        value: tirvona_smart_contact
+      # The origin printed QR codes encode. Deliberately NOT derived from
+      # CLIENT_URL: this value is baked into physical visiting cards and can
+      # never change afterwards, so moving the marketing site must not be able
+      # to invalidate artwork already in circulation.
+      - key: SMART_CONTACT_PUBLIC_BASE_URL
+        value: https://www.tirvona.com
+      - key: SMART_CONTACT_PUBLIC_PATH_PREFIX
+        value: c
+      # Origin the console builds QR/vCard download links against.
+      - key: SMART_CONTACT_API_BASE_URL
+        sync: false
+      - key: SMART_CONTACT_INACTIVE_EMAIL
+        value: partners@tirvona.com
+      # Optional QR branding. The logo is embedded in SVG output only.
+      - key: SMART_CONTACT_QR_LOGO_URL
+        sync: false
+      # Salts the per-visitor analytics hash. Set it to something random and
+      # long — reusing JWT_SECRET is the fallback, not the intent.
+      - key: SMART_CONTACT_SESSION_SALT
+        sync: false
 
   # ── Frontend SPA (static site) ──────────────────────────────────────────────
   - type: web
@@ -116,4 +144,28 @@ services:
       - key: VITE_API_URL
         sync: false
       - key: VITE_GOOGLE_CLIENT_ID
+        sync: false
+
+  # ── Smart Contact public page (static site) ─────────────────────────────────
+  # The page a scanned QR opens. A separate build from the main SPA because it
+  # is a single, dependency-light public route held to a two-second budget.
+  #
+  # IMPORTANT: printed QR codes encode https://www.tirvona.com/c/{slug}, so
+  # this build has to be reachable at that path. Render serves it on its own
+  # host, which means /c/* on the tirvona.com host must be routed here (a CDN
+  # or reverse-proxy rule). Until that rule exists, point
+  # SMART_CONTACT_PUBLIC_BASE_URL at this service's own URL so generated QR
+  # codes stay correct — see SmarID/README.md, "Deployment".
+  - type: web
+    name: tirvona-smart-contact
+    runtime: static
+    rootDir: SmarID
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
         sync: false
