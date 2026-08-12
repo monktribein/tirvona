@@ -678,11 +678,11 @@ const AddAshramWizardPage: React.FC = () => {
       foundedBy: formData.foundedBy,
       establishedYear: formData.establishedYear,
       address: {
-        street: formData.street,
-        city: formData.city,
-        district: formData.district,
-        state: formData.state,
-        pincode: formData.pincode,
+        street: String(formData.street).trim(),
+        city: String(formData.city).trim(),
+        district: String(formData.district).trim(),
+        state: String(formData.state).trim(),
+        pincode: String(formData.pincode).trim(),
         coordinates:
           formData.lat && formData.lng
             ? {
@@ -1093,6 +1093,9 @@ const AddAshramWizardPage: React.FC = () => {
               </Field>
               <Field label="PIN Code" required>
                 <Input
+                  name="postal-code"
+                  autoComplete="postal-code"
+                  inputMode="numeric"
                   placeholder="249201"
                   value={formData.pincode}
                   onChange={(e) => set("pincode", e.target.value)}
