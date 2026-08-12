@@ -2,15 +2,13 @@
  * CreateLeadPage.jsx — Clean Clean Design without Decorative Icons on Section Headers & Labels
  */
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Calendar, Navigation, ExternalLink, CheckCircle2, AlertCircle, Upload, X, Mic, MicOff, Loader2 } from 'lucide-react';
-import { useGeolocation } from '../hooks/useGeolocation';
-import { buildGoogleMapsUrl } from '../utils/formatDate';
-import { compressMultipleImages } from '../utils/imageCompressor';
+import { Send, Calendar, Camera, CheckCircle2, Upload, X, Mic, MicOff, Loader2, FileText } from 'lucide-react';
+import { leadApi } from '../services/leadApi';
 
 const DRAFT_STORAGE_KEY = 'tirvona_create_lead_draft';
 
 const INITIAL_FORM = {
-  name: '', address: '', city: '', state: '',
+  name: '', address: '', city: '', state: '', district: '',
   totalRooms: '', roomPrice: '', onlineRooms: '', offlineRooms: '',
   ownerName: '', phone: '', notes: '',
   interest: 'Interested',
@@ -18,27 +16,72 @@ const INITIAL_FORM = {
   coordinates: { lat: '', lng: '' }, images: []
 };
 
-export default function CreateLeadPage({ onSubmitLead, onSuccessNavigate }) {
+export default function CreateLeadPage({
+  onSubmitLead,
+  onSuccessNavigate,
+  attendanceCoordinates,
+  assignedJurisdiction
+}) {
   const [currentDateTime, setCurrentDateTime] = useState('');
-  const { isCapturing, gpsError, captureCurrentLocation } = useGeolocation();
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef(null);
 
-  const [isOptimizing, setIsOptimizing] = useState(false);
-  const [optimizationStatus, setOptimizationStatus] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState('');
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [cameraStarting, setCameraStarting] = useState(false);
+  const [cameraReady, setCameraReady] = useState(false);
+  const [cameraError, setCameraError] = useState('');
+  const videoRef = useRef(null);
+  const cameraStreamRef = useRef(null);
 
   // Restore draft from localStorage if available
   const [formData, setFormData] = useState(() => {
     try {
       const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
       if (savedDraft) {
-        return { ...INITIAL_FORM, ...JSON.parse(savedDraft) };
+        const draft = JSON.parse(savedDraft);
+        return {
+          ...INITIAL_FORM,
+          ...draft,
+          // GPS never comes from a saved form draft; attendance owns it.
+          coordinates: INITIAL_FORM.coordinates,
+          images: Array.isArray(draft.images) ? draft.images.slice(0, 10) : []
+        };
       }
     } catch (e) {
       console.warn('Failed to parse lead form draft:', e);
     }
     return INITIAL_FORM;
   });
+
+  const hasAttendanceCoordinates =
+    attendanceCoordinates?.lat !== undefined &&
+    attendanceCoordinates?.lat !== null &&
+    attendanceCoordinates?.lng !== undefined &&
+    attendanceCoordinates?.lng !== null;
+
+  // Attendance already captured the agent's current geotag. Reuse it for the
+  // lead silently. GPS is shown and captured only in the login attendance UI.
+  useEffect(() => {
+    if (!hasAttendanceCoordinates) return;
+    setFormData(prev => ({
+      ...prev,
+      coordinates: {
+        lat: attendanceCoordinates.lat,
+        lng: attendanceCoordinates.lng
+      }
+    }));
+  }, [hasAttendanceCoordinates, attendanceCoordinates?.lat, attendanceCoordinates?.lng]);
+
+  useEffect(() => {
+    if (!assignedJurisdiction?.state || !assignedJurisdiction?.district) return;
+    setFormData(prev => ({
+      ...prev,
+      state: assignedJurisdiction.state,
+      district: assignedJurisdiction.district
+    }));
+  }, [assignedJurisdiction?.state, assignedJurisdiction?.district]);
 
   // Auto-save form draft to localStorage whenever fields change
   useEffect(() => {
@@ -64,6 +107,18 @@ export default function CreateLeadPage({ onSubmitLead, onSuccessNavigate }) {
     const iv = setInterval(update, 1000);
     return () => clearInterval(iv);
   }, []);
+
+  useEffect(() => () => {
+    cameraStreamRef.current?.getTracks().forEach(track => track.stop());
+  }, []);
+
+  useEffect(() => {
+    if (!cameraOpen || cameraStarting || !videoRef.current || !cameraStreamRef.current) return;
+    videoRef.current.srcObject = cameraStreamRef.current;
+    videoRef.current.play().catch(() => {
+      setCameraError('The camera preview could not start. Check browser camera permission.');
+    });
+  }, [cameraOpen, cameraStarting]);
 
   const handleChange = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
 
@@ -134,32 +189,139 @@ export default function CreateLeadPage({ onSubmitLead, onSuccessNavigate }) {
     }
   };
 
-  const handleFileChange = async (e) => {
+  const handleFileChange = async (e, source = 'picker') => {
     const files = Array.from(e.target.files);
     if (!files.length) return;
 
-    setIsOptimizing(true);
-    setOptimizationStatus(`Optimizing image (1/${files.length})...`);
+    const remainingSlots = 10 - formData.images.length;
+    if (remainingSlots <= 0) {
+      e.target.value = '';
+      return alert('A lead can contain a maximum of 10 attachments.');
+    }
+
+    const selectedFiles = files.slice(0, remainingSlots);
+    if (files.length > remainingSlots) {
+      alert(`Only ${remainingSlots} more attachment(s) can be added. The maximum is 10.`);
+    }
+
+    const supportedFiles = selectedFiles.filter((file) => {
+      const extension = file.name.split('.').pop()?.toLowerCase();
+      const supportedExtension = [
+        'jpg', 'jpeg', 'png', 'webp', 'gif', 'avif', 'heic', 'heif', 'pdf'
+      ].includes(extension);
+      const supportedMimeType = file.type.startsWith('image/') || file.type === 'application/pdf';
+      return (supportedExtension || supportedMimeType) && file.size <= 10 * 1024 * 1024;
+    });
+
+    if (supportedFiles.length !== selectedFiles.length) {
+      alert('Some files were skipped. Use a supported image or PDF up to 10 MB.');
+    }
+    if (!supportedFiles.length) {
+      e.target.value = '';
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadStatus(`Uploading file (1/${supportedFiles.length})...`);
+    const uploadedUrls = [];
 
     try {
-      const optimizedImages = await compressMultipleImages(
-        files,
-        60000,
-        (current, total) => {
-          setOptimizationStatus(`Optimizing image (${current}/${total})...`);
-        }
-      );
+      for (let index = 0; index < supportedFiles.length; index += 1) {
+        setUploadStatus(`Uploading file (${index + 1}/${supportedFiles.length})...`);
+        const uploaded = await leadApi.uploadAttachment(supportedFiles[index], source);
+        if (!uploaded?.url) throw new Error('Cloudinary did not return a file URL.');
+        uploadedUrls.push(uploaded.url);
+      }
 
-      handleChange('images', [...formData.images, ...optimizedImages]);
-      setOptimizationStatus('Image ready');
-      setTimeout(() => setOptimizationStatus(''), 3000);
+      handleChange('images', [...formData.images, ...uploadedUrls].slice(0, 10));
+      setUploadStatus('Files uploaded');
+      setTimeout(() => setUploadStatus(''), 3000);
     } catch (err) {
-      console.error('Failed to optimize images:', err);
-      alert('Failed to process selected image(s). Please try another file.');
+      console.error('Failed to upload attachments:', err);
+      if (uploadedUrls.length) {
+        handleChange('images', [...formData.images, ...uploadedUrls].slice(0, 10));
+      }
+      alert(err?.message || 'Failed to upload the selected files. Please try again.');
     } finally {
-      setIsOptimizing(false);
+      setIsUploading(false);
       if (e.target) e.target.value = '';
     }
+  };
+
+  const closeCamera = () => {
+    cameraStreamRef.current?.getTracks().forEach(track => track.stop());
+    cameraStreamRef.current = null;
+    if (videoRef.current) videoRef.current.srcObject = null;
+    setCameraOpen(false);
+    setCameraStarting(false);
+    setCameraReady(false);
+    setCameraError('');
+  };
+
+  const openCamera = async () => {
+    setCameraOpen(true);
+    setCameraStarting(true);
+    setCameraReady(false);
+    setCameraError('');
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setCameraStarting(false);
+      setCameraError('Live camera access requires HTTPS or localhost in a supported browser.');
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: {
+          facingMode: { ideal: 'environment' },
+          width: { ideal: 1920 },
+          height: { ideal: 1080 }
+        }
+      });
+      cameraStreamRef.current = stream;
+      setCameraStarting(false);
+    } catch (error) {
+      console.error('Camera access failed:', error);
+      setCameraStarting(false);
+      const message = error?.name === 'NotAllowedError'
+        ? 'Camera permission was denied. Allow camera access from the browser address bar and try again.'
+        : error?.name === 'NotFoundError'
+          ? 'No camera was found on this device.'
+          : error?.name === 'NotReadableError'
+            ? 'The camera is being used by another application. Close it there and try again.'
+            : 'The camera could not be opened. Check your camera and browser permissions.';
+      setCameraError(message);
+    }
+  };
+
+  const captureCameraPhoto = () => {
+    const video = videoRef.current;
+    if (!video || !video.videoWidth || !video.videoHeight) {
+      setCameraError('The camera is not ready yet. Wait a moment and try again.');
+      return;
+    }
+
+    const maxDimension = 2560;
+    const scale = Math.min(1, maxDimension / Math.max(video.videoWidth, video.videoHeight));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(video.videoWidth * scale);
+    canvas.height = Math.round(video.videoHeight * scale);
+    const context = canvas.getContext('2d');
+    if (!context) {
+      setCameraError('This browser could not process the camera image.');
+      return;
+    }
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        setCameraError('The photo could not be captured. Please try again.');
+        return;
+      }
+      const file = new File([blob], `camera-${Date.now()}.jpg`, { type: 'image/jpeg' });
+      closeCamera();
+      void handleFileChange({ target: { files: [file], value: '' } }, 'camera');
+    }, 'image/jpeg', 0.9);
   };
 
   const removeImage = (idx) => {
@@ -168,8 +330,8 @@ export default function CreateLeadPage({ onSubmitLead, onSuccessNavigate }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (isOptimizing) {
-      return alert('Please wait until image optimization is completed before submitting.');
+    if (isUploading) {
+      return alert('Please wait until all attachments finish uploading.');
     }
     if (!formData.name.trim()) return alert('Please enter Stay Name');
     if (!formData.city.trim()) return alert('Please enter City');
@@ -182,7 +344,8 @@ export default function CreateLeadPage({ onSubmitLead, onSuccessNavigate }) {
       location: {
         address: formData.address.trim(),
         city: formData.city.trim(),
-        state: formData.state.trim() || 'Uttarakhand',
+        district: assignedJurisdiction?.district || formData.district,
+        state: assignedJurisdiction?.state || formData.state,
         coordinates: {
           lat: formData.coordinates.lat ? parseFloat(formData.coordinates.lat) : null,
           lng: formData.coordinates.lng ? parseFloat(formData.coordinates.lng) : null
@@ -214,7 +377,6 @@ export default function CreateLeadPage({ onSubmitLead, onSuccessNavigate }) {
 
   const inputClass = "w-full min-h-[44px] px-3.5 sm:px-4 py-2.5 sm:py-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/20 focus:border-[#0A4DA6] transition-all placeholder:text-[#94A3B8]";
   const labelClass = "text-xs font-bold text-[#64748B] tracking-wider block mb-1.5";
-  const mapsUrl = buildGoogleMapsUrl(formData.coordinates.lat, formData.coordinates.lng);
 
   return (
     <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 text-left space-y-4 sm:space-y-6">
@@ -223,8 +385,8 @@ export default function CreateLeadPage({ onSubmitLead, onSuccessNavigate }) {
       <div className="bg-white border border-[#E2E8F0] rounded-2xl sm:rounded-3xl p-4 sm:p-7 shadow-xs">
         
         {/* Header Title (Icon Removed) */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 sm:pb-6 border-b border-[#E2E8F0] mb-5 sm:mb-6">
-          <div>
+        <div className="flex flex-row items-start sm:items-center justify-between gap-2 sm:gap-3 pb-4 sm:pb-6 border-b border-[#E2E8F0] mb-5 sm:mb-6">
+          <div className="min-w-0 flex-1">
             <h1 className="text-base sm:text-2xl font-extrabold text-[#0F172A] tracking-tight">
               Ashram Onboarding Form
             </h1>
@@ -233,76 +395,22 @@ export default function CreateLeadPage({ onSubmitLead, onSuccessNavigate }) {
             </p>
           </div>
 
-          <div className="flex items-center gap-2 bg-white border border-[#E2E8F0] rounded-xl px-3 py-1.5 sm:px-3.5 sm:py-2 shrink-0 self-start sm:self-auto shadow-2xs">
-            <Calendar size={13} className="text-[#0A4DA6] shrink-0" />
+          <div className="flex items-center gap-1.5 sm:gap-2 bg-white border border-[#E2E8F0] rounded-xl px-2 py-1.5 sm:px-3.5 sm:py-2 shrink-0 shadow-2xs">
+            <Calendar size={12} className="text-[#0A4DA6] shrink-0 sm:w-[13px] sm:h-[13px]" />
             <div>
-              <span className="text-[9px] font-bold tracking-wider text-[#64748B] uppercase block">Timestamp</span>
-              <span className="text-[11px] sm:text-xs font-bold text-[#0F172A]">{currentDateTime}</span>
+              {/* <span className="text-[9px] font-bold tracking-wider text-[#64748B] uppercase block">Timestamp</span> */}
+              <span className="text-[9px] min-[390px]:text-[10px] sm:text-xs font-bold text-[#0F172A] whitespace-nowrap">{currentDateTime}</span>
             </div>
           </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
           
-          {/* SECTION 1: GPS Location Capture (Icon Removed) */}
-          <div className="space-y-3 pb-5 border-b border-[#E2E8F0]">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-xs sm:text-sm font-extrabold text-[#0F172A]">
-                1. GPS Location
-              </span>
-              <button
-                type="button"
-                onClick={() => captureCurrentLocation((c) => handleChange('coordinates', c))}
-                disabled={isCapturing}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0A4DA6] hover:bg-[#083D85] text-white font-extrabold rounded-full text-[11px] sm:text-xs shadow-xs transition-all disabled:opacity-60 cursor-pointer"
-              >
-                <Navigation size={12} style={{ animation: isCapturing ? 'spin 1s linear infinite' : 'none' }} />
-                {isCapturing ? 'Locating...' : 'Capture GPS'}
-              </button>
-            </div>
-
-            {gpsError && (
-              <div className="flex items-center gap-2 px-3 py-2 bg-red-50 border border-red-200 rounded-xl text-[11px] font-medium text-red-700">
-                <AlertCircle size={13} className="shrink-0 text-red-500" />
-                <span>{gpsError}</span>
-              </div>
-            )}
-
-            <div className="grid grid-cols-2 gap-2.5">
-              <div>
-                <label className="text-[11px] font-bold text-[#64748B] block mb-1">Latitude</label>
-                <input type="number" step="any" placeholder="e.g. 30.1205" className={inputClass}
-                  value={formData.coordinates.lat || ''}
-                  onChange={(e) => handleChange('coordinates', { ...formData.coordinates, lat: e.target.value })} />
-              </div>
-              <div>
-                <label className="text-[11px] font-bold text-[#64748B] block mb-1">Longitude</label>
-                <input type="number" step="any" placeholder="e.g. 78.3135" className={inputClass}
-                  value={formData.coordinates.lng || ''}
-                  onChange={(e) => handleChange('coordinates', { ...formData.coordinates, lng: e.target.value })} />
-              </div>
-            </div>
-
-            {formData.coordinates.lat && formData.coordinates.lng && (
-              <div className="flex items-center justify-between px-3 py-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-[11px]">
-                <span className="flex items-center gap-1.5 text-[#0A4DA6] font-bold">
-                  <CheckCircle2 size={13} />
-                  {formData.coordinates.lat}, {formData.coordinates.lng}
-                </span>
-                {mapsUrl && (
-                  <a href={mapsUrl} target="_blank" rel="noopener noreferrer"
-                    className="text-[#0A4DA6] font-extrabold flex items-center gap-0.5 hover:underline">
-                    View Map <ExternalLink size={10} />
-                  </a>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* SECTION 2: Ashram Details (Icon Removed) */}
+          {/* GPS is captured only by the attendance modal after login. */}
+          {/* SECTION 1: Ashram Details */}
           <div className="space-y-3.5 pb-5 border-b border-[#E2E8F0]">
             <span className="text-xs sm:text-sm font-extrabold text-[#0F172A] block">
-              2. Ashram Details &amp; Room Inventory
+              1. Ashram Details &amp; Room Inventory
             </span>
 
             {/* Basic Property Info */}
@@ -327,9 +435,15 @@ export default function CreateLeadPage({ onSubmitLead, onSuccessNavigate }) {
               </div>
               <div>
                 <label className={labelClass}>State</label>
-                <input type="text" placeholder="e.g. Uttarakhand"
-                  className={inputClass} value={formData.state}
-                  onChange={(e) => handleChange('state', e.target.value)} />
+                <input type="text" readOnly
+                  className={`${inputClass} cursor-not-allowed opacity-80`}
+                  value={assignedJurisdiction?.state || ''} />
+              </div>
+              <div>
+                <label className={labelClass}>Assigned District</label>
+                <input type="text" readOnly
+                  className={`${inputClass} cursor-not-allowed opacity-80`}
+                  value={assignedJurisdiction?.district || ''} />
               </div>
             </div>
 
@@ -402,7 +516,7 @@ export default function CreateLeadPage({ onSubmitLead, onSuccessNavigate }) {
           {/* SECTION 3: Contact Person Details (Icon Removed) */}
           <div className="space-y-3 pb-5 border-b border-[#E2E8F0]">
             <span className="text-xs sm:text-sm font-extrabold text-[#0F172A] block">
-              3. Contact Person
+              2. Contact Person
             </span>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
@@ -424,7 +538,7 @@ export default function CreateLeadPage({ onSubmitLead, onSuccessNavigate }) {
           <div className="space-y-2 pb-5 border-b border-[#E2E8F0]">
             <div className="flex items-center justify-between gap-2">
               <span className="text-xs sm:text-sm font-extrabold text-[#0F172A] block">
-                4. Discussion Notes
+                3. Discussion Notes
               </span>
 
               {/* Speech-to-Text Voice Dictation Mic Button */}
@@ -465,7 +579,7 @@ export default function CreateLeadPage({ onSubmitLead, onSuccessNavigate }) {
           {/* SECTION 5: Interest Level (Icon Removed) */}
           <div className="space-y-3 pb-5 border-b border-[#E2E8F0]">
             <span className="text-xs sm:text-sm font-extrabold text-[#0F172A] block">
-              5. Owner Interest Level
+              4. Owner Interest Level
             </span>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
               {[
@@ -537,71 +651,104 @@ export default function CreateLeadPage({ onSubmitLead, onSuccessNavigate }) {
           {/* SECTION 7: Image Upload (Icon Removed) */}
           <div className="space-y-3 pb-2">
             <span className="text-xs sm:text-sm font-extrabold text-[#0F172A] flex items-center justify-between gap-1.5">
-              <span>7. Ashram Photos</span>
+              <span>6. Ashram Attachments</span>
               <div className="flex items-center gap-2">
-                {isOptimizing && (
+                {isUploading && (
                   <span className="flex items-center gap-1.5 text-[11px] font-bold text-[#0A4DA6] bg-[#0A4DA6]/10 px-2.5 py-0.5 rounded-full border border-[#0A4DA6]/20">
                     <Loader2 size={11} className="animate-spin text-[#0A4DA6]" />
-                    {optimizationStatus}
+                    {uploadStatus}
                   </span>
                 )}
-                {!isOptimizing && optimizationStatus === 'Image ready' && (
+                {!isUploading && uploadStatus === 'Files uploaded' && (
                   <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
                     <CheckCircle2 size={11} className="text-emerald-600" />
-                    Image ready
+                    Files uploaded
                   </span>
                 )}
-                <span className="text-xs font-bold text-[#64748B]">{formData.images.length} photo(s)</span>
+                <span className="text-xs font-bold text-[#64748B]">{formData.images.length}/10 file(s)</span>
               </div>
             </span>
 
             <div
               className={`flex flex-col items-center justify-center p-4 border-2 border-dashed border-[#E2E8F0] rounded-xl cursor-pointer hover:border-[#0A4DA6] hover:bg-[#0A4DA6]/5 transition-all text-center ${
-                isOptimizing ? 'opacity-60 pointer-events-none bg-[#F8FAFC]' : ''
+                isUploading || formData.images.length >= 10 ? 'opacity-60 pointer-events-none bg-[#F8FAFC]' : ''
               }`}
               onClick={() => document.getElementById('mobile-file-input')?.click()}
             >
-              {isOptimizing ? (
+              {isUploading ? (
                 <Loader2 size={20} className="text-[#0A4DA6] mb-1 animate-spin" />
               ) : (
                 <Upload size={20} className="text-[#0A4DA6] mb-1" />
               )}
               <p className="text-xs font-extrabold text-[#0F172A]">
-                {isOptimizing ? 'Optimizing images...' : 'Click to upload photos'}
+                {isUploading ? 'Uploading to Cloudinary...' : 'Click to upload photos or PDFs'}
               </p>
               <p className="text-[10px] text-[#64748B]">
-                {isOptimizing ? 'Please wait a moment' : 'JPG, PNG, WEBP supported'}
+                {isUploading ? 'Please wait a moment' : 'Images or PDF, maximum 10 files, 10 MB each'}
               </p>
-              <input id="mobile-file-input" type="file" accept="image/*" multiple className="hidden" onChange={handleFileChange} disabled={isOptimizing} />
+              <input
+                id="mobile-file-input"
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif,.heic,.heif,application/pdf,.pdf"
+                multiple
+                className="hidden"
+                onChange={(event) => void handleFileChange(event, 'picker')}
+                disabled={isUploading || formData.images.length >= 10}
+              />
             </div>
+
+            <button
+              type="button"
+              disabled={isUploading || formData.images.length >= 10}
+              onClick={() => void openCamera()}
+              className="w-full min-h-[44px] flex items-center justify-center gap-2 rounded-xl border border-[#0A4DA6] bg-white text-[#0A4DA6] text-xs sm:text-sm font-extrabold hover:bg-[#0A4DA6]/5 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Camera size={17} />
+              <span>Take Photo with Camera</span>
+            </button>
 
             {formData.images.length > 0 && (
               <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 pt-1">
-                {formData.images.map((src, idx) => (
+                {formData.images.map((src, idx) => {
+                  const isPdf = /\.pdf(?:$|[?#])/i.test(src) || src.includes('/raw/upload/');
+                  return (
                   <div key={idx} className="relative group rounded-lg overflow-hidden border border-[#E2E8F0] aspect-square bg-[#F8FAFC]">
-                    <img src={src} alt={`Photo ${idx + 1}`} className="w-full h-full object-cover" />
+                    {isPdf ? (
+                      <a
+                        href={src}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full h-full flex flex-col items-center justify-center gap-1 text-[#0A4DA6] bg-slate-50"
+                      >
+                        <FileText size={28} />
+                        <span className="text-[10px] font-extrabold">View PDF</span>
+                      </a>
+                    ) : (
+                      <img src={src} alt={`Photo ${idx + 1}`} className="w-full h-full object-cover" />
+                    )}
                     <button
                       type="button"
                       onClick={() => removeImage(idx)}
-                      disabled={isOptimizing}
+                      disabled={isUploading}
                       className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center cursor-pointer disabled:opacity-50"
                     >
                       <X size={10} />
                     </button>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
 
           {/* Submit Button */}
           <div className="pt-2">
-            <button type="submit" disabled={isOptimizing}
+            <button type="submit" disabled={isUploading}
               className="w-full flex items-center justify-center gap-2 px-8 min-h-[46px] bg-[#0A4DA6] hover:bg-[#083D85] text-white font-extrabold rounded-full text-xs sm:text-sm shadow-sm transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
-              {isOptimizing ? (
+              {isUploading ? (
                 <>
                   <Loader2 size={16} className="animate-spin" />
-                  <span>Optimizing Photos...</span>
+                  <span>Uploading Attachments...</span>
                 </>
               ) : (
                 <>
@@ -614,6 +761,57 @@ export default function CreateLeadPage({ onSubmitLead, onSuccessNavigate }) {
         </form>
 
       </div>
+
+      {cameraOpen && (
+        <div className="fixed inset-0 z-[100] bg-black/75 p-3 sm:p-6 flex items-center justify-center" role="dialog" aria-modal="true" aria-label="Take a photo">
+          <div className="w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-[#E2E8F0]">
+              <div>
+                <h2 className="text-sm sm:text-base font-extrabold text-[#0F172A]">Take Ashram Photo</h2>
+                <p className="text-[10px] sm:text-xs text-[#64748B]">Position the ashram clearly inside the camera frame.</p>
+              </div>
+              <button type="button" onClick={closeCamera} className="w-9 h-9 rounded-full flex items-center justify-center text-[#64748B] hover:bg-slate-100 cursor-pointer" aria-label="Close camera">
+                <X size={19} />
+              </button>
+            </div>
+
+            <div className="relative bg-black aspect-[4/3] sm:aspect-video flex items-center justify-center">
+              {cameraStarting && (
+                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 text-white bg-black">
+                  <Loader2 size={28} className="animate-spin" />
+                  <span className="text-xs font-bold">Starting camera...</span>
+                </div>
+              )}
+              {cameraError && (
+                <div className="absolute inset-0 z-20 flex items-center justify-center p-6 bg-black text-center">
+                  <div className="max-w-sm">
+                    <Camera size={32} className="mx-auto mb-3 text-white/70" />
+                    <p className="text-sm font-bold text-white">{cameraError}</p>
+                  </div>
+                </div>
+              )}
+              <video
+                ref={videoRef}
+                autoPlay
+                muted
+                playsInline
+                onCanPlay={() => setCameraReady(true)}
+                className="w-full h-full object-contain"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2 p-3 sm:p-4">
+              <button type="button" onClick={closeCamera} className="min-h-[42px] px-5 rounded-full border border-[#E2E8F0] text-xs font-extrabold text-[#475569] hover:bg-slate-50 cursor-pointer">
+                Cancel
+              </button>
+              <button type="button" onClick={captureCameraPhoto} disabled={!cameraReady || cameraStarting || Boolean(cameraError)} className="min-h-[42px] px-5 rounded-full bg-[#0A4DA6] text-white text-xs font-extrabold flex items-center gap-2 hover:bg-[#083D85] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                <Camera size={16} />
+                Capture Photo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

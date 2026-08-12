@@ -118,6 +118,22 @@ export const HomePage: React.FC = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    const refreshRooms = (event: Event) => {
+      if (event instanceof StorageEvent && event.key !== "tirvona:rooms-updated") return;
+      void fetchStays();
+    };
+    const refreshOnFocus = () => void fetchStays();
+    window.addEventListener("tirvona:rooms-updated", refreshRooms);
+    window.addEventListener("storage", refreshRooms);
+    window.addEventListener("focus", refreshOnFocus);
+    return () => {
+      window.removeEventListener("tirvona:rooms-updated", refreshRooms);
+      window.removeEventListener("storage", refreshRooms);
+      window.removeEventListener("focus", refreshOnFocus);
+    };
+  }, []);
+
   const fetchPublishedCms = async () => {
     try {
       const res = await api.get("/cms/published");

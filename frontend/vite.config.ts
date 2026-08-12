@@ -16,6 +16,11 @@ export default defineConfig(({ command, mode }) => {
         "@": path.resolve(__dirname, "./src"),
       },
     },
+    // This catalogue is published as CommonJS. Pre-bundle it explicitly so
+    // route navigation never requests a stale raw dependency from Vite.
+    optimizeDeps: {
+      include: ["india-state-district"],
+    },
     server: {
       proxy: {
         "/api": {

@@ -20,6 +20,7 @@ export interface Lead {
   location: {
     address?: string;
     city?: string;
+    district?: string;
     state?: string;
     coordinates?: { lat: number | null; lng: number | null };
   };
@@ -53,10 +54,13 @@ export interface LeadUser {
   role: "field_agent" | "field_supervisor";
   status: "active" | "suspended";
   region?: string;
+  state?: string;
+  district?: string;
   employeeCode?: string;
   notes?: string;
   lastLoginAt?: string | null;
   leadCount?: number;
+  createdByAdminId?: string;
   createdByAdminName?: string;
   createdAt?: string;
 }
@@ -70,6 +74,12 @@ export interface LeadStats {
   interested: number;
   meetingsRequested: number;
   capturedLast7Days: number;
+}
+
+export interface LeadRegion {
+  state: string;
+  district: string;
+  source: "tirvona" | "custom";
 }
 
 export interface Paged<T> {
@@ -102,6 +112,11 @@ export const leadCollectionService = {
   deleteLead: (id: string) => api.delete(`${BASE}/leads/${id}`),
 
   // ── Field agents (lead_users) ──
+  listRegions: () => api.get<{ data: LeadRegion[] }>(`${BASE}/regions`),
+  addRegion: (state: string, district: string) =>
+    api.post(`${BASE}/regions`, { state, district }),
+  deleteRegion: (state: string, district: string) =>
+    api.delete(`${BASE}/regions`, { params: { state, district } }),
   listUsers: (params: Record<string, string | number> = {}) =>
     api.get<{ data: Paged<LeadUser> }>(`${BASE}/users`, { params }),
   createUser: (data: unknown) => api.post(`${BASE}/users`, data),

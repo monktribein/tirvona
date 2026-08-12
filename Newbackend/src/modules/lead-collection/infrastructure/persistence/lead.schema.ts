@@ -22,6 +22,7 @@ export const LeadSchema = new Schema(
     location: {
       address: { type: String, trim: true, default: "" },
       city: { type: String, trim: true, default: "", index: true },
+      district: { type: String, trim: true, default: "", index: true },
       state: { type: String, trim: true, default: "" },
       coordinates: {
         lat: { type: Number, default: null },
@@ -66,7 +67,7 @@ export const LeadSchema = new Schema(
       mode: { type: String, enum: [...LEAD_MEETING_MODES, ""], default: "" },
     },
 
-    // Cloudinary URLs, or base64 data URLs when the agent captured offline.
+    // Cloudinary image/PDF URLs, or legacy base64 images from demo mode.
     images: { type: [String], default: [] },
 
     status: {

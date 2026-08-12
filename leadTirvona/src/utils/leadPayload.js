@@ -28,6 +28,7 @@ export const toApiLead = (lead) => ({
   location: {
     address: lead.location?.address || '',
     city: lead.location?.city || '',
+    district: lead.location?.district || '',
     state: lead.location?.state || '',
     coordinates: compact({
       lat: numberOrUndefined(lead.location?.coordinates?.lat),
@@ -51,7 +52,7 @@ export const toApiLead = (lead) => ({
     time: lead.meeting?.requested ? lead.meeting.time || '' : '',
     mode: lead.meeting?.requested ? lead.meeting.mode || '' : ''
   },
-  images: Array.isArray(lead.images) ? lead.images.slice(0, 12) : []
+  images: Array.isArray(lead.images) ? lead.images.slice(0, 10) : []
 });
 
 /**
@@ -74,6 +75,7 @@ export const toApprovedAshram = (row) => ({
   name: row.name,
   address: row.location?.address || '',
   city: row.location?.city || '',
+  district: row.location?.district || '',
   state: row.location?.state || '',
   location: {
     type: 'Point',

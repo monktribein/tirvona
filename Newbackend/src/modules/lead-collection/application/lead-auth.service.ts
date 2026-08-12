@@ -26,12 +26,9 @@ export interface LeadLoginResult {
 /**
  * Sign-in for field agents.
  *
- * Phone plus password against `lead_users` — no OTP, no Google. With
- * `LEAD_AUTO_PROVISION` on (the default), a phone number nobody has used
- * before is enrolled on the spot: an agent standing outside an ashram can
- * start capturing without an admin provisioning them first. Turn the flag off
- * and the same endpoint becomes closed, accepting only accounts the console
- * created.
+ * Phone plus password against `lead_users` — no signup, OTP, Google, or
+ * first-login provisioning. Only accounts created by a platform super admin
+ * through the Lead Collection console are accepted.
  *
  * The token it mints is scoped to the lead product via a distinct
  * issuer/audience, so it is rejected by the platform's `JwtStrategy` even when
@@ -56,31 +53,9 @@ export class LeadAuthService {
       role: user.role,
       status: user.status,
       region: user.region ?? "",
+      state: user.state ?? "",
+      district: user.district ?? "",
     };
-  }
-
-  /**
-   * Enrol a phone number on its first sign-in.
-   *
-   * The password typed here becomes the account's password, so the same
-   * credentials work on every later sign-in. The name is a placeholder built
-   * from the number — an admin renames it in the console once they know who it
-   * is. Anything richer would need a signup form, which is exactly what this
-   * exists to avoid.
-   */
-  private async provision(
-    phone: string,
-    password: string,
-  ): Promise<LeadUserRecord> {
-    const created = await this.leadUsers.create({
-      name: `Field Agent ${phone.slice(-4)}`,
-      phone,
-      passwordHash: await hash(password, this.config.bcryptRounds),
-      role: "field_agent",
-      status: "active",
-      createdByAdminName: "Self-enrolled on first sign-in",
-    });
-    return created.toObject() as LeadUserRecord;
   }
 
   async login(dto: LeadLoginDto): Promise<LeadLoginResult> {
@@ -88,23 +63,30 @@ export class LeadAuthService {
     if (phone.length !== 10)
       throw new UnauthorizedException("Enter a valid 10-digit mobile number");
 
-    let user = await this.leadUsers
+    const user = await this.leadUsers
       .findOne({ phone })
       .select("+passwordHash")
       .lean<LeadUserRecord>();
 
+    const invalid = new UnauthorizedException("Invalid phone or password");
     if (!user) {
-      if (!this.config.autoProvisionAgents)
-        throw new UnauthorizedException("Invalid phone or password");
-      user = await this.provision(phone, dto.password);
+      await hash(dto.password, this.config.bcryptRounds);
+      throw invalid;
     } else {
       // One message for "no such agent" and for "wrong password" — the login
       // screen is reachable by anyone with the URL, and distinguishing the two
       // turns it into a directory of who works here.
-      const invalid = new UnauthorizedException("Invalid phone or password");
       if (!user.passwordHash) throw invalid;
       if (!(await compare(dto.password, user.passwordHash))) throw invalid;
     }
+
+    // Only the platform super-admin endpoint writes this immutable provenance
+    // id. Historical self-enrolled or directly inserted accounts stay locked.
+    if (!user.createdByAdminId?.trim()) throw invalid;
+    if (!user.state?.trim() || !user.district?.trim())
+      throw new UnauthorizedException(
+        "No state and district are assigned to this account. Contact your supervisor.",
+      );
 
     if (user.status !== "active")
       throw new UnauthorizedException(
@@ -160,6 +142,10 @@ export class LeadAuthService {
       .findById(payload.sub)
       .lean<LeadUserRecord>();
     if (!user) throw new UnauthorizedException("Field agent account not found");
+    if (!user.createdByAdminId?.trim())
+      throw new UnauthorizedException("Field agent account is not authorised");
+    if (!user.state?.trim() || !user.district?.trim())
+      throw new UnauthorizedException("Field agent jurisdiction is not assigned");
     if (user.status !== "active")
       throw new UnauthorizedException("This field agent account is suspended");
     if ((payload.tv ?? 0) !== (user.tokenVersion ?? 0))

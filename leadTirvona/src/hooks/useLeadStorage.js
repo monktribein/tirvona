@@ -20,14 +20,6 @@
  *  - resetToDemo()    → restore the local demo data
  */
 import { useState, useEffect, useCallback } from 'react';
-import {
-  getLeads,
-  saveLead,
-  updateLeadStatus,
-  getApprovedAshrams,
-  deleteLead as deleteLeadFromStorage,
-  resetToInitialDemoData
-} from '../utils/localStorageService';
 import { leadApi } from '../services/leadApi';
 import { toApiLead, fromApiLead, toApprovedAshram } from '../utils/leadPayload';
 
@@ -44,8 +36,8 @@ export function useLeadStorage(isSignedIn = false) {
 
   const refreshAll = useCallback(async () => {
     if (!isSignedIn) {
-      setLeads(getLeads());
-      setApprovedAshrams(getApprovedAshrams());
+      setLeads([]);
+      setApprovedAshrams([]);
       return;
     }
 
@@ -75,10 +67,8 @@ export function useLeadStorage(isSignedIn = false) {
 
   const addLead = async (leadData) => {
     if (!isSignedIn) {
-      const created = saveLead(leadData);
-      await refreshAll();
-      showToast(`Lead created for "${created.name}"`);
-      return created;
+      showToast('Sign in with a Super Admin-created account first.', 'error');
+      return null;
     }
 
     try {
@@ -93,8 +83,6 @@ export function useLeadStorage(isSignedIn = false) {
   };
 
   const approveLead = async (leadId) => {
-    // Approval is a super-admin decision on the server. Locally there is no
-    // one to ask, so the demo mode keeps its own simulation.
     if (isSignedIn) {
       showToast(
         'Approval is handled by the Tirvona admin team in the console.',
@@ -102,18 +90,12 @@ export function useLeadStorage(isSignedIn = false) {
       );
       return;
     }
-    const updated = updateLeadStatus(leadId, 'approved');
-    if (updated) {
-      await refreshAll();
-      showToast(`"${updated.name}" approved and converted into Tirvona Ashram!`);
-    }
+    showToast('Sign in with an authorised account first.', 'error');
   };
 
   const removeLead = async (leadId) => {
     if (!isSignedIn) {
-      deleteLeadFromStorage(leadId);
-      await refreshAll();
-      showToast('Lead entry removed');
+      showToast('Sign in with an authorised account first.', 'error');
       return;
     }
 
@@ -126,12 +108,6 @@ export function useLeadStorage(isSignedIn = false) {
     }
   };
 
-  const resetToDemo = async () => {
-    resetToInitialDemoData();
-    await refreshAll();
-    showToast('Reset to initial demo data');
-  };
-
   return {
     leads,
     approvedAshrams,
@@ -141,7 +117,6 @@ export function useLeadStorage(isSignedIn = false) {
     addLead,
     approveLead,
     removeLead,
-    resetToDemo,
     refreshAll
   };
 }

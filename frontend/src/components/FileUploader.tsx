@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import { UploadCloud, Loader2, CheckCircle, AlertCircle } from "lucide-react";
+import { UploadCloud, Loader2, CheckCircle, AlertCircle, ExternalLink, FileText } from "lucide-react";
 import { uploadService } from "../services";
 import { getErrorMessage } from "../lib/api";
 
@@ -80,7 +80,16 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
         </p>
       )}
       {currentUrl && status !== "uploading" && (
-        <p className="text-[10px] text-gray-400 truncate">{currentUrl}</p>
+        /\.(jpe?g|png|webp|gif|svg|avif|heic)($|\?)/i.test(currentUrl) ? (
+          <a href={currentUrl} target="_blank" rel="noreferrer" className="inline-flex flex-col gap-1 rounded-xl border border-gray-200 p-1.5">
+            <img src={currentUrl} alt="Uploaded file" className="h-20 w-28 rounded-lg object-cover" />
+            <span className="inline-flex items-center justify-center gap-1 text-[10px] font-bold text-[#0A4DA6]"><ExternalLink size={10} /> Open image</span>
+          </a>
+        ) : (
+          <a href={currentUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1.5 text-[10px] font-bold text-[#0A4DA6]">
+            <FileText size={12} /> Open document <ExternalLink size={10} />
+          </a>
+        )
       )}
     </div>
   );

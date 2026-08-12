@@ -2172,46 +2172,33 @@ const AddAshramWizardPage: React.FC = () => {
             <SectionHeader
               icon={<FileCheck size={22} />}
               title="Verification Documents"
-              subtitle="Upload document URLs for KYC verification by the District Officer."
+              subtitle="Upload verification documents for review by the District Officer."
             />
             <div className="p-4 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/30 rounded-2xl">
               <p className="text-xs font-semibold text-amber-700 dark:text-amber-500 flex items-start gap-2">
                 <AlertCircle size={14} className="flex-shrink-0 mt-0.5" />
                 Physical verification by a Tirvona District Inspector is
-                required after submission. Please upload scanned PDF links from
-                Cloudinary or Google Drive (make sure links are public /
-                shareable).
+                required after submission. Upload clear PDF or image copies of
+                each required document.
               </p>
             </div>
             <Field
-              label="Trust Deed Document URL"
+              label="Trust Deed Document"
               hint="Scanned copy of the registered trust deed"
             >
-              <Input
-                placeholder="https://res.cloudinary.com/.../trust_deed.pdf"
-                value={formData.trustDeedUrl}
-                onChange={(e) => set("trustDeedUrl", e.target.value)}
-              />
+              <FileUploader folder="ashram-documents" accept="image/*,.pdf,application/pdf" label="Upload trust deed" currentUrl={formData.trustDeedUrl} onUploaded={(url) => set("trustDeedUrl", url)} />
             </Field>
             <Field
-              label="Fire Safety Certificate URL"
+              label="Fire Safety Certificate"
               hint="Latest fire safety audit certificate"
             >
-              <Input
-                placeholder="https://res.cloudinary.com/.../fire_cert.pdf"
-                value={formData.fireSafetyCertUrl}
-                onChange={(e) => set("fireSafetyCertUrl", e.target.value)}
-              />
+              <FileUploader folder="ashram-documents" accept="image/*,.pdf,application/pdf" label="Upload fire safety certificate" currentUrl={formData.fireSafetyCertUrl} onUploaded={(url) => set("fireSafetyCertUrl", url)} />
             </Field>
             <Field
-              label="Land Ownership / Lease Document URL"
+              label="Land Ownership / Lease Document"
               hint="Registry or lease certificate for the property"
             >
-              <Input
-                placeholder="https://res.cloudinary.com/.../land_ownership.pdf"
-                value={formData.landOwnershipUrl}
-                onChange={(e) => set("landOwnershipUrl", e.target.value)}
-              />
+              <FileUploader folder="ashram-documents" accept="image/*,.pdf,application/pdf" label="Upload ownership or lease document" currentUrl={formData.landOwnershipUrl} onUploaded={(url) => set("landOwnershipUrl", url)} />
             </Field>
             <Field
               label="Additional Notes for Verification Team"

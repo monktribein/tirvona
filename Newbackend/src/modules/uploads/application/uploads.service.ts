@@ -20,6 +20,7 @@ export class UploadsService {
   async upload(
     file: Express.Multer.File | undefined,
     folder?: string,
+    options?: { imagesOnly?: boolean },
   ): Promise<any> {
     if (!file)
       throw new BadRequestException(
@@ -28,9 +29,13 @@ export class UploadsService {
     const detected = this.detectType(file.buffer);
     if (!detected)
       throw new BadRequestException(
-        `That file is not a supported image. Allowed: JPG, PNG, WEBP, GIF, AVIF, HEIC, PDF${
+        `That file type is not supported. Allowed: JPG, PNG, WEBP, GIF, AVIF, HEIC, PDF${
           file.mimetype ? ` (the browser sent it as "${file.mimetype}")` : ""
         }.`,
+      );
+    if (options?.imagesOnly && detected.isPdf)
+      throw new BadRequestException(
+        "Camera captures must be an image. Use the attachment picker to upload a PDF.",
       );
     const configured = Boolean(
       this.config.get<string>("cloudinaryCloudName") &&
@@ -79,8 +84,8 @@ export class UploadsService {
       const reason = String(raw?.message ?? nested ?? "").slice(0, 200);
       throw new BadGatewayException(
         reason
-          ? `Image upload failed: ${reason}`
-          : "Image upload failed. Please try again.",
+          ? `File upload failed: ${reason}`
+          : "File upload failed. Please try again.",
       );
     }
   }

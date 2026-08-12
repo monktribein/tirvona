@@ -22,6 +22,7 @@ import {
 import { LeadsService } from "../application/leads.service";
 import {
   CreateLeadUserDto,
+  CreateLeadRegionDto,
   LeadUserQueryDto,
   ResetLeadUserPasswordDto,
   UpdateLeadUserDto,
@@ -155,6 +156,35 @@ export class LeadAdminController {
   }
 
   // ── Lead users (field agents) ────────────────────────────────────────────
+
+  @Get("regions")
+  async listRegions() {
+    return { success: true, data: await this.leadUsers.listRegions() };
+  }
+
+  @Post("regions")
+  async addRegion(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: CreateLeadRegionDto,
+  ) {
+    return {
+      success: true,
+      message: "Lead region added",
+      data: await this.leadUsers.addRegion(dto, this.actor(user)),
+    };
+  }
+
+  @Delete("regions")
+  async removeRegion(
+    @Query("state") state: string,
+    @Query("district") district: string,
+  ) {
+    return {
+      success: true,
+      message: "Lead region removed",
+      data: await this.leadUsers.removeRegion(state, district),
+    };
+  }
 
   @Get("users")
   async listUsers(@Query() query: LeadUserQueryDto) {

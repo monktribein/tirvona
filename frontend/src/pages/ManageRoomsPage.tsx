@@ -165,6 +165,8 @@ export const ManageRoomsPage: React.FC = () => {
       }
       setShowCreate(false);
       setEditRoomId(null);
+      localStorage.setItem("tirvona:rooms-updated", Date.now().toString());
+      window.dispatchEvent(new Event("tirvona:rooms-updated"));
       fetchRooms(selectedAshramId);
     } catch (err) {
       console.error("Room save error:", err);
@@ -190,6 +192,8 @@ export const ManageRoomsPage: React.FC = () => {
         "success",
       );
       setConfirmDelete(null);
+      localStorage.setItem("tirvona:rooms-updated", Date.now().toString());
+      window.dispatchEvent(new Event("tirvona:rooms-updated"));
       fetchRooms(selectedAshramId);
     } catch (err) {
       addNotification(

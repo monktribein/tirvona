@@ -1,4 +1,5 @@
 import React from "react";
+import { ExternalLink, FileText } from "lucide-react";
 import {
   URL_LIKE,
   formatScalar,
@@ -12,6 +13,37 @@ import {
  */
 
 const MAX_DEPTH = 3;
+const IMAGE_ASSET = /\.(jpe?g|png|webp|gif|svg|avif|heic)($|\?)/i;
+const PDF_ASSET = /\.pdf($|\?)/i;
+
+const AssetValue: React.FC<{ url: string }> = ({ url }) => {
+  if (IMAGE_ASSET.test(url))
+    return (
+      <a
+        href={url}
+        target="_blank"
+        rel="noreferrer"
+        className="inline-flex flex-col gap-1 rounded-xl border border-gray-200 dark:border-slate-700 p-1.5 hover:border-[#0A4DA6]"
+      >
+        <img src={url} alt="Uploaded document" className="h-20 w-28 rounded-lg object-cover bg-slate-900" />
+        <span className="inline-flex items-center justify-center gap-1 text-[10px] font-extrabold text-[#0A4DA6]">
+          <ExternalLink size={10} /> Open image
+        </span>
+      </a>
+    );
+
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noreferrer"
+      className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 dark:bg-blue-950/40 px-3 py-1.5 text-[10px] font-extrabold text-[#0A4DA6] hover:bg-blue-100"
+    >
+      <FileText size={12} /> {PDF_ASSET.test(url) ? "Open PDF" : "Open document"}
+      <ExternalLink size={10} />
+    </a>
+  );
+};
 
 /** Renders any value — scalar, array or nested object — as readable markup. */
 export const RecordValue: React.FC<{ value: unknown; depth?: number }> = ({
@@ -32,7 +64,7 @@ export const RecordValue: React.FC<{ value: unknown; depth?: number }> = ({
               key={index}
               className="px-2 py-0.5 bg-gray-100 dark:bg-slate-800 rounded-full text-[10px] font-semibold"
             >
-              {formatScalar(item)}
+              <RecordValue value={item} depth={depth + 1} />
             </span>
           ))}
         </span>
@@ -85,18 +117,9 @@ export const RecordValue: React.FC<{ value: unknown; depth?: number }> = ({
     );
   }
 
-  const text = formatScalar(value);
   if (typeof value === "string" && URL_LIKE.test(value))
-    return (
-      <a
-        href={value}
-        target="_blank"
-        rel="noreferrer"
-        className="text-[#0A4DA6] dark:text-amber-400 hover:underline break-all"
-      >
-        {text}
-      </a>
-    );
+    return <AssetValue url={value} />;
+  const text = formatScalar(value);
   return <span className="break-words">{text}</span>;
 };
 
@@ -112,7 +135,7 @@ export const RecordFieldList: React.FC<{
   if (isEmptyValue(data) || typeof data !== "object")
     return (
       <p className={`text-gray-400 dark:text-gray-500 ${className}`}>
-        {isEmptyValue(data) ? emptyLabel : formatScalar(data)}
+        {isEmptyValue(data) ? emptyLabel : <RecordValue value={data} />}
       </p>
     );
 

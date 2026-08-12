@@ -5,13 +5,12 @@
 import React, { useState } from 'react';
 import {
   MapPin, Phone, User, Calendar, Clock,
-  CheckCircle2, ExternalLink, Trash2, FileText, Camera
+  CheckCircle2, Trash2, FileText, Camera
 } from 'lucide-react';
-import { formatDate, formatMeetingDateTime, buildGoogleMapsUrl } from '../utils/formatDate';
+import { formatDate, formatMeetingDateTime } from '../utils/formatDate';
 
 export default function LeadCard({ lead, onApprove, onDelete }) {
   const [showFullNotes, setShowFullNotes] = useState(false);
-  const mapsUrl = buildGoogleMapsUrl(lead.location?.coordinates?.lat, lead.location?.coordinates?.lng);
 
   return (
     <div className="bg-white border border-[#E2E8F0] rounded-2xl p-5 sm:p-6 shadow-xs hover:shadow-md transition-all duration-300 flex flex-col justify-between h-full min-w-[300px] sm:min-w-[350px]">
@@ -59,17 +58,6 @@ export default function LeadCard({ lead, onApprove, onDelete }) {
             <div className="flex items-center gap-1.5 text-[#64748B] font-medium">
               <Phone size={13} className="text-[#0A4DA6] shrink-0" />
               <strong className="text-[#0F172A] font-bold">{lead.contact.phone}</strong>
-            </div>
-          )}
-          {lead.location.coordinates?.lat && lead.location.coordinates?.lng && (
-            <div className="flex items-center gap-1.5 text-[#64748B] font-medium sm:col-span-2">
-              <MapPin size={13} className="text-[#0A4DA6] shrink-0" />
-              <span>GPS: <strong className="text-[#0F172A] font-bold">{lead.location.coordinates.lat}, {lead.location.coordinates.lng}</strong></span>
-              {mapsUrl && (
-                <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="text-[#0A4DA6] hover:underline font-bold flex items-center gap-0.5 ml-auto">
-                  Map <ExternalLink size={10} />
-                </a>
-              )}
             </div>
           )}
           {lead.createdAt && (
@@ -146,22 +134,39 @@ export default function LeadCard({ lead, onApprove, onDelete }) {
           </div>
         )}
 
-        {/* Photo Gallery Thumbnails */}
+        {/* Cloudinary image and PDF attachments */}
         {lead.images && lead.images.length > 0 && (
           <div className="mb-3.5 space-y-1">
             <span className="text-[11px] font-bold text-[#64748B] flex items-center gap-1">
               <Camera size={12} className="text-[#0A4DA6]" />
-              <span>Attached Photos ({lead.images.length})</span>
+              <span>Attachments ({lead.images.length})</span>
             </span>
             <div className="flex items-center gap-2 overflow-x-auto pb-1">
-              {lead.images.map((img, idx) => (
-                <img
-                  key={idx}
-                  src={img}
-                  alt={`Attachment ${idx + 1}`}
-                  className="w-11 h-11 object-cover rounded-lg border border-[#E2E8F0] shrink-0"
-                />
-              ))}
+              {lead.images.map((attachment, idx) => {
+                const isPdf =
+                  /\.pdf(?:$|[?#])/i.test(attachment) ||
+                  attachment.includes('/raw/upload/');
+                return isPdf ? (
+                  <a
+                    key={idx}
+                    href={attachment}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={`Open PDF ${idx + 1}`}
+                    className="w-11 h-11 rounded-lg border border-[#E2E8F0] bg-slate-50 text-[#0A4DA6] shrink-0 flex items-center justify-center"
+                  >
+                    <FileText size={20} />
+                  </a>
+                ) : (
+                  <a key={idx} href={attachment} target="_blank" rel="noopener noreferrer">
+                    <img
+                      src={attachment}
+                      alt={`Attachment ${idx + 1}`}
+                      className="w-11 h-11 object-cover rounded-lg border border-[#E2E8F0] shrink-0"
+                    />
+                  </a>
+                );
+              })}
             </div>
           </div>
         )}

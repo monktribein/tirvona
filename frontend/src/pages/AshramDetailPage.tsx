@@ -273,6 +273,22 @@ export const AshramDetailPage: React.FC = () => {
   }, [id]);
 
   useEffect(() => {
+    const refreshRooms = (event: Event) => {
+      if (event instanceof StorageEvent && event.key !== "tirvona:rooms-updated") return;
+      void fetchDetails();
+    };
+    const refreshOnFocus = () => void fetchDetails();
+    window.addEventListener("tirvona:rooms-updated", refreshRooms);
+    window.addEventListener("storage", refreshRooms);
+    window.addEventListener("focus", refreshOnFocus);
+    return () => {
+      window.removeEventListener("tirvona:rooms-updated", refreshRooms);
+      window.removeEventListener("storage", refreshRooms);
+      window.removeEventListener("focus", refreshOnFocus);
+    };
+  }, [id]);
+
+  useEffect(() => {
     if (selectedRoom) {
       fetchAvailability();
     }
@@ -725,9 +741,11 @@ export const AshramDetailPage: React.FC = () => {
 
         setAshram(detailAshram);
         setRooms(detailRooms);
-        if (detailRooms.length > 0) {
-          setSelectedRoom(detailRooms[0]);
-        }
+        setSelectedRoom((current: any) =>
+          detailRooms.find((room: any) => room._id === current?._id) ??
+          detailRooms[0] ??
+          null,
+        );
 
         if (id) {
           fetchReviews(id);

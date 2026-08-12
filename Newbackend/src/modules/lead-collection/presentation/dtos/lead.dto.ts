@@ -40,6 +40,7 @@ class LeadCoordinatesDto {
 class LeadLocationDto {
   @IsOptional() @IsString() @MaxLength(300) address?: string;
   @IsOptional() @IsString() @MaxLength(120) city?: string;
+  @IsOptional() @IsString() @MaxLength(120) district?: string;
   @IsOptional() @IsString() @MaxLength(120) state?: string;
   @IsOptional()
   @ValidateNested()
@@ -83,12 +84,12 @@ export class SaveLeadDto {
   @IsOptional() @IsIn(LEAD_INTERESTS as unknown as string[]) interest?: string;
   @IsOptional() @ValidateNested() @Type(() => LeadMeetingDto)
   meeting?: LeadMeetingDto;
-  // Cloudinary URLs, or base64 data URLs when the agent captured offline.
+  // Up to ten Cloudinary image/PDF URLs, or legacy base64 images in demo mode.
   // Bounded on both axes so one capture cannot fill the 12mb body budget the
   // module's middleware allows for these routes.
   @IsOptional()
   @IsArray()
-  @ArrayMaxSize(12)
+  @ArrayMaxSize(10)
   @IsString({ each: true })
   @MaxLength(1_500_000, { each: true })
   images?: string[];

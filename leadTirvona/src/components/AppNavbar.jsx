@@ -12,6 +12,8 @@ export default function AppNavbar({
   leadCount,
   approvedCount,
   agent,
+  attendanceState,
+  onAttendanceUpdated,
   onLogin,
   onLogout
 }) {
@@ -19,7 +21,6 @@ export default function AppNavbar({
   const [showHeader, setShowHeader] = useState(true);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isAttendanceModalOpen, setIsAttendanceModalOpen] = useState(false);
-  const [attendanceState, setAttendanceState] = useState(null);
   // The session itself lives in App via useLeadAuth; the navbar only renders it.
   const user = agent;
 
@@ -49,15 +50,14 @@ export default function AppNavbar({
 
   // Authenticate, then immediately open the Attendance geotag popup. Errors
   // are thrown back to the modal, which is where they are shown.
-  const handleLoginSuccess = async (phone, password) => {
-    const signedIn = await onLogin(phone, password);
+  const handleLoginSuccess = async (phone, password, remember) => {
+    const signedIn = await onLogin(phone, password, remember);
     setIsAttendanceModalOpen(true);
     return signedIn;
   };
 
   const handleLogout = () => {
     onLogout();
-    setAttendanceState(null);
     setMobileMenuOpen(false);
   };
 
@@ -286,7 +286,7 @@ export default function AppNavbar({
         isOpen={isAttendanceModalOpen}
         onClose={() => setIsAttendanceModalOpen(false)}
         user={user}
-        onAttendanceUpdated={(record) => setAttendanceState(record)}
+        onAttendanceUpdated={onAttendanceUpdated}
       />
     </>
   );

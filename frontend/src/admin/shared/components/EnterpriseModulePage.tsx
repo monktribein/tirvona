@@ -7,8 +7,11 @@ import LocalHubEnterpriseDrawer from "./LocalHubEnterpriseDrawer";
 import { EnterprisePageHeader } from "./EnterprisePageHeader";
 import { useNotifications } from "../../../contexts/NotificationContext";
 import api, { getErrorMessage } from "../../../lib/api";
+import { roomService } from "../../../services";
+import { parkingAdminService } from "../../../modules/parking/services/parking.service";
 import { humanizeLabel } from "../../../utils/labels";
 import { formatCurrency, getFormattingLocale } from "../../../utils/format";
+import { formatInline } from "../utils/recordFormat";
 import {
   Image,
   Tag as TagIcon,
@@ -80,6 +83,77 @@ export const EnterpriseModulePage: React.FC<{
       .trim();
 
   const title = `${formatTitle(activeModule)}${activeSubKey ? ` — ${formatTitle(activeSubKey)}` : ""}`;
+
+  const pageTitles: Record<string, string> = {
+    "users:pilgrims": "Pilgrim Accounts",
+    "users:owners": "Ashram Owner Accounts",
+    "users:content-managers": "Content Managers",
+    "users:staff": "Staff Members",
+    "users:roles": "Roles & Permissions",
+    "institution:all": "Institution Profiles",
+    "institution:trusts": "Trust & Legal Bodies",
+    "institution_contacts:all": "Contacts Directory",
+    "institution_locations:all": "Institution Locations & GPS",
+    "institution_audits:all": "Institution Quality & Audit",
+    "ashrams:all": "All Ashrams",
+    "ashrams:approved": "Approved Ashrams",
+    "ashrams:rejected": "Rejected Ashrams",
+    "rooms:all": "Room Categories",
+    "rooms:availability": "Room Availability",
+    "rooms:pricing": "Room Pricing",
+    "rooms:inventory": "Room Inventory",
+    "bookings:all": "All Bookings",
+    "bookings:pending": "Pending Bookings",
+    "bookings:confirmed": "Confirmed Bookings",
+    "bookings:checked_in": "Checked-in Stays",
+    "bookings:checked_out": "Checked-out Stays",
+    "bookings:completed": "Completed Stays",
+    "bookings:cancelled": "Cancelled Bookings",
+    "bookings:expired": "Expired Bookings",
+    "bookings:no_show": "No-show Bookings",
+    "bookings:refunded": "Refunded Bookings",
+    "bookings:refunds": "Booking Refund Requests",
+    "offers:all": "All Offers",
+    "offers:featured": "Featured Offers",
+    "blogs:all": "All Blogs",
+    "blogs:categories": "Blog Categories",
+    "blogs:authors": "Author Approvals",
+    "planner:circuits": "Spiritual Circuits",
+    "planner:temples": "Temple Directory",
+    "planner:routes": "Yatra Routes",
+    "planner:itineraries": "Itineraries",
+    "planner:rituals": "Ritual Packages",
+    "local:transport": "Local Transport Services",
+    "local:guides": "Local Guides",
+    "local:restaurants": "Restaurants",
+    "local:medical": "Medical Services",
+    "local:emergency": "Emergency Services",
+    "local:shops": "Local Shops",
+    "local:photography": "Photography Services",
+    "local:events": "Local Events",
+    "marketplace:products": "Marketplace Products",
+    "marketplace:categories": "Marketplace Categories",
+    "marketplace:vendors": "Marketplace Vendors",
+    "marketplace:orders": "Marketplace Orders",
+    "marketplace:waitlist": "Marketplace Waitlist",
+    "marketplace:newsletter": "Marketplace Newsletter",
+    "banner:homepage": "Homepage Banner Management",
+    "parking_partners:all": "Parking Partners",
+    "parking_partners:pending": "Pending Parking Partners",
+    "parking_locations:all": "Parking Locations",
+    "parking_bookings:all": "Parking Bookings",
+    "parking_bookings:checked_in": "Vehicles On-Site",
+    "parking_slot_types:all": "Parking Slot Types",
+    "parking_slots:all": "Parking Slots",
+    "parking_pricing:all": "Parking Pricing Rules",
+    "parking_commissions:pending": "Pending Parking Commissions",
+    "parking_transactions:all": "Parking Transactions",
+    "parking_scan_logs:all": "Parking Scan Logs",
+    "parking_reviews:all": "Parking Reviews",
+    "reports:revenue": "Revenue Reports",
+    "reports:bookings": "Booking Telemetry",
+  };
+  const displayTitle = pageTitles[`${activeModule}:${activeSubKey || "all"}`] || title;
 
   useEffect(() => {
     fetchModuleData();
@@ -176,7 +250,9 @@ export const EnterpriseModulePage: React.FC<{
       const endpoint =
         activeModule === "bookings" && activeSubKey === "refunds"
           ? "/booking-finance/refunds"
-          : `/admin/crud/${activeModule}${activeSubKey ? `?subKey=${activeSubKey}` : ""}`;
+          : activeModule === "bookings"
+            ? `/bookings/dashboard?limit=100${activeSubKey === "refunded" ? "&paymentStatus=refunded" : activeSubKey && activeSubKey !== "all" ? `&status=${encodeURIComponent(activeSubKey)}` : ""}`
+            : `/admin/crud/${activeModule}${activeSubKey ? `?subKey=${activeSubKey}` : ""}`;
       const res = await api.get(endpoint);
       if (res.data?.success) {
         setData(res.data.data || []);
@@ -204,15 +280,22 @@ export const EnterpriseModulePage: React.FC<{
   // authorisation rules that a plain field update would bypass — all of them
   // change through /parking/admin, which enforces the transition.
   const READ_ONLY_MODULES = new Set([
+    "bookings",
     "parking_bookings",
     "parking_commissions",
     "parking_transactions",
     "parking_scan_logs",
     "parking_staff",
   ]);
+  const isOperationalRoomView =
+    activeModule === "rooms" &&
+    ["availability", "inventory", "pricing", "season_pricing"].includes(
+      activeSubKey,
+    );
   const isReadOnlyFinance =
     (activeModule === "bookings" && activeSubKey === "refunds") ||
-    READ_ONLY_MODULES.has(activeModule);
+    READ_ONLY_MODULES.has(activeModule) ||
+    isOperationalRoomView;
 
   // Custom Form & Column Definitions per Feature Area
   const getModuleConfig = () => {
@@ -357,6 +440,11 @@ export const EnterpriseModulePage: React.FC<{
               type: "text",
               required: true,
             },
+            { name: "street", label: "Street Address", type: "text" },
+            { name: "district", label: "District", type: "text", required: true },
+            { name: "state", label: "State", type: "text", required: true },
+            { name: "pincode", label: "Pincode", type: "text", required: true },
+            { name: "description", label: "Description", type: "textarea" },
             {
               name: "isVerified",
               label: "Verification Status",
@@ -365,6 +453,10 @@ export const EnterpriseModulePage: React.FC<{
             },
             { name: "email", label: "Contact Email", type: "email" },
             { name: "phone", label: "Contact Phone", type: "text" },
+            { name: "trustDeedUrl", label: "Trust Deed", type: "text" },
+            { name: "fireSafetyCertificateUrl", label: "Fire Safety Certificate", type: "text" },
+            { name: "landOwnershipUrl", label: "Land Ownership Document", type: "text" },
+            { name: "uploadNotes", label: "Document Notes", type: "textarea" },
             {
               name: "status",
               label: "Status",
@@ -900,6 +992,208 @@ export const EnterpriseModulePage: React.FC<{
           ],
         };
 
+      case "bookings":
+        if (activeSubKey === "refunds") {
+          return {
+            icon: <Calendar size={20} className="text-[#0A4DA6]" />,
+            columns: [
+              { key: "refundReference", label: "Refund Reference" },
+              {
+                key: "bookingId",
+                label: "Booking",
+                render: (value: any) =>
+                  value?.bookingId || value?.reservationNumber || "Booking unavailable",
+              },
+              {
+                key: "requestedBy",
+                label: "Requested By",
+                render: (value: any) => value?.name || value?.email || "User unavailable",
+              },
+              {
+                key: "amount",
+                label: "Refund Amount",
+                render: (value: any) => formatCurrency(Number(value) || 0),
+              },
+              { key: "reason", label: "Reason" },
+              { key: "status", label: "Refund Status" },
+            ],
+            fields: [],
+          };
+        }
+        return {
+          icon: <Calendar size={20} className="text-[#0A4DA6]" />,
+          columns: [
+            { key: "bookingId", label: "Booking ID" },
+            {
+              key: "customerId",
+              label: "Guest",
+              render: (value: any) =>
+                value?.name || value?.email || value?.phone || "Guest unavailable",
+            },
+            {
+              key: "ashramId",
+              label: "Ashram",
+              render: (value: any) => value?.name || "Ashram unavailable",
+            },
+            {
+              key: "roomId",
+              label: "Room Category",
+              render: (value: any) => value?.name || "Room unavailable",
+            },
+            {
+              key: "checkInDate",
+              label: "Check-in",
+              render: (value: any) =>
+                value ? new Date(value).toLocaleDateString(getFormattingLocale()) : "—",
+            },
+            {
+              key: "checkOutDate",
+              label: "Check-out",
+              render: (value: any) =>
+                value ? new Date(value).toLocaleDateString(getFormattingLocale()) : "—",
+            },
+            { key: "paymentStatus", label: "Payment" },
+            {
+              key: "pricing",
+              label: "Total",
+              render: (value: any) =>
+                formatCurrency(Number(value?.totalAmount || 0)),
+            },
+            { key: "status", label: "Booking Status" },
+          ],
+          fields: [],
+        };
+
+      case "rooms":
+        if (["availability", "inventory"].includes(activeSubKey)) {
+          return {
+            icon: <Calendar size={20} className="text-[#0A4DA6]" />,
+            columns: [
+              {
+                key: "ashramId",
+                label: "Ashram",
+                render: (value: any) => value?.name || "—",
+              },
+              {
+                key: "roomId",
+                label: "Room Category",
+                render: (value: any) => value?.name || "—",
+              },
+              {
+                key: "date",
+                label: "Date",
+                render: (value: any) =>
+                  value ? new Date(value).toLocaleDateString(getFormattingLocale()) : "—",
+              },
+              { key: "totalInventory", label: "Total" },
+              { key: "bookedCount", label: "Booked" },
+              { key: "heldCount", label: "Held" },
+              { key: "maintenanceCount", label: "Maintenance" },
+              {
+                key: "customPrice",
+                label: "Custom Price",
+                render: (value: any) =>
+                  value == null ? "Base price" : formatCurrency(Number(value)),
+              },
+              {
+                key: "isClosed",
+                label: "Closed",
+                render: (value: any) => (value ? "Yes" : "No"),
+              },
+            ],
+            fields: [],
+          };
+        }
+        if (["pricing", "season_pricing"].includes(activeSubKey)) {
+          return {
+            icon: <TagIcon size={20} className="text-[#0A4DA6]" />,
+            columns: [
+              {
+                key: "ashramId",
+                label: "Ashram",
+                render: (value: any) => value?.name || "—",
+              },
+              {
+                key: "roomId",
+                label: "Room Category",
+                render: (value: any) => value?.name || "All rooms",
+              },
+              { key: "name", label: "Pricing Rule" },
+              {
+                key: "validFrom",
+                label: "Valid From",
+                render: (value: any) =>
+                  value ? new Date(value).toLocaleDateString(getFormattingLocale()) : "Always",
+              },
+              {
+                key: "validUntil",
+                label: "Valid Until",
+                render: (value: any) =>
+                  value ? new Date(value).toLocaleDateString(getFormattingLocale()) : "Always",
+              },
+              { key: "multiplier", label: "Multiplier" },
+              {
+                key: "overridePrice",
+                label: "Override Price",
+                render: (value: any) =>
+                  value == null ? "—" : formatCurrency(Number(value)),
+              },
+              { key: "minStay", label: "Minimum Stay" },
+              {
+                key: "isActive",
+                label: "Active",
+                render: (value: any) => (value === false ? "No" : "Yes"),
+              },
+            ],
+            fields: [],
+          };
+        }
+        return {
+          icon: <Building size={20} className="text-[#0A4DA6]" />,
+          columns: [
+            {
+              key: "ashramId",
+              label: "Ashram",
+              render: (value: any) => value?.name || "Ashram unavailable",
+            },
+            { key: "name", label: "Room Category" },
+            { key: "type", label: "Stay Type" },
+            { key: "acType", label: "AC / Ventilation" },
+            { key: "capacity", label: "Capacity" },
+            { key: "totalInventory", label: "Total Units" },
+            {
+              key: "basePrice",
+              label: "Base Price",
+              render: (value: any) => formatCurrency(Number(value) || 0),
+            },
+            { key: "status", label: "Status" },
+          ],
+          fields: [
+            { name: "name", label: "Room Category Name", type: "text", required: true },
+            {
+              name: "type",
+              label: "Stay Type",
+              type: "select",
+              options: ["private_room", "dormitory", "family_room", "hall"],
+            },
+            {
+              name: "acType",
+              label: "AC / Ventilation",
+              type: "select",
+              options: ["AC", "Non-AC"],
+            },
+            { name: "capacity", label: "Capacity", type: "number", required: true },
+            { name: "totalInventory", label: "Total Units", type: "number", required: true },
+            { name: "basePrice", label: "Base Price", type: "number", required: true },
+            {
+              name: "status",
+              label: "Status",
+              type: "select",
+              options: ["active", "under_maintenance"],
+            },
+          ],
+        };
+
       default:
         return {
           icon: <Building size={20} className="text-[#0A4DA6]" />,
@@ -982,6 +1276,23 @@ export const EnterpriseModulePage: React.FC<{
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      if (activeModule === "rooms" && editingItem?._id) {
+        await roomService.update(editingItem._id, {
+          name: String(formData.name || "").trim(),
+          type: formData.type,
+          acType: formData.acType,
+          capacity: Number(formData.capacity),
+          totalInventory: Number(formData.totalInventory),
+          basePrice: Number(formData.basePrice),
+          status: formData.status,
+        });
+        localStorage.setItem("tirvona:rooms-updated", Date.now().toString());
+        window.dispatchEvent(new Event("tirvona:rooms-updated"));
+        addNotification("Room Updated", "Room and inventory data are now live.", "success");
+        setIsModalOpen(false);
+        fetchModuleData();
+        return;
+      }
       if (activeModule === "parking_locations") {
         const parkingPhotos = Array.from(
           new Set(
@@ -1091,6 +1402,38 @@ export const EnterpriseModulePage: React.FC<{
 
   const handleDirectSave = async (savedData: any) => {
     try {
+      if (activeModule === "rooms" && savedData._id) {
+        await roomService.update(savedData._id, {
+          name: String(savedData.name || "").trim(),
+          type: savedData.type,
+          acType: savedData.acType,
+          capacity: Number(savedData.capacity),
+          totalInventory: Number(savedData.totalInventory),
+          basePrice: Number(savedData.basePrice),
+          status: savedData.status,
+        });
+        localStorage.setItem("tirvona:rooms-updated", Date.now().toString());
+        window.dispatchEvent(new Event("tirvona:rooms-updated"));
+        addNotification("Saved Successfully", "Room and inventory data are now live.", "success");
+        fetchModuleData();
+        return;
+      }
+      if (activeModule === "parking_partners" && savedData._id) {
+        const editablePartner = { ...savedData };
+        delete editablePartner.status;
+        delete editablePartner.isVerified;
+        delete editablePartner.createdAt;
+        delete editablePartner.updatedAt;
+        delete editablePartner.__v;
+        await api.post("/admin/crud/parking_partners", editablePartner);
+        addNotification(
+          "Partner Updated",
+          "Parking partner details were updated without changing approval status.",
+          "success",
+        );
+        fetchModuleData();
+        return;
+      }
       const cityVal = savedData.city || savedData.address?.city || "";
       let isVerifiedVal = false;
       if (
@@ -1114,6 +1457,38 @@ export const EnterpriseModulePage: React.FC<{
             },
           }
           : {}),
+        ...(activeModule === "ashrams"
+          ? {
+            address: {
+              ...(savedData.address || {}),
+              street: savedData.street || savedData.address?.street || "",
+              city: cityVal,
+              district: savedData.district || savedData.address?.district || "",
+              state: savedData.state || savedData.address?.state || "",
+              pincode: savedData.pincode || savedData.address?.pincode || "",
+            },
+            contact: {
+              ...(savedData.contact || {}),
+              email: savedData.email || savedData.contact?.email || "",
+              phone: savedData.phone || savedData.contact?.phone || "",
+            },
+            documents: {
+              ...(savedData.documents || {}),
+              trustDeedUrl:
+                savedData.trustDeedUrl || savedData.documents?.trustDeedUrl || "",
+              fireSafetyCertificateUrl:
+                savedData.fireSafetyCertificateUrl ||
+                savedData.documents?.fireSafetyCertificateUrl ||
+                "",
+              landOwnershipUrl:
+                savedData.landOwnershipUrl ||
+                savedData.documents?.landOwnershipUrl ||
+                "",
+              uploadNotes:
+                savedData.uploadNotes || savedData.documents?.uploadNotes || "",
+            },
+          }
+          : {}),
         status: savedData.status || "approved",
       };
 
@@ -1133,6 +1508,14 @@ export const EnterpriseModulePage: React.FC<{
 
   const handleDelete = async (id: string) => {
     try {
+      if (activeModule === "rooms") {
+        await roomService.remove(id);
+        localStorage.setItem("tirvona:rooms-updated", Date.now().toString());
+        window.dispatchEvent(new Event("tirvona:rooms-updated"));
+        addNotification("Room Removed", "The room category was removed safely.", "success");
+        fetchModuleData();
+        return;
+      }
       const itemToDelete = data.find((x) => (x._id || x.id) === id);
       await api.delete(crudDeletePath(id));
 
@@ -1178,6 +1561,20 @@ export const EnterpriseModulePage: React.FC<{
 
   const handleBulkApprove = async (ids: string[]) => {
     try {
+      if (activeModule === "parking_partners") {
+        await Promise.all(
+          ids.map((id) =>
+            parkingAdminService.updatePartnerStatus(id, { status: "active" }),
+          ),
+        );
+        addNotification(
+          "Parking Partners Approved",
+          `${ids.length} parking partner(s) activated.`,
+          "success",
+        );
+        fetchModuleData();
+        return;
+      }
       await Promise.all(
         ids.map((id) => {
           const item = data.find((d) => (d._id || d.id) === id);
@@ -1209,6 +1606,23 @@ export const EnterpriseModulePage: React.FC<{
 
   const handleBulkReject = async (ids: string[]) => {
     try {
+      if (activeModule === "parking_partners") {
+        await Promise.all(
+          ids.map((id) =>
+            parkingAdminService.updatePartnerStatus(id, {
+              status: "rejected",
+              rejectionReason: "Rejected from parking partner administration",
+            }),
+          ),
+        );
+        addNotification(
+          "Parking Partners Rejected",
+          `${ids.length} parking partner(s) rejected.`,
+          "warning",
+        );
+        fetchModuleData();
+        return;
+      }
       await Promise.all(
         ids.map((id) => {
           const item = data.find((d) => (d._id || d.id) === id);
@@ -1240,6 +1654,49 @@ export const EnterpriseModulePage: React.FC<{
 
   const handleToggleStatus = async (item: any) => {
     try {
+      if (activeModule === "parking_partners") {
+        const nextStatus = item.status === "active" ? "suspended" : "active";
+        const response = await parkingAdminService.updatePartnerStatus(
+          item._id || item.id,
+          { status: nextStatus },
+        );
+        if (!response.data?.success)
+          throw new Error(response.data?.message || "Partner status was not updated");
+        addNotification(
+          nextStatus === "active" ? "Parking Partner Approved" : "Parking Partner Suspended",
+          `${item.businessName || "Parking partner"} is now ${nextStatus}.`,
+          nextStatus === "active" ? "success" : "warning",
+        );
+        fetchModuleData();
+        return;
+      }
+      if (activeModule === "rooms") {
+        const nextStatus = item.status === "active" ? "under_maintenance" : "active";
+        await roomService.update(item._id, { status: nextStatus });
+        localStorage.setItem("tirvona:rooms-updated", Date.now().toString());
+        window.dispatchEvent(new Event("tirvona:rooms-updated"));
+        addNotification("Status Updated", `Status changed to ${nextStatus}.`, "success");
+        fetchModuleData();
+        return;
+      }
+      if (activeModule === "ashrams") {
+        const currentlyActive = ["active", "approved"].includes(
+          String(item.status || "").toLowerCase(),
+        );
+        const nextStatus = currentlyActive ? "suspended" : "approved";
+        await api.post("/admin/crud/ashrams", {
+          ...item,
+          status: nextStatus,
+          isVerified: nextStatus === "approved",
+        });
+        addNotification(
+          nextStatus === "approved" ? "Ashram Reactivated" : "Ashram Suspended",
+          `${item.name || "Ashram"} is now ${nextStatus}.`,
+          nextStatus === "approved" ? "success" : "warning",
+        );
+        fetchModuleData();
+        return;
+      }
       const currentStatus =
         item.status || (item.isVerified ? "approved" : "pending");
       const nextStatus =
@@ -1277,7 +1734,7 @@ export const EnterpriseModulePage: React.FC<{
     const headers = cols.map((c) => c.label).join(",");
     const rows = data.map((row) =>
       keys
-        .map((k) => `"${(row[k] !== undefined && row[k] !== null ? String(row[k]) : "").replace(/"/g, '""')}"`)
+        .map((k) => `"${formatInline(row[k]).replace(/"/g, '""')}"`)
         .join(","),
     );
     const csvContent =
@@ -1302,7 +1759,7 @@ export const EnterpriseModulePage: React.FC<{
     <div className="space-y-6 text-left w-full">
       {/* Page Module Banner Header */}
       <EnterprisePageHeader
-        title={title}
+        title={displayTitle}
         subtitle="Enterprise administration, lifecycle controls, and status monitoring console."
         icon={moduleConfig.icon}
         actions={
@@ -1319,7 +1776,7 @@ export const EnterpriseModulePage: React.FC<{
             >
               <Printer size={14} /> Print
             </button>
-            {!isReadOnlyFinance && (
+            {!isReadOnlyFinance && activeModule !== "rooms" && (
               <button
                 onClick={
                   activeModule === "ashrams" || activeModule === "ashram"
@@ -1389,11 +1846,22 @@ export const EnterpriseModulePage: React.FC<{
         </div>
       )}
       <EnterpriseDataTable
-        title={title}
+        title={displayTitle}
         columns={moduleConfig.columns}
         data={data}
         loading={loading}
         hideAddButton={true}
+        formFields={moduleConfig.fields}
+        showImageManager={[
+          "ashrams",
+          "banner",
+          "blogs",
+          "marketplace",
+          "local",
+          "temples",
+          "events",
+          "parking_locations",
+        ].includes(activeModule)}
         onSave={isReadOnlyFinance ? undefined : (item) => handleDirectSave(item)}
         onManage={
           activeModule === "local"
@@ -1405,13 +1873,13 @@ export const EnterpriseModulePage: React.FC<{
         }
         onDelete={isReadOnlyFinance ? undefined : (id) => handleDelete(id)}
         onBulkDelete={
-          isReadOnlyFinance ? undefined : (ids) => handleBulkDelete(ids)
+          isReadOnlyFinance || activeModule === "rooms" ? undefined : (ids) => handleBulkDelete(ids)
         }
         onBulkApprove={
-          isReadOnlyFinance ? undefined : (ids) => handleBulkApprove(ids)
+          isReadOnlyFinance || activeModule === "rooms" ? undefined : (ids) => handleBulkApprove(ids)
         }
         onBulkReject={
-          isReadOnlyFinance ? undefined : (ids) => handleBulkReject(ids)
+          isReadOnlyFinance || activeModule === "rooms" ? undefined : (ids) => handleBulkReject(ids)
         }
         onToggleStatus={
           isReadOnlyFinance ? undefined : (item) => handleToggleStatus(item)
@@ -1446,7 +1914,7 @@ export const EnterpriseModulePage: React.FC<{
           >
             <div className="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-3">
               <h3 className="font-extrabold text-base sm:text-lg text-[#0B192C] dark:text-white">
-                {editingItem ? `Edit ${title}` : `Create ${title}`}
+                {editingItem ? `Edit ${displayTitle}` : `Create ${displayTitle}`}
               </h3>
               <button
                 type="button"
@@ -1488,7 +1956,7 @@ export const EnterpriseModulePage: React.FC<{
                     images: urls,
                   }));
                 }}
-                label={`${title} Image & Gallery Manager`}
+                label={`${displayTitle} Image & Gallery Manager`}
                 minimumImages={activeModule === "parking_locations" ? 3 : 0}
               />
 
