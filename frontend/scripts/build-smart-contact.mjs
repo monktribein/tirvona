@@ -1,9 +1,9 @@
 /**
  * Builds the SmarID Smart Contact page and folds its output into this app's
- * `dist/c/`, so a single deployment serves both.
+ * `dist/`, so a single deployment serves both.
  *
  * Why co-deploy rather than run SmarID as its own service: printed QR codes
- * encode `https://www.tirvona.com/c/{slug}` and that URL is permanent, so the
+ * encode `https://www.tirvona.com/{slug}` and that URL is permanent, so the
  * page has to answer on the main host no matter what. Publishing it under the
  * same origin means no cross-service proxy, no second CORS origin, and one TLS
  * certificate — and it leaves the door open to injecting per-profile Open
@@ -11,13 +11,24 @@
  *
  * The two codebases stay entirely separate; only the built assets meet.
  *
- * Publishing the files is only half of it — the host also needs a rule sending
- * `/c/*` to `/c/index.html`, declared BEFORE the SPA catch-all, or the
- * catch-all swallows every scanned QR and serves the marketing homepage. Those
- * rules live in `vercel.json` (`rewrites`) and `render.yaml` (`routes`), and
- * the order of the entries is load-bearing in both. Note that `vercel.json`
- * rejects unknown keys, so it cannot carry a comment saying so — which is why
- * this warning is here instead.
+ * Output layout, and why:
+ *
+ *   dist/index.html          the SPA
+ *   dist/assets/…            the SPA's assets
+ *   dist/smart-contact.html  the contact page
+ *   dist/sc-assets/…         the contact page's assets (separate folder, or
+ *                            the two apps would merge into dist/assets)
+ *
+ * Publishing the files is only half of it. Profiles live at the site ROOT
+ * (`/ram-bhrose`), which is indistinguishable from a real page (`/parking`) to
+ * a static host — so the rewrite lists in `vercel.json` and `render.yaml` name
+ * every SPA route explicitly and fall back to the contact page for anything
+ * else. Order is load-bearing, and a page missing from those lists would
+ * silently render "Contact not found" instead. `check-spa-routes.mjs` runs
+ * before this script and fails the build if that ever drifts.
+ *
+ * (`vercel.json` rejects unknown keys, so it cannot carry a comment saying any
+ * of this — which is why the warning lives here.)
  *
  * Failure here is deliberately non-fatal. Some hosts check out only the
  * project's root directory, in which case `../SmarID` does not exist — and a
@@ -25,14 +36,16 @@
  * The script warns loudly and exits 0 instead.
  */
 import { execFileSync } from "node:child_process";
-import { cpSync, existsSync, mkdirSync, rmSync } from "node:fs";
+import { copyFileSync, cpSync, existsSync, mkdirSync, rmSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const frontendRoot = resolve(here, "..");
 const smarIdRoot = resolve(frontendRoot, "..", "SmarID");
-const target = resolve(frontendRoot, "dist", "c");
+const distRoot = resolve(frontendRoot, "dist");
+const pageTarget = resolve(distRoot, "smart-contact.html");
+const assetTarget = resolve(distRoot, "sc-assets");
 
 const warn = (message) => {
   process.stdout.write(`\n[smart-contact] ${message}\n`);
@@ -73,15 +86,20 @@ try {
   run(["run", "build"], smarIdRoot);
 
   const source = resolve(smarIdRoot, "dist");
-  if (!existsSync(source)) {
+  if (!existsSync(resolve(source, "index.html"))) {
     warn("SKIPPED — SmarID built but produced no dist/.");
     process.exit(0);
   }
 
-  rmSync(target, { recursive: true, force: true });
-  mkdirSync(target, { recursive: true });
-  cpSync(source, target, { recursive: true });
-  warn(`OK — Smart Contact page published at /c/ (from ${source})`);
+  // The page itself is renamed on the way in: `index.html` is already taken by
+  // the SPA, and the host rewrites unknown paths to this file by name.
+  mkdirSync(distRoot, { recursive: true });
+  copyFileSync(resolve(source, "index.html"), pageTarget);
+
+  rmSync(assetTarget, { recursive: true, force: true });
+  cpSync(resolve(source, "sc-assets"), assetTarget, { recursive: true });
+
+  warn("OK — Smart Contact page published at the site root (/{slug})");
 } catch (error) {
   warn(
     `SKIPPED — SmarID build failed: ${error.message}\n` +
