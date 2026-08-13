@@ -132,12 +132,6 @@ export class AnalyticsService {
     const month = new Date(today.getFullYear(), today.getMonth(), 1);
     const paid = (b: any) => Number(b.pricing?.amountPaid ?? 0);
     const total = (b: any) => Number(b.pricing?.totalAmount ?? 0);
-    const confirmed = bookings.filter(
-      (b: any) => b.status === "confirmed",
-    ).length;
-    const checkedIn = bookings.filter(
-      (b: any) => b.status === "checked_in",
-    ).length;
     const totalInventory = rooms.reduce(
       (n: number, r: any) => n + Number(r.totalInventory ?? 0),
       0,
