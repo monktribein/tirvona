@@ -68,7 +68,7 @@ const formatDate = (value?: string) =>
 
 export const ProfileMainPage: React.FC = () => {
   const { user, logout, refreshUser } = useAuth();
-  const { addNotification } = useNotifications();
+  const { addNotification, confirmAction } = useNotifications();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -243,9 +243,12 @@ export const ProfileMainPage: React.FC = () => {
 
   const handleCancelBooking = async (booking: UnifiedBooking) => {
     if (cancellingId) return;
-    const ok = window.confirm(
-      `Cancel ${booking.reference}?\n\nAny refund due will follow the cancellation policy for this booking.`,
-    );
+    const ok = await confirmAction({
+      title: "Cancel booking?",
+      message: `${booking.reference} will be cancelled. Any eligible refund will follow this booking's cancellation policy.`,
+      confirmLabel: "Cancel Booking",
+      tone: "danger",
+    });
     if (!ok) return;
 
     setCancellingId(booking.id);

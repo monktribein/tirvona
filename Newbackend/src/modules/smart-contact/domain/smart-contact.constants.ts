@@ -52,6 +52,10 @@ export const SMART_CONTACT_EVENT_TYPES = [
   "QR_SCAN",
   "SAVE_CONTACT",
   "VCARD_DOWNLOAD",
+  // Recorded server-side when the printable badge is served, alongside
+  // VCARD_DOWNLOAD — a click handler on a link that navigates away is not
+  // reliable enough to count.
+  "ID_CARD_DOWNLOAD",
   "CALL_CLICK",
   "WHATSAPP_CLICK",
   "EMAIL_CLICK",
@@ -172,19 +176,27 @@ export const AUDITED_FIELD_ACTIONS: Readonly<
 };
 
 /**
- * Slugs that must never be handed to a profile: they would either collide with
- * a public route or let a profile impersonate a Tirvona-operated page.
+ * Slugs that must never be handed to a profile.
+ *
+ * This list carries real weight now that profiles are served from the site
+ * root: `https://www.tirvona.com/{slug}` shares a namespace with every page of
+ * the website. A profile given the slug `parking` would have its URL routed to
+ * the parking page instead — and since the slug is printed on cards, that
+ * profile would be permanently unreachable with no way to fix it.
+ *
+ * Two groups below. The platform routes must stay in step with the top-level
+ * paths in `frontend/src/App.tsx`; `frontend/scripts/check-spa-routes.mjs`
+ * guards the host's side of the same list at build time.
  */
 export const RESERVED_SLUGS: readonly string[] = [
-  "admin",
+  // Infrastructure and anything that could impersonate a Tirvona-operated page
   "api",
   "app",
   "assets",
+  "sc-assets",
   "c",
-  "contact",
   "health",
   "index",
-  "login",
   "logout",
   "new",
   "null",
@@ -192,11 +204,61 @@ export const RESERVED_SLUGS: readonly string[] = [
   "robots",
   "settings",
   "sitemap",
+  "smart-contact",
   "static",
-  "support",
   "tirvona",
   "undefined",
   "www",
+  // Top-level routes of the public SPA
+  "about",
+  "admin",
+  "ashram",
+  "blog",
+  "booking",
+  "books",
+  "cancellation-policy",
+  "careers",
+  "circuits",
+  "contact",
+  "cookie-policy",
+  "dashboard",
+  "destinations",
+  "events",
+  "faq",
+  "govt-guidelines",
+  "handicrafts",
+  "help",
+  "local",
+  "local-guides",
+  "login",
+  "marketplace",
+  "offers",
+  "owner",
+  "owner-guide",
+  "parking",
+  "partner",
+  "pilgrimage-circuits",
+  "press",
+  "privacy",
+  "profile",
+  "puja-items",
+  "refund-policy",
+  "register",
+  "religious-products",
+  "reset-password",
+  "restaurants",
+  "search",
+  "services",
+  "shops",
+  "staff",
+  "stay-policies",
+  "support",
+  "temples",
+  "terms",
+  "transport",
+  "travel-guides",
+  "video",
+  "volunteer",
 ];
 
 export const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;

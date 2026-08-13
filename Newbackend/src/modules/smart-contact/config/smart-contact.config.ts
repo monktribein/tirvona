@@ -49,6 +49,20 @@ const positiveInt = (raw: string | undefined, fallback: number): number => {
   return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : fallback;
 };
 
+/**
+ * Turns a configured prefix into a leading-slash segment, or an empty string
+ * when the segment is being dropped entirely.
+ *
+ * The empty case is the one worth being careful about: a bare "/" here would
+ * concatenate into `https://host//slug`, which is a different URL from
+ * `https://host/slug` and would 404 on most hosts. Collapsing it to "" keeps
+ * `buildProfileUrl` correct either way.
+ */
+const normalisePrefix = (raw: string | undefined): string => {
+  const cleaned = (raw ?? "c").replace(/^\/+|\/+$/g, "");
+  return cleaned ? `/${cleaned}` : "";
+};
+
 export const smartContactConfig = (): SmartContactConfig => ({
   mongoUri:
     process.env.SMART_CONTACT_MONGODB_URI ||
@@ -61,8 +75,12 @@ export const smartContactConfig = (): SmartContactConfig => ({
   publicBaseUrl: trimSlashes(
     process.env.SMART_CONTACT_PUBLIC_BASE_URL || "https://www.tirvona.com",
   ),
-  publicPathPrefix: `/${(process.env.SMART_CONTACT_PUBLIC_PATH_PREFIX || "c")
-    .replace(/^\/+|\/+$/g, "")}`,
+  // Normalised to either "/c" or "" — never a bare "/", which would produce a
+  // double slash once the slug is appended. Setting the prefix to "/" is how
+  // someone would try to drop the segment entirely and serve profiles from the
+  // site root; that is supported here, but see the warning on `buildProfileUrl`
+  // before doing it.
+  publicPathPrefix: normalisePrefix(process.env.SMART_CONTACT_PUBLIC_PATH_PREFIX),
   apiBaseUrl: trimSlashes(
     process.env.SMART_CONTACT_API_BASE_URL ||
       process.env.API_PUBLIC_URL ||
@@ -70,7 +88,10 @@ export const smartContactConfig = (): SmartContactConfig => ({
   ),
   qrDarkColor: process.env.SMART_CONTACT_QR_DARK_COLOR || "#0B192C",
   qrLightColor: process.env.SMART_CONTACT_QR_LIGHT_COLOR || "#FFFFFF",
-  qrAccentColor: process.env.SMART_CONTACT_QR_ACCENT_COLOR || "#D4AF37",
+  // Saffron Gold, matching --accent in frontend/src/index.css. Not the older
+  // #D4AF37: the brand palette moved and printed artwork has to agree with the
+  // website it sends people to.
+  qrAccentColor: process.env.SMART_CONTACT_QR_ACCENT_COLOR || "#E58C28",
   qrLogoUrl: process.env.SMART_CONTACT_QR_LOGO_URL || "",
   qrDefaultPngSize: positiveInt(process.env.SMART_CONTACT_QR_PNG_SIZE, 1000),
   qrPrintPngSize: positiveInt(process.env.SMART_CONTACT_QR_PRINT_PNG_SIZE, 2000),
@@ -86,11 +107,32 @@ export const smartContactConfig = (): SmartContactConfig => ({
     "development-only-smart-contact-salt",
 });
 
-/** The permanent URL a QR encodes for a given slug (spec §2). */
+/**
+ * The permanent URL a QR encodes for a given slug (spec §2).
+ *
+ * A note on dropping the `/c` segment and serving profiles from the site root
+ * (`SMART_CONTACT_PUBLIC_PATH_PREFIX=/`): it works, and it shortens the URL,
+ * but it puts every slug into the same namespace as the website's own pages.
+ * `/offers`, `/parking`, `/temples` and every route added in future then
+ * compete with profile slugs, and the host can no longer route by prefix — it
+ * would need an explicit list of every SPA route kept in sync forever, and one
+ * new page silently shadows a representative's card. The `/c` segment costs
+ * two characters and removes that entire class of failure.
+ */
 export const buildProfileUrl = (
   config: SmartContactConfig,
   slug: string,
-): string => `${config.publicBaseUrl}${config.publicPathPrefix}/${slug}`;
+): string =>
+  // The `replace` is deliberate belt-and-braces, not redundancy. A doubled
+  // slash here is uniquely expensive: `https://host//slug` is a different URL
+  // that 404s, and once it has been written into a QR row's immutable
+  // `destinationUrl` — or printed — it cannot be corrected. Collapsing runs of
+  // slashes in the path (never in the `https://` scheme) means no combination
+  // of base URL and prefix can produce one.
+  `${config.publicBaseUrl}${config.publicPathPrefix}/${slug}`.replace(
+    /([^:]\/)\/+/g,
+    "$1",
+  );
 
 /** The vCard download URL for a given slug (spec §9). */
 export const buildVcardUrl = (

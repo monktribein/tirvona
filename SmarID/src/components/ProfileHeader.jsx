@@ -10,33 +10,38 @@ const initials = (name) =>
     .map((part) => part.charAt(0).toUpperCase())
     .join("") || "T";
 
+/** The navy band at the top of the card, shared by the profile and notices. */
+export const CardHeader = () => (
+  <header className="card-header">
+    <span className="brand-chip">
+      <TirvonaMark height={30} />
+    </span>
+    <p className="card-header-tag">Authorised Representative</p>
+  </header>
+);
+
 /**
- * Logo band, photograph and identity block (spec §6).
+ * Photograph and identity block (spec §6).
  *
- * The photo is `loading="eager"` and `fetchpriority="high"` — it is the
- * largest contentful paint on this page, and the two-second budget in spec §39
- * is mostly a question of how quickly it arrives.
+ * The photo overlaps the navy band by design — it is what makes the layout
+ * read as an identity card rather than a web page, and it is the largest
+ * contentful paint, so it loads eagerly at high priority against the
+ * two-second budget in spec §39.
  */
-export const ProfileHeader = ({ profile }) => {
-  const { displayName, designation, roleLine, organization, photoUrl } = profile;
+export const ProfileIdentity = ({ profile }) => {
+  const { displayName, designation, roleLine, organization, photoUrl, employeeId } =
+    profile;
 
   return (
-    <header className="profile-header">
-      <div className="brand">
-        <TirvonaMark />
-        <p className="brand-tagline">
-          India&rsquo;s Digital Infrastructure for Religious Destinations
-        </p>
-      </div>
-
+    <>
       <div className="avatar-wrap">
         {photoUrl ? (
           <img
             className="avatar"
             src={photoUrl}
             alt={displayName}
-            width="128"
-            height="128"
+            width="108"
+            height="108"
             loading="eager"
             fetchPriority="high"
             decoding="async"
@@ -52,11 +57,12 @@ export const ProfileHeader = ({ profile }) => {
       {designation && <p className="profile-designation">{designation}</p>}
       {roleLine && <p className="profile-role">{roleLine}</p>}
       {organization && (
-        <p className="profile-org">
+        <span className="profile-org">
           {organization}
           <sup>&trade;</sup>
-        </p>
+        </span>
       )}
-    </header>
+      {employeeId && <p className="profile-id">ID · {employeeId}</p>}
+    </>
   );
 };

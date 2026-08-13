@@ -27,7 +27,7 @@ interface AddOnServiceItem {
 }
 
 export const OwnerAddOnsPage: React.FC = () => {
-  const { addNotification } = useNotifications();
+  const { addNotification, confirmAction } = useNotifications();
   const [myAshrams, setMyAshrams] = useState<any[]>([]);
   const [selectedAshramId, setSelectedAshramId] = useState<string>("");
   const [addOns, setAddOns] = useState<AddOnServiceItem[]>([]);
@@ -170,8 +170,7 @@ export const OwnerAddOnsPage: React.FC = () => {
 
   const handleDeleteService = async (serviceId: string) => {
     if (!selectedAshramId || !serviceId) return;
-    if (!window.confirm("Are you sure you want to delete this add-on service?"))
-      return;
+    if (!(await confirmAction({ title: "Delete add-on service?", message: "Visitors will no longer be able to select this service.", confirmLabel: "Delete Service", tone: "danger" }))) return;
 
     try {
       const res = await ashramService.deleteAddOn(selectedAshramId, serviceId);

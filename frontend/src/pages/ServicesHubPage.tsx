@@ -376,7 +376,7 @@ export const ServicesHubPage: React.FC = () => {
                   onChange={(e) => setGovtVerifiedOnly(e.target.checked)}
                   className="accent-[#0A4DA6] w-4 h-4 rounded"
                 />
-                <span>Govt Certified Only</span>
+                <span>Tirvona Verified Only</span>
               </label>
             </div>
 
@@ -480,7 +480,7 @@ export const ServicesHubPage: React.FC = () => {
                     )}
                     {item.specifications?.govtVerified && (
                       <span className="px-2.5 py-0.5 bg-blue-50 text-[#0A4DA6] border border-blue-200 rounded-full">
-                        ✓ GOVT VERIFIED
+                        ✓ TIRVONA VERIFIED
                       </span>
                     )}
                     {item.specifications?.available24x7 && (

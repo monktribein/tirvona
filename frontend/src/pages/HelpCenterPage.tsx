@@ -46,7 +46,7 @@ const getCategories = () => [
     items: [
       {
         q: "How does Tirvona verify ashrams?",
-        a: 'Every ashram goes through a 5-step physical verification: document check, on-site visit by our field executive, facility audit, safety inspection, and community reference check. Only verified ashrams receive the blue "Verified" badge.',
+        a: 'Every ashram goes through a 5-step Tirvona verification: document check, on-site visit by our field executive, facility audit, safety inspection, and community reference check. Approved ashrams receive the blue "Tirvona Verified" badge.',
       },
       {
         q: "What facilities can I expect?",

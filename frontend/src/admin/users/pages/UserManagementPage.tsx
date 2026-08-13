@@ -28,6 +28,7 @@ import { getErrorMessage } from "../../../lib/api";
 import { useAuth } from "../../../contexts/AuthContext";
 import { useNotifications } from "../../../contexts/NotificationContext";
 import { humanizeLabel } from "../../../utils/labels";
+import { FileUploader } from "../../../components/FileUploader";
 
 interface ManagedUser {
   _id: string;
@@ -66,7 +67,8 @@ const ALL_ROLES = [
   { id: "state_admin", label: "State Admin" },
   { id: "govt_admin", label: "Government Admin" },
   { id: "district_officer", label: "District Officer" },
-  { id: "owner", label: "Ashram Stay Admin" },
+  { id: "ashram_admin", label: "Ashram Admin (All Ashrams)" },
+  { id: "ashram_owner", label: "Ashram Owner (Assigned Ashrams Only)" },
   { id: "manager", label: "Ashram Manager" },
   { id: "reception", label: "Receptionist" },
   { id: "housekeeping", label: "Housekeeping" },
@@ -83,6 +85,7 @@ const ALL_ROLES = [
 ];
 
 const ALL_PERMISSIONS = [
+  "ashrams.manage_all",
   "Can Create Users",
   "Can Delete Users",
   "Can Approve Ashrams",
@@ -111,25 +114,23 @@ export const UserManagementPage: React.FC = () => {
     () => new URLSearchParams(window.location.search).get("q") ?? "",
   );
   const [filterStatus, setFilterStatus] = useState("all");
+  const [filterRole, setFilterRole] = useState("all");
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
-  // Multi-step Create Account Modal State
+  // Single-step, role-aware account onboarding.
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [createStep, setCreateStep] = useState<1 | 2 | 3>(1);
+  const [creatingAccount, setCreatingAccount] = useState(false);
   const [newAccountData, setNewAccountData] = useState<Record<string, any>>({
     name: "",
     email: "",
     phone: "",
-    password: "",
-    role: "staff",
-    designation: "",
-    department: "",
-    city: "",
-    state: "",
-    aadhaarId: "",
+    role: "customer",
     gender: "Male",
-    status: "active",
-    permissions: ["Can View Reports"],
-    remarks: "",
+    aadhaarCardUrl: "",
+    panCardUrl: "",
   });
 
   // Action Modals State
@@ -147,6 +148,14 @@ export const UserManagementPage: React.FC = () => {
   const [adminPassword, setAdminPassword] = useState("");
   const [confirmDeleteText, setConfirmDeleteText] = useState("");
   const [viewingUser, setViewingUser] = useState<ManagedUser | null>(null);
+  const [editingUser, setEditingUser] = useState(false);
+  const [savingUser, setSavingUser] = useState(false);
+  const [editUserData, setEditUserData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    gender: "Male",
+  });
 
   // Suspension Form State
   const [reason, setReason] = useState("Terms Violation");
@@ -185,6 +194,20 @@ export const UserManagementPage: React.FC = () => {
   // Create Account Handler
   const handleCreateAccountSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const isPilgrim = newAccountData.role === "customer";
+    if (
+      !isPilgrim &&
+      (!newAccountData.aadhaarCardUrl ||
+        !newAccountData.panCardUrl)
+    ) {
+      addNotification(
+        "Documents Required",
+        "Aadhaar card and PAN card are mandatory for role accounts.",
+        "error",
+      );
+      return;
+    }
+    setCreatingAccount(true);
     try {
       const res = await userService.createAccount(newAccountData);
       if (res.data?.success) {
@@ -194,7 +217,15 @@ export const UserManagementPage: React.FC = () => {
           "success",
         );
         setIsCreateOpen(false);
-        setCreateStep(1);
+        setNewAccountData({
+          name: "",
+          email: "",
+          phone: "",
+          role: "customer",
+          gender: "Male",
+          aadhaarCardUrl: "",
+          panCardUrl: "",
+        });
         fetchUsers();
       }
     } catch (err) {
@@ -203,6 +234,8 @@ export const UserManagementPage: React.FC = () => {
         getErrorMessage(err, "Could not create user account."),
         "error",
       );
+    } finally {
+      setCreatingAccount(false);
     }
   };
 
@@ -405,6 +438,46 @@ export const UserManagementPage: React.FC = () => {
     }
   };
 
+  const startAccountEdit = (user: ManagedUser) => {
+    setEditUserData({
+      name: user.name || "",
+      email: user.email || "",
+      phone: user.phone || "",
+      gender: user.gender || "Male",
+    });
+    setEditingUser(true);
+  };
+
+  const handleAccountEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!viewingUser || !canModerate) return;
+    setSavingUser(true);
+    try {
+      const res = await userService.updateAccount(viewingUser._id, editUserData);
+      if (res.data?.success) {
+        const updated = { ...viewingUser, ...res.data.data };
+        setViewingUser(updated);
+        setEditingUser(false);
+        setUsers((current) =>
+          current.map((user) => (user._id === updated._id ? updated : user)),
+        );
+        addNotification(
+          "Account Updated",
+          `${updated.name}'s account details were saved.`,
+          "success",
+        );
+      }
+    } catch (err) {
+      addNotification(
+        "Update Failed",
+        getErrorMessage(err, "Could not update account details."),
+        "error",
+      );
+    } finally {
+      setSavingUser(false);
+    }
+  };
+
   // Filter & Search Logic
   const filteredUsers = useMemo(() => {
     return users.filter((u) => {
@@ -418,6 +491,7 @@ export const UserManagementPage: React.FC = () => {
         u.role.toLowerCase().includes(searchTerm.toLowerCase());
 
       const isSusp = Boolean(u.isSuspended);
+      const roleMatch = filterRole === "all" || u.role === filterRole;
       let statusMatch = true;
 
       if (filterStatus === "active")
@@ -426,7 +500,8 @@ export const UserManagementPage: React.FC = () => {
         statusMatch = ["pending", "pending_approval"].includes(u.status);
       else if (filterStatus === "suspended")
         statusMatch =
-          isSusp || ["suspended", "temp_suspended"].includes(u.status);
+          (isSusp && u.suspensionType !== "permanent") ||
+          ["suspended", "temp_suspended"].includes(u.status);
       else if (filterStatus === "permanent_suspended")
         statusMatch =
           u.status === "perm_suspended" ||
@@ -438,9 +513,73 @@ export const UserManagementPage: React.FC = () => {
       else if (filterStatus === "archived")
         statusMatch = u.status === "archived";
 
-      return searchMatch && statusMatch;
+      return searchMatch && roleMatch && statusMatch;
     });
-  }, [users, searchTerm, filterStatus]);
+  }, [users, searchTerm, filterRole, filterStatus]);
+
+  const availableRoleFilters = useMemo(() => {
+    const roles = [...ALL_ROLES];
+    const knownRoleIds = new Set(roles.map((role) => role.id));
+
+    users.forEach((user) => {
+      if (user.role && !knownRoleIds.has(user.role)) {
+        roles.push({ id: user.role, label: humanizeLabel(user.role) });
+        knownRoleIds.add(user.role);
+      }
+    });
+
+    return roles;
+  }, [users]);
+
+  const selectableFilteredIds = useMemo(
+    () =>
+      filteredUsers
+        .filter(
+          (user) =>
+            user._id !== currentUser?.id &&
+            user.status !== "deleted" &&
+            !user.isDeleted,
+        )
+        .map((user) => user._id),
+    [filteredUsers, currentUser?.id],
+  );
+  const allFilteredSelected =
+    selectableFilteredIds.length > 0 &&
+    selectableFilteredIds.every((id) => selectedUserIds.includes(id));
+
+  const toggleSelectAllFiltered = () => {
+    setSelectedUserIds((current) =>
+      allFilteredSelected
+        ? current.filter((id) => !selectableFilteredIds.includes(id))
+        : [...new Set([...current, ...selectableFilteredIds])],
+    );
+  };
+
+  const handleBulkDelete = async () => {
+    if (!canModerate || !selectedUserIds.length) return;
+    setBulkDeleting(true);
+    try {
+      const res = await userService.bulkSoftDelete(selectedUserIds);
+      if (res.data?.success) {
+        addNotification(
+          "Accounts Deleted",
+          `${res.data.count ?? selectedUserIds.length} account(s) moved to Deleted Accounts.`,
+          "success",
+        );
+        setSelectedUserIds([]);
+        setBulkDeleteOpen(false);
+        await fetchUsers();
+      }
+    } catch (err) {
+      addNotification(
+        "Bulk Delete Failed",
+        getErrorMessage(err, "Could not delete the selected accounts."),
+        "error",
+      );
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
 
   return (
     <div className="space-y-6 text-left w-full">
@@ -490,8 +629,9 @@ export const UserManagementPage: React.FC = () => {
       )}
 
       {/* ── Filters & Search Toolbar ── */}
-      <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-4 rounded-[24px] shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
-        <div className="relative w-full md:w-80">
+      <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-4 rounded-[24px] shadow-sm space-y-3">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(260px,1fr)_240px_220px_auto] md:items-end">
+          <div className="relative w-full">
           <Search
             className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
             size={16}
@@ -503,32 +643,67 @@ export const UserManagementPage: React.FC = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-full text-xs font-medium text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6]"
           />
-        </div>
-
-        <div className="flex flex-wrap items-center gap-1.5 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
-          {[
-            { id: "all", label: "All Accounts" },
-            { id: "active", label: "Active" },
-            { id: "pending", label: "Pending" },
-            { id: "suspended", label: "Suspended" },
-            { id: "permanent_suspended", label: "Perm Suspended" },
-            { id: "disabled", label: "Disabled" },
-            { id: "deleted", label: "Deleted Accounts" },
-            { id: "archived", label: "Archived" },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setFilterStatus(tab.id)}
-              className={`px-3 py-1.5 rounded-full text-[11px] font-bold transition-all cursor-pointer whitespace-nowrap ${
-                filterStatus === tab.id
-                  ? "bg-[#0A4DA6] text-white shadow-sm"
-                  : "bg-gray-50 dark:bg-slate-900 text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800"
-              }`}
+          </div>
+          <label className="space-y-1 text-[10px] font-extrabold uppercase tracking-wider text-gray-400">
+            Account Type / Role
+            <select
+              value={filterRole}
+              onChange={(e) => setFilterRole(e.target.value)}
+              className="w-full rounded-full border border-gray-200 bg-gray-50 px-4 py-2.5 text-xs font-bold normal-case tracking-normal text-[#0B192C] outline-none focus:border-[#0A4DA6] dark:border-slate-800 dark:bg-slate-900 dark:text-white"
             >
-              {tab.label}
-            </button>
-          ))}
+              <option value="all">All Account Types</option>
+              {availableRoleFilters.map((role) => (
+                <option key={role.id} value={role.id}>{role.label}</option>
+              ))}
+            </select>
+          </label>
+          <label className="space-y-1 text-[10px] font-extrabold uppercase tracking-wider text-gray-400">
+            Account Status
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="w-full rounded-full border border-gray-200 bg-gray-50 px-4 py-2.5 text-xs font-bold normal-case tracking-normal text-[#0B192C] outline-none focus:border-[#0A4DA6] dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+            >
+              <option value="all">All Statuses</option>
+              <option value="active">Active Accounts</option>
+              <option value="pending">Pending Accounts</option>
+              <option value="suspended">Suspended Accounts</option>
+              <option value="permanent_suspended">Permanently Suspended</option>
+              <option value="disabled">Disabled Accounts</option>
+              <option value="deleted">Deleted Accounts</option>
+              <option value="archived">Archived Accounts</option>
+            </select>
+          </label>
+          <button
+            type="button"
+            onClick={() => {
+              setSearchTerm("");
+              setFilterRole("all");
+              setFilterStatus("all");
+            }}
+            disabled={!searchTerm && filterRole === "all" && filterStatus === "all"}
+            className="rounded-full border border-gray-200 px-4 py-2.5 text-xs font-bold text-gray-500 hover:border-[#0A4DA6]/30 hover:text-[#0A4DA6] disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-800"
+          >
+            Clear Filters
+          </button>
         </div>
+        <div className="flex items-center justify-between gap-3 px-1 text-[10px] font-semibold text-gray-400">
+          <span>Showing {filteredUsers.length} of {users.length} account(s)</span>
+          {(filterRole !== "all" || filterStatus !== "all") && (
+            <span className="text-[#0A4DA6]">Filtered results</span>
+          )}
+        </div>
+        {selectedUserIds.length > 0 && (
+          <div className="flex flex-col gap-2 rounded-2xl border border-rose-100 bg-rose-50/60 px-4 py-3 sm:flex-row sm:items-center sm:justify-between dark:border-rose-900/40 dark:bg-rose-950/20">
+            <span className="text-xs font-extrabold text-rose-700 dark:text-rose-300">
+              {selectedUserIds.length} account(s) selected
+            </span>
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={() => setSelectedUserIds([])} className="rounded-full bg-white px-4 py-2 text-[10px] font-bold text-gray-600 shadow-sm dark:bg-slate-900 dark:text-gray-300">Clear Selection</button>
+              <button type="button" onClick={() => setBulkDeleteOpen(true)} disabled={!canModerate} className="inline-flex items-center gap-1.5 rounded-full bg-rose-600 px-4 py-2 text-[10px] font-extrabold text-white shadow-sm disabled:opacity-50"><Trash2 size={13} /> Delete Selected</button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── IAM Data Table ── */}
@@ -540,18 +715,28 @@ export const UserManagementPage: React.FC = () => {
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="border-b border-gray-100 dark:border-slate-800 bg-gray-50/70 dark:bg-slate-900/50 text-gray-400 font-extrabold text-[10px] tracking-wider">
-                  <th className="py-4 px-6">Employee / User Info</th>
+                  <th className="py-4 pl-6 pr-2">
+                    <input
+                      type="checkbox"
+                      checked={allFilteredSelected}
+                      onChange={toggleSelectAllFiltered}
+                      disabled={!selectableFilteredIds.length}
+                      aria-label="Select all filtered accounts"
+                      className="h-4 w-4 rounded border-gray-300 accent-[#0A4DA6]"
+                    />
+                  </th>
+                  <th className="py-4 px-4">Employee / User Info</th>
                   <th className="py-4 px-6">Role</th>
                   <th className="py-4 px-6">Status</th>
                   <th className="py-4 px-6">Emp ID / Username</th>
-                  <th className="py-4 px-6 text-right">IAM Control Actions</th>
+                  <th className="py-4 px-6 text-right">Edit / View</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredUsers.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={5}
+                      colSpan={6}
                       className="py-12 text-center text-gray-400 font-semibold"
                     >
                       No matching user accounts found.
@@ -574,7 +759,23 @@ export const UserManagementPage: React.FC = () => {
                         key={u._id}
                         className="border-b border-gray-50 dark:border-slate-850 hover:bg-gray-50/30 transition-colors"
                       >
-                        <td className="py-4 px-6 font-bold text-[#0B192C] dark:text-white">
+                        <td className="py-4 pl-6 pr-2">
+                          <input
+                            type="checkbox"
+                            checked={selectedUserIds.includes(u._id)}
+                            onChange={() =>
+                              setSelectedUserIds((current) =>
+                                current.includes(u._id)
+                                  ? current.filter((id) => id !== u._id)
+                                  : [...current, u._id],
+                              )
+                            }
+                            disabled={u._id === currentUser?.id || isSoftDeleted}
+                            aria-label={`Select ${u.name}`}
+                            className="h-4 w-4 rounded border-gray-300 accent-[#0A4DA6] disabled:opacity-30"
+                          />
+                        </td>
+                        <td className="py-4 px-4 font-bold text-[#0B192C] dark:text-white">
                           <div className="flex flex-col">
                             <span className="text-sm font-extrabold">
                               {u.name}
@@ -618,92 +819,14 @@ export const UserManagementPage: React.FC = () => {
                           </div>
                         </td>
                         <td className="py-4 px-6 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
+                          <div className="flex items-center justify-end">
                             <button
                               onClick={() => setViewingUser(u)}
-                              className="p-1.5 text-gray-400 hover:text-[#0A4DA6] hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer"
-                              title="View Details"
+                              className="inline-flex items-center gap-1.5 rounded-full border border-[#0A4DA6]/20 bg-[#0A4DA6]/5 px-3 py-1.5 text-[10px] font-extrabold text-[#0A4DA6] transition-colors hover:bg-[#0A4DA6] hover:text-white"
+                              title="Edit or view account"
                             >
-                              <Eye size={14} />
+                              <Eye size={13} /> Edit / View
                             </button>
-
-                            {isSoftDeleted ? (
-                              <button
-                                onClick={() => handleRestore(u)}
-                                disabled={!canModerate}
-                                className="px-3 py-1 bg-emerald-600 text-white rounded-full text-[10px] font-extrabold flex items-center gap-1 hover:bg-emerald-700 disabled:opacity-40 cursor-pointer shadow-sm"
-                                title="Restore Account"
-                              >
-                                <RotateCcw size={12} /> Restore
-                              </button>
-                            ) : (
-                              <>
-                                <button
-                                  onClick={() => {
-                                    setRoleTarget(u);
-                                    setNewSelectedRole(u.role);
-                                  }}
-                                  disabled={!canModerate}
-                                  className="p-1.5 text-gray-400 hover:text-amber-500 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer"
-                                  title="Change Role"
-                                >
-                                  <Shield size={14} />
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    setPermTarget(u);
-                                    setSelectedPerms(
-                                      u.permissions || ["Can View Reports"],
-                                    );
-                                  }}
-                                  disabled={!canModerate}
-                                  className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer"
-                                  title="Manage Permissions"
-                                >
-                                  <Tag size={14} />
-                                </button>
-                                <button
-                                  onClick={() => setResetPassTarget(u)}
-                                  disabled={!canModerate}
-                                  className="p-1.5 text-gray-400 hover:text-purple-500 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer"
-                                  title="Reset Password"
-                                >
-                                  <Key size={14} />
-                                </button>
-
-                                {isUserSuspended ? (
-                                  <button
-                                    onClick={() => handleReactivate(u)}
-                                    disabled={!canModerate}
-                                    className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-full cursor-pointer"
-                                    title="Reactivate Account"
-                                  >
-                                    <UserCheck size={14} />
-                                  </button>
-                                ) : (
-                                  <button
-                                    onClick={() => setSuspendTarget(u)}
-                                    disabled={!canModerate}
-                                    className="p-1.5 text-amber-500 hover:bg-amber-50 rounded-full cursor-pointer"
-                                    title="Suspend Account"
-                                  >
-                                    <UserX size={14} />
-                                  </button>
-                                )}
-
-                                <button
-                                  onClick={() => {
-                                    setDeleteTarget(u);
-                                    setDeleteType("soft");
-                                  }}
-                                  disabled={!canModerate}
-                                  className="p-1.5 text-gray-400 hover:text-rose-500 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer"
-                                  title="Delete Account Options"
-                                >
-                                  <Trash2 size={14} />
-                                </button>
-                              </>
-                            )}
                           </div>
                         </td>
                       </tr>
@@ -716,8 +839,73 @@ export const UserManagementPage: React.FC = () => {
         </div>
       )}
 
-      {/* ── Multi-Step "Create New Account" Modal ── */}
+      {bulkDeleteOpen && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" onClick={() => !bulkDeleting && setBulkDeleteOpen(false)}>
+          <div role="dialog" aria-modal="true" aria-label="Delete selected accounts" onClick={(e) => e.stopPropagation()} className="w-full max-w-md rounded-[28px] border border-gray-100 bg-white p-6 shadow-2xl dark:border-slate-800 dark:bg-[#0B192C]">
+            <div className="flex items-start gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-rose-50 text-rose-600 dark:bg-rose-950/40"><Trash2 size={20} /></div>
+              <div>
+                <h3 className="text-lg font-extrabold text-[#0B192C] dark:text-white">Delete selected accounts?</h3>
+                <p className="mt-1 text-xs leading-5 text-gray-500">{selectedUserIds.length} account(s) will be soft deleted, signed out, and moved to Deleted Accounts. They can be restored later.</p>
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end gap-2 border-t border-gray-100 pt-4 dark:border-slate-800">
+              <button type="button" onClick={() => setBulkDeleteOpen(false)} disabled={bulkDeleting} className="rounded-full bg-gray-100 px-5 py-2.5 text-xs font-bold text-gray-600 disabled:opacity-50 dark:bg-slate-800 dark:text-gray-300">Cancel</button>
+              <button type="button" onClick={handleBulkDelete} disabled={bulkDeleting} className="rounded-full bg-rose-600 px-5 py-2.5 text-xs font-extrabold text-white disabled:opacity-50">{bulkDeleting ? "Deleting..." : "Delete Accounts"}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Single-step account creation */}
       {isCreateOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <form onSubmit={handleCreateAccountSubmit} className="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-[28px] border border-gray-100 bg-white p-6 text-left shadow-2xl dark:border-slate-800 dark:bg-[#0B192C] sm:p-8">
+            <div className="flex items-start justify-between gap-4 border-b border-gray-100 pb-4 dark:border-slate-800">
+              <div>
+                <h3 className="flex items-center gap-2 text-xl font-extrabold text-[#0B192C] dark:text-white"><UserPlus size={22} className="text-[#0A4DA6]" /> Create Account</h3>
+                <p className="mt-1 text-xs font-medium text-gray-500">Enter account details and verification documents in one step.</p>
+              </div>
+              <button type="button" onClick={() => setIsCreateOpen(false)} disabled={creatingAccount} className="rounded-full p-1.5 text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800" aria-label="Close account form"><X size={18} /></button>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 py-6 text-xs md:grid-cols-2">
+              <label className="space-y-1 font-bold text-gray-700 dark:text-gray-300">Full Name *
+                <input type="text" required minLength={2} autoComplete="name" placeholder="Enter full name" value={newAccountData.name} onChange={(e) => setNewAccountData({ ...newAccountData, name: e.target.value })} className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 font-normal focus:border-[#0A4DA6] focus:outline-none dark:border-slate-800 dark:bg-slate-900" />
+              </label>
+              <label className="space-y-1 font-bold text-gray-700 dark:text-gray-300">Email Address *
+                <input type="email" required autoComplete="email" placeholder="name@example.com" value={newAccountData.email} onChange={(e) => setNewAccountData({ ...newAccountData, email: e.target.value })} className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 font-normal focus:border-[#0A4DA6] focus:outline-none dark:border-slate-800 dark:bg-slate-900" />
+              </label>
+              <label className="space-y-1 font-bold text-gray-700 dark:text-gray-300">Phone Number *
+                <input type="tel" required autoComplete="tel" placeholder="+91 98765 43210" value={newAccountData.phone} onChange={(e) => setNewAccountData({ ...newAccountData, phone: e.target.value })} className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 font-normal focus:border-[#0A4DA6] focus:outline-none dark:border-slate-800 dark:bg-slate-900" />
+              </label>
+              <label className="space-y-1 font-bold text-gray-700 dark:text-gray-300">Gender *
+                <select required value={newAccountData.gender} onChange={(e) => setNewAccountData({ ...newAccountData, gender: e.target.value })} className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 font-normal focus:border-[#0A4DA6] focus:outline-none dark:border-slate-800 dark:bg-slate-900"><option value="Male">Male</option><option value="Female">Female</option><option value="Other">Other</option></select>
+              </label>
+              <label className="space-y-1 font-bold text-gray-700 dark:text-gray-300 md:col-span-2">Role *
+                <select required value={newAccountData.role} onChange={(e) => setNewAccountData({ ...newAccountData, role: e.target.value })} className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 font-bold text-[#0A4DA6] focus:border-[#0A4DA6] focus:outline-none dark:border-slate-800 dark:bg-slate-900">{ALL_ROLES.map((role) => <option key={role.id} value={role.id}>{role.label}</option>)}</select>
+              </label>
+            </div>
+
+            <section className="rounded-2xl border border-gray-200 bg-gray-50/70 p-4 dark:border-slate-800 dark:bg-slate-900/60">
+              <h4 className="flex items-center gap-2 text-sm font-extrabold text-[#0B192C] dark:text-white"><FileText size={16} className="text-[#0A4DA6]" />{newAccountData.role === "customer" ? "Identity Documents (Optional)" : "Role Verification Documents (Required)"}</h4>
+              <p className="mb-4 mt-1 text-[11px] text-gray-500">{newAccountData.role === "customer" ? "Pilgrim accounts may be created without Aadhaar or PAN documents." : "Aadhaar card and PAN card must be uploaded for every role account."}</p>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div><p className="mb-1 text-xs font-bold">Aadhaar Card {newAccountData.role === "customer" ? "(Optional)" : "*"}</p><FileUploader folder="user-documents/aadhaar" accept="image/*,application/pdf" label="Upload Aadhaar" currentUrl={newAccountData.aadhaarCardUrl} onUploaded={(aadhaarCardUrl) => setNewAccountData((current: Record<string, any>) => ({ ...current, aadhaarCardUrl }))} /></div>
+                <div><p className="mb-1 text-xs font-bold">PAN Card {newAccountData.role === "customer" ? "(Optional)" : "*"}</p><FileUploader folder="user-documents/pan" accept="image/*,application/pdf" label="Upload PAN" currentUrl={newAccountData.panCardUrl} onUploaded={(panCardUrl) => setNewAccountData((current: Record<string, any>) => ({ ...current, panCardUrl }))} /></div>
+              </div>
+            </section>
+
+            <div className="mt-6 flex flex-col-reverse gap-3 border-t border-gray-100 pt-5 dark:border-slate-800 sm:flex-row sm:justify-end">
+              <button type="button" onClick={() => setIsCreateOpen(false)} disabled={creatingAccount} className="rounded-full bg-gray-100 px-6 py-2.5 text-xs font-bold disabled:opacity-60 dark:bg-slate-800">Cancel</button>
+              <button type="submit" disabled={creatingAccount} className="rounded-full bg-[#0A4DA6] px-7 py-2.5 text-xs font-extrabold text-white shadow-md disabled:opacity-60">{creatingAccount ? "Creating Account..." : "Create Account"}</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Legacy wizard is disabled; retained temporarily to avoid mixing this focused fix with unrelated modal code. */}
+      {false && isCreateOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <form
             onSubmit={handleCreateAccountSubmit}
@@ -1368,7 +1556,10 @@ export const UserManagementPage: React.FC = () => {
       {viewingUser && (
         <div
           className="fixed inset-0 z-[70] flex items-start sm:items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm overflow-y-auto"
-          onClick={() => setViewingUser(null)}
+          onClick={() => {
+            setEditingUser(false);
+            setViewingUser(null);
+          }}
         >
           <div
             role="dialog"
@@ -1406,7 +1597,10 @@ export const UserManagementPage: React.FC = () => {
               </div>
               <button
                 type="button"
-                onClick={() => setViewingUser(null)}
+                onClick={() => {
+                  setEditingUser(false);
+                  setViewingUser(null);
+                }}
                 aria-label="Close"
                 className="shrink-0 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-400 hover:text-gray-600 cursor-pointer"
               >
@@ -1415,6 +1609,26 @@ export const UserManagementPage: React.FC = () => {
             </div>
 
             <div className="flex-1 min-h-0 overflow-y-auto px-5 sm:px-7 py-5 space-y-5">
+              {editingUser && (
+                <form
+                  id="account-details-form"
+                  onSubmit={handleAccountEditSubmit}
+                  className="grid grid-cols-1 gap-3 rounded-2xl border border-blue-100 bg-blue-50/40 p-4 sm:grid-cols-2 dark:border-slate-700 dark:bg-slate-900/60"
+                >
+                  <label className="space-y-1 text-[10px] font-bold text-gray-500">Full Name
+                    <input required minLength={2} value={editUserData.name} onChange={(e) => setEditUserData({ ...editUserData, name: e.target.value })} className="w-full rounded-xl border border-gray-200 bg-white p-2.5 text-xs text-[#0B192C] outline-none focus:border-[#0A4DA6] dark:border-slate-700 dark:bg-slate-950 dark:text-white" />
+                  </label>
+                  <label className="space-y-1 text-[10px] font-bold text-gray-500">Email
+                    <input type="email" required value={editUserData.email} onChange={(e) => setEditUserData({ ...editUserData, email: e.target.value })} className="w-full rounded-xl border border-gray-200 bg-white p-2.5 text-xs text-[#0B192C] outline-none focus:border-[#0A4DA6] dark:border-slate-700 dark:bg-slate-950 dark:text-white" />
+                  </label>
+                  <label className="space-y-1 text-[10px] font-bold text-gray-500">Phone
+                    <input type="tel" required value={editUserData.phone} onChange={(e) => setEditUserData({ ...editUserData, phone: e.target.value })} className="w-full rounded-xl border border-gray-200 bg-white p-2.5 text-xs text-[#0B192C] outline-none focus:border-[#0A4DA6] dark:border-slate-700 dark:bg-slate-950 dark:text-white" />
+                  </label>
+                  <label className="space-y-1 text-[10px] font-bold text-gray-500">Gender
+                    <select required value={editUserData.gender} onChange={(e) => setEditUserData({ ...editUserData, gender: e.target.value })} className="w-full rounded-xl border border-gray-200 bg-white p-2.5 text-xs text-[#0B192C] outline-none focus:border-[#0A4DA6] dark:border-slate-700 dark:bg-slate-950 dark:text-white"><option value="Male">Male</option><option value="Female">Female</option><option value="Other">Other</option></select>
+                  </label>
+                </form>
+              )}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {[
                   { label: "Email", value: viewingUser.email },
@@ -1550,11 +1764,111 @@ export const UserManagementPage: React.FC = () => {
               )}
             </div>
 
-            <div className="shrink-0 flex justify-end px-5 sm:px-7 py-4 border-t border-gray-100 dark:border-slate-800">
+            <div className="shrink-0 flex flex-wrap items-center justify-end gap-2 px-5 sm:px-7 py-4 border-t border-gray-100 dark:border-slate-800">
+              {canModerate && !viewingUser.isDeleted && !editingUser && (
+                <button
+                  type="button"
+                  onClick={() => startAccountEdit(viewingUser)}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-[#0A4DA6]/20 bg-[#0A4DA6]/5 px-3.5 py-2 text-[10px] font-extrabold text-[#0A4DA6] hover:bg-[#0A4DA6] hover:text-white"
+                >
+                  Edit Details
+                </button>
+              )}
+              {editingUser && (
+                <>
+                  <button type="button" onClick={() => setEditingUser(false)} disabled={savingUser} className="rounded-full bg-gray-100 px-4 py-2 text-[10px] font-bold text-gray-600 disabled:opacity-60">Cancel Edit</button>
+                  <button type="submit" form="account-details-form" disabled={savingUser} className="rounded-full bg-emerald-600 px-4 py-2 text-[10px] font-extrabold text-white disabled:opacity-60">{savingUser ? "Saving..." : "Save Details"}</button>
+                </>
+              )}
+              {canModerate && !viewingUser.isDeleted && !editingUser && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRoleTarget(viewingUser);
+                      setNewSelectedRole(viewingUser.role);
+                      setViewingUser(null);
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 px-3.5 py-2 text-[10px] font-extrabold text-amber-700 hover:bg-amber-50"
+                  >
+                    <Shield size={13} /> Change Role
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPermTarget(viewingUser);
+                      setSelectedPerms(viewingUser.permissions || []);
+                      setViewingUser(null);
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 px-3.5 py-2 text-[10px] font-extrabold text-blue-700 hover:bg-blue-50"
+                  >
+                    <Tag size={13} /> Permissions
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setResetPassTarget(viewingUser);
+                      setViewingUser(null);
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-purple-200 px-3.5 py-2 text-[10px] font-extrabold text-purple-700 hover:bg-purple-50"
+                  >
+                    <Key size={13} /> Reset Password
+                  </button>
+                  {viewingUser.isSuspended || ["suspended", "temp_suspended", "perm_suspended"].includes(viewingUser.status) ? (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await handleReactivate(viewingUser);
+                        setViewingUser(null);
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 px-3.5 py-2 text-[10px] font-extrabold text-emerald-700 hover:bg-emerald-50"
+                    >
+                      <UserCheck size={13} /> Reactivate
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSuspendTarget(viewingUser);
+                        setViewingUser(null);
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 px-3.5 py-2 text-[10px] font-extrabold text-amber-700 hover:bg-amber-50"
+                    >
+                      <UserX size={13} /> Suspend
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDeleteTarget(viewingUser);
+                      setDeleteType("soft");
+                      setViewingUser(null);
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 px-3.5 py-2 text-[10px] font-extrabold text-rose-700 hover:bg-rose-50"
+                  >
+                    <Trash2 size={13} /> Delete
+                  </button>
+                </>
+              )}
+              {canModerate && viewingUser.isDeleted && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await handleRestore(viewingUser);
+                    setViewingUser(null);
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 px-3.5 py-2 text-[10px] font-extrabold text-emerald-700 hover:bg-emerald-50"
+                >
+                  <RotateCcw size={13} /> Restore Account
+                </button>
+              )}
               <button
                 type="button"
-                onClick={() => setViewingUser(null)}
-                className="px-6 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-blue-900 text-white text-xs font-extrabold shadow-md cursor-pointer"
+                onClick={() => {
+                  setEditingUser(false);
+                  setViewingUser(null);
+                }}
+                className="px-5 py-2 rounded-full bg-[#0A4DA6] hover:bg-blue-900 text-white text-[10px] font-extrabold shadow-md cursor-pointer"
               >
                 Close
               </button>

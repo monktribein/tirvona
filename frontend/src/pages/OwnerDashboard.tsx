@@ -1,22 +1,28 @@
 import React, { useState, useEffect } from "react";
-import { analyticsService, bookingService, approvalService } from "../services";
+import {
+  analyticsService,
+  bookingService,
+  approvalService,
+  ashramService,
+} from "../services";
 import api, { getErrorMessage } from "../lib/api";
 import { RecordFieldList } from "../admin/shared/components/RecordValue";
 import { useNotifications } from "../contexts/NotificationContext";
+import { useAuth } from "../contexts/AuthContext";
 import { formatCurrency, getFormattingLocale } from "../utils/format";
 import {
-  TrendingUp,
   Bed,
   Users,
   Clock,
   DollarSign,
   Star,
-  Check,
   XCircle,
   MessageSquare,
   ShieldCheck,
   Plus,
   FileText,
+  Building2,
+  CalendarCheck,
 } from "lucide-react";
 
 interface CmsRequest {
@@ -32,10 +38,16 @@ interface CmsRequest {
 }
 
 export const OwnerDashboard: React.FC = () => {
+  const { user } = useAuth();
   const { addNotification } = useNotifications();
 
   const [analytics, setAnalytics] = useState<any>(null);
   const [recentBookings, setRecentBookings] = useState<any[]>([]);
+  const [estateSummary, setEstateSummary] = useState({
+    totalAshrams: 0,
+    totalRoomCategories: 0,
+    totalInventory: 0,
+  });
   const [pendingCmsRequests, setPendingCmsRequests] = useState<CmsRequest[]>(
     [],
   );
@@ -128,20 +140,60 @@ export const OwnerDashboard: React.FC = () => {
     setLoading(true);
     setError("");
     try {
-      const res = await analyticsService.dashboard();
-      if (res.data.success) {
-        setAnalytics(res.data.data);
-      }
+      const [analyticsResult, bookingsResult] = await Promise.allSettled([
+        analyticsService.dashboard(),
+        bookingService.dashboard({ page: "1", limit: "8" }),
+      ]);
+      if (
+        analyticsResult.status === "fulfilled" &&
+        analyticsResult.value.data.success
+      )
+        setAnalytics(analyticsResult.value.data.data);
+      else throw analyticsResult.status === "rejected"
+        ? analyticsResult.reason
+        : new Error("Analytics response was not successful");
 
-      const bookingsRes = await bookingService.dashboard();
-      if (bookingsRes.data.success) {
-        setRecentBookings(bookingsRes.data.data.slice(0, 8));
-      }
+      if (
+        bookingsResult.status === "fulfilled" &&
+        bookingsResult.value.data.success
+      )
+        setRecentBookings(bookingsResult.value.data.data.slice(0, 8));
+      else setRecentBookings([]);
+
+      // Structural totals come from the management estate itself. This keeps
+      // the dashboard accurate against older analytics deployments that do
+      // not yet return the newer totalAshrams/totalInventory fields.
+      const ashramsResult = await ashramService.myListings();
+      const ashrams = ashramsResult.data?.success
+        ? ashramsResult.data.data || []
+        : [];
+      const roomResults = await Promise.allSettled(
+        ashrams.map((ashram: any) => ashramService.getManagedById(ashram._id)),
+      );
+      const rooms = roomResults.flatMap((result) =>
+        result.status === "fulfilled" && result.value.data?.success
+          ? result.value.data.data?.rooms || []
+          : [],
+      );
+      setEstateSummary({
+        totalAshrams: ashrams.length,
+        totalRoomCategories: rooms.length,
+        totalInventory: rooms.reduce(
+          (total: number, room: any) =>
+            total + Number(room.totalInventory ?? room.totalRooms ?? 0),
+          0,
+        ),
+      });
     } catch (err) {
       console.error("Owner dashboard load error:", err);
       setError("Unable to load dashboard data. Please try again.");
       setAnalytics(null);
       setRecentBookings([]);
+      setEstateSummary({
+        totalAshrams: 0,
+        totalRoomCategories: 0,
+        totalInventory: 0,
+      });
     } finally {
       setLoading(false);
     }
@@ -205,6 +257,29 @@ export const OwnerDashboard: React.FC = () => {
     }
   };
 
+  const totalAshrams =
+    estateSummary.totalAshrams || Number(analytics?.totalAshrams ?? 0);
+  const totalRoomCategories =
+    estateSummary.totalRoomCategories ||
+    Number(analytics?.totalRoomCategories ?? 0);
+  const totalInventory =
+    estateSummary.totalInventory || Number(analytics?.totalInventory ?? 0);
+  const availableRooms = Number(
+    analytics?.availableRooms ??
+      Math.max(0, totalInventory - Number(analytics?.occupiedRooms ?? 0)),
+  );
+  const occupiedRooms = Number(
+    analytics?.occupiedRooms ?? Math.max(0, totalInventory - availableRooms),
+  );
+  const occupancyRate =
+    analytics?.occupancyRate ??
+    (totalInventory ? Math.round((occupiedRooms * 100) / totalInventory) : 0);
+  const collectedRevenue = Number(analytics?.revenue ?? 0);
+  const pendingCollections = Number(analytics?.pendingPayments ?? 0);
+  const grossBookingValue = Number(
+    analytics?.grossBookingValue ?? collectedRevenue + pendingCollections,
+  );
+
   return (
     <div className="space-y-8">
       {/* Enterprise Page Header */}
@@ -215,7 +290,9 @@ export const OwnerDashboard: React.FC = () => {
           </div>
           <div>
             <h2 className="text-xl sm:text-2xl font-black text-[#0B192C] dark:text-white tracking-tight">
-              Ashram Stay Admin Portal
+              {user?.role === "ashram_admin" || user?.role === "stay_admin"
+                ? "Ashram Admin Portal"
+                : "Ashram Owner Portal"}
             </h2>
             <p className="text-xs text-gray-400 font-semibold mt-0.5">
               Live telemetry, room occupancy, guest reservations, and pending
@@ -225,7 +302,7 @@ export const OwnerDashboard: React.FC = () => {
         </div>
 
         <span className="px-3.5 py-1.5 bg-[#E58C28]/15 text-[#E58C28] border border-[#E58C28]/30 rounded-full text-xs font-black tracking-wider">
-          Verified Trust Portal
+          Tirvona Verified Portal
         </span>
       </div>
 
@@ -235,88 +312,58 @@ export const OwnerDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Metric Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Gross Revenue */}
-        <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-5 rounded-[24px] shadow-lg shadow-gray-200/40 dark:shadow-none hover:shadow-xl transition-all space-y-3">
-          <div className="flex justify-between items-start">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 flex items-center justify-center">
-              <DollarSign size={20} />
-            </div>
-            <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-full text-[10px] font-black">
-              +12% MO.
-            </span>
-          </div>
+      <section className="space-y-4">
+        <div className="flex items-end justify-between gap-4 px-1">
           <div>
-            <span className="text-[10px] text-gray-400 font-extrabold tracking-wider block">
-              Gross Revenue
-            </span>
-            <h3 className="text-2xl font-black text-[#0B192C] dark:text-white mt-0.5">
-              {formatCurrency(analytics?.revenue || 0)}
-            </h3>
+            <h3 className="text-lg font-black text-[#0B192C] dark:text-white">Platform Overview</h3>
+            <p className="text-xs font-semibold text-gray-400">Live totals across every ashram this account is authorized to manage.</p>
           </div>
+          <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[10px] font-black text-emerald-700">LIVE DATA</span>
         </div>
 
-        {/* Today's Revenue */}
-        <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-5 rounded-[24px] shadow-lg shadow-gray-200/40 dark:shadow-none hover:shadow-xl transition-all space-y-3">
-          <div className="flex justify-between items-start">
-            <div className="w-10 h-10 rounded-2xl bg-[#0A4DA6]/10 text-[#0A4DA6] flex items-center justify-center">
-              <TrendingUp size={20} />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {[
+            { label: "Total Ashrams", value: totalAshrams, detail: "Platform accommodations", icon: <Building2 size={22} />, accent: "from-blue-600 to-[#0A4DA6]" },
+            { label: "Total Bookings", value: Number(analytics?.totalBookings ?? 0), detail: `${Number(analytics?.activeBookings ?? 0)} active reservations`, icon: <CalendarCheck size={22} />, accent: "from-violet-600 to-indigo-700" },
+            { label: "Collected Revenue", value: formatCurrency(collectedRevenue), detail: `${formatCurrency(Number(analytics?.todayRevenue ?? 0))} collected today`, icon: <DollarSign size={22} />, accent: "from-emerald-600 to-teal-700" },
+            { label: "Available Rooms", value: availableRooms, detail: `${occupiedRooms} occupied of ${totalInventory} rooms`, icon: <Bed size={22} />, accent: "from-orange-500 to-[#E58C28]" },
+          ].map((metric) => (
+            <div key={metric.label} className="relative overflow-hidden rounded-[24px] border border-gray-100 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-[#0B192C]">
+              <div className={`absolute inset-y-0 left-0 w-1.5 bg-gradient-to-b ${metric.accent}`} />
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.12em] text-gray-400">{metric.label}</p>
+                  <p className="mt-2 text-3xl font-black tracking-tight text-[#0B192C] dark:text-white">{loading ? "—" : metric.value}</p>
+                  <p className="mt-1 text-[11px] font-semibold text-gray-400">{metric.detail}</p>
+                </div>
+                <div className={`rounded-2xl bg-gradient-to-br ${metric.accent} p-3 text-white shadow-lg`}>{metric.icon}</div>
+              </div>
             </div>
-            <span className="px-2.5 py-0.5 bg-[#0A4DA6]/10 text-[#0A4DA6] border border-[#0A4DA6]/20 rounded-full text-[10px] font-black">
-              TODAY
-            </span>
-          </div>
-          <div>
-            <span className="text-[10px] text-gray-400 font-extrabold tracking-wider block">
-              Today's Revenue
-            </span>
-            <h3 className="text-2xl font-black text-[#0A4DA6] mt-0.5">
-              {formatCurrency(analytics?.todayRevenue || 0)}
-            </h3>
-          </div>
+          ))}
         </div>
 
-        {/* Bed Occupancy */}
-        <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-5 rounded-[24px] shadow-lg shadow-gray-200/40 dark:shadow-none hover:shadow-xl transition-all space-y-3">
-          <div className="flex justify-between items-start">
-            <div className="w-10 h-10 rounded-2xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 flex items-center justify-center">
-              <Bed size={20} />
-            </div>
-            <span className="px-2.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-full text-[10px] font-black">
-              OCCUPANCY
-            </span>
-          </div>
-          <div>
-            <span className="text-[10px] text-gray-400 font-extrabold tracking-wider block">
-              Bed Occupancy Rate
-            </span>
-            <h3 className="text-2xl font-black text-[#0B192C] dark:text-white mt-0.5">
-              {analytics?.occupancyRate || "0"}%
-            </h3>
-          </div>
-        </div>
-
-        {/* Available Rooms */}
-        <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-5 rounded-[24px] shadow-lg shadow-gray-200/40 dark:shadow-none hover:shadow-xl transition-all space-y-3">
-          <div className="flex justify-between items-start">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 flex items-center justify-center">
-              <Check size={20} />
-            </div>
-            <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-full text-[10px] font-black">
-              VACANT
-            </span>
-          </div>
-          <div>
-            <span className="text-[10px] text-gray-400 font-extrabold tracking-wider block">
-              Available Rooms
-            </span>
-            <h3 className="text-2xl font-black text-emerald-600 mt-0.5">
-              {analytics?.availableRooms || "0"} Rooms
-            </h3>
+        <div className="rounded-[24px] border border-gray-100 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-[#0B192C]">
+          <div className="grid grid-cols-2 divide-x-0 divide-y divide-gray-100 sm:grid-cols-3 lg:grid-cols-5 lg:divide-x lg:divide-y-0 dark:divide-slate-800">
+            {[
+              ["Gross Booking Value", formatCurrency(grossBookingValue)],
+              ["Pending Collections", formatCurrency(pendingCollections)],
+              ["Room Categories", totalRoomCategories],
+              ["Occupancy", `${occupancyRate}%`],
+              ["Average Rating", `${Number(analytics?.averageRating ?? 0)} / 5`],
+              ["Today's Check-ins", Number(analytics?.checkInsToday ?? 0)],
+              ["Today's Check-outs", Number(analytics?.checkoutSoon ?? 0)],
+              ["Cancelled", Number(analytics?.cancelledBookings ?? 0)],
+              ["Occupied Rooms", occupiedRooms],
+              ["Total Inventory", totalInventory],
+            ].map(([label, value]) => (
+              <div key={String(label)} className="min-w-0 px-4 py-4 first:pl-0 lg:py-2">
+                <p className="truncate text-[10px] font-extrabold uppercase tracking-wider text-gray-400">{label}</p>
+                <p className="mt-1 truncate text-lg font-black text-[#0B192C] dark:text-white">{loading ? "—" : value}</p>
+              </div>
+            ))}
           </div>
         </div>
-      </div>
+      </section>
 
       {/* ── Pending Content Approvals (CMS Workflow Console) ── */}
       <div className="bg-white dark:bg-[#0B192C] border border-amber-200 dark:border-amber-900/50 p-6 rounded-[24px] shadow-sm space-y-4">
@@ -487,7 +534,7 @@ export const OwnerDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* ── Room Category Approval Request Workflow (Stay Admin Console) ── */}
+      {/* Room Category Approval Request Workflow (Accommodation Console) */}
       <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[24px] shadow-sm space-y-4">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-gray-100 dark:border-slate-800 pb-4">
           <div className="flex items-center gap-3">
@@ -731,6 +778,7 @@ export const OwnerDashboard: React.FC = () => {
               <tr className="border-b border-gray-100 dark:border-slate-800 text-gray-400 font-bold text-[10px] tracking-wider">
                 <th className="py-3 px-4">Booking ID</th>
                 <th className="py-3 px-4">Pilgrim Name</th>
+                <th className="py-3 px-4">Ashram</th>
                 <th className="py-3 px-4">Room Type</th>
                 <th className="py-3 px-4">Amount</th>
                 <th className="py-3 px-4">Payment</th>
@@ -738,7 +786,9 @@ export const OwnerDashboard: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {recentBookings.map((bk) => (
+              {recentBookings.length === 0 ? (
+                <tr><td colSpan={7} className="py-8 text-center font-semibold text-gray-400">No recent bookings across the platform.</td></tr>
+              ) : recentBookings.map((bk) => (
                 <tr
                   key={bk._id}
                   className="border-b border-gray-100 dark:border-slate-800 hover:bg-gray-50/50 dark:hover:bg-slate-900/40"
@@ -755,6 +805,10 @@ export const OwnerDashboard: React.FC = () => {
                         {bk.customerId?.phone}
                       </span>
                     </div>
+                  </td>
+                  <td className="py-3.5 px-4">
+                    <div className="font-semibold text-[#0B192C] dark:text-white">{bk.ashramId?.name || "Unknown ashram"}</div>
+                    <div className="text-[10px] text-gray-400">{bk.ashramId?.address?.city || ""}</div>
                   </td>
                   <td className="py-3.5 px-4 text-gray-500">
                     {bk.roomId?.name}
@@ -833,6 +887,10 @@ export const OwnerDashboard: React.FC = () => {
                     <span className="font-semibold text-secondary dark:text-white">
                       {bk.customerId?.name} ({bk.customerId?.phone})
                     </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Ashram:</span>
+                    <span className="font-semibold text-right text-secondary dark:text-white">{bk.ashramId?.name || "Unknown ashram"}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-400">Room:</span>

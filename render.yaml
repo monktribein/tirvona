@@ -106,8 +106,11 @@ services:
       # to invalidate artwork already in circulation.
       - key: SMART_CONTACT_PUBLIC_BASE_URL
         value: https://www.tirvona.com
+      # "/" means no path segment: profiles are https://www.tirvona.com/{slug}.
+      # Set to "c" to serve them under /c/{slug} instead. Changing this after
+      # cards are printed invalidates every QR already in circulation.
       - key: SMART_CONTACT_PUBLIC_PATH_PREFIX
-        value: c
+        value: /
       # Origin the console builds QR/vCard download links against.
       - key: SMART_CONTACT_API_BASE_URL
         sync: false
@@ -128,14 +131,37 @@ services:
     rootDir: frontend
     buildCommand: npm ci && npm run build
     staticPublishPath: dist
+    # Smart Contact profiles live at the site ROOT (/{slug}), which a static
+    # host cannot tell apart from a real page (/parking). So every SPA page is
+    # named explicitly and the contact page is the fallback for everything
+    # else. Order is load-bearing.
+    #
+    # Adding a page to the SPA? Add it here too. `npm run build` runs
+    # scripts/check-spa-routes.mjs, which fails the build if this drifts —
+    # a missing entry would otherwise serve "Contact not found" silently.
+    #
+    # Vercel is the production host for this app; these rules mirror
+    # frontend/vercel.json so a Render deploy behaves identically.
     routes:
       - type: rewrite
-        source: /c/*
-        destination: /c/index.html
-      # SPA fallback so client-side routes resolve to index.html.
+        source: /
+        destination: /index.html
+      - type: rewrite
+        source: >-
+          /:page(about|admin|ashram|ashram-admin|ashram-owner|blog|booking|books|cancellation-policy|careers|circuits|contact|cookie-policy|dashboard|destinations|events|faq|govt-guidelines|handicrafts|help|local|local-guides|login|marketplace|offers|owner|owner-guide|parking|partner|pilgrimage-circuits|press|privacy|profile|public|puja-items|refund-policy|register|religious-products|reset-password|restaurants|search|services|shops|staff|stay-policies|support|temples|terms|transport|travel-guides|video|volunteer)
+        destination: /index.html
+      - type: rewrite
+        source: >-
+          /:page(about|admin|ashram|ashram-admin|ashram-owner|blog|booking|books|cancellation-policy|careers|circuits|contact|cookie-policy|dashboard|destinations|events|faq|govt-guidelines|handicrafts|help|local|local-guides|login|marketplace|offers|owner|owner-guide|parking|partner|pilgrimage-circuits|press|privacy|profile|public|puja-items|refund-policy|register|religious-products|reset-password|restaurants|search|services|shops|staff|stay-policies|support|temples|terms|transport|travel-guides|video|volunteer)/:rest*
+        destination: /index.html
+      # Legacy: QR codes generated while profiles lived under /c/ keep working.
+      - type: rewrite
+        source: /c/:slug
+        destination: /smart-contact.html
+      # Anything else is treated as a profile slug.
       - type: rewrite
         source: /*
-        destination: /index.html
+        destination: /smart-contact.html
     envVars:
       - key: VITE_API_URL
         sync: false

@@ -24,6 +24,7 @@ import {
   formatDateTimeIN,
 } from "../../utils/format";
 import { SUPPORT_CONFIG } from "../../constants/support";
+import { useNotifications } from "../../contexts/NotificationContext";
 
 interface BookingDetailsData {
   _id: string;
@@ -97,9 +98,21 @@ interface BookingDetailsData {
   };
 }
 
+const isPaymentComplete = (paymentStatus?: string): boolean =>
+  ["fully_paid", "paid", "success", "completed"].includes(
+    String(paymentStatus ?? "").trim().toLowerCase(),
+  );
+
+const isStayConfirmed = (booking: BookingDetailsData): boolean =>
+  isPaymentComplete(booking.paymentStatus) &&
+  ["confirmed", "checked_in", "checked_out", "completed"].includes(
+    String(booking.status ?? "").trim().toLowerCase(),
+  );
+
 export const BookingDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { addNotification, confirmAction } = useNotifications();
 
   const [booking, setBooking] = useState<BookingDetailsData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -133,9 +146,12 @@ export const BookingDetailPage: React.FC = () => {
 
   const handleCancelBooking = async () => {
     if (!booking || cancelling) return;
-    const confirmCancel = window.confirm(
-      `Are you sure you want to cancel booking ${booking.bookingId}?\n\nInventory will be released back to the ashram.`,
-    );
+    const confirmCancel = await confirmAction({
+      title: "Cancel this stay?",
+      message: `Booking ${booking.bookingId} will be cancelled and its inventory released back to the ashram.`,
+      confirmLabel: "Cancel Stay",
+      tone: "danger",
+    });
     if (!confirmCancel) return;
 
     setCancelling(true);
@@ -147,11 +163,15 @@ export const BookingDetailPage: React.FC = () => {
       );
       if (res.data?.success) {
         await fetchBookingDetails();
+        addNotification("Booking Cancelled", `${booking.bookingId} was cancelled successfully.`, "success");
       } else {
         setCancelError(res.data?.message || "Could not cancel booking.");
+        addNotification("Cancellation Failed", res.data?.message || "Could not cancel booking.", "error");
       }
     } catch (err) {
-      setCancelError(getErrorMessage(err, "Error cancelling booking."));
+      const message = getErrorMessage(err, "Error cancelling booking.");
+      setCancelError(message);
+      addNotification("Cancellation Failed", message, "error");
     } finally {
       setCancelling(false);
     }
@@ -247,7 +267,13 @@ export const BookingDetailPage: React.FC = () => {
 
       ctx.fillStyle = "#FFFFFF";
       ctx.font = "800 14px sans-serif";
-      ctx.fillText("OFFICIAL ACCOMMODATION RECEIPT", width / 2, textY + 18);
+      ctx.fillText(
+        isPaymentComplete(booking.paymentStatus)
+          ? "OFFICIAL ACCOMMODATION RECEIPT"
+          : "BOOKING & PAYMENT SUMMARY",
+        width / 2,
+        textY + 18,
+      );
       ctx.restore();
 
       // Ashram Title Block
@@ -288,7 +314,13 @@ export const BookingDetailPage: React.FC = () => {
 
       ctx.fillStyle = "#064E3B";
       ctx.font = "900 18px monospace";
-      ctx.fillText(booking.checkInCode || "VERIFIED", 40, 190);
+      ctx.fillText(
+        isStayConfirmed(booking)
+          ? booking.checkInCode || "CONFIRMED"
+          : "PAYMENT PENDING",
+        40,
+        190,
+      );
 
       ctx.textAlign = "right";
       ctx.fillStyle = "#047857";
@@ -407,7 +439,7 @@ export const BookingDetailPage: React.FC = () => {
       const dataUrl = canvas.toDataURL("image/png");
       const a = document.createElement("a");
       a.href = dataUrl;
-      a.download = `tirvona-booking-receipt-${booking.bookingId}.png`;
+      a.download = `tirvona-${isPaymentComplete(booking.paymentStatus) ? "booking-receipt" : "booking-summary"}-${booking.bookingId}.png`;
       a.click();
     } catch (err) {
       console.error("Failed to generate receipt image:", err);
@@ -446,6 +478,55 @@ export const BookingDetailPage: React.FC = () => {
   const ashram = booking.ashramId;
   const room = booking.roomId;
   const pricing = booking.pricing;
+  const paymentComplete = isPaymentComplete(booking.paymentStatus);
+  const stayConfirmed = isStayConfirmed(booking);
+  // A reservation cannot be presented as confirmed while its payment is
+  // pending. This also protects the page from inconsistent legacy records.
+  const effectiveStatus =
+    booking.status === "confirmed" && !paymentComplete
+      ? "pending"
+      : booking.status;
+  const lifecycle = (() => {
+    switch (effectiveStatus) {
+      case "confirmed":
+        return {
+          title: "Reservation Confirmed",
+          detail: "Payment completed and the stay is confirmed.",
+          dot: "bg-emerald-500",
+        };
+      case "cancelled":
+        return {
+          title: "Reservation Cancelled",
+          detail: "This reservation has been cancelled.",
+          dot: "bg-rose-500",
+        };
+      case "expired":
+        return {
+          title: "Reservation Expired",
+          detail: "The payment window expired before confirmation.",
+          dot: "bg-rose-500",
+        };
+      case "checked_in":
+        return {
+          title: "Guest Checked In",
+          detail: "The stay is currently in progress.",
+          dot: "bg-blue-500",
+        };
+      case "checked_out":
+      case "completed":
+        return {
+          title: effectiveStatus === "completed" ? "Stay Completed" : "Guest Checked Out",
+          detail: "The guest has completed the stay.",
+          dot: "bg-blue-500",
+        };
+      default:
+        return {
+          title: "Reservation Created — Payment Pending",
+          detail: `Payment status: ${booking.paymentStatus || "pending"}. The stay is not confirmed yet.`,
+          dot: "bg-amber-500",
+        };
+    }
+  })();
   const ashramImage =
     ashram?.images && ashram.images.length > 0
       ? ashram.images[0]
@@ -464,7 +545,7 @@ export const BookingDetailPage: React.FC = () => {
               <h1 className="text-base sm:text-lg font-black text-[#0B192C] dark:text-white">
                 Booking #{booking.bookingId}
               </h1>
-              <EnterpriseStatusBadge status={booking.status} />
+              <EnterpriseStatusBadge status={effectiveStatus} />
             </div>
             <p className="text-xs text-gray-400 font-semibold">
               Ref: {booking.reservationNumber || booking._id}
@@ -477,7 +558,7 @@ export const BookingDetailPage: React.FC = () => {
             onClick={handlePrintReceipt}
             className="inline-flex items-center gap-1.5 px-4 py-2 bg-white dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 text-[#0B192C] dark:text-white border border-gray-200 dark:border-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer shadow-2xs"
           >
-            <Download size={14} /> Receipt
+            <Download size={14} /> {paymentComplete ? "Receipt" : "Booking Summary"}
           </button>
 
           {isCancellable && (
@@ -555,7 +636,7 @@ export const BookingDetailPage: React.FC = () => {
                 </span>
               </div>
 
-              {booking.assignedRoomNumber ? (
+              {stayConfirmed && booking.assignedRoomNumber ? (
                 <div className="bg-purple-50 dark:bg-purple-950/50 border border-purple-200 dark:border-purple-900/50 text-purple-700 dark:text-purple-300 px-3.5 py-1.5 rounded-xl flex items-center gap-2 font-extrabold">
                   <BedDouble size={15} />
                   <span>Assigned Room: {booking.assignedRoomNumber}</span>
@@ -563,11 +644,15 @@ export const BookingDetailPage: React.FC = () => {
               ) : (
                 <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/40 text-amber-800 dark:text-amber-300 px-3.5 py-1.5 rounded-xl flex items-center gap-2 text-xs">
                   <Clock size={14} />
-                  <span>Room Number: Assigned at Front Desk</span>
+                  <span>
+                    {stayConfirmed
+                      ? "Room Number: Assigned at Front Desk"
+                      : "Room assignment available after payment confirmation"}
+                  </span>
                 </div>
               )}
 
-              {booking.checkInCode && (
+              {stayConfirmed && booking.checkInCode && (
                 <div className="bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900/50 text-emerald-800 dark:text-emerald-300 px-3.5 py-1.5 rounded-xl flex items-center gap-2 font-black">
                   <KeyRound size={15} />
                   <span>Check-in Code: {booking.checkInCode}</span>
@@ -761,13 +846,12 @@ export const BookingDetailPage: React.FC = () => {
 
           <div className="relative pl-6 space-y-4 border-l-2 border-gray-100 dark:border-slate-800">
             <div className="relative">
-              <div className="absolute -left-[31px] top-0 w-4 h-4 rounded-full bg-emerald-500 border-2 border-white dark:border-[#0B192C]" />
+              <div className={`absolute -left-[31px] top-0 w-4 h-4 rounded-full ${lifecycle.dot} border-2 border-white dark:border-[#0B192C]`} />
               <p className="text-xs font-black text-[#0B192C] dark:text-white">
-                Reservation Confirmed
+                {lifecycle.title}
               </p>
               <p className="text-[10px] text-gray-400 font-medium">
-                Booking ID #{booking.bookingId} generated with status:{" "}
-                {booking.status}
+                Booking ID #{booking.bookingId}. {lifecycle.detail}
               </p>
             </div>
 
@@ -775,7 +859,9 @@ export const BookingDetailPage: React.FC = () => {
               <div key={i} className="relative">
                 <div className="absolute -left-[31px] top-0 w-4 h-4 rounded-full bg-[#0A4DA6] border-2 border-white dark:border-[#0B192C]" />
                 <p className="text-xs font-black text-[#0B192C] dark:text-white capitalize">
-                  {h.status.replace("_", " ")}
+                  {!paymentComplete && h.status === "confirmed"
+                    ? "payment pending"
+                    : h.status.replaceAll("_", " ")}
                 </p>
                 <p className="text-[10px] text-gray-400 font-medium">
                   {h.timestamp ? formatDateTimeIN(h.timestamp) : "Recorded"}
@@ -828,7 +914,9 @@ export const BookingDetailPage: React.FC = () => {
                   Tirvona Sacred Stays
                 </p>
                 <h3 className="font-extrabold text-sm mt-0.5">
-                  Official Accommodation Receipt
+                  {paymentComplete
+                    ? "Official Accommodation Receipt"
+                    : "Booking & Payment Summary"}
                 </h3>
               </div>
 
@@ -852,13 +940,15 @@ export const BookingDetailPage: React.FC = () => {
                   )}
                 </div>
 
-                <div className="bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-900/50 p-3 rounded-xl flex items-center justify-between">
+                <div className={`${stayConfirmed ? "bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-900/50" : "bg-amber-50 dark:bg-amber-950/50 border-amber-200 dark:border-amber-900/50"} border p-3 rounded-xl flex items-center justify-between`}>
                   <div>
-                    <span className="text-[9px] font-extrabold tracking-wider text-emerald-700 dark:text-emerald-300 block">
-                      6-DIGIT CHECK-IN CODE
+                    <span className={`text-[9px] font-extrabold tracking-wider ${stayConfirmed ? "text-emerald-700 dark:text-emerald-300" : "text-amber-700 dark:text-amber-300"} block`}>
+                      {stayConfirmed ? "6-DIGIT CHECK-IN CODE" : "RESERVATION STATUS"}
                     </span>
-                    <span className="font-mono font-black text-lg text-emerald-900 dark:text-emerald-200">
-                      {booking.checkInCode || "VERIFIED"}
+                    <span className={`font-mono font-black text-lg ${stayConfirmed ? "text-emerald-900 dark:text-emerald-200" : "text-amber-900 dark:text-amber-200"}`}>
+                      {stayConfirmed
+                        ? booking.checkInCode || "CONFIRMED"
+                        : "PAYMENT PENDING"}
                     </span>
                   </div>
                   <div className="text-right">
@@ -907,7 +997,9 @@ export const BookingDetailPage: React.FC = () => {
                 <div>
                   <dt className="text-gray-400 font-bold text-[10px]">Assigned Room:</dt>
                   <dd className="font-bold text-purple-600 dark:text-purple-400">
-                    {booking.assignedRoomNumber || "Front Desk"}
+                    {stayConfirmed
+                      ? booking.assignedRoomNumber || "Front Desk"
+                      : "After payment"}
                   </dd>
                 </div>
               </dl>
@@ -965,7 +1057,11 @@ export const BookingDetailPage: React.FC = () => {
                 className="flex-1 py-2.5 bg-[#0A4DA6] hover:bg-[#083D85] disabled:opacity-50 text-white font-extrabold text-xs rounded-xl cursor-pointer transition-all inline-flex items-center justify-center gap-1.5 shadow-sm"
               >
                 <Download size={14} />
-                {isDownloadingReceipt ? "Generating Image..." : "Download Receipt"}
+                {isDownloadingReceipt
+                  ? "Generating Image..."
+                  : paymentComplete
+                    ? "Download Receipt"
+                    : "Download Summary"}
               </button>
               <button
                 onClick={() => window.print()}

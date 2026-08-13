@@ -31,7 +31,28 @@ interface NotificationContextType {
   markAllAsRead: () => void;
   removeNotification: (id: string) => void;
   clearNotifications: () => void;
+  confirmAction: (options: ConfirmDialogOptions) => Promise<boolean>;
+  promptAction: (options: PromptDialogOptions) => Promise<string | null>;
 }
+
+interface ConfirmDialogOptions {
+  title: string;
+  message: string;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  tone?: "danger" | "warning" | "primary";
+}
+
+interface PromptDialogOptions extends ConfirmDialogOptions {
+  placeholder?: string;
+  initialValue?: string;
+  required?: boolean;
+}
+
+type DialogState =
+  | ({ kind: "confirm"; resolve: (value: boolean) => void } & ConfirmDialogOptions)
+  | ({ kind: "prompt"; resolve: (value: string | null) => void } & PromptDialogOptions)
+  | null;
 
 const NotificationContext = createContext<NotificationContextType | undefined>(
   undefined,
@@ -43,6 +64,28 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const { user } = useAuth();
   const socketRef = useRef<Socket | null>(null);
+  const [dialog, setDialog] = useState<DialogState>(null);
+  const [promptValue, setPromptValue] = useState("");
+
+  const closeDialog = (confirmed: boolean) => {
+    if (!dialog) return;
+    if (dialog.kind === "confirm") dialog.resolve(confirmed);
+    else dialog.resolve(confirmed ? promptValue.trim() : null);
+    setDialog(null);
+    setPromptValue("");
+  };
+
+  const confirmAction = (options: ConfirmDialogOptions) =>
+    new Promise<boolean>((resolve) => {
+      setPromptValue("");
+      setDialog({ ...options, kind: "confirm", resolve });
+    });
+
+  const promptAction = (options: PromptDialogOptions) =>
+    new Promise<string | null>((resolve) => {
+      setPromptValue(options.initialValue ?? "");
+      setDialog({ ...options, kind: "prompt", resolve });
+    });
 
   const addNotification = (
     title: string,
@@ -196,9 +239,59 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         markAllAsRead,
         removeNotification,
         clearNotifications,
+        confirmAction,
+        promptAction,
       }}
     >
       {children}
+      {dialog && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-[#07111f]/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-[24px] border border-[#E58C28]/35 bg-white p-6 text-left shadow-2xl dark:bg-[#0B192C]">
+            <h3 className="text-base font-black text-[#0B192C] dark:text-white">
+              {dialog.title}
+            </h3>
+            <p className="mt-2 whitespace-pre-line text-xs leading-5 text-gray-500 dark:text-gray-300">
+              {dialog.message}
+            </p>
+            {dialog.kind === "prompt" && (
+              <input
+                autoFocus
+                value={promptValue}
+                onChange={(event) => setPromptValue(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && (!dialog.required || promptValue.trim()))
+                    closeDialog(true);
+                }}
+                placeholder={dialog.placeholder}
+                className="mt-4 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none focus:border-[#0A4DA6] dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+              />
+            )}
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => closeDialog(false)}
+                className="rounded-full bg-gray-100 px-5 py-2.5 text-xs font-bold text-gray-700 dark:bg-slate-800 dark:text-gray-200"
+              >
+                {dialog.cancelLabel ?? "Cancel"}
+              </button>
+              <button
+                type="button"
+                disabled={dialog.kind === "prompt" && dialog.required && !promptValue.trim()}
+                onClick={() => closeDialog(true)}
+                className={`rounded-full px-5 py-2.5 text-xs font-black text-white disabled:cursor-not-allowed disabled:opacity-50 ${
+                  dialog.tone === "danger"
+                    ? "bg-rose-600 hover:bg-rose-700"
+                    : dialog.tone === "warning"
+                      ? "bg-[#E58C28] hover:bg-[#c97618]"
+                      : "bg-[#0A4DA6] hover:bg-[#083b80]"
+                }`}
+              >
+                {dialog.confirmLabel ?? "Confirm"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </NotificationContext.Provider>
   );
 };

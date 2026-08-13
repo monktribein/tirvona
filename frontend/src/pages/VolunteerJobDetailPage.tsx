@@ -315,7 +315,7 @@ export const VolunteerJobDetailPage: React.FC = () => {
                 </span>
                 {job.isGovtVerified && (
                   <span className="px-3 py-1 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50 rounded-full text-xs font-bold flex items-center gap-1">
-                    <ShieldCheck size={13} /> Govt Verified Seva
+                    <ShieldCheck size={13} /> Tirvona Verified Seva
                   </span>
                 )}
                 <span

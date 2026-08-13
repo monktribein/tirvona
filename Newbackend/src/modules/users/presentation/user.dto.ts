@@ -1,10 +1,13 @@
 import { Type } from "class-transformer";
 import {
+  ArrayMaxSize,
+  ArrayMinSize,
   IsArray,
   IsEmail,
   IsIn,
   IsInt,
   IsMongoId,
+  IsNotEmpty,
   IsOptional,
   IsString,
   Max,
@@ -30,23 +33,21 @@ export class CreateStaffDto {
 export class CreateAccountDto {
   @IsString() @MinLength(2) name: string;
   @IsEmail() email: string;
-  @IsOptional() @IsString() phone?: string;
+  @IsString() @IsNotEmpty() phone: string;
   @IsOptional() @IsString() @MinLength(6) password?: string;
-  @IsOptional() @IsIn(USER_ROLES) role?: string;
-  @IsOptional() @IsString() designation?: string;
-  @IsOptional() @IsString() department?: string;
-  @IsOptional() @IsString() city?: string;
-  @IsOptional() @IsString() state?: string;
-  @IsOptional() @IsString() gender?: string;
-  @IsOptional() @IsString() dob?: string;
-  @IsOptional() @IsString() joiningDate?: string;
-  @IsOptional() @IsArray() permissions?: string[];
-  @IsOptional() @IsString() remarks?: string;
-  @IsOptional() @IsString() status?: string;
-  @IsOptional() @IsString() username?: string;
+  @IsIn(USER_ROLES) role: string;
+  @IsIn(["Male", "Female", "Other"]) gender: string;
+  @IsOptional() @IsString() aadhaarCardUrl?: string;
+  @IsOptional() @IsString() panCardUrl?: string;
 }
 export class UserStatusDto {
   @IsIn(["active", "suspended", "pending"]) status: string;
+}
+export class UpdateAccountDto {
+  @IsString() @MinLength(2) name: string;
+  @IsEmail() email: string;
+  @IsString() @IsNotEmpty() phone: string;
+  @IsIn(["Male", "Female", "Other"]) gender: string;
 }
 export class SuspendUserDto {
   @IsOptional() @IsString() reason?: string;
@@ -68,4 +69,11 @@ export class AdminResetPasswordDto {
 export class PermanentDeleteDto {
   @IsString() adminPassword: string;
   @IsIn(["DELETE"]) confirmText: string;
+}
+export class BulkDeleteUsersDto {
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(100)
+  @IsMongoId({ each: true })
+  ids: string[];
 }

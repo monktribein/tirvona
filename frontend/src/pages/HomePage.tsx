@@ -78,7 +78,7 @@ export const HomePage: React.FC = () => {
     { value: "", label: "Trip Type" },
     { value: "ashram", label: "Ashram Stay" },
     { value: "dharamshala", label: "Dharamshala" },
-    { value: "temple", label: "Temple Guest House" },
+    { value: "homestay", label: "Homestay" },
   ];
 
   const carouselRef = useRef<HTMLDivElement>(null);
@@ -1595,7 +1595,7 @@ export const HomePage: React.FC = () => {
             <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
           </div>
           <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-xl mx-auto leading-relaxed">
-            Government-verified ashrams and dharamshalas providing peaceful
+            Tirvona Verified ashrams and dharamshalas providing peaceful
             rooms, satvik food, and morning prayers.
           </p>
           <button
@@ -1614,7 +1614,7 @@ export const HomePage: React.FC = () => {
             {[
               { id: "top_rated", label: "Top Rated" },
               { id: "most_booked", label: "Most Booked" },
-              { id: "recent", label: "Recently Verified" },
+              { id: "recent", label: "Recently Tirvona Verified" },
               { id: "govt_recom", label: "Govt Recommended" },
             ].map((tab) => (
               <button

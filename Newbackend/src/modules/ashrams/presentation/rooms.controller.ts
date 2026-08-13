@@ -25,7 +25,7 @@ import {
 
 @ApiTags("Rooms")
 @ApiBearerAuth()
-@Roles("owner", "manager", "super_admin")
+@Roles("owner", "stay_admin", "manager", "super_admin")
 @Controller("rooms")
 export class RoomsController {
   constructor(private readonly service: AshramsService) {}

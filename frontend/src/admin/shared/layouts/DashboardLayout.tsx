@@ -50,9 +50,12 @@ const getFormattedRole = (role?: string): string => {
   switch (role) {
     case "super_admin":
       return "Super Admin";
-    case "owner":
+    case "ashram_admin":
     case "stay_admin":
-      return "Stay Admin";
+      return "Ashram Admin";
+    case "ashram_owner":
+    case "owner":
+      return "Ashram Owner";
     case "support":
       return "Support";
     case "reception":
@@ -164,14 +167,6 @@ export const DashboardLayout: React.FC = () => {
       icon: <Users size={15} />,
       links: [
         { label: "All User Accounts", path: "/admin/users" },
-        { label: "Pilgrim Accounts", path: "/admin/manage/users/pilgrims" },
-        { label: "Ashram Owner Accounts", path: "/admin/manage/users/owners" },
-        {
-          label: "Content Managers",
-          path: "/admin/manage/users/content-managers",
-        },
-        { label: "Staff Members", path: "/admin/manage/users/staff" },
-        { label: "Roles & Permissions", path: "/admin/manage/users/roles" },
       ],
     },
     {
@@ -425,54 +420,60 @@ export const DashboardLayout: React.FC = () => {
     },
   ];
 
+  const accommodationRole = user?.role || "";
+  const ownerBase = ["ashram_admin", "stay_admin"].includes(accommodationRole)
+    ? "/ashram-admin"
+    : ["ashram_owner", "owner"].includes(accommodationRole)
+      ? "/ashram-owner"
+      : "/owner";
   const ownerGroups: NavGroup[] = [
     {
       groupName: "Ashram management",
       icon: <Building size={15} />,
       links: [
-        { label: "Manage Ashrams", path: "/owner/ashrams" },
-        { label: "Add-On Services", path: "/owner/add-ons" },
+        { label: "Manage Ashrams", path: `${ownerBase}/ashrams` },
+        { label: "Add-On Services", path: `${ownerBase}/add-ons` },
       ],
     },
     {
       groupName: "Room management",
       icon: <Bed size={15} />,
       links: [
-        { label: "Manage Rooms", path: "/owner/rooms" },
-        { label: "Inventory Calendar", path: "/owner/calendar" },
+        { label: "Manage Rooms", path: `${ownerBase}/rooms` },
+        { label: "Inventory Calendar", path: `${ownerBase}/calendar` },
       ],
     },
     {
       groupName: "Offers & deals",
       icon: <Tag size={15} />,
-      links: [{ label: "Offers & Deals", path: "/owner/offers" }],
+      links: [{ label: "Offers & Deals", path: `${ownerBase}/offers` }],
     },
     {
       groupName: "Volunteer & careers",
       icon: <Heart size={15} />,
-      links: [{ label: "Volunteer & Careers", path: "/owner/volunteer" }],
+      links: [{ label: "Volunteer & Careers", path: `${ownerBase}/volunteer` }],
     },
     {
       groupName: "Staff & users",
       icon: <Users size={15} />,
       links: [
-        { label: "Users & Guests", path: "/owner/users" },
-        { label: "Staff Management", path: "/owner/staff" },
+        { label: "Users & Guests", path: `${ownerBase}/users` },
+        { label: "Staff Management", path: `${ownerBase}/staff` },
       ],
     },
     {
       groupName: "Bookings & finance",
       icon: <Calendar size={15} />,
       links: [
-        { label: "All Bookings", path: "/owner/bookings" },
-        { label: "Payments & Payouts", path: "/owner/payments" },
+        { label: "All Bookings", path: `${ownerBase}/bookings` },
+        { label: "Payments & Payouts", path: `${ownerBase}/payments` },
       ],
     },
     {
       groupName: "Parking Management",
       icon: <Car size={15} />,
       links: [
-        { label: "My Ashram Parking", path: "/owner/parking" },
+        { label: "My Ashram Parking", path: `${ownerBase}/parking` },
         { label: "Parking Operations", path: "/parking/dashboard" },
       ],
     },
@@ -542,7 +543,7 @@ export const DashboardLayout: React.FC = () => {
     }
     if (
       userHasParkingRole &&
-      !["owner", "stay_admin"].includes(user?.role || "")
+      !["owner", "stay_admin", "ashram_owner", "ashram_admin"].includes(user?.role || "")
     ) {
       return {
         topLink: {
@@ -553,11 +554,11 @@ export const DashboardLayout: React.FC = () => {
         groups: parkingGroups,
       };
     }
-    if (["owner", "stay_admin"].includes(user?.role || "")) {
+    if (["owner", "stay_admin", "ashram_owner", "ashram_admin"].includes(user?.role || "")) {
       return {
         topLink: {
           label: "Overview Dashboard",
-          path: "/owner/dashboard",
+          path: `${ownerBase}/dashboard`,
           icon: <LayoutDashboard size={16} className="text-[#E58C28]" />,
         },
         groups: ownerGroups,
@@ -1008,7 +1009,7 @@ export const DashboardLayout: React.FC = () => {
 
           {/* Public Portal Action Button */}
           <Link
-            to="/"
+            to="/public"
             className="text-xs font-extrabold px-4 py-2 rounded-full bg-[#0A4DA6] hover:bg-[#083b80] text-white transition-all flex items-center gap-1.5 shadow-md shadow-[#0A4DA6]/20 cursor-pointer shrink-0"
           >
             <Globe size={14} className="text-[#E58C28]" /> {t("Public Portal")}{" "}

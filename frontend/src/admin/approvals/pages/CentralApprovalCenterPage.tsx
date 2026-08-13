@@ -369,7 +369,7 @@ export const CentralApprovalCenterPage: React.FC = () => {
                   <th className="py-3 px-4">Request ID</th>
                   <th className="py-3 px-4">Module</th>
                   <th className="py-3 px-4">Ashram Name</th>
-                  <th className="py-3 px-4">Stay Admin</th>
+                  <th className="py-3 px-4">Ashram Owner</th>
                   <th className="py-3 px-4">Title / Summary</th>
                   <th className="py-3 px-4">Priority</th>
                   <th className="py-3 px-4">Status</th>
@@ -398,7 +398,7 @@ export const CentralApprovalCenterPage: React.FC = () => {
                     <td className="py-3.5 px-4">
                       <div className="flex flex-col">
                         <span className="font-bold">
-                          {req.stayAdminId?.name || "Stay Admin"}
+                          {req.stayAdminId?.name || "Ashram Owner"}
                         </span>
                         <span className="text-[10px] text-gray-400">
                           {req.stayAdminId?.email}
@@ -496,7 +496,7 @@ export const CentralApprovalCenterPage: React.FC = () => {
               </div>
               <div>
                 <span className="text-gray-400 block text-[10px] font-bold">
-                  Stay Admin
+                  Ashram Owner
                 </span>
                 <span className="font-bold text-gray-700 dark:text-gray-200">
                   {selectedRequest.stayAdminId?.name}

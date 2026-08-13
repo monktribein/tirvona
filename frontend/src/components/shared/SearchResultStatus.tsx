@@ -32,7 +32,7 @@ export const SearchResultStatus: React.FC<SearchResultStatusProps> = ({
     return (
       <div className="flex justify-between items-center bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 px-5 py-3.5 rounded-[20px] shadow-sm">
         <div className="text-xs font-bold text-gray-500">
-          Finding verified Ashrams in{" "}
+          Finding Tirvona Verified Ashrams in{" "}
           <span className="text-[#0A4DA6] font-extrabold">{displayLabel}</span>
           <span className="inline-flex ml-1">
             <span className="animate-bounce [animation-delay:0ms]">.</span>
@@ -51,7 +51,7 @@ export const SearchResultStatus: React.FC<SearchResultStatusProps> = ({
         <div className="text-xs font-bold text-gray-500">
           Found{" "}
           <span className="text-[#0A4DA6] font-extrabold">
-            {count} verified Ashrams
+            {count} Tirvona Verified Ashrams
           </span>{" "}
           matching {displayLabel}
         </div>
@@ -63,7 +63,7 @@ export const SearchResultStatus: React.FC<SearchResultStatusProps> = ({
   return (
     <div className="flex justify-between items-center bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 px-5 py-3.5 rounded-[20px] shadow-sm">
       <div className="text-xs font-bold text-gray-500">
-        No verified Ashrams found matching{" "}
+        No Tirvona Verified Ashrams found matching{" "}
         <span className="text-[#0A4DA6] font-extrabold">{displayLabel}</span>
       </div>
     </div>

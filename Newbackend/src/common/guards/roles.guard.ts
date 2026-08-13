@@ -3,6 +3,11 @@ import { Reflector } from "@nestjs/core";
 import { IS_PUBLIC_KEY } from "../decorators/public.decorator";
 import { ROLES_KEY } from "../decorators/roles.decorator";
 import type { AuthenticatedUser } from "../decorators/current-user.decorator";
+import {
+  ASHRAM_ADMIN_ROLE,
+  ASHRAM_OWNER_ROLE,
+  canonicalAshramRole,
+} from "../auth/ashram-access";
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -31,8 +36,21 @@ export class RolesGuard implements CanActivate {
     const user = context
       .switchToHttp()
       .getRequest<{ user?: AuthenticatedUser }>().user;
-    return Boolean(
-      user && (user.role === "super_admin" || allowed.includes(user.role)),
-    );
+    if (!user) return false;
+    if (user.role === "super_admin") return true;
+    const actual = canonicalAshramRole(user);
+    const canonicalAllowed = allowed.map((role) => {
+      if (role === "owner") return ASHRAM_OWNER_ROLE;
+      if (role === "stay_admin") return ASHRAM_ADMIN_ROLE;
+      return role;
+    });
+    // The platform Ashram Admin may operate every accommodation endpoint that
+    // an individual owner can, while an owner never inherits global access.
+    if (
+      actual === ASHRAM_ADMIN_ROLE &&
+      canonicalAllowed.includes(ASHRAM_OWNER_ROLE)
+    )
+      return true;
+    return canonicalAllowed.includes(actual);
   }
 }

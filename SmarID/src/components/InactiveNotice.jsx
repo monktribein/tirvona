@@ -1,5 +1,5 @@
 import React from "react";
-import { TirvonaMark } from "./TirvonaMark";
+import { CardHeader } from "./ProfileHeader";
 
 /**
  * What an obsolete visiting card shows (spec §22).
@@ -12,44 +12,43 @@ import { TirvonaMark } from "./TirvonaMark";
  */
 export const InactiveNotice = ({ profile }) => (
   <main className="card card-notice">
-    <div className="brand">
-      <TirvonaMark />
-      <p className="brand-tagline">
-        India&rsquo;s Digital Infrastructure for Religious Destinations
+    <CardHeader />
+
+    <div className="card-body">
+      <div className="notice-icon" aria-hidden="true">
+        ⓘ
+      </div>
+
+      {profile?.displayName && (
+        <h1 className="profile-name notice-name">{profile.displayName}</h1>
+      )}
+
+      <p className="notice-message">
+        {profile?.inactiveNotice?.message ??
+          "This Tirvona representative profile is no longer active."}
       </p>
+
+      <p className="notice-help">
+        For assistance, please contact the Tirvona central office.
+      </p>
+
+      <a
+        className="btn btn-primary"
+        href={`mailto:${profile?.inactiveNotice?.contactEmail ?? "partners@tirvona.com"}`}
+      >
+        Contact Tirvona
+      </a>
+
+      <a
+        className="btn btn-ghost"
+        href="https://www.tirvona.com"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Visit tirvona.com
+      </a>
     </div>
 
-    <div className="notice-icon" aria-hidden="true">
-      ⓘ
-    </div>
-
-    {profile?.displayName && (
-      <h1 className="profile-name notice-name">{profile.displayName}</h1>
-    )}
-
-    <p className="notice-message">
-      {profile?.inactiveNotice?.message ??
-        "This Tirvona representative profile is no longer active."}
-    </p>
-
-    <p className="notice-help">
-      For assistance, please contact the Tirvona central office.
-    </p>
-
-    <a
-      className="btn btn-primary"
-      href={`mailto:${profile?.inactiveNotice?.contactEmail ?? "partners@tirvona.com"}`}
-    >
-      Contact Tirvona
-    </a>
-
-    <a
-      className="btn btn-ghost"
-      href="https://www.tirvona.com"
-      target="_blank"
-      rel="noopener noreferrer"
-    >
-      Visit tirvona.com
-    </a>
+    <div className="card-strip">Tirvona™ Smart Contact</div>
   </main>
 );

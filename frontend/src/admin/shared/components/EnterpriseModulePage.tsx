@@ -7,7 +7,7 @@ import LocalHubEnterpriseDrawer from "./LocalHubEnterpriseDrawer";
 import { EnterprisePageHeader } from "./EnterprisePageHeader";
 import { useNotifications } from "../../../contexts/NotificationContext";
 import api, { getErrorMessage } from "../../../lib/api";
-import { roomService } from "../../../services";
+import { roomService, userService } from "../../../services";
 import { parkingAdminService } from "../../../modules/parking/services/parking.service";
 import { humanizeLabel } from "../../../utils/labels";
 import { formatCurrency, getFormattingLocale } from "../../../utils/format";
@@ -1119,6 +1119,7 @@ export const EnterpriseModulePage: React.FC<{
                 render: (value: any) => value?.name || "All rooms",
               },
               { key: "name", label: "Pricing Rule" },
+              { key: "priceType", label: "Price Type" },
               {
                 key: "validFrom",
                 label: "Valid From",
@@ -1134,7 +1135,7 @@ export const EnterpriseModulePage: React.FC<{
               { key: "multiplier", label: "Multiplier" },
               {
                 key: "overridePrice",
-                label: "Override Price",
+                label: "Effective Price",
                 render: (value: any) =>
                   value == null ? "—" : formatCurrency(Number(value)),
               },
@@ -1459,6 +1460,8 @@ export const EnterpriseModulePage: React.FC<{
           : {}),
         ...(activeModule === "ashrams"
           ? {
+            ownerId:
+              savedData.ownerId?._id ?? savedData.ownerId ?? undefined,
             address: {
               ...(savedData.address || {}),
               street: savedData.street || savedData.address?.street || "",
@@ -1883,6 +1886,18 @@ export const EnterpriseModulePage: React.FC<{
         }
         onToggleStatus={
           isReadOnlyFinance ? undefined : (item) => handleToggleStatus(item)
+        }
+        onResetOwnerPassword={
+          activeModule === "ashrams"
+            ? async (ownerId, password) => {
+                await userService.resetPassword(ownerId, password);
+                addNotification(
+                  "Owner Password Changed",
+                  "The owner password was changed securely and existing sessions were invalidated.",
+                  "success",
+                );
+              }
+            : undefined
         }
       />
 

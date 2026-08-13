@@ -1,5 +1,5 @@
 import React from "react";
-import { vcardUrl } from "../services/smartContactApi";
+import { idCardUrl, vcardUrl } from "../services/smartContactApi";
 
 /**
  * Digits only, for `wa.me` (spec §42). The link rejects a leading `+`.
@@ -52,7 +52,7 @@ export const ContactActions = ({ profile, slug, source, onTrack }) => {
             href={`tel:${primaryPhone}`}
             onClick={() => onTrack("CALL_CLICK")}
           >
-            <span aria-hidden="true">📞</span>
+            <span className="btn-icon" aria-hidden="true">📞</span>
             Call
           </a>
         )}
@@ -65,7 +65,7 @@ export const ContactActions = ({ profile, slug, source, onTrack }) => {
             rel="noopener noreferrer"
             onClick={() => onTrack("WHATSAPP_CLICK")}
           >
-            <span aria-hidden="true">💬</span>
+            <span className="btn-icon" aria-hidden="true">💬</span>
             WhatsApp
           </a>
         )}
@@ -76,7 +76,7 @@ export const ContactActions = ({ profile, slug, source, onTrack }) => {
             href={`mailto:${email}`}
             onClick={() => onTrack("EMAIL_CLICK")}
           >
-            <span aria-hidden="true">✉</span>
+            <span className="btn-icon" aria-hidden="true">✉</span>
             Email
           </a>
         )}
@@ -89,11 +89,24 @@ export const ContactActions = ({ profile, slug, source, onTrack }) => {
             rel="noopener noreferrer"
             onClick={() => onTrack("WEBSITE_CLICK")}
           >
-            <span aria-hidden="true">🌐</span>
+            <span className="btn-icon" aria-hidden="true">🌐</span>
             Website
           </a>
         )}
       </div>
+
+      {/*
+        The printable badge. A plain link, so a long-press offers "save as" and
+        the OS opens it in a PDF viewer — the same reasoning as the .vcf above.
+        PDF rather than an image because the file is laid out at true CR80 card
+        size (54 × 85.6mm) and has to come out of a printer at that size.
+      */}
+      <a
+        className="btn btn-ghost"
+        href={idCardUrl(slug, source)}
+      >
+        <span aria-hidden="true">🪪</span> Download ID Card (PDF)
+      </a>
 
       {/* Optional per spec §6 — shown only when there is an address to open. */}
       {officeAddress && (

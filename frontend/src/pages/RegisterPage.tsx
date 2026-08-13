@@ -274,7 +274,7 @@ export const RegisterPage: React.FC = () => {
                     }`}
                   >
                     <Building2 size={16} />
-                    <span className="text-[11px] font-bold">Ashram Stay Admin</span>
+                    <span className="text-[11px] font-bold">Individual Ashram Owner</span>
                   </button>
                 </div>
 
@@ -401,7 +401,7 @@ export const RegisterPage: React.FC = () => {
                   {role === "owner" && (
                     <div className="p-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-[16px] space-y-2 animate-in fade-in duration-200">
                       <span className="text-[9px] font-bold text-[#0A4DA6] tracking-wider">
-                        Government KYC Verification Required
+                        Tirvona Verification Required
                       </span>
                       <div className="grid grid-cols-2 gap-2">
                         <select

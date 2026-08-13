@@ -157,6 +157,7 @@ export const ADMIN_REFS: Record<
   string,
   Record<string, { ref: string; select: string }>
 > = {
+  ashrams: { ownerId: ACCOUNT },
   rooms: { ashramId: ASHRAM },
   room_inventory: { ashramId: ASHRAM, roomId: ROOM },
   room_pricing: { ashramId: ASHRAM, roomId: ROOM },

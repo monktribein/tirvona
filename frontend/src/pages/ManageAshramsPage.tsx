@@ -28,6 +28,11 @@ import { FileUploader } from "../components/FileUploader";
 export const ManageAshramsPage: React.FC = () => {
   const { addNotification } = useNotifications();
   const navigate = useNavigate();
+  const consoleBase = window.location.pathname.startsWith("/ashram-admin")
+    ? "/ashram-admin"
+    : window.location.pathname.startsWith("/ashram-owner")
+      ? "/ashram-owner"
+      : "/owner";
   const [ashrams, setAshrams] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -208,12 +213,12 @@ export const ManageAshramsPage: React.FC = () => {
           </h1>
           <p className="text-xs sm:text-sm text-gray-200 max-w-2xl font-medium">
             Manage your sacred ashram profile, spiritual history, daily
-            guidelines, amenities, and government verification status.
+            guidelines, amenities, and Tirvona verification status.
           </p>
         </div>
 
         <button
-          onClick={() => navigate("/owner/ashrams/add")}
+          onClick={() => navigate(`${consoleBase}/ashrams/add`)}
           className="bg-[#E58C28] hover:bg-[#d47d1f] text-white font-extrabold text-xs sm:text-sm px-6 py-3.5 rounded-full flex items-center justify-center gap-2 shadow-lg shadow-black/20 transition-all cursor-pointer shrink-0 active:scale-95"
         >
           <Plus size={16} />
@@ -240,7 +245,7 @@ export const ManageAshramsPage: React.FC = () => {
             account.
           </p>
           <button
-            onClick={() => navigate("/owner/ashrams/add")}
+            onClick={() => navigate(`${consoleBase}/ashrams/add`)}
             className="px-6 py-3 bg-[#0A4DA6] text-white font-extrabold text-xs rounded-full shadow-md"
           >
             Register Ashram Now
@@ -270,7 +275,7 @@ export const ManageAshramsPage: React.FC = () => {
                     >
                       <ShieldCheck size={13} />
                       {ashram.status === "approved"
-                        ? "Government Verified"
+                        ? "Tirvona Verified"
                         : ashram.status.replace(/_/g, " ")}
                     </span>
                   </div>
@@ -298,14 +303,14 @@ export const ManageAshramsPage: React.FC = () => {
                   </button>
 
                   <button
-                    onClick={() => navigate("/owner/rooms")}
+                    onClick={() => navigate(`${consoleBase}/rooms`)}
                     className="px-4 py-2.5 rounded-full bg-[#0A4DA6]/10 hover:bg-[#0A4DA6]/20 text-[#0A4DA6] border border-[#0A4DA6]/20 text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer"
                   >
                     <Bed size={14} /> Manage Rooms
                   </button>
 
                   <button
-                    onClick={() => navigate("/owner/calendar")}
+                    onClick={() => navigate(`${consoleBase}/calendar`)}
                     className="px-4 py-2.5 rounded-full bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 border border-indigo-500/20 text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer"
                   >
                     <CalendarIcon size={14} /> Rate Calendar
@@ -406,7 +411,7 @@ export const ManageAshramsPage: React.FC = () => {
                   {/* KYC Legal Verification */}
                   <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-5 space-y-3">
                     <h3 className="text-xs font-black tracking-wider text-emerald-600 flex items-center gap-2">
-                      <FileCheck size={14} /> Government KYC Verification
+                      <FileCheck size={14} /> Tirvona Verification
                     </h3>
                     <div className="space-y-2 text-xs font-bold text-slate-700 dark:text-slate-300">
                       <div className="flex items-center justify-between">

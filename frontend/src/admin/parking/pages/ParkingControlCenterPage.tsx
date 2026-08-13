@@ -76,7 +76,7 @@ const PARTNER_ACTIONS: {
 ];
 
 export const ParkingControlCenterPage: React.FC = () => {
-  const { addNotification } = useNotifications();
+  const { addNotification, confirmAction, promptAction } = useNotifications();
   const [tab, setTab] = useState<Tab>("overview");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -172,12 +172,24 @@ export const ParkingControlCenterPage: React.FC = () => {
     }
   };
 
-  const setPartnerStatus = (partner: any, status: string, confirm: string) => {
-    if (!window.confirm(confirm)) return;
-    const rejectionReason =
-      status === "rejected"
-        ? window.prompt("Reason for rejection (shown to the partner):") || ""
-        : undefined;
+  const setPartnerStatus = async (partner: any, status: string, confirm: string) => {
+    if (!(await confirmAction({
+      title: status === "rejected" ? "Reject parking partner?" : "Update parking partner?",
+      message: confirm,
+      confirmLabel: status === "rejected" ? "Continue to Reason" : "Confirm Update",
+      tone: status === "rejected" ? "danger" : "warning",
+    }))) return;
+    const rejectionReason = status === "rejected"
+      ? await promptAction({
+          title: "Rejection reason",
+          message: "Explain why this application is rejected. This will be shown to the partner.",
+          placeholder: "Enter a clear rejection reason",
+          confirmLabel: "Reject Partner",
+          tone: "danger",
+          required: true,
+        })
+      : undefined;
+    if (status === "rejected" && rejectionReason === null) return;
     return run(
       partner._id,
       () =>
@@ -233,13 +245,13 @@ export const ParkingControlCenterPage: React.FC = () => {
   const pendingPartners = partners.filter((p) => p.status === "pending").length;
   const totals = analytics?.totals ?? {};
 
-  const settle = (group: { partnerId: string; name: string; earning: number }) => {
-    if (
-      !window.confirm(
-        `Settle ${money(group.earning)} to ${group.name}? This marks every pending commission as settled under one payout batch and cannot be undone from this screen.`,
-      )
-    )
-      return;
+  const settle = async (group: { partnerId: string; name: string; earning: number }) => {
+    if (!(await confirmAction({
+      title: "Settle partner payout?",
+      message: `${money(group.earning)} will be settled to ${group.name}. Every pending commission will be marked settled and this cannot be undone here.`,
+      confirmLabel: "Settle Payout",
+      tone: "warning",
+    }))) return;
     return run(
       group.partnerId,
       () => parkingAdminService.settleCommissions(group.partnerId),

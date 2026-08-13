@@ -14,6 +14,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import Razorpay from "razorpay";
 import { TransactionService } from "../../../common/database/transaction.service";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
+import { canManageAllAshrams, isAshramOwner } from "../../../common/auth/ashram-access";
 import {
   BOOKING_REPOSITORY,
   type BookingRepository,
@@ -79,7 +80,10 @@ export class BookingsService {
   private async scopedAshrams(
     user: AuthenticatedUser,
   ): Promise<string[] | null> {
-    if (["super_admin", "national_admin", "support"].includes(user.role))
+    if (
+      ["national_admin", "support"].includes(user.role) ||
+      canManageAllAshrams(user)
+    )
       return null;
     if (["state_admin", "government_admin", "govt_admin"].includes(user.role)) {
       if (!user.state) return [];
@@ -103,7 +107,7 @@ export class BookingsService {
           .lean()
       ).map((a: any) => String(a._id));
     }
-    if (user.role === "owner")
+    if (isAshramOwner(user))
       return (
         await this.ashrams
           .find({ ownerId: user.id, deletedAt: null })
@@ -122,8 +126,9 @@ export class BookingsService {
     user: AuthenticatedUser,
     booking: any,
   ): Promise<void> {
-    if (["super_admin", "support"].includes(user.role)) return;
-    if (!["owner", "manager", "reception"].includes(user.role))
+    if (user.role === "support" || canManageAllAshrams(user))
+      return;
+    if (!isAshramOwner(user) && !["manager", "reception"].includes(user.role))
       throw new ForbiddenException("You cannot manage ashram bookings.");
     const scope = await this.scopedAshrams(user);
     if (

@@ -9,6 +9,7 @@ import { randomUUID } from "node:crypto";
 import { InjectModel } from "@nestjs/mongoose";
 import type { Model } from "mongoose";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
+import { canManageAllAshrams, isAshramOwner } from "../../../common/auth/ashram-access";
 import { PARKING_MODEL } from "../../parking/domain/parking.constants";
 import { parkingPartnerCode } from "../../parking/domain/parking.utils";
 import type {
@@ -153,7 +154,7 @@ export class AshramsService {
         address: body.address ?? {},
         status: "pending",
         isVerified: false,
-        notes: "Self-service application from Stay Admin portal",
+        notes: "Self-service application from Ashram Owner portal",
       });
     } else if (["pending", "rejected"].includes(partner.status)) {
       partner.businessName = businessName;
@@ -225,13 +226,37 @@ export class AshramsService {
       ];
     }
     if (query.type) {
-      const value = { $regex: escapeRegex(query.type), $options: "i" };
-      filter.$and = [
-        ...(filter.$and ?? []),
-        {
-          $or: [{ ashramType: value }, { name: value }, { description: value }],
-        },
+      const requestedTypes = [
+        ...new Set(
+          query.type
+            .split(",")
+            .map((type) => type.trim().toLowerCase())
+            .map((type) => (type === "temple" ? "homestay" : type))
+            .filter((type) => ["ashram", "dharamshala", "homestay"].includes(type)),
+        ),
       ];
+      const legacyPatterns: Record<string, RegExp> = {
+        ashram: /ashram|retreat|monastery/i,
+        dharamshala: /dharam|dharma/i,
+        homestay: /home\s*stay|guest\s*house|rest\s*house|temple\s*trust\s*stay/i,
+      };
+      const patterns = requestedTypes.map((type) => legacyPatterns[type]);
+      if (patterns.length) {
+        filter.$and = [
+          ...(filter.$and ?? []),
+          {
+            $or: [
+              { ashramType: { $in: patterns } },
+              {
+                $and: [
+                  { $or: [{ ashramType: { $exists: false } }, { ashramType: "" }] },
+                  { name: { $in: patterns } },
+                ],
+              },
+            ],
+          },
+        ];
+      }
     }
     if (query.amenities)
       filter.amenities = {
@@ -457,9 +482,9 @@ export class AshramsService {
    * the same pair `assertScope` accepts on a write.
    */
   async listForUser(user: AuthenticatedUser): Promise<any[]> {
-    if (user.role === "super_admin")
+    if (canManageAllAshrams(user))
       return this.ashrams.find({ deletedAt: null }).sort({ createdAt: -1 });
-    if (user.role === "owner")
+    if (isAshramOwner(user))
       return this.ashrams
         .find({ ownerId: user.id, deletedAt: null })
         .sort({ createdAt: -1 });
@@ -477,7 +502,8 @@ export class AshramsService {
 
   assertScope(user: AuthenticatedUser, ashram: any): void {
     if (!ashram) throw new NotFoundException("Ashram not found");
-    if (user.role === "super_admin") return;
+    if (canManageAllAshrams(user))
+      return;
     if (String(ashram.ownerId) === user.id) return;
     if (
       user.employerAshramId === String(ashram._id) ||
@@ -779,7 +805,6 @@ export class AshramsService {
           ashramId: room.ashramId,
           roomId,
           date,
-          totalInventory: room.totalInventory,
           heldCount: 0,
           bookedCount: 0,
         },

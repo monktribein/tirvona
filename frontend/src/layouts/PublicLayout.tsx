@@ -191,13 +191,17 @@ export const PublicLayout: React.FC = () => {
 
   const getDashboardLabel = () => {
     if (!user) return "Dashboard";
-    if (isParkingRole(user.parkingRoles, user.role, user.email))
-      return user.role === "super_admin" ? "Admin Dashboard" : "Parking Dashboard";
     if (["district_officer", "govt_admin", "super_admin"].includes(user.role))
       return "Admin Dashboard";
-    if (["owner", "stay_admin"].includes(user.role))
-      return "Stay Admin Dashboard";
+    if (["ashram_admin", "stay_admin"].includes(user.role))
+      return "Ashram Admin Dashboard";
+    if (["ashram_owner", "owner"].includes(user.role))
+      return "Ashram Owner Dashboard";
     if (user.role === "support") return "Support Console";
+    // Parking is secondary for platform/ashram management accounts. Only an
+    // account without a higher-priority console should be labelled as parking.
+    if (isParkingRole(user.parkingRoles, user.role, user.email))
+      return "Parking Dashboard";
     return "My Dashboard";
   };
 
@@ -217,6 +221,8 @@ export const PublicLayout: React.FC = () => {
       "district_officer",
       "owner",
       "stay_admin",
+      "ashram_admin",
+      "ashram_owner",
       "manager",
       "reception",
       "housekeeping",
@@ -229,7 +235,8 @@ export const PublicLayout: React.FC = () => {
     if (user.role === "super_admin") return "Super Admin";
     if (user.role === "govt_admin") return "Govt Admin";
     if (user.role === "district_officer") return "District Admin";
-    if (["owner", "stay_admin"].includes(user.role)) return "Stay Admin";
+    if (["ashram_admin", "stay_admin"].includes(user.role)) return "Ashram Admin";
+    if (["ashram_owner", "owner"].includes(user.role)) return "Ashram Owner";
     if (isParkingRole(user.parkingRoles, user.role, user.email))
       return "Parking Partner";
     if (user.role === "volunteer") return "Volunteer";

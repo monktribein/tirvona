@@ -23,6 +23,7 @@ import useMyBookings, {
   type BookingCategory,
   type UnifiedBooking,
 } from "../../hooks/useMyBookings";
+import { useNotifications } from "../../contexts/NotificationContext";
 
 const TABS: { key: BookingCategory; label: string }[] = [
   { key: "upcoming", label: "Upcoming" },
@@ -64,6 +65,7 @@ const FALLBACK_IMAGE: Record<string, string> = {
 export const ProfileBookingsPage: React.FC = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const { addNotification, confirmAction } = useNotifications();
 
   const { bookings, loading, error, partialFailures, counts, refresh } =
     useMyBookings(Boolean(user));
@@ -91,9 +93,12 @@ export const ProfileBookingsPage: React.FC = () => {
   /** Cancel through whichever engine owns the booking. */
   const handleCancel = async (booking: UnifiedBooking) => {
     if (cancellingId) return;
-    const ok = window.confirm(
-      `Cancel ${booking.reference}?\n\nAny refund due will follow the cancellation policy for this booking.`,
-    );
+    const ok = await confirmAction({
+      title: "Cancel booking?",
+      message: `${booking.reference} will be cancelled. Any eligible refund will follow this booking's cancellation policy.`,
+      confirmLabel: "Cancel Booking",
+      tone: "danger",
+    });
     if (!ok) return;
 
     setCancellingId(booking.id);
@@ -107,11 +112,17 @@ export const ProfileBookingsPage: React.FC = () => {
             )
           : await bookingService.cancel(booking.id, "Cancelled from profile");
 
-      if (res.data?.success) await refresh();
-      else
+      if (res.data?.success) {
+        await refresh();
+        addNotification("Booking Cancelled", `${booking.reference} was cancelled.`, "success");
+      } else {
         setActionError(res.data?.message || "Could not cancel this booking.");
+        addNotification("Cancellation Failed", res.data?.message || "Could not cancel this booking.", "error");
+      }
     } catch (err) {
-      setActionError(getErrorMessage(err, "Could not cancel this booking."));
+      const message = getErrorMessage(err, "Could not cancel this booking.");
+      setActionError(message);
+      addNotification("Cancellation Failed", message, "error");
     } finally {
       setCancellingId(null);
     }

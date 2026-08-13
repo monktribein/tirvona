@@ -246,6 +246,7 @@ export const verificationService = {
 export const userService = {
   list: (params: Record<string, string> = {}) => api.get("/users", { params }),
   createAccount: (data: unknown) => api.post("/users/create-account", data),
+  updateAccount: (id: string, data: unknown) => api.patch(`/users/${id}`, data),
   updateStatus: (id: string, status: string) =>
     api.patch(`/users/${id}/status`, { status }),
   suspend: (id: string, data: unknown) =>
@@ -258,6 +259,8 @@ export const userService = {
   resetPassword: (id: string, password?: string) =>
     api.post(`/users/${id}/reset-password`, { password }),
   softDelete: (id: string) => api.delete(`/users/${id}/soft-delete`),
+  bulkSoftDelete: (ids: string[]) =>
+    api.delete("/users/bulk/soft-delete", { data: { ids } }),
   permanentDelete: (id: string, data: unknown) =>
     api.delete(`/users/${id}/permanent-delete`, { data }),
   restore: (id: string) => api.patch(`/users/${id}/restore`, {}),
@@ -298,7 +301,8 @@ export const offerService = {
     bookingAmount?: number;
     ashramId?: string;
   }) => api.post("/offers/validate-promo", data),
-  getPublicOffers: () => api.get("/offers/public/all"),
+  getPublicOffers: (params: Record<string, string> = {}) =>
+    api.get("/offers/public/all", { params }),
   getById: (id: string) => api.get(`/offers/public/${id}`),
 
   // ── Administration ──

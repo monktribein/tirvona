@@ -28,6 +28,11 @@ import {
 import type { UserDocument } from "../../users/infrastructure/persistence/user.schema";
 import { PARKING_MODEL } from "../../parking/domain/parking.constants";
 import type { LoginDto, RegisterDto } from "../presentation/dtos/auth.dto";
+import {
+  ASHRAM_ADMIN_ROLE,
+  ASHRAM_OWNER_ROLE,
+  canonicalAshramRole,
+} from "../../../common/auth/ashram-access";
 
 @Injectable()
 export class AuthService {
@@ -94,6 +99,20 @@ export class AuthService {
     // Parking grants are resolved because they ride on the session, not
     // because they gate anything here.
     const parkingRoles = await this.activeParkingRoles(user._id);
+    const normalizedRole = canonicalAshramRole({
+      role: user.role,
+      name: user.name,
+      permissions: user.permissions ?? [],
+    });
+    if (normalizedRole !== user.role) {
+      user.role = normalizedRole;
+      if (normalizedRole === ASHRAM_ADMIN_ROLE) {
+        user.permissions = [
+          ...new Set([...(user.permissions ?? []), "ashrams.manage_all"]),
+        ];
+      }
+      user.tokenVersion = Number(user.tokenVersion ?? 0) + 1;
+    }
     user.lastLoginAt = new Date();
     await user.save();
     return this.session(user, parkingRoles);
@@ -104,7 +123,8 @@ export class AuthService {
       throw new ConflictException("Email is already registered");
     if (await this.users.findByPhone(dto.phone))
       throw new ConflictException("Phone number is already registered");
-    const role = dto.role ?? "customer";
+    const role =
+      dto.role === "owner" ? ASHRAM_OWNER_ROLE : dto.role ?? "customer";
     const email = dto.email.trim().toLowerCase();
     return {
       otpRequired: true,
@@ -114,11 +134,11 @@ export class AuthService {
         phone: dto.phone,
         passwordHash: await bcrypt.hash(dto.password, 12),
         role,
-        status: role === "owner" ? "pending_approval" : "active",
-        isVerified: role !== "owner",
-        govtIdType: role === "owner" ? dto.govtIdType?.trim() : undefined,
-        govtIdNumber: role === "owner" ? dto.govtIdNumber?.trim() : undefined,
-        govtIdUrl: role === "owner" ? dto.govtIdUrl?.trim() : undefined,
+        status: role === ASHRAM_OWNER_ROLE ? "pending_approval" : "active",
+        isVerified: role !== ASHRAM_OWNER_ROLE,
+        govtIdType: role === ASHRAM_OWNER_ROLE ? dto.govtIdType?.trim() : undefined,
+        govtIdNumber: role === ASHRAM_OWNER_ROLE ? dto.govtIdNumber?.trim() : undefined,
+        govtIdUrl: role === ASHRAM_OWNER_ROLE ? dto.govtIdUrl?.trim() : undefined,
       }),
     };
   }
@@ -448,7 +468,7 @@ export class AuthService {
     this.master(actor);
     return this.userModel
       .find({
-        role: { $in: ["owner", "manager", "reception", "housekeeping"] },
+        role: { $in: ["ashram_owner", "owner", "manager", "reception", "housekeeping"] },
         isDeleted: { $ne: true },
       })
       .select("name email phone role status createdAt")
@@ -477,7 +497,7 @@ export class AuthService {
       email: dto.email.toLowerCase(),
       phone: dto.phone,
       passwordHash: await bcrypt.hash(dto.password, 12),
-      role: dto.role,
+      role: dto.role === "owner" ? ASHRAM_OWNER_ROLE : dto.role,
       status: "active",
       isVerified: true,
     } as Partial<UserDocument>);
@@ -498,7 +518,7 @@ export class AuthService {
     this.master(actor);
     const user = await this.userModel.findById(id).select("+passwordHash");
     if (!user) throw new NotFoundException("Staff user not found");
-    if (!["owner", "manager", "reception", "housekeeping"].includes(user.role))
+    if (!["ashram_owner", "owner", "manager", "reception", "housekeeping"].includes(user.role))
       throw new ForbiddenException(
         "You can only reset passwords for staff and owner accounts.",
       );
@@ -514,7 +534,7 @@ export class AuthService {
     this.master(actor);
     const user = await this.userModel.findById(id);
     if (!user) throw new NotFoundException("Staff user not found");
-    if (!["owner", "manager", "reception", "housekeeping"].includes(user.role))
+    if (!["ashram_owner", "owner", "manager", "reception", "housekeeping"].includes(user.role))
       throw new ForbiddenException(
         "You can only change status for staff and owner accounts.",
       );

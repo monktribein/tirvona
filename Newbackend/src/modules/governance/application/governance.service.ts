@@ -9,6 +9,7 @@ import { randomUUID } from "node:crypto";
 import { Types } from "mongoose";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import { escapeRegex } from "../../../common/utils/escape-regex";
+import { isAshramOwner } from "../../../common/auth/ashram-access";
 import {
   GOVERNANCE_REPOSITORY,
   type GovernanceRepository,
@@ -562,7 +563,7 @@ export class GovernanceService {
       "activityId",
     ]);
     if (user.role === "district_officer") filter.city = user.district;
-    else if (user.role === "owner") filter.userId = user.id;
+    else if (isAshramOwner(user)) filter.userId = user.id;
     return this.page("ActivityLog", filter, query, { timestamp: -1 });
   }
   async notifications(
@@ -703,6 +704,72 @@ export class GovernanceService {
       path,
       select,
     }));
+    if (name === "Admin_room_pricing") {
+      const [savedRules, rooms] = await Promise.all([
+        this.repository.list(name, filter, {
+          sort: { createdAt: -1 },
+          limit: 100,
+          populate,
+          select: GovernanceService.ADMIN_LIST_PROJECTIONS[name],
+        }),
+        this.repository.list("Admin_rooms", {}, {
+          sort: { createdAt: -1 },
+          limit: 500,
+          populate: [{ path: "ashramId", select: "name ashramCode" }],
+          select:
+            "ashramId name basePrice status pricingRules createdAt updatedAt",
+        }),
+      ]);
+
+      const basePrices = rooms.map((room) => ({
+        _id: `base:${String(room._id)}`,
+        sourceRoomId: room._id,
+        ashramId: room.ashramId,
+        roomId: { _id: room._id, name: room.name },
+        name: "Base room price",
+        priceType: "Base price",
+        multiplier: 1,
+        overridePrice: Number(room.basePrice ?? 0),
+        minStay: 1,
+        isActive: room.status === "active",
+        status: room.status === "active" ? "active" : "inactive",
+        createdAt: room.createdAt,
+        updatedAt: room.updatedAt,
+      }));
+      const embeddedPrices = rooms.flatMap((room) =>
+        (Array.isArray(room.pricingRules) ? room.pricingRules : []).map(
+          (rule: any, index: number) => ({
+            _id: `embedded:${String(room._id)}:${String(rule._id ?? index)}`,
+            sourceRoomId: room._id,
+            ashramId: room.ashramId,
+            roomId: { _id: room._id, name: room.name },
+            name: rule.name || "Seasonal room price",
+            priceType: "Seasonal price",
+            validFrom: rule.startDate,
+            validUntil: rule.endDate,
+            multiplier: Number(rule.multiplier ?? 1),
+            overridePrice:
+              rule.overridePrice == null
+                ? Number(room.basePrice ?? 0) * Number(rule.multiplier ?? 1)
+                : Number(rule.overridePrice),
+            minStay: Number(rule.minStay ?? 1),
+            isActive: room.status === "active",
+            status: room.status === "active" ? "active" : "inactive",
+            createdAt: room.createdAt,
+            updatedAt: room.updatedAt,
+          }),
+        ),
+      );
+      const explicitPrices = savedRules.map((row) =>
+        this.redact({
+          ...row,
+          priceType: "Pricing override",
+          status: row.isActive === false ? "inactive" : "active",
+        }),
+      );
+      const data = [...explicitPrices, ...basePrices, ...embeddedPrices];
+      return { success: true, count: data.length, data };
+    }
     const data = (
       await this.repository.list(name, filter, {
         sort: { createdAt: -1 },
@@ -1074,7 +1141,8 @@ export class GovernanceService {
 
     if (moduleName === "users") {
       if (section === "pilgrims") filter.role = "customer";
-      else if (section === "owners") filter.role = "owner";
+      else if (section === "owners")
+        filter.role = { $in: ["ashram_owner", "owner"] };
       else if (section === "staff")
         filter.role = {
           $in: ["manager", "reception", "housekeeping", "staff"],
