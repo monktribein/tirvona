@@ -2,6 +2,7 @@ import { ForbiddenException, Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import type { Model } from "mongoose";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
+import { canManageAllAshrams, isAshramOwner } from "../../../common/auth/ashram-access";
 import { PARKING_MODEL } from "../../parking/domain/parking.constants";
 import type { AnalyticsRange } from "../presentation/dtos/analytics.dto";
 
@@ -101,9 +102,10 @@ export class AnalyticsService {
     user: AuthenticatedUser,
     requested?: string,
   ): Promise<any> {
-    if (user.role === "super_admin") return requested ? requested : undefined;
+    if (canManageAllAshrams(user))
+      return requested ? requested : undefined;
     const ids =
-      user.role === "owner"
+      isAshramOwner(user)
         ? (
             await this.ashrams.find({ ownerId: user.id }).select("_id").lean()
           ).map((a: any) => String(a._id))
@@ -129,6 +131,7 @@ export class AnalyticsService {
     today.setHours(0, 0, 0, 0);
     const month = new Date(today.getFullYear(), today.getMonth(), 1);
     const paid = (b: any) => Number(b.pricing?.amountPaid ?? 0);
+    const total = (b: any) => Number(b.pricing?.totalAmount ?? 0);
     const confirmed = bookings.filter(
       (b: any) => b.status === "confirmed",
     ).length;
@@ -147,22 +150,47 @@ export class AnalyticsService {
           new Date(b.checkOutDate) >= new Date(),
       )
       .reduce((n: number, b: any) => n + Number(b.roomsBookedCount ?? 1), 0);
+    const activeBookings = bookings.filter((b: any) =>
+      ["confirmed", "checked_in"].includes(b.status),
+    ).length;
+    const checkInsToday = bookings.filter((b: any) => {
+      const checkIn = new Date(b.checkInDate);
+      return (
+        ["confirmed", "checked_in"].includes(b.status) &&
+        checkIn >= today &&
+        checkIn < new Date(today.getTime() + 86_400_000)
+      );
+    }).length;
+    const checkoutsToday = bookings.filter((b: any) => {
+      const checkOut = new Date(b.checkOutDate);
+      return (
+        ["confirmed", "checked_in"].includes(b.status) &&
+        checkOut >= today &&
+        checkOut < new Date(today.getTime() + 86_400_000)
+      );
+    }).length;
     return {
+      totalAshrams: stays.length,
+      totalRoomCategories: rooms.length,
+      totalInventory,
+      occupiedRooms: occupied,
       totalBookings: bookings.length,
-      occupancyRate: bookings.length
-        ? Math.min(
-            100,
-            Math.round(((confirmed + checkedIn) * 100) / bookings.length),
-          )
+      activeBookings,
+      occupancyRate: totalInventory
+        ? Math.min(100, Math.round((occupied * 100) / totalInventory))
         : 0,
       revenue: bookings.reduce((n: number, b: any) => n + paid(b), 0),
+      grossBookingValue: bookings.reduce(
+        (n: number, b: any) => n + total(b),
+        0,
+      ),
       pendingPayments: bookings.reduce(
         (n: number, b: any) =>
           n + Math.max(0, Number(b.pricing?.totalAmount ?? 0) - paid(b)),
         0,
       ),
-      checkInsToday: checkedIn,
-      checkoutSoon: checkedIn,
+      checkInsToday,
+      checkoutSoon: checkoutsToday,
       todayRevenue: bookings
         .filter((b: any) => new Date(b.createdAt) >= today)
         .reduce((n: number, b: any) => n + paid(b), 0),

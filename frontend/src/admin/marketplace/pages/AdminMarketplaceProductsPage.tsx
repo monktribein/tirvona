@@ -34,7 +34,7 @@ import {
 } from "../../shared";
 
 export const AdminMarketplaceProductsPage: React.FC = () => {
-  const { addNotification } = useNotifications();
+  const { addNotification, confirmAction } = useNotifications();
 
   const [products, setProducts] = useState<MarketplaceProductItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -183,7 +183,7 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
   };
 
   const handleDelete = async (id: string, name: string) => {
-    if (!window.confirm(`Are you sure you want to delete "${name}"?`)) return;
+    if (!(await confirmAction({ title: "Delete marketplace product?", message: `Product “${name}” will be permanently removed.`, confirmLabel: "Delete Product", tone: "danger" }))) return;
     try {
       await marketplaceService.deleteProduct(id);
       addNotification("Deleted", `Product "${name}" deleted.`, "info");

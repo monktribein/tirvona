@@ -244,21 +244,23 @@ const RULE_PRESETS = [
 ];
 
 const ASHRAM_TYPES = [
-  "Vedantic Ashram",
-  "Yoga Retreat",
-  "Dharamsala",
-  "Buddhist Monastery",
-  "Jain Dharmashala",
-  "Sikh Gurudwara Rest House",
-  "Temple Trust Stay",
-  "Spiritual Retreat Center",
+  { value: "ashram", label: "Ashram" },
+  { value: "dharamshala", label: "Dharamshala" },
+  { value: "homestay", label: "Homestay" },
 ];
+
+const normalizeAshramType = (value: unknown): string => {
+  const normalized = String(value ?? "").trim().toLowerCase();
+  if (!normalized) return "";
+  if (/dharam|dharma/.test(normalized)) return "dharamshala";
+  if (/home\s*stay|guest\s*house|rest\s*house|temple\s*trust\s*stay/.test(normalized))
+    return "homestay";
+  return "ashram";
+};
 
 const TRUST_TYPES = [
   "Public Charitable Trust",
   "Religious Trust",
-  "Section 8 Company",
-  "Society Registered under Societies Act",
   "Temple Trust",
   "Private Trust",
 ];
@@ -436,7 +438,11 @@ const AddAshramWizardPage: React.FC = () => {
   const navigate = useNavigate();
   const backPath = window.location.pathname.startsWith("/admin")
     ? "/admin/manage/ashrams/all"
-    : "/owner/ashrams";
+    : window.location.pathname.startsWith("/ashram-admin")
+      ? "/ashram-admin/ashrams"
+      : window.location.pathname.startsWith("/ashram-owner")
+        ? "/ashram-owner/ashrams"
+        : "/owner/ashrams";
   const [searchParams] = useSearchParams();
   const editId = searchParams.get("edit");
   const STEPS = editId ? CONFIG_STEPS : BASIC_STEPS;
@@ -479,7 +485,7 @@ const AddAshramWizardPage: React.FC = () => {
               ...prev,
               name: ashram.name || "",
               tagline: ashram.tagline || "",
-              ashramType: ashram.ashramType || "",
+              ashramType: normalizeAshramType(ashram.ashramType),
               description: ashram.description || "",
               history: ashram.history || "",
               foundedBy: ashram.foundedBy || "",
@@ -504,7 +510,9 @@ const AddAshramWizardPage: React.FC = () => {
               trustName: ashram.trust?.trustName || "",
               trustRegNo: ashram.trust?.trustRegNo || "",
               panNo: ashram.trust?.panNo || "",
-              trustType: ashram.trust?.trustType || "",
+              trustType: TRUST_TYPES.includes(ashram.trust?.trustType)
+                ? ashram.trust.trustType
+                : "",
               registeredBy: ashram.trust?.registeredBy || "",
               coverImageUrl: ashram.images?.[0] || "",
               galleryUrls: ashram.images?.slice(1) || [],
@@ -959,9 +967,9 @@ const AddAshramWizardPage: React.FC = () => {
                   onChange={(e) => set("ashramType", e.target.value)}
                 >
                   <option value="">— Select Type —</option>
-                  {ASHRAM_TYPES.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
+                  {ASHRAM_TYPES.map((type) => (
+                    <option key={type.value} value={type.value}>
+                      {type.label}
                     </option>
                   ))}
                 </Select>

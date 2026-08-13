@@ -135,7 +135,7 @@ export const SearchPage: React.FC = () => {
       const lower = typeQuery.toLowerCase();
       if (lower.includes("ashram")) setAshramFilter(true);
       if (lower.includes("dharamshala")) setDharamshalaFilter(true);
-      if (lower.includes("homestay") || lower.includes("temple"))
+      if (lower.includes("homestay") || lower.includes("home stay") || lower.includes("temple"))
         setHomestayFilter(true);
     }
     setCheckIn(effIn);
@@ -201,16 +201,15 @@ export const SearchPage: React.FC = () => {
 
         if (selectedTypes.length > 0 && selectedTypes.length < 3) {
           fetchedData = fetchedData.filter((a: any) => {
-            const ashramType = (
-              a.type ||
-              a.category ||
-              a.propertyType ||
-              "ashram"
+            const rawType = String(
+              a.ashramType || a.type || a.category || a.propertyType || a.name || "ashram",
             ).toLowerCase();
-            const ashramName = (a.name || "").toLowerCase();
-            return selectedTypes.some(
-              (t) => ashramType.includes(t) || ashramName.includes(t),
-            );
+            const category = /dharam|dharma/.test(rawType)
+              ? "dharamshala"
+              : /home\s*stay|guest\s*house|rest\s*house|temple\s*trust\s*stay/.test(rawType)
+                ? "homestay"
+                : "ashram";
+            return selectedTypes.includes(category);
           });
         }
 
@@ -609,7 +608,7 @@ export const SearchPage: React.FC = () => {
           ) : results.length === 0 ? (
             <div className="text-center py-20 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] space-y-4">
               <h4 className="font-extrabold text-base text-[#0B192C] dark:text-white">
-                No verified Ashrams found matching{" "}
+                No Tirvona Verified Ashrams found matching{" "}
                 {activeKeyword ? `"${activeKeyword}"` : "your query"}
               </h4>
               <p className="text-xs text-gray-400 max-w-sm mx-auto leading-relaxed">
@@ -650,7 +649,7 @@ export const SearchPage: React.FC = () => {
                           {(ashram.isVerified ?? ashram.status === "approved") && (
                             <img
                               src="/Verified badge/verified.png"
-                              alt="Verified"
+                              alt="Tirvona Verified"
                               className="h-9 sm:h-11 w-auto object-contain inline-block shrink-0 align-middle max-w-[140px]"
                             />
                           )}

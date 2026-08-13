@@ -36,8 +36,8 @@ export const FaqPage: React.FC = () => {
     {
       category: "Security & Quality",
       icon: <ShieldCheck className="text-[#0A4DA6]" size={20} />,
-      q: 'What makes an Ashram "Government Verified"?',
-      a: 'Ashrams showing the "Government Verified" badge have undergone manual document screening (Trust deeds, legal title search) and physical site inspections by District Officers to ensure cleanliness, basic amenities (potable water, safe bedding, separate washrooms), and proper safety protocols.',
+      q: 'What makes an Ashram "Tirvona Verified"?',
+      a: 'Ashrams showing the "Tirvona Verified" badge have undergone Tirvona document screening (trust deeds and legal records) and physical site inspection to confirm cleanliness, essential amenities, and safety protocols.',
     },
   ];
 

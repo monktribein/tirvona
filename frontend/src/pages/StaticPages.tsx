@@ -316,7 +316,7 @@ export const OwnerGuidePage: React.FC = () => (
         {
           step: "06",
           title: "Go Live",
-          desc: 'Once verified, your ashram receives the blue "Verified" badge and becomes discoverable by millions of pilgrims. You\'ll receive login credentials for the Owner Dashboard to manage bookings, calendar, and pricing.',
+          desc: 'Once approved, your ashram receives the blue "Tirvona Verified" badge and becomes discoverable by millions of pilgrims. You\'ll receive login credentials for the Owner Dashboard to manage bookings, calendar, and pricing.',
         },
       ].map((s, i) => (
         <div

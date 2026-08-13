@@ -8,6 +8,7 @@ import { InjectModel } from "@nestjs/mongoose";
 import type { Model } from "mongoose";
 import { TransactionService } from "../../../common/database/transaction.service";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
+import { canManageAllAshrams, isAshramOwner } from "../../../common/auth/ashram-access";
 import { financialReference } from "../domain/booking.utils";
 import type {
   CompleteSettlementDto,
@@ -31,8 +32,10 @@ export class BookingFinanceService {
   private async owner(
     user: AuthenticatedUser,
     requested?: string,
-  ): Promise<string> {
-    if (user.role === "owner") return user.id;
+  ): Promise<string | null> {
+    if (isAshramOwner(user)) return user.id;
+    if (canManageAllAshrams(user))
+      return requested ?? null;
     if (["finance_manager", "super_admin"].includes(user.role) && requested)
       return requested;
     throw new ForbiddenException("An owner scope is required");
@@ -41,9 +44,9 @@ export class BookingFinanceService {
     user: AuthenticatedUser,
     requested?: string,
   ): Promise<string[] | null> {
-    if (["finance_manager", "super_admin"].includes(user.role))
+    if (user.role === "finance_manager" || canManageAllAshrams(user))
       return requested ? [requested] : null;
-    if (user.role !== "owner")
+    if (!isAshramOwner(user))
       throw new ForbiddenException("An owner scope is required");
     const owned = (await this.ashrams.distinct("_id", { ownerId: user.id })).map(
       String,
@@ -62,10 +65,14 @@ export class BookingFinanceService {
     const [row] = await this.commissions.aggregate([
       {
         $match: {
-          ownerId:
-            this.commissions.db.base.Types.ObjectId.createFromHexString(
-              ownerId,
-            ),
+          ...(ownerId
+            ? {
+                ownerId:
+                  this.commissions.db.base.Types.ObjectId.createFromHexString(
+                    ownerId,
+                  ),
+              }
+            : {}),
           ...(scope === null
             ? {}
             : {
@@ -149,7 +156,7 @@ export class BookingFinanceService {
     const scope = await this.ashramScope(user, ashramId);
     return this.settlements
       .find({
-        ownerId,
+        ...(ownerId ? { ownerId } : {}),
         ...(scope === null ? {} : { ashramIds: { $in: scope } }),
       })
       .populate("ashramIds", "name ashramCode")
@@ -161,6 +168,10 @@ export class BookingFinanceService {
     dto: CreateSettlementDto,
   ): Promise<any> {
     const ownerId = await this.owner(user, dto.ownerId);
+    if (!ownerId)
+      throw new BadRequestException(
+        "Select an ashram owner before creating a settlement",
+      );
     return this.transactions.run(async (session) => {
       const filter: any = {
         ownerId,
@@ -267,7 +278,7 @@ export class BookingFinanceService {
     ashramId?: string,
   ): Promise<any[]> {
     const filter: any = {};
-    if (user.role === "owner") {
+    if (isAshramOwner(user)) {
       const ids = await this.ashramScope(user, ashramId);
       const bookings = await this.payments
         .find({ ashramId: { $in: ids ?? [] } })

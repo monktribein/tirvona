@@ -54,14 +54,11 @@ export class VolunteerController {
   @Public() @Get("jobs") jobs(@Query() query: Record<string, string>) {
     return this.community.jobs(query);
   }
-  @Get("owner/jobs") @Roles("owner", "manager", "super_admin") ownerJobs(
+  @Get("owner/jobs") @Roles("owner", "stay_admin", "manager", "super_admin") ownerJobs(
     @CurrentUser() user: AuthenticatedUser,
     @Query() query: Record<string, string>,
   ) {
-    return this.community.jobs(
-      query,
-      user.role === "super_admin" ? undefined : user.id,
-    );
+    return this.community.managedJobs(user, query);
   }
   @Public() @Get("jobs/:id") job(@Param("id") id: string) {
     return this.community.job(id);
@@ -82,33 +79,33 @@ export class VolunteerController {
   ) {
     return this.community.myApplications(user, query);
   }
-  @Post("jobs") @Roles("owner", "manager", "super_admin") create(
+  @Post("jobs") @Roles("owner", "stay_admin", "manager", "super_admin") create(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: VolunteerJobDto,
   ) {
     return this.community.createJob(user, dto);
   }
-  @Put("jobs/:id") @Roles("owner", "manager", "super_admin") update(
+  @Put("jobs/:id") @Roles("owner", "stay_admin", "manager", "super_admin") update(
     @CurrentUser() user: AuthenticatedUser,
     @Param("id") id: string,
     @Body() dto: UpdateVolunteerJobDto,
   ) {
     return this.community.updateJob(user, id, dto);
   }
-  @Delete("jobs/:id") @Roles("owner", "manager", "super_admin") remove(
+  @Delete("jobs/:id") @Roles("owner", "stay_admin", "manager", "super_admin") remove(
     @CurrentUser() user: AuthenticatedUser,
     @Param("id") id: string,
   ) {
     return this.community.deleteJob(user, id);
   }
-  @Get("applications") @Roles("owner", "manager", "super_admin") applications(
+  @Get("applications") @Roles("owner", "stay_admin", "manager", "super_admin") applications(
     @CurrentUser() user: AuthenticatedUser,
     @Query() query: Record<string, string>,
   ) {
     return this.community.applications(user, query);
   }
   @Put("applications/:id/status")
-  @Roles("owner", "manager", "super_admin")
+  @Roles("owner", "stay_admin", "manager", "super_admin")
   status(
     @CurrentUser() user: AuthenticatedUser,
     @Param("id") id: string,

@@ -50,7 +50,7 @@ export class AshramsController {
    */
   @Get("my-listings/all")
   @ApiBearerAuth()
-  @Roles("owner", "manager", "offer_manager", "super_admin")
+  @Roles("owner", "stay_admin", "manager", "offer_manager", "super_admin")
   async mine(@CurrentUser() user: AuthenticatedUser) {
     const data = await this.service.listForUser(user);
     return { success: true, count: data.length, data };
@@ -96,7 +96,7 @@ export class AshramsController {
   }
   @Get("manage/:id")
   @ApiBearerAuth()
-  @Roles("owner", "manager", "super_admin")
+  @Roles("owner", "stay_admin", "manager", "super_admin")
   async managedDetail(
     @CurrentUser() user: AuthenticatedUser,
     @Param("id") id: string,
@@ -106,7 +106,7 @@ export class AshramsController {
   @Public() @Get(":id") @Header("Cache-Control", "no-store") async detail(@Param("id") id: string) {
     return { success: true, data: await this.service.detail(id) };
   }
-  @Post() @ApiBearerAuth() @Roles("owner", "super_admin") async create(
+  @Post() @ApiBearerAuth() @Roles("owner", "stay_admin", "super_admin") async create(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: SaveAshramDto,
   ) {
@@ -118,7 +118,7 @@ export class AshramsController {
       roomsCreated: result.roomsCreated,
     };
   }
-  @Put(":id") @ApiBearerAuth() @Roles("owner", "manager") async update(
+  @Put(":id") @ApiBearerAuth() @Roles("owner", "stay_admin", "manager") async update(
     @CurrentUser() user: AuthenticatedUser,
     @Param("id") id: string,
     @Body() dto: UpdateAshramDto,
@@ -131,7 +131,7 @@ export class AshramsController {
   }
   @Post(":id/documents")
   @ApiBearerAuth()
-  @Roles("owner", "manager")
+  @Roles("owner", "stay_admin", "manager")
   async documents(
     @CurrentUser() user: AuthenticatedUser,
     @Param("id") id: string,
@@ -153,7 +153,7 @@ export class AshramsController {
   }
   // Add-on mutations answer with the ashram's whole catalogue: the owner
   // console renders the list straight from the response.
-  @Post(":id/add-ons") @Roles("owner", "manager") async createAddon(
+  @Post(":id/add-ons") @Roles("owner", "stay_admin", "manager") async createAddon(
     @CurrentUser() user: AuthenticatedUser,
     @Param("id") id: string,
     @Body(addOnBody) body: SaveAddOnDto,
@@ -161,7 +161,7 @@ export class AshramsController {
     const data = await this.service.createAddOn(user, id, body);
     return { success: true, message: "Add-on saved.", count: data.length, data };
   }
-  @Put(":id/add-ons/:addonId") @Roles("owner", "manager") async updateAddon(
+  @Put(":id/add-ons/:addonId") @Roles("owner", "stay_admin", "manager") async updateAddon(
     @CurrentUser() user: AuthenticatedUser,
     @Param("id") id: string,
     @Param("addonId") addonId: string,
@@ -175,7 +175,7 @@ export class AshramsController {
       data,
     };
   }
-  @Delete(":id/add-ons/:addonId") @Roles("owner", "manager") async deleteAddon(
+  @Delete(":id/add-ons/:addonId") @Roles("owner", "stay_admin", "manager") async deleteAddon(
     @CurrentUser() user: AuthenticatedUser,
     @Param("id") id: string,
     @Param("addonId") addonId: string,

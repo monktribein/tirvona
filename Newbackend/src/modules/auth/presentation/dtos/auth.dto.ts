@@ -78,7 +78,7 @@ export class CreateOwnerStaffDto {
   @IsEmail() email: string;
   @IsPhoneNumber("IN") phone: string;
   @IsString() @MinLength(6) password: string;
-  @IsIn(["owner", "manager", "reception", "housekeeping"]) role: string;
+  @IsIn(["ashram_owner", "owner", "manager", "reception", "housekeeping"]) role: string;
 }
 export class StaffPasswordDto {
   @IsString() @MinLength(6) password: string;

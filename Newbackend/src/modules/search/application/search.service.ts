@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import type { Model } from "mongoose";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
+import { canManageAllAshrams, isAshramOwner } from "../../../common/auth/ashram-access";
 import { escapeRegex } from "../../../common/utils/escape-regex";
 import { PARKING_MODEL } from "../../parking/domain/parking.constants";
 
@@ -46,7 +47,8 @@ export class SearchService {
    * entire estate, so the caller must branch on null explicitly.
    */
   private ashramScope(user: AuthenticatedUser): Record<string, any> | null {
-    if (NATIONAL_ROLES.includes(user.role)) return {};
+    if (NATIONAL_ROLES.includes(user.role) || canManageAllAshrams(user))
+      return {};
     if (DISTRICT_ROLES.includes(user.role)) {
       if (!user.state || !user.district) return null;
       return { "address.state": user.state, "address.district": user.district };
@@ -55,7 +57,7 @@ export class SearchService {
       if (!user.state) return null;
       return { "address.state": user.state };
     }
-    if (user.role === "owner") return { ownerId: user.id };
+    if (isAshramOwner(user)) return { ownerId: user.id };
     const scoped = [
       ...new Set([
         ...(user.scopedAshramIds ?? []),

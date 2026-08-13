@@ -23,11 +23,12 @@ export const EnterpriseButton: React.FC<EnterpriseButtonProps> = ({
   loading = false,
   className = "",
   disabled,
+  type = "button",
   ...props
 }) => {
   const { t } = useLanguage();
   const baseClasses =
-    "rounded-full font-extrabold inline-flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap";
+    "min-h-9 shrink-0 rounded-full font-extrabold leading-none inline-flex items-center justify-center gap-2 whitespace-nowrap transition-all cursor-pointer shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-[#0A4DA6]/40 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
 
   const sizeClasses =
     size === "sm"
@@ -53,6 +54,7 @@ export const EnterpriseButton: React.FC<EnterpriseButtonProps> = ({
 
   return (
     <button
+      type={type}
       disabled={disabled || loading}
       className={`${baseClasses} ${sizeClasses} ${variantClasses} ${className}`}
       {...props}
@@ -62,7 +64,9 @@ export const EnterpriseButton: React.FC<EnterpriseButtonProps> = ({
       ) : (
         icon
       )}
-      <span>{typeof children === "string" ? t(children) : children}</span>
+      <span className="inline-flex items-center gap-2 whitespace-nowrap">
+        {typeof children === "string" ? t(children) : children}
+      </span>
     </button>
   );
 };

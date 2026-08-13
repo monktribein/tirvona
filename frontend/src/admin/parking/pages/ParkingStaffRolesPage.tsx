@@ -53,7 +53,7 @@ const FALLBACK_ROLES = [
 ] as const;
 
 export const ParkingStaffRolesPage: React.FC = () => {
-  const { addNotification } = useNotifications();
+  const { addNotification, confirmAction } = useNotifications();
   const [grants, setGrants] = useState<any[]>([]);
   const [partners, setPartners] = useState<any[]>([]);
   const [locations, setLocations] = useState<any[]>([]);
@@ -228,12 +228,7 @@ export const ParkingStaffRolesPage: React.FC = () => {
 
   const revoke = async (grant: any) => {
     const who = grant.userId?.name || grant.userId?.email || "this user";
-    if (
-      !window.confirm(
-        `Revoke ${String(grant.parkingRole).replace(/_/g, " ")} from ${who}? They lose access immediately.`,
-      )
-    )
-      return;
+    if (!(await confirmAction({ title: "Revoke parking role?", message: `${who} will immediately lose ${String(grant.parkingRole).replace(/_/g, " ")} access.`, confirmLabel: "Revoke Access", tone: "danger" }))) return;
     setBusyId(grant._id);
     try {
       await parkingAdminService.revokeStaff(grant._id);

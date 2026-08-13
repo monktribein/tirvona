@@ -965,7 +965,7 @@ export const AdminDashboard: React.FC = () => {
               <QuickPill
                 icon={<Building2 size={18} />}
                 tone="bg-blue-100 text-blue-600"
-                label="Verified ashrams"
+                label="Tirvona Verified ashrams"
                 value={`${formatIndianNumber(system?.ashrams?.approved ?? 0)} active`}
               />
               <QuickPill

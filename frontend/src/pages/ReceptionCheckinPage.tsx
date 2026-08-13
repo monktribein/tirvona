@@ -5,7 +5,7 @@ import { bookingService } from "../services";
 import { getErrorMessage } from "../lib/api";
 
 export const ReceptionCheckinPage: React.FC = () => {
-  const { addNotification } = useNotifications();
+  const { addNotification, promptAction } = useNotifications();
   const [activeBookings, setActiveBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -84,9 +84,13 @@ export const ReceptionCheckinPage: React.FC = () => {
   };
 
   const handleAssignRoomNumber = async (bookingId: string) => {
-    const roomNo = window.prompt(
-      "Enter Room Number to assign (e.g. Room 102):",
-    );
+    const roomNo = await promptAction({
+      title: "Assign room number",
+      message: "Enter the physical room number for this reservation.",
+      placeholder: "e.g. Room 102",
+      confirmLabel: "Assign Room",
+      required: true,
+    });
     if (roomNo === null) return;
     try {
       const res = await bookingService.assignRoomNumber(bookingId, roomNo);
@@ -142,7 +146,7 @@ export const ReceptionCheckinPage: React.FC = () => {
                   <th className="py-4 px-6">Guest Contact</th>
                   <th className="py-4 px-6">Room / Assigned</th>
                   <th className="py-4 px-6">Current Status</th>
-                  <th className="py-4 px-6 text-right">Stay Admin Actions</th>
+                  <th className="py-4 px-6 text-right">Ashram Owner Actions</th>
                 </tr>
               </thead>
               <tbody>

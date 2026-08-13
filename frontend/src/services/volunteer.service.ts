@@ -101,6 +101,10 @@ export const volunteerService = {
     return api.get(`/volunteer/jobs/${id}`);
   },
 
+  getManagedJobs: async (params?: { page?: number; limit?: number }) => {
+    return api.get("/volunteer/owner/jobs", { params });
+  },
+
   applyJob: async (payload: ApplicationPayload) => {
     return api.post("/volunteer/apply", payload);
   },

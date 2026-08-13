@@ -237,9 +237,37 @@ const OwnerVolunteerPage = lazy(
 // Customer Profile Pages
 const ProfileMainPage = lazy(() => import("./pages/profile/ProfileMainPage"));
 
-import { hasRoleAccess } from "./utils/roleRedirect";
+import {
+  getRoleDefaultDashboard,
+  hasRoleAccess,
+} from "./utils/roleRedirect";
 import { setGuestPendingIntent } from "./utils/guestGate";
 import { smoothScrollEngine } from "./utils/smoothScroll";
+
+/**
+ * `/` is the visitor landing page only. Once an operational account has an
+ * authenticated session, reopening Tirvona (or being sent away from a route
+ * it cannot access) must return it to its own console instead of exposing the
+ * public homepage. Customer/pilgrim accounts intentionally keep the homepage.
+ */
+const RoleAwareHome: React.FC = () => {
+  const { user, loading } = useAuth();
+
+  if (loading) return <PageLoader />;
+  if (!user) return <HomePage />;
+
+  const dashboard = getRoleDefaultDashboard(
+    user.role,
+    user.parkingRoles,
+    user.email,
+  );
+
+  return dashboard === "/profile" ? (
+    <HomePage />
+  ) : (
+    <Navigate to={dashboard} replace />
+  );
+};
 
 // Protected Route Wrapper Component
 const ProtectedRoute: React.FC<{
@@ -265,7 +293,16 @@ const ProtectedRoute: React.FC<{
   }
 
   if (allowedRoles && !hasRoleAccess(user.role, allowedRoles)) {
-    return <Navigate to="/" replace />;
+    return (
+      <Navigate
+        to={getRoleDefaultDashboard(
+          user.role,
+          user.parkingRoles,
+          user.email,
+        )}
+        replace
+      />
+    );
   }
 
   return <>{children}</>;
@@ -304,7 +341,11 @@ const AppContent: React.FC = () => {
         <Routes>
           {/* Public Routes */}
           <Route element={<PublicLayout />}>
-            <Route path="/" element={<HomePage />} />
+            <Route path="/" element={<RoleAwareHome />} />
+            {/* Operational accounts normally redirect from `/` to their own
+              console. This explicit route is the intentional escape hatch
+              used by the dashboard's Public Portal button. */}
+            <Route path="/public" element={<HomePage />} />
             <Route path="/search" element={<SearchPage />} />
             <Route path="/ashram/:id" element={<AshramDetailPage />} />
             <Route path="/faq" element={<FaqPage />} />
@@ -521,20 +562,30 @@ const AppContent: React.FC = () => {
             or housekeeping account cannot open owner administration pages. */}
           <Route
             element={
-              <ProtectedRoute allowedRoles={["owner", "manager"]}>
+              <ProtectedRoute allowedRoles={["ashram_owner", "ashram_admin", "owner", "stay_admin", "manager"]}>
                 <DashboardLayout />
               </ProtectedRoute>
             }
           >
             <Route path="/owner/ashrams" element={<ManageAshramsPage />} />
+            <Route path="/ashram-admin/ashrams" element={<ManageAshramsPage />} />
+            <Route path="/ashram-owner/ashrams" element={<ManageAshramsPage />} />
             <Route path="/owner/add-ons" element={<OwnerAddOnsPage />} />
+            <Route path="/ashram-admin/add-ons" element={<OwnerAddOnsPage />} />
+            <Route path="/ashram-owner/add-ons" element={<OwnerAddOnsPage />} />
             <Route
               path="/admin/manage/ashrams/add-ons"
               element={<OwnerAddOnsPage />}
             />
             <Route path="/owner/rooms" element={<ManageRoomsPage />} />
+            <Route path="/ashram-admin/rooms" element={<ManageRoomsPage />} />
+            <Route path="/ashram-owner/rooms" element={<ManageRoomsPage />} />
             <Route path="/owner/calendar" element={<InventoryCalendarPage />} />
+            <Route path="/ashram-admin/calendar" element={<InventoryCalendarPage />} />
+            <Route path="/ashram-owner/calendar" element={<InventoryCalendarPage />} />
             <Route path="/owner/volunteer" element={<OwnerVolunteerPage />} />
+            <Route path="/ashram-admin/volunteer" element={<OwnerVolunteerPage />} />
+            <Route path="/ashram-owner/volunteer" element={<OwnerVolunteerPage />} />
             <Route
               path="/owner/articles"
               element={<OwnerVisitorArticlesPage />}
@@ -543,17 +594,19 @@ const AppContent: React.FC = () => {
 
           <Route
             element={
-              <ProtectedRoute allowedRoles={["owner", "manager", "staff"]}>
+              <ProtectedRoute allowedRoles={["ashram_owner", "ashram_admin", "owner", "stay_admin", "manager", "staff"]}>
                 <DashboardLayout />
               </ProtectedRoute>
             }
           >
             <Route path="/owner/dashboard" element={<OwnerDashboard />} />
+            <Route path="/ashram-admin/dashboard" element={<OwnerDashboard />} />
+            <Route path="/ashram-owner/dashboard" element={<OwnerDashboard />} />
           </Route>
 
           <Route
             element={
-              <ProtectedRoute allowedRoles={["owner"]}>
+              <ProtectedRoute allowedRoles={["ashram_owner", "ashram_admin", "owner", "stay_admin"]}>
                 <DashboardLayout />
               </ProtectedRoute>
             }
@@ -562,8 +615,14 @@ const AppContent: React.FC = () => {
               path="/owner/ashrams/add"
               element={<AddAshramWizardPage />}
             />
+            <Route path="/ashram-admin/ashrams/add" element={<AddAshramWizardPage />} />
+            <Route path="/ashram-owner/ashrams/add" element={<AddAshramWizardPage />} />
             <Route path="/owner/users" element={<OwnerGuestsPage />} />
+            <Route path="/ashram-admin/users" element={<OwnerGuestsPage />} />
+            <Route path="/ashram-owner/users" element={<OwnerGuestsPage />} />
             <Route path="/owner/staff" element={<StaffManagementPage />} />
+            <Route path="/ashram-admin/staff" element={<StaffManagementPage />} />
+            <Route path="/ashram-owner/staff" element={<StaffManagementPage />} />
             <Route
               path="/owner/bookings"
               element={
@@ -576,10 +635,16 @@ const AppContent: React.FC = () => {
                 <OwnerBookingCenterPage key="owner-payments" initialView="payments" />
               }
             />
+            <Route path="/ashram-admin/bookings" element={<OwnerBookingCenterPage key="ashram-admin-bookings" initialView="bookings" />} />
+            <Route path="/ashram-owner/bookings" element={<OwnerBookingCenterPage key="ashram-owner-bookings" initialView="bookings" />} />
+            <Route path="/ashram-admin/payments" element={<OwnerBookingCenterPage key="ashram-admin-payments" initialView="payments" />} />
+            <Route path="/ashram-owner/payments" element={<OwnerBookingCenterPage key="ashram-owner-payments" initialView="payments" />} />
             <Route
               path="/owner/parking"
               element={<OwnerParkingSetupPage />}
             />
+            <Route path="/ashram-admin/parking" element={<OwnerParkingSetupPage />} />
+            <Route path="/ashram-owner/parking" element={<OwnerParkingSetupPage />} />
           </Route>
 
           <Route
@@ -605,7 +670,7 @@ const AppContent: React.FC = () => {
           <Route
             element={
               <ProtectedRoute
-                allowedRoles={["owner", "manager", "offer_manager"]}
+                allowedRoles={["ashram_owner", "ashram_admin", "owner", "stay_admin", "manager", "offer_manager"]}
               >
                 <DashboardLayout />
               </ProtectedRoute>
@@ -617,6 +682,8 @@ const AppContent: React.FC = () => {
               that file is left in place, unused, so this is easy to revert.
               Scope is role-aware inside the page. */}
             <Route path="/owner/offers" element={<AdminOffersPage />} />
+            <Route path="/ashram-admin/offers" element={<AdminOffersPage />} />
+            <Route path="/ashram-owner/offers" element={<AdminOffersPage />} />
           </Route>
 
 
@@ -627,6 +694,9 @@ const AppContent: React.FC = () => {
               <ProtectedRoute
                 allowedRoles={[
                   "customer",
+                  "ashram_owner",
+                  "ashram_admin",
+                  "stay_admin",
                   "owner",
                   "manager",
                   "support",
@@ -753,6 +823,11 @@ const AppContent: React.FC = () => {
               path="/admin/manage/ashrams/edit/:id"
               element={<AddAshramWizardPage />}
             />
+            <Route path="/admin/manage/users/pilgrims" element={<Navigate to="/admin/users" replace />} />
+            <Route path="/admin/manage/users/owners" element={<Navigate to="/admin/users" replace />} />
+            <Route path="/admin/manage/users/content-managers" element={<Navigate to="/admin/users" replace />} />
+            <Route path="/admin/manage/users/staff" element={<Navigate to="/admin/users" replace />} />
+            <Route path="/admin/manage/users/roles" element={<Navigate to="/admin/users" replace />} />
             <Route
               path="/admin/manage/:moduleKey/:subKey?"
               element={<EnterpriseModulePage />}

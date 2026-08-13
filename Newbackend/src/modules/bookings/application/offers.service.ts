@@ -7,6 +7,7 @@ import {
 import { InjectModel } from "@nestjs/mongoose";
 import { Types, type Model } from "mongoose";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
+import { canManageAllAshrams, isAshramOwner } from "../../../common/auth/ashram-access";
 import { roundMoney } from "../domain/booking.utils";
 import type {
   SaveOfferDto,
@@ -101,6 +102,16 @@ export class OffersService {
       filter.status = query.status || "active";
       filter.validTill = { $gte: startOfToday() };
       filter.remainingRedemptions = { $gt: 0 };
+      filter.$and = [
+        ...(filter.$and ?? []),
+        {
+          $or: [
+            { validFrom: { $exists: false } },
+            { validFrom: null },
+            { validFrom: { $lte: new Date() } },
+          ],
+        },
+      ];
     }
     if (query.category)
       filter.offerType = { $regex: query.category, $options: "i" };
@@ -113,6 +124,18 @@ export class OffersService {
     }
     if (query.city)
       filter.applicableCities = { $regex: query.city, $options: "i" };
+    if (query.ashramId) {
+      const ashramId = this.objectId(query.ashramId);
+      filter.$and = [
+        ...(filter.$and ?? []),
+        {
+          $or: [
+            { ashramId },
+            { applicableAshrams: ashramId },
+          ],
+        },
+      ];
+    }
     return this.offers
       .find(filter)
       .sort({ featured: -1, priority: -1, createdAt: -1 })
@@ -150,8 +173,9 @@ export class OffersService {
     return row;
   }
   async ownerAshrams(user: AuthenticatedUser): Promise<string[]> {
-    if (user.role === "super_admin") return [];
-    if (user.role === "owner")
+    if (canManageAllAshrams(user))
+      return (await this.ashrams.distinct("_id", { deletedAt: null })).map(String);
+    if (isAshramOwner(user))
       return (
         await this.ashrams
           .find({ ownerId: user.id, deletedAt: null })
@@ -169,7 +193,7 @@ export class OffersService {
     user: AuthenticatedUser,
     row: any,
   ): Promise<void> {
-    if (user.role === "super_admin" || String(row.ownerId) === user.id) return;
+    if (canManageAllAshrams(user) || String(row.ownerId) === user.id) return;
     const scope = await this.ownerAshrams(user);
     // `one()` populates the ashram refs, so a reference here may already be a
     // document. Stringifying that yields "[object Object]" and the comparison
@@ -190,7 +214,7 @@ export class OffersService {
   async mine(user: AuthenticatedUser): Promise<any[]> {
     // Resolved here too: the console lists which ashram each coupon is bound
     // to, and the edit form preselects that ashram's destination.
-    if (user.role === "super_admin")
+    if (canManageAllAshrams(user))
       return this.offers
         .find(NOT_DELETED)
         .sort({ createdAt: -1 })
@@ -212,7 +236,7 @@ export class OffersService {
   }
   async save(user: AuthenticatedUser, dto: SaveOfferDto): Promise<any> {
     const scope = await this.ownerAshrams(user);
-    if (user.role !== "super_admin") {
+    if (!canManageAllAshrams(user)) {
       // Only the platform may publish a coupon that is valid everywhere.
       // Without this an owner could omit `ashramId` and mint a discount
       // redeemable against every ashram on the platform, including ones they
@@ -294,7 +318,7 @@ export class OffersService {
     // ashram; owning the coupon is not enough to point it somewhere else.
     // Clearing the binding is likewise reserved to the platform, otherwise an
     // owner could widen their own coupon to every ashram by editing it.
-    if (dto.ashramId !== undefined && user.role !== "super_admin") {
+    if (dto.ashramId !== undefined && !canManageAllAshrams(user)) {
       if (!dto.ashramId)
         throw new ForbiddenException(
           "Select which of your ashrams this coupon applies to",

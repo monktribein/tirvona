@@ -247,6 +247,8 @@ export const AshramDetailPage: React.FC = () => {
   const [couponCode, setCouponCode] = useState("");
   const [appliedDiscount, setAppliedDiscount] = useState(0);
   const [couponMsg, setCouponMsg] = useState("");
+  const [availableOffers, setAvailableOffers] = useState<any[]>([]);
+  const [offersLoading, setOffersLoading] = useState(false);
   const [specialRequests, setSpecialRequests] = useState("");
   const [restoredNotice, setRestoredNotice] = useState(false);
 
@@ -270,6 +272,52 @@ export const AshramDetailPage: React.FC = () => {
 
   useEffect(() => {
     fetchDetails();
+  }, [id]);
+
+  useEffect(() => {
+    if (!id) {
+      setAvailableOffers([]);
+      return;
+    }
+    let active = true;
+    const fetchAvailableOffers = async () => {
+      setOffersLoading(true);
+      try {
+        const response = await offerService.getPublicOffers({
+          ashramId: id,
+          status: "active",
+          targetRoute: "stays",
+          limit: "20",
+        });
+        if (active) {
+          const offers =
+            response.data?.success && Array.isArray(response.data.data)
+              ? response.data.data
+              : [];
+          const belongsToCurrentAshram = (offer: any) => {
+            const directAshramId = String(
+              offer?.ashramId?._id ?? offer?.ashramId ?? "",
+            );
+            const applicableAshramIds = Array.isArray(offer?.applicableAshrams)
+              ? offer.applicableAshrams.map((ashram: any) =>
+                  String(ashram?._id ?? ashram ?? ""),
+                )
+              : [];
+            return directAshramId === id || applicableAshramIds.includes(id);
+          };
+          setAvailableOffers(offers.filter(belongsToCurrentAshram));
+        }
+      } catch (error) {
+        console.error("Available offers load error:", error);
+        if (active) setAvailableOffers([]);
+      } finally {
+        if (active) setOffersLoading(false);
+      }
+    };
+    void fetchAvailableOffers();
+    return () => {
+      active = false;
+    };
   }, [id]);
 
   useEffect(() => {
@@ -384,6 +432,14 @@ export const AshramDetailPage: React.FC = () => {
     if (couponCode.trim()) {
       handleValidatePromo(couponCode);
     }
+  };
+
+  const handleApplyAvailableOffer = (offer: any) => {
+    const code = String(offer?.promoCode ?? "").trim().toUpperCase();
+    if (!code) return;
+    setCouponCode(code);
+    setCouponMsg("");
+    void handleValidatePromo(code);
   };
 
   const handleRemoveCoupon = () => {
@@ -1140,7 +1196,7 @@ export const AshramDetailPage: React.FC = () => {
           <div className="flex items-center justify-center gap-2">
             <VerifiedBadge
               isVerified={ashram.isVerified ?? ashram.status === "approved"}
-              text="Verified Stay"
+              text="Tirvona Verified"
               size="md"
             />
             <span className="text-xs text-gray-400 font-extrabold tracking-wider">
@@ -1973,6 +2029,84 @@ export const AshramDetailPage: React.FC = () => {
                     className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs font-semibold"
                   />
                 </div>
+
+                {/* Live offers applicable to this ashram. The Apply action
+                  still goes through validate-promo, so eligibility and the
+                  final saving always come from the server. */}
+                {(offersLoading || availableOffers.length > 0) && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <label className="text-[10px] font-black tracking-wider text-[#0A4DA6] flex items-center gap-1.5">
+                        <Sparkles size={12} /> Available Offers
+                      </label>
+                      {!offersLoading && (
+                        <span className="text-[9px] font-bold text-gray-400">
+                          {availableOffers.length} offer{availableOffers.length === 1 ? "" : "s"}
+                        </span>
+                      )}
+                    </div>
+
+                    {offersLoading ? (
+                      <div className="h-20 rounded-2xl bg-gray-100 dark:bg-slate-900 animate-pulse" />
+                    ) : (
+                      <div className="space-y-2 max-h-56 overflow-y-auto pr-1 scrollbar-thin">
+                        {availableOffers.map((offer) => {
+                          const code = String(offer.promoCode || "").toUpperCase();
+                          const isApplied = appliedPromo === code;
+                          const discountLabel =
+                            offer.discountType === "Percentage"
+                              ? `${offer.discountValue}% OFF`
+                              : offer.discountType === "Flat Amount"
+                                ? `${formatCurrency(offer.discountValue || 0)} OFF`
+                                : offer.discountType || "Special Offer";
+                          return (
+                            <div
+                              key={offer._id || code}
+                              className={`rounded-2xl border p-3 transition-colors ${
+                                isApplied
+                                  ? "border-emerald-300 bg-emerald-50/80 dark:border-emerald-800 dark:bg-emerald-950/30"
+                                  : "border-amber-200 bg-amber-50/70 dark:border-amber-900/60 dark:bg-amber-950/20"
+                              }`}
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0 space-y-1">
+                                  <div className="flex flex-wrap items-center gap-1.5">
+                                    <span className="text-[11px] font-black text-[#0B192C] dark:text-white">
+                                      {offer.offerTitle || offer.shortTitle || "Stay Offer"}
+                                    </span>
+                                    <span className="rounded-full bg-[#E58C28] px-2 py-0.5 text-[9px] font-black text-white">
+                                      {discountLabel}
+                                    </span>
+                                  </div>
+                                  <p className="text-[10px] text-gray-500 dark:text-gray-400 line-clamp-2">
+                                    {offer.description || "Apply this offer to your stay."}
+                                  </p>
+                                  {Number(offer.minimumBookingAmount || 0) > 0 && (
+                                    <p className="text-[9px] font-bold text-amber-700 dark:text-amber-300">
+                                      Minimum booking {formatCurrency(offer.minimumBookingAmount)}
+                                    </p>
+                                  )}
+                                </div>
+                                <button
+                                  type="button"
+                                  disabled={isApplied}
+                                  onClick={() => handleApplyAvailableOffer(offer)}
+                                  className={`shrink-0 rounded-xl px-3 py-2 text-[10px] font-black transition-colors ${
+                                    isApplied
+                                      ? "cursor-default bg-emerald-500 text-white"
+                                      : "cursor-pointer bg-[#0A4DA6] text-white hover:bg-[#083b80]"
+                                  }`}
+                                >
+                                  {isApplied ? "Applied" : `Apply ${code}`}
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* SECTION 1: Premium Savings Card (Framer Motion) */}
                 {appliedOfferData && (

@@ -103,7 +103,7 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
       {/* Header */}
       <EnterprisePageHeader
         title="Room Category Approval Engine"
-        subtitle="Review and validate structural room category additions requested by Stay Admins across ashrams."
+        subtitle="Review and validate structural room category additions requested by Ashram Owners across ashrams."
         icon={<Layers size={22} />}
         badgeText="Super Admin Console"
       />
@@ -167,7 +167,7 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
                 <tr className="border-b border-gray-100 dark:border-slate-800 text-gray-400 font-bold text-[10px] tracking-wider">
                   <th className="py-3 px-4">Request ID</th>
                   <th className="py-3 px-4">Ashram Name</th>
-                  <th className="py-3 px-4">Stay Admin</th>
+                  <th className="py-3 px-4">Ashram Owner</th>
                   <th className="py-3 px-4">Category Name</th>
                   <th className="py-3 px-4">Capacity / Price</th>
                   <th className="py-3 px-4">Created Date</th>
@@ -190,7 +190,7 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
                     <td className="py-3.5 px-4">
                       <div className="flex flex-col">
                         <span className="font-bold">
-                          {req.stayAdminId?.name || "Stay Admin"}
+                          {req.stayAdminId?.name || "Ashram Owner"}
                         </span>
                         <span className="text-[10px] text-gray-400">
                           {req.stayAdminId?.email}
@@ -280,7 +280,7 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
               </div>
               <div>
                 <span className="text-gray-400 block text-[10px] font-bold">
-                  Stay Admin
+                  Ashram Owner
                 </span>
                 <span className="font-bold text-gray-700 dark:text-gray-200">
                   {selectedRequest.stayAdminId?.name}

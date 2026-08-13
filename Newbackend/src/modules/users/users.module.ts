@@ -7,6 +7,7 @@ import { AshramsModule } from "../ashrams/ashrams.module";
 import { AuditModule } from "../audit/audit.module";
 import { UsersService } from "./application/users.service";
 import { UsersController } from "./presentation/users.controller";
+import { AshramRoleMigrationService } from "./application/ashram-role-migration.service";
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { UsersController } from "./presentation/users.controller";
   providers: [
     { provide: USER_REPOSITORY, useClass: MongooseUserRepository },
     UsersService,
+    AshramRoleMigrationService,
   ],
   exports: [MongooseModule, USER_REPOSITORY],
 })

@@ -47,7 +47,7 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
   compact = false,
 }) => {
   const { user } = useAuth();
-  const { addNotification } = useNotifications();
+  const { addNotification, confirmAction } = useNotifications();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
@@ -60,7 +60,7 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
   const [itemsPerPage, setItemsPerPage] = useState(3);
 
   const handleDeleteReview = async (reviewId: string) => {
-    if (!window.confirm("Are you sure you want to remove this review?")) return;
+    if (!(await confirmAction({ title: "Remove review?", message: "This review will be permanently removed.", confirmLabel: "Remove Review", tone: "danger" }))) return;
     try {
       if (onReviewDeleted) {
         onReviewDeleted(reviewId);
@@ -88,7 +88,7 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
     const authorId = rev.customerId?._id || (rev.customerId as any);
     const userId = user.id || (user as any)._id;
     const isAuthor = Boolean(authorId && String(authorId) === String(userId));
-    const isAdminOrOwner = ["super_admin", "owner", "manager"].includes(
+    const isAdminOrOwner = ["super_admin", "ashram_admin", "ashram_owner", "owner", "manager"].includes(
       user.role,
     );
     return isAuthor || isAdminOrOwner;

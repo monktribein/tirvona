@@ -7,6 +7,7 @@ import {
 } from "@nestjs/common";
 import { Types } from "mongoose";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
+import { canManageAllAshrams } from "../../../common/auth/ashram-access";
 import { escapeRegex } from "../../../common/utils/escape-regex";
 import {
   COMMUNITY_REPOSITORY,
@@ -84,10 +85,17 @@ export class CommunityService {
     };
   }
 
-  async jobs(query: Record<string, string>, ownerId?: string): Promise<any> {
-    const filter: Record<string, any> = ownerId
-      ? { ownerId }
-      : { status: "open" };
+  async jobs(
+    query: Record<string, string>,
+    ownerId?: string,
+    managedFilter?: Record<string, any>,
+  ): Promise<any> {
+    const filter: Record<string, any> =
+      managedFilter !== undefined
+        ? { ...managedFilter }
+        : ownerId
+          ? { ownerId }
+          : { status: "open" };
     for (const key of ["category", "type", "accommodation", "food"])
       if (query[key] && query[key] !== "all") filter[key] = query[key];
     for (const key of ["city", "department"])
@@ -95,13 +103,21 @@ export class CommunityService {
         filter[key] = { $regex: escapeRegex(query[key]), $options: "i" };
     if (query.search) {
       const term = escapeRegex(query.search.slice(0, 100));
-      filter.$or = [
+      const searchConditions = [
         "title",
         "ashramName",
         "department",
         "city",
         "responsibilities",
       ].map((field) => ({ [field]: { $regex: term, $options: "i" } }));
+      if (filter.$or) {
+        const scopeConditions = filter.$or;
+        delete filter.$or;
+        filter.$and = [
+          { $or: scopeConditions },
+          { $or: searchConditions },
+        ];
+      } else filter.$or = searchConditions;
     }
     const page = Math.max(1, Number(query.page) || 1);
     const limit = Math.min(100, Math.max(1, Number(query.limit) || 20));
@@ -114,6 +130,13 @@ export class CommunityService {
       this.repository.count("jobs", filter),
     ]);
     return { success: true, count: data.length, total, data };
+  }
+  async managedJobs(
+    user: AuthenticatedUser,
+    query: Record<string, string>,
+  ): Promise<any> {
+    if (canManageAllAshrams(user)) return this.jobs(query, undefined, {});
+    return this.jobs(query, undefined, this.managedJobFilter(user));
   }
   async job(id: string): Promise<any> {
     const data = await this.repository.one("jobs", { _id: id });
@@ -175,6 +198,10 @@ export class CommunityService {
     return { success: true, count: data.length, data };
   }
   async createJob(user: AuthenticatedUser, dto: VolunteerJobDto): Promise<any> {
+    if (!(await this.canManageJobAshram(user, dto.ashramId)))
+      throw new ForbiddenException(
+        "You cannot publish an opportunity for this ashram",
+      );
     const data = await this.repository.create("jobs", {
       ...dto,
       ownerId: user.id,
@@ -188,6 +215,10 @@ export class CommunityService {
     dto: UpdateVolunteerJobDto,
   ): Promise<any> {
     await this.ownsJob(user, id);
+    if (dto.ashramId && !(await this.canManageJobAshram(user, dto.ashramId)))
+      throw new ForbiddenException(
+        "You cannot move this opportunity to that ashram",
+      );
     const data = await this.repository.update(
       "jobs",
       { _id: id },
@@ -205,12 +236,12 @@ export class CommunityService {
     query: Record<string, string>,
   ): Promise<any> {
     const owned =
-      user.role === "super_admin"
+      canManageAllAshrams(user)
         ? undefined
         : (
             await this.repository.list(
               "jobs",
-              { ownerId: user.id },
+              this.managedJobFilter(user),
               { select: "_id", limit: 1000 },
             )
           ).map((job) => job._id);
@@ -237,8 +268,9 @@ export class CommunityService {
     );
     if (!application) throw new NotFoundException("Application not found.");
     if (
-      user.role !== "super_admin" &&
-      String(application.jobId?.ownerId) !== user.id
+      !canManageAllAshrams(user) &&
+      String(application.jobId?.ownerId) !== user.id &&
+      !this.managedAshramIds(user).includes(String(application.jobId?.ashramId))
     )
       throw new ForbiddenException("You cannot manage this application");
     const data = await this.repository.update(
@@ -613,8 +645,37 @@ export class CommunityService {
   private async ownsJob(user: AuthenticatedUser, id: string): Promise<void> {
     const job = await this.repository.one("jobs", { _id: id });
     if (!job) throw new NotFoundException("Volunteer opening not found.");
-    if (user.role !== "super_admin" && String(job.ownerId) !== user.id)
+    if (
+      !canManageAllAshrams(user) &&
+      String(job.ownerId) !== user.id &&
+      !this.managedAshramIds(user).includes(String(job.ashramId))
+    )
       throw new ForbiddenException("You cannot manage this opening");
+  }
+  private managedAshramIds(user: AuthenticatedUser): string[] {
+    return [
+      ...(user.scopedAshramIds ?? []),
+      ...(user.employerAshramId ? [user.employerAshramId] : []),
+    ].map(String);
+  }
+  private managedJobFilter(user: AuthenticatedUser): Record<string, unknown> {
+    const ashramIds = this.managedAshramIds(user);
+    return ashramIds.length
+      ? { $or: [{ ownerId: user.id }, { ashramId: { $in: ashramIds } }] }
+      : { ownerId: user.id };
+  }
+  private async canManageJobAshram(
+    user: AuthenticatedUser,
+    ashramId: string,
+  ): Promise<boolean> {
+    if (canManageAllAshrams(user)) return true;
+    if (this.managedAshramIds(user).includes(String(ashramId))) return true;
+    return Boolean(
+      await this.repository.one("ashrams", {
+        _id: ashramId,
+        ownerId: user.id,
+      }),
+    );
   }
   private async history(
     articleId: unknown,

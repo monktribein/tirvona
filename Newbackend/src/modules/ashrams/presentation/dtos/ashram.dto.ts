@@ -39,7 +39,9 @@ export class AshramQueryDto {
 export class SaveAshramDto {
   @IsString() @MinLength(2) name: string;
   @IsOptional() @IsString() tagline?: string;
-  @IsOptional() @IsString() ashramType?: string;
+  @IsOptional()
+  @IsIn(["ashram", "dharamshala", "homestay"])
+  ashramType?: string;
   @IsOptional() @IsString() description?: string;
   @IsOptional() @IsString() history?: string;
   @IsOptional() @IsString() foundedBy?: string;
