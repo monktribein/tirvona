@@ -5,9 +5,16 @@ const initials = (name) => String(name ?? "").split(/\s+/).filter(Boolean).slice
 
 export const CardHeader = () => (
   <header className="card-header">
-    <span className="card-eyebrow">Tirvona Digital Identity</span>
-    <span className="brand-chip"><TirvonaMark height={58} /></span>
-    <p className="card-header-tag"><span /> Authorised Representative <span /></p>
+    <div className="header-brand-row">
+      <div className="brand-lockup">
+        <span className="brand-chip"><TirvonaMark height={78} /></span>
+        <span className="card-eyebrow">Digital Identity</span>
+      </div>
+      <div className="authentic-lockup">
+        <span className="authentic-shield" aria-hidden="true">✓</span>
+        <span><strong>Authentic</strong><small>Verified identity</small></span>
+      </div>
+    </div>
   </header>
 );
 

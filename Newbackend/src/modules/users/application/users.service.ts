@@ -48,12 +48,23 @@ export class UsersService {
       const value = { $regex: escapeRegex(query.search), $options: "i" };
       filter.$or = [{ name: value }, { email: value }, { phone: value }];
     }
-    return this.users
+    const rows = await this.users
       .find(filter)
+      .select("+aadhaarCardUrl +panCardUrl")
       .sort({ createdAt: -1 })
       .skip((query.page - 1) * query.limit)
       .limit(query.limit)
       .lean();
+    return rows.map((row: any) => {
+      const { aadhaarCardUrl, panCardUrl, ...safe } = row;
+      // Never leaves the service, even if a projection lets it through.
+      delete safe.passwordHash;
+      return {
+        ...safe,
+        hasAadhaarCard: Boolean(aadhaarCardUrl?.trim()),
+        hasPanCard: Boolean(panCardUrl?.trim()),
+      };
+    });
   }
   async staff(actor: AuthenticatedUser): Promise<any[]> {
     const ids =
@@ -208,8 +219,14 @@ export class UsersService {
       throw new BadRequestException("You cannot suspend your own account");
     const row = await this.row(id);
     row.status = status;
-    if (status === "suspended")
-      row.tokenVersion = Number(row.tokenVersion ?? 0) + 1;
+    row.isSuspended = status === "suspended";
+    if (status === "active") {
+      row.suspensionType = "none";
+      row.suspensionEndDate = undefined;
+    } else if (status === "suspended") {
+      row.suspensionType = "temporary";
+    }
+    row.tokenVersion = Number(row.tokenVersion ?? 0) + 1;
     await row.save();
     await this.audit(actor, "USER_STATUS_UPDATE", { targetUserId: id, status });
     return row;
@@ -263,23 +280,29 @@ export class UsersService {
     await this.audit(actor, "USER_REACTIVATED", { targetUserId: id });
     return row;
   }
-  async role(actor: AuthenticatedUser, id: string, role: string): Promise<any> {
+  async role(
+    actor: AuthenticatedUser,
+    id: string,
+    dto: { role: string; aadhaarCardUrl?: string; panCardUrl?: string },
+  ): Promise<any> {
     const row = await this.users
       .findById(id)
       .select("+aadhaarCardUrl +panCardUrl");
     if (!row) throw new NotFoundException("User not found");
-    if (
-      role !== "customer" &&
-      (!row.aadhaarCardUrl?.trim() ||
-        !row.panCardUrl?.trim())
-    )
+    const aadhaarCardUrl =
+      dto.aadhaarCardUrl?.trim() || row.aadhaarCardUrl?.trim();
+    const panCardUrl = dto.panCardUrl?.trim() || row.panCardUrl?.trim();
+    if (dto.role !== "customer" && (!aadhaarCardUrl || !panCardUrl))
       throw new BadRequestException(
         "Upload an Aadhaar card and PAN card before assigning an operational role",
       );
     const oldRole = row.role;
-    row.role = role;
+    row.role = dto.role;
+    if (dto.aadhaarCardUrl?.trim())
+      row.aadhaarCardUrl = dto.aadhaarCardUrl.trim();
+    if (dto.panCardUrl?.trim()) row.panCardUrl = dto.panCardUrl.trim();
     row.permissions =
-      role === "ashram_admin"
+      dto.role === "ashram_admin"
         ? [...new Set([...(row.permissions ?? []), "ashrams.manage_all"])]
         : (row.permissions ?? []).filter(
             (permission: string) => permission !== "ashrams.manage_all",
@@ -289,7 +312,7 @@ export class UsersService {
     await this.audit(actor, "USER_ROLE_CHANGED", {
       targetUserId: id,
       oldRole,
-      role,
+      role: dto.role,
     });
     const safeUser = row.toObject();
     delete safeUser.passwordHash;

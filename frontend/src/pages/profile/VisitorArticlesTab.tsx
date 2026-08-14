@@ -1,6 +1,9 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   FileText,
+  ImagePlus,
+  Pencil,
+  Video,
   Plus,
   CheckCircle2,
   Clock,
@@ -21,6 +24,8 @@ import {
   type EligibleBooking,
   type VisitorArticle,
 } from "../../services/visitorArticleService";
+import { uploadService } from "../../services";
+import { ImageUploadGrid } from "../../components/shared/ImageUploadGrid";
 import { useNotifications } from "../../contexts/NotificationContext";
 import { getErrorMessage } from "../../lib/api";
 
@@ -76,10 +81,18 @@ export const VisitorArticlesTab: React.FC = () => {
   const [category, setCategory] = useState("Experience");
   const [shortDescription, setShortDescription] = useState("");
   const [content, setContent] = useState("");
-  const [featuredImage, setFeaturedImage] = useState(
-    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E",
-  );
-  const [galleryImagesStr, setGalleryImagesStr] = useState("");
+  // Empty until the visitor uploads one. It used to be seeded with an inline
+  // placeholder SVG, which meant every article that skipped the field shipped
+  // a grey icon as its cover photo.
+  const [featuredImage, setFeaturedImage] = useState("");
+  const [videoUrl, setVideoUrl] = useState("");
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
+  const coverInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
+  const [galleryImages, setGalleryImages] = useState<string[]>([]);
+  // Set while editing an existing article; null means "creating a new one".
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [tagsStr, setTagsStr] = useState("Rishikesh, AshramStay, SatvikLiving");
   const [language, setLanguage] = useState("English");
   const [submitting, setSubmitting] = useState(false);
@@ -127,6 +140,61 @@ export const VisitorArticlesTab: React.FC = () => {
     }
   };
 
+  // Limits mirror the server's per-type ceilings, so an oversized file is
+  // refused before it is pushed over a slow mobile connection.
+  const MAX_COVER_BYTES = 10 * 1024 * 1024;
+  const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
+
+  const handleCoverUpload = async (file: File) => {
+    if (file.size > MAX_COVER_BYTES) {
+      addNotification(
+        "Photo Too Large",
+        `That photo is ${(file.size / 1024 / 1024).toFixed(1)} MB. Choose one under 10 MB.`,
+        "warning",
+      );
+      return;
+    }
+    setUploadingCover(true);
+    try {
+      const url = await uploadService.file(file, "visitor-articles");
+      setFeaturedImage(url);
+    } catch (err) {
+      addNotification(
+        "Upload Failed",
+        getErrorMessage(err, "Could not upload that photo."),
+        "error",
+      );
+    } finally {
+      setUploadingCover(false);
+      if (coverInputRef.current) coverInputRef.current.value = "";
+    }
+  };
+
+  const handleVideoUpload = async (file: File) => {
+    if (file.size > MAX_VIDEO_BYTES) {
+      addNotification(
+        "Video Too Large",
+        `That video is ${(file.size / 1024 / 1024).toFixed(1)} MB. The limit is 100 MB.`,
+        "warning",
+      );
+      return;
+    }
+    setUploadingVideo(true);
+    try {
+      const url = await uploadService.file(file, "visitor-articles");
+      setVideoUrl(url);
+    } catch (err) {
+      addNotification(
+        "Upload Failed",
+        getErrorMessage(err, "Could not upload that video."),
+        "error",
+      );
+    } finally {
+      setUploadingVideo(false);
+      if (videoInputRef.current) videoInputRef.current.value = "";
+    }
+  };
+
   const handleSelectBooking = (booking: EligibleBooking) => {
     if (booking.hasSubmittedArticle) {
       addNotification(
@@ -150,30 +218,45 @@ export const VisitorArticlesTab: React.FC = () => {
       );
       return;
     }
+    // Photo and video are both optional and independent — an article may have
+    // one, the other, both, or neither.
+    if (uploadingCover || uploadingVideo) {
+      addNotification(
+        "Upload In Progress",
+        "Wait for the upload to finish before submitting.",
+        "warning",
+      );
+      return;
+    }
 
     setSubmitting(true);
     try {
-      const galleryImages = galleryImagesStr
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean);
       const tags = tagsStr
         .split(",")
         .map((s) => s.trim())
         .filter(Boolean);
 
-      const res = await visitorArticleService.createArticle({
-        bookingId: selectedBooking._id,
+      const payload = {
         title: title.trim(),
         category,
         shortDescription: shortDescription.trim(),
         content: content.trim(),
         featuredImage: featuredImage.trim(),
+        videoUrl: videoUrl.trim(),
         galleryImages,
         tags,
         language,
-        status: asDraft ? "draft" : "pending",
-      });
+        status: (asDraft ? "draft" : "pending") as "draft" | "pending",
+      };
+
+      // Editing keeps the article on its original booking — that link is the
+      // proof of stay and is not something an edit may move.
+      const res = editingId
+        ? await visitorArticleService.updateArticle(editingId, payload)
+        : await visitorArticleService.createArticle({
+            bookingId: selectedBooking._id,
+            ...payload,
+          });
 
       if (res.data.success) {
         addNotification("Success", res.data.message, "success");
@@ -197,8 +280,39 @@ export const VisitorArticlesTab: React.FC = () => {
     setCategory("Experience");
     setShortDescription("");
     setContent("");
+    // Uploaded media has to clear too, or the next article starts with the
+    // previous one's cover photo and video already attached.
+    setFeaturedImage("");
+    setVideoUrl("");
+    setGalleryImages([]);
     setSelectedBooking(null);
+    setEditingId(null);
     setStep(1);
+  };
+
+  /**
+   * Loads an existing article into the wizard and jumps straight to step 2 —
+   * the stay is already chosen and must not change.
+   */
+  const openEditor = (article: VisitorArticle) => {
+    setEditingId(article._id);
+    setTitle(article.title || "");
+    setCategory(article.category || "Experience");
+    setShortDescription(article.shortDescription || "");
+    setContent(article.content || "");
+    setFeaturedImage(article.featuredImage || "");
+    setVideoUrl(article.videoUrl || "");
+    setGalleryImages(article.galleryImages || []);
+    setTagsStr((article.tags || []).join(", "));
+    setLanguage(article.language || "English");
+    // The step-2 banner reads `booking.ashram`, but a populated bookingId
+    // nests the ashram under `ashramId` — reshape so the name still shows.
+    setSelectedBooking({
+      ...(article.bookingId as any),
+      ashram: (article.bookingId as any)?.ashram ?? article.ashramId,
+    } as any);
+    setStep(2);
+    setIsWizardOpen(true);
   };
 
   return (
@@ -291,12 +405,19 @@ export const VisitorArticlesTab: React.FC = () => {
               className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-5 shadow-md flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center"
             >
               <div className="flex items-start gap-4 min-w-0">
-                <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 bg-gray-100 dark:bg-slate-800">
-                  <img
-                    src={art.featuredImage}
-                    alt={art.title}
-                    className="w-full h-full object-cover"
-                  />
+                {/* Cover photo is optional — a video-only article has none. */}
+                <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 bg-gray-100 dark:bg-slate-800 flex items-center justify-center">
+                  {art.featuredImage ? (
+                    <img
+                      src={art.featuredImage}
+                      alt={art.title}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : art.videoUrl ? (
+                    <Video size={20} className="text-gray-400" />
+                  ) : (
+                    <FileText size={20} className="text-gray-300 dark:text-slate-700" />
+                  )}
                 </div>
 
                 <div className="space-y-1 min-w-0">
@@ -371,17 +492,27 @@ export const VisitorArticlesTab: React.FC = () => {
                   </span>
                 </div>
 
-                {art.status === "approved" && (
-                  <a
-                    href={`/blog/${art.slug}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="px-4 py-1.5 bg-[#0A4DA6] hover:bg-[#083D85] text-white text-xs font-black rounded-full transition-all flex items-center gap-1 shadow-xs"
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => openEditor(art)}
+                    className="px-4 py-1.5 bg-[#EBF2FA] hover:bg-[#dbe8f7] dark:bg-blue-950/40 text-[#0A4DA6] dark:text-blue-300 text-xs font-black rounded-full transition-colors flex items-center gap-1.5 cursor-pointer"
                   >
-                    <span>View Published</span>
-                    <ArrowRight size={12} />
-                  </a>
-                )}
+                    <Pencil size={12} /> Edit
+                  </button>
+
+                  {art.status === "approved" && (
+                    <a
+                      href={`/blog/${art.slug}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-4 py-1.5 bg-[#0A4DA6] hover:bg-[#083D85] text-white text-xs font-black rounded-full transition-all flex items-center gap-1 shadow-xs"
+                    >
+                      <span>View Published</span>
+                      <ArrowRight size={12} />
+                    </a>
+                  )}
+                </div>
               </div>
             </div>
           ))}
@@ -395,13 +526,18 @@ export const VisitorArticlesTab: React.FC = () => {
         title={
           step === 1
             ? "Step 1: Select Verified Ashram Stay"
-            : "Step 2: Write Experience Article"
+            : editingId
+              ? "Edit Your Experience Article"
+              : "Step 2: Write Experience Article"
         }
         subtitle={
           step === 1
             ? "Choose from your completed stay bookings to link your article"
             : `Writing article for ${selectedBooking?.ashram?.name || "Ashram Stay"}`
         }
+        // The default `md` was too narrow for a stay row (name + verified badge
+        // + booking line + action), and too cramped for the step-2 article form.
+        maxWidth="2xl"
       >
         {step === 1 ? (
           <div className="space-y-4">
@@ -428,23 +564,25 @@ export const VisitorArticlesTab: React.FC = () => {
                 </p>
               </div>
             ) : (
-              <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
+              <div className="space-y-3">
                 {eligibleBookings.map((b) => (
                   <div
                     key={b._id}
                     onClick={() => handleSelectBooking(b)}
-                    className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                    className={`p-4 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
                       b.hasSubmittedArticle
                         ? "bg-gray-50 dark:bg-slate-900 border-gray-200 dark:border-slate-800 opacity-60 cursor-not-allowed"
-                        : "bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-800 hover:border-[#0A4DA6] hover:shadow-md"
+                        : "bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-800 hover:border-[#0A4DA6] hover:shadow-md cursor-pointer"
                     }`}
                   >
-                    <div className="space-y-1 text-xs">
-                      <div className="flex items-center gap-2">
-                        <span className="font-black text-[#0B192C] dark:text-white text-sm">
+                    {/* min-w-0 lets a long ashram name truncate instead of
+                        squeezing the action out of the row. */}
+                    <div className="space-y-1 text-xs min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-black text-[#0B192C] dark:text-white text-sm truncate">
                           {b.ashram?.name}
                         </span>
-                        <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 rounded-full text-[10px] font-black flex items-center gap-1">
+                        <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 rounded-full text-[10px] font-black flex items-center gap-1 shrink-0 whitespace-nowrap">
                           <ShieldCheck size={11} /> Verified Stay
                         </span>
                       </div>
@@ -454,14 +592,17 @@ export const VisitorArticlesTab: React.FC = () => {
                       </p>
                     </div>
 
-                    <div>
+                    {/* shrink-0 keeps the pill at its natural width; without it
+                        flex compressed the label and pushed the arrow outside
+                        the button. */}
+                    <div className="shrink-0">
                       {b.hasSubmittedArticle ? (
-                        <span className="px-3 py-1 bg-gray-200 text-gray-600 text-[10px] font-extrabold rounded-full">
+                        <span className="inline-block px-3 py-1 bg-gray-200 dark:bg-slate-800 text-gray-600 dark:text-gray-300 text-[10px] font-extrabold rounded-full whitespace-nowrap capitalize">
                           Article {b.existingArticleStatus}
                         </span>
                       ) : (
-                        <span className="px-4 py-1.5 bg-[#0A4DA6] text-white text-xs font-extrabold rounded-full">
-                          Select Stay →
+                        <span className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#0A4DA6] text-white text-xs font-extrabold rounded-full whitespace-nowrap">
+                          Select Stay <ArrowRight size={13} />
                         </span>
                       )}
                     </div>
@@ -476,7 +617,9 @@ export const VisitorArticlesTab: React.FC = () => {
               e.preventDefault();
               handleSubmitArticle(false);
             }}
-            className="space-y-4 text-xs font-bold max-h-[75vh] overflow-y-auto pr-1"
+            // No max-height/overflow here: EnterpriseModal's body already
+            // scrolls, and a second scroller inside it rendered two bars.
+            className="space-y-4 text-xs font-bold"
           >
             {/* Auto-filled Verified Stay Banner */}
             <div className="p-3 bg-blue-50/80 dark:bg-blue-950/30 rounded-xl border border-blue-100 dark:border-slate-800 flex items-center justify-between text-xs">
@@ -572,19 +715,133 @@ export const VisitorArticlesTab: React.FC = () => {
               />
             </div>
 
-            {/* Cover Image URL */}
-            <div className="space-y-1">
+            {/* Featured Cover Photo — upload only, no URL field */}
+            <div className="space-y-1.5">
               <label className="text-gray-700 dark:text-gray-300">
-                Featured Cover Image URL *
+                Featured Cover Photo (optional)
               </label>
               <input
-                type="url"
-                required
-                value={featuredImage}
-                onChange={(e) => setFeaturedImage(e.target.value)}
-                placeholder="https://domain.com/photo.jpg"
-                className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold focus:outline-none focus:border-[#0A4DA6]"
+                ref={coverInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) void handleCoverUpload(file);
+                }}
               />
+              {featuredImage ? (
+                <div className="relative rounded-2xl overflow-hidden border border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-900">
+                  <img
+                    src={featuredImage}
+                    alt="Cover preview"
+                    className="w-full h-44 object-cover"
+                  />
+                  <div className="absolute bottom-2 right-2 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => coverInputRef.current?.click()}
+                      disabled={uploadingCover}
+                      className="px-3 py-1.5 bg-white/95 text-[#0A4DA6] rounded-full text-[11px] font-extrabold shadow-sm cursor-pointer"
+                    >
+                      Replace
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFeaturedImage("")}
+                      className="px-3 py-1.5 bg-white/95 text-rose-600 rounded-full text-[11px] font-extrabold shadow-sm cursor-pointer"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => coverInputRef.current?.click()}
+                  disabled={uploadingCover}
+                  className="w-full py-8 rounded-2xl border-2 border-dashed border-[#0A4DA6]/35 bg-blue-50/40 dark:bg-slate-900 text-[#0A4DA6] flex flex-col items-center justify-center gap-1.5 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors cursor-pointer disabled:opacity-60"
+                >
+                  {uploadingCover ? (
+                    <Loader2 size={22} className="animate-spin" />
+                  ) : (
+                    <ImagePlus size={22} />
+                  )}
+                  <span className="text-xs font-extrabold">
+                    {uploadingCover
+                      ? "Uploading photo…"
+                      : "Upload cover photo from your device"}
+                  </span>
+                  <span className="text-[10px] text-gray-400 font-semibold">
+                    JPG, PNG, WEBP or HEIC · up to 10 MB
+                  </span>
+                </button>
+              )}
+            </div>
+
+            {/* Optional Video */}
+            <div className="space-y-1.5">
+              <label className="text-gray-700 dark:text-gray-300">
+                Experience Video (optional)
+              </label>
+              <input
+                ref={videoInputRef}
+                type="file"
+                accept="video/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) void handleVideoUpload(file);
+                }}
+              />
+              {videoUrl ? (
+                <div className="rounded-2xl overflow-hidden border border-gray-200 dark:border-slate-800 bg-black">
+                  <video
+                    src={videoUrl}
+                    controls
+                    preload="metadata"
+                    className="w-full max-h-56"
+                  />
+                  <div className="flex justify-end gap-2 p-2 bg-gray-50 dark:bg-slate-900">
+                    <button
+                      type="button"
+                      onClick={() => videoInputRef.current?.click()}
+                      disabled={uploadingVideo}
+                      className="px-3 py-1.5 text-[#0A4DA6] rounded-full text-[11px] font-extrabold cursor-pointer"
+                    >
+                      Replace
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setVideoUrl("")}
+                      className="px-3 py-1.5 text-rose-600 rounded-full text-[11px] font-extrabold cursor-pointer"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => videoInputRef.current?.click()}
+                  disabled={uploadingVideo}
+                  className="w-full py-6 rounded-2xl border-2 border-dashed border-gray-300 dark:border-slate-700 bg-gray-50/60 dark:bg-slate-900 text-gray-500 dark:text-gray-300 flex flex-col items-center justify-center gap-1.5 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors cursor-pointer disabled:opacity-60"
+                >
+                  {uploadingVideo ? (
+                    <Loader2 size={20} className="animate-spin" />
+                  ) : (
+                    <Video size={20} />
+                  )}
+                  <span className="text-xs font-extrabold">
+                    {uploadingVideo
+                      ? "Uploading video…"
+                      : "Upload a short video from your device"}
+                  </span>
+                  <span className="text-[10px] text-gray-400 font-semibold">
+                    MP4, WEBM or MOV · up to 100 MB
+                  </span>
+                </button>
+              )}
             </div>
 
             {/* Rich Text / Article Content */}
@@ -606,14 +863,14 @@ export const VisitorArticlesTab: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1">
                 <label className="text-gray-700 dark:text-gray-300">
-                  Gallery Images (Comma-separated URLs)
+                  Photo Gallery
                 </label>
-                <input
-                  type="text"
-                  value={galleryImagesStr}
-                  onChange={(e) => setGalleryImagesStr(e.target.value)}
-                  placeholder="https://img1.jpg, https://img2.jpg"
-                  className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-medium focus:outline-none focus:border-[#0A4DA6]"
+                <ImageUploadGrid
+                  value={galleryImages}
+                  onChange={setGalleryImages}
+                  folder="visitor-articles"
+                  max={10}
+                  onError={(t, m) => addNotification(t, m, "warning")}
                 />
               </div>
 
@@ -662,7 +919,11 @@ export const VisitorArticlesTab: React.FC = () => {
                     <Sparkles size={14} />
                   )}
                   <span>
-                    {submitting ? "Submitting..." : "Submit for Approval"}
+                    {submitting
+                      ? "Saving..."
+                      : editingId
+                        ? "Save & Resubmit"
+                        : "Submit for Approval"}
                   </span>
                 </button>
               </div>

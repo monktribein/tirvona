@@ -34,6 +34,8 @@ import {
   Printer,
   Sparkles,
   Plus,
+  BarChart3,
+  BookOpen,
 } from "lucide-react";
 
 interface CmsRequest {
@@ -163,6 +165,14 @@ export const EnterpriseModulePage: React.FC<{
     "reports:bookings": "Booking Telemetry",
   };
   const displayTitle = pageTitles[`${activeModule}:${activeSubKey || "all"}`] || title;
+  // `displayTitle` names the list ("All Blogs"), which reads wrong as a form
+  // heading — "Create All Blogs". Drop the "All " and singularise for the noun
+  // that describes one record.
+  const recordLabel =
+    displayTitle
+      .replace(/^All\s+/i, "")
+      .replace(/ies$/, "y")
+      .replace(/([^s])s$/, "$1") || displayTitle;
 
   useEffect(() => {
     fetchModuleData();
@@ -279,8 +289,17 @@ export const EnterpriseModulePage: React.FC<{
     try {
       // Must go through the shared `api` client: /admin/crud is authenticated,
       // and raw axios sends no Authorization header (it would 401).
+      // Reports read the live ledgers, not the `booking_reports` queue. That
+      // collection only holds export jobs a user asked for and TTLs them away,
+      // so /admin/crud/reports was almost always empty — which is what made
+      // both report pages render "No records found" on a busy platform.
       const endpoint =
-        activeModule === "bookings" && activeSubKey === "refunds"
+        activeModule === "reports"
+          ? activeSubKey === "bookings"
+            ? // The dashboard DTO caps `limit` at 100; asking for more is a 400.
+              "/bookings/dashboard?limit=100"
+            : "/booking-finance/payments"
+          : activeModule === "bookings" && activeSubKey === "refunds"
           ? "/booking-finance/refunds"
           : activeModule === "bookings"
             ? `/bookings/dashboard?limit=100${activeSubKey === "refunded" ? "&paymentStatus=refunded" : activeSubKey && activeSubKey !== "all" ? `&status=${encodeURIComponent(activeSubKey)}` : ""}`
@@ -311,7 +330,11 @@ export const EnterpriseModulePage: React.FC<{
   // settlement run, scan logs are an audit trail, and a staff grant carries
   // authorisation rules that a plain field update would bypass — all of them
   // change through /parking/admin, which enforces the transition.
+  // `reports` reads the payment and booking ledgers directly, so every row is
+  // a derived record — editing or deleting one here would mean rewriting
+  // settled money.
   const READ_ONLY_MODULES = new Set([
+    "reports",
     "bookings",
     "parking_bookings",
     "parking_commissions",
@@ -330,6 +353,47 @@ export const EnterpriseModulePage: React.FC<{
     isOperationalRoomView;
 
   // Custom Form & Column Definitions per Feature Area
+  // The fallback shape, named so a case can opt back into it (a sub-key that
+  // resolves to a different collection than its module's own config expects).
+  const genericModuleConfig = {
+    icon: <Building size={20} className="text-[#0A4DA6]" />,
+    columns: defaultColumns || [
+      {
+        key: "name",
+        label: "Record Name / Title",
+        render: (v: any, item: any) =>
+          v || item.title || item.bookingId || item._id,
+      },
+      {
+        key: "category",
+        label: "Category / Tag",
+        render: (v: any, item: any) => v || item.department || item.type || "General",
+      },
+      {
+        key: "owner",
+        label: "Managed By",
+        render: (v: any, item: any) => v || item.customerId?.name || "System Admin",
+      },
+      {
+        key: "status",
+        label: "Status",
+        render: (v: any) => v || "active",
+      },
+    ],
+    fields: [
+      { name: "name", label: "Record Name", type: "text", required: true },
+      { name: "title", label: "Title / Subject", type: "text" },
+      { name: "category", label: "Category", type: "text" },
+      { name: "details", label: "Description", type: "textarea" },
+      {
+        name: "status",
+        label: "Status",
+        type: "select",
+        options: ["active", "pending", "approved", "rejected", "archived"],
+      },
+    ],
+  };
+
   const getModuleConfig = () => {
     switch (activeModule) {
       case "banner":
@@ -1024,6 +1088,235 @@ export const EnterpriseModulePage: React.FC<{
           ],
         };
 
+      // ── Blogs ──────────────────────────────────────────────────────────────
+      // The public feed reads title/slug/excerpt/coverImage/author and only
+      // shows `status: published`. The generic form collected none of that,
+      // which is why a console-authored post never reached the homepage.
+      case "blogs":
+        // Only the post list. `blogs/authors` and `blogs/categories` resolve to
+        // different collections and keep the generic config.
+        if (activeSubKey && activeSubKey !== "all") return genericModuleConfig;
+        return {
+          icon: <BookOpen size={20} className="text-[#0A4DA6]" />,
+          columns: [
+            {
+              key: "coverImage",
+              label: "Cover",
+              render: (value: any, item: any) => {
+                const src = value || item.image || item.imageUrl;
+                return (
+                  <div className="w-12 h-10 rounded-lg overflow-hidden border border-gray-200 dark:border-slate-800 bg-slate-900 shrink-0">
+                    {src ? (
+                      <img
+                        src={src}
+                        alt="Cover"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : null}
+                  </div>
+                );
+              },
+            },
+            {
+              key: "title",
+              label: "Article Title",
+              render: (value: any, item: any) => value || item.name || "—",
+            },
+            { key: "category", label: "Category" },
+            {
+              key: "contentType",
+              label: "Type",
+              render: (value: any) => humanizeLabel(value || "article"),
+            },
+            {
+              key: "author",
+              label: "Author",
+              render: (value: any, item: any) =>
+                value?.name || item.authorId?.name || "Tirvona Editorial",
+            },
+            {
+              key: "views",
+              label: "Views",
+              render: (value: any) => Number(value || 0),
+            },
+            {
+              key: "status",
+              label: "Status",
+              // "published" is the only value the public feed accepts.
+              render: (value: any) => humanizeLabel(value || "draft"),
+            },
+          ],
+          fields: [
+            {
+              name: "title",
+              label: "Article Title",
+              type: "text",
+              required: true,
+            },
+            {
+              name: "slug",
+              label: "URL Slug (auto-generated when blank)",
+              type: "text",
+            },
+            {
+              name: "category",
+              label: "Category",
+              type: "select",
+              options: [
+                "spiritual",
+                "pilgrimage",
+                "temples",
+                "festivals",
+                "travel",
+                "wellness",
+                "food",
+                "culture",
+              ],
+            },
+            {
+              name: "contentType",
+              label: "Content Type",
+              type: "select",
+              options: ["article", "video"],
+            },
+            { name: "videoUrl", label: "Video URL (for video posts)", type: "text" },
+            { name: "coverImage", label: "Featured Image URL", type: "text" },
+            // Same wording as the Visitor Article form, so both blog surfaces
+            // ask for the same things by the same names.
+            {
+              name: "excerpt",
+              label: "Short Description",
+              type: "textarea",
+            },
+            {
+              name: "content",
+              label: "Article Body Content",
+              type: "textarea",
+              required: true,
+            },
+            { name: "tags", label: "Tags (comma separated)", type: "text" },
+            {
+              name: "status",
+              label: "Publish Status",
+              type: "select",
+              // Only "published" appears on the homepage and /blog.
+              options: ["published", "draft", "archived"],
+            },
+          ],
+        };
+
+      // ── Reports & Audit ────────────────────────────────────────────────────
+      // Revenue reads the settled payment ledger; telemetry reads the booking
+      // pipeline. Both are read-only views of live data.
+      case "reports":
+        if (activeSubKey === "bookings") {
+          return {
+            icon: <BarChart3 size={20} className="text-[#0A4DA6]" />,
+            columns: [
+              { key: "bookingId", label: "Booking ID" },
+              {
+                key: "customerId",
+                label: "Guest",
+                render: (value: any) =>
+                  value?.name || value?.email || value?.phone || "—",
+              },
+              {
+                key: "ashramId",
+                label: "Ashram",
+                render: (value: any) => value?.name || "—",
+              },
+              {
+                key: "checkInDate",
+                label: "Check-in",
+                render: (value: any) =>
+                  value
+                    ? new Date(value).toLocaleDateString(getFormattingLocale())
+                    : "—",
+              },
+              {
+                key: "checkOutDate",
+                label: "Check-out",
+                render: (value: any) =>
+                  value
+                    ? new Date(value).toLocaleDateString(getFormattingLocale())
+                    : "—",
+              },
+              {
+                key: "guestsCount",
+                label: "Guests / Rooms",
+                render: (value: any, item: any) =>
+                  value == null && item.roomsBookedCount == null
+                    ? "—"
+                    : `${value ?? 0} guest${value === 1 ? "" : "s"} · ${item.roomsBookedCount ?? 0} room${item.roomsBookedCount === 1 ? "" : "s"}`,
+              },
+              {
+                key: "pricing",
+                label: "Booking Value",
+                render: (value: any) =>
+                  formatCurrency(Number(value?.totalAmount) || 0),
+              },
+              { key: "paymentStatus", label: "Payment" },
+              { key: "status", label: "Booking Status" },
+            ],
+            fields: [],
+          };
+        }
+        return {
+          icon: <BarChart3 size={20} className="text-[#0A4DA6]" />,
+          columns: [
+            {
+              key: "transactionId",
+              label: "Transaction Reference",
+              render: (value: any, item: any) =>
+                value ||
+                item.gateway?.paymentId ||
+                item.gateway?.orderId ||
+                (item._id ? String(item._id).slice(-10).toUpperCase() : "—"),
+            },
+            {
+              key: "bookingId",
+              label: "Booking",
+              render: (value: any) =>
+                value?.bookingId || value?.reservationNumber || "—",
+            },
+            {
+              key: "ashramId",
+              label: "Ashram",
+              render: (value: any) => value?.name || "—",
+            },
+            {
+              key: "paidBy",
+              label: "Paid By",
+              render: (value: any, item: any) => {
+                const payer = value || item.bookedBy || item.userId;
+                return payer?.name || payer?.email || payer?.phone || "—";
+              },
+            },
+            {
+              key: "amount",
+              label: "Amount",
+              render: (value: any) => formatCurrency(Number(value) || 0),
+            },
+            {
+              key: "method",
+              label: "Payment Method",
+              render: (value: any) => (value ? humanizeLabel(value) : "—"),
+            },
+            { key: "status", label: "Payment Status" },
+            {
+              key: "paidAt",
+              label: "Paid On",
+              render: (value: any, item: any) => {
+                const when = value || item.createdAt;
+                return when
+                  ? new Date(when).toLocaleString(getFormattingLocale())
+                  : "—";
+              },
+            },
+          ],
+          fields: [],
+        };
+
       case "bookings":
         if (activeSubKey === "refunds") {
           return {
@@ -1267,57 +1560,7 @@ export const EnterpriseModulePage: React.FC<{
         };
 
       default:
-        return {
-          icon: <Building size={20} className="text-[#0A4DA6]" />,
-          columns: defaultColumns || [
-            {
-              key: "name",
-              label: "Record Name / Title",
-              render: (v: any, item: any) =>
-                v || item.title || item.bookingId || item._id,
-            },
-            {
-              key: "category",
-              label: "Category / Tag",
-              render: (v: any, item: any) =>
-                v || item.department || item.type || "General",
-            },
-            {
-              key: "owner",
-              label: "Managed By",
-              render: (v: any, item: any) =>
-                v || item.customerId?.name || "System Admin",
-            },
-            {
-              key: "status",
-              label: "Status",
-              render: (v: any) => v || "active",
-            },
-          ],
-          fields: [
-            {
-              name: "name",
-              label: "Record Name",
-              type: "text",
-              required: true,
-            },
-            { name: "title", label: "Title / Subject", type: "text" },
-            { name: "category", label: "Category", type: "text" },
-            { name: "details", label: "Description", type: "textarea" },
-            {
-              name: "status",
-              label: "Status",
-              type: "select",
-              options: [
-                "active",
-                "pending",
-                "approved",
-                "rejected",
-                "archived",
-              ],
-            },
-          ],
-        };
+        return genericModuleConfig;
     }
   };
 
@@ -1394,6 +1637,12 @@ export const EnterpriseModulePage: React.FC<{
       initialData.relatedContentType = "event";
       initialData.ctaText = "Book Now";
       initialData.status = "active";
+    } else if (activeModule === "blogs" && (!activeSubKey || activeSubKey === "all")) {
+      // "published" is the only status the public feed accepts, so it is the
+      // default — a Super Admin writing a post means to publish it.
+      initialData.status = "published";
+      initialData.contentType = "article";
+      initialData.category = "spiritual";
     }
     setFormData(initialData);
     setFeaturedAshramSearch("");
@@ -2065,7 +2314,7 @@ export const EnterpriseModulePage: React.FC<{
           >
             <div className="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-3">
               <h3 className="font-extrabold text-base sm:text-lg text-[#0B192C] dark:text-white">
-                {editingItem ? `Edit ${displayTitle}` : `Create ${displayTitle}`}
+                {editingItem ? `Edit ${recordLabel}` : `Create New ${recordLabel}`}
               </h3>
               <button
                 type="button"

@@ -41,7 +41,15 @@ export class CreateAccountDto {
   @IsOptional() @IsString() panCardUrl?: string;
 }
 export class UserStatusDto {
-  @IsIn(["active", "suspended", "pending"]) status: string;
+  @IsIn([
+    "active",
+    "pending",
+    "pending_approval",
+    "suspended",
+    "disabled",
+    "archived",
+  ])
+  status: string;
 }
 export class UpdateAccountDto {
   @IsString() @MinLength(2) name: string;
@@ -59,6 +67,8 @@ export class SuspendUserDto {
 }
 export class ChangeRoleDto {
   @IsIn(USER_ROLES) role: string;
+  @IsOptional() @IsString() aadhaarCardUrl?: string;
+  @IsOptional() @IsString() panCardUrl?: string;
 }
 export class PermissionsDto {
   @IsArray() permissions: string[];

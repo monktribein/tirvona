@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../lib/api";
 import { visitorArticleService } from "../services/visitorArticleService";
+import { useAuth } from "../contexts/AuthContext";
+import { AutoImageSlider } from "../components/shared/AutoImageSlider";
 import { toast } from "../lib/toast";
 import {
   Calendar,
@@ -19,24 +21,38 @@ import {
 export const BlogDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [likes, setLikes] = useState(0);
   const [hasLiked, setHasLiked] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   // New comment state
   const [userName, setUserName] = useState("");
   const [commentText, setCommentText] = useState("");
   const [submittingComment, setSubmittingComment] = useState(false);
+  // Which collection this slug resolved to. Comments and likes live on
+  // different endpoints for the two, and posting to the wrong one 404s.
+  const [source, setSource] = useState<"blog" | "visitor">("blog");
+  const [articleId, setArticleId] = useState("");
+  // Open reply box, keyed by the comment being replied to.
+  const [replyTo, setReplyTo] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState("");
 
   const fetchPostDetail = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get(`/blog/posts/${slug}`).catch(() => null);
+      // A slug belongs to either a platform blog post or a visitor article, so
+      // one of these two lookups is *expected* to 404. `skipToast` keeps that
+      // expected miss from raising "Article or video not found" on a page that
+      // then loads perfectly from the other source.
+      const res = await api
+        .get(`/blog/posts/${slug}`, { skipToast: true })
+        .catch(() => null);
 
       if (res?.data?.success) {
+        setSource("blog");
         setData(res.data.data);
         setLikes(res.data.data.post.likes || 0);
       } else {
@@ -44,6 +60,8 @@ export const BlogDetailPage: React.FC = () => {
         const vRes = await visitorArticleService.getPublicArticleBySlug(slug!);
         if (vRes.data?.success) {
           const va = vRes.data.data.article;
+          setSource("visitor");
+          setArticleId(va._id);
           setData({
             post: {
               _id: va._id,
@@ -52,6 +70,7 @@ export const BlogDetailPage: React.FC = () => {
               content: va.content,
               subtitle: va.shortDescription,
               coverImage: va.featuredImage,
+              videoUrl: va.videoUrl,
               createdAt: va.createdAt,
               readingTime: "5 min read",
               views: va.viewsCount || 1,
@@ -84,13 +103,24 @@ export const BlogDetailPage: React.FC = () => {
   }, [slug]);
 
   useEffect(() => {
-    setSelectedImage(null);
     fetchPostDetail();
   }, [fetchPostDetail]);
 
   const handleLike = async () => {
     if (hasLiked) return;
     try {
+      if (source === "visitor") {
+        if (!user) {
+          toast.info("Sign in to like this article.");
+          return;
+        }
+        const res = await visitorArticleService.toggleLike(articleId);
+        if (res.data.success) {
+          setLikes(res.data.likesCount);
+          setHasLiked(res.data.liked);
+        }
+        return;
+      }
       const res = await api.post(`/blog/posts/${slug}/like`);
       if (res.data.success) {
         setLikes(res.data.likes);
@@ -117,25 +147,110 @@ export const BlogDetailPage: React.FC = () => {
     window.print();
   };
 
-  const handleAddComment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!commentText.trim()) return;
+  /**
+   * Posts a comment or a reply against whichever collection this article came
+   * from. The visitor-article endpoint is authenticated (it records who said
+   * it), while platform blog comments are open to anyone.
+   */
+  const submitComment = async (text: string, parentId?: string) => {
+    const body = text.trim();
+    if (!body) return false;
     setSubmittingComment(true);
     try {
-      const res = await api.post(`/blog/posts/${slug}/comments`, {
-        userName: userName || "Devotee Pilgrim",
-        comment: commentText,
-      });
-      if (res.data.success) {
-        setCommentText("");
-        fetchPostDetail();
+      if (source === "visitor") {
+        if (!user) {
+          toast.info("Sign in to join the discussion.");
+          return false;
+        }
+        const res = await visitorArticleService.addComment(
+          articleId,
+          body,
+          parentId,
+        );
+        if (!res.data.success) return false;
+      } else {
+        const res = await api.post(`/blog/posts/${slug}/comments`, {
+          userName: userName || "Devotee Pilgrim",
+          comment: body,
+        });
+        if (!res.data.success) return false;
       }
+      await fetchPostDetail();
+      return true;
     } catch (err) {
       console.error("Add comment error:", err);
+      return false;
     } finally {
       setSubmittingComment(false);
     }
   };
+
+  const handleAddComment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (await submitComment(commentText)) setCommentText("");
+  };
+
+  const handleAddReply = async (e: React.FormEvent, parentId: string) => {
+    e.preventDefault();
+    if (await submitComment(replyText, parentId)) {
+      setReplyText("");
+      setReplyTo(null);
+    }
+  };
+
+  /** Avatar, name, badges and date — shared by comments and their replies. */
+  const renderCommentHeader = (c: any) => (
+    <div className="flex justify-between items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap min-w-0">
+        <div className="w-7 h-7 rounded-full bg-[#0A4DA6] text-white font-extrabold text-xs flex items-center justify-center shrink-0">
+          {String(c.userName || "?").charAt(0).toUpperCase()}
+        </div>
+        <h5 className="font-bold text-xs text-[#0B192C] dark:text-white truncate">
+          {c.userName || "Devotee Pilgrim"}
+        </h5>
+        {c.isAuthor && (
+          <span className="px-2 py-0.5 rounded-full bg-[#EBF2FA] dark:bg-blue-950 text-[#0A4DA6] dark:text-blue-300 text-[9px] font-black shrink-0">
+            AUTHOR
+          </span>
+        )}
+        <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-600 text-[9px] font-black shrink-0">
+          VERIFIED PILGRIM
+        </span>
+      </div>
+      <span className="text-[10px] text-gray-400 shrink-0">
+        {c.createdAt
+          ? new Date(c.createdAt).toLocaleDateString("en-IN")
+          : ""}
+      </span>
+    </div>
+  );
+
+  /**
+   * The slider's photos: the cover first, then the gallery, de-duplicated
+   * (the cover is often repeated as the first gallery entry). Falls back to
+   * the house image only when the article has no photos *and* no video —
+   * a video-only article should not be padded with a stock picture.
+   */
+  const heroImages: string[] = (() => {
+    const post = data?.post;
+    if (!post) return [];
+    const unique = [
+      ...new Set(
+        [post.coverImage, ...(post.gallery ?? [])].filter(
+          (src: unknown): src is string =>
+            typeof src === "string" && src.trim().length > 0,
+        ),
+      ),
+    ];
+    if (unique.length) return unique;
+    return post.videoUrl ? [] : ["/blogs/rishikesh_ashram_1785404729056.png"];
+  })();
+
+  // Replies count toward the total the heading advertises.
+  const totalComments = (data?.comments ?? []).reduce(
+    (sum: number, c: any) => sum + 1 + (c.replies?.length ?? 0),
+    0,
+  );
 
   if (loading) {
     return (
@@ -357,56 +472,27 @@ export const BlogDetailPage: React.FC = () => {
 
         {/* 2. Main Hero Image Block (Clean image without dark text overlay) */}
         <div className="space-y-4">
-          <div className="relative rounded-[28px] overflow-hidden shadow-xl h-[380px] sm:h-[480px] w-full border border-gray-100 dark:border-slate-800 bg-gray-100 dark:bg-slate-800 group">
-            <img
-              src={
-                selectedImage ||
-                post.coverImage ||
-                "/blogs/rishikesh_ashram_1785404729056.png"
-              }
+          {/* Cover plus gallery, auto-advancing. Photo and video are
+              independent, so the slider only appears when there are photos;
+              a video-only article goes straight to the player below. */}
+          {heroImages.length > 0 && (
+            <AutoImageSlider
+              images={heroImages}
               alt={post.title}
-              className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-500"
-              onError={(e) => {
-                e.currentTarget.onerror = null;
-                e.currentTarget.src =
-                  "/blogs/rishikesh_ashram_1785404729056.png";
-              }}
+              className="h-[380px] sm:h-[480px] w-full"
             />
-          </div>
-
-          {/* Photo Gallery Thumbnails Strip */}
-          {post.gallery?.length > 0 && (
-            <div className="flex items-center gap-3 overflow-x-auto pb-1">
-              {[post.coverImage, ...post.gallery]
-                .filter(Boolean)
-                .slice(0, 5)
-                .map((imgUrl: string, idx: number) => {
-                  const active = (selectedImage || post.coverImage) === imgUrl;
-                  return (
-                    <div
-                      key={idx}
-                      onClick={() => setSelectedImage(imgUrl)}
-                      className={`w-24 h-16 sm:w-28 sm:h-20 rounded-2xl overflow-hidden border-2 ${
-                        active
-                          ? "border-[#0A4DA6] shadow-lg scale-105"
-                          : "border-white dark:border-slate-800"
-                      } shrink-0 cursor-pointer hover:opacity-90 transition-all`}
-                    >
-                      <img
-                        src={imgUrl}
-                        alt={`Thumbnail ${idx}`}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.onerror = null;
-                          e.currentTarget.src =
-                            "/blogs/rishikesh_ashram_1785404729056.png";
-                        }}
-                      />
-                    </div>
-                  );
-                })}
-            </div>
           )}
+
+          {/* Uploaded experience video, when the author attached one. */}
+          {post.videoUrl && (
+            <video
+              src={post.videoUrl}
+              controls
+              preload="metadata"
+              className="w-full rounded-[28px] bg-black border border-gray-100 dark:border-slate-800 shadow-xl max-h-[480px]"
+            />
+          )}
+
         </div>
 
         {/* 3. Main 2-Column Desktop Layout */}
@@ -490,7 +576,7 @@ export const BlogDetailPage: React.FC = () => {
                 <h3 className="font-black text-xl text-[#0B192C] dark:text-white flex items-center gap-2">
                   <MessageSquare size={20} className="text-[#0A4DA6]" />
                   <span>
-                    Pilgrim Discussion & Comments ({comments?.length || 0})
+                    Pilgrim Discussion & Comments ({totalComments})
                   </span>
                 </h3>
 
@@ -502,13 +588,22 @@ export const BlogDetailPage: React.FC = () => {
                   <h5 className="font-bold text-xs text-[#0B192C] dark:text-white">
                     Leave a Devotional Comment
                   </h5>
-                  <input
-                    type="text"
-                    placeholder="Your Name (e.g. Ramesh Devotee)..."
-                    value={userName}
-                    onChange={(e) => setUserName(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 text-xs font-bold focus:outline-none"
-                  />
+                  {/* Visitor-article comments are signed by the account that
+                      posts them, so there is no name to type. */}
+                  {source === "blog" && (
+                    <input
+                      type="text"
+                      placeholder="Your Name (e.g. Ramesh Devotee)..."
+                      value={userName}
+                      onChange={(e) => setUserName(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 text-xs font-bold focus:outline-none"
+                    />
+                  )}
+                  {source === "visitor" && !user && (
+                    <p className="text-[11px] font-bold text-amber-600">
+                      Sign in to join the discussion on this pilgrim story.
+                    </p>
+                  )}
                   <textarea
                     rows={3}
                     placeholder="Share your spiritual thoughts or feedback on this article..."
@@ -527,30 +622,93 @@ export const BlogDetailPage: React.FC = () => {
 
                 {/* Comments List */}
                 <div className="space-y-4">
+                  {totalComments === 0 && (
+                    <p className="text-xs font-semibold text-gray-400 py-2">
+                      No comments yet — be the first to share a thought.
+                    </p>
+                  )}
                   {comments?.map((c: any) => (
                     <div
                       key={c._id}
                       className="p-4 rounded-2xl bg-gray-50/80 dark:bg-slate-900/80 border border-gray-100 dark:border-slate-800 space-y-2"
                     >
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-full bg-[#0A4DA6] text-white font-extrabold text-xs flex items-center justify-center">
-                            {c.userName.charAt(0)}
-                          </div>
-                          <h5 className="font-bold text-xs text-[#0B192C] dark:text-white">
-                            {c.userName}
-                          </h5>
-                          <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-600 text-[9px] font-black">
-                            VERIFIED PILGRIM
-                          </span>
-                        </div>
-                        <span className="text-[10px] text-gray-400">
-                          {new Date(c.createdAt).toLocaleDateString("en-IN")}
-                        </span>
-                      </div>
-                      <p className="text-xs text-gray-600 dark:text-gray-300 font-medium pl-9">
+                      {renderCommentHeader(c)}
+                      <p className="text-xs text-gray-600 dark:text-gray-300 font-medium pl-9 whitespace-pre-line">
                         {c.comment}
                       </p>
+
+                      {/* Replies, one level deep. */}
+                      {c.replies?.length > 0 && (
+                        <div className="pl-9 space-y-3 pt-1">
+                          {c.replies.map((r: any) => (
+                            <div
+                              key={r._id}
+                              className="p-3 rounded-xl bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 space-y-1.5"
+                            >
+                              {renderCommentHeader(r)}
+                              <p className="text-xs text-gray-600 dark:text-gray-300 font-medium pl-9 whitespace-pre-line">
+                                {r.comment}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Replying is only wired for visitor articles; platform
+                          blog comments have no threading on the API. */}
+                      {source === "visitor" && (
+                        <div className="pl-9 pt-1">
+                          {replyTo === c._id ? (
+                            <form
+                              onSubmit={(e) => handleAddReply(e, c._id)}
+                              className="space-y-2"
+                            >
+                              <textarea
+                                rows={2}
+                                autoFocus
+                                value={replyText}
+                                onChange={(e) => setReplyText(e.target.value)}
+                                placeholder={`Reply to ${c.userName}...`}
+                                className="w-full px-3 py-2 rounded-xl bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 text-xs font-medium focus:outline-none focus:border-[#0A4DA6]"
+                              />
+                              <div className="flex gap-2">
+                                <button
+                                  type="submit"
+                                  disabled={submittingComment}
+                                  className="px-4 py-1.5 rounded-full bg-[#0A4DA6] hover:bg-blue-900 text-white font-black text-[11px] cursor-pointer disabled:opacity-60"
+                                >
+                                  Post Reply
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setReplyTo(null);
+                                    setReplyText("");
+                                  }}
+                                  className="px-4 py-1.5 rounded-full text-gray-500 font-bold text-[11px] cursor-pointer"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </form>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (!user) {
+                                  toast.info("Sign in to reply to a comment.");
+                                  return;
+                                }
+                                setReplyTo(c._id);
+                                setReplyText("");
+                              }}
+                              className="text-[11px] font-extrabold text-[#0A4DA6] hover:underline cursor-pointer"
+                            >
+                              Reply
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

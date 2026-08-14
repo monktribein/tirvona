@@ -146,7 +146,7 @@ export class UsersController {
     return {
       success: true,
       message: `Role changed to ${dto.role}`,
-      data: await this.service.role(user, id, dto.role),
+      data: await this.service.role(user, id, dto),
     };
   }
   @Patch(":id/permissions") @Roles("super_admin") async permissions(

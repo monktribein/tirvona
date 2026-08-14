@@ -59,6 +59,8 @@ interface ManagedUser {
   isDeleted?: boolean;
   deletedAt?: string;
   createdAt?: string;
+  hasAadhaarCard?: boolean;
+  hasPanCard?: boolean;
 }
 
 const ALL_ROLES = [
@@ -137,6 +139,14 @@ export const UserManagementPage: React.FC = () => {
   const [suspendTarget, setSuspendTarget] = useState<ManagedUser | null>(null);
   const [roleTarget, setRoleTarget] = useState<ManagedUser | null>(null);
   const [newSelectedRole, setNewSelectedRole] = useState("staff");
+  const [roleDocuments, setRoleDocuments] = useState({
+    aadhaarCardUrl: "",
+    panCardUrl: "",
+  });
+  const [changingRole, setChangingRole] = useState(false);
+  const [statusTarget, setStatusTarget] = useState<ManagedUser | null>(null);
+  const [newSelectedStatus, setNewSelectedStatus] = useState("active");
+  const [changingStatus, setChangingStatus] = useState(false);
   const [permTarget, setPermTarget] = useState<ManagedUser | null>(null);
   const [selectedPerms, setSelectedPerms] = useState<string[]>([]);
   const [resetPassTarget, setResetPassTarget] = useState<ManagedUser | null>(
@@ -299,8 +309,25 @@ export const UserManagementPage: React.FC = () => {
   const handleChangeRoleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!roleTarget || !canModerate) return;
+    const needsDocuments = newSelectedRole !== "customer";
+    if (
+      needsDocuments &&
+      ((!roleTarget.hasAadhaarCard && !roleDocuments.aadhaarCardUrl) ||
+        (!roleTarget.hasPanCard && !roleDocuments.panCardUrl))
+    ) {
+      addNotification(
+        "Documents Required",
+        "Upload the missing Aadhaar card and PAN card before changing this role.",
+        "error",
+      );
+      return;
+    }
+    setChangingRole(true);
     try {
-      const res = await userService.changeRole(roleTarget._id, newSelectedRole);
+      const res = await userService.changeRole(roleTarget._id, {
+        role: newSelectedRole,
+        ...roleDocuments,
+      });
       if (res.data?.success) {
         addNotification(
           "Role Updated",
@@ -308,6 +335,7 @@ export const UserManagementPage: React.FC = () => {
           "success",
         );
         setRoleTarget(null);
+        setRoleDocuments({ aadhaarCardUrl: "", panCardUrl: "" });
         fetchUsers();
       }
     } catch (err) {
@@ -316,6 +344,37 @@ export const UserManagementPage: React.FC = () => {
         getErrorMessage(err, "Could not update role."),
         "error",
       );
+    } finally {
+      setChangingRole(false);
+    }
+  };
+
+  const handleStatusChangeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!statusTarget || !canModerate) return;
+    setChangingStatus(true);
+    try {
+      const res = await userService.updateStatus(
+        statusTarget._id,
+        newSelectedStatus,
+      );
+      if (res.data?.success) {
+        addNotification(
+          "Status Updated",
+          `${statusTarget.name}'s account is now ${humanizeLabel(newSelectedStatus)}.`,
+          "success",
+        );
+        setStatusTarget(null);
+        fetchUsers();
+      }
+    } catch (err) {
+      addNotification(
+        "Action Failed",
+        getErrorMessage(err, "Could not update account status."),
+        "error",
+      );
+    } finally {
+      setChangingStatus(false);
     }
   };
 
@@ -1253,7 +1312,10 @@ export const UserManagementPage: React.FC = () => {
               </h3>
               <button
                 type="button"
-                onClick={() => setRoleTarget(null)}
+                onClick={() => {
+                  setRoleTarget(null);
+                  setRoleDocuments({ aadhaarCardUrl: "", panCardUrl: "" });
+                }}
                 className="text-gray-400 hover:text-gray-600"
               >
                 <X size={18} />
@@ -1266,7 +1328,10 @@ export const UserManagementPage: React.FC = () => {
               </span>
               <select
                 value={newSelectedRole}
-                onChange={(e) => setNewSelectedRole(e.target.value)}
+                onChange={(e) => {
+                  setNewSelectedRole(e.target.value);
+                  setRoleDocuments({ aadhaarCardUrl: "", panCardUrl: "" });
+                }}
                 className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold text-[#0A4DA6]"
               >
                 {ALL_ROLES.map((r) => (
@@ -1277,19 +1342,117 @@ export const UserManagementPage: React.FC = () => {
               </select>
             </div>
 
+            {newSelectedRole !== "customer" && (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-3 space-y-3">
+                <div>
+                  <p className="text-xs font-extrabold text-amber-900">
+                    Role Verification Documents
+                  </p>
+                  <p className="mt-0.5 text-[10px] font-medium text-amber-700">
+                    Aadhaar and PAN are required for every operational role.
+                    Existing verified documents can be retained.
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <p className="mb-1 text-[10px] font-bold text-gray-700">
+                      Aadhaar Card {roleTarget.hasAadhaarCard ? "(On file)" : "*"}
+                    </p>
+                    <FileUploader
+                      folder="user-documents/aadhaar"
+                      accept="image/*,application/pdf"
+                      label={roleTarget.hasAadhaarCard ? "Replace Aadhaar" : "Upload Aadhaar"}
+                      currentUrl={roleDocuments.aadhaarCardUrl}
+                      onUploaded={(aadhaarCardUrl) =>
+                        setRoleDocuments((current) => ({
+                          ...current,
+                          aadhaarCardUrl,
+                        }))
+                      }
+                    />
+                  </div>
+                  <div>
+                    <p className="mb-1 text-[10px] font-bold text-gray-700">
+                      PAN Card {roleTarget.hasPanCard ? "(On file)" : "*"}
+                    </p>
+                    <FileUploader
+                      folder="user-documents/pan"
+                      accept="image/*,application/pdf"
+                      label={roleTarget.hasPanCard ? "Replace PAN" : "Upload PAN"}
+                      currentUrl={roleDocuments.panCardUrl}
+                      onUploaded={(panCardUrl) =>
+                        setRoleDocuments((current) => ({
+                          ...current,
+                          panCardUrl,
+                        }))
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="flex gap-3 pt-3 border-t border-gray-100 dark:border-slate-800">
               <button
                 type="button"
-                onClick={() => setRoleTarget(null)}
+                onClick={() => {
+                  setRoleTarget(null);
+                  setRoleDocuments({ aadhaarCardUrl: "", panCardUrl: "" });
+                }}
+                disabled={changingRole}
                 className="flex-1 py-2 bg-gray-100 text-gray-700 rounded-full font-bold text-xs"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="flex-1 py-2 bg-[#0A4DA6] text-white rounded-full font-bold text-xs"
+                disabled={changingRole}
+                className="flex-1 py-2 bg-[#0A4DA6] text-white rounded-full font-bold text-xs disabled:opacity-60"
               >
-                Update Role
+                {changingRole ? "Updating..." : "Update Role"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Change Account Status Modal */}
+      {statusTarget && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <form
+            onSubmit={handleStatusChangeSubmit}
+            className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-md w-full rounded-[28px] p-6 space-y-4 text-left shadow-2xl"
+          >
+            <div className="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-3">
+              <h3 className="font-bold text-base text-[#0B192C] dark:text-white flex items-center gap-2">
+                <UserCheck size={18} className="text-[#0A4DA6]" /> Change Account Status
+              </h3>
+              <button type="button" onClick={() => setStatusTarget(null)} className="text-gray-400 hover:text-gray-600">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="space-y-2 text-xs">
+              <span className="font-bold text-gray-400">Target User: {statusTarget.name}</span>
+              <select
+                value={newSelectedStatus}
+                onChange={(e) => setNewSelectedStatus(e.target.value)}
+                className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold text-[#0A4DA6]"
+              >
+                <option value="active">Active</option>
+                <option value="pending">Pending</option>
+                <option value="pending_approval">Pending Approval</option>
+                <option value="suspended">Suspended</option>
+                <option value="disabled">Disabled</option>
+                <option value="archived">Archived</option>
+              </select>
+              <p className="text-[10px] font-medium text-gray-500">
+                Only Active accounts can sign in. Changing status invalidates existing sessions.
+              </p>
+            </div>
+            <div className="flex gap-3 pt-3 border-t border-gray-100 dark:border-slate-800">
+              <button type="button" onClick={() => setStatusTarget(null)} disabled={changingStatus} className="flex-1 py-2 bg-gray-100 text-gray-700 rounded-full font-bold text-xs disabled:opacity-60">Cancel</button>
+              <button type="submit" disabled={changingStatus || newSelectedStatus === statusTarget.status} className="flex-1 py-2 bg-[#0A4DA6] text-white rounded-full font-bold text-xs disabled:opacity-60">
+                {changingStatus ? "Updating..." : "Update Status"}
               </button>
             </div>
           </form>
@@ -1787,11 +1950,27 @@ export const UserManagementPage: React.FC = () => {
                     onClick={() => {
                       setRoleTarget(viewingUser);
                       setNewSelectedRole(viewingUser.role);
+                      setRoleDocuments({ aadhaarCardUrl: "", panCardUrl: "" });
                       setViewingUser(null);
                     }}
                     className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 px-3.5 py-2 text-[10px] font-extrabold text-amber-700 hover:bg-amber-50"
                   >
                     <Shield size={13} /> Change Role
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStatusTarget(viewingUser);
+                      setNewSelectedStatus(
+                        ["temp_suspended", "perm_suspended"].includes(viewingUser.status)
+                          ? "suspended"
+                          : viewingUser.status,
+                      );
+                      setViewingUser(null);
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-cyan-200 px-3.5 py-2 text-[10px] font-extrabold text-cyan-700 hover:bg-cyan-50"
+                  >
+                    <RefreshCw size={13} /> Change Status
                   </button>
                   <button
                     type="button"

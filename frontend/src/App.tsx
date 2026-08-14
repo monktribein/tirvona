@@ -357,6 +357,13 @@ const AppContent: React.FC = () => {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
+            {/* Links mailed before the token moved to the query string used a
+                path segment. Kept so reset emails already sitting in inboxes
+                still open the form instead of the 404 page. */}
+            <Route
+              path="/reset-password/:token"
+              element={<ResetPasswordPage />}
+            />
             {/* Company */}
             <Route path="/about" element={<AboutPage />} />
             <Route path="/careers" element={<CareersPage />} />
@@ -910,6 +917,14 @@ const AppContent: React.FC = () => {
             }
           >
             <Route path="/admin/volunteer" element={<OwnerVolunteerPage />} />
+            {/* Same review console the owner uses, at platform scope. The API
+                already allowed super_admin to review an article; only the
+                listing and this route were missing, so an administrator could
+                not reach the articles that fill the public blog feed. */}
+            <Route
+              path="/admin/articles"
+              element={<OwnerVisitorArticlesPage />}
+            />
           </Route>
 
           <Route

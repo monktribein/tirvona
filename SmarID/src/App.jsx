@@ -11,26 +11,9 @@ import { useDocumentMeta, useSmartContact } from "./hooks/useSmartContact";
  * add a dependency and a bundle for a slug this app reads straight off
  * `location.pathname`, against a two-second budget on mobile data (spec §39).
  */
-const Footer = () => (
-  <footer className="footer">
-    <p className="footer-line">
-      Connecting Sacred Destinations. Empowering Communities.
-    </p>
-    <a
-      className="footer-link"
-      href="https://www.tirvona.com"
-      target="_blank"
-      rel="noopener noreferrer"
-    >
-      www.tirvona.com
-    </a>
-  </footer>
-);
-
 const Shell = ({ children }) => (
   <div className="page">
     <div className="page-main">{children}</div>
-    <Footer />
   </div>
 );
 
@@ -45,7 +28,7 @@ const NoticeCard = ({ icon, title, children }) => (
       <h1 className="profile-name notice-name">{title}</h1>
       {children}
     </div>
-    <div className="card-strip"><span>Tirvona™ Smart Contact</span><span>Verified digital identity</span></div>
+    <div className="card-strip"><strong>♢ Tirvona™ Smart Contact</strong><span>Verified&nbsp; • &nbsp;Secure&nbsp; • &nbsp;Trusted</span></div>
   </main>
 );
 
@@ -160,7 +143,7 @@ const App = () => {
             onTrack={track}
           />
         </div>
-        <div className="card-strip"><span>Tirvona™ Smart Contact</span><span>Verified digital identity</span></div>
+        <div className="card-strip"><strong>♢ Tirvona™ Smart Contact</strong><span>Verified&nbsp; • &nbsp;Secure&nbsp; • &nbsp;Trusted</span></div>
       </main>
     </Shell>
   );
