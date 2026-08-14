@@ -10,6 +10,12 @@ import { useAuth } from "./AuthContext";
 import { API_BASE_URL, TOKEN_KEY } from "../lib/api";
 import { humanizeLabel } from "../utils/labels";
 import { toast } from "../lib/toast";
+import {
+  loadNotificationSound,
+  playNotificationSound,
+  primeNotificationSound,
+} from "../lib/notificationSound";
+import { enterpriseNotificationService } from "../services";
 
 export interface Notification {
   id: string;
@@ -54,9 +60,19 @@ type DialogState =
   | ({ kind: "prompt"; resolve: (value: string | null) => void } & PromptDialogOptions)
   | null;
 
-const NotificationContext = createContext<NotificationContextType | undefined>(
-  undefined,
-);
+// Keep one context identity across Vite hot reloads and lazy route chunks.
+// Without this, a refreshed ProfileMainPage chunk can import a newly-created
+// context while the already-mounted App tree still provides the previous one,
+// making the hook incorrectly report that no provider exists.
+const notificationContextStore = globalThis as typeof globalThis & {
+  __tirvonaNotificationContext?: React.Context<
+    NotificationContextType | undefined
+  >;
+};
+const NotificationContext =
+  notificationContextStore.__tirvonaNotificationContext ??
+  createContext<NotificationContextType | undefined>(undefined);
+notificationContextStore.__tirvonaNotificationContext = NotificationContext;
 
 export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -124,6 +140,9 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     };
     setNotifications((prev) => [newNotif, ...prev]);
     toast[resolvedType](resolvedMessage, { title: resolvedTitle });
+    // Every bell notification is also an audible alert, using the one tone the
+    // Super Admin configured for the whole platform. No-ops when unconfigured.
+    playNotificationSound();
   };
 
   // Seed a welcome notification when a user logs in.
@@ -142,6 +161,92 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     } else {
       setNotifications([]);
     }
+  }, [user]);
+
+  // The alert tone is one platform-wide setting, so it is read once per app
+  // load rather than per dashboard. Autoplay stays blocked until the user has
+  // interacted with the page, so the first real gesture buys that permission.
+  useEffect(() => {
+    void loadNotificationSound();
+    const prime = () => primeNotificationSound();
+    const options = { once: true, passive: true } as const;
+    window.addEventListener("pointerdown", prime, options);
+    window.addEventListener("keydown", prime, options);
+    return () => {
+      window.removeEventListener("pointerdown", prime);
+      window.removeEventListener("keydown", prime);
+    };
+  }, []);
+
+  // Server-side notifications reach the bell too.
+  //
+  // The bell used to hold only what this provider created locally — the
+  // welcome line and socket booking events — so anything the backend wrote to
+  // the `notifications` collection (approvals, volunteer applications, refund
+  // updates) never appeared and never toasted. This polls the same endpoint
+  // the Notification Center reads, which is scoped server-side to the caller's
+  // id and role, so it is correct for every role on every dashboard.
+  const addNotificationRef = useRef(addNotification);
+  addNotificationRef.current = addNotification;
+  useEffect(() => {
+    if (!user) return;
+    // Ids already surfaced. Seeded from the first response so signing in does
+    // not fire a toast for every unread notification in the backlog.
+    const seen = new Set<string>();
+    let primed = false;
+    let cancelled = false;
+
+    const severityToType = (severity?: string): Notification["type"] => {
+      switch (String(severity || "").toLowerCase()) {
+        case "critical":
+        case "emergency":
+        case "security":
+          return "error";
+        case "warning":
+          return "warning";
+        case "success":
+          return "success";
+        default:
+          return "info";
+      }
+    };
+
+    const poll = async () => {
+      if (document.hidden) return;
+      try {
+        const res = await enterpriseNotificationService.getNotifications({
+          isRead: "false",
+          limit: 20,
+        });
+        if (cancelled || !res.data?.success) return;
+        const rows: any[] = res.data.data || [];
+        // Oldest first, so a burst arrives in the order it happened.
+        for (const row of [...rows].reverse()) {
+          const id = String(row._id ?? "");
+          if (!id || seen.has(id)) continue;
+          seen.add(id);
+          if (!primed) continue;
+          addNotificationRef.current(
+            row.title || "Notification",
+            row.message || "",
+            severityToType(row.severity),
+          );
+        }
+        primed = true;
+      } catch {
+        // A dashboard must not break because the feed is briefly unreachable.
+      }
+    };
+
+    void poll();
+    const timer = window.setInterval(poll, 20_000);
+    const onVisible = () => void poll();
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, [user]);
 
   // Establish a real-time Socket.io connection scoped to the logged-in user.

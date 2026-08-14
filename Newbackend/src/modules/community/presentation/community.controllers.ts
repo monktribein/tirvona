@@ -17,6 +17,7 @@ import { Public } from "../../../common/decorators/public.decorator";
 import { Roles } from "../../../common/decorators/roles.decorator";
 import { CommunityService } from "../application/community.service";
 import {
+  AdminUpdateVisitorArticleDto,
   ApplicationStatusDto,
   ArticleCommentDto,
   ReviewVisitorArticleDto,
@@ -154,6 +155,22 @@ export class VisitorArticlesController {
   ) {
     return this.community.updateArticle(user, id, dto);
   }
+  // Administrator copy-edit. Order against the visitor's `@Put(":id")` above
+  // does not matter: `:id` matches a single segment, so it can never swallow
+  // the two-segment `admin/:id`.
+  @Put("admin/:id") @Roles("owner", "manager", "super_admin") adminUpdate(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("id") id: string,
+    @Body() dto: AdminUpdateVisitorArticleDto,
+  ) {
+    return this.community.adminUpdateArticle(user, id, dto);
+  }
+  @Delete(":id") @Roles("owner", "manager", "super_admin") remove(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("id") id: string,
+  ) {
+    return this.community.deleteArticle(user, id);
+  }
   @Post(":id/review") @Roles("owner", "manager", "super_admin") review(
     @CurrentUser() user: AuthenticatedUser,
     @Param("id") id: string,
@@ -177,6 +194,6 @@ export class VisitorArticlesController {
     @Param("id") id: string,
     @Body() dto: ArticleCommentDto,
   ) {
-    return this.community.commentArticle(user, id, dto.comment);
+    return this.community.commentArticle(user, id, dto.comment, dto.parentId);
   }
 }

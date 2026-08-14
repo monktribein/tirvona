@@ -1,10 +1,14 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { getFormattingLocale } from "../../utils/format";
 import {
   FileText,
   CheckCircle2,
   ShieldCheck,
   Loader2,
+  Pencil,
+  Trash2,
+  ImagePlus,
+  Video,
 } from "lucide-react";
 import {
   EnterpriseModal,
@@ -14,16 +18,20 @@ import {
   visitorArticleService,
   type VisitorArticle,
 } from "../../services/visitorArticleService";
+import { uploadService } from "../../services";
+import { ImageUploadGrid } from "../../components/shared/ImageUploadGrid";
 import { useNotifications } from "../../contexts/NotificationContext";
 import { getErrorMessage } from "../../lib/api";
 import { humanizeLabel } from "../../utils/labels";
 
 export const OwnerVisitorArticlesPage: React.FC = () => {
-  const { addNotification } = useNotifications();
+  const { addNotification, confirmAction } = useNotifications();
 
+  // Approved first: most visits here are to manage what is already live on the
+  // public blog, not to clear a queue that is usually empty.
   const [activeTab, setActiveTab] = useState<
-    "pending" | "approved" | "rejected" | "all"
-  >("pending");
+    "approved" | "pending" | "rejected" | "all"
+  >("approved");
   const [articles, setArticles] = useState<VisitorArticle[]>([]);
   const [counts, setCounts] = useState<Record<string, number>>({
     pending: 0,
@@ -39,6 +47,74 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const [processing, setProcessing] = useState(false);
+
+  // Administrator edit. Holds only the fields the API accepts, so the form
+  // cannot offer a change the server will reject.
+  const [editingArticle, setEditingArticle] = useState<VisitorArticle | null>(
+    null,
+  );
+  const [editForm, setEditForm] = useState({
+    title: "",
+    category: "",
+    shortDescription: "",
+    content: "",
+    featuredImage: "",
+    videoUrl: "",
+    galleryImages: [] as string[],
+  });
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
+  const coverInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
+
+  const openEditor = (article: VisitorArticle) => {
+    setSelectedArticle(null);
+    setEditingArticle(article);
+    setEditForm({
+      title: article.title || "",
+      category: article.category || "",
+      shortDescription: article.shortDescription || "",
+      content: article.content || "",
+      featuredImage: article.featuredImage || "",
+      videoUrl: article.videoUrl || "",
+      galleryImages: article.galleryImages || [],
+    });
+  };
+
+  // Same ceilings the server enforces per file type.
+  const MAX_COVER_BYTES = 10 * 1024 * 1024;
+  const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
+
+  const uploadInto = async (
+    file: File,
+    maxBytes: number,
+    label: string,
+    setBusy: (busy: boolean) => void,
+    apply: (url: string) => void,
+    inputRef: React.RefObject<HTMLInputElement | null>,
+  ) => {
+    if (file.size > maxBytes) {
+      addNotification(
+        `${label} Too Large`,
+        `That ${label.toLowerCase()} is ${(file.size / 1024 / 1024).toFixed(1)} MB. The limit is ${maxBytes / 1024 / 1024} MB.`,
+        "warning",
+      );
+      return;
+    }
+    setBusy(true);
+    try {
+      apply(await uploadService.file(file, "visitor-articles"));
+    } catch (err) {
+      addNotification(
+        "Upload Failed",
+        getErrorMessage(err, `Could not upload that ${label.toLowerCase()}.`),
+        "error",
+      );
+    } finally {
+      setBusy(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  };
 
   const fetchOwnerArticles = useCallback(async () => {
     setLoading(true);
@@ -79,6 +155,73 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
       addNotification(
         "Error",
         getErrorMessage(err, "Failed to approve article."),
+        "error",
+      );
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingArticle) return;
+    setProcessing(true);
+    try {
+      const res = await visitorArticleService.adminUpdateArticle(
+        editingArticle._id,
+        {
+          title: editForm.title.trim(),
+          category: editForm.category.trim(),
+          shortDescription: editForm.shortDescription.trim(),
+          content: editForm.content.trim(),
+          featuredImage: editForm.featuredImage.trim(),
+          videoUrl: editForm.videoUrl.trim(),
+          galleryImages: editForm.galleryImages,
+        },
+      );
+      if (res.data.success) {
+        addNotification(
+          "Article Updated",
+          `"${editForm.title.trim()}" was saved.`,
+          "success",
+        );
+        setEditingArticle(null);
+        fetchOwnerArticles();
+      }
+    } catch (err) {
+      addNotification(
+        "Error",
+        getErrorMessage(err, "Failed to update article."),
+        "error",
+      );
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleDelete = async (article: VisitorArticle) => {
+    // Deleting also clears the article's comments, likes and status history,
+    // so it is worth naming the article in the prompt.
+    const confirmed = await confirmAction({
+      title: "Delete this article?",
+      message: `"${article.title}" and its comments and likes will be permanently removed. This cannot be undone.`,
+      confirmLabel: "Delete permanently",
+      tone: "danger",
+    });
+    if (!confirmed) return;
+    setProcessing(true);
+    try {
+      const res = await visitorArticleService.deleteArticle(article._id);
+      if (res.data.success) {
+        addNotification("Article Deleted", `"${article.title}" was removed.`, "info");
+        setSelectedArticle(null);
+        setEditingArticle(null);
+        fetchOwnerArticles();
+      }
+    } catch (err) {
+      addNotification(
+        "Error",
+        getErrorMessage(err, "Failed to delete article."),
         "error",
       );
     } finally {
@@ -139,7 +282,7 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
 
       {/* Tabs Bar */}
       <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-2 shadow-sm flex items-center gap-2 overflow-x-auto text-xs font-extrabold">
-        {(["pending", "approved", "rejected", "all"] as const).map((tab) => {
+        {(["approved", "pending", "rejected", "all"] as const).map((tab) => {
           const isActive = activeTab === tab;
           const count =
             tab === "all"
@@ -200,12 +343,18 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
               className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row justify-between items-start md:items-center gap-5"
             >
               <div className="flex items-start gap-4 min-w-0">
-                <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 bg-gray-100 dark:bg-slate-800">
-                  <img
-                    src={art.featuredImage}
-                    alt={art.title}
-                    className="w-full h-full object-cover"
-                  />
+                {/* The cover is optional; a video-only article shows a film
+                    icon rather than a broken image. */}
+                <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 bg-gray-100 dark:bg-slate-800 flex items-center justify-center">
+                  {art.featuredImage ? (
+                    <img
+                      src={art.featuredImage}
+                      alt={art.title}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <FileText size={20} className="text-gray-300 dark:text-slate-700" />
+                  )}
                 </div>
 
                 <div className="space-y-1 min-w-0">
@@ -262,6 +411,22 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
                   Inspect &amp; Review
                 </button>
 
+                <button
+                  onClick={() => openEditor(art)}
+                  disabled={processing}
+                  className="px-4 py-2 bg-[#EBF2FA] hover:bg-[#dbe8f7] dark:bg-blue-950/40 text-[#0A4DA6] dark:text-blue-300 text-xs font-extrabold rounded-full transition-colors cursor-pointer flex items-center gap-1.5"
+                >
+                  <Pencil size={13} /> Edit
+                </button>
+
+                <button
+                  onClick={() => handleDelete(art)}
+                  disabled={processing}
+                  className="px-4 py-2 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 text-xs font-extrabold rounded-full transition-colors cursor-pointer flex items-center gap-1.5"
+                >
+                  <Trash2 size={13} /> Delete
+                </button>
+
                 {art.status === "pending" && (
                   <>
                     <button
@@ -296,121 +461,455 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
           onClose={() => setSelectedArticle(null)}
           title="Review Visitor Experience Article"
           subtitle={`Submitted for ${selectedArticle.ashramId?.name}`}
-        >
-          <div className="space-y-5 text-xs font-bold max-h-[75vh] overflow-y-auto pr-1 text-left">
-            {/* Verified Booking Banner */}
-            <div className="p-4 bg-emerald-50 dark:bg-emerald-950/30 rounded-2xl border border-emerald-200 dark:border-emerald-900 space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-emerald-700 dark:text-emerald-400 font-black text-[11px] flex items-center gap-1.5">
-                  <ShieldCheck size={14} /> Verified Stay Record
-                </span>
-                <span className="text-[10px] text-gray-500 font-mono">
-                  Booking ID:{" "}
-                  {selectedArticle.bookingId?.bookingId || "Verified"}
-                </span>
-              </div>
-              <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                Visitor: <strong>{selectedArticle.visitorId?.name}</strong> (
-                {selectedArticle.visitorId?.email || "Registered User"})
-              </p>
-            </div>
-
-            {/* Title & Cover */}
-            <div className="space-y-2">
-              <h2 className="text-lg font-black text-[#0B192C] dark:text-white leading-tight">
-                {selectedArticle.title}
-              </h2>
-              <div className="h-48 w-full rounded-2xl overflow-hidden bg-gray-100 dark:bg-slate-800">
-                <img
-                  src={selectedArticle.featuredImage}
-                  alt={selectedArticle.title}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            </div>
-
-            {/* Short Description */}
-            <div className="space-y-1">
-              <span className="text-gray-400 text-[10px]">
-                Short Description
-              </span>
-              <p className="p-3 bg-gray-50 dark:bg-slate-900 rounded-xl font-medium text-gray-700 dark:text-gray-200">
-                {selectedArticle.shortDescription}
-              </p>
-            </div>
-
-            {/* Full Content */}
-            <div className="space-y-1">
-              <span className="text-gray-400 text-[10px]">
-                Article Body Content
-              </span>
-              <div className="p-4 bg-gray-50 dark:bg-slate-900 rounded-xl font-medium text-gray-700 dark:text-gray-200 whitespace-pre-line leading-relaxed">
-                {selectedArticle.content}
-              </div>
-            </div>
-
-            {/* Gallery Images */}
-            {selectedArticle.galleryImages?.length > 0 && (
-              <div className="space-y-1">
-                <span className="text-gray-400 text-[10px]">
-                  Uploaded Gallery Photos (
-                  {selectedArticle.galleryImages.length})
-                </span>
-                <div className="grid grid-cols-3 gap-2">
-                  {selectedArticle.galleryImages.map((img, i) => (
-                    <div
-                      key={i}
-                      className="h-24 rounded-xl overflow-hidden bg-gray-100 dark:bg-slate-800"
-                    >
-                      <img
-                        src={img}
-                        alt={`Gallery ${i}`}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Actions */}
-            <div className="pt-4 border-t border-gray-100 dark:border-slate-800 flex items-center justify-between">
+          maxWidth="5xl"
+          // The action bar lives in the modal's footer slot, which sits
+          // outside the scrolling body — so it stays reachable on a long
+          // article instead of scrolling away with the text.
+          footer={
+            <div className="flex items-center justify-between gap-3 flex-wrap text-xs font-bold">
               <button
                 type="button"
                 onClick={() => setSelectedArticle(null)}
-                className="px-4 py-2 text-gray-500 font-bold"
+                className="px-4 py-2 text-gray-500 font-bold cursor-pointer"
               >
                 Close Preview
               </button>
 
-              {selectedArticle.status === "pending" && (
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsRejectModalOpen(true)}
-                    disabled={processing}
-                    className="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-full font-black cursor-pointer shadow-xs"
-                  >
-                    Reject Article
-                  </button>
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => openEditor(selectedArticle)}
+                  disabled={processing}
+                  className="px-5 py-2 bg-[#EBF2FA] hover:bg-[#dbe8f7] dark:bg-blue-950/40 text-[#0A4DA6] dark:text-blue-300 rounded-full font-black cursor-pointer flex items-center gap-1.5"
+                >
+                  <Pencil size={14} /> Edit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDelete(selectedArticle)}
+                  disabled={processing}
+                  className="px-5 py-2 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 rounded-full font-black cursor-pointer flex items-center gap-1.5"
+                >
+                  <Trash2 size={14} /> Delete
+                </button>
 
-                  <button
-                    type="button"
-                    onClick={() => handleApprove(selectedArticle)}
-                    disabled={processing}
-                    className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full font-black cursor-pointer shadow-xs flex items-center gap-1.5"
-                  >
-                    {processing ? (
-                      <Loader2 size={14} className="animate-spin" />
-                    ) : (
-                      <CheckCircle2 size={14} />
-                    )}
-                    <span>Approve &amp; Publish</span>
-                  </button>
+                {selectedArticle.status === "pending" && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setIsRejectModalOpen(true)}
+                      disabled={processing}
+                      className="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-full font-black cursor-pointer shadow-xs"
+                    >
+                      Reject Article
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleApprove(selectedArticle)}
+                      disabled={processing}
+                      className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full font-black cursor-pointer shadow-xs flex items-center gap-1.5"
+                    >
+                      {processing ? (
+                        <Loader2 size={14} className="animate-spin" />
+                      ) : (
+                        <CheckCircle2 size={14} />
+                      )}
+                      <span>Approve &amp; Publish</span>
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          }
+        >
+          {/* Two columns on desktop: media and provenance on the left, the
+              article text on the right, so a long body no longer pushes the
+              cover photo and stay record off the top of a narrow scroller. */}
+          <div className="text-xs font-bold text-left">
+            <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,340px)_minmax(0,1fr)] gap-6">
+              {/* ── Left: media + provenance ──────────────────────────────── */}
+              <div className="space-y-4">
+                {/* Photo and video are independent and both optional, so each
+                    is rendered only when the author actually attached it. */}
+                {selectedArticle.featuredImage ? (
+                  <div className="aspect-video w-full rounded-2xl overflow-hidden bg-gray-100 dark:bg-slate-800">
+                    <img
+                      src={selectedArticle.featuredImage}
+                      alt={selectedArticle.title}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : !selectedArticle.videoUrl ? (
+                  <div className="aspect-video w-full rounded-2xl bg-gray-50 dark:bg-slate-900 border border-dashed border-gray-200 dark:border-slate-800 flex items-center justify-center text-[11px] font-bold text-gray-400">
+                    No photo or video attached
+                  </div>
+                ) : null}
+
+                {/* An uploaded clip is part of what is being reviewed, so it
+                    has to be playable here and not just referenced. */}
+                {selectedArticle.videoUrl && (
+                  <div className="space-y-1.5">
+                    <span className="text-gray-400 text-[10px]">
+                      Experience Video
+                    </span>
+                    <video
+                      src={selectedArticle.videoUrl}
+                      controls
+                      preload="metadata"
+                      className="w-full rounded-2xl bg-black max-h-56"
+                    />
+                  </div>
+                )}
+
+                <div className="p-4 bg-emerald-50 dark:bg-emerald-950/30 rounded-2xl border border-emerald-200 dark:border-emerald-900 space-y-1.5">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <span className="text-emerald-700 dark:text-emerald-400 font-black text-[11px] flex items-center gap-1.5">
+                      <ShieldCheck size={14} /> Verified Stay Record
+                    </span>
+                    <span className="text-[10px] text-gray-500 font-mono">
+                      {selectedArticle.bookingId?.bookingId || "Verified"}
+                    </span>
+                  </div>
+                  <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                    Visitor: <strong>{selectedArticle.visitorId?.name}</strong>
+                    <br />
+                    <span className="text-[11px] text-gray-500">
+                      {selectedArticle.visitorId?.email || "Registered User"}
+                    </span>
+                  </p>
                 </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="p-3 bg-gray-50 dark:bg-slate-900 rounded-xl">
+                    <span className="text-gray-400 text-[10px] block">
+                      Category
+                    </span>
+                    <span className="text-[#0B192C] dark:text-white">
+                      {humanizeLabel(selectedArticle.category)}
+                    </span>
+                  </div>
+                  <div className="p-3 bg-gray-50 dark:bg-slate-900 rounded-xl">
+                    <span className="text-gray-400 text-[10px] block">
+                      Status
+                    </span>
+                    <span className="text-[#0B192C] dark:text-white">
+                      {humanizeLabel(selectedArticle.status)}
+                    </span>
+                  </div>
+                </div>
+
+                {selectedArticle.galleryImages?.length > 0 && (
+                  <div className="space-y-1.5">
+                    <span className="text-gray-400 text-[10px]">
+                      Gallery Photos ({selectedArticle.galleryImages.length})
+                    </span>
+                    <div className="grid grid-cols-3 gap-2">
+                      {selectedArticle.galleryImages.map((img, i) => (
+                        <div
+                          key={i}
+                          className="h-20 rounded-xl overflow-hidden bg-gray-100 dark:bg-slate-800"
+                        >
+                          <img
+                            src={img}
+                            alt={`Gallery ${i}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* ── Right: the article itself ─────────────────────────────── */}
+              <div className="space-y-4 min-w-0">
+                <h2 className="text-lg font-black text-[#0B192C] dark:text-white leading-tight">
+                  {selectedArticle.title}
+                </h2>
+
+                <div className="space-y-1">
+                  <span className="text-gray-400 text-[10px]">
+                    Short Description
+                  </span>
+                  <p className="p-3 bg-gray-50 dark:bg-slate-900 rounded-xl font-medium text-gray-700 dark:text-gray-200">
+                    {selectedArticle.shortDescription}
+                  </p>
+                </div>
+
+                <div className="space-y-1">
+                  <span className="text-gray-400 text-[10px]">
+                    Article Body Content
+                  </span>
+                  <div className="p-4 bg-gray-50 dark:bg-slate-900 rounded-xl font-medium text-gray-700 dark:text-gray-200 whitespace-pre-line leading-relaxed break-words">
+                    {selectedArticle.content}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </EnterpriseModal>
+      )}
+
+      {/* Administrator Edit Modal */}
+      {editingArticle && (
+        <EnterpriseModal
+          isOpen={Boolean(editingArticle)}
+          onClose={() => setEditingArticle(null)}
+          title="Edit Visitor Article"
+          subtitle={`By ${editingArticle.visitorId?.name || "Visitor"} · ${editingArticle.ashramId?.name || ""}`}
+          maxWidth="4xl"
+        >
+          <form
+            onSubmit={handleSaveEdit}
+            // EnterpriseModal's body scrolls already; a nested scroller here
+            // produced a second scrollbar.
+            className="space-y-4 text-xs font-bold text-left"
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-gray-700 dark:text-gray-300">
+                  Article Title *
+                </label>
+                <input
+                  required
+                  value={editForm.title}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, title: e.target.value })
+                  }
+                  className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-medium focus:outline-none focus:border-[#0A4DA6]"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-gray-700 dark:text-gray-300">
+                  Category
+                </label>
+                <input
+                  value={editForm.category}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, category: e.target.value })
+                  }
+                  className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-medium focus:outline-none focus:border-[#0A4DA6]"
+                />
+              </div>
+            </div>
+
+            {/* Cover photo — upload, matching the visitor's own form. */}
+            <div className="space-y-1.5">
+              <label className="text-gray-700 dark:text-gray-300">
+                Featured Cover Photo
+              </label>
+              <input
+                ref={coverInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file)
+                    void uploadInto(
+                      file,
+                      MAX_COVER_BYTES,
+                      "Photo",
+                      setUploadingCover,
+                      (url) =>
+                        setEditForm((prev) => ({ ...prev, featuredImage: url })),
+                      coverInputRef,
+                    );
+                }}
+              />
+              {editForm.featuredImage ? (
+                <div className="relative rounded-2xl overflow-hidden border border-gray-200 dark:border-slate-800">
+                  <img
+                    src={editForm.featuredImage}
+                    alt="Cover"
+                    className="w-full h-40 object-cover"
+                  />
+                  <div className="absolute bottom-2 right-2 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => coverInputRef.current?.click()}
+                      disabled={uploadingCover}
+                      className="px-3 py-1.5 bg-white/95 text-[#0A4DA6] rounded-full text-[11px] font-extrabold shadow-sm cursor-pointer"
+                    >
+                      Replace
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setEditForm({ ...editForm, featuredImage: "" })
+                      }
+                      className="px-3 py-1.5 bg-white/95 text-rose-600 rounded-full text-[11px] font-extrabold shadow-sm cursor-pointer"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => coverInputRef.current?.click()}
+                  disabled={uploadingCover}
+                  className="w-full py-6 rounded-2xl border-2 border-dashed border-[#0A4DA6]/35 bg-blue-50/40 dark:bg-slate-900 text-[#0A4DA6] flex flex-col items-center justify-center gap-1 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors cursor-pointer disabled:opacity-60"
+                >
+                  {uploadingCover ? (
+                    <Loader2 size={18} className="animate-spin" />
+                  ) : (
+                    <ImagePlus size={18} />
+                  )}
+                  <span className="text-xs font-extrabold">
+                    {uploadingCover ? "Uploading…" : "Upload cover photo"}
+                  </span>
+                  <span className="text-[10px] text-gray-400 font-semibold">
+                    up to 10 MB
+                  </span>
+                </button>
               )}
             </div>
-          </div>
+
+            {/* Experience video */}
+            <div className="space-y-1.5">
+              <label className="text-gray-700 dark:text-gray-300">
+                Experience Video
+              </label>
+              <input
+                ref={videoInputRef}
+                type="file"
+                accept="video/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file)
+                    void uploadInto(
+                      file,
+                      MAX_VIDEO_BYTES,
+                      "Video",
+                      setUploadingVideo,
+                      (url) => setEditForm((prev) => ({ ...prev, videoUrl: url })),
+                      videoInputRef,
+                    );
+                }}
+              />
+              {editForm.videoUrl ? (
+                <div className="rounded-2xl overflow-hidden border border-gray-200 dark:border-slate-800 bg-black">
+                  <video
+                    src={editForm.videoUrl}
+                    controls
+                    preload="metadata"
+                    className="w-full max-h-48"
+                  />
+                  <div className="flex justify-end gap-2 p-2 bg-gray-50 dark:bg-slate-900">
+                    <button
+                      type="button"
+                      onClick={() => videoInputRef.current?.click()}
+                      disabled={uploadingVideo}
+                      className="px-3 py-1.5 text-[#0A4DA6] rounded-full text-[11px] font-extrabold cursor-pointer"
+                    >
+                      Replace
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditForm({ ...editForm, videoUrl: "" })}
+                      className="px-3 py-1.5 text-rose-600 rounded-full text-[11px] font-extrabold cursor-pointer"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => videoInputRef.current?.click()}
+                  disabled={uploadingVideo}
+                  className="w-full py-5 rounded-2xl border-2 border-dashed border-gray-300 dark:border-slate-700 bg-gray-50/60 dark:bg-slate-900 text-gray-500 dark:text-gray-300 flex flex-col items-center justify-center gap-1 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors cursor-pointer disabled:opacity-60"
+                >
+                  {uploadingVideo ? (
+                    <Loader2 size={18} className="animate-spin" />
+                  ) : (
+                    <Video size={18} />
+                  )}
+                  <span className="text-xs font-extrabold">
+                    {uploadingVideo ? "Uploading…" : "Upload a video"}
+                  </span>
+                  <span className="text-[10px] text-gray-400 font-semibold">
+                    MP4, WEBM or MOV · up to 100 MB
+                  </span>
+                </button>
+              )}
+            </div>
+
+            {/* Gallery — the photos that feed the article slider. */}
+            <div className="space-y-1.5">
+              <label className="text-gray-700 dark:text-gray-300">
+                Photo Gallery
+              </label>
+              <ImageUploadGrid
+                value={editForm.galleryImages}
+                onChange={(next) =>
+                  setEditForm((prev) => ({ ...prev, galleryImages: next }))
+                }
+                folder="visitor-articles"
+                max={10}
+                onError={(t, m) => addNotification(t, m, "warning")}
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-gray-700 dark:text-gray-300">
+                Short Description
+              </label>
+              <textarea
+                rows={2}
+                maxLength={350}
+                value={editForm.shortDescription}
+                onChange={(e) =>
+                  setEditForm({
+                    ...editForm,
+                    shortDescription: e.target.value,
+                  })
+                }
+                className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-medium focus:outline-none focus:border-[#0A4DA6]"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-gray-700 dark:text-gray-300">
+                Article Body Content
+              </label>
+              <textarea
+                rows={12}
+                value={editForm.content}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, content: e.target.value })
+                }
+                className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-medium focus:outline-none focus:border-[#0A4DA6] leading-relaxed"
+              />
+            </div>
+
+            <p className="text-[10px] text-gray-400 font-semibold">
+              The linked booking and the review status are not editable here —
+              status changes go through Approve / Reject.
+            </p>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setEditingArticle(null)}
+                className="flex-1 py-2.5 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-200 rounded-full font-bold cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={processing}
+                className="flex-1 py-2.5 bg-[#0A4DA6] hover:bg-[#083b80] text-white rounded-full font-extrabold shadow-md cursor-pointer disabled:opacity-60 flex items-center justify-center gap-1.5"
+              >
+                {processing && <Loader2 size={14} className="animate-spin" />}
+                Save Changes
+              </button>
+            </div>
+          </form>
         </EnterpriseModal>
       )}
 

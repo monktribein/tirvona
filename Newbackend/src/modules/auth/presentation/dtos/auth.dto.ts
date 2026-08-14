@@ -37,6 +37,11 @@ export class UpdateMeDto {
   @IsOptional() @IsPhoneNumber("IN") phone?: string;
 }
 
+export class ChangeMyPasswordDto {
+  @IsString() @MinLength(6) currentPassword: string;
+  @IsString() @MinLength(8) newPassword: string;
+}
+
 export class VerifyChallengeDto {
   @IsString() otpToken: string;
   @IsString() @MinLength(6) otp: string;

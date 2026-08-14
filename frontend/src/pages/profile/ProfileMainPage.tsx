@@ -38,7 +38,7 @@ import {
 } from "../../admin/shared";
 import { authService, bookingService } from "../../services";
 import { parkingBookingService } from "../../modules/parking/services/parking.service";
-import { getErrorMessage } from "../../lib/api";
+import { getErrorMessage, TOKEN_KEY } from "../../lib/api";
 import useMyBookings, {
   type BookingCategory,
   type UnifiedBooking,
@@ -137,6 +137,7 @@ export const ProfileMainPage: React.FC = () => {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [changingPassword, setChangingPassword] = useState(false);
 
   // Wishlist local state
   const [wishlistItems, setWishlistItems] = useState([
@@ -286,8 +287,9 @@ export const ProfileMainPage: React.FC = () => {
     }
   };
 
-  const handleChangePassword = (e: React.FormEvent) => {
+  const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (changingPassword) return;
     if (newPassword !== confirmPassword) {
       addNotification(
         "Password Mismatch",
@@ -296,14 +298,39 @@ export const ProfileMainPage: React.FC = () => {
       );
       return;
     }
-    addNotification(
-      "Password Changed",
-      "Your security password has been updated.",
-      "success",
-    );
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
+    if (newPassword.length < 8) {
+      addNotification(
+        "Password Too Short",
+        "The new password must contain at least 8 characters.",
+        "error",
+      );
+      return;
+    }
+    setChangingPassword(true);
+    try {
+      const response = await authService.changePassword(
+        currentPassword,
+        newPassword,
+      );
+      if (response.data?.data?.token)
+        localStorage.setItem(TOKEN_KEY, response.data.data.token);
+      addNotification(
+        "Password Changed",
+        "Your security password has been updated and other sessions were signed out.",
+        "success",
+      );
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err) {
+      addNotification(
+        "Password Update Failed",
+        getErrorMessage(err, "Could not update your password."),
+        "error",
+      );
+    } finally {
+      setChangingPassword(false);
+    }
   };
 
   const handleRemoveWishlist = (id: string) => {
@@ -1091,9 +1118,10 @@ export const ProfileMainPage: React.FC = () => {
                     <div className="pt-2 flex justify-end">
                       <button
                         type="submit"
-                        className="px-5 py-2 bg-[#0A4DA6] hover:bg-[#083D85] text-white rounded-full text-xs font-black transition-all cursor-pointer shadow-sm"
+                        disabled={changingPassword}
+                        className="px-5 py-2 bg-[#0A4DA6] hover:bg-[#083D85] text-white rounded-full text-xs font-black transition-all cursor-pointer shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        Update Security Password
+                        {changingPassword ? "Updating..." : "Update Security Password"}
                       </button>
                     </div>
                   </form>

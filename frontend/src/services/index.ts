@@ -33,6 +33,8 @@ export const authService = {
   /** Update the signed-in user's own name / phone. */
   updateMe: (data: { name?: string; phone?: string }) =>
     api.put("/auth/me", data),
+  changePassword: (currentPassword: string, newPassword: string) =>
+    api.put("/auth/me/password", { currentPassword, newPassword }),
 };
 
 // ── Ashrams ──────────────────────────────────────────────────────────────────
@@ -252,8 +254,10 @@ export const userService = {
   suspend: (id: string, data: unknown) =>
     api.patch(`/users/${id}/suspend`, data),
   reactivate: (id: string) => api.patch(`/users/${id}/reactivate`, {}),
-  changeRole: (id: string, role: string) =>
-    api.patch(`/users/${id}/role`, { role }),
+  changeRole: (
+    id: string,
+    data: { role: string; aadhaarCardUrl?: string; panCardUrl?: string },
+  ) => api.patch(`/users/${id}/role`, data),
   updatePermissions: (id: string, permissions: string[]) =>
     api.patch(`/users/${id}/permissions`, { permissions }),
   resetPassword: (id: string, password?: string) =>

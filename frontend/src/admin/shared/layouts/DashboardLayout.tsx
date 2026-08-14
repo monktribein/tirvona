@@ -277,6 +277,9 @@ export const DashboardLayout: React.FC = () => {
         { label: "All Offers", path: "/admin/manage/offers/all" },
         { label: "Featured Offers", path: "/admin/manage/offers/featured" },
         { label: "All Blogs", path: "/admin/manage/blogs/all" },
+        // Pilgrim-written stay stories. A separate collection from All Blogs,
+        // and the one the public blog feed is actually full of.
+        { label: "Visitor Articles", path: "/admin/articles" },
         { label: "Blog Categories", path: "/admin/manage/blogs/categories" },
         { label: "Author Approvals", path: "/admin/manage/blogs/authors" },
       ],
@@ -389,40 +392,19 @@ export const DashboardLayout: React.FC = () => {
       ],
     },
     {
+      // No dropdown: every section (all notifications, system activities,
+      // auth logs, bookings telemetry, payment audit, CMS queue, timeline)
+      // is a tab on the one dashboard page, so a second copy of that list in
+      // the sidebar only duplicated navigation the page already provides.
+      // Matching `label` to `groupName` renders this as a flat link.
       groupName: "Notification Center",
       icon: <Bell size={15} />,
       links: [
         {
-          label: "Dashboard",
-          path: "/admin/enterprise-notifications/dashboard",
-        },
-        {
-          label: "All Notifications",
-          path: "/admin/enterprise-notifications/all",
-        },
-        {
-          label: "System Activities",
-          path: "/admin/enterprise-notifications/activities",
-        },
-        {
-          label: "Authentication Logs",
-          path: "/admin/enterprise-notifications/auth-logs",
-        },
-        {
-          label: "Bookings Telemetry",
-          path: "/admin/enterprise-notifications/bookings",
-        },
-        {
-          label: "Payment Audit",
-          path: "/admin/enterprise-notifications/payments",
-        },
-        {
-          label: "Banner CMS Queue",
-          path: "/admin/enterprise-notifications/cms",
-        },
-        {
-          label: "Audit Timeline",
-          path: "/admin/enterprise-notifications/timeline",
+          // The base path (subSection is optional and defaults to the
+          // dashboard) so the link stays highlighted whichever tab is open.
+          label: "Notification Center",
+          path: "/admin/enterprise-notifications",
         },
       ],
     },

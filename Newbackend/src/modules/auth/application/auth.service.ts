@@ -89,9 +89,16 @@ export class AuthService {
         "Invalid email, phone number, or password",
       );
     }
-    if (user.status === "suspended" || user.isDeleted) {
+    if (user.status !== "active" || user.isDeleted || user.isSuspended) {
+      // A soft-deleted or suspended row keeps `status: "active"`, so reporting
+      // the raw status told those users their account was "active" — which is
+      // both wrong and unactionable. The flags name the reason instead.
+      const reason =
+        user.isDeleted || user.isSuspended
+          ? "suspended"
+          : String(user.status).replace(/_/g, " ");
       throw new UnauthorizedException(
-        "Your account is suspended. Contact support.",
+        `Your account is ${reason}. Contact support.`,
       );
     }
     // Signing in is password-only. The email OTP belongs to registration,
@@ -171,6 +178,28 @@ export class AuthService {
       parkingRoles: parkingRoles ?? (await this.activeParkingRoles(user._id)),
       token,
     };
+  }
+
+  async changeMyPassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<any> {
+    const user = await this.userModel.findById(userId).select("+passwordHash");
+    if (!user?.passwordHash)
+      throw new BadRequestException(
+        "This account does not have a password. Use password recovery to create one.",
+      );
+    if (!(await bcrypt.compare(currentPassword, user.passwordHash)))
+      throw new UnauthorizedException("Current password is incorrect");
+    if (await bcrypt.compare(newPassword, user.passwordHash))
+      throw new BadRequestException(
+        "New password must be different from the current password",
+      );
+    user.passwordHash = await bcrypt.hash(newPassword, 12);
+    user.tokenVersion = Number(user.tokenVersion ?? 0) + 1;
+    await user.save();
+    return user;
   }
 
   private digest(value: string): string {
@@ -358,6 +387,21 @@ export class AuthService {
     return this.createChallenge(old.purpose, old.identifier, old.payload ?? {});
   }
 
+  /**
+   * The site origin the emailed reset link points at.
+   *
+   * `FRONTEND_URL`/`CLIENT_URL` are documented as comma-separated (they double
+   * as a CORS-style list), and operators do set more than one — so the raw
+   * value is not a URL. The first entry is the canonical site; a trailing
+   * slash is dropped so the link never comes out with `//reset-password`.
+   */
+  private siteOrigin(): string {
+    return (this.config.get<string>("frontendUrl") ?? "")
+      .split(",")[0]
+      .trim()
+      .replace(/\/+$/, "");
+  }
+
   async forgotPassword(email: string): Promise<void> {
     const user = await this.users.findByEmail(email);
     if (!user) return;
@@ -366,14 +410,43 @@ export class AuthService {
     user.resetTokenExpiresAt = new Date(Date.now() + 30 * 60_000);
     await user.save();
     const resendApiKey = this.config.get<string>("resendApiKey");
-    if (resendApiKey)
-      await new Resend(resendApiKey).emails.send({
-        from: this.config.getOrThrow<string>("resendFromEmail"),
-        replyTo: this.config.get<string>("resendReplyTo"),
-        to: user.email,
-        subject: "Reset your Tirvona password",
-        html: `<p>Use this link within 30 minutes: ${this.config.get<string>("frontendUrl")}/reset-password/${token}</p>`,
-      });
+    if (!resendApiKey) {
+      // The endpoint answers "if that account exists, a link has been sent"
+      // either way, so an unconfigured mailer is otherwise silent — and looks
+      // exactly like a working one that nobody received. Say so in the log.
+      process.stderr.write(
+        "Password reset requested but RESEND_API_KEY is not configured — no email was sent.\n",
+      );
+      return;
+    }
+    // `?token=` and not `/reset-password/<token>`: the SPA has one route,
+    // `/reset-password`, and the page reads the token from the query string.
+    // A path segment matched no route at all, so every emailed link landed on
+    // the 404 page — which is what made password reset unusable.
+    const resetUrl = `${this.siteOrigin()}/reset-password?token=${encodeURIComponent(token)}`;
+    await new Resend(resendApiKey).emails.send({
+      from: this.config.getOrThrow<string>("resendFromEmail"),
+      replyTo: this.config.get<string>("resendReplyTo"),
+      to: user.email,
+      subject: "Reset your Tirvona password",
+      // Some clients strip the anchor, so the raw URL is repeated as text.
+      html: `<div style="font-family:Segoe UI,Helvetica,Arial,sans-serif;font-size:15px;color:#0B192C;line-height:1.6">
+  <p>Namaste${user.name ? ` ${user.name}` : ""},</p>
+  <p>We received a request to reset your Tirvona password. Click the button below to choose a new one. This link expires in 30 minutes and can be used once.</p>
+  <p style="margin:28px 0">
+    <a href="${resetUrl}" style="background:#0A4DA6;color:#ffffff;text-decoration:none;padding:13px 28px;border-radius:999px;font-weight:700;display:inline-block">Reset my password</a>
+  </p>
+  <p style="font-size:13px;color:#5b6b7f">If the button does not work, copy this link into your browser:<br><a href="${resetUrl}" style="color:#0A4DA6;word-break:break-all">${resetUrl}</a></p>
+  <p style="font-size:13px;color:#5b6b7f">If you did not request this, you can safely ignore this email — your password stays unchanged.</p>
+</div>`,
+      text: `Namaste${user.name ? ` ${user.name}` : ""},
+
+We received a request to reset your Tirvona password. Open this link within 30 minutes to choose a new one:
+
+${resetUrl}
+
+If you did not request this, you can safely ignore this email — your password stays unchanged.`,
+    });
   }
   async resetUser(token: string, password?: string): Promise<any> {
     const user = await this.userModel
@@ -406,6 +479,10 @@ export class AuthService {
       throw new UnauthorizedException("Google email is not verified");
     const user = await this.users.findByEmail(payload.email);
     if (user) {
+      if (user.status !== "active" || user.isDeleted || user.isSuspended)
+        throw new UnauthorizedException(
+          `Your account is ${String(user.status).replace(/_/g, " ")}. Contact support.`,
+        );
       user.lastLoginAt = new Date();
       await user.save();
       return { session: await this.session(user) };

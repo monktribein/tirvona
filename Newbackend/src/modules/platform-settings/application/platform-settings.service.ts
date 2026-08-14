@@ -20,6 +20,12 @@ export class PlatformSettingsService {
           gstRate: 5,
           platformFeeGstRate: 18,
           bookingCommissionPercent: 10,
+          notificationSound: {
+            enabled: false,
+            url: "",
+            fileName: "",
+            volume: 0.7,
+          },
         },
       },
       { upsert: true, new: true },
@@ -45,6 +51,22 @@ export class PlatformSettingsService {
       row.platformFeeGstRate = dto.platformFeeGstRate;
     if (dto.bookingCommissionPercent !== undefined)
       row.bookingCommissionPercent = dto.bookingCommissionPercent;
+    if (dto.notificationSound) {
+      // A row created before this field existed has no subdocument at all,
+      // so assigning into it would throw.
+      row.notificationSound ??= {};
+      const sound = dto.notificationSound;
+      if (sound.url !== undefined) row.notificationSound.url = sound.url.trim();
+      if (sound.fileName !== undefined)
+        row.notificationSound.fileName = sound.fileName.trim();
+      if (sound.volume !== undefined)
+        row.notificationSound.volume = Math.min(1, Math.max(0, sound.volume));
+      // Enabling with no file would leave every dashboard trying to play "".
+      row.notificationSound.enabled =
+        sound.enabled !== undefined
+          ? sound.enabled && Boolean(row.notificationSound.url)
+          : row.notificationSound.enabled && Boolean(row.notificationSound.url);
+    }
     row.updatedBy = user.id;
     return row.save();
   }

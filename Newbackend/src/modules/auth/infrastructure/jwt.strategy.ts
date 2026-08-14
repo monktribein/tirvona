@@ -37,9 +37,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException("User not found");
     if ((payload.tv ?? 0) !== (user.tokenVersion ?? 0))
       throw new UnauthorizedException("Session expired. Please log in again.");
-    if (user.status === "suspended")
+    if (user.status !== "active" || user.isSuspended)
       throw new UnauthorizedException(
-        "Your account is suspended. Contact support.",
+        "Your account is not active. Contact support.",
       );
     return {
       _id: user._id.toString(),

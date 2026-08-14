@@ -798,7 +798,7 @@ export class GovernanceService {
       throw new BadRequestException(
         "A booking's status changes through the payment, check-in, check-out, or cancellation workflow, not this console",
       );
-    const payload = this.cleanAdminPayload(
+    let payload = this.cleanAdminPayload(
       body,
       user.role === "super_admin",
       name,
@@ -807,6 +807,7 @@ export class GovernanceService {
       typeof body._id === "string" && Types.ObjectId.isValid(body._id)
         ? body._id
         : undefined;
+    if (name === "Admin_blogs") payload = this.normalizeBlogPayload(user, payload);
 
     if (name === "Admin_parking_locations") {
       const photos = new Set(
@@ -868,6 +869,85 @@ export class GovernanceService {
       message: id ? "Record saved successfully" : "Record created successfully",
       data: this.redact(data),
     };
+  }
+
+  /**
+   * Makes a console-authored blog post publishable.
+   *
+   * The public feed (`/blog/posts`) selects `status: "published"` and every
+   * card reads `title`, `slug`, `excerpt`, `coverImage` and `author`. The
+   * generic admin form speaks a different vocabulary — it writes `name`,
+   * `details` and a status of `active`/`approved` — so a post a Super Admin
+   * created was stored correctly but matched no public query and had no slug
+   * to link to. It simply never appeared on the homepage.
+   *
+   * The author is embedded from the acting admin rather than joined to a
+   * `blogauthors` row on purpose: publishing from the console must not require
+   * a visitor author account to exist first.
+   */
+  private normalizeBlogPayload(
+    user: AuthenticatedUser,
+    input: Record<string, unknown>,
+  ): Record<string, unknown> {
+    const payload = { ...input };
+    const text = (value: unknown): string =>
+      typeof value === "string" ? value.trim() : "";
+
+    const title = text(payload.title) || text(payload.name);
+    if (!title)
+      throw new BadRequestException("A blog post needs a title to be saved");
+    payload.title = title;
+    payload.name = title;
+
+    if (!text(payload.slug))
+      payload.slug = `${
+        title
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/(^-|-$)/g, "")
+          .slice(0, 60) || "post"
+      }-${randomUUID().replace(/-/g, "").slice(0, 6)}`;
+
+    // The console offers "active"/"approved"; the feed only knows "published".
+    // Anything else keeps its own meaning and stays off the public site.
+    const status = text(payload.status).toLowerCase();
+    payload.status = ["active", "approved", "publish", "published", "live"]
+      .includes(status)
+      ? "published"
+      : status || "draft";
+
+    const body =
+      text(payload.content) || text(payload.details) || text(payload.body);
+    if (body) payload.content = body;
+    if (!text(payload.excerpt))
+      payload.excerpt = (
+        text(payload.details) ||
+        text(payload.description) ||
+        body
+      ).slice(0, 200);
+
+    const cover =
+      text(payload.coverImage) || text(payload.image) || text(payload.imageUrl);
+    if (cover) payload.coverImage = cover;
+
+    if (!text(payload.contentType))
+      payload.contentType = text(payload.videoUrl) ? "video" : "article";
+    if (!text(payload.category)) payload.category = "spiritual";
+
+    // `author` is what every card renders; `authorId` stays optional so a
+    // console post does not depend on a visitor author record.
+    const existing = (payload.author ?? {}) as Record<string, unknown>;
+    if (!text(existing.name))
+      payload.author = {
+        ...existing,
+        name: user.name || "Tirvona Editorial",
+        photo: text(existing.photo) || cover || "",
+      };
+
+    if (payload.status === "published" && !payload.publishedAt)
+      payload.publishedAt = new Date();
+    payload.views = Number(payload.views ?? 0) || 0;
+    return payload;
   }
 
   /**
