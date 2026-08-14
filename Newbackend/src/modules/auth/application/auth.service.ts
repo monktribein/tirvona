@@ -90,8 +90,15 @@ export class AuthService {
       );
     }
     if (user.status !== "active" || user.isDeleted || user.isSuspended) {
+      // A soft-deleted or suspended row keeps `status: "active"`, so reporting
+      // the raw status told those users their account was "active" — which is
+      // both wrong and unactionable. The flags name the reason instead.
+      const reason =
+        user.isDeleted || user.isSuspended
+          ? "suspended"
+          : String(user.status).replace(/_/g, " ");
       throw new UnauthorizedException(
-        `Your account is ${String(user.status).replace(/_/g, " ")}. Contact support.`,
+        `Your account is ${reason}. Contact support.`,
       );
     }
     // Signing in is password-only. The email OTP belongs to registration,
