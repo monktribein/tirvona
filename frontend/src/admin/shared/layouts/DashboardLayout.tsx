@@ -37,6 +37,7 @@ import {
   Car,
   Undo2,
   ContactRound,
+  Sparkles,
 } from "lucide-react";
 
 interface NavGroup {
@@ -322,6 +323,13 @@ export const DashboardLayout: React.FC = () => {
       icon: <Image size={15} />,
       links: [
         { label: "Homepage Banner Management", path: "/admin/manage/banner/homepage" },
+      ],
+    },
+    {
+      groupName: "Featured Banner",
+      icon: <Sparkles size={15} />,
+      links: [
+        { label: "Featured Banner Management", path: "/admin/manage/featured_banner/homepage" },
       ],
     },
     {

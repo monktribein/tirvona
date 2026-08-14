@@ -51,6 +51,7 @@ export class GovernanceService {
     planner: "circuits",
     routes: "templates",
     rituals: "templates",
+    featured_banners: "featured_banner",
   };
   private readonly adminCollections = new Set(ADMIN_MODULE_KEYS);
   /**
@@ -1084,6 +1085,7 @@ export class GovernanceService {
     const moduleLogical = this.adminAliases[moduleName] ?? moduleName;
     if (moduleName === "local") return "local";
     if (moduleName === "banner") return "banner";
+    if (moduleName === "featured_banner") return "featured_banner";
     if (moduleName === "ashrams" && section === "room_categories")
       return "rooms";
     if (moduleName === "rooms") {

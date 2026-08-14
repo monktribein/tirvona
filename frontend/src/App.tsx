@@ -14,6 +14,7 @@ import { CartProvider } from "./contexts/CartContext";
 import { ToastProvider } from "./contexts/ToastContext";
 import { CurrencyProvider, useCurrency } from "./contexts/CurrencyContext";
 import { LanguageProvider, useLanguage } from "./contexts/LanguageContext";
+import { installAutomaticTextCase } from "./utils/textCase";
 
 // Layouts (eager — always needed)
 import PublicLayout from "./layouts/PublicLayout";
@@ -23,6 +24,7 @@ import AuthReturnRestorer from "./components/AuthReturnRestorer";
 
 // Pages (lazy — code-split so each route loads its own chunk)
 const HomePage = lazy(() => import("./pages/HomePage"));
+const BannerDetailPage = lazy(() => import("./pages/BannerDetailPage"));
 const SearchPage = lazy(() => import("./pages/SearchPage"));
 const AshramDetailPage = lazy(() => import("./pages/AshramDetailPage"));
 const FaqPage = lazy(() => import("./pages/FaqPage"));
@@ -328,7 +330,9 @@ const AppContent: React.FC = () => {
   useLanguage();
   useEffect(() => {
     smoothScrollEngine.init();
+    const removeAutomaticTextCase = installAutomaticTextCase();
     return () => {
+      removeAutomaticTextCase();
       smoothScrollEngine.destroy();
     };
   }, []);
@@ -346,6 +350,7 @@ const AppContent: React.FC = () => {
               console. This explicit route is the intentional escape hatch
               used by the dashboard's Public Portal button. */}
             <Route path="/public" element={<HomePage />} />
+            <Route path="/featured-banner/:bannerId" element={<BannerDetailPage />} />
             <Route path="/search" element={<SearchPage />} />
             <Route path="/ashram/:id" element={<AshramDetailPage />} />
             <Route path="/faq" element={<FaqPage />} />

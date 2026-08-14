@@ -45,7 +45,7 @@ const NoticeCard = ({ icon, title, children }) => (
       <h1 className="profile-name notice-name">{title}</h1>
       {children}
     </div>
-    <div className="card-strip">Tirvona™ Smart Contact</div>
+    <div className="card-strip"><span>Tirvona™ Smart Contact</span><span>Verified digital identity</span></div>
   </main>
 );
 
@@ -79,7 +79,7 @@ const App = () => {
   if (status === "no-slug") {
     return (
       <Shell>
-        <NoticeCard icon="⌁" title="Incomplete link">
+        <NoticeCard icon="↗" title="Incomplete link">
           <p className="notice-message">
             This link is missing the representative&rsquo;s profile name.
           </p>
@@ -160,7 +160,7 @@ const App = () => {
             onTrack={track}
           />
         </div>
-        <div className="card-strip">Tirvona™ Smart Contact</div>
+        <div className="card-strip"><span>Tirvona™ Smart Contact</span><span>Verified digital identity</span></div>
       </main>
     </Shell>
   );

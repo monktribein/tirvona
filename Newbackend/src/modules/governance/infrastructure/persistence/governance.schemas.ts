@@ -91,6 +91,7 @@ const ADMIN_COLLECTIONS: Record<string, string> = {
   authors: "blogauthors",
   comments: "blogcomments",
   banner: "banners",
+  featured_banner: "featured_banners",
   marketplace: "marketplaceproducts",
   categories: "marketplacecategories",
   orders: "marketplaceorders",

@@ -40,10 +40,7 @@ try {
   if (!existsSync(resolve(source, "index.html"))) {
     warn("SKIPPED — SmarID built but produced no dist/.");
     process.exit(0);
-  }
-
-  // The page itself is renamed on the way in: `index.html` is already taken by
-  // the SPA, and the host rewrites unknown paths to this file by name.
+  };
   mkdirSync(distRoot, { recursive: true });
   copyFileSync(resolve(source, "index.html"), pageTarget);
 

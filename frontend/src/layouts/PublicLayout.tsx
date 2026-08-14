@@ -74,7 +74,47 @@ export const PublicLayout: React.FC = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const [navbarVisible, setNavbarVisible] = useState(true);
   const notifRef = useRef<HTMLDivElement>(null);
+  const lastNavbarScrollY = useRef(0);
+  const navbarScrollFrame = useRef<number | null>(null);
+
+  useEffect(() => {
+    const updateNavbar = () => {
+      const currentScrollY = Math.max(window.scrollY, 0);
+      const scrollDifference = currentScrollY - lastNavbarScrollY.current;
+
+      if (currentScrollY <= 32) {
+        setNavbarVisible(true);
+        lastNavbarScrollY.current = currentScrollY;
+      } else if (Math.abs(scrollDifference) >= 8) {
+        setNavbarVisible(scrollDifference < 0);
+        lastNavbarScrollY.current = currentScrollY;
+      }
+
+      navbarScrollFrame.current = null;
+    };
+
+    const handleScroll = () => {
+      if (navbarScrollFrame.current === null) {
+        navbarScrollFrame.current = window.requestAnimationFrame(updateNavbar);
+      }
+    };
+
+    lastNavbarScrollY.current = Math.max(window.scrollY, 0);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      if (navbarScrollFrame.current !== null) {
+        window.cancelAnimationFrame(navbarScrollFrame.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    setNavbarVisible(true);
+    lastNavbarScrollY.current = Math.max(window.scrollY, 0);
+  }, [location.pathname]);
 
   const {
     currency: activeCurrency,
@@ -253,13 +293,18 @@ export const PublicLayout: React.FC = () => {
     { label: "Offers", to: "/offers" },
   ];
 
-  const isHomePage = location.pathname === "/";
+  // Keep the floating navbar over pages that begin with a full-width hero so
+  // the layout does not introduce a separate white band above the artwork.
+  const hasOverlayHero =
+    ["/", "/public"].includes(location.pathname) ||
+    location.pathname.startsWith("/featured-banner/");
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50/70 dark:bg-[#070F1B] text-foreground transition-colors duration-300">
       {/* ── Sticky Header (Floating Rounded Navbar) ── */}
       <header
-        className={`sticky top-0 z-50 pt-3 pb-3 ${isHomePage ? "-mb-20 lg:-mb-24" : "mb-0"} pointer-events-none`}
+        className={`sticky top-0 z-50 pt-3 pb-3 ${hasOverlayHero ? "-mb-20 lg:-mb-24" : "mb-0"} pointer-events-none transform-gpu transition-all duration-300 ease-out will-change-transform ${navbarVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"}`}
+        aria-hidden={!navbarVisible}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pointer-events-auto">
           {/* Simple Clean Single Floating Navbar Container */}

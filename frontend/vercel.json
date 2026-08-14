@@ -42,11 +42,11 @@
       "destination": "/index.html"
     },
     {
-      "source": "/:page(about|admin|ashram|ashram-admin|ashram-owner|blog|booking|books|cancellation-policy|careers|circuits|contact|cookie-policy|dashboard|destinations|events|faq|govt-guidelines|handicrafts|help|local|local-guides|login|marketplace|offers|owner|owner-guide|parking|partner|pilgrimage-circuits|press|privacy|profile|public|puja-items|refund-policy|register|religious-products|reset-password|restaurants|search|services|shops|staff|stay-policies|support|temples|terms|transport|travel-guides|video|volunteer)",
+      "source": "/:page(about|admin|ashram|ashram-admin|ashram-owner|blog|booking|books|cancellation-policy|careers|circuits|contact|cookie-policy|dashboard|destinations|events|faq|featured-banner|govt-guidelines|handicrafts|help|local|local-guides|login|marketplace|offers|owner|owner-guide|parking|partner|pilgrimage-circuits|press|privacy|profile|public|puja-items|refund-policy|register|religious-products|reset-password|restaurants|search|services|shops|staff|stay-policies|support|temples|terms|transport|travel-guides|video|volunteer)",
       "destination": "/index.html"
     },
     {
-      "source": "/:page(about|admin|ashram|ashram-admin|ashram-owner|blog|booking|books|cancellation-policy|careers|circuits|contact|cookie-policy|dashboard|destinations|events|faq|govt-guidelines|handicrafts|help|local|local-guides|login|marketplace|offers|owner|owner-guide|parking|partner|pilgrimage-circuits|press|privacy|profile|public|puja-items|refund-policy|register|religious-products|reset-password|restaurants|search|services|shops|staff|stay-policies|support|temples|terms|transport|travel-guides|video|volunteer)/:rest*",
+      "source": "/:page(about|admin|ashram|ashram-admin|ashram-owner|blog|booking|books|cancellation-policy|careers|circuits|contact|cookie-policy|dashboard|destinations|events|faq|featured-banner|govt-guidelines|handicrafts|help|local|local-guides|login|marketplace|offers|owner|owner-guide|parking|partner|pilgrimage-circuits|press|privacy|profile|public|puja-items|refund-policy|register|religious-products|reset-password|restaurants|search|services|shops|staff|stay-policies|support|temples|terms|transport|travel-guides|video|volunteer)/:rest*",
       "destination": "/index.html"
     },
     {

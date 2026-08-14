@@ -49,6 +49,6 @@ export const InactiveNotice = ({ profile }) => (
       </a>
     </div>
 
-    <div className="card-strip">Tirvona™ Smart Contact</div>
+    <div className="card-strip"><span>Tirvona™ Smart Contact</span><span>Verified digital identity</span></div>
   </main>
 );
