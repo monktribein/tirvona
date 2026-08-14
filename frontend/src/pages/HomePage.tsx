@@ -5,6 +5,7 @@ import api from "../lib/api";
 import { ashramService, reviewService, marketplaceService } from "../services";
 import { visitorArticleService } from "../services/visitorArticleService";
 import { formatCurrency } from "../utils/format";
+import { toTitleCase } from "../utils/textCase";
 import { CouponVoucherCard } from "../components/CouponVoucherCard";
 import { DateRangePicker } from "../components/DateRangePicker";
 import { GuestRoomSelector } from "../components/shared/GuestRoomSelector";
@@ -94,12 +95,14 @@ export const HomePage: React.FC = () => {
   });
 
   const [publishedCms, setPublishedCms] = useState<any>({});
+  const [publishedFeatured, setPublishedFeatured] = useState<any>({});
 
   useEffect(() => {
     fetchStays();
     fetchOffers();
     fetchFeedbacks();
     fetchPublishedCms();
+    fetchPublishedFeatured();
     const handleClickOutside = (event: MouseEvent) => {
       if (
         autocompleteRef.current &&
@@ -142,6 +145,15 @@ export const HomePage: React.FC = () => {
       }
     } catch (err) {
       console.warn("Published CMS load:", err);
+    }
+  };
+
+  const fetchPublishedFeatured = async () => {
+    try {
+      const res = await api.get("/cms/featured-banners/published");
+      if (res.data?.success) setPublishedFeatured(res.data.data || {});
+    } catch (err) {
+      console.warn("Published featured banner load:", err);
     }
   };
 
@@ -711,8 +723,8 @@ export const HomePage: React.FC = () => {
       const existing = destMap.get(key);
       if (!existing) {
         destMap.set(key, {
-          name: city,
-          state: a.address?.state?.trim() || "",
+          name: toTitleCase(city),
+          state: toTitleCase(a.address?.state),
           img: primaryImg,
           count: 1,
           ratingSum: ratingVal,
@@ -834,7 +846,6 @@ export const HomePage: React.FC = () => {
 
   // Extract Dynamic Approved Published CMS Sections (Strictly Section-Mapped)
   const publishedHero = publishedCms.hero_banner || {};
-  const publishedFestival = publishedCms.festival_banner || {};
   const publishedOffer = publishedCms.offer_banner || {};
   /**
    * Published banner values, with the bundled defaults as fallbacks.
@@ -1304,12 +1315,15 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* ══════════════════════ UPCOMING ARDH KUMBH FESTIVAL BANNER (100% Full Width Edge-to-Edge Hero Banner) ══════════════════════ */}
-      <section className="relative w-full aspect-[16/7] sm:aspect-[21/9] lg:aspect-[1920/540] min-h-[280px] sm:min-h-[360px] lg:min-h-[440px] flex items-center justify-center overflow-hidden rounded-none shadow-2xl mb-14 lg:mb-24">
+      <section
+        onClick={() => publishedFeatured._id && navigate(`/featured-banner/${publishedFeatured._id}`)}
+        className={`relative w-full aspect-[16/7] sm:aspect-[21/9] lg:aspect-[1920/540] min-h-[280px] sm:min-h-[360px] lg:min-h-[440px] flex items-center justify-center overflow-hidden rounded-none shadow-2xl mb-14 lg:mb-24 ${publishedFeatured._id ? "cursor-pointer" : ""}`}
+      >
         {/* Published festival banner */}
-        {publishedFestival.bannerImage ? (
+        {publishedFeatured.bannerImage || publishedFeatured.imageUrl || publishedFeatured.image ? (
           <img
-            src={publishedFestival.bannerImage}
-            alt={publishedFestival.heading || "Upcoming Ardh Kumbh Festival"}
+            src={publishedFeatured.bannerImage || publishedFeatured.imageUrl || publishedFeatured.image}
+            alt={publishedFeatured.heading || "Featured Tirvona banner"}
             className="absolute inset-0 w-full h-full object-cover"
             loading="lazy"
           />
@@ -1353,8 +1367,8 @@ export const HomePage: React.FC = () => {
               transition={{ duration: 0.6 }}
               className="text-3xl sm:text-5xl lg:text-6xl font-black text-white drop-shadow-lg leading-tight"
             >
-              {publishedFestival.heading ||
-                publishedFestival.title ||
+              {publishedFeatured.heading ||
+                publishedFeatured.title ||
                 "Upcoming Aradh Kumbh Festival"}
             </motion.h2>
 
@@ -1365,8 +1379,8 @@ export const HomePage: React.FC = () => {
               transition={{ delay: 0.2, duration: 0.5 }}
               className="text-[#E2E8F0] text-sm sm:text-base leading-relaxed max-w-2xl font-medium drop-shadow-md"
             >
-              {publishedFestival.description ||
-                publishedFestival.subtitle ||
+              {publishedFeatured.description ||
+                publishedFeatured.subtitle ||
                 "Experience the divine spiritual gathering on the sacred banks of Ganga in Haridwar. Secure your holy ashram stay today for peace and divine blessings."}
             </motion.p>
 
@@ -1378,10 +1392,16 @@ export const HomePage: React.FC = () => {
               className="pt-3"
             >
               <button
-                onClick={() => navigate("/search?destination=Haridwar")}
+                onClick={() =>
+                  navigate(
+                    publishedFeatured._id
+                      ? `/featured-banner/${publishedFeatured._id}`
+                      : publishedFeatured.targetUrl || "/search?destination=Haridwar",
+                  )
+                }
                 className="bg-[#0A4DA6] hover:bg-[#083D85] text-white font-extrabold text-xs sm:text-sm pl-7 pr-2 py-3 rounded-full flex items-center gap-3 shadow-2xl hover:shadow-primary/40 transition-all cursor-pointer group/btn border border-white/20"
               >
-                <span>Book Now</span>
+                <span>{publishedFeatured.ctaText || "View Details"}</span>
                 <div className="w-8 h-8 rounded-full bg-white text-[#0A4DA6] flex items-center justify-center transition-transform group-hover/btn:translate-x-1 shadow-md">
                   <ArrowRight size={15} className="stroke-[2.5]" />
                 </div>

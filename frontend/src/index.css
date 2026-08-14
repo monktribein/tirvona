@@ -125,6 +125,14 @@ body {
 h1, h2, h3, h4, h5, h6 {
   font-family: "Plus Jakarta Sans", "Inter", sans-serif;
   letter-spacing: -0.025em;
+  text-transform: capitalize;
+}
+
+/* Existing long-form records keep their original wording, with a correctly
+   capitalized opening character. Input values are normalized before save by
+   the shared text-case handler. */
+p::first-letter {
+  text-transform: uppercase;
 }
 
 /* Smooth, GPU-friendly default transitions for interactive elements */

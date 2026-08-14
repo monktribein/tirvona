@@ -260,6 +260,24 @@ export class ContentService {
     return { success: true, data };
   }
 
+  async featuredBannerPublished(): Promise<any> {
+    const [data] = await this.repository.list(
+      "featuredBanners",
+      { status: "active" },
+      { sort: { updatedAt: -1 }, limit: 1 },
+    );
+    return { success: true, data };
+  }
+
+  async featuredBanner(id: string): Promise<any> {
+    const data = await this.repository.one("featuredBanners", {
+      _id: id,
+      status: { $ne: "inactive" },
+    });
+    if (!data) throw new NotFoundException("Featured banner not found");
+    return { success: true, data };
+  }
+
   async deleteRequest(id: string, user: AuthenticatedUser): Promise<any> {
     const request = await this.repository.remove("requests", { _id: id });
     if (!request) throw new NotFoundException("Change request not found");

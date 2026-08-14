@@ -7,7 +7,13 @@ import LocalHubEnterpriseDrawer from "./LocalHubEnterpriseDrawer";
 import { EnterprisePageHeader } from "./EnterprisePageHeader";
 import { useNotifications } from "../../../contexts/NotificationContext";
 import api, { getErrorMessage } from "../../../lib/api";
-import { roomService, userService } from "../../../services";
+import {
+  ashramService,
+  marketplaceService,
+  offerService,
+  roomService,
+  userService,
+} from "../../../services";
 import { parkingAdminService } from "../../../modules/parking/services/parking.service";
 import { humanizeLabel } from "../../../utils/labels";
 import { formatCurrency, getFormattingLocale } from "../../../utils/format";
@@ -67,6 +73,8 @@ export const EnterpriseModulePage: React.FC<{
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any | null>(null);
   const [formData, setFormData] = useState<Record<string, any>>({});
+  const [bannerEntities, setBannerEntities] = useState<Record<string, any[]>>({});
+  const [featuredAshramSearch, setFeaturedAshramSearch] = useState("");
 
   // Local Hub 7-Section Enterprise Drawer State
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -138,6 +146,7 @@ export const EnterpriseModulePage: React.FC<{
     "marketplace:waitlist": "Marketplace Waitlist",
     "marketplace:newsletter": "Marketplace Newsletter",
     "banner:homepage": "Homepage Banner Management",
+    "featured_banner:homepage": "Featured Banner Management",
     "parking_partners:all": "Parking Partners",
     "parking_partners:pending": "Pending Parking Partners",
     "parking_locations:all": "Parking Locations",
@@ -161,6 +170,29 @@ export const EnterpriseModulePage: React.FC<{
       fetchPendingCmsRequests();
     }
   }, [activeModule, activeSubKey]);
+
+  useEffect(() => {
+    if (activeModule !== "featured_banner") return;
+    void Promise.allSettled([
+      ashramService.search({ limit: "100" }),
+      marketplaceService.getProducts({ limit: 100 }),
+      offerService.getPublicOffers({ limit: "100" }),
+      api.get("/services/events"),
+      ashramService.destinations(),
+    ]).then((results) => {
+      const value = (index: number) =>
+        results[index].status === "fulfilled"
+          ? (results[index] as PromiseFulfilledResult<any>).value.data?.data || []
+          : [];
+      setBannerEntities({
+        ashram: value(0),
+        marketplace: value(1),
+        offer: value(2),
+        event: value(3),
+        destination: value(4),
+      });
+    });
+  }, [activeModule]);
 
   const fetchPendingCmsRequests = async () => {
     try {
@@ -1195,6 +1227,45 @@ export const EnterpriseModulePage: React.FC<{
           ],
         };
 
+      case "featured_banner":
+        return {
+          icon: <Sparkles size={20} className="text-[#0A4DA6]" />,
+          columns: [
+            { key: "title", label: "Featured Banner Title" },
+            { key: "eventName", label: "Event / Festival" },
+            { key: "relatedAshramName", label: "Linked Ashram" },
+            { key: "location", label: "Location" },
+            { key: "startDate", label: "Start Date" },
+            { key: "status", label: "Status" },
+          ],
+          fields: [
+            { name: "title", label: "Featured Banner Title", type: "text", required: true },
+            { name: "subtitle", label: "Subtitle / Caption", type: "text", required: true },
+            { name: "description", label: "Full Description / Content", type: "textarea", required: true },
+            { name: "eventName", label: "Event / Festival Name", type: "text", required: true },
+            { name: "eventDetails", label: "Event / Festival Details", type: "textarea", required: true },
+            { name: "startDate", label: "Start Date & Time", type: "datetime-local", required: true },
+            { name: "endDate", label: "End Date & Time", type: "datetime-local" },
+            { name: "timing", label: "Timings", type: "text" },
+            { name: "location", label: "Location", type: "text", required: true },
+            {
+              name: "relatedContentType",
+              label: "Related Tirvona Content Type",
+              type: "select",
+              options: ["event", "ashram", "offer", "destination", "marketplace"],
+              required: true,
+            },
+            { name: "ctaText", label: "CTA Button Text", type: "text", required: true },
+            { name: "ctaUrl", label: "Book Now / Explore Destination", type: "text" },
+            {
+              name: "status",
+              label: "Status",
+              type: "select",
+              options: ["active", "inactive"],
+            },
+          ],
+        };
+
       default:
         return {
           icon: <Building size={20} className="text-[#0A4DA6]" />,
@@ -1251,6 +1322,55 @@ export const EnterpriseModulePage: React.FC<{
   };
 
   const moduleConfig = getModuleConfig();
+  const featuredAshrams = Array.isArray(bannerEntities.ashram)
+    ? bannerEntities.ashram
+    : [];
+  const featuredStates = Array.from(
+    new Set(
+      featuredAshrams
+        .map((item: any) => item.address?.state || item.state || "")
+        .filter(Boolean),
+    ),
+  ).sort((a, b) => String(a).localeCompare(String(b)));
+  const featuredDistricts = Array.from(
+    new Set(
+      featuredAshrams
+        .filter(
+          (item: any) =>
+            !formData.relatedState ||
+            (item.address?.state || item.state) === formData.relatedState,
+        )
+        .map(
+          (item: any) =>
+            item.address?.district ||
+            item.district ||
+            item.address?.city ||
+            item.city ||
+            "",
+        )
+        .filter(Boolean),
+    ),
+  ).sort((a, b) => String(a).localeCompare(String(b)));
+  const filteredFeaturedAshrams = featuredAshrams.filter((item: any) => {
+    const state = item.address?.state || item.state || "";
+    const district =
+      item.address?.district ||
+      item.district ||
+      item.address?.city ||
+      item.city ||
+      "";
+    const query = featuredAshramSearch.trim().toLowerCase();
+    const matchesSearch =
+      !query ||
+      [item.name, item.ashramCode, district, state]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(query));
+    return (
+      matchesSearch &&
+      (!formData.relatedState || state === formData.relatedState) &&
+      (!formData.relatedDistrict || district === formData.relatedDistrict)
+    );
+  });
 
   const handleEditOpen = (item: any) => {
     setEditingItem(item);
@@ -1259,6 +1379,7 @@ export const EnterpriseModulePage: React.FC<{
       initial.city = item.address.city;
     }
     setFormData(initial);
+    setFeaturedAshramSearch("");
     setIsModalOpen(true);
   };
 
@@ -1269,8 +1390,13 @@ export const EnterpriseModulePage: React.FC<{
       initialData.category = "hero_banner";
       initialData.deviceType = "both";
       initialData.status = "active";
+    } else if (activeModule === "featured_banner") {
+      initialData.relatedContentType = "event";
+      initialData.ctaText = "Book Now";
+      initialData.status = "active";
     }
     setFormData(initialData);
+    setFeaturedAshramSearch("");
     setIsModalOpen(true);
   };
 
@@ -1315,7 +1441,9 @@ export const EnterpriseModulePage: React.FC<{
           return;
         }
       }
-      const bannerCategory = formData.category || "hero_banner";
+      const isHomepageBanner = activeModule === "banner";
+      const isFeaturedBanner = activeModule === "featured_banner";
+      const bannerCategory = isHomepageBanner ? formData.category || "hero_banner" : undefined;
       const bannerImage =
         formData.image ||
         formData.coverImage ||
@@ -1346,18 +1474,23 @@ export const EnterpriseModulePage: React.FC<{
           }
           : {}),
         title: formData.title || "",
-        category: bannerCategory,
-        section: bannerCategory,
-        deviceType: formData.deviceType || "both",
+        ...(isHomepageBanner
+          ? {
+              category: bannerCategory,
+              section: bannerCategory,
+              deviceType: formData.deviceType || "both",
+            }
+          : {}),
         status: formData.status || "active",
         image: bannerImage,
         imageUrl: bannerImage,
+        gallery: Array.isArray(formData.gallery) ? formData.gallery : [],
       };
 
       const endpoint = `/admin/crud/${activeModule}${activeSubKey ? `?subKey=${activeSubKey}` : ""}`;
       await api.post(endpoint, payload);
 
-      if (activeModule === "banner") {
+      if (isHomepageBanner) {
         try {
           const reqRes = await api.post("/cms/request-change", {
             page: "homepage",
@@ -1386,8 +1519,10 @@ export const EnterpriseModulePage: React.FC<{
       }
 
       addNotification(
-        "Saved & Published Live",
-        `Banner updated and published live on homepage.`,
+        isFeaturedBanner ? "Featured Banner Published" : "Saved & Published Live",
+        isFeaturedBanner
+          ? "The Featured Sacred Event section is now updated on the public homepage."
+          : "Banner updated and published live on homepage.",
         "success",
       );
       setIsModalOpen(false);
@@ -1858,6 +1993,7 @@ export const EnterpriseModulePage: React.FC<{
         showImageManager={[
           "ashrams",
           "banner",
+          "featured_banner",
           "blogs",
           "marketplace",
           "local",
@@ -1975,6 +2111,162 @@ export const EnterpriseModulePage: React.FC<{
                 minimumImages={activeModule === "parking_locations" ? 3 : 0}
               />
 
+              {activeModule === "featured_banner" && (
+                <div className="space-y-4 rounded-2xl border border-blue-100 bg-blue-50/60 p-4 dark:border-slate-800 dark:bg-slate-900/60">
+                  <div>
+                    <label className="mb-1.5 block font-bold text-gray-700 dark:text-gray-300">
+                      Search Ashrams
+                    </label>
+                    <input
+                      type="search"
+                      value={featuredAshramSearch}
+                      onChange={(event) => setFeaturedAshramSearch(event.target.value)}
+                      placeholder="Search by Ashram name, code, district or state..."
+                      className="w-full rounded-xl border border-blue-200 bg-white p-3 font-semibold text-gray-800 outline-none focus:border-[#0A4DA6] dark:border-slate-700 dark:bg-[#0B192C] dark:text-white"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                    <div>
+                      <label className="mb-1.5 block font-bold text-gray-700 dark:text-gray-300">
+                        State <span className="text-rose-500">*</span>
+                      </label>
+                      <select
+                        required
+                        value={formData.relatedState || ""}
+                        onChange={(event) =>
+                          setFormData({
+                            ...formData,
+                            relatedState: event.target.value,
+                            relatedDistrict: "",
+                            relatedAshramId: "",
+                            relatedAshramName: "",
+                            ctaUrl: String(formData.ctaUrl || "").startsWith("/ashram/")
+                              ? ""
+                              : formData.ctaUrl,
+                          })
+                        }
+                        className="w-full rounded-xl border border-blue-200 bg-white p-3 font-bold text-[#0A4DA6] outline-none dark:border-slate-700 dark:bg-[#0B192C]"
+                      >
+                        <option value="">Select State</option>
+                        {featuredStates.map((state) => (
+                          <option key={String(state)} value={String(state)}>{String(state)}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="mb-1.5 block font-bold text-gray-700 dark:text-gray-300">
+                        District <span className="text-rose-500">*</span>
+                      </label>
+                      <select
+                        required
+                        disabled={!formData.relatedState}
+                        value={formData.relatedDistrict || ""}
+                        onChange={(event) =>
+                          setFormData({
+                            ...formData,
+                            relatedDistrict: event.target.value,
+                            relatedAshramId: "",
+                            relatedAshramName: "",
+                            ctaUrl: String(formData.ctaUrl || "").startsWith("/ashram/")
+                              ? ""
+                              : formData.ctaUrl,
+                          })
+                        }
+                        className="w-full rounded-xl border border-blue-200 bg-white p-3 font-bold text-[#0A4DA6] outline-none disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-[#0B192C]"
+                      >
+                        <option value="">Select District</option>
+                        {featuredDistricts.map((district) => (
+                          <option key={String(district)} value={String(district)}>{String(district)}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="mb-1.5 block font-bold text-gray-700 dark:text-gray-300">
+                        Ashram <span className="text-rose-500">*</span>
+                      </label>
+                      <select
+                        required
+                        disabled={!formData.relatedDistrict}
+                        value={formData.relatedAshramId || ""}
+                        onChange={(event) => {
+                          const selected = featuredAshrams.find(
+                            (item: any) => String(item._id || item.id) === event.target.value,
+                          );
+                          const ashramId = String(selected?._id || selected?.id || "");
+                          setFormData({
+                            ...formData,
+                            relatedAshramId: ashramId,
+                            relatedAshramName: selected?.name || "",
+                            relatedAshramSlug: selected?.slug || "",
+                            ctaUrl: formData.ctaUrl || (ashramId ? `/ashram/${ashramId}` : ""),
+                          });
+                        }}
+                        className="w-full rounded-xl border border-blue-200 bg-white p-3 font-bold text-[#0A4DA6] outline-none disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-[#0B192C]"
+                      >
+                        <option value="">Select Ashram</option>
+                        {filteredFeaturedAshrams.map((item: any) => {
+                          const value = String(item._id || item.id);
+                          return <option key={value} value={value}>{item.name || item.ashramCode || value}</option>;
+                        })}
+                      </select>
+                    </div>
+                  </div>
+
+                  <p className="text-[10px] font-semibold text-gray-500">
+                    The selected State, District and Ashram control the destination route and which Ashram offers appear on the Featured Banner detail page.
+                  </p>
+
+                  <div className="border-t border-blue-100 pt-4 dark:border-slate-700">
+                  <label className="mb-1.5 block font-bold text-gray-700 dark:text-gray-300">
+                    Related Tirvona Content <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    required
+                    value={formData.linkedEntityId || ""}
+                    onChange={(event) => {
+                      const selected = (bannerEntities[formData.relatedContentType] || []).find(
+                        (item: any) => String(item._id || item.id || item.slug || item.city || item.name) === event.target.value,
+                      );
+                      if (!selected) {
+                        setFormData({ ...formData, linkedEntityId: "" });
+                        return;
+                      }
+                      const entityId = String(selected._id || selected.id || selected.slug || selected.city || selected.name);
+                      const entityName = selected.name || selected.title || selected.city || selected.label || entityId;
+                      const entitySlug = selected.slug || selected.code || "";
+                      const entityImage = selected.coverImageUrl || selected.coverImage || selected.imageUrl || selected.image || selected.images?.[0] || "";
+                      setFormData({
+                        ...formData,
+                        linkedEntityId: entityId,
+                        linkedEntitySlug: entitySlug,
+                        linkedEntityName: entityName,
+                        title: formData.title || entityName,
+                        description: formData.description || selected.description || selected.about || selected.excerpt || "",
+                        location: formData.location || selected.address?.city || selected.city || selected.location || "",
+                        image: formData.image || entityImage,
+                        coverImage: formData.coverImage || entityImage,
+                        imageUrl: formData.imageUrl || entityImage,
+                      });
+                    }}
+                    className="w-full rounded-xl border border-blue-200 bg-white p-3 font-bold text-[#0A4DA6] outline-none dark:border-slate-700 dark:bg-[#0B192C]"
+                  >
+                    <option value="">Select related {humanizeLabel(formData.relatedContentType || "content")}</option>
+                    {(bannerEntities[formData.relatedContentType] || []).map((item: any) => {
+                      const value = String(item._id || item.id || item.slug || item.city || item.name);
+                      const label = item.name || item.title || item.city || item.label || value;
+                      return <option key={value} value={value}>{label}</option>;
+                    })}
+                  </select>
+                  <p className="mt-1.5 text-[10px] font-semibold text-gray-500">
+                    Selecting content links this banner to its live Tirvona record and pre-fills available details. You can still customize the banner copy and CTA below.
+                  </p>
+                  </div>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                 {moduleConfig.fields.map((f) => (
                   <div
@@ -1992,7 +2284,17 @@ export const EnterpriseModulePage: React.FC<{
                           formData[f.name] || (f.options ? f.options[0] : "")
                         }
                         onChange={(e) =>
-                          setFormData({ ...formData, [f.name]: e.target.value })
+                          setFormData({
+                            ...formData,
+                            [f.name]: e.target.value,
+                            ...(f.name === "relatedContentType"
+                              ? {
+                                  linkedEntityId: "",
+                                  linkedEntitySlug: "",
+                                  linkedEntityName: "",
+                                }
+                              : {}),
+                          })
                         }
                         className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold text-[#0A4DA6]"
                       >
