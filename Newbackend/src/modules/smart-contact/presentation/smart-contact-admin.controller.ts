@@ -36,6 +36,7 @@ import type {
 import { SmartContactAnalyticsQueryDto } from "./dtos/smart-contact-event.dto";
 import {
   CreateSmartContactProfileDto,
+  DeleteSmartContactProfilesDto,
   GenerateQrDto,
   QrRenderQueryDto,
   SmartContactProfileQueryDto,
@@ -240,6 +241,38 @@ export class SmartContactAdminController {
         this.actor(user),
         this.ip(request),
       ),
+    };
+  }
+
+  /**
+   * Permanent bulk deletion — the one route that really removes a profile.
+   *
+   * Archiving is the module's normal end state (spec §22) precisely because a
+   * freed slug stops resolving and any printed QR carrying it dies. That makes
+   * this the wrong tool for a representative who has left and the right one
+   * for clearing drafts and test rows, which archiving only hides. Restricted
+   * to `super_admin`: the wider Smart Contact admin roles can archive, but
+   * nobody below the top role can destroy.
+   *
+   * The response reports how many QR assets were registered against the
+   * selection, so the console can say plainly what was just invalidated.
+   */
+  @Post("bulk-delete")
+  @Roles("super_admin")
+  @HttpCode(200)
+  async bulkDelete(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: DeleteSmartContactProfilesDto,
+  ) {
+    const result = await this.profiles.deleteMany(dto.ids, this.actor(user));
+    return {
+      success: true,
+      message:
+        `${result.deleted} profile(s) permanently deleted.` +
+        (result.printedQrCodes > 0
+          ? ` ${result.printedQrCodes} generated QR code(s) will no longer resolve.`
+          : ""),
+      data: result,
     };
   }
 

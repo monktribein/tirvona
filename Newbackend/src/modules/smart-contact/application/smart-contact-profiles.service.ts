@@ -21,7 +21,9 @@ import {
   SLUG_MIN_LENGTH,
   SLUG_PATTERN,
   SMART_CONTACT_CONNECTION,
+  SMART_CONTACT_EVENT_MODEL,
   SMART_CONTACT_PROFILE_MODEL,
+  SMART_CONTACT_QR_MODEL,
   type SmartContactStatus,
 } from "../domain/smart-contact.constants";
 import type {
@@ -55,6 +57,13 @@ export class SmartContactProfilesService {
   constructor(
     @InjectModel(SMART_CONTACT_PROFILE_MODEL, SMART_CONTACT_CONNECTION)
     private readonly profiles: Model<Record<string, any>>,
+    // Injected for permanent deletion only. A profile's QR assets and
+    // analytics events are keyed to its id, so removing the profile without
+    // them would leave rows pointing at nothing.
+    @InjectModel(SMART_CONTACT_QR_MODEL, SMART_CONTACT_CONNECTION)
+    private readonly qrCodes: Model<Record<string, any>>,
+    @InjectModel(SMART_CONTACT_EVENT_MODEL, SMART_CONTACT_CONNECTION)
+    private readonly events: Model<Record<string, any>>,
     private readonly audit: SmartContactAuditService,
   ) {}
 
@@ -544,6 +553,75 @@ export class SmartContactProfilesService {
     });
 
     return this.toView(updated);
+  }
+
+  /**
+   * Permanently remove profiles, with everything keyed to them.
+   *
+   * Deliberately the one destructive operation in a module built around
+   * archive-instead-of-delete (spec §22): a slug freed here stops resolving,
+   * so any printed QR that carries it becomes a dead link. That trade is the
+   * caller's to make — the console exists to clear out drafts and test rows,
+   * which archiving only hides — so this reports how many of the selected
+   * profiles have QR assets registered against them rather than refusing.
+   *
+   * Not a transaction: the module runs on its own connection and a standalone
+   * MongoDB has no session support. Children are removed before the profile,
+   * so a failure part-way leaves the profile still resolving rather than a
+   * live slug pointing at nothing.
+   */
+  async deleteMany(
+    ids: string[],
+    actor: ActorRef,
+  ): Promise<{
+    deleted: number;
+    requested: number;
+    printedQrCodes: number;
+    slugs: string[];
+  }> {
+    const valid = [...new Set(ids)].filter((id) => Types.ObjectId.isValid(id));
+    if (valid.length === 0)
+      throw new BadRequestException(
+        "Select at least one valid profile to delete.",
+      );
+
+    const docs = await this.profiles
+      .find({ _id: { $in: valid } })
+      .select("_id slug displayName")
+      .lean();
+    if (docs.length === 0)
+      throw new NotFoundException("No matching Smart Contact profiles found.");
+
+    const objectIds = docs.map((doc) => doc._id as Types.ObjectId);
+    const printedQrCodes = await this.qrCodes.countDocuments({
+      profileId: { $in: objectIds },
+    });
+
+    // QR assets and analytics events are operational data for a live profile
+    // and go with it. The audit trail does not: a log that the logged action
+    // can erase is not an audit trail, so those lines are kept and a
+    // PROFILE_DELETED entry is appended naming the slug that was freed.
+    await this.qrCodes.deleteMany({ profileId: { $in: objectIds } });
+    await this.events.deleteMany({ profileId: { $in: objectIds } });
+    const removed = await this.profiles.deleteMany({ _id: { $in: objectIds } });
+
+    await this.audit.recordMany(
+      docs.map((doc) => ({
+        profileId: doc._id as Types.ObjectId,
+        action: "PROFILE_DELETED" as const,
+        field: "profile",
+        oldValue: String(doc.slug),
+        newValue: "",
+        actor,
+      })),
+    );
+
+    return {
+      deleted: removed.deletedCount ?? 0,
+      requested: valid.length,
+      printedQrCodes,
+      slugs: docs.map((doc) => String(doc.slug)),
+    };
   }
 
   /** Exposed so the QR controller can resolve a profile id without a re-read. */

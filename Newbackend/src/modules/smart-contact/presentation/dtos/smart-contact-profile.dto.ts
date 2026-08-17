@@ -1,6 +1,8 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
 import { Transform, Type } from "class-transformer";
 import {
+  ArrayMaxSize,
+  ArrayNotEmpty,
   IsArray,
   IsBoolean,
   IsEmail,
@@ -203,4 +205,23 @@ export class QrRenderQueryDto {
   @IsBoolean()
   @Transform(({ value }: { value: unknown }) => value === true || value === "true")
   logo?: boolean;
+}
+
+/**
+ * The selection for a permanent bulk deletion.
+ *
+ * Capped because this is the module's only destructive route and the console
+ * sends the ids it has on screen; an unbounded list would let one request
+ * clear the whole table.
+ */
+export class DeleteSmartContactProfilesDto {
+  @ApiPropertyOptional({
+    description: "Profile ids to permanently remove.",
+    type: [String],
+  })
+  @IsArray()
+  @ArrayNotEmpty()
+  @ArrayMaxSize(100)
+  @IsString({ each: true })
+  ids!: string[];
 }

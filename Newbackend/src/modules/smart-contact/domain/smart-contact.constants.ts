@@ -155,6 +155,10 @@ export const SMART_CONTACT_AUDIT_ACTIONS = [
   "PROFILE_DISABLED",
   "PROFILE_ARCHIVED",
   "PROFILE_RESTORED",
+  // The profile row is gone by the time this is written, so the entry is the
+  // only remaining record that it ever existed — it keeps the freed slug in
+  // `oldValue` so a dead printed QR can still be traced back to a decision.
+  "PROFILE_DELETED",
 ] as const;
 export type SmartContactAuditAction =
   (typeof SMART_CONTACT_AUDIT_ACTIONS)[number];
