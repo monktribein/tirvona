@@ -16,7 +16,7 @@
  * Fix when it fires: add the segment to `rewrites` in `frontend/vercel.json`
  * and to `routes` in `render.yaml`.
  */
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -34,6 +34,16 @@ const spaSegments = () => {
   return segments;
 };
 
+/** Pulls every `a|b|c` alternation group out of a rewrite/location pattern. */
+const segmentsFromPattern = (pattern, into) => {
+  for (const group of pattern.matchAll(/\(([^)]*)\)/g)) {
+    for (const name of group[1].split("|")) {
+      const clean = name.trim();
+      if (clean && /^[a-z0-9-]+$/i.test(clean)) into.add(clean);
+    }
+  }
+};
+
 /** Segments named in the alternation groups of vercel.json's rewrites. */
 const configuredSegments = () => {
   const config = JSON.parse(
@@ -42,19 +52,39 @@ const configuredSegments = () => {
   const segments = new Set();
   for (const rule of config.rewrites ?? []) {
     if (rule.destination !== "/index.html") continue;
-    for (const group of rule.source.matchAll(/\(([^)]*)\)/g)) {
-      for (const name of group[1].split("|")) {
-        const clean = name.trim();
-        if (clean && /^[a-z0-9-]+$/i.test(clean)) segments.add(clean);
-      }
-    }
+    segmentsFromPattern(rule.source, segments);
+  }
+  return segments;
+};
+
+/**
+ * Segments named in the nginx snippet, which is what actually routes
+ * production now that the site is served from a VPS rather than Vercel.
+ *
+ * Checked because leaving nginx out is precisely how this broke: the move to
+ * the VPS carried none of the host rewrites with it, and every scanned QR
+ * quietly rendered the homepage instead of the identity card.
+ */
+const nginxSegments = () => {
+  const path = resolve(frontendRoot, "..", "deploy", "nginx", "tirvona-web.conf");
+  if (!existsSync(path)) return null;
+  const source = readFileSync(path, "utf8");
+  const segments = new Set();
+  for (const line of source.split("\n")) {
+    // Only the SPA-page location; the asset location has a group of its own
+    // that names build directories rather than pages.
+    if (!/^\s*location\s+~\s+\^\/\(/.test(line)) continue;
+    segmentsFromPattern(line, segments);
   }
   return segments;
 };
 
 const declared = spaSegments();
 const configured = configuredSegments();
-const missing = [...declared].filter((s) => !configured.has(s)).sort();
+const nginx = nginxSegments();
+const missing = [...declared].filter(
+  (s) => !configured.has(s) || (nginx && !nginx.has(s)),
+).sort();
 
 if (missing.length) {
   process.stderr.write(
@@ -62,8 +92,9 @@ if (missing.length) {
       "host rewrite lists, and would serve the Smart Contact page instead:\n\n" +
       missing.map((s) => `    /${s}`).join("\n") +
       "\n\nAdd them to the alternation group in:\n" +
-      "    frontend/vercel.json  -> rewrites[].source\n" +
-      "    render.yaml           -> tirvona-web routes\n\n" +
+      "    deploy/nginx/tirvona-web.conf  -> the SPA-page location (production)\n" +
+      "    frontend/vercel.json           -> rewrites[].source\n" +
+      "    render.yaml                    -> tirvona-web routes\n\n" +
       "This check exists because the failure it prevents is silent in\n" +
       "production: the page would 'work', just show the wrong content.\n\n",
   );

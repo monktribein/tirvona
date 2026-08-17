@@ -710,8 +710,19 @@ export class AshramsService {
     // `ashramId` is never taken from the payload: a room's availability,
     // bookings and inventory are all keyed to its ashram, so re-parenting it
     // would orphan them. Everything else is applied as sent.
-    const { ashramId: _ignored, ...patch } = dto;
+    const { ashramId: _ignored, ...received } = dto;
     void _ignored;
+
+    // Only fields the client actually sent are applied. `UpdateRoomDto`
+    // declares `status` in its own body, so with ES2022 class-field semantics
+    // every validated instance carries `status: undefined` as an own key even
+    // when the request never mentioned it. `Object.assign` then handed that
+    // `undefined` to Mongoose, which unsets the path — and schema defaults do
+    // not re-apply on update, so a room lost its status entirely. Editing only
+    // the base price silently dropped a room out of "active".
+    const patch = Object.fromEntries(
+      Object.entries(received).filter(([, value]) => value !== undefined),
+    ) as Partial<CreateRoomDto>;
 
     if (patch.totalInventory !== undefined) {
       const inventoryDays = await this.inventory

@@ -77,6 +77,11 @@ export const EnterpriseModulePage: React.FC<{
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [bannerEntities, setBannerEntities] = useState<Record<string, any[]>>({});
   const [featuredAshramSearch, setFeaturedAshramSearch] = useState("");
+  // Creating a room category needs a real ashram, and creating a seasonal
+  // price needs a real room — neither is a free-text field, and the server
+  // rejects the record without one. Loaded only while the room module is open.
+  const [roomAshramOptions, setRoomAshramOptions] = useState<any[]>([]);
+  const [roomCategoryOptions, setRoomCategoryOptions] = useState<any[]>([]);
 
   // Local Hub 7-Section Enterprise Drawer State
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -202,6 +207,46 @@ export const EnterpriseModulePage: React.FC<{
         destination: value(4),
       });
     });
+  }, [activeModule]);
+
+  // Every ashram and every room category on the platform, for the pickers the
+  // room forms need. Read through /admin/crud so a Super Admin sees all of
+  // them, not only properties they happen to own.
+  useEffect(() => {
+    if (activeModule !== "rooms") return;
+    let cancelled = false;
+
+    // /admin/crud caps a page at 100 rows, so a single request would quietly
+    // truncate the picker on a platform with more properties than that. Paged
+    // through to a sane ceiling instead of guessing a limit the server ignores.
+    const fetchAllPages = async (path: string): Promise<any[]> => {
+      const rows: any[] = [];
+      for (let page = 1; page <= 10; page += 1) {
+        const separator = path.includes("?") ? "&" : "?";
+        const res = await api.get(`${path}${separator}limit=100&page=${page}`);
+        if (!res.data?.success) break;
+        rows.push(...(res.data.data || []));
+        if (page >= (res.data.totalPages || 1)) break;
+      }
+      return rows;
+    };
+
+    void Promise.allSettled([
+      fetchAllPages("/admin/crud/ashrams"),
+      fetchAllPages("/admin/crud/rooms?subKey=all"),
+    ]).then((results) => {
+      if (cancelled) return;
+      const value = (index: number) =>
+        results[index].status === "fulfilled"
+          ? (results[index] as PromiseFulfilledResult<any[]>).value
+          : [];
+      setRoomAshramOptions(value(0));
+      setRoomCategoryOptions(value(1));
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, [activeModule]);
 
   const fetchPendingCmsRequests = async () => {
@@ -342,15 +387,19 @@ export const EnterpriseModulePage: React.FC<{
     "parking_scan_logs",
     "parking_staff",
   ]);
-  const isOperationalRoomView =
+  // The three faces of the room module. Each writes to a different place, so
+  // they are named once here rather than re-tested at every call site.
+  const isRoomInventoryView =
     activeModule === "rooms" &&
-    ["availability", "inventory", "pricing", "season_pricing"].includes(
-      activeSubKey,
-    );
+    ["availability", "inventory"].includes(activeSubKey);
+  const isRoomPricingView =
+    activeModule === "rooms" &&
+    ["pricing", "season_pricing"].includes(activeSubKey);
+  /** Room Categories — the structural records themselves. */
+  const isRoomCategoryView = activeModule === "rooms" && !isRoomInventoryView && !isRoomPricingView;
   const isReadOnlyFinance =
     (activeModule === "bookings" && activeSubKey === "refunds") ||
-    READ_ONLY_MODULES.has(activeModule) ||
-    isOperationalRoomView;
+    READ_ONLY_MODULES.has(activeModule);
 
   // Custom Form & Column Definitions per Feature Area
   // The fallback shape, named so a case can opt back into it (a sub-key that
@@ -1426,7 +1475,36 @@ export const EnterpriseModulePage: React.FC<{
                 render: (value: any) => (value ? "Yes" : "No"),
               },
             ],
-            fields: [],
+            // Booked and held units are deliberately absent: those are written
+            // by the reservation flow, and editing them here would oversell the
+            // room. Everything an operator legitimately controls for a night —
+            // capacity, blocked units, an override rate, a full stop-sell — is
+            // present, matching the owner's own availability form.
+            fields: [
+              {
+                name: "totalInventory",
+                label: "Total Units",
+                type: "number",
+                required: true,
+              },
+              {
+                name: "maintenanceCount",
+                label: "Blocked / Maintenance Units",
+                type: "number",
+              },
+              {
+                name: "customPrice",
+                label: "Custom Price (blank = base price)",
+                type: "number",
+              },
+              {
+                name: "isClosed",
+                label: "Stop Sell",
+                type: "select",
+                options: ["false", "true"],
+              },
+              { name: "note", label: "Internal Note", type: "text" },
+            ],
           };
         }
         if (["pricing", "season_pricing"].includes(activeSubKey)) {
@@ -1471,7 +1549,26 @@ export const EnterpriseModulePage: React.FC<{
                 render: (value: any) => (value === false ? "No" : "Yes"),
               },
             ],
-            fields: [],
+            // A base row edits the room's own `basePrice`; a seasonal row edits
+            // one entry of its `pricingRules`. The server routes the write by
+            // the row's id, so one field set serves both — on a base row the
+            // seasonal-only fields are simply ignored.
+            fields: [
+              { name: "name", label: "Pricing Rule Name", type: "text" },
+              { name: "validFrom", label: "Valid From", type: "date" },
+              { name: "validUntil", label: "Valid Until", type: "date" },
+              {
+                name: "multiplier",
+                label: "Peak Multiplier (e.g. 1.5)",
+                type: "number",
+              },
+              {
+                name: "overridePrice",
+                label: "Effective Price (₹)",
+                type: "number",
+                required: true,
+              },
+            ],
           };
         }
         return {
@@ -1643,16 +1740,36 @@ export const EnterpriseModulePage: React.FC<{
       initialData.status = "published";
       initialData.contentType = "article";
       initialData.category = "spiritual";
+    } else if (isRoomCategoryView) {
+      initialData.ashramId = roomAshramOptions[0]?._id || "";
+      initialData.type = "private_room";
+      initialData.acType = "Non-AC";
+      initialData.capacity = 2;
+      initialData.totalInventory = 10;
+      initialData.basePrice = 800;
+      initialData.status = "active";
+    } else if (isRoomPricingView) {
+      initialData.sourceRoomId = roomCategoryOptions[0]?._id || "";
+      initialData.multiplier = 1;
     }
     setFormData(initialData);
     setFeaturedAshramSearch("");
     setIsModalOpen(true);
   };
 
+  /** Tells the console a room write landed, so open room pages re-read. */
+  const announceRoomsChanged = () => {
+    localStorage.setItem("tirvona:rooms-updated", Date.now().toString());
+    window.dispatchEvent(new Event("tirvona:rooms-updated"));
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      if (activeModule === "rooms" && editingItem?._id) {
+      // Editing a category goes through /rooms, which enforces the same
+      // committed-units rule the owner console obeys. Creating one goes through
+      // /admin/crud, the only path that accepts an explicit ashramId.
+      if (isRoomCategoryView && editingItem?._id) {
         await roomService.update(editingItem._id, {
           name: String(formData.name || "").trim(),
           type: formData.type,
@@ -1662,9 +1779,84 @@ export const EnterpriseModulePage: React.FC<{
           basePrice: Number(formData.basePrice),
           status: formData.status,
         });
-        localStorage.setItem("tirvona:rooms-updated", Date.now().toString());
-        window.dispatchEvent(new Event("tirvona:rooms-updated"));
+        announceRoomsChanged();
         addNotification("Room Updated", "Room and inventory data are now live.", "success");
+        setIsModalOpen(false);
+        fetchModuleData();
+        return;
+      }
+      if (isRoomCategoryView) {
+        if (!formData.ashramId) {
+          addNotification(
+            "Ashram Required",
+            "Pick the ashram this room category belongs to.",
+            "error",
+          );
+          return;
+        }
+        await api.post("/admin/crud/rooms?subKey=all", {
+          ashramId: formData.ashramId,
+          name: String(formData.name || "").trim(),
+          type: formData.type || "private_room",
+          acType: formData.acType || "Non-AC",
+          capacity: Number(formData.capacity) || 1,
+          totalInventory: Number(formData.totalInventory) || 1,
+          basePrice: Number(formData.basePrice) || 0,
+          status: formData.status || "active",
+        });
+        announceRoomsChanged();
+        addNotification("Room Category Created", "The category is now bookable.", "success");
+        setIsModalOpen(false);
+        fetchModuleData();
+        return;
+      }
+      // A pricing row is written back to the room it was derived from. `_id`
+      // carries which kind it is (`base:` / `embedded:`); `sourceRoomId` names
+      // the room when a brand-new seasonal rule is being added.
+      if (isRoomPricingView) {
+        const sourceRoomId = editingItem?.sourceRoomId || formData.sourceRoomId;
+        if (!sourceRoomId) {
+          addNotification(
+            "Room Required",
+            "Pick the room category this price applies to.",
+            "error",
+          );
+          return;
+        }
+        await api.post(`/admin/crud/rooms?subKey=${activeSubKey || "pricing"}`, {
+          _id: editingItem?._id,
+          sourceRoomId,
+          name: formData.name,
+          validFrom: formData.validFrom || undefined,
+          validUntil: formData.validUntil || undefined,
+          multiplier: Number(formData.multiplier) || 1,
+          overridePrice: Number(formData.overridePrice) || 0,
+        });
+        announceRoomsChanged();
+        addNotification("Pricing Updated", "The new rate is live for new bookings.", "success");
+        setIsModalOpen(false);
+        fetchModuleData();
+        return;
+      }
+      // A daily inventory row. `isClosed` arrives as a select string, and the
+      // server stores a boolean.
+      if (isRoomInventoryView && editingItem?._id) {
+        await api.post(
+          `/admin/crud/rooms?subKey=${activeSubKey || "availability"}`,
+          {
+            _id: editingItem._id,
+            totalInventory: Number(formData.totalInventory) || 0,
+            maintenanceCount: Number(formData.maintenanceCount) || 0,
+            customPrice:
+              formData.customPrice === "" || formData.customPrice == null
+                ? null
+                : Number(formData.customPrice),
+            isClosed: String(formData.isClosed) === "true",
+            note: formData.note || "",
+          },
+        );
+        announceRoomsChanged();
+        addNotification("Availability Updated", "The calendar now reflects this change.", "success");
         setIsModalOpen(false);
         fetchModuleData();
         return;
@@ -1787,7 +1979,11 @@ export const EnterpriseModulePage: React.FC<{
 
   const handleDirectSave = async (savedData: any) => {
     try {
-      if (activeModule === "rooms" && savedData._id) {
+      // The table's own "Edit Record" panel lands here, so each of the three
+      // room views has to be routed to the place it actually writes. Sending
+      // all of them to /rooms/:id — as this once did — meant a pricing or
+      // availability row was addressed as though it were a room category.
+      if (isRoomCategoryView && savedData._id) {
         await roomService.update(savedData._id, {
           name: String(savedData.name || "").trim(),
           type: savedData.type,
@@ -1797,9 +1993,44 @@ export const EnterpriseModulePage: React.FC<{
           basePrice: Number(savedData.basePrice),
           status: savedData.status,
         });
-        localStorage.setItem("tirvona:rooms-updated", Date.now().toString());
-        window.dispatchEvent(new Event("tirvona:rooms-updated"));
+        announceRoomsChanged();
         addNotification("Saved Successfully", "Room and inventory data are now live.", "success");
+        fetchModuleData();
+        return;
+      }
+      if (isRoomPricingView && savedData._id) {
+        await api.post(`/admin/crud/rooms?subKey=${activeSubKey || "pricing"}`, {
+          _id: savedData._id,
+          sourceRoomId: savedData.sourceRoomId || savedData.roomId?._id,
+          name: savedData.name,
+          validFrom: savedData.validFrom || undefined,
+          validUntil: savedData.validUntil || undefined,
+          multiplier: Number(savedData.multiplier) || 1,
+          overridePrice: Number(savedData.overridePrice) || 0,
+        });
+        announceRoomsChanged();
+        addNotification("Pricing Updated", "The new rate is live for new bookings.", "success");
+        fetchModuleData();
+        return;
+      }
+      if (isRoomInventoryView && savedData._id) {
+        await api.post(
+          `/admin/crud/rooms?subKey=${activeSubKey || "availability"}`,
+          {
+            _id: savedData._id,
+            totalInventory: Number(savedData.totalInventory) || 0,
+            maintenanceCount: Number(savedData.maintenanceCount) || 0,
+            customPrice:
+              savedData.customPrice === "" || savedData.customPrice == null
+                ? null
+                : Number(savedData.customPrice),
+            isClosed:
+              savedData.isClosed === true || String(savedData.isClosed) === "true",
+            note: savedData.note || "",
+          },
+        );
+        announceRoomsChanged();
+        addNotification("Availability Updated", "The calendar now reflects this change.", "success");
         fetchModuleData();
         return;
       }
@@ -1895,11 +2126,20 @@ export const EnterpriseModulePage: React.FC<{
 
   const handleDelete = async (id: string) => {
     try {
-      if (activeModule === "rooms") {
+      // Only a category is a room of its own. A pricing row lives inside its
+      // room and an availability row is a calendar record, so both go through
+      // /admin/crud — sending them to /rooms/:id deleted the wrong thing.
+      if (isRoomCategoryView) {
         await roomService.remove(id);
-        localStorage.setItem("tirvona:rooms-updated", Date.now().toString());
-        window.dispatchEvent(new Event("tirvona:rooms-updated"));
+        announceRoomsChanged();
         addNotification("Room Removed", "The room category was removed safely.", "success");
+        fetchModuleData();
+        return;
+      }
+      if (isRoomPricingView || isRoomInventoryView) {
+        await api.delete(crudDeletePath(id));
+        announceRoomsChanged();
+        addNotification("Removed", "The record was removed.", "info");
         fetchModuleData();
         return;
       }
@@ -2163,7 +2403,10 @@ export const EnterpriseModulePage: React.FC<{
             >
               <Printer size={14} /> Print
             </button>
-            {!isReadOnlyFinance && activeModule !== "rooms" && (
+            {/* Daily availability rows are generated by the booking engine for
+              a specific room and date, so they are edited rather than authored
+              here. Categories and prices are both created from this button. */}
+            {!isReadOnlyFinance && !isRoomInventoryView && (
               <button
                 onClick={
                   activeModule === "ashrams" || activeModule === "ashram"
@@ -2175,7 +2418,11 @@ export const EnterpriseModulePage: React.FC<{
                 <Plus size={16} />{" "}
                 {activeModule === "banner"
                   ? "Add New Banner"
-                  : `Add New ${formatTitle(activeModule).replace(/s$/, "")}`}
+                  : isRoomCategoryView
+                    ? "Add Room Category"
+                    : isRoomPricingView
+                      ? "Add Seasonal Price"
+                      : `Add New ${formatTitle(activeModule).replace(/s$/, "")}`}
               </button>
             )}
           </div>
@@ -2260,6 +2507,10 @@ export const EnterpriseModulePage: React.FC<{
             : undefined
         }
         onDelete={isReadOnlyFinance ? undefined : (id) => handleDelete(id)}
+        // Bulk delete posts straight to /admin/crud, which cannot honour the
+        // live-booking refusal that guards a single category delete, and a base
+        // price is not a deletable row at all. Approve/reject have no meaning
+        // for any room record.
         onBulkDelete={
           isReadOnlyFinance || activeModule === "rooms" ? undefined : (ids) => handleBulkDelete(ids)
         }
@@ -2513,6 +2764,75 @@ export const EnterpriseModulePage: React.FC<{
                     Selecting content links this banner to its live Tirvona record and pre-fills available details. You can still customize the banner copy and CTA below.
                   </p>
                   </div>
+                </div>
+              )}
+
+              {/* Room forms need a real parent record, which the generic field
+                renderer cannot express: its selects carry plain strings, while
+                these need an id as the value and a name as the label. Locked
+                once the record exists — neither a category nor a price can be
+                moved to another property. */}
+              {isRoomCategoryView && (
+                <div className="space-y-1">
+                  <label className="font-bold text-gray-700 dark:text-gray-300">
+                    Ashram <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    required
+                    disabled={!!editingItem}
+                    value={
+                      formData.ashramId ||
+                      editingItem?.ashramId?._id ||
+                      ""
+                    }
+                    onChange={(e) =>
+                      setFormData({ ...formData, ashramId: e.target.value })
+                    }
+                    className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold text-[#0A4DA6] disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    <option value="">Select an ashram</option>
+                    {roomAshramOptions.map((a: any) => (
+                      <option key={String(a._id)} value={String(a._id)}>
+                        {a.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {isRoomPricingView && (
+                <div className="space-y-1">
+                  <label className="font-bold text-gray-700 dark:text-gray-300">
+                    Room Category <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    required
+                    disabled={!!editingItem}
+                    value={
+                      formData.sourceRoomId ||
+                      editingItem?.sourceRoomId ||
+                      editingItem?.roomId?._id ||
+                      ""
+                    }
+                    onChange={(e) =>
+                      setFormData({ ...formData, sourceRoomId: e.target.value })
+                    }
+                    className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold text-[#0A4DA6] disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    <option value="">Select a room category</option>
+                    {roomCategoryOptions.map((room: any) => (
+                      <option key={String(room._id)} value={String(room._id)}>
+                        {room.name}
+                        {room.ashramId?.name ? ` — ${room.ashramId.name}` : ""}
+                      </option>
+                    ))}
+                  </select>
+                  {editingItem?.priceType === "Base price" && (
+                    <p className="mt-1.5 text-[10px] font-semibold text-gray-500">
+                      This is the room's own base price. Saving updates the
+                      category's rate directly; the seasonal fields are ignored.
+                    </p>
+                  )}
                 </div>
               )}
 

@@ -1,7 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { ashramService } from "../../services";
 import { useNotifications } from "../../contexts/NotificationContext";
 import { formatCurrency } from "../../utils/format";
+import {
+  useAshramSelection,
+  ALL_ASHRAMS,
+} from "../../hooks/useAshramSelection";
 import {
   Sparkles,
   Plus,
@@ -12,6 +16,7 @@ import {
   Tag,
   ToggleLeft,
   ToggleRight,
+  Building2,
 } from "lucide-react";
 
 interface AddOnServiceItem {
@@ -24,12 +29,17 @@ interface AddOnServiceItem {
   enabled: boolean;
   iconUrl?: string;
   description?: string;
+  /**
+   * Which property this service belongs to. Add-ons are nested under an ashram
+   * rather than carrying their own reference, so under "All Ashrams" every
+   * mutation would otherwise have to guess the owner. Tagged on read.
+   */
+  ashramId?: string;
+  ashramName?: string;
 }
 
 export const OwnerAddOnsPage: React.FC = () => {
   const { addNotification, confirmAction } = useNotifications();
-  const [myAshrams, setMyAshrams] = useState<any[]>([]);
-  const [selectedAshramId, setSelectedAshramId] = useState<string>("");
   const [addOns, setAddOns] = useState<AddOnServiceItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -45,53 +55,92 @@ export const OwnerAddOnsPage: React.FC = () => {
     enabled: true,
     description: "",
   });
+  // The modal's ashram, kept apart from the page filter: the filter may hold
+  // the "all" sentinel, which is not a property a service can be created under.
+  const [formAshramId, setFormAshramId] = useState("");
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    fetchAshrams();
+  const notifyRef = useRef(addNotification);
+  notifyRef.current = addNotification;
+
+  // Same selection rules as Manage Rooms and the Inventory Calendar: the
+  // current view is preserved across re-fetches, the choice survives a reload,
+  // and a first visit opens on every property rather than one empty one.
+  const {
+    ashrams: myAshrams,
+    selectedAshramId,
+    setSelectedAshramId,
+    loadingAshrams,
+    targetAshrams,
+    isAllSelected,
+  } = useAshramSelection({
+    storageKey: "tirvona:addons-ashram-filter",
+    allowAll: true,
+    onError: () =>
+      notifyRef.current("Unable to load your ashrams.", "error"),
+  });
+
+  const targetsRef = useRef<any[]>([]);
+  targetsRef.current = targetAshrams;
+
+  const fetchAddOns = useCallback(async () => {
+    setLoading(true);
+    try {
+      // Add-ons live under one ashram each, so "All Ashrams" is a client-side
+      // fan-out. Failures are counted rather than thrown, so one unreachable
+      // property does not blank out the services that did load.
+      const targets = targetsRef.current;
+      const results = await Promise.allSettled(
+        targets.map((a: any) => ashramService.getAddOns(a._id)),
+      );
+      const merged: AddOnServiceItem[] = [];
+      let failures = 0;
+      results.forEach((result, index) => {
+        if (result.status !== "fulfilled" || !result.value.data?.success) {
+          failures += 1;
+          return;
+        }
+        const owner = targets[index];
+        (result.value.data.data || []).forEach((item: AddOnServiceItem) =>
+          merged.push({
+            ...item,
+            ashramId: owner._id,
+            ashramName: owner.name,
+          }),
+        );
+      });
+      setAddOns(merged);
+      if (failures > 0)
+        notifyRef.current(
+          `Could not load add-on services for ${failures} ashram(s).`,
+          "error",
+        );
+    } catch (err) {
+      console.error("Fetch add-ons error:", err);
+      setAddOns([]);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
-    if (selectedAshramId) {
-      fetchAddOns(selectedAshramId);
-    }
-  }, [selectedAshramId]);
-
-  const fetchAshrams = async () => {
-    setLoading(true);
-    try {
-      const res = await ashramService.myListings();
-      if (
-        res.data?.success &&
-        Array.isArray(res.data.data) &&
-        res.data.data.length > 0
-      ) {
-        setMyAshrams(res.data.data);
-        setSelectedAshramId(res.data.data[0]._id);
-      }
-    } catch (err) {
-      console.error("Fetch ashrams error:", err);
-    } finally {
+    if (!selectedAshramId) {
+      setAddOns([]);
       setLoading(false);
+      return;
     }
-  };
-
-  const fetchAddOns = async (ashramId: string) => {
-    setLoading(true);
-    try {
-      const res = await ashramService.getAddOns(ashramId);
-      if (res.data?.success) {
-        setAddOns(res.data.data);
-      }
-    } catch (err) {
-      console.error("Fetch add-ons error:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    fetchAddOns();
+  }, [selectedAshramId, fetchAddOns]);
 
   const handleOpenAddModal = () => {
     setEditingItem(null);
+    // A new service needs a real ashram; under "All Ashrams" there is none in
+    // view, so the form opens on the first and the admin can switch it.
+    setFormAshramId(
+      selectedAshramId && selectedAshramId !== ALL_ASHRAMS
+        ? selectedAshramId
+        : myAshrams[0]?._id || "",
+    );
     setFormData({
       name: "",
       price: 50,
@@ -106,6 +155,9 @@ export const OwnerAddOnsPage: React.FC = () => {
 
   const handleOpenEditModal = (item: AddOnServiceItem) => {
     setEditingItem(item);
+    // The service's own ashram, not the page filter — under "All Ashrams" the
+    // two differ, and the update must be addressed to the right property.
+    setFormAshramId(String(item.ashramId || selectedAshramId || ""));
     setFormData({ ...item });
     setModalOpen(true);
   };
@@ -120,24 +172,34 @@ export const OwnerAddOnsPage: React.FC = () => {
 
     setSaving(true);
     try {
+      // Addressed to the form's ashram, never the page filter. The endpoints
+      // answer with that one property's services, so the list is re-fetched
+      // rather than replaced — under "All Ashrams" a direct swap would drop
+      // every other property's services from the view.
       if (editingItem?._id) {
         const res = await ashramService.updateAddOn(
-          selectedAshramId,
+          formAshramId,
           editingItem._id,
           formData,
         );
-        if (res.data?.success) {
-          setAddOns(res.data.data);
+        if (res.data?.success)
           addNotification("Add-On service updated successfully.", "success");
-        }
       } else {
-        const res = await ashramService.createAddOn(selectedAshramId, formData);
-        if (res.data?.success) {
-          setAddOns(res.data.data);
+        const res = await ashramService.createAddOn(formAshramId, formData);
+        if (res.data?.success)
           addNotification("Add-On service created successfully.", "success");
-        }
       }
       setModalOpen(false);
+      // Creating into a property the page is not showing would otherwise save
+      // out of sight, so the view follows it. Editing never moves the filter.
+      if (
+        !editingItem &&
+        selectedAshramId !== ALL_ASHRAMS &&
+        formAshramId &&
+        formAshramId !== selectedAshramId
+      )
+        setSelectedAshramId(formAshramId);
+      else fetchAddOns();
     } catch (err: any) {
       console.error("Save add-on error:", err);
       addNotification(
@@ -150,33 +212,36 @@ export const OwnerAddOnsPage: React.FC = () => {
   };
 
   const handleToggleEnable = async (item: AddOnServiceItem) => {
-    if (!selectedAshramId || !item._id) return;
+    // The service's own ashram — under "All Ashrams" the page filter is not a
+    // property at all, and toggling used to address the wrong one.
+    const ownerId = item.ashramId || selectedAshramId;
+    if (!ownerId || ownerId === ALL_ASHRAMS || !item._id) return;
     try {
-      const updated = { ...item, enabled: !item.enabled };
-      const res = await ashramService.updateAddOn(selectedAshramId, item._id, {
+      const res = await ashramService.updateAddOn(ownerId, item._id, {
         enabled: !item.enabled,
       });
       if (res.data?.success) {
-        setAddOns(res.data.data);
         addNotification(
           `Service ${!item.enabled ? "enabled" : "disabled"}`,
           "info",
         );
+        fetchAddOns();
       }
     } catch (err) {
       console.error("Toggle enable error:", err);
     }
   };
 
-  const handleDeleteService = async (serviceId: string) => {
-    if (!selectedAshramId || !serviceId) return;
+  const handleDeleteService = async (item: AddOnServiceItem) => {
+    const ownerId = item.ashramId || selectedAshramId;
+    if (!ownerId || ownerId === ALL_ASHRAMS || !item._id) return;
     if (!(await confirmAction({ title: "Delete add-on service?", message: "Visitors will no longer be able to select this service.", confirmLabel: "Delete Service", tone: "danger" }))) return;
 
     try {
-      const res = await ashramService.deleteAddOn(selectedAshramId, serviceId);
+      const res = await ashramService.deleteAddOn(ownerId, item._id);
       if (res.data?.success) {
-        setAddOns(res.data.data);
         addNotification("Add-On service deleted.", "success");
+        fetchAddOns();
       }
     } catch (err: any) {
       console.error("Delete add-on error:", err);
@@ -208,8 +273,16 @@ export const OwnerAddOnsPage: React.FC = () => {
               <select
                 value={selectedAshramId}
                 onChange={(e) => setSelectedAshramId(e.target.value)}
+                aria-label="Select ashram"
                 className="bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-bold text-[#0B192C] dark:text-white focus:outline-none cursor-pointer"
               >
+                {/* Every property's services in one list, so an owner can
+                  review them without stepping through ashrams one at a time. */}
+                {myAshrams.length > 1 && (
+                  <option value={ALL_ASHRAMS}>
+                    All Ashrams ({myAshrams.length})
+                  </option>
+                )}
                 {myAshrams.map((a) => (
                   <option key={a._id} value={a._id}>
                     {a.name}
@@ -230,7 +303,7 @@ export const OwnerAddOnsPage: React.FC = () => {
       </div>
 
       {/* Services Grid */}
-      {loading ? (
+      {loadingAshrams || loading ? (
         <div className="h-64 bg-gray-50 dark:bg-slate-900 rounded-3xl animate-pulse" />
       ) : addOns.length === 0 ? (
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-12 text-center space-y-3 shadow-sm">
@@ -265,6 +338,13 @@ export const OwnerAddOnsPage: React.FC = () => {
                   <span className="text-[10px] font-extrabold text-[#0A4DA6] bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded-md mt-1 inline-block">
                     {formatCurrency(item.price)} / {item.unitLabel || "Unit"}
                   </span>
+                  {/* Only under "All Ashrams", where two properties can easily
+                    offer a service of the same name. */}
+                  {isAllSelected && item.ashramName && (
+                    <span className="mt-1 flex items-center gap-1 text-[9px] font-bold text-gray-400">
+                      <Building2 size={10} /> {item.ashramName}
+                    </span>
+                  )}
                 </div>
 
                 <button
@@ -303,7 +383,7 @@ export const OwnerAddOnsPage: React.FC = () => {
                   {item._id && (
                     <button
                       type="button"
-                      onClick={() => handleDeleteService(item._id!)}
+                      onClick={() => handleDeleteService(item)}
                       className="p-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg text-rose-500 transition-all cursor-pointer"
                     >
                       <Trash2 size={14} />
@@ -337,6 +417,31 @@ export const OwnerAddOnsPage: React.FC = () => {
               onSubmit={handleSaveService}
               className="space-y-4 text-xs font-semibold"
             >
+              {/* Bound to the form's own ashram, never the page filter. Locked
+                while editing: a service belongs to the property it was created
+                under, and the update endpoint is addressed by that id. */}
+              <div className="space-y-1">
+                <label
+                  htmlFor="addon-ashram"
+                  className="text-[10px] font-extrabold text-gray-400"
+                >
+                  Ashram *
+                </label>
+                <select
+                  id="addon-ashram"
+                  value={formAshramId}
+                  onChange={(e) => setFormAshramId(e.target.value)}
+                  disabled={!!editingItem}
+                  className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0A4DA6] disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {myAshrams.map((a) => (
+                    <option key={a._id} value={a._id}>
+                      {a.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div className="space-y-1">
                 <label className="text-[10px] font-extrabold text-gray-400">
                   Service Name *

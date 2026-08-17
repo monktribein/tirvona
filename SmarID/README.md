@@ -48,24 +48,34 @@ development.
 ## Deployment — the one thing to get right
 
 The QR codes encode `https://www.tirvona.com/c/{slug}` and that URL is
-**permanent** (spec §2), so `/c/*` has to answer on the main host.
+**permanent** (spec §2), so `/c/*` has to answer on the main host. Profiles are
+also served from the bare site root (`/{slug}`), which is the current scheme —
+`/c/` is kept alive for QR codes already in print.
 
-**This is wired up already.** `frontend`'s `npm run build` runs
+**The build is wired up already.** `frontend`'s `npm run build` runs
 [`scripts/build-smart-contact.mjs`](../frontend/scripts/build-smart-contact.mjs),
-which builds this app and copies its output into `frontend/dist/c/`. One
+which builds this app and copies its output next to the SPA's as
+`frontend/dist/smart-contact.html`, with assets in `dist/sc-assets/`. One
 deployment then serves both: no proxy hop, no second CORS origin, one
-certificate. `vite.config.js` sets `base: "/c/"` so the assets emit at
-`/c/assets/*` to match.
+certificate. `vite.config.js` sets `base: "/"` and `assetsDir: "sc-assets"` so
+the two builds never merge into one `assets/` directory.
 
-The routing rule that makes it resolve is declared **before** the SPA catch-all
-in both host configs — order matters, or the catch-all swallows every scanned
-QR and renders the marketing homepage:
+**The routing is per-host, and it is the part that breaks.** The rule must be
+declared *before* the SPA catch-all, or the catch-all swallows every scanned QR
+and renders the marketing homepage:
 
-- Vercel — [`frontend/vercel.json`](../frontend/vercel.json): `/c/(.*)` → `/c/index.html`
-- Render — [`render.yaml`](../render.yaml): `/c/*` → `/c/index.html`
+- nginx / VPS — [`deploy/nginx/tirvona-web.conf`](../deploy/nginx/tirvona-web.conf): `location ^~ /c/` → `smart-contact.html` **(current production)**
+- Vercel — [`frontend/vercel.json`](../frontend/vercel.json): `/c/:slug` → `/smart-contact.html`
+- Render — [`render.yaml`](../render.yaml): `/c/:slug` → `/smart-contact.html`
 
-Real files are served from the filesystem before rewrites are consulted, so
-`/c/assets/*` resolves normally and only slugs hit the rule.
+This exact failure has happened once: production moved to a VPS and neither
+`vercel.json` nor `render.yaml` is read by nginx, so `/c/{slug}` fell through
+to the SPA and every profile rendered the homepage. `npm run check:routes` now
+validates the nginx snippet too, but the snippet still has to be *installed* on
+the host — see the header of that file.
+
+Real files are served from the filesystem before the fallback applies, so
+`/sc-assets/*` resolves normally and only slugs hit the rule.
 
 `VITE_API_URL` is inherited from the parent build, and the main app already
 sets it — so there is nothing extra to configure.
