@@ -52,7 +52,22 @@ jobs:
             sudo systemctl reload nginx
 
             echo "=== Health Check ==="
-            curl -f https://api.tirvona.com/api/health
+
+            for i in {1..12}; do
+              if curl -fsS https://api.tirvona.com/api/health; then
+                echo ""
+                echo "=== API is healthy ==="
+                break
+              fi
+
+              if [ "$i" -eq 12 ]; then
+                echo "=== API health check failed after 12 attempts ==="
+                exit 1
+              fi
+
+              echo "Health check failed. Attempt $i/12. Waiting 5 seconds..."
+              sleep 5
+            done
 
             echo "================================"
             echo "Tirvona deployment successful"
