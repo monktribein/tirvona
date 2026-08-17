@@ -37,6 +37,7 @@ import type {
   CreateBookingDto,
   UpdateBookingStatusDto,
 } from "../presentation/dtos/booking.dto";
+import { BookingIdentityService } from "./booking-identity.service";
 import { BookingPricingService } from "./booking-pricing.service";
 
 @Injectable()
@@ -45,6 +46,7 @@ export class BookingsService {
     @Inject(BOOKING_REPOSITORY) private readonly repository: BookingRepository,
     private readonly transactions: TransactionService,
     private readonly pricing: BookingPricingService,
+    private readonly identity: BookingIdentityService,
     private readonly config: ConfigService,
     @InjectModel("Booking") private readonly bookings: Model<any>,
     @InjectModel("BookingStatusHistory") private readonly history: Model<any>,
@@ -210,11 +212,18 @@ export class BookingsService {
         if (!reserved.modifiedCount)
           throw new ConflictException("This offer is no longer available");
       }
+      // Issued inside the session so the visitor number is committed with the
+      // booking and released if this transaction aborts or is retried.
+      const identityCode = await this.identity.issueForBooking(
+        dto.ashramId,
+        session,
+      );
       const [created] = await this.bookings.create(
         [
           {
             bookingId: bookingReference(),
             reservationNumber: reservationReference(),
+            identityCode,
             customerId: user.id,
             ashramId: dto.ashramId,
             roomId: dto.roomId,

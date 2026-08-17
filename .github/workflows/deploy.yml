@@ -1,0 +1,59 @@
+name: Deploy Tirvona
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy Production
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            set -e
+
+            echo "================================"
+            echo "Starting Tirvona deployment"
+            echo "================================"
+
+            cd /var/www/tirvona
+
+            echo "=== Updating repository ==="
+            git fetch origin
+            git checkout main
+            git reset --hard origin/main
+
+            echo "=== Backend ==="
+            cd /var/www/tirvona/Newbackend
+            npm ci
+            npm run build
+
+            echo "=== Frontend ==="
+            cd /var/www/tirvona/frontend
+            npm ci
+            npm run build
+
+            echo "=== Restarting API ==="
+            pm2 restart tirvona-api --update-env
+
+            echo "=== Validating Nginx ==="
+            sudo nginx -t
+
+            echo "=== Reloading Nginx ==="
+            sudo systemctl reload nginx
+
+            echo "=== Health Check ==="
+            curl -f https://api.tirvona.com/api/health
+
+            echo "================================"
+            echo "Tirvona deployment successful"
+            echo "================================"

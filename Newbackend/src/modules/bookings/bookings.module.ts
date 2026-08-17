@@ -8,7 +8,13 @@ import { OffersService } from "./application/offers.service";
 import { ReviewsService } from "./application/reviews.service";
 import { BookingMaintenanceService } from "./application/booking-maintenance.service";
 import { BookingFinanceService } from "./application/booking-finance.service";
+import { BookingIdentityService } from "./application/booking-identity.service";
 import { BookingFinanceController } from "./presentation/booking-finance.controller";
+import { BookingIdentityController } from "./presentation/booking-identity.controller";
+import {
+  BookingIdentityCounterSchema,
+  BookingIdentityPropertySchema,
+} from "./infrastructure/persistence/booking-identity.schemas";
 import { BOOKING_REPOSITORY } from "./domain/booking.repository";
 import {
   BookingCommissionSchema,
@@ -72,6 +78,8 @@ const models = [
   ["BookingHoliday", BookingHolidaySchema],
   ["BookingAuditLog", BookingAuditLogSchema],
   ["BookingReport", BookingReportSchema],
+  ["BookingIdentityProperty", BookingIdentityPropertySchema],
+  ["BookingIdentityCounter", BookingIdentityCounterSchema],
 ].map(([name, schema]) => ({ name: name as string, schema: schema as any }));
 
 @Module({
@@ -85,9 +93,11 @@ const models = [
     OffersController,
     ReviewsController,
     BookingFinanceController,
+    BookingIdentityController,
   ],
   providers: [
     BookingPricingService,
+    BookingIdentityService,
     BookingsService,
     OffersService,
     ReviewsService,

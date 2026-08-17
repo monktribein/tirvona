@@ -38,6 +38,7 @@ import {
   Undo2,
   ContactRound,
   Sparkles,
+  DollarSign,
 } from "lucide-react";
 
 interface NavGroup {
@@ -211,8 +212,18 @@ export const DashboardLayout: React.FC = () => {
         { label: "Room Categories", path: "/admin/manage/rooms/all" },
         { label: "Room Availability", path: "/admin/manage/rooms/availability" },
         { label: "Room Pricing", path: "/admin/manage/rooms/pricing" },
-        { label: "Platform Pricing Rules", path: "/admin/settings/pricing" },
         { label: "Room Inventory", path: "/admin/manage/rooms/inventory" },
+      ],
+    },
+    {
+      // Its own section rather than a link under Room & Inventory: this is the
+      // platform's own fee, charged on top of whatever a property prices its
+      // rooms at, and it reaches systems beyond stays. Filed under rooms it
+      // read as a per-room setting, which is the opposite of what it is.
+      groupName: "Platform Fee & Pricing",
+      icon: <DollarSign size={15} />,
+      links: [
+        { label: "Platform Fee Settings", path: "/admin/settings/pricing" },
       ],
     },
     {
