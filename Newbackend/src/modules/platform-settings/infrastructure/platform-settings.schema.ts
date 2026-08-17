@@ -1,4 +1,8 @@
 import { Schema } from "mongoose";
+import {
+  DEFAULT_PLATFORM_FEE_SCOPES,
+  PLATFORM_FEE_SCOPE_VALUES,
+} from "../domain/platform-fee";
 export const PlatformSettingsSchema = new Schema(
   {
     key: { type: String, required: true, unique: true, default: "main" },
@@ -7,6 +11,19 @@ export const PlatformSettingsSchema = new Schema(
       type: { type: String, enum: ["flat", "percentage"], default: "flat" },
       value: { type: Number, default: 49, min: 0 },
       label: { type: String, default: "Tirvona Platform Fee" },
+      /**
+       * Booking systems this fee is levied on.
+       *
+       * A row saved before this field existed has no value here at all, which
+       * `platformFeeScopesOf` reads as the historic behaviour (ashram bookings
+       * only). An explicitly empty array means the Super Admin turned every
+       * system off and is honoured as such — the two cases are not the same.
+       */
+      appliesTo: {
+        type: [String],
+        enum: PLATFORM_FEE_SCOPE_VALUES,
+        default: () => [...DEFAULT_PLATFORM_FEE_SCOPES],
+      },
     },
     gstRate: { type: Number, default: 5, min: 0 },
     // GST charged on the platform fee. The stay itself is untaxed, so this is

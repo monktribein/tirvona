@@ -26,6 +26,11 @@ import {
 } from "../utils/bookingDraft";
 import { setGuestPendingIntent } from "../utils/guestGate";
 import { formatCurrency, roundMoney } from "../utils/format";
+import {
+  DEFAULT_PLATFORM_FEE_SCOPES,
+  platformFeeAppliesTo,
+  type PlatformFeeScope,
+} from "../constants/platformFee";
 import { GuestRoomSelector } from "../components/shared/GuestRoomSelector";
 import { GuestReviewsCarousel } from "../components/shared/GuestReviewsCarousel";
 import WriteReviewCard from "../components/shared/WriteReviewCard";
@@ -610,11 +615,13 @@ export const AshramDetailPage: React.FC = () => {
     type: "flat" | "percentage";
     value: number;
     label: string;
+    appliesTo?: PlatformFeeScope[];
   }>({
     enabled: true,
     type: "flat",
     value: 49,
     label: "Tirvona Platform Fee",
+    appliesTo: DEFAULT_PLATFORM_FEE_SCOPES,
   });
 
   // GST rate applied to the platform fee. Defaults to the same 18% the server
@@ -637,7 +644,13 @@ export const AshramDetailPage: React.FC = () => {
 
   const extraGuestCalc = adults > 2 ? (adults - 2) * 200 * daysCount : 0;
   const loyaltyCalc = useLoyalty ? 100 : 0;
-  const platformFeeCalc = !platformSettings.enabled
+  // Gated on the same switch and scope list the server quote uses. Testing
+  // `enabled` alone was not enough: a stay could still be quoted a fee here
+  // that checkout would not charge once Ashram Bookings was deselected.
+  const platformFeeCalc = !platformFeeAppliesTo(
+    platformSettings,
+    "ashram_booking",
+  )
     ? 0
     : platformSettings.type === "percentage"
       ? Math.round((subtotalCalc * platformSettings.value) / 100)

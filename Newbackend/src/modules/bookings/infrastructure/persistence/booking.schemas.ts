@@ -1,4 +1,5 @@
 import { Schema, SchemaTypes } from "mongoose";
+import { IDENTITY_CODE_PATTERN } from "../../domain/identity-code";
 const id = (ref: string, required = false) => ({
   type: SchemaTypes.ObjectId,
   ref,
@@ -15,6 +16,26 @@ export const BookingSchema = new Schema(
   {
     bookingId: { type: String, required: true, unique: true },
     reservationNumber: { type: String, unique: true, sparse: true },
+    /**
+     * Ashram Booking Unique Identity Code — `CCPT-PPPPP-VXXXX`.
+     *
+     * `immutable`, so Mongoose strips it from any later update: a code handed
+     * to a guest is never rewritten. `sparse`, because bookings created before
+     * this field existed carry no code and a plain unique index over their
+     * missing values would admit exactly one such row platform-wide.
+     *
+     * Not `required` for the same reason — the existing corpus stays valid and
+     * every existing read path keeps working untouched.
+     */
+    identityCode: {
+      type: String,
+      unique: true,
+      sparse: true,
+      immutable: true,
+      uppercase: true,
+      trim: true,
+      match: IDENTITY_CODE_PATTERN,
+    },
     customerId: id("User", true),
     ashramId: id("Ashram", true),
     roomId: id("Room", true),

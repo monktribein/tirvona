@@ -1,7 +1,9 @@
 import {
+  ArrayUnique,
+  IsArray,
   IsBoolean,
+  IsIn,
   IsNumber,
-  IsObject,
   IsOptional,
   IsString,
   Matches,
@@ -11,6 +13,35 @@ import {
   ValidateNested,
 } from "class-validator";
 import { Type } from "class-transformer";
+import {
+  PLATFORM_FEE_SCOPE_VALUES,
+  type PlatformFeeScope,
+} from "../domain/platform-fee";
+
+/**
+ * The fee engine's configuration.
+ *
+ * Previously a bare `@IsObject()`, which meant none of these fields were
+ * validated at all: `type` accepted any string and `value` accepted any type,
+ * so a malformed save could silently park a value the pricing path could not
+ * interpret. `@ValidateNested` gives the inner fields the same guarantees the
+ * rest of the payload already had.
+ */
+export class PlatformFeeDto {
+  @IsOptional() @IsBoolean() enabled?: boolean;
+  @IsOptional() @IsIn(["flat", "percentage"]) type?: "flat" | "percentage";
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(0) value?: number;
+  @IsOptional() @IsString() @MaxLength(120) label?: string;
+  /**
+   * Booking systems the fee is levied on. An empty array is meaningful — it
+   * turns the fee off everywhere without discarding the configured amount.
+   */
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique()
+  @IsIn(PLATFORM_FEE_SCOPE_VALUES, { each: true })
+  appliesTo?: PlatformFeeScope[];
+}
 
 export class NotificationSoundDto {
   @IsOptional() @IsBoolean() enabled?: boolean;
@@ -31,12 +62,10 @@ export class NotificationSoundDto {
 }
 
 export class UpdatePlatformSettingsDto {
-  @IsOptional() @IsObject() platformFee?: {
-    enabled?: boolean;
-    type?: "flat" | "percentage";
-    value?: number;
-    label?: string;
-  };
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => PlatformFeeDto)
+  platformFee?: PlatformFeeDto;
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) gstRate?: number;
   /** GST on the platform fee. The stay itself is never taxed. */
   @IsOptional()
