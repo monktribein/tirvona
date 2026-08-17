@@ -283,18 +283,49 @@ export const housekeepingService = {
 };
 
 // ── Uploads (Cloudinary) ─────────────────────────────────────────────────────
+
+/**
+ * Mirrors `UploadsService.SIZE_LIMITS` on the server. Checked here as well so
+ * an oversized file is refused instantly with the reason, rather than after a
+ * long upload that the browser can only report as a transport failure.
+ */
+const UPLOAD_IMAGE_LIMIT_BYTES = 10 * 1024 * 1024;
+const UPLOAD_MAX_BYTES = 100 * 1024 * 1024;
+
 export const uploadService = {
   // Uploads a single File and resolves to the secure Cloudinary URL.
   file: async (file: File, folder = "uploads"): Promise<string> => {
+    const megabytes = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+    const isImage = file.type.startsWith("image/");
+    const limit = isImage ? UPLOAD_IMAGE_LIMIT_BYTES : UPLOAD_MAX_BYTES;
+    if (file.size > limit)
+      throw new Error(
+        `That ${isImage ? "image" : "file"} is ${megabytes(file.size)}. The limit is ${megabytes(limit)}.`,
+      );
+
     const form = new FormData();
     form.append("file", file);
     form.append("folder", folder);
-    // Let axios set the multipart Content-Type with the correct boundary.
-    const res = await api.post("/uploads", form);
-    if (!res.data?.success) {
-      throw new Error(res.data?.message || "Upload failed");
+    try {
+      // Let axios set the multipart Content-Type with the correct boundary.
+      const res = await api.post("/uploads", form);
+      if (!res.data?.success) {
+        throw new Error(res.data?.message || "Upload failed");
+      }
+      return res.data.data.url as string;
+    } catch (err: any) {
+      // A 413 is answered by the reverse proxy, not the app, so its response
+      // carries no CORS headers and the browser hands JavaScript a bare
+      // "Network Error" with no status at all. Both shapes are translated here
+      // into something that names the actual problem.
+      const status = err?.response?.status;
+      if (status === 413 || (!status && err?.message === "Network Error"))
+        throw new Error(
+          `Upload rejected — the file may be too large for the server to accept (${megabytes(file.size)}). ` +
+            "If it is well under the limit, check your connection and try again.",
+        );
+      throw err;
     }
-    return res.data.data.url as string;
   },
 };
 
