@@ -45,6 +45,40 @@ jobs:
             echo "=== Restarting API ==="
             pm2 restart tirvona-api --update-env
 
+            echo "=== Installing Nginx routing ==="
+            # Smart Contact profiles live at /c/{slug} and /{slug} on the main
+            # host. Vercel and Render expressed that routing in their own
+            # config; nginx reads neither, so moving to this VPS silently sent
+            # every scanned QR to the SPA and rendered the homepage. The rules
+            # now ship with the repo and are installed on each deploy.
+            sudo install -D -m 0644 \
+              /var/www/tirvona/deploy/nginx/tirvona-web.conf \
+              /etc/nginx/snippets/tirvona-web.conf
+
+            # The snippet only takes effect once the server block includes it.
+            # That include is a one-time manual edit — this deploy cannot make
+            # it safely without rewriting a config holding the TLS certificate
+            # and the api.tirvona.com proxy.
+            # Matches a real `include` directive anywhere under /etc/nginx, so
+            # this works on both sites-enabled and conf.d layouts. Anchored on
+            # the directive rather than the filename, because the snippet's own
+            # header comment shows the include line and would match otherwise.
+            if ! sudo grep -rEq '^[[:space:]]*include[[:space:]].*tirvona-web\.conf' /etc/nginx/; then
+              echo ""
+              echo "############################################################"
+              echo "# WARNING: Smart Contact routing is NOT active yet."
+              echo "#"
+              echo "# Add this line inside the server block for www.tirvona.com"
+              echo "# (usually /etc/nginx/sites-available/tirvona), then reload:"
+              echo "#"
+              echo "#     include /etc/nginx/snippets/tirvona-web.conf;"
+              echo "#"
+              echo "# Until then https://www.tirvona.com/c/{slug} keeps serving"
+              echo "# the homepage instead of the identity card."
+              echo "############################################################"
+              echo ""
+            fi
+
             echo "=== Validating Nginx ==="
             sudo nginx -t
 
@@ -68,6 +102,24 @@ jobs:
               echo "Health check failed. Attempt $i/12. Waiting 5 seconds..."
               sleep 5
             done
+
+            echo "=== Smart Contact Routing Check ==="
+
+            # The two builds emit to different asset directories precisely so
+            # they can be told apart: /sc-assets is the identity card, /assets
+            # is the marketing SPA. Any slug works here — a profile that does
+            # not exist still renders from the Smart Contact bundle.
+            if curl -fsS https://www.tirvona.com/c/_deploy_check | grep -q "/sc-assets/"; then
+              echo "=== /c/{slug} correctly serves the Smart Contact page ==="
+            else
+              echo ""
+              echo "############################################################"
+              echo "# WARNING: /c/{slug} is serving the main SPA, not the"
+              echo "# Smart Contact page. Scanned QR codes will show the"
+              echo "# homepage. See the Nginx routing warning above."
+              echo "############################################################"
+              echo ""
+            fi
 
             echo "================================"
             echo "Tirvona deployment successful"

@@ -746,8 +746,11 @@ export class GovernanceService {
             roomId: { _id: room._id, name: room.name },
             name: rule.name || "Seasonal room price",
             priceType: "Seasonal price",
-            validFrom: rule.startDate,
-            validUntil: rule.endDate,
+            // Sent as plain calendar dates: the console edits these in a
+            // `<input type="date">`, which silently renders blank for a full
+            // ISO timestamp and so lost the dates on every save.
+            validFrom: GovernanceService.toDateOnly(rule.startDate),
+            validUntil: GovernanceService.toDateOnly(rule.endDate),
             multiplier: Number(rule.multiplier ?? 1),
             overridePrice:
               rule.overridePrice == null
@@ -809,6 +812,24 @@ export class GovernanceService {
         : undefined;
     if (name === "Admin_blogs") payload = this.normalizeBlogPayload(user, payload);
 
+    // The pricing view is assembled, not stored: a room's own `basePrice` and
+    // each entry of its `pricingRules` array are presented as rows alongside
+    // the real `room_pricing` documents. Those synthetic rows carry a composite
+    // id rather than an ObjectId, so the generic branch below would read them
+    // as brand-new records and insert junk. They are written back to the room
+    // they came from instead.
+    if (name === "Admin_room_pricing") {
+      const target = this.parseRoomPricingRowId(body._id);
+      if (target || body.sourceRoomId)
+        return this.saveRoomPricingRow(target, body, payload);
+    }
+
+    // Booked and held units belong to the booking engine — a hold is written by
+    // the reservation flow and read back to decide whether a night can still be
+    // sold. Letting the console set them directly would oversell a room.
+    if (name === "Admin_room_inventory")
+      payload = await this.sanitizeRoomInventoryPayload(id, payload);
+
     if (name === "Admin_parking_locations") {
       const photos = new Set(
         [
@@ -869,6 +890,164 @@ export class GovernanceService {
       message: id ? "Record saved successfully" : "Record created successfully",
       data: this.redact(data),
     };
+  }
+
+  /**
+   * Splits a synthetic pricing row id back into the room it was derived from.
+   *
+   * `base:<roomId>` is a room's own `basePrice`; `embedded:<roomId>:<ruleId>`
+   * is one entry of that room's `pricingRules` array. Anything else — a real
+   * `room_pricing` document id, or nothing at all — returns null and takes the
+   * ordinary path.
+   */
+  private parseRoomPricingRowId(
+    value: unknown,
+  ): { kind: "base" | "embedded"; roomId: string; ruleId?: string } | null {
+    if (typeof value !== "string") return null;
+    const [kind, roomId, ruleId] = value.split(":");
+    if (kind === "base" && Types.ObjectId.isValid(roomId ?? ""))
+      return { kind: "base", roomId };
+    if (kind === "embedded" && Types.ObjectId.isValid(roomId ?? ""))
+      return { kind: "embedded", roomId, ruleId };
+    return null;
+  }
+
+  private static toOptionalDate(value: unknown): Date | undefined {
+    if (value === undefined || value === null || value === "") return undefined;
+    const date = new Date(value as string);
+    return Number.isNaN(date.getTime()) ? undefined : date;
+  }
+
+  /** `YYYY-MM-DD`, the only shape a date input will pre-fill from. */
+  private static toDateOnly(value: unknown): string | undefined {
+    const date = GovernanceService.toOptionalDate(value);
+    return date ? date.toISOString().slice(0, 10) : undefined;
+  }
+
+  /**
+   * Writes a pricing row back to the room that produced it.
+   *
+   * A base row edits `basePrice` on the room itself. An embedded row edits one
+   * seasonal rule in place. With no target at all — but a `sourceRoomId` — a
+   * new seasonal rule is appended, which is how the console creates one.
+   */
+  private async saveRoomPricingRow(
+    target: { kind: "base" | "embedded"; roomId: string; ruleId?: string } | null,
+    body: Record<string, unknown>,
+    payload: Record<string, unknown>,
+  ): Promise<any> {
+    const roomId =
+      target?.roomId ??
+      (typeof body.sourceRoomId === "string" ? body.sourceRoomId : "");
+    if (!Types.ObjectId.isValid(roomId))
+      throw new BadRequestException(
+        "This pricing row is not linked to a room category",
+      );
+    const room = await this.repository.one("Admin_rooms", { _id: roomId });
+    if (!room) throw new NotFoundException("Room category not found");
+
+    const price = Number(payload.overridePrice);
+    const multiplier = Number(payload.multiplier);
+
+    if (target?.kind === "base") {
+      if (!Number.isFinite(price) || price < 0)
+        throw new BadRequestException(
+          "A base room price must be zero or more",
+        );
+      const data = await this.repository.update(
+        "Admin_rooms",
+        { _id: roomId },
+        { $set: { basePrice: price } },
+      );
+      return {
+        success: true,
+        message: "Base room price updated successfully",
+        data: this.redact(data),
+      };
+    }
+
+    const rules = Array.isArray(room.pricingRules) ? [...room.pricingRules] : [];
+    const rule = {
+      name: String(payload.name ?? "").trim() || "Seasonal room price",
+      startDate: GovernanceService.toOptionalDate(payload.validFrom),
+      endDate: GovernanceService.toOptionalDate(payload.validUntil),
+      multiplier: Number.isFinite(multiplier) && multiplier > 0 ? multiplier : 1,
+      // Left unset when blank so the multiplier applies to the base price,
+      // which is what an empty effective price means in the listing.
+      overridePrice: Number.isFinite(price) && price > 0 ? price : undefined,
+    };
+    if (
+      rule.startDate &&
+      rule.endDate &&
+      rule.startDate.getTime() > rule.endDate.getTime()
+    )
+      throw new BadRequestException(
+        "A seasonal price cannot end before it starts",
+      );
+
+    const index = target?.ruleId
+      ? rules.findIndex(
+          (entry: any, position: number) =>
+            String(entry?._id ?? position) === String(target.ruleId),
+        )
+      : -1;
+    if (target?.kind === "embedded" && index === -1)
+      throw new NotFoundException("Seasonal price rule not found");
+
+    if (index >= 0) rules[index] = { ...rules[index], ...rule };
+    else rules.push(rule);
+
+    const data = await this.repository.update(
+      "Admin_rooms",
+      { _id: roomId },
+      { $set: { pricingRules: rules } },
+    );
+    return {
+      success: true,
+      message:
+        index >= 0
+          ? "Seasonal price updated successfully"
+          : "Seasonal price created successfully",
+      data: this.redact(data),
+    };
+  }
+
+  /**
+   * Keeps a console inventory edit inside what the booking engine allows.
+   *
+   * Mirrors the rule the owner's own availability endpoint enforces: blocked
+   * units plus everything already sold or held can never exceed the room's
+   * capacity for that night, or the next booking oversells it.
+   */
+  private async sanitizeRoomInventoryPayload(
+    id: string | undefined,
+    payload: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
+    const cleaned = { ...payload };
+    delete cleaned.bookedCount;
+    delete cleaned.heldCount;
+
+    if (cleaned.maintenanceCount === undefined) return cleaned;
+    const maintenance = Number(cleaned.maintenanceCount);
+    if (!Number.isFinite(maintenance) || maintenance < 0)
+      throw new BadRequestException(
+        "Blocked units must be zero or more",
+      );
+    cleaned.maintenanceCount = maintenance;
+
+    if (!id) return cleaned;
+    const row = await this.repository.one("Admin_room_inventory", { _id: id });
+    if (!row) return cleaned;
+    const committed =
+      Number(row.bookedCount ?? 0) + Number(row.heldCount ?? 0);
+    const capacity = Number(
+      cleaned.totalInventory ?? row.totalInventory ?? 0,
+    );
+    if (committed + maintenance > capacity)
+      throw new BadRequestException(
+        `Only ${Math.max(0, capacity - committed)} unit(s) can be blocked on this date; the rest are already booked or held.`,
+      );
+    return cleaned;
   }
 
   /**
@@ -1010,6 +1189,36 @@ export class GovernanceService {
   ): Promise<any> {
     this.assertAdminModuleAccess(user, moduleKey, subKey, true);
     const name = this.adminModel(moduleKey, subKey);
+
+    // Synthetic pricing rows live inside their room, so they are removed from
+    // it rather than deleted from a collection of their own.
+    if (name === "Admin_room_pricing") {
+      const target = this.parseRoomPricingRowId(id);
+      if (target?.kind === "base")
+        throw new BadRequestException(
+          "A room's base price cannot be removed — edit it, or delete the room category itself",
+        );
+      if (target?.kind === "embedded") {
+        const room = await this.repository.one("Admin_rooms", {
+          _id: target.roomId,
+        });
+        if (!room) throw new NotFoundException("Room category not found");
+        const rules = Array.isArray(room.pricingRules) ? room.pricingRules : [];
+        const remaining = rules.filter(
+          (entry: any, position: number) =>
+            String(entry?._id ?? position) !== String(target.ruleId),
+        );
+        if (remaining.length === rules.length)
+          throw new NotFoundException("Seasonal price rule not found");
+        await this.repository.update(
+          "Admin_rooms",
+          { _id: target.roomId },
+          { $set: { pricingRules: remaining } },
+        );
+        return { success: true, message: "Seasonal price removed" };
+      }
+    }
+
     if (name === "Admin_users" && user.role !== "super_admin")
       throw new ForbiddenException(
         "Only a Super Admin can delete user accounts",
