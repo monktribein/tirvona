@@ -8,7 +8,11 @@ import type { SmartContactAuditService } from "./smart-contact-audit.service";
  * suspended representative's phone number.
  */
 describe("SmartContactProfilesService", () => {
+  // The QR-code and event models are only reached by `deleteMany`, which
+  // these tests never call — the pure logic below touches none of them.
   const service = new SmartContactProfilesService(
+    {} as never,
+    {} as never,
     {} as never,
     {} as unknown as SmartContactAuditService,
   );

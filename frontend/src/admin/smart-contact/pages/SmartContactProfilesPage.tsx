@@ -15,6 +15,7 @@ import {
 } from "../../shared";
 import { ProfileFormModal } from "../components/ProfileFormModal";
 import {
+  AlertTriangle,
   ContactRound,
   Copy,
   ExternalLink,
@@ -24,6 +25,7 @@ import {
   QrCode,
   RefreshCw,
   Search,
+  Trash2,
 } from "lucide-react";
 
 const STATUS_TABS: { label: string; value: SmartContactStatus | ""; key: string }[] =
@@ -77,6 +79,12 @@ export const SmartContactProfilesPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [creating, setCreating] = useState(false);
+  // Bulk deletion. Held as a Set of ids rather than a flag on each row so the
+  // selection survives a re-fetch, and pruned against the rows actually on
+  // screen before it is ever sent.
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const limit = 20;
   const pages = Math.max(1, Math.ceil(total / limit));
@@ -135,6 +143,49 @@ export const SmartContactProfilesPage: React.FC = () => {
   useEffect(() => {
     void loadStats();
   }, [loadStats]);
+
+  // Only ever act on rows the current filter and page actually show, so a
+  // stale id left over from an earlier view can never be deleted unseen.
+  const visibleSelected = profiles.filter((profile) => selected.has(profile.id));
+  const allVisibleSelected =
+    profiles.length > 0 && visibleSelected.length === profiles.length;
+
+  const toggleOne = (id: string) =>
+    setSelected((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+  const toggleAllVisible = () =>
+    setSelected((current) => {
+      const next = new Set(current);
+      if (allVisibleSelected) profiles.forEach((p) => next.delete(p.id));
+      else profiles.forEach((p) => next.add(p.id));
+      return next;
+    });
+
+  const deleteSelected = async () => {
+    if (visibleSelected.length === 0) return;
+    setDeleting(true);
+    try {
+      const res = await smartContactService.bulkDelete(
+        visibleSelected.map((profile) => profile.id),
+      );
+      toast.success(res.data.message || "Profiles deleted.");
+      setSelected(new Set());
+      setConfirmingDelete(false);
+      // The page may now be past the end of a shorter list.
+      setPage((current) => Math.max(1, Math.min(current, pages)));
+      void load();
+      void loadStats();
+    } catch (err) {
+      toast.error(getErrorMessage(err, "Could not delete the selected profiles."));
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const copyUrl = async (profile: SmartContactProfile) => {
     try {
@@ -231,6 +282,33 @@ export const SmartContactProfilesPage: React.FC = () => {
           </div>
         )}
 
+        {/* Only appears once something is ticked, so the destructive control is
+          never sitting idle next to a list of live profiles. */}
+        {visibleSelected.length > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-[#0A4DA6]/5 border border-[#0A4DA6]/20">
+            <span className="text-xs font-black text-[#0B192C] dark:text-white">
+              {visibleSelected.length} profile
+              {visibleSelected.length === 1 ? "" : "s"} selected
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setSelected(new Set())}
+                className="px-3.5 py-2 rounded-full border border-gray-200 dark:border-slate-700 text-[11px] font-extrabold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 cursor-pointer"
+              >
+                Clear
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmingDelete(true)}
+                className="px-4 py-2 rounded-full bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-extrabold shadow-sm flex items-center gap-1.5 cursor-pointer"
+              >
+                <Trash2 size={13} /> Delete Selected
+              </button>
+            </div>
+          </div>
+        )}
+
         {loading ? (
           <div className="py-16 flex items-center justify-center text-gray-400">
             <Loader2 size={22} className="animate-spin" />
@@ -250,6 +328,22 @@ export const SmartContactProfilesPage: React.FC = () => {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="text-[10px] font-black uppercase tracking-wider text-gray-400 border-b border-gray-100 dark:border-slate-800">
+                  <th className="py-3 pr-3 w-8">
+                    <input
+                      type="checkbox"
+                      checked={allVisibleSelected}
+                      // Some but not all: the box shows neither state honestly,
+                      // so it is dashed rather than silently reading "empty".
+                      ref={(node) => {
+                        if (node)
+                          node.indeterminate =
+                            visibleSelected.length > 0 && !allVisibleSelected;
+                      }}
+                      onChange={toggleAllVisible}
+                      aria-label="Select all profiles on this page"
+                      className="w-3.5 h-3.5 rounded border-gray-300 dark:border-slate-600 accent-[#0A4DA6] cursor-pointer"
+                    />
+                  </th>
                   <th className="py-3 pr-3">Representative</th>
                   <th className="py-3 px-3">Profile URL</th>
                   <th className="py-3 px-3">Status</th>
@@ -264,8 +358,21 @@ export const SmartContactProfilesPage: React.FC = () => {
                 {profiles.map((profile) => (
                   <tr
                     key={profile.id}
-                    className="border-b border-gray-50 dark:border-slate-800/60 hover:bg-gray-50/70 dark:hover:bg-slate-900/40 transition-colors"
+                    className={`border-b border-gray-50 dark:border-slate-800/60 transition-colors ${
+                      selected.has(profile.id)
+                        ? "bg-[#0A4DA6]/5"
+                        : "hover:bg-gray-50/70 dark:hover:bg-slate-900/40"
+                    }`}
                   >
+                    <td className="py-3 pr-3">
+                      <input
+                        type="checkbox"
+                        checked={selected.has(profile.id)}
+                        onChange={() => toggleOne(profile.id)}
+                        aria-label={`Select ${profile.displayName}`}
+                        className="w-3.5 h-3.5 rounded border-gray-300 dark:border-slate-600 accent-[#0A4DA6] cursor-pointer"
+                      />
+                    </td>
                     <td className="py-3 pr-3">
                       <div className="flex items-center gap-3">
                         {profile.photoUrl ? (
@@ -390,6 +497,80 @@ export const SmartContactProfilesPage: React.FC = () => {
             void loadStats();
           }}
         />
+      )}
+
+      {/* Deletion is permanent and this module is otherwise archive-only, so
+        the dialog names every profile going and says plainly what a freed slug
+        does to a printed card — the one consequence that cannot be undone. */}
+      {confirmingDelete && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            aria-label="Confirm permanent deletion"
+            className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] max-w-lg w-full p-5 sm:p-6 space-y-5 shadow-2xl my-4"
+          >
+            <div className="flex items-start gap-3">
+              <div className="p-2.5 rounded-2xl bg-rose-50 dark:bg-rose-950/40 shrink-0">
+                <AlertTriangle size={20} className="text-rose-600" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white">
+                  Permanently delete {visibleSelected.length} profile
+                  {visibleSelected.length === 1 ? "" : "s"}?
+                </h3>
+                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
+                  This cannot be undone. Their QR codes and analytics history go
+                  with them.
+                </p>
+                <p className="text-[11px] font-semibold text-amber-700 dark:text-amber-400 mt-2.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-xl p-2.5 leading-relaxed">
+                  Any printed card carrying one of these URLs will stop working
+                  — the address returns nothing rather than the inactive notice.
+                  To retire a representative whose cards are still circulating,
+                  archive the profile instead.
+                </p>
+              </div>
+            </div>
+
+            <ul className="max-h-40 overflow-y-auto rounded-xl border border-gray-100 dark:border-slate-800 divide-y divide-gray-50 dark:divide-slate-800/60">
+              {visibleSelected.map((profile) => (
+                <li
+                  key={profile.id}
+                  className="flex items-center justify-between gap-3 px-3 py-2"
+                >
+                  <span className="text-xs font-bold text-[#0B192C] dark:text-white truncate">
+                    {profile.displayName}
+                  </span>
+                  <code className="text-[10px] font-bold text-gray-500 shrink-0">
+                    /c/{profile.slug}
+                  </code>
+                </li>
+              ))}
+            </ul>
+
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center sm:justify-end gap-2 sm:gap-3">
+              <button
+                type="button"
+                onClick={() => setConfirmingDelete(false)}
+                disabled={deleting}
+                className="px-5 py-2.5 rounded-full border border-gray-200 dark:border-slate-700 text-xs font-extrabold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 cursor-pointer disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void deleteSelected()}
+                disabled={deleting}
+                className="px-6 py-2.5 rounded-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-extrabold shadow-md cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {deleting && <Loader2 size={13} className="animate-spin" />}
+                {deleting
+                  ? "Deleting..."
+                  : `Delete ${visibleSelected.length} Profile${visibleSelected.length === 1 ? "" : "s"}`}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

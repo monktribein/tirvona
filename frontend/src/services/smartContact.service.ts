@@ -208,11 +208,27 @@ export const smartContactService = {
   create: (data: unknown) => api.post(BASE, data),
   update: (id: string, data: unknown) => api.put(`${BASE}/${id}`, data),
 
-  // ── Lifecycle. There is no delete: spec §22 forbids removing a profile
-  //    whose printed cards are still circulating. ──
+  // ── Lifecycle. Archive is the normal end state: spec §22 keeps a profile
+  //    resolving for as long as its printed cards are circulating. ──
   activate: (id: string) => api.post(`${BASE}/${id}/activate`),
   disable: (id: string) => api.post(`${BASE}/${id}/disable`),
   archive: (id: string) => api.post(`${BASE}/${id}/archive`),
+
+  /**
+   * Permanent bulk deletion — super-admin only, and the one call here that
+   * really removes a profile. A freed slug stops resolving, so any printed QR
+   * carrying it dies; the response reports how many QR assets that affected.
+   */
+  bulkDelete: (ids: string[]) =>
+    api.post<{
+      message: string;
+      data: {
+        deleted: number;
+        requested: number;
+        printedQrCodes: number;
+        slugs: string[];
+      };
+    }>(`${BASE}/bulk-delete`, { ids }),
 
   // ── QR assets ──
   listQr: (id: string) => api.get<{ data: SmartContactQr[] }>(`${BASE}/${id}/qr`),
