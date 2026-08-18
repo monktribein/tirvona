@@ -53,8 +53,8 @@ export class LeadAuthService {
       role: user.role,
       status: user.status,
       region: user.region ?? "",
-      state: (user as any).state ?? "",
-      district: (user as any).district ?? "",
+      state: user.state ?? "",
+      district: user.district ?? "",
     };
   }
 

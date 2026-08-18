@@ -80,9 +80,6 @@ export interface LeadRecord {
   capturedBy: Types.ObjectId | null;
   capturedByName: string;
   capturedAt: Date;
-  assignedAgentId?: Types.ObjectId | null;
-  assignedAgentName?: string;
-  assignedAgentCode?: string;
   reviewedByAdminId: string;
   reviewedByAdminName: string;
   reviewedAt: Date | null;
