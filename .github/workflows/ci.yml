@@ -2,7 +2,6 @@ name: Tirvona CI
 
 on:
   push:
-    branches: [main, master, develop]
   pull_request:
 
 permissions:
@@ -40,8 +39,8 @@ jobs:
       JWT_SECRET: ci-only-jwt-secret-with-at-least-32-characters
       PARKING_QR_SECRET: ci-only-parking-secret-with-at-least-32-chars
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -62,8 +61,8 @@ jobs:
     env:
       VITE_API_URL: https://api.example.test
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
