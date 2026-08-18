@@ -50,7 +50,7 @@ export class LeadSupervisorController {
   constructor(
     private readonly leadUsers: LeadUsersService,
     private readonly leads: LeadsService,
-  ) {}
+  ) { }
 
   // ── Dashboard ──────────────────────────────────────────────────────────
 
@@ -222,8 +222,10 @@ export class LeadSupervisorController {
       supervisor.district,
     );
 
-    // A supervisor can only set managed accounts to field_agent role.
-    if (dto.role && dto.role !== "field_agent") {
+    // District & role are strictly guarded by supervisor's jurisdiction
+    delete dto.state;
+    delete dto.district;
+    if (dto.role && dto.role !== "field_agent" && dto.role !== "lead_executive") {
       delete dto.role;
     }
 
