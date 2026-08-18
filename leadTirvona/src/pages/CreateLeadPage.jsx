@@ -9,6 +9,7 @@ const DRAFT_STORAGE_KEY = 'tirvona_create_lead_draft';
 
 const INITIAL_FORM = {
   name: '', address: '', city: '', state: '', district: '',
+  assignedAgentId: '', assignedAgentName: '', assignedAgentCode: '',
   totalRooms: '', roomPrice: '', onlineRooms: '', offlineRooms: '',
   ownerName: '', phone: '', notes: '',
   interest: 'Interested',
@@ -20,7 +21,9 @@ export default function CreateLeadPage({
   onSubmitLead,
   onSuccessNavigate,
   attendanceCoordinates,
-  assignedJurisdiction
+  assignedJurisdiction,
+  editingLead = null,
+  onBackToConsole = null
 }) {
   const [currentDateTime, setCurrentDateTime] = useState('');
   const [isListening, setIsListening] = useState(false);
@@ -37,6 +40,31 @@ export default function CreateLeadPage({
 
   // Restore draft from localStorage if available
   const [formData, setFormData] = useState(() => {
+    if (editingLead) {
+      return {
+        name: editingLead.name || '',
+        address: editingLead.location?.address || editingLead.address || '',
+        city: editingLead.location?.city || editingLead.city || '',
+        state: editingLead.location?.state || editingLead.state || assignedJurisdiction?.state || '',
+        district: editingLead.location?.district || editingLead.district || assignedJurisdiction?.district || '',
+        assignedAgentId: editingLead.assignedAgentId || '',
+        assignedAgentName: editingLead.assignedAgentName || '',
+        assignedAgentCode: editingLead.assignedAgentCode || '',
+        totalRooms: editingLead.roomInventory?.totalRooms ?? editingLead.totalRooms ?? '',
+        roomPrice: editingLead.roomInventory?.roomPrice ?? editingLead.roomPrice ?? '',
+        onlineRooms: editingLead.roomInventory?.onlineRooms ?? editingLead.onlineRooms ?? '',
+        offlineRooms: editingLead.roomInventory?.offlineRooms ?? editingLead.offlineRooms ?? '',
+        ownerName: editingLead.contact?.ownerName || editingLead.ownerName || '',
+        phone: editingLead.contact?.phone || editingLead.phone || '',
+        notes: editingLead.notes || '',
+        interest: editingLead.interest || 'Interested',
+        meetingRequested: editingLead.meeting?.requested ?? true,
+        meetingTime: editingLead.meeting?.time || '',
+        meetingMode: editingLead.meeting?.mode || 'Call',
+        coordinates: editingLead.location?.coordinates || { lat: '', lng: '' },
+        images: Array.isArray(editingLead.images) ? editingLead.images : []
+      };
+    }
     try {
       const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
       if (savedDraft) {
@@ -54,6 +82,35 @@ export default function CreateLeadPage({
     }
     return INITIAL_FORM;
   });
+
+  // If editingLead changes, update formData
+  useEffect(() => {
+    if (editingLead) {
+      setFormData({
+        name: editingLead.name || '',
+        address: editingLead.location?.address || editingLead.address || '',
+        city: editingLead.location?.city || editingLead.city || '',
+        state: editingLead.location?.state || editingLead.state || assignedJurisdiction?.state || '',
+        district: editingLead.location?.district || editingLead.district || assignedJurisdiction?.district || '',
+        assignedAgentId: editingLead.assignedAgentId || '',
+        assignedAgentName: editingLead.assignedAgentName || '',
+        assignedAgentCode: editingLead.assignedAgentCode || '',
+        totalRooms: editingLead.roomInventory?.totalRooms ?? editingLead.totalRooms ?? '',
+        roomPrice: editingLead.roomInventory?.roomPrice ?? editingLead.roomPrice ?? '',
+        onlineRooms: editingLead.roomInventory?.onlineRooms ?? editingLead.onlineRooms ?? '',
+        offlineRooms: editingLead.roomInventory?.offlineRooms ?? editingLead.offlineRooms ?? '',
+        ownerName: editingLead.contact?.ownerName || editingLead.ownerName || '',
+        phone: editingLead.contact?.phone || editingLead.phone || '',
+        notes: editingLead.notes || '',
+        interest: editingLead.interest || 'Interested',
+        meetingRequested: editingLead.meeting?.requested ?? true,
+        meetingTime: editingLead.meeting?.time || '',
+        meetingMode: editingLead.meeting?.mode || 'Call',
+        coordinates: editingLead.location?.coordinates || { lat: '', lng: '' },
+        images: Array.isArray(editingLead.images) ? editingLead.images : []
+      });
+    }
+  }, [editingLead, assignedJurisdiction?.state, assignedJurisdiction?.district]);
 
   const hasAttendanceCoordinates =
     attendanceCoordinates?.lat !== undefined &&
@@ -81,6 +138,33 @@ export default function CreateLeadPage({
       state: assignedJurisdiction.state,
       district: assignedJurisdiction.district
     }));
+  }, [assignedJurisdiction?.state, assignedJurisdiction?.district]);
+
+  // Load field agents in the assigned district for assignment dropdown
+  const [fieldAgents, setFieldAgents] = useState([]);
+  const [loadingAgents, setLoadingAgents] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadAgents() {
+      setLoadingAgents(true);
+      try {
+        const params = {};
+        if (assignedJurisdiction?.district) params.district = assignedJurisdiction.district;
+        if (assignedJurisdiction?.state) params.state = assignedJurisdiction.state;
+        const res = await leadApi.listFieldAgents(params);
+        const list = Array.isArray(res) ? res : (res?.data || res?.items || []);
+        if (isMounted && Array.isArray(list)) {
+          setFieldAgents(list);
+        }
+      } catch (err) {
+        console.warn('Could not load district field agents:', err);
+      } finally {
+        if (isMounted) setLoadingAgents(false);
+      }
+    }
+    loadAgents();
+    return () => { isMounted = false; };
   }, [assignedJurisdiction?.state, assignedJurisdiction?.district]);
 
   // Auto-save form draft to localStorage whenever fields change
@@ -339,7 +423,7 @@ export default function CreateLeadPage({
     // Awaited: when the submit goes to the API it can fail, and clearing the
     // form before knowing that would lose everything the agent just captured
     // on site.
-    const created = await onSubmitLead({
+    const payload = {
       name: formData.name.trim(),
       location: {
         address: formData.address.trim(),
@@ -366,12 +450,17 @@ export default function CreateLeadPage({
         mode: formData.meetingRequested ? formData.meetingMode : ''
       },
       images: formData.images,
-      status: 'pending'
-    });
+      assignedAgentId: formData.assignedAgentId || null,
+      assignedAgentName: formData.assignedAgentName || '',
+      assignedAgentCode: formData.assignedAgentCode || '',
+      status: editingLead?.status || 'pending'
+    };
 
-    if (created === null) return;
+    const res = await onSubmitLead(payload, editingLead?._id || editingLead?.id);
 
-    clearFormDraft();
+    if (res === null) return;
+
+    if (!editingLead) clearFormDraft();
     onSuccessNavigate();
   };
 
@@ -384,21 +473,20 @@ export default function CreateLeadPage({
       {/* Form Container */}
       <div className="bg-white border border-[#E2E8F0] rounded-2xl sm:rounded-3xl p-4 sm:p-7 shadow-xs">
         
-        {/* Header Title (Icon Removed) */}
+        {/* Header Title */}
         <div className="flex flex-row items-start sm:items-center justify-between gap-2 sm:gap-3 pb-4 sm:pb-6 border-b border-[#E2E8F0] mb-5 sm:mb-6">
           <div className="min-w-0 flex-1">
             <h1 className="text-base sm:text-2xl font-extrabold text-[#0F172A] tracking-tight">
-              Ashram Onboarding Form
+              {editingLead ? 'Edit Ashram Lead' : 'Ashram Onboarding Form'}
             </h1>
             <p className="text-[11px] sm:text-xs text-[#64748B] font-medium mt-0.5">
-              Field Verification &amp; Contact Registration
+              {editingLead ? 'Update Field Verification & Contact Registration' : 'Field Verification & Contact Registration'}
             </p>
           </div>
 
           <div className="flex items-center gap-1.5 sm:gap-2 bg-white border border-[#E2E8F0] rounded-xl px-2 py-1.5 sm:px-3.5 sm:py-2 shrink-0 shadow-2xs">
             <Calendar size={12} className="text-[#0A4DA6] shrink-0 sm:w-[13px] sm:h-[13px]" />
             <div>
-              {/* <span className="text-[9px] font-bold tracking-wider text-[#64748B] uppercase block">Timestamp</span> */}
               <span className="text-[9px] min-[390px]:text-[10px] sm:text-xs font-bold text-[#0F172A] whitespace-nowrap">{currentDateTime}</span>
             </div>
           </div>
@@ -444,6 +532,29 @@ export default function CreateLeadPage({
                 <input type="text" readOnly
                   className={`${inputClass} cursor-not-allowed opacity-80`}
                   value={assignedJurisdiction?.district || ''} />
+              </div>
+              <div>
+                <label className={labelClass}>
+                  Field Agent {loadingAgents && <span className="text-[10px] text-[#0A4DA6] font-normal">(Loading...)</span>}
+                </label>
+                <select
+                  className={inputClass}
+                  value={formData.assignedAgentId || ''}
+                  onChange={(e) => {
+                    const agentId = e.target.value;
+                    const selected = fieldAgents.find(a => (a._id || a.id) === agentId);
+                    handleChange('assignedAgentId', agentId);
+                    handleChange('assignedAgentName', selected ? selected.name : '');
+                    handleChange('assignedAgentCode', selected ? (selected.employeeCode || selected.phone || '') : '');
+                  }}
+                >
+                  <option value="">Select Field Agent (Optional)</option>
+                  {fieldAgents.map((agent) => (
+                    <option key={agent._id || agent.id} value={agent._id || agent.id}>
+                      {agent.name} {agent.employeeCode ? `(ID: ${agent.employeeCode})` : (agent.phone ? `(${agent.phone})` : '')}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
@@ -753,7 +864,7 @@ export default function CreateLeadPage({
               ) : (
                 <>
                   <Send size={16} />
-                  <span>Submit Lead Entry</span>
+                  <span>{editingLead ? 'Update Lead Verification' : 'Submit Lead Entry'}</span>
                 </>
               )}
             </button>

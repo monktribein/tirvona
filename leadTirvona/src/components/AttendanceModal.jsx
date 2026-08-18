@@ -1,14 +1,11 @@
-/**
- * AttendanceModal.jsx — Tirvona Field Agent Attendance & Geo-Tag Check-In / Check-Out
- * Opens immediately after login.
- * Captures live GPS coordinates (latitude, longitude) + exact timestamp on Check-In and Check-Out.
- */
 import React, { useState } from 'react';
-import { X, MapPin, Clock, CheckCircle2, LogOut, Navigation, AlertCircle, Calendar } from 'lucide-react';
+import { X, MapPin, Clock, CheckCircle2, LogOut, Navigation, AlertCircle, Calendar, ShieldCheck } from 'lucide-react';
 import { useGeolocation } from '../hooks/useGeolocation';
 import { buildGoogleMapsUrl } from '../utils/formatDate';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpdated }) {
+  const { t } = useLanguage();
   const { isCapturing, gpsError, captureCurrentLocation } = useGeolocation();
   const [attendance, setAttendance] = useState({
     checkedIn: false,
@@ -21,6 +18,31 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
   const [statusMsg, setStatusMsg] = useState('');
 
   if (!isOpen) return null;
+
+  const isSupervisor = user?.role === 'supervisor' || user?.role === 'field_supervisor';
+  const isLeadExecutive = user?.role === 'lead_executive';
+  const roleTitle = isSupervisor
+    ? t('Supervisor Attendance')
+    : isLeadExecutive
+    ? t('Lead Executive Attendance')
+    : t('Field Agent Attendance');
+  const roleSubtitle = isSupervisor
+    ? `${user?.district ? `${user.district} ` : ''}District Geotag & Location Console`
+    : isLeadExecutive
+    ? `${user?.district ? `${user.district} ` : ''}Executive Geotag & Location Console`
+    : 'Geotag Attendance & Location Check-In Console';
+  const userInitials = user?.name
+    ? user.name.slice(0, 2).toUpperCase()
+    : isSupervisor
+    ? 'SP'
+    : isLeadExecutive
+    ? 'LE'
+    : 'FA';
+  const badgeLabel = isSupervisor
+    ? t('Supervisor')
+    : isLeadExecutive
+    ? t('Lead Executive')
+    : t('Active Shift');
 
   const handleCheckIn = () => {
     setStatusMsg('Capturing Geotag location...');
@@ -82,10 +104,10 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
             <img src="/logo.png" alt="Tirvona Logo" className="h-10 w-auto object-contain" />
           </div>
           <h2 className="text-xl sm:text-2xl font-extrabold text-[#0F172A] tracking-tight">
-            Field Agent Attendance
+            {roleTitle}
           </h2>
           <p className="text-xs text-[#64748B] font-medium">
-            Geotag Attendance &amp; Location Check-In Console
+            {roleSubtitle}
           </p>
         </div>
 
@@ -93,15 +115,19 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
         <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-[#0A4DA6]/10 text-[#0A4DA6] font-extrabold flex items-center justify-center text-sm">
-              FA
+              {userInitials}
             </div>
             <div>
-              <h3 className="text-sm font-extrabold text-[#0F172A]">{user?.name || 'Field Lead Agent'}</h3>
+              <h3 className="text-sm font-extrabold text-[#0F172A]">{user?.name || (isSupervisor ? 'Field Supervisor' : 'Field Lead Agent')}</h3>
               <p className="text-xs font-medium text-[#64748B]">Phone: {user?.phone || '+91 9876543210'}</p>
             </div>
           </div>
-          <span className="text-[10px] font-extrabold uppercase px-3 py-1 rounded-full bg-[#0A4DA6]/10 text-[#0A4DA6] border border-[#0A4DA6]/20">
-            Active Shift
+          <span className={`text-[10px] font-extrabold uppercase px-3 py-1 rounded-full border ${
+            isSupervisor
+              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+              : 'bg-[#0A4DA6]/10 text-[#0A4DA6] border-[#0A4DA6]/20'
+          }`}>
+            {badgeLabel}
           </span>
         </div>
 
@@ -135,7 +161,7 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
           >
             <div className="flex items-center gap-1.5">
               <MapPin size={16} />
-              <span>{attendance.checkedIn ? 'Checked In' : 'Check In'}</span>
+              <span>{attendance.checkedIn ? t('Checked In') : t('Check In')}</span>
             </div>
             {isCapturing && !attendance.checkedIn && (
               <span className="text-[10px] opacity-80 font-normal">Capturing Geotag...</span>
@@ -157,7 +183,7 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
           >
             <div className="flex items-center gap-1.5">
               <LogOut size={16} />
-              <span>{attendance.checkedOut ? 'Checked Out' : 'Check Out'}</span>
+              <span>{attendance.checkedOut ? t('Checked Out') : t('Check Out')}</span>
             </div>
             {isCapturing && attendance.checkedIn && !attendance.checkedOut && (
               <span className="text-[10px] opacity-80 font-normal">Capturing Geotag...</span>
@@ -168,14 +194,14 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
         {/* Live Attendance Geotag Logs */}
         <div className="space-y-2.5 pt-2 border-t border-[#E2E8F0]">
           <h4 className="text-xs font-bold text-[#64748B] tracking-wider uppercase">
-            Attendance Log Record
+            {t('Attendance Log Record')}
           </h4>
 
           {/* Check-In Log Details */}
           <div className="p-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl space-y-1 text-xs">
             <div className="flex items-center justify-between font-extrabold text-[#0F172A]">
               <span className="flex items-center gap-1 text-[#0A4DA6]">
-                <Clock size={13} /> Check-In Status
+                <Clock size={13} /> {t('Check-In Status')}
               </span>
               <span>{attendance.checkedIn ? 'COMPLETED' : 'PENDING'}</span>
             </div>
@@ -198,7 +224,7 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
           <div className="p-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl space-y-1 text-xs">
             <div className="flex items-center justify-between font-extrabold text-[#0F172A]">
               <span className="flex items-center gap-1 text-[#0B192C]">
-                <Clock size={13} /> Check-Out Status
+                <Clock size={13} /> {t('Check-Out Status')}
               </span>
               <span>{attendance.checkedOut ? 'COMPLETED' : 'PENDING'}</span>
             </div>
@@ -224,7 +250,7 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
             onClick={onClose}
             className="w-full py-2.5 bg-[#F8FAFC] hover:bg-slate-100 border border-[#E2E8F0] text-[#0F172A] font-extrabold rounded-xl text-xs transition-colors cursor-pointer"
           >
-            Continue to Field Dashboard
+            {isSupervisor ? t('Continue to Dashboard') : t('Continue to Field Dashboard')}
           </button>
         </div>
 

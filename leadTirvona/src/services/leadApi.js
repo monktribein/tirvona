@@ -1,3 +1,13 @@
+/**
+ * leadApi.js — the only place this app talks to a server.
+ *
+ * Points at the Lead Collection module in the Tirvona API
+ * (`/api/lead-collection/...`). That module runs on its own database and its
+ * own token scope, so nothing here can reach platform data even by accident.
+ *
+ * The token is a field-agent token, kept under its own localStorage key so it
+ * can never be confused with the main site's `ab_token`.
+ */
 
 const RAW_BASE = (import.meta.env.VITE_LEAD_API_URL || 'http://localhost:5000')
   .trim()
@@ -10,22 +20,34 @@ const TOKEN_KEY = 'tirvona_lead_token';
 const AGENT_KEY = 'tirvona_lead_agent';
 
 export const leadSession = {
-  getToken: () => localStorage.getItem(TOKEN_KEY),
+  getToken: () =>
+    sessionStorage.getItem(TOKEN_KEY) || localStorage.getItem(TOKEN_KEY),
+  isPersistent: () => Boolean(localStorage.getItem(TOKEN_KEY)),
   getAgent: () => {
     try {
-      const raw = localStorage.getItem(AGENT_KEY);
+      const storage = sessionStorage.getItem(TOKEN_KEY)
+        ? sessionStorage
+        : localStorage;
+      const raw = storage.getItem(AGENT_KEY);
       return raw ? JSON.parse(raw) : null;
     } catch {
       return null;
     }
   },
-  save: (token, agent) => {
-    localStorage.setItem(TOKEN_KEY, token);
-    localStorage.setItem(AGENT_KEY, JSON.stringify(agent));
+  save: (token, agent, persistent = false) => {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(AGENT_KEY);
+    sessionStorage.removeItem(TOKEN_KEY);
+    sessionStorage.removeItem(AGENT_KEY);
+    const storage = persistent ? localStorage : sessionStorage;
+    storage.setItem(TOKEN_KEY, token);
+    storage.setItem(AGENT_KEY, JSON.stringify(agent));
   },
   clear: () => {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(AGENT_KEY);
+    sessionStorage.removeItem(TOKEN_KEY);
+    sessionStorage.removeItem(AGENT_KEY);
   }
 };
 
@@ -36,7 +58,8 @@ export const leadSession = {
  */
 async function request(path, { method = 'GET', body, auth = true } = {}) {
   const headers = { Accept: 'application/json' };
-  if (body) headers['Content-Type'] = 'application/json';
+  const isFormData = body instanceof FormData;
+  if (body && !isFormData) headers['Content-Type'] = 'application/json';
 
   const token = leadSession.getToken();
   if (auth && token) headers.Authorization = `Bearer ${token}`;
@@ -44,7 +67,7 @@ async function request(path, { method = 'GET', body, auth = true } = {}) {
   const response = await fetch(`${LEAD_API_BASE}${path}`, {
     method,
     headers,
-    body: body ? JSON.stringify(body) : undefined
+    body: body ? (isFormData ? body : JSON.stringify(body)) : undefined
   });
 
   let payload = null;
@@ -88,6 +111,15 @@ export const leadApi = {
   },
 
   myStats: () => request('/agent/leads/stats'),
+
+  uploadAttachment: (file, source = 'picker') => {
+    const form = new FormData();
+    form.append('file', file);
+    form.append('source', source === 'camera' ? 'camera' : 'picker');
+    return request('/agent/uploads', { method: 'POST', body: form });
+  },
+
+  listFieldAgents: () => request('/agent/leads/field-agents'),
 
   createLead: (lead) =>
     request('/agent/leads', { method: 'POST', body: lead }),
