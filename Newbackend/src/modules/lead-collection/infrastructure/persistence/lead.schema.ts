@@ -90,6 +90,16 @@ export const LeadSchema = new Schema(
     capturedByName: { type: String, default: "" },
     capturedAt: { type: Date, default: Date.now },
 
+    // Assignment to Field Agent (when created by Lead Executive or Supervisor)
+    assignedAgentId: {
+      type: SchemaTypes.ObjectId,
+      ref: "LeadCollectionUser",
+      default: null,
+      index: true,
+    },
+    assignedAgentName: { type: String, default: "" },
+    assignedAgentCode: { type: String, default: "" },
+
     // Review trail. Platform-user ids as plain strings — see lead-user.schema.
     reviewedByAdminId: { type: String, default: "" },
     reviewedByAdminName: { type: String, default: "" },

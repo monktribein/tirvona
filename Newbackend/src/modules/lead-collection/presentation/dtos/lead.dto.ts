@@ -93,6 +93,9 @@ export class SaveLeadDto {
   @IsString({ each: true })
   @MaxLength(1_500_000, { each: true })
   images?: string[];
+  @IsOptional() @IsString() assignedAgentId?: string;
+  @IsOptional() @IsString() @MaxLength(120) assignedAgentName?: string;
+  @IsOptional() @IsString() @MaxLength(120) assignedAgentCode?: string;
   /**
    * Admin-only. Ignored on the agent routes, where the service always writes
    * `pending` — an agent must not be able to self-approve a lead.
