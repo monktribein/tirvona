@@ -1,8 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Calendar as CalendarIcon, Sparkles, Edit2, X } from "lucide-react";
 import { useNotifications } from "../contexts/NotificationContext";
 import { ashramService, roomService } from "../services";
 import { getErrorMessage } from "../lib/api";
+import { formatCurrency } from "../utils/format";
+import { useAshramSelection, ALL_ASHRAMS } from "../hooks/useAshramSelection";
+
+/** Remembers the category too, so a reload returns to the same calendar. */
+const ROOM_STORAGE_KEY = "tirvona:inventory-room";
 
 export const InventoryCalendarPage: React.FC = () => {
   const { addNotification } = useNotifications();
@@ -18,42 +23,115 @@ export const InventoryCalendarPage: React.FC = () => {
   const [customPrice, setCustomPrice] = useState("");
   const [maintenanceCount, setMaintenanceCount] = useState("0");
 
-  useEffect(() => {
-    fetchRooms();
+  const notifyRef = useRef(addNotification);
+  notifyRef.current = addNotification;
+
+  // Same selection rules as Manage Rooms and Add-On Services. "All Ashrams"
+  // matters most here: a calendar is always one room's, and landing on a
+  // property with no categories left the page with nothing to show.
+  const {
+    ashrams: myAshrams,
+    selectedAshramId,
+    setSelectedAshramId,
+    loadingAshrams,
+    targetAshrams,
+    isAllSelected,
+  } = useAshramSelection({
+    storageKey: "tirvona:inventory-ashram-filter",
+    allowAll: true,
+    onError: (err) =>
+      notifyRef.current(
+        "Load Failed",
+        getErrorMessage(err, "Unable to load your ashrams."),
+        "error",
+      ),
+  });
+
+  const targetsRef = useRef<any[]>([]);
+  targetsRef.current = targetAshrams;
+
+  const fetchRooms = useCallback(async () => {
+    setLoading(true);
+    setCalendar([]);
+    try {
+      // Under "All Ashrams" the category picker spans every property, so an
+      // empty ashram no longer dead-ends the page.
+      const targets = targetsRef.current;
+      const results = await Promise.allSettled(
+        targets.map((a: any) => ashramService.getManagedById(a._id)),
+      );
+      const rooms: any[] = [];
+      let failures = 0;
+      results.forEach((result, index) => {
+        if (result.status !== "fulfilled" || !result.value.data?.success) {
+          failures += 1;
+          return;
+        }
+        const owner = targets[index];
+        (result.value.data.data.rooms || []).forEach((room: any) =>
+          rooms.push({ ...room, ashramName: owner.name }),
+        );
+      });
+      setMyRooms(rooms);
+
+      // Keep the category the admin is on. Only fall back when it is gone —
+      // switching ashrams, or a category that was removed.
+      setSelectedRoomId((current) => {
+        if (current && rooms.some((r) => r._id === current)) return current;
+        let stored = "";
+        try {
+          stored = localStorage.getItem(ROOM_STORAGE_KEY) || "";
+        } catch {
+          stored = "";
+        }
+        if (stored && rooms.some((r) => r._id === stored)) return stored;
+        return rooms[0]?._id || "";
+      });
+
+      if (rooms.length === 0) setLoading(false);
+      if (failures > 0)
+        notifyRef.current(
+          "Load Failed",
+          `Could not load room categories for ${failures} ashram(s).`,
+          "error",
+        );
+    } catch (err) {
+      console.error("Fetch rooms error:", err);
+      notifyRef.current(
+        "Load Failed",
+        getErrorMessage(err, "Unable to load rooms for this ashram."),
+        "error",
+      );
+      setMyRooms([]);
+      setSelectedRoomId("");
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    if (!selectedAshramId) {
+      setMyRooms([]);
+      setSelectedRoomId("");
+      setCalendar([]);
+      setLoading(false);
+      return;
+    }
+    fetchRooms();
+  }, [selectedAshramId, fetchRooms]);
 
   useEffect(() => {
     if (selectedRoomId) {
       fetchCalendar();
+      try {
+        localStorage.setItem(ROOM_STORAGE_KEY, selectedRoomId);
+      } catch {
+        // Storage unavailable — the category just resets on the next reload.
+      }
+    } else {
+      setCalendar([]);
+      setLoading(false);
     }
   }, [selectedRoomId]);
-
-  const fetchRooms = async () => {
-    try {
-      const ashramsRes = await ashramService.myListings();
-      if (ashramsRes.data.success && ashramsRes.data.data.length > 0) {
-        const roomsRes = await ashramService.getManagedById(
-          ashramsRes.data.data[0]._id,
-        );
-        if (roomsRes.data.success && roomsRes.data.data.rooms.length > 0) {
-          setMyRooms(roomsRes.data.data.rooms);
-          setSelectedRoomId(roomsRes.data.data.rooms[0]._id);
-        } else {
-          setMyRooms([]);
-        }
-      } else {
-        setMyRooms([]);
-      }
-    } catch (err) {
-      console.error("Fetch rooms error:", err);
-      addNotification(
-        "Load Failed",
-        getErrorMessage(err, "Unable to load your rooms."),
-        "error",
-      );
-      setMyRooms([]);
-    }
-  };
 
   const fetchCalendar = async () => {
     setLoading(true);
@@ -97,6 +175,8 @@ export const InventoryCalendarPage: React.FC = () => {
           "success",
         );
         fetchCalendar();
+        localStorage.setItem("tirvona:rooms-updated", Date.now().toString());
+        window.dispatchEvent(new Event("tirvona:rooms-updated"));
       }
     } catch (err) {
       console.error("Override save error:", err);
@@ -121,27 +201,59 @@ export const InventoryCalendarPage: React.FC = () => {
           </p>
         </div>
 
-        {myRooms.length > 0 && (
-          <div className="flex items-center gap-3 shrink-0">
-            <label className="text-[10px] font-extrabold text-gray-400 tracking-wider">
-              Active Category
-            </label>
-            <select
-              value={selectedRoomId}
-              onChange={(e) => setSelectedRoomId(e.target.value)}
-              className="p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none"
-            >
-              {myRooms.map((room) => (
-                <option key={room._id} value={room._id}>
-                  {room.name}
-                </option>
-              ))}
-            </select>
+        {myAshrams.length > 0 && (
+          <div className="flex flex-wrap items-center justify-end gap-3 shrink-0">
+            <div className="flex items-center gap-2">
+              <label className="text-[10px] font-extrabold text-gray-400 tracking-wider">
+                Active Ashram
+              </label>
+              <select
+                value={selectedAshramId}
+                onChange={(e) => setSelectedAshramId(e.target.value)}
+                aria-label="Active ashram"
+                className="p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none"
+              >
+                {/* Pools every property's categories into the picker beside
+                  it, so an ashram with none does not strand the page. */}
+                {myAshrams.length > 1 && (
+                  <option value={ALL_ASHRAMS}>
+                    All Ashrams ({myAshrams.length})
+                  </option>
+                )}
+                {myAshrams.map((ashram) => (
+                  <option key={ashram._id} value={ashram._id}>
+                    {ashram.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-[10px] font-extrabold text-gray-400 tracking-wider">
+                Active Category
+              </label>
+              <select
+                value={selectedRoomId}
+                disabled={myRooms.length === 0}
+                onChange={(e) => setSelectedRoomId(e.target.value)}
+                className="p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none disabled:opacity-50"
+              >
+                {myRooms.length === 0 && <option value="">No room categories</option>}
+                {myRooms.map((room) => (
+                  <option key={room._id} value={room._id}>
+                    {/* Qualified by property when the list spans several, since
+                      category names repeat across ashrams. */}
+                    {isAllSelected && room.ashramName
+                      ? `${room.name} — ${room.ashramName}`
+                      : room.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         )}
       </div>
 
-      {loading ? (
+      {loadingAshrams || loading ? (
         <div className="h-40 bg-gray-50 border border-gray-100 rounded-[24px] animate-pulse" />
       ) : (
         /* Calendar Grid */
@@ -177,7 +289,7 @@ export const InventoryCalendarPage: React.FC = () => {
                   Night Price
                 </span>
                 <span className="text-xs font-extrabold text-[#0B192C] dark:text-white">
-                  ₹{item.price}
+                  {formatCurrency(item.price)}
                 </span>
               </div>
 

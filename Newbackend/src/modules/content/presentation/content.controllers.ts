@@ -47,6 +47,12 @@ export class CmsController {
   @Public() @Get("published") published() {
     return this.content.published();
   }
+  @Public() @Get("featured-banners/published") featuredBannerPublished() {
+    return this.content.featuredBannerPublished();
+  }
+  @Public() @Get("featured-banners/:id") featuredBanner(@Param("id") id: string) {
+    return this.content.featuredBanner(id);
+  }
   @Post("request-change")
   @Roles("content_manager", "super_admin", "owner", "manager")
   submit(@CurrentUser() user: AuthenticatedUser, @Body() dto: CmsChangeDto) {

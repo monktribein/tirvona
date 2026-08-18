@@ -68,6 +68,25 @@ export const VolunteerHubPage: React.FC = () => {
 
   // Application Modal State
   const [selectedJob, setSelectedJob] = useState<VolunteerJobItem | null>(null);
+  const [appliedJobIds, setAppliedJobIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!user) {
+      setAppliedJobIds(new Set());
+      return;
+    }
+    volunteerService
+      .getMyApplications()
+      .then((response) => {
+        const ids = (response.data?.data || [])
+          .filter((application: any) => application.status !== "rejected")
+          .map((application: any) =>
+            String(application.jobId?._id || application.jobId),
+          );
+        setAppliedJobIds(new Set(ids));
+      })
+      .catch(() => setAppliedJobIds(new Set()));
+  }, [user]);
 
   // Auto-open job modal if returning from login with jobId query param
   useEffect(() => {
@@ -87,6 +106,10 @@ export const VolunteerHubPage: React.FC = () => {
         data: { jobId: job._id },
       });
       navigate(`/login?redirect=${encodeURIComponent(targetUrl)}`);
+      return;
+    }
+    if (appliedJobIds.has(job._id)) {
+      navigate("/profile/volunteer");
       return;
     }
     setSelectedJob(job);
@@ -318,6 +341,7 @@ export const VolunteerHubPage: React.FC = () => {
         setPhone("");
         setCity("");
         setMotivation("");
+        setAppliedJobIds((current) => new Set(current).add(selectedJob._id));
       }
     } catch (err) {
       console.error("Application submit error:", err);
@@ -589,11 +613,11 @@ export const VolunteerHubPage: React.FC = () => {
                     View Details →
                   </Link>
                   <EnterpriseButton
-                    variant="primary"
+                    variant={appliedJobIds.has(job._id) ? "success" : "primary"}
                     size="sm"
                     onClick={() => handleApplyClick(job)}
                   >
-                    Apply Now
+                    {appliedJobIds.has(job._id) ? "Already Applied" : "Apply Now"}
                   </EnterpriseButton>
                 </div>
               </div>

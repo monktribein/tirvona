@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tirvona™ Smart Contact</title>
+
+    <link rel="icon" type="image/png" href="/logo.png" />
+
+    <!--
+      Spec §40. Thousands of representative pages should not become search
+      landing pages; `follow` still lets the links out to tirvona.com.
+    -->
+    <meta name="robots" content="noindex,follow" />
+
+    <!--
+      Spec §41 — Open Graph, for WhatsApp link previews.
+
+      These are static defaults. A social crawler does not execute JavaScript,
+      so it sees exactly what is below, not the per-representative title the
+      app sets at runtime. Per-profile previews need the HTML to be rendered
+      with the profile already in it — see README, "Social previews".
+    -->
+    <meta property="og:type" content="profile" />
+    <meta property="og:site_name" content="Tirvona" />
+    <meta property="og:title" content="Tirvona™ Smart Contact" />
+    <meta
+      property="og:description"
+      content="Tirvona™ — India's Digital Infrastructure for Religious Destinations"
+    />
+    <meta property="og:image" content="/logo.png" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="theme-color" content="#0A4DA6" />
+
+    <!--
+      The platform's type stack: Plus Jakarta Sans with Inter as the fallback,
+      matching frontend/index.html so the contact page reads as the same
+      product. Only the weights this page actually uses are requested —
+      the main site loads five families, which would be most of the two-second
+      budget in spec §39 for a page with one heading and four buttons.
+
+      `preconnect` opens the TLS handshake early; `display=swap` means the page
+      paints in a system face immediately rather than blocking on the webfont.
+    -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>
+      <div style="padding: 24px; font-family: system-ui, sans-serif">
+        This Tirvona contact page needs JavaScript enabled. You can reach us at
+        <a href="mailto:partners@tirvona.com">partners@tirvona.com</a>.
+      </div>
+    </noscript>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

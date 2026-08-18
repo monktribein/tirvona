@@ -81,4 +81,11 @@ export class MongooseCommunityRepository implements CommunityRepository {
   remove(name: string, filter: Record<string, unknown>): Promise<any | null> {
     return this.model(name).findOneAndDelete(filter).lean();
   }
+  async removeMany(
+    name: string,
+    filter: Record<string, unknown>,
+  ): Promise<number> {
+    const result = await this.model(name).deleteMany(filter);
+    return result.deletedCount ?? 0;
+  }
 }

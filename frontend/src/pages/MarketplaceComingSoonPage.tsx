@@ -133,7 +133,7 @@ export const MarketplaceComingSoonPage: React.FC = () => {
           </h1>
 
           <p className="text-sm sm:text-base text-purple-100 max-w-2xl mx-auto font-medium leading-relaxed">
-            We are building a government-certified spiritual marketplace to
+            We are building a Tirvona Verified spiritual marketplace to
             deliver authentic temple prasad, lab-tested rudraksha, Vedic books,
             and handloom puja apparel directly to your doorstep.
           </p>

@@ -5,6 +5,7 @@ import api from "../lib/api";
 import { ashramService, reviewService, marketplaceService } from "../services";
 import { visitorArticleService } from "../services/visitorArticleService";
 import { formatCurrency } from "../utils/format";
+import { toTitleCase } from "../utils/textCase";
 import { CouponVoucherCard } from "../components/CouponVoucherCard";
 import { DateRangePicker } from "../components/DateRangePicker";
 import { GuestRoomSelector } from "../components/shared/GuestRoomSelector";
@@ -12,6 +13,7 @@ import {
   useBookingSearch,
   normalizeBookingDates,
 } from "../contexts/BookingSearchContext";
+import { useLanguage } from "../contexts/LanguageContext";
 import { useAutoScroll } from "../hooks/useAutoScroll";
 import {
   Search,
@@ -39,6 +41,7 @@ import {
 } from "lucide-react";
 
 export const HomePage: React.FC = () => {
+  const { language, t } = useLanguage();
   const navigate = useNavigate();
   const { searchState, updateBookingSearch, totalGuests } = useBookingSearch();
   const [destination, setDestination] = useState("");
@@ -76,7 +79,7 @@ export const HomePage: React.FC = () => {
     { value: "", label: "Trip Type" },
     { value: "ashram", label: "Ashram Stay" },
     { value: "dharamshala", label: "Dharamshala" },
-    { value: "temple", label: "Temple Guest House" },
+    { value: "homestay", label: "Homestay" },
   ];
 
   const carouselRef = useRef<HTMLDivElement>(null);
@@ -92,12 +95,14 @@ export const HomePage: React.FC = () => {
   });
 
   const [publishedCms, setPublishedCms] = useState<any>({});
+  const [publishedFeatured, setPublishedFeatured] = useState<any>({});
 
   useEffect(() => {
     fetchStays();
     fetchOffers();
     fetchFeedbacks();
     fetchPublishedCms();
+    fetchPublishedFeatured();
     const handleClickOutside = (event: MouseEvent) => {
       if (
         autocompleteRef.current &&
@@ -116,6 +121,22 @@ export const HomePage: React.FC = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    const refreshRooms = (event: Event) => {
+      if (event instanceof StorageEvent && event.key !== "tirvona:rooms-updated") return;
+      void fetchStays();
+    };
+    const refreshOnFocus = () => void fetchStays();
+    window.addEventListener("tirvona:rooms-updated", refreshRooms);
+    window.addEventListener("storage", refreshRooms);
+    window.addEventListener("focus", refreshOnFocus);
+    return () => {
+      window.removeEventListener("tirvona:rooms-updated", refreshRooms);
+      window.removeEventListener("storage", refreshRooms);
+      window.removeEventListener("focus", refreshOnFocus);
+    };
+  }, []);
+
   const fetchPublishedCms = async () => {
     try {
       const res = await api.get("/cms/published");
@@ -124,6 +145,15 @@ export const HomePage: React.FC = () => {
       }
     } catch (err) {
       console.warn("Published CMS load:", err);
+    }
+  };
+
+  const fetchPublishedFeatured = async () => {
+    try {
+      const res = await api.get("/cms/featured-banners/published");
+      if (res.data?.success) setPublishedFeatured(res.data.data || {});
+    } catch (err) {
+      console.warn("Published featured banner load:", err);
     }
   };
 
@@ -693,8 +723,8 @@ export const HomePage: React.FC = () => {
       const existing = destMap.get(key);
       if (!existing) {
         destMap.set(key, {
-          name: city,
-          state: a.address?.state?.trim() || "",
+          name: toTitleCase(city),
+          state: toTitleCase(a.address?.state),
           img: primaryImg,
           count: 1,
           ratingSum: ratingVal,
@@ -816,7 +846,6 @@ export const HomePage: React.FC = () => {
 
   // Extract Dynamic Approved Published CMS Sections (Strictly Section-Mapped)
   const publishedHero = publishedCms.hero_banner || {};
-  const publishedFestival = publishedCms.festival_banner || {};
   const publishedOffer = publishedCms.offer_banner || {};
   /**
    * Published banner values, with the bundled defaults as fallbacks.
@@ -1140,8 +1169,6 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-
-
       {/* ══════════════════════ EVERYTHING YOU NEED ══════════════════════ */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 space-y-8 mb-10 lg:mb-20 mt-6 lg:mt-0">
         {/* Clean Text Header (No Background Wallpaper) */}
@@ -1161,13 +1188,6 @@ export const HomePage: React.FC = () => {
           <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-xl mx-auto leading-relaxed">
             Find verified ashram stays and authentic spiritual experiences with Tirvona.
           </p>
-          {/* <button
-            type="button"
-            onClick={() => navigate("/search")}
-            className="mt-2 inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-[#083b80] text-white text-xs font-extrabold shadow-md transition-all cursor-pointer"
-          >
-            Explore Tirvona <ArrowRight size={14} />
-          </button> */}
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-6 w-full pt-2 pb-6">
           {serviceHighlights.map((card, idx) => (
@@ -1295,12 +1315,15 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* ══════════════════════ UPCOMING ARDH KUMBH FESTIVAL BANNER (100% Full Width Edge-to-Edge Hero Banner) ══════════════════════ */}
-      <section className="relative w-full aspect-[16/7] sm:aspect-[21/9] lg:aspect-[1920/540] min-h-[280px] sm:min-h-[360px] lg:min-h-[440px] flex items-center justify-center overflow-hidden rounded-none shadow-2xl mb-14 lg:mb-24">
+      <section
+        onClick={() => publishedFeatured._id && navigate(`/featured-banner/${publishedFeatured._id}`)}
+        className={`relative w-full aspect-[16/7] sm:aspect-[21/9] lg:aspect-[1920/540] min-h-[280px] sm:min-h-[360px] lg:min-h-[440px] flex items-center justify-center overflow-hidden rounded-none shadow-2xl mb-14 lg:mb-24 ${publishedFeatured._id ? "cursor-pointer" : ""}`}
+      >
         {/* Published festival banner */}
-        {publishedFestival.bannerImage ? (
+        {publishedFeatured.bannerImage || publishedFeatured.imageUrl || publishedFeatured.image ? (
           <img
-            src={publishedFestival.bannerImage}
-            alt={publishedFestival.heading || "Upcoming Ardh Kumbh Festival"}
+            src={publishedFeatured.bannerImage || publishedFeatured.imageUrl || publishedFeatured.image}
+            alt={publishedFeatured.heading || "Featured Tirvona banner"}
             className="absolute inset-0 w-full h-full object-cover"
             loading="lazy"
           />
@@ -1344,8 +1367,8 @@ export const HomePage: React.FC = () => {
               transition={{ duration: 0.6 }}
               className="text-3xl sm:text-5xl lg:text-6xl font-black text-white drop-shadow-lg leading-tight"
             >
-              {publishedFestival.heading ||
-                publishedFestival.title ||
+              {publishedFeatured.heading ||
+                publishedFeatured.title ||
                 "Upcoming Aradh Kumbh Festival"}
             </motion.h2>
 
@@ -1356,8 +1379,8 @@ export const HomePage: React.FC = () => {
               transition={{ delay: 0.2, duration: 0.5 }}
               className="text-[#E2E8F0] text-sm sm:text-base leading-relaxed max-w-2xl font-medium drop-shadow-md"
             >
-              {publishedFestival.description ||
-                publishedFestival.subtitle ||
+              {publishedFeatured.description ||
+                publishedFeatured.subtitle ||
                 "Experience the divine spiritual gathering on the sacred banks of Ganga in Haridwar. Secure your holy ashram stay today for peace and divine blessings."}
             </motion.p>
 
@@ -1369,10 +1392,16 @@ export const HomePage: React.FC = () => {
               className="pt-3"
             >
               <button
-                onClick={() => navigate("/search?destination=Haridwar")}
+                onClick={() =>
+                  navigate(
+                    publishedFeatured._id
+                      ? `/featured-banner/${publishedFeatured._id}`
+                      : publishedFeatured.targetUrl || "/search?destination=Haridwar",
+                  )
+                }
                 className="bg-[#0A4DA6] hover:bg-[#083D85] text-white font-extrabold text-xs sm:text-sm pl-7 pr-2 py-3 rounded-full flex items-center gap-3 shadow-2xl hover:shadow-primary/40 transition-all cursor-pointer group/btn border border-white/20"
               >
-                <span>Book Now</span>
+                <span>{publishedFeatured.ctaText || "View Details"}</span>
                 <div className="w-8 h-8 rounded-full bg-white text-[#0A4DA6] flex items-center justify-center transition-transform group-hover/btn:translate-x-1 shadow-md">
                   <ArrowRight size={15} className="stroke-[2.5]" />
                 </div>
@@ -1402,8 +1431,7 @@ export const HomePage: React.FC = () => {
             <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
           </div>
           <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-xl mx-auto leading-relaxed">
-            Authentic Mahaprasad delivered
-            directly from famous holy temples.
+            Authentic Mahaprasad delivered directly from famous holy temples.
           </p>
           <button
             type="button"
@@ -1496,6 +1524,7 @@ export const HomePage: React.FC = () => {
 
               return (
                 <div
+                  key={idx}
                   onClick={() => {
                     const targetId = item.slug || item._id;
                     if (targetId) {
@@ -1511,9 +1540,7 @@ export const HomePage: React.FC = () => {
                   className="flex-shrink-0 relative group cursor-pointer"
                   style={{ width: "clamp(210px, 48vw, 230px)" }}
                 >
-                  {/* Modern Rounded Rectangle Card */}
                   <div className="w-full bg-white dark:bg-[#0B192C] rounded-3xl overflow-hidden border border-gray-100 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col hover:-translate-y-1">
-                    {/* Image Container */}
                     <div
                       className="relative overflow-hidden bg-gray-100 dark:bg-slate-900"
                       style={{ height: "clamp(170px, 40vw, 190px)" }}
@@ -1533,7 +1560,7 @@ export const HomePage: React.FC = () => {
                         </span>
                       ) : discountPct > 0 ? (
                         <span className="absolute top-3 left-3 bg-rose-500/90 backdrop-blur-md text-white text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-md tracking-wider">
-                          {discountPct}% OFF
+                          ${discountPct}% OFF
                         </span>
                       ) : null}
 
@@ -1545,13 +1572,12 @@ export const HomePage: React.FC = () => {
                       )}
                     </div>
 
-                    {/* Centered Bottom Title & Out of Stock / Price Area */}
                     <div className="p-4 text-center flex flex-col items-center justify-center min-h-[84px]">
                       <h4 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight line-clamp-1 text-center group-hover:text-[#0A4DA6] transition-colors">
-                        {name}
+                        {t(name)}
                       </h4>
                       <p className="text-[11px] text-gray-400 font-bold mt-0.5 text-center line-clamp-1">
-                        {subtitle}
+                        {t(subtitle)}
                       </p>
                       <div className="mt-1 flex items-center justify-center gap-2">
                         <span className="font-black text-xs text-[#0B192C] dark:text-gray-300">
@@ -1589,7 +1615,7 @@ export const HomePage: React.FC = () => {
             <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
           </div>
           <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-xl mx-auto leading-relaxed">
-            Government-verified ashrams and dharamshalas providing peaceful
+            Tirvona Verified ashrams and dharamshalas providing peaceful
             rooms, satvik food, and morning prayers.
           </p>
           <button
@@ -1608,7 +1634,7 @@ export const HomePage: React.FC = () => {
             {[
               { id: "top_rated", label: "Top Rated" },
               { id: "most_booked", label: "Most Booked" },
-              { id: "recent", label: "Recently Verified" },
+              { id: "recent", label: "Recently Tirvona Verified" },
               { id: "govt_recom", label: "Govt Recommended" },
             ].map((tab) => (
               <button
@@ -1677,7 +1703,7 @@ export const HomePage: React.FC = () => {
                       />
                       {/* Royal Navy Blue Price Badge */}
                       <span className="absolute top-3 left-3 bg-[#0A4DA6] text-white text-[10px] sm:text-[11px] font-extrabold px-3 py-1 rounded-full shadow-sm">
-                        ₹{ashram.lowestNightPrice ?? 150} / night
+                        {formatCurrency(ashram.lowestNightPrice ?? 150)} / night
                       </span>
                       {/* Rating Badge — only when the ashram has real reviews */}
                       {ashram.rating?.count > 0 && (

@@ -16,12 +16,13 @@ export function useLeadAuth() {
   useEffect(() => {
     if (!leadSession.getToken()) return;
     let cancelled = false;
+    const persistent = leadSession.isPersistent();
 
     leadApi
       .me()
       .then((fresh) => {
         if (cancelled) return;
-        leadSession.save(leadSession.getToken(), fresh);
+        leadSession.save(leadSession.getToken(), fresh, persistent);
         setAgent(fresh);
       })
       .catch(() => {
@@ -37,9 +38,9 @@ export function useLeadAuth() {
     };
   }, []);
 
-  const login = useCallback(async (phone, password) => {
+  const login = useCallback(async (phone, password, remember = false) => {
     const result = await leadApi.login(phone, password);
-    leadSession.save(result.token, result.user);
+    leadSession.save(result.token, result.user, remember);
     setAgent(result.user);
     return result.user;
   }, []);

@@ -5,6 +5,7 @@ import { JwtModule } from "@nestjs/jwt";
 import { BookingsModule } from "../bookings/bookings.module";
 import { ParkingModule } from "../parking/parking.module";
 import { UsersModule } from "../users/users.module";
+import { CommunityModule } from "../community/community.module";
 import { NotificationOutboxService } from "./notification-outbox.service";
 import { NotificationWorker } from "./notification.worker";
 import { NotificationsGateway } from "./notifications.gateway";
@@ -13,6 +14,7 @@ import { NotificationsGateway } from "./notifications.gateway";
     BookingsModule,
     ParkingModule,
     UsersModule,
+    CommunityModule,
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({

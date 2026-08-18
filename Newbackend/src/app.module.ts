@@ -32,6 +32,10 @@ import { SearchModule } from "./modules/search/search.module";
 // account table; see lead-collection.module.ts for what it deliberately
 // does not share with the platform.
 import { LeadCollectionModule } from "./modules/lead-collection/lead-collection.module";
+// Smart Contact QR. Same arrangement as Lead Collection: own database
+// connection, own audit and analytics, no exports; see smart-contact.module.ts
+// for the boundary it keeps and what extracting it would take.
+import { SmartContactModule } from "./modules/smart-contact/smart-contact.module";
 
 @Module({
   imports: [
@@ -122,6 +126,7 @@ import { LeadCollectionModule } from "./modules/lead-collection/lead-collection.
     RefundsModule,
     SearchModule,
     LeadCollectionModule,
+    SmartContactModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

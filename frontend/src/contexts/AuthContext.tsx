@@ -12,6 +12,7 @@ interface User {
   status: string;
   district?: string;
   state?: string;
+  permissions?: string[];
   /**
    * Active parking grants from `parking_staff`. Parking authorisation is not a
    * value of `role` — a guard or partner reads `customer` like any pilgrim — so

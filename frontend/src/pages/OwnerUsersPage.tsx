@@ -191,10 +191,11 @@ export const OwnerUsersPage: React.FC = () => {
 
   const getRoleBadge = (role: string) => {
     switch (role) {
+      case "ashram_owner":
       case "owner":
         return (
           <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-600 border border-amber-500/20 flex items-center gap-1 w-fit">
-            <Shield size={12} /> Ashram Admin
+            <Shield size={12} /> Ashram Owner
           </span>
         );
       case "manager":
@@ -265,7 +266,7 @@ export const OwnerUsersPage: React.FC = () => {
             Ashram Admins
           </span>
           <div className="text-2xl font-black text-amber-600">
-            {staff.filter((s) => s.role === "owner").length}
+            {staff.filter((s) => ["ashram_owner", "owner"].includes(s.role)).length}
           </div>
         </div>
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-5 rounded-2xl shadow-sm space-y-2">
@@ -307,7 +308,7 @@ export const OwnerUsersPage: React.FC = () => {
         <div className="flex items-center gap-1 overflow-x-auto w-full sm:w-auto">
           {[
             { id: "all", label: "All Users" },
-            { id: "owner", label: "Admins" },
+            { id: "ashram_owner", label: "Ashram Owners" },
             { id: "manager", label: "Managers" },
             { id: "reception", label: "Reception" },
             { id: "housekeeping", label: "Housekeeping" },
@@ -632,7 +633,7 @@ export const OwnerUsersPage: React.FC = () => {
                       🛎️ Front Desk / Receptionist
                     </option>
                     <option value="housekeeping">🧹 Housekeeping Staff</option>
-                    <option value="owner">🛡️ Ashram Admin / Co-Owner</option>
+                    <option value="ashram_owner">🛡️ Ashram Owner / Co-Owner</option>
                   </select>
                 </div>
 

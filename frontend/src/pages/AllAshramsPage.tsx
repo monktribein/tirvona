@@ -70,7 +70,9 @@ export const AllAshramsPage: React.FC = () => {
       const usersRes = await api.get("/auth/owner-staff");
       if (usersRes.data.success) {
         setOwnerUsers(
-          usersRes.data.data.filter((u: any) => u.role === "owner"),
+          usersRes.data.data.filter((u: any) =>
+            ["ashram_owner", "owner"].includes(u.role),
+          ),
         );
       }
     } catch (err) {
@@ -229,7 +231,7 @@ export const AllAshramsPage: React.FC = () => {
 
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-1">
           <div className="text-xs font-bold text-gray-400 tracking-wider">
-            Government Verified
+            Tirvona Verified
           </div>
           <div className="text-2xl font-black text-emerald-600 flex items-center gap-1.5">
             <span>
@@ -356,7 +358,7 @@ export const AllAshramsPage: React.FC = () => {
                     >
                       <ShieldCheck size={13} />
                       {ashram.status === "approved"
-                        ? "Verified"
+                        ? "Tirvona Verified"
                         : ashram.status.replace(/_/g, " ")}
                     </span>
                   </div>
@@ -629,7 +631,7 @@ export const AllAshramsPage: React.FC = () => {
 
                 <div>
                   <label className="block text-[10px] font-black text-gray-400 mb-1">
-                    Government Verification Status
+                    Tirvona Verification Status
                   </label>
                   <select
                     value={editFormData.status}

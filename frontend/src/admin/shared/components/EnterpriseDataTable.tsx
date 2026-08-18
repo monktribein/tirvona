@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from "react";
 import {
   Search,
-  Plus,
   Trash2,
   CheckCircle,
   XCircle,
@@ -12,19 +11,88 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
-  Info,
-  Clock,
-  Activity,
-  History,
-  Tag,
-  ToggleLeft,
-  ToggleRight,
-  Sparkles,
   Image as ImageIcon,
+  ExternalLink,
+  FileText,
+  Loader2,
+  Upload,
+  KeyRound,
 } from "lucide-react";
 import { RecordValue } from "./RecordValue";
 import { ImageGalleryManager } from "./ImageGalleryManager";
-import { formatInline, humanizeKey } from "../utils/recordFormat";
+import { formatInline, humanizeKey, URL_LIKE } from "../utils/recordFormat";
+import { useLanguage } from "../../../contexts/LanguageContext";
+import { getFormattingLocale } from "../../../utils/format";
+import api, { getErrorMessage } from "../../../lib/api";
+
+const IMAGE_ASSET = /\.(jpe?g|png|webp|gif|svg|avif|heic)($|\?)/i;
+const DOCUMENT_FIELD = /(document|certificate|deed|ownership|pdf|file).*url$|^(trustDeedUrl|fireSafetyCertificateUrl|landOwnershipUrl)$/i;
+
+const DocumentAssetEditor: React.FC<{
+  label: string;
+  value: string;
+  onChange: (url: string) => void;
+}> = ({ label, value, onChange }) => {
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState("");
+  const isUrl = URL_LIKE.test(value || "");
+
+  const upload = async (file: File) => {
+    setUploading(true);
+    setError("");
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      body.append("folder", "admin-documents");
+      const response = await api.post("/uploads", body, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      const uploadedUrl = response.data?.data?.url || "";
+      if (!response.data?.success || !uploadedUrl)
+        throw new Error(response.data?.message || "Upload did not return a document.");
+      onChange(uploadedUrl);
+    } catch (uploadError) {
+      setError(getErrorMessage(uploadError, "Could not upload this document."));
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-2 sm:col-span-2 rounded-2xl border border-gray-200 dark:border-slate-800 bg-gray-50/70 dark:bg-slate-900/60 p-3">
+      <p className="text-xs font-bold text-gray-400">{label}</p>
+      {value ? (
+        <div className="flex flex-wrap items-center gap-3">
+          {isUrl && IMAGE_ASSET.test(value) ? (
+            <img src={value} alt={label} className="h-24 w-36 rounded-xl object-cover bg-slate-900" />
+          ) : (
+            <div className="h-16 w-16 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-[#0A4DA6] flex items-center justify-center">
+              <FileText size={24} />
+            </div>
+          )}
+          <div className="flex flex-wrap gap-2">
+            {isUrl && (
+              <a href={value} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-full bg-[#0A4DA6] px-3 py-2 text-[10px] font-extrabold text-white">
+                <ExternalLink size={11} /> {IMAGE_ASSET.test(value) ? "Open image" : "Open document"}
+              </a>
+            )}
+            <button type="button" onClick={() => onChange("")} className="rounded-full bg-rose-50 px-3 py-2 text-[10px] font-extrabold text-rose-600">
+              Remove
+            </button>
+          </div>
+        </div>
+      ) : (
+        <p className="text-[11px] text-gray-400">No document uploaded.</p>
+      )}
+      <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-[#0A4DA6]/30 px-3 py-2 text-[10px] font-extrabold text-[#0A4DA6]">
+        {uploading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
+        {value ? "Replace document" : "Upload document or image"}
+        <input type="file" accept="image/*,.pdf,application/pdf" disabled={uploading} onChange={(event) => { const file = event.target.files?.[0]; if (file) void upload(file); }} className="hidden" />
+      </label>
+      {error && <p className="text-[10px] font-bold text-rose-600">{error}</p>}
+    </div>
+  );
+};
 
 function extractAllImages(item: any): string[] {
   if (!item || typeof item !== "object") return [];
@@ -35,11 +103,8 @@ function extractAllImages(item: any): string[] {
     if (typeof val === "string") {
       const trimmed = val.trim();
       if (
-        trimmed.startsWith("http://") ||
-        trimmed.startsWith("https://") ||
         trimmed.startsWith("data:image/") ||
-        trimmed.startsWith("/uploads/") ||
-        /\.(jpg|jpeg|png|webp|gif|svg|avif)($|\?)/i.test(trimmed)
+        /\.(jpg|jpeg|png|webp|gif|svg|avif|heic)($|\?)/i.test(trimmed)
       ) {
         foundUrls.push(trimmed);
       } else if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
@@ -76,9 +141,9 @@ function extractAllImages(item: any): string[] {
     if (item[key]) addIfImage(item[key]);
   });
 
-  if (foundUrls.length === 0) {
-    Object.values(item).forEach(addIfImage);
-  }
+  // Scan the complete record as well so nested galleries, documents and
+  // module-specific image fields all appear in the unified view/editor.
+  Object.values(item).forEach(addIfImage);
 
   return Array.from(new Set(foundUrls));
 }
@@ -97,13 +162,22 @@ export interface EnterpriseDataTableProps {
   isLoading?: boolean;
   loading?: boolean;
   hideAddButton?: boolean;
-  onSave?: (item: any) => void;
+  onSave?: (item: any) => void | Promise<void>;
   onManage?: (item: any) => void;
   onDelete?: (id: string) => void;
   onBulkDelete?: (ids: string[]) => void;
   onBulkApprove?: (ids: string[]) => void;
   onBulkReject?: (ids: string[]) => void;
   onToggleStatus?: (item: any) => void;
+  onResetOwnerPassword?: (ownerId: string, password: string) => Promise<void>;
+  formFields?: Array<{
+    name: string;
+    label: string;
+    type: string;
+    required?: boolean;
+    options?: string[];
+  }>;
+  showImageManager?: boolean;
 }
 
 export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
@@ -114,14 +188,18 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
   onSave,
   onManage,
   onDelete,
+  onToggleStatus,
+  onResetOwnerPassword,
   onBulkDelete,
   onBulkApprove,
   onBulkReject,
-  onToggleStatus,
   isLoading = false,
   loading = false,
   hideAddButton = false,
+  formFields,
+  showImageManager = true,
 }) => {
+  const { t } = useLanguage();
   const tableLoading = isLoading || loading;
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -131,14 +209,29 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
 
   // Modal States
   const [detailItem, setDetailItem] = useState<any | null>(null);
-  const [activeTab, setActiveTab] = useState<
-    "overview" | "info" | "timeline" | "activity" | "logs"
-  >("overview");
-  const [editItem, setEditItem] = useState<any | null>(null);
+  const [isDetailEditing, setIsDetailEditing] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [showPasswordChange, setShowPasswordChange] = useState(false);
+  const [newOwnerPassword, setNewOwnerPassword] = useState("");
+  const [confirmOwnerPassword, setConfirmOwnerPassword] = useState("");
+  const [passwordChangeError, setPasswordChangeError] = useState("");
+  const [passwordChanging, setPasswordChanging] = useState(false);
 
   // Form State for Create/Edit
   const [formData, setFormData] = useState<Record<string, any>>({});
+  const resolvedFormFields = useMemo<
+    NonNullable<EnterpriseDataTableProps["formFields"]>
+  >(
+    () =>
+      formFields ??
+      columns.map((column) => ({
+        name: column.key,
+        label: column.label,
+        type: "text",
+      })),
+    [formFields, columns],
+  );
 
   // Filtered & Searched Data
   const filteredData = useMemo(() => {
@@ -220,7 +313,6 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
       onSave(formData);
     }
     setIsCreateOpen(false);
-    setEditItem(null);
     setFormData({});
   };
 
@@ -234,24 +326,222 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
     setIsCreateOpen(true);
   };
 
-  const openEditModal = (item: any) => {
-    setEditItem(item);
+  const prepareFormData = (item: any) => {
     const initial: Record<string, any> = { ...item };
     if (!initial.city && item.address?.city) {
       initial.city = item.address.city;
     }
+    if (!initial.district && item.address?.district) initial.district = item.address.district;
+    if (!initial.state && item.address?.state) initial.state = item.address.state;
+    if (!initial.pincode && item.address?.pincode) initial.pincode = item.address.pincode;
+    if (!initial.email && item.contact?.email) initial.email = item.contact.email;
+    if (!initial.phone && item.contact?.phone) initial.phone = item.contact.phone;
+    if (!initial.street && item.address?.street) initial.street = item.address.street;
+    if (!initial.trustDeedUrl && item.documents?.trustDeedUrl) initial.trustDeedUrl = item.documents.trustDeedUrl;
+    if (!initial.fireSafetyCertificateUrl && item.documents?.fireSafetyCertificateUrl) initial.fireSafetyCertificateUrl = item.documents.fireSafetyCertificateUrl;
+    if (!initial.landOwnershipUrl && item.documents?.landOwnershipUrl) initial.landOwnershipUrl = item.documents.landOwnershipUrl;
+    if (!initial.uploadNotes && item.documents?.uploadNotes) initial.uploadNotes = item.documents.uploadNotes;
+    initial.images = Array.from(
+      new Set([
+        ...(Array.isArray(initial.images) ? initial.images : []),
+        ...extractAllImages(item),
+      ]),
+    );
     if (
       initial.isVerified === true ||
       initial.isVerified === "true" ||
       initial.isVerified === "Verified" ||
       initial.isVerified === "verified"
     ) {
-      initial.isVerified = true;
+      initial.isVerified = "Verified";
     } else if (initial.isVerified === false || initial.isVerified === "false" || initial.isVerified === "Unverified") {
-      initial.isVerified = false;
+      initial.isVerified = "Unverified";
     }
-    setFormData(initial);
+    return initial;
   };
+
+  const openDetailModal = (item: any) => {
+    setDetailItem(item);
+    setIsDetailEditing(false);
+    setConfirmingDelete(false);
+    setShowPasswordChange(false);
+    setNewOwnerPassword("");
+    setConfirmOwnerPassword("");
+    setPasswordChangeError("");
+    setFormData(prepareFormData(item));
+  };
+
+  const detailOwnerId = String(
+    detailItem?.ownerId?._id ?? detailItem?.ownerId ?? "",
+  );
+
+  const handleOwnerPasswordChange = async () => {
+    if (!onResetOwnerPassword || !detailOwnerId) return;
+    if (newOwnerPassword.length < 6) {
+      setPasswordChangeError("Password must contain at least 6 characters.");
+      return;
+    }
+    if (newOwnerPassword !== confirmOwnerPassword) {
+      setPasswordChangeError("The password confirmation does not match.");
+      return;
+    }
+    setPasswordChanging(true);
+    setPasswordChangeError("");
+    try {
+      await onResetOwnerPassword(detailOwnerId, newOwnerPassword);
+      setShowPasswordChange(false);
+      setNewOwnerPassword("");
+      setConfirmOwnerPassword("");
+    } catch (error) {
+      setPasswordChangeError(
+        getErrorMessage(error, "The owner password could not be changed."),
+      );
+    } finally {
+      setPasswordChanging(false);
+    }
+  };
+
+  const beginDetailEdit = () => {
+    if (!detailItem) return;
+    setFormData(prepareFormData(detailItem));
+    setIsDetailEditing(true);
+  };
+
+  const handleDetailSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!onSave) return;
+    await onSave(formData);
+    setDetailItem((current: any) => (current ? { ...current, ...formData } : current));
+    setIsDetailEditing(false);
+  };
+
+  const renderRecordEditor = () => (
+    <div className="space-y-4">
+      {showImageManager && (
+        <ImageGalleryManager
+          coverImage={
+            formData.coverImage ||
+            formData.image ||
+            formData.imageUrl ||
+            (Array.isArray(formData.images) ? formData.images[0] : "")
+          }
+          onCoverImageChange={(url) =>
+            setFormData((current) => ({
+              ...current,
+              coverImage: url,
+              image: url,
+              imageUrl: url,
+              images: [
+                url,
+                ...(Array.isArray(current.images) ? current.images : []).filter(
+                  (image: string) => image !== url,
+                ),
+              ],
+            }))
+          }
+          gallery={
+            Array.isArray(formData.images)
+              ? formData.images
+              : formData.gallery || []
+          }
+          onGalleryChange={(urls) =>
+            setFormData((current) => ({
+              ...current,
+              images: urls,
+              gallery: urls,
+            }))
+          }
+          label="Record Images"
+        />
+      )}
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {resolvedFormFields.map((field) =>
+          (DOCUMENT_FIELD.test(field.name) ||
+            URL_LIKE.test(String(formData[field.name] || ""))) ? (
+            <DocumentAssetEditor
+              key={field.name}
+              label={t(field.label)}
+              value={String(formData[field.name] || "")}
+              onChange={(url) =>
+                setFormData((current) => ({
+                  ...current,
+                  [field.name]: url,
+                }))
+              }
+            />
+          ) : (
+          <div
+            key={field.name}
+            className={field.type === "textarea" ? "space-y-1 sm:col-span-2" : "space-y-1"}
+          >
+            <label className="text-xs font-bold text-gray-400">
+              {t(field.label)}
+            </label>
+            {field.type === "select" ? (
+              <select
+                value={formData[field.name] ?? field.options?.[0] ?? ""}
+                onChange={(event) =>
+                  setFormData((current) => ({
+                    ...current,
+                    [field.name]: event.target.value,
+                  }))
+                }
+                className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none text-[#0B192C] dark:text-white font-bold"
+              >
+                {field.options?.map((option) => (
+                  <option key={option} value={option}>
+                    {humanizeKey(option)}
+                  </option>
+                ))}
+              </select>
+            ) : field.name === "isVerified" ? (
+              <select
+                value={formData[field.name] ? "Verified" : "Unverified"}
+                onChange={(event) =>
+                  setFormData((current) => ({
+                    ...current,
+                    [field.name]: event.target.value === "Verified",
+                  }))
+                }
+                className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none text-[#0B192C] dark:text-white font-bold"
+              >
+                <option value="Verified">Verified</option>
+                <option value="Unverified">Unverified</option>
+              </select>
+            ) : field.type === "textarea" ? (
+              <textarea
+                required={field.required}
+                rows={4}
+                value={formData[field.name] ?? ""}
+                onChange={(event) =>
+                  setFormData((current) => ({
+                    ...current,
+                    [field.name]: event.target.value,
+                  }))
+                }
+                className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none text-[#0B192C] dark:text-white resize-y"
+              />
+            ) : (
+              <input
+                type={field.type}
+                required={field.required}
+                min={field.type === "number" ? 0 : undefined}
+                value={formData[field.name] ?? ""}
+                onChange={(event) =>
+                  setFormData((current) => ({
+                    ...current,
+                    [field.name]: event.target.value,
+                  }))
+                }
+                className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none text-[#0B192C] dark:text-white"
+              />
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <div className="space-y-6 text-left w-full">
@@ -265,7 +555,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
           />
           <input
             type="text"
-            placeholder="Search records..."
+            placeholder={t("Search records...")}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-full text-xs font-medium text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6]"
@@ -275,22 +565,22 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
         {/* Filter & Per-Page Controls */}
         <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
           <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-400 font-bold">Status:</span>
+            <span className="text-xs text-gray-400 font-bold">{t("Status")}:</span>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               className="px-3 py-1.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-full text-xs font-bold text-[#0B192C] dark:text-white focus:outline-none"
             >
-              <option value="all">All Statuses</option>
-              <option value="active">Active / Approved</option>
-              <option value="pending">Pending</option>
-              <option value="rejected">Rejected / Suspended</option>
-              <option value="cancelled">Cancelled</option>
+              <option value="all">{t("All Statuses")}</option>
+              <option value="active">{t("Active / Approved")}</option>
+              <option value="pending">{t("Pending")}</option>
+              <option value="rejected">{t("Rejected / Suspended")}</option>
+              <option value="cancelled">{t("Cancelled")}</option>
             </select>
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-400 font-bold">Show:</span>
+            <span className="text-xs text-gray-400 font-bold">{t("Show")}:</span>
             <select
               value={itemsPerPage}
               onChange={(e) => {
@@ -322,7 +612,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                 }}
                 className="px-3 py-1.5 rounded-full bg-emerald-600 text-white text-xs font-bold flex items-center gap-1 cursor-pointer hover:bg-emerald-700"
               >
-                <CheckCircle size={14} /> Bulk Approve
+                <CheckCircle size={14} /> {t("Bulk Approve")}
               </button>
             )}
             {onBulkReject && (
@@ -333,7 +623,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                 }}
                 className="px-3 py-1.5 rounded-full bg-orange-600 text-white text-xs font-bold flex items-center gap-1 cursor-pointer hover:bg-orange-700"
               >
-                <XCircle size={14} /> Bulk Reject
+                <XCircle size={14} /> {t("Bulk Reject")}
               </button>
             )}
             {onBulkDelete && (
@@ -344,7 +634,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                 }}
                 className="px-3 py-1.5 rounded-full bg-rose-600 text-white text-xs font-bold flex items-center gap-1 cursor-pointer hover:bg-rose-700"
               >
-                <Trash2 size={14} /> Bulk Delete
+                <Trash2 size={14} /> {t("Bulk Delete")}
               </button>
             )}
           </div>
@@ -355,7 +645,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
       <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] shadow-sm overflow-hidden">
         {tableLoading ? (
           <div className="h-64 flex items-center justify-center text-gray-400 text-xs font-bold animate-pulse">
-            Loading data records...
+            {t("Loading data records...")}
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -377,22 +667,24 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                   </th>
                   {columns.map((col) => (
                     <th key={col.key} className="py-4 px-4 font-bold">
-                      {col.label}
+                        {t(col.label)}
                     </th>
                   ))}
-                  <th className="py-4 px-4">Status</th>
+                   {!columns.some((column) => column.key === "status") && (
+                     <th className="py-4 px-4">Status</th>
+                   )}
                   <th className="py-4 px-4">Created Date</th>
-                  <th className="py-4 px-4 text-right">Actions</th>
+                   <th className="py-4 px-4 text-right">Edit / View</th>
                 </tr>
               </thead>
               <tbody>
                 {paginatedData.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={columns.length + 4}
+                      colSpan={columns.length + (columns.some((column) => column.key === "status") ? 3 : 4)}
                       className="py-12 text-center text-gray-400 font-semibold"
                     >
-                      No records found.
+                      {t("No records found.")}
                     </td>
                   </tr>
                 ) : (
@@ -427,7 +719,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                               : formatInline(item[col.key])}
                           </td>
                         ))}
-                        <td className="py-3.5 px-4">
+                         {!columns.some((column) => column.key === "status") && <td className="py-3.5 px-4">
                           <span
                             className={`px-2.5 py-0.5 rounded-full text-[9px] font-black tracking-wide ${["active", "approved"].includes(statusStr)
                               ? "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400"
@@ -438,71 +730,19 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                           >
                             {statusStr === "approved" ? "active" : statusStr}
                           </span>
-                        </td>
+                         </td>}
                         <td className="py-3.5 px-4 text-gray-400 text-[11px] font-mono whitespace-nowrap">
                           {item.createdAt
-                            ? new Date(item.createdAt).toLocaleDateString()
+                            ? new Date(item.createdAt).toLocaleDateString(getFormattingLocale())
                             : "—"}
                         </td>
                         <td className="py-3.5 px-4 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            {onManage ? (
-                              <button
-                                onClick={() => onManage(item)}
-                                className="px-3 py-1 bg-[#0A4DA6] hover:bg-blue-900 text-white rounded-full text-[11px] font-black shadow-sm transition-all cursor-pointer flex items-center gap-1"
-                                title="Open 7-Section Enterprise Manager"
-                              >
-                                <Sparkles size={12} /> Manage
-                              </button>
-                            ) : (
-                              <>
-                                <button
-                                  onClick={() => setDetailItem(item)}
-                                  className="p-1.5 text-gray-400 hover:text-[#0A4DA6] hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer"
-                                  title="View Details"
-                                >
-                                  <Eye size={14} />
-                                </button>
-                                {onSave && (
-                                  <button
-                                    onClick={() => openEditModal(item)}
-                                    className="p-1.5 text-gray-400 hover:text-amber-500 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer"
-                                    title="Edit Record"
-                                  >
-                                    <Edit size={14} />
-                                  </button>
-                                )}
-                              </>
-                            )}
-                            {onToggleStatus && (
-                              <button
-                                onClick={() => onToggleStatus(item)}
-                                className="p-1.5 text-gray-400 hover:text-emerald-500 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer"
-                                title="Toggle Status"
-                              >
-                                {["active", "approved"].includes(statusStr) ? (
-                                  <ToggleRight
-                                    size={16}
-                                    className="text-emerald-500"
-                                  />
-                                ) : (
-                                  <ToggleLeft
-                                    size={16}
-                                    className="text-rose-500"
-                                  />
-                                )}
-                              </button>
-                            )}
-                            {onDelete && (
-                              <button
-                                onClick={() => onDelete(id)}
-                                className="p-1.5 text-gray-400 hover:text-rose-500 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer"
-                                title="Delete Record"
-                              >
-                                <Trash2 size={14} />
-                              </button>
-                            )}
-                          </div>
+                          <button
+                            onClick={() => openDetailModal(item)}
+                            className="inline-flex items-center justify-center gap-1.5 rounded-full border border-[#0A4DA6]/25 bg-[#0A4DA6]/5 px-3 py-1.5 text-[11px] font-extrabold text-[#0A4DA6] transition-colors hover:bg-[#0A4DA6] hover:text-white cursor-pointer whitespace-nowrap"
+                          >
+                            <Eye size={13} /> {t("Edit / View")}
+                          </button>
                         </td>
                       </tr>
                     );
@@ -546,16 +786,21 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
         </div>
       </div>
 
-      {/* View Detail Tabbed Modal */}
+      {/* Unified Edit / View record modal */}
       {detailItem && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-2xl w-full rounded-[28px] p-6 space-y-6 text-left shadow-2xl animate-in zoom-in-95 duration-150">
+          <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-4xl w-full rounded-[28px] p-6 space-y-6 text-left shadow-2xl animate-in zoom-in-95 duration-150">
             {/* Header */}
             <div className="flex justify-between items-start border-b border-gray-100 dark:border-slate-800 pb-4">
               <div className="space-y-1 text-left">
                 <div className="flex items-center gap-2.5 flex-wrap">
                   <h3 className="font-black text-xl text-[#0B192C] dark:text-white tracking-tight">
-                    {detailItem.name || detailItem.title || "Record Details"}
+                    {detailItem.name ||
+                      detailItem.title ||
+                      detailItem.businessName ||
+                      detailItem.bookingCode ||
+                      detailItem.email ||
+                      "Record Details"}
                   </h3>
                   {detailItem.status && (
                     <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
@@ -573,69 +818,29 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                 </p>
               </div>
               <button
-                onClick={() => setDetailItem(null)}
+                onClick={() => {
+                  setDetailItem(null);
+                  setIsDetailEditing(false);
+                }}
                 className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-white rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 cursor-pointer"
               >
                 <X size={18} />
               </button>
             </div>
 
-            {/* Navigation Tabs */}
-            <div className="flex border-b border-gray-100 dark:border-slate-800 gap-4 text-xs font-bold text-gray-400">
-              <button
-                onClick={() => setActiveTab("overview")}
-                className={`pb-2 border-b-2 transition-all cursor-pointer flex items-center gap-1.5 ${activeTab === "overview"
-                  ? "border-[#0A4DA6] text-[#0A4DA6] dark:text-amber-400"
-                  : "border-transparent"
-                  }`}
-              >
-                <Info size={14} /> Overview
-              </button>
-              <button
-                onClick={() => setActiveTab("info")}
-                className={`pb-2 border-b-2 transition-all cursor-pointer flex items-center gap-1.5 ${activeTab === "info"
-                  ? "border-[#0A4DA6] text-[#0A4DA6] dark:text-amber-400"
-                  : "border-transparent"
-                  }`}
-              >
-                <Tag size={14} /> Information
-              </button>
-              <button
-                onClick={() => setActiveTab("timeline")}
-                className={`pb-2 border-b-2 transition-all cursor-pointer flex items-center gap-1.5 ${activeTab === "timeline"
-                  ? "border-[#0A4DA6] text-[#0A4DA6] dark:text-amber-400"
-                  : "border-transparent"
-                  }`}
-              >
-                <Clock size={14} /> Timeline
-              </button>
-              <button
-                onClick={() => setActiveTab("activity")}
-                className={`pb-2 border-b-2 transition-all cursor-pointer flex items-center gap-1.5 ${activeTab === "activity"
-                  ? "border-[#0A4DA6] text-[#0A4DA6] dark:text-amber-400"
-                  : "border-transparent"
-                  }`}
-              >
-                <Activity size={14} /> Activity
-              </button>
-              <button
-                onClick={() => setActiveTab("logs")}
-                className={`pb-2 border-b-2 transition-all cursor-pointer flex items-center gap-1.5 ${activeTab === "logs"
-                  ? "border-[#0A4DA6] text-[#0A4DA6] dark:text-amber-400"
-                  : "border-transparent"
-                  }`}
-              >
-                <History size={14} /> Audit Logs
-              </button>
-            </div>
-
-            {/* Tab Content */}
-            <div className="space-y-4 max-h-[360px] overflow-y-auto pr-1">
-              {activeTab === "overview" && (
-                <div className="space-y-5">
+            {/* One complete record view shared by every Super Admin module. */}
+            <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
+              {isDetailEditing ? (
+                <form id="unified-record-edit-form" onSubmit={handleDetailSubmit}>
+                  {renderRecordEditor()}
+                </form>
+              ) : (
+                <>
+              <div className="space-y-5">
                   {/* Photo & Media Showcase */}
                   {(() => {
                     const gallery = extractAllImages(detailItem);
+                    if (gallery.length === 0) return null;
 
                     return (
                       <div className="space-y-3 p-4 bg-gray-50 dark:bg-slate-900/60 rounded-2xl border border-gray-100 dark:border-slate-800">
@@ -643,23 +848,9 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                           <span className="text-[11px] font-black uppercase text-gray-400 tracking-wider flex items-center gap-1.5">
                             <ImageIcon size={14} className="text-[#0A4DA6]" /> Photos & Media Gallery ({gallery.length})
                           </span>
-                          {onSave && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const target = detailItem;
-                                setDetailItem(null);
-                                openEditModal(target);
-                              }}
-                              className="text-[11px] font-extrabold text-[#0A4DA6] hover:underline cursor-pointer"
-                            >
-                              + Manage Photos & Edit
-                            </button>
-                          )}
                         </div>
 
-                        {gallery.length > 0 ? (
-                          <div className="space-y-2">
+                        <div className="space-y-2">
                             {/* Main Cover Image Preview */}
                             <div className="h-40 rounded-xl overflow-hidden relative border border-gray-200 dark:border-slate-800 bg-slate-950">
                               <img
@@ -699,26 +890,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                                 ))}
                               </div>
                             )}
-                          </div>
-                        ) : (
-                          <div className="py-6 text-center text-gray-400 text-xs font-medium space-y-2 border border-dashed border-gray-200 dark:border-slate-800 rounded-xl bg-white/50 dark:bg-slate-900/50">
-                            <ImageIcon size={28} className="mx-auto text-gray-300 dark:text-slate-700" />
-                            <p>No photos uploaded for this listing yet.</p>
-                            {onSave && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const target = detailItem;
-                                  setDetailItem(null);
-                                  openEditModal(target);
-                                }}
-                                className="px-4 py-2 bg-[#0A4DA6] text-white rounded-full text-xs font-extrabold inline-flex items-center gap-1.5 shadow-md shadow-[#0A4DA6]/25 cursor-pointer hover:bg-[#083b80] mt-1"
-                              >
-                                <Plus size={14} /> Add / Upload Photos Now
-                              </button>
-                            )}
-                          </div>
-                        )}
+                        </div>
                       </div>
                     );
                   })()}
@@ -730,6 +902,10 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                         ([k]) =>
                           ![
                             "__v",
+                            "_id",
+                            "id",
+                            "createdAt",
+                            "updatedAt",
                             "images",
                             "gallery",
                             "coverImage",
@@ -743,89 +919,198 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                           className="p-3 bg-gray-50 dark:bg-slate-900/60 rounded-xl space-y-1 border border-gray-100/80 dark:border-slate-800/80"
                         >
                           <span className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider">
-                            {humanizeKey(k)}
+                            {k === "ownerId" ? "Owner Account" : humanizeKey(k)}
                           </span>
                           <div className="font-semibold text-[#0B192C] dark:text-white">
-                            <RecordValue value={v} />
+                            {k === "ownerId" && v && typeof v === "object" ? (
+                              <div className="space-y-0.5">
+                                <p>{(v as any).name || "Ashram owner"}</p>
+                                <p className="font-medium text-[#0A4DA6]">{(v as any).email || "No email available"}</p>
+                                {(v as any).phone && <p className="font-medium text-gray-500">{(v as any).phone}</p>}
+                              </div>
+                            ) : (
+                              <RecordValue value={v} />
+                            )}
                           </div>
                         </div>
                       ))}
                   </div>
                 </div>
-              )}
-
-              {activeTab === "info" && (
-                <div className="p-4 bg-gray-50 dark:bg-slate-900 rounded-2xl text-xs space-y-2">
-                  <h4 className="font-bold text-[#0B192C] dark:text-white">
-                    Record Metadata
-                  </h4>
-                  <p className="text-gray-400">
-                    Owner Module: Enterprise System Admin Panel
-                  </p>
-                  <p className="text-gray-400">
-                    Encrypted DB Node: tirvona-primary-cluster
-                  </p>
+              {(detailItem.createdAt || detailItem.updatedAt) && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  {detailItem.createdAt && (
+                    <div className="rounded-xl border border-gray-100 dark:border-slate-800 p-3">
+                      <span className="text-[10px] font-extrabold uppercase text-gray-400">Created</span>
+                      <p className="mt-1 font-semibold text-[#0B192C] dark:text-white">{new Date(detailItem.createdAt).toLocaleString(getFormattingLocale())}</p>
+                    </div>
+                  )}
+                  {detailItem.updatedAt && (
+                    <div className="rounded-xl border border-gray-100 dark:border-slate-800 p-3">
+                      <span className="text-[10px] font-extrabold uppercase text-gray-400">Last updated</span>
+                      <p className="mt-1 font-semibold text-[#0B192C] dark:text-white">{new Date(detailItem.updatedAt).toLocaleString(getFormattingLocale())}</p>
+                    </div>
+                  )}
                 </div>
               )}
-
-              {activeTab === "timeline" && (
-                <div className="space-y-3 text-xs">
-                  <div className="flex gap-3 items-center text-gray-400">
-                    <Clock size={14} className="text-[#0A4DA6]" /> Created:{" "}
-                    {detailItem.createdAt
-                      ? new Date(detailItem.createdAt).toLocaleString()
-                      : "N/A"}
-                  </div>
-                  <div className="flex gap-3 items-center text-gray-400">
-                    <Clock size={14} className="text-emerald-500" /> Updated:{" "}
-                    {detailItem.updatedAt
-                      ? new Date(detailItem.updatedAt).toLocaleString()
-                      : "N/A"}
-                  </div>
-                </div>
-              )}
-
-              {activeTab === "activity" && (
-                <div className="p-4 bg-gray-50 dark:bg-slate-900 rounded-2xl text-xs text-gray-400">
-                  Recent activities and change triggers registered for this
-                  record.
-                </div>
-              )}
-
-              {activeTab === "logs" && (
-                <div className="p-4 bg-gray-50 dark:bg-slate-900 rounded-2xl text-xs font-mono text-gray-400">
-                  [AUDIT_LOG]: Action verified by Super Admin at{" "}
-                  {new Date().toISOString()}
-                </div>
+                </>
               )}
             </div>
 
-            <div className="pt-4 border-t border-gray-100 dark:border-slate-800 flex justify-end gap-3">
-              <button
-                onClick={() => setDetailItem(null)}
-                className="px-6 py-2.5 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-200 rounded-full text-xs font-bold cursor-pointer hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors"
-              >
-                Close
-              </button>
-              {onSave && (
-                <button
-                  onClick={() => {
-                    const targetItem = detailItem;
-                    setDetailItem(null);
-                    openEditModal(targetItem);
-                  }}
-                  className="px-6 py-2.5 bg-[#0A4DA6] text-white rounded-full text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-[#0A4DA6]/25 cursor-pointer hover:bg-[#083b80] transition-colors"
-                >
-                  <Edit size={14} /> Edit Record
-                </button>
+            <div className="pt-4 border-t border-gray-100 dark:border-slate-800 flex flex-wrap justify-end gap-3">
+              {isDetailEditing ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormData(prepareFormData(detailItem));
+                      setIsDetailEditing(false);
+                    }}
+                    className="px-6 py-2.5 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-200 rounded-full text-xs font-bold cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    form="unified-record-edit-form"
+                    className="px-6 py-2.5 bg-[#0A4DA6] text-white rounded-full text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-[#0A4DA6]/25 cursor-pointer hover:bg-[#083b80]"
+                  >
+                    <Edit size={14} /> Save Changes
+                  </button>
+                </>
+              ) : (
+                <>
+                  {showPasswordChange && onResetOwnerPassword && detailOwnerId && (
+                    <div className="w-full rounded-2xl border border-purple-200 bg-purple-50/70 p-4 dark:border-purple-900/60 dark:bg-purple-950/20">
+                      <div className="mb-3 flex items-center gap-2 text-xs font-black text-purple-700 dark:text-purple-300">
+                        <KeyRound size={15} /> Change ashram owner password
+                      </div>
+                      <p className="mb-3 text-[10px] text-gray-500 dark:text-gray-400">
+                        Account: {detailItem.ownerId?.email || "Owner account"}. The existing password is encrypted and cannot be displayed.
+                      </p>
+                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        <input
+                          type="password"
+                          value={newOwnerPassword}
+                          onChange={(event) => setNewOwnerPassword(event.target.value)}
+                          placeholder="New password"
+                          autoComplete="new-password"
+                          className="rounded-xl border border-purple-200 bg-white px-3 py-2.5 text-xs outline-none focus:border-purple-500 dark:border-purple-900 dark:bg-slate-950"
+                        />
+                        <input
+                          type="password"
+                          value={confirmOwnerPassword}
+                          onChange={(event) => setConfirmOwnerPassword(event.target.value)}
+                          placeholder="Confirm new password"
+                          autoComplete="new-password"
+                          className="rounded-xl border border-purple-200 bg-white px-3 py-2.5 text-xs outline-none focus:border-purple-500 dark:border-purple-900 dark:bg-slate-950"
+                        />
+                      </div>
+                      {passwordChangeError && (
+                        <p className="mt-2 text-[10px] font-bold text-rose-600">{passwordChangeError}</p>
+                      )}
+                      <div className="mt-3 flex justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowPasswordChange(false);
+                            setNewOwnerPassword("");
+                            setConfirmOwnerPassword("");
+                            setPasswordChangeError("");
+                          }}
+                          className="rounded-full bg-white px-4 py-2 text-[10px] font-bold text-gray-600 dark:bg-slate-900 dark:text-gray-300"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          disabled={passwordChanging}
+                          onClick={() => void handleOwnerPasswordChange()}
+                          className="rounded-full bg-purple-600 px-4 py-2 text-[10px] font-black text-white disabled:opacity-50"
+                        >
+                          {passwordChanging ? "Changing..." : "Confirm Password Change"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  {onToggleStatus && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await onToggleStatus(detailItem);
+                        const currentStatus = String(detailItem.status || "").toLowerCase();
+                        setDetailItem((current: any) => ({
+                          ...current,
+                          status: ["active", "approved"].includes(currentStatus)
+                            ? "suspended"
+                            : "active",
+                        }));
+                      }}
+                      className="px-5 py-2.5 rounded-full bg-amber-50 text-amber-700 text-xs font-extrabold cursor-pointer"
+                    >
+                      {["active", "approved"].includes(String(detailItem.status || "").toLowerCase())
+                        ? "Suspend"
+                        : "Reactivate"}
+                    </button>
+                  )}
+                  {onResetOwnerPassword && detailOwnerId && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowPasswordChange((current) => !current);
+                        setPasswordChangeError("");
+                      }}
+                      className="px-5 py-2.5 rounded-full bg-purple-50 text-purple-700 text-xs font-extrabold cursor-pointer inline-flex items-center gap-1.5"
+                    >
+                      <KeyRound size={14} /> Change Owner Password
+                    </button>
+                  )}
+                  {onDelete && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (!confirmingDelete) {
+                          setConfirmingDelete(true);
+                          return;
+                        }
+                        await onDelete(detailItem._id || detailItem.id);
+                        setDetailItem(null);
+                        setConfirmingDelete(false);
+                      }}
+                      className="px-5 py-2.5 rounded-full bg-rose-50 text-rose-600 text-xs font-extrabold cursor-pointer"
+                    >
+                      {confirmingDelete ? "Confirm Delete" : "Delete"}
+                    </button>
+                  )}
+                  <button
+                    onClick={() => {
+                      setDetailItem(null);
+                      setIsDetailEditing(false);
+                      setConfirmingDelete(false);
+                    }}
+                    className="px-6 py-2.5 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-200 rounded-full text-xs font-bold cursor-pointer hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors"
+                  >
+                    Close
+                  </button>
+                  {(onSave || onManage) && (
+                    <button
+                      onClick={() => {
+                        if (onSave) beginDetailEdit();
+                        else if (onManage) onManage(detailItem);
+                      }}
+                      className="px-6 py-2.5 bg-[#0A4DA6] text-white rounded-full text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-[#0A4DA6]/25 cursor-pointer hover:bg-[#083b80] transition-colors"
+                    >
+                      <Edit size={14} /> Edit Record
+                    </button>
+                  )}
+                </>
               )}
             </div>
           </div>
         </div>
       )}
 
-      {/* Create / Edit Form Modal */}
-      {(isCreateOpen || editItem) && (
+      {/* Create Form Modal. Editing stays inside the unified record modal. */}
+      {isCreateOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <form
             onSubmit={handleFormSubmit}
@@ -833,13 +1118,12 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
           >
             <div className="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-3">
               <h3 className="font-bold text-base text-[#0B192C] dark:text-white">
-                {editItem ? "Edit Record" : "Create New Record"}
+                Create New Record
               </h3>
               <button
                 type="button"
                 onClick={() => {
                   setIsCreateOpen(false);
-                  setEditItem(null);
                 }}
                 className="text-gray-400 hover:text-gray-600 cursor-pointer"
               >
@@ -848,7 +1132,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
             </div>
 
             <div className="space-y-4 max-h-[360px] overflow-y-auto pr-1">
-              <ImageGalleryManager
+              {showImageManager && <ImageGalleryManager
                 coverImage={
                   formData.coverImage ||
                   formData.image ||
@@ -877,47 +1161,61 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                 onGalleryChange={(urls) =>
                   setFormData({ ...formData, images: urls, gallery: urls })
                 }
-              />
-              {columns.map((col) => (
-                <div key={col.key} className="space-y-1">
+              />}
+              {resolvedFormFields.map((field) => (
+                <div key={field.name} className="space-y-1">
                   <label className="text-xs font-bold text-gray-400">
-                    {col.label}
+                    {t(field.label)}
                   </label>
-                  {col.key === "isVerified" ? (
+                  {field.type === "select" ? (
                     <select
-                      value={
-                        formData[col.key] === true ||
-                          formData[col.key] === "true" ||
-                          formData[col.key] === "Verified" ||
-                          formData[col.key] === "verified"
-                          ? "Verified"
-                          : "Unverified"
-                      }
+                      value={formData[field.name] ?? field.options?.[0] ?? ""}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
-                          [col.key]: e.target.value === "Verified" ? true : false,
+                          [field.name]: e.target.value,
                         })
                       }
+                      className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none text-[#0B192C] dark:text-white font-bold cursor-pointer"
+                    >
+                      {field.options?.map((option) => (
+                        <option key={option} value={option}>{humanizeKey(option)}</option>
+                      ))}
+                    </select>
+                  ) : field.name === "isVerified" ? (
+                    <select
+                      value={formData[field.name] ? "Verified" : "Unverified"}
+                      onChange={(e) => setFormData({ ...formData, [field.name]: e.target.value === "Verified" })}
                       className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none text-[#0B192C] dark:text-white font-bold cursor-pointer"
                     >
                       <option value="Verified">Verified</option>
                       <option value="Unverified">Unverified</option>
                     </select>
+                  ) : field.type === "textarea" ? (
+                    <textarea
+                      required={field.required}
+                      rows={4}
+                      value={formData[field.name] ?? ""}
+                      onChange={(e) =>
+                        setFormData({ ...formData, [field.name]: e.target.value })
+                      }
+                      className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none text-[#0B192C] dark:text-white resize-y"
+                    />
                   ) : (
                     <input
-                      type="text"
-                      required
-                      value={formData[col.key] || ""}
+                      type={field.type}
+                      required={field.required}
+                      min={field.type === "number" ? 0 : undefined}
+                      value={formData[field.name] ?? ""}
                       onChange={(e) =>
-                        setFormData({ ...formData, [col.key]: e.target.value })
+                        setFormData({ ...formData, [field.name]: e.target.value })
                       }
                       className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none text-[#0B192C] dark:text-white"
                     />
                   )}
                 </div>
               ))}
-              <div className="space-y-1">
+              {!formFields && <div className="space-y-1">
                 <label className="text-xs font-bold text-gray-400">
                   Status
                 </label>
@@ -933,7 +1231,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                   <option value="rejected">Rejected / Suspended</option>
                   <option value="cancelled">Cancelled</option>
                 </select>
-              </div>
+              </div>}
             </div>
 
             <div className="flex gap-3 pt-3 border-t border-gray-100 dark:border-slate-800">
@@ -941,7 +1239,6 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                 type="button"
                 onClick={() => {
                   setIsCreateOpen(false);
-                  setEditItem(null);
                 }}
                 className="flex-1 py-2.5 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-200 rounded-full text-xs font-bold cursor-pointer"
               >
@@ -951,7 +1248,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                 type="submit"
                 className="flex-1 py-2.5 bg-[#0A4DA6] text-white rounded-full text-xs font-black shadow-md cursor-pointer hover:bg-[#083b80]"
               >
-                {editItem ? "Save Changes" : "Create Record"}
+                Create Record
               </button>
             </div>
           </form>

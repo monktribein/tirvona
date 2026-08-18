@@ -18,10 +18,13 @@ export class UploadsController {
   // browser and is wrong often enough to reject valid photos. UploadsService
   // identifies the file from its magic bytes, which is both more permissive
   // for real images and stricter for anything pretending to be one.
+  // The ceiling has to admit the largest allowed file (a 100 MB video);
+  // UploadsService then applies the real per-type limit, so an oversized image
+  // is still rejected at 10 MB.
   @UseInterceptors(
     FileInterceptor("file", {
       storage: memoryStorage(),
-      limits: { fileSize: 10 * 1024 * 1024 },
+      limits: { fileSize: UploadsService.MAX_UPLOAD_BYTES },
     }),
   )
   async upload(

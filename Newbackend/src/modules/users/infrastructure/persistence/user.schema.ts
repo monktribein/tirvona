@@ -8,6 +8,11 @@ export const USER_ROLES = [
   "govt_admin",
   "government_admin",
   "district_officer",
+  "ashram_admin",
+  "ashram_owner",
+  // Legacy values remain accepted until the idempotent role migration has
+  // upgraded every deployed database.
+  "stay_admin",
   "owner",
   "manager",
   "reception",
@@ -74,6 +79,8 @@ export class User {
   @Prop({ default: "local", enum: ["local", "google"] }) authProvider: string;
   @Prop({ sparse: true, index: true }) googleId?: string;
   @Prop({ default: "" }) avatarUrl: string;
+  @Prop({ select: false, default: "" }) aadhaarCardUrl: string;
+  @Prop({ select: false, default: "" }) panCardUrl: string;
   @Prop({ default: "" }) district: string;
   @Prop({ default: "" }) state: string;
   @Prop({ default: "" }) city: string;

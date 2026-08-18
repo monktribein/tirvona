@@ -2,10 +2,16 @@ import React, { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   leadCollectionService,
+  type LeadRegion,
   type LeadUser,
 } from "../../../services/leadCollection.service";
+import {
+  getAllStates,
+  getDistricts,
+} from "india-state-district";
 import { getErrorMessage } from "../../../lib/api";
 import { toast } from "../../../lib/toast";
+import { getFormattingLocale } from "../../../utils/format";
 import {
   EnterpriseButton,
   EnterpriseModal,
@@ -17,6 +23,7 @@ import {
   ClipboardList,
   KeyRound,
   Loader2,
+  MapPinned,
   Pencil,
   Plus,
   RefreshCw,
@@ -48,7 +55,8 @@ interface AgentForm {
   email: string;
   password: string;
   role: "field_agent" | "field_supervisor";
-  region: string;
+  state: string;
+  district: string;
   employeeCode: string;
   notes: string;
 }
@@ -59,14 +67,15 @@ const BLANK: AgentForm = {
   email: "",
   password: "",
   role: "field_agent",
-  region: "",
+  state: "",
+  district: "",
   employeeCode: "",
   notes: "",
 };
 
 const formatDate = (value?: string | null): string =>
   value
-    ? new Date(value).toLocaleString("en-IN", {
+    ? new Date(value).toLocaleString(getFormattingLocale(), {
         day: "2-digit",
         month: "short",
         year: "numeric",
@@ -84,6 +93,10 @@ export const LeadAgentsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [regions, setRegions] = useState<LeadRegion[]>([]);
+  const [managingRegions, setManagingRegions] = useState(false);
+  const [newRegionState, setNewRegionState] = useState("");
+  const [newRegionDistrict, setNewRegionDistrict] = useState("");
 
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<LeadUser | null>(null);
@@ -120,9 +133,22 @@ export const LeadAgentsPage: React.FC = () => {
     }
   }, [page, debouncedSearch]);
 
+  const loadRegions = useCallback(async () => {
+    try {
+      const res = await leadCollectionService.listRegions();
+      setRegions(res.data.data ?? []);
+    } catch (err) {
+      toast.error(getErrorMessage(err, "Could not load regions."));
+    }
+  }, []);
+
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    void loadRegions();
+  }, [loadRegions]);
 
   const openCreate = () => {
     setForm(BLANK);
@@ -137,7 +163,8 @@ export const LeadAgentsPage: React.FC = () => {
       // Never prefilled — the hash is not readable and a reset is its own action.
       password: "",
       role: agent.role,
-      region: agent.region ?? "",
+      state: agent.state ?? "",
+      district: agent.district ?? "",
       employeeCode: agent.employeeCode ?? "",
       notes: agent.notes ?? "",
     });
@@ -153,8 +180,10 @@ export const LeadAgentsPage: React.FC = () => {
     if (!form.name.trim()) return toast.error("Agent name is required");
     if (form.phone.replace(/\D/g, "").length < 10)
       return toast.error("Enter a valid 10-digit mobile number");
-    if (!editing && form.password.length < 6)
-      return toast.error("Password must be at least 6 characters");
+    if (!editing && form.password.length < 8)
+      return toast.error("Password must be at least 8 characters");
+    if (!form.state || !form.district)
+      return toast.error("State and district region are required");
 
     setSaving(true);
     try {
@@ -162,7 +191,8 @@ export const LeadAgentsPage: React.FC = () => {
         name: form.name.trim(),
         phone: form.phone.trim(),
         role: form.role,
-        region: form.region.trim(),
+        state: form.state,
+        district: form.district,
         employeeCode: form.employeeCode.trim(),
         notes: form.notes.trim(),
       };
@@ -187,6 +217,36 @@ export const LeadAgentsPage: React.FC = () => {
     }
   };
 
+  const addRegion = async () => {
+    if (!newRegionState || !newRegionDistrict)
+      return toast.error("Select a state and district");
+    setSaving(true);
+    try {
+      await leadCollectionService.addRegion(
+        newRegionState,
+        newRegionDistrict,
+      );
+      setNewRegionDistrict("");
+      await loadRegions();
+    } catch (err) {
+      toast.error(getErrorMessage(err, "Could not add the region."));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const removeRegion = async (region: LeadRegion) => {
+    setSaving(true);
+    try {
+      await leadCollectionService.deleteRegion(region.state, region.district);
+      await loadRegions();
+    } catch (err) {
+      toast.error(getErrorMessage(err, "Could not remove the region."));
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const toggleStatus = async (agent: LeadUser) => {
     setSaving(true);
     try {
@@ -203,8 +263,8 @@ export const LeadAgentsPage: React.FC = () => {
 
   const resetPassword = async () => {
     if (!resetting) return;
-    if (newPassword.length < 6)
-      return toast.error("Password must be at least 6 characters");
+    if (newPassword.length < 8)
+      return toast.error("Password must be at least 8 characters");
     setSaving(true);
     try {
       await leadCollectionService.resetUserPassword(resetting._id, newPassword);
@@ -254,6 +314,13 @@ export const LeadAgentsPage: React.FC = () => {
               onClick={() => void load()}
             >
               Refresh
+            </EnterpriseButton>
+            <EnterpriseButton
+              variant="outline"
+              icon={<MapPinned size={14} />}
+              onClick={() => setManagingRegions(true)}
+            >
+              Regions
             </EnterpriseButton>
             <EnterpriseButton icon={<Plus size={14} />} onClick={openCreate}>
               Create Agent
@@ -351,24 +418,32 @@ export const LeadAgentsPage: React.FC = () => {
                       {formatDate(agent.lastLoginAt)}
                     </td>
                     <td className="px-5 py-3">
-                      <EnterpriseStatusBadge status={agent.status} size="sm" />
+                      {agent.createdByAdminId ? (
+                        <EnterpriseStatusBadge status={agent.status} size="sm" />
+                      ) : (
+                        <span className="inline-flex px-2.5 py-1 rounded-full text-[10px] font-black bg-rose-50 text-rose-700 border border-rose-200">
+                          UNAUTHORISED
+                        </span>
+                      )}
                     </td>
                     <td className="px-5 py-3">
                       <div className="flex items-center justify-end gap-1.5">
                         <button
                           title="Edit"
+                          disabled={!agent.createdByAdminId}
                           onClick={() => openEdit(agent)}
-                          className="p-1.5 rounded-lg text-[#0A4DA6] hover:bg-[#0A4DA6]/10 cursor-pointer"
+                          className="p-1.5 rounded-lg text-[#0A4DA6] hover:bg-[#0A4DA6]/10 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                         >
                           <Pencil size={15} />
                         </button>
                         <button
                           title="Reset password"
+                          disabled={!agent.createdByAdminId}
                           onClick={() => {
                             setNewPassword("");
                             setResetting(agent);
                           }}
-                          className="p-1.5 rounded-lg text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40 cursor-pointer"
+                          className="p-1.5 rounded-lg text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                         >
                           <KeyRound size={15} />
                         </button>
@@ -376,7 +451,7 @@ export const LeadAgentsPage: React.FC = () => {
                           title={
                             agent.status === "active" ? "Suspend" : "Reactivate"
                           }
-                          disabled={saving}
+                          disabled={saving || !agent.createdByAdminId}
                           onClick={() => void toggleStatus(agent)}
                           className={`p-1.5 rounded-lg cursor-pointer disabled:opacity-40 ${
                             agent.status === "active"
@@ -476,9 +551,9 @@ export const LeadAgentsPage: React.FC = () => {
             />
           </Field>
           {!editing && (
-            <Field label="PASSWORD *" hint="Minimum 6 characters.">
+            <Field label="PASSWORD *" hint="Minimum 8 characters.">
               <input
-                type="text"
+                type="password"
                 className={inputClass}
                 value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
@@ -500,13 +575,34 @@ export const LeadAgentsPage: React.FC = () => {
               <option value="field_supervisor">Field supervisor</option>
             </select>
           </Field>
-          <Field label="REGION">
-            <input
+          <Field
+            label="REGION *"
+            hint="The agent is restricted to this state and district."
+          >
+            <select
               className={inputClass}
-              placeholder="e.g. Rishikesh"
-              value={form.region}
-              onChange={(e) => setForm({ ...form, region: e.target.value })}
-            />
+              value={form.state && form.district ? `${form.state}|${form.district}` : ""}
+              onChange={(e) => {
+                const selected = regions.find(
+                  (region) => `${region.state}|${region.district}` === e.target.value,
+                );
+                setForm({
+                  ...form,
+                  state: selected?.state ?? "",
+                  district: selected?.district ?? "",
+                });
+              }}
+            >
+              <option value="">Select state and district</option>
+              {regions.map((region) => (
+                <option
+                  key={`${region.state}|${region.district}`}
+                  value={`${region.state}|${region.district}`}
+                >
+                  {region.state} — {region.district}
+                </option>
+              ))}
+            </select>
           </Field>
           <Field label="EMPLOYEE CODE">
             <input
@@ -526,6 +622,97 @@ export const LeadAgentsPage: React.FC = () => {
                 onChange={(e) => setForm({ ...form, notes: e.target.value })}
               />
             </Field>
+          </div>
+        </div>
+      </EnterpriseModal>
+
+      {/* Region catalogue */}
+      <EnterpriseModal
+        isOpen={managingRegions}
+        onClose={() => setManagingRegions(false)}
+        title="Manage lead regions"
+        subtitle="Tirvona districts appear automatically. Add another Indian district when needed."
+        icon={<MapPinned size={18} className="text-[#0A4DA6]" />}
+        maxWidth="2xl"
+        footer={
+          <div className="flex justify-end">
+            <EnterpriseButton
+              variant="outline"
+              onClick={() => setManagingRegions(false)}
+            >
+              Done
+            </EnterpriseButton>
+          </div>
+        }
+      >
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-2 items-end">
+            <Field label="STATE / UNION TERRITORY">
+              <select
+                className={inputClass}
+                value={newRegionState}
+                onChange={(e) => {
+                  setNewRegionState(e.target.value);
+                  setNewRegionDistrict("");
+                }}
+              >
+                <option value="">Select state</option>
+                {getAllStates().map((state) => (
+                  <option key={state.code} value={state.name}>{state.name}</option>
+                ))}
+              </select>
+            </Field>
+            <Field label="DISTRICT">
+              <select
+                className={inputClass}
+                value={newRegionDistrict}
+                disabled={!newRegionState}
+                onChange={(e) => setNewRegionDistrict(e.target.value)}
+              >
+                <option value="">Select district</option>
+                {getDistricts(
+                  getAllStates().find((state) => state.name === newRegionState)?.code ?? "",
+                ).map((district) => (
+                  <option key={district} value={district}>{district}</option>
+                ))}
+              </select>
+            </Field>
+            <EnterpriseButton
+              icon={<Plus size={14} />}
+              loading={saving}
+              onClick={() => void addRegion()}
+            >
+              Add
+            </EnterpriseButton>
+          </div>
+
+          <div className="max-h-72 overflow-y-auto border border-gray-100 dark:border-slate-800 rounded-xl divide-y divide-gray-100 dark:divide-slate-800">
+            {regions.map((region) => (
+              <div
+                key={`${region.state}|${region.district}`}
+                className="flex items-center justify-between gap-3 px-3 py-2"
+              >
+                <div>
+                  <div className="text-xs font-black text-[#0B192C] dark:text-white">
+                    {region.district}
+                  </div>
+                  <div className="text-[10px] font-semibold text-gray-400">
+                    {region.state} · {region.source === "tirvona" ? "From Tirvona" : "Added region"}
+                  </div>
+                </div>
+                {region.source === "custom" && (
+                  <button
+                    type="button"
+                    title="Remove region"
+                    disabled={saving}
+                    onClick={() => void removeRegion(region)}
+                    className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 disabled:opacity-40 cursor-pointer"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       </EnterpriseModal>
@@ -557,7 +744,7 @@ export const LeadAgentsPage: React.FC = () => {
       >
         <Field label="NEW PASSWORD" hint="Share this with the agent directly.">
           <input
-            type="text"
+            type="password"
             className={inputClass}
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}

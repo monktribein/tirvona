@@ -1,4 +1,5 @@
 import React from "react";
+import { formatCurrency } from "../utils/format";
 
 // Shared component for static legal/info pages
 const StaticSection: React.FC<{ title: string; children: React.ReactNode }> = ({
@@ -315,7 +316,7 @@ export const OwnerGuidePage: React.FC = () => (
         {
           step: "06",
           title: "Go Live",
-          desc: 'Once verified, your ashram receives the blue "Verified" badge and becomes discoverable by millions of pilgrims. You\'ll receive login credentials for the Owner Dashboard to manage bookings, calendar, and pricing.',
+          desc: 'Once approved, your ashram receives the blue "Tirvona Verified" badge and becomes discoverable by millions of pilgrims. You\'ll receive login credentials for the Owner Dashboard to manage bookings, calendar, and pricing.',
         },
       ].map((s, i) => (
         <div
@@ -441,7 +442,8 @@ export const StayPoliciesPage: React.FC = () => (
       <StaticSection title="Security Deposit">
         <p>
           Some ashrams may collect a refundable security deposit at check-in
-          (typically ₹500–₹2,000 depending on room category). This is returned
+          (typically {formatCurrency(500)}–{formatCurrency(2000)} depending on
+          room category). This is returned
           in full at check-out if no damage is found.
         </p>
       </StaticSection>

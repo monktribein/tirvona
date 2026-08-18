@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import api from "../lib/api";
+import api, { getErrorMessage } from "../lib/api";
+import { formatCurrency } from "../utils/format";
 import {
   Tag,
   Plus,
@@ -22,7 +23,7 @@ import { useNotifications } from "../contexts/NotificationContext";
 import FileUploader from "../components/FileUploader";
 
 export const OwnerOffersPage: React.FC = () => {
-  const { addNotification } = useNotifications();
+  const { addNotification, confirmAction } = useNotifications();
 
   const [offers, setOffers] = useState<any[]>([]);
   const [ashrams, setAshrams] = useState<any[]>([]);
@@ -272,16 +273,18 @@ export const OwnerOffersPage: React.FC = () => {
   };
 
   const handleDelete = async (offerId: string) => {
-    if (
-      !window.confirm("Are you sure you want to delete this promotional offer?")
-    )
-      return;
+    if (!(await confirmAction({ title: "Delete promotional offer?", message: "This offer will be removed and its coupon will no longer be usable.", confirmLabel: "Delete Offer", tone: "danger" }))) return;
     try {
       await api.delete(`/offers/${offerId}`);
       addNotification("Offer Deleted", "The offer has been removed.", "info");
       fetchData();
     } catch (err) {
       console.error("Delete offer error:", err);
+      addNotification(
+        "Could Not Delete Offer",
+        getErrorMessage(err, "The offer could not be deleted. Please try again."),
+        "error",
+      );
     }
   };
 
@@ -377,7 +380,7 @@ export const OwnerOffersPage: React.FC = () => {
             Revenue
           </div>
           <div className="text-xl font-black text-amber-500">
-            ₹{stats.revenueGenerated}
+            {formatCurrency(stats.revenueGenerated)}
           </div>
         </div>
       </div>
@@ -453,7 +456,7 @@ export const OwnerOffersPage: React.FC = () => {
                   <span className="absolute top-3 right-3 px-3 py-1 rounded-full bg-amber-500 text-white text-xs font-black">
                     {offer.discountType === "Percentage"
                       ? `${offer.discountValue}% OFF`
-                      : `₹${offer.discountValue} OFF`}
+                      : `${formatCurrency(offer.discountValue)} OFF`}
                   </span>
                 </div>
 

@@ -18,7 +18,6 @@ export interface LeadCollectionConfig {
   jwtIssuer: string;
   jwtAudience: string;
   bcryptRounds: number;
-  autoProvisionAgents: boolean;
 }
 
 const DEFAULT_DB_NAME = "tirvona_leads";
@@ -43,15 +42,4 @@ export const leadCollectionConfig = (): LeadCollectionConfig => ({
   jwtIssuer: process.env.LEAD_JWT_ISSUER || "tirvona-lead-api",
   jwtAudience: process.env.LEAD_JWT_AUDIENCE || "tirvona-lead-agents",
   bcryptRounds: Number(process.env.LEAD_BCRYPT_ROUNDS) || 10,
-  /**
-   * When true, a first sign-in with an unknown phone number creates the field
-   * agent instead of rejecting it — agents get to work without waiting on an
-   * admin to provision them.
-   *
-   * The trade-off is real: it makes the login endpoint self-service, so anyone
-   * who can reach it can create an agent and post leads. Set
-   * `LEAD_AUTO_PROVISION=false` to require admin-created accounts instead; the
-   * console at Lead Collection → Field Agents is then the only way in.
-   */
-  autoProvisionAgents: process.env.LEAD_AUTO_PROVISION !== "false",
 });

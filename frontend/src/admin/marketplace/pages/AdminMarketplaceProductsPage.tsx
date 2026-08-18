@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { formatCurrency } from "../../../utils/format";
 import {
   ShoppingBag,
   Plus,
@@ -33,7 +34,7 @@ import {
 } from "../../shared";
 
 export const AdminMarketplaceProductsPage: React.FC = () => {
-  const { addNotification } = useNotifications();
+  const { addNotification, confirmAction } = useNotifications();
 
   const [products, setProducts] = useState<MarketplaceProductItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -182,7 +183,7 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
   };
 
   const handleDelete = async (id: string, name: string) => {
-    if (!window.confirm(`Are you sure you want to delete "${name}"?`)) return;
+    if (!(await confirmAction({ title: "Delete marketplace product?", message: `Product “${name}” will be permanently removed.`, confirmLabel: "Delete Product", tone: "danger" }))) return;
     try {
       await marketplaceService.deleteProduct(id);
       addNotification("Deleted", `Product "${name}" deleted.`, "info");
@@ -662,15 +663,15 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
                         {p.salePrice ? (
                           <div>
                             <span className="font-black text-emerald-600 dark:text-emerald-400 text-sm">
-                              ₹{p.salePrice}
+                              {formatCurrency(p.salePrice)}
                             </span>
                             <span className="text-[10px] text-gray-400 line-through block">
-                              ₹{p.price}
+                              {formatCurrency(p.price)}
                             </span>
                           </div>
                         ) : (
                           <span className="font-black text-gray-800 dark:text-gray-200 text-sm">
-                            ₹{p.price}
+                            {formatCurrency(p.price)}
                           </span>
                         )}
                       </td>

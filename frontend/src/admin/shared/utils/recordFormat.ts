@@ -1,3 +1,6 @@
+import { tUi } from "../../../contexts/LanguageContext";
+import { getFormattingLocale } from "../../../utils/format";
+
 /**
  * Formatting helpers for record values coming back from the API.
  *
@@ -29,7 +32,7 @@ const ACRONYMS: Record<string, string> = {
 
 /** "ownerId" / "owner_id" / "address.city" -> "Owner ID" / "Address › City" */
 export const humanizeKey = (key: string): string =>
-  key
+  tUi(key
     .replace(/\./g, " › ")
     .replace(/_/g, " ")
     .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
@@ -41,7 +44,7 @@ export const humanizeKey = (key: string): string =>
         : (ACRONYMS[word.toLowerCase()] ??
           word.charAt(0).toUpperCase() + word.slice(1)),
     )
-    .join(" ");
+    .join(" ")).replace(/\s+URLs?$/i, "");
 
 export const ISO_DATE = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}|$)/;
 export const URL_LIKE = /^https?:\/\//i;
@@ -54,12 +57,13 @@ export const isEmptyValue = (value: unknown): boolean =>
 /** Single-line text for one scalar. */
 export const formatScalar = (value: unknown): string => {
   if (isEmptyValue(value)) return "—";
-  if (typeof value === "boolean") return value ? "Yes" : "No";
-  if (typeof value === "number") return value.toLocaleString();
-  if (value instanceof Date) return value.toLocaleString();
+  if (typeof value === "boolean") return tUi(value ? "Yes" : "No");
+  if (typeof value === "number") return value.toLocaleString(getFormattingLocale());
+  if (value instanceof Date) return value.toLocaleString(getFormattingLocale());
   if (typeof value === "string" && ISO_DATE.test(value)) {
     const parsed = new Date(value);
-    if (!Number.isNaN(parsed.getTime())) return parsed.toLocaleString();
+    if (!Number.isNaN(parsed.getTime()))
+      return parsed.toLocaleString(getFormattingLocale());
   }
   return String(value);
 };
@@ -69,6 +73,12 @@ export const formatScalar = (value: unknown): string => {
  * block would break the row. Objects collapse to their most name-like field.
  */
 export const formatInline = (value: unknown): string => {
+  if (typeof value === "string" && URL_LIKE.test(value)) {
+    if (/\.(jpe?g|png|webp|gif|svg|avif|heic)($|\?)/i.test(value))
+      return "Image available";
+    if (/\.pdf($|\?)/i.test(value)) return "PDF available";
+    return "Document available";
+  }
   if (isEmptyValue(value)) return "—";
   if (Array.isArray(value)) {
     if (!value.length) return "—";
@@ -79,14 +89,14 @@ export const formatInline = (value: unknown): string => {
   if (typeof value === "object" && !(value instanceof Date)) {
     const record = value as Record<string, unknown>;
     for (const key of ["name", "title", "label", "city", "average", "url"])
-      if (!isEmptyValue(record[key])) return formatScalar(record[key]);
+      if (!isEmptyValue(record[key])) return formatInline(record[key]);
     const entries = Object.entries(record).filter(
       ([, item]) => !isEmptyValue(item),
     );
     if (!entries.length) return "—";
     return entries
       .slice(0, 3)
-      .map(([key, item]) => `${humanizeKey(key)}: ${formatScalar(item)}`)
+      .map(([key, item]) => `${humanizeKey(key)}: ${formatInline(item)}`)
       .join(" · ");
   }
   return formatScalar(value);

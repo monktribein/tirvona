@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "node scripts/check-spa-routes.mjs && tsc -b && vite build && npm run build:smart-contact",
+    "build:smart-contact": "node scripts/build-smart-contact.mjs",
+    "check:routes": "node scripts/check-spa-routes.mjs",
     "lint": "oxlint",
     "preview": "vite preview"
   },
@@ -14,6 +16,7 @@
     "axios": "^1.18.1",
     "framer-motion": "^12.42.2",
     "i18next": "^26.3.6",
+    "india-state-district": "^1.0.5",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.24.0",
     "react": "^19.2.7",

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ashramService } from "../services";
+import { formatCurrency } from "../utils/format";
 import { SearchResultStatus } from "../components/shared/SearchResultStatus";
 import { GuestRoomSelector } from "../components/shared/GuestRoomSelector";
 import { VerifiedBadge } from "../components/shared/VerifiedBadge";
@@ -10,6 +11,8 @@ import {
   useBookingSearch,
   normalizeBookingDates,
 } from "../contexts/BookingSearchContext";
+import { useLanguage } from "../contexts/LanguageContext";
+import { hiUi } from "../i18n/resources";
 import {
   Filter,
   MapPin,
@@ -26,6 +29,7 @@ import {
 } from "lucide-react";
 
 export const SearchPage: React.FC = () => {
+  const { language, t } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
   const rawDestination = searchParams.get("destination") || "";
   const rawCategory =
@@ -131,7 +135,7 @@ export const SearchPage: React.FC = () => {
       const lower = typeQuery.toLowerCase();
       if (lower.includes("ashram")) setAshramFilter(true);
       if (lower.includes("dharamshala")) setDharamshalaFilter(true);
-      if (lower.includes("homestay") || lower.includes("temple"))
+      if (lower.includes("homestay") || lower.includes("home stay") || lower.includes("temple"))
         setHomestayFilter(true);
     }
     setCheckIn(effIn);
@@ -197,16 +201,15 @@ export const SearchPage: React.FC = () => {
 
         if (selectedTypes.length > 0 && selectedTypes.length < 3) {
           fetchedData = fetchedData.filter((a: any) => {
-            const ashramType = (
-              a.type ||
-              a.category ||
-              a.propertyType ||
-              "ashram"
+            const rawType = String(
+              a.ashramType || a.type || a.category || a.propertyType || a.name || "ashram",
             ).toLowerCase();
-            const ashramName = (a.name || "").toLowerCase();
-            return selectedTypes.some(
-              (t) => ashramType.includes(t) || ashramName.includes(t),
-            );
+            const category = /dharam|dharma/.test(rawType)
+              ? "dharamshala"
+              : /home\s*stay|guest\s*house|rest\s*house|temple\s*trust\s*stay/.test(rawType)
+                ? "homestay"
+                : "ashram";
+            return selectedTypes.includes(category);
           });
         }
 
@@ -376,10 +379,10 @@ export const SearchPage: React.FC = () => {
             <div className="relative">
               <input
                 type="text"
-                value={destination}
+                value={language === "hi" && destination && hiUi[destination] ? hiUi[destination] : destination}
                 onChange={handleInputChange}
                 onFocus={() => setShowSuggestions(true)}
-                placeholder="Search destinations"
+                placeholder={t("Search destinations")}
                 className="w-full bg-transparent border-0 p-0 mt-0.5 text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-300 focus:outline-none"
               />
             </div>
@@ -400,7 +403,7 @@ export const SearchPage: React.FC = () => {
                       className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-slate-800 font-semibold flex items-center gap-2 border-b border-gray-50 dark:border-slate-850 last:border-b-0 cursor-pointer"
                     >
                       <Compass size={12} className="text-[#0A4DA6]" />
-                      <span>{sug}</span>
+                      <span>{t(sug)}</span>
                     </button>
                   ))}
                 </motion.div>
@@ -605,7 +608,7 @@ export const SearchPage: React.FC = () => {
           ) : results.length === 0 ? (
             <div className="text-center py-20 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] space-y-4">
               <h4 className="font-extrabold text-base text-[#0B192C] dark:text-white">
-                No verified Ashrams found matching{" "}
+                No Tirvona Verified Ashrams found matching{" "}
                 {activeKeyword ? `"${activeKeyword}"` : "your query"}
               </h4>
               <p className="text-xs text-gray-400 max-w-sm mx-auto leading-relaxed">
@@ -646,7 +649,7 @@ export const SearchPage: React.FC = () => {
                           {(ashram.isVerified ?? ashram.status === "approved") && (
                             <img
                               src="/Verified badge/verified.png"
-                              alt="Verified"
+                              alt="Tirvona Verified"
                               className="h-9 sm:h-11 w-auto object-contain inline-block shrink-0 align-middle max-w-[140px]"
                             />
                           )}
@@ -693,7 +696,7 @@ export const SearchPage: React.FC = () => {
                         Starts From
                       </span>
                       <span className="text-base font-extrabold text-[#0B192C] dark:text-white">
-                        ₹{ashram.lowestNightPrice ?? 150}
+                        {formatCurrency(ashram.lowestNightPrice ?? 150)}
                       </span>
                       <span className="text-[9px] text-gray-400 font-bold">
                         per night / bed
@@ -909,7 +912,7 @@ export const SearchPage: React.FC = () => {
                               {isSelected && (
                                 <div className="mt-3 pt-3 border-t border-dashed border-gray-150 flex justify-between items-center">
                                   <span className="text-[9px] font-bold text-gray-500">
-                                    From: ₹{item.lowestNightPrice ?? 150}/night
+                                    From: {formatCurrency(item.lowestNightPrice ?? 150)}/night
                                   </span>
                                   <Link
                                     to={buildDetailLink(item._id)}

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, useSearchParams, Link } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams, Link } from "react-router-dom";
 import {
   ShieldCheck,
   Lock,
@@ -18,7 +18,11 @@ import { getErrorMessage } from "../lib/api";
 export const ResetPasswordPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const token = searchParams.get("token") || "";
+  // The query string is the current link format. The path param covers links
+  // mailed by the older `/reset-password/<token>` builder, which are still
+  // valid for 30 minutes after a deploy.
+  const params = useParams<{ token?: string }>();
+  const token = searchParams.get("token") || params.token || "";
 
   const [checking, setChecking] = useState(true);
   const [tokenValid, setTokenValid] = useState(false);

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { formatCurrency } from "../utils/format";
 import {
   CheckCircle,
   ArrowRight,
@@ -11,7 +12,8 @@ import {
 const plans = [
   {
     name: "Basic Listing",
-    price: "Free",
+    price: null,
+    priceLabel: "Free",
     desc: "Perfect for small ashrams and dharamshalas just getting started.",
     features: [
       "1 Ashram listing",
@@ -25,7 +27,8 @@ const plans = [
   },
   {
     name: "Professional",
-    price: "₹999/mo",
+    price: 999,
+    priceLabel: null,
     desc: "For established ashrams seeking premium visibility and bookings.",
     features: [
       "Unlimited room types",
@@ -40,7 +43,8 @@ const plans = [
   },
   {
     name: "Enterprise",
-    price: "Custom",
+    price: null,
+    priceLabel: "Custom",
     desc: "For large temple trusts and multi-property retreat organisations.",
     features: [
       "Multi-property management",
@@ -64,7 +68,7 @@ const benefits = [
   {
     icon: <ShieldCheck className="w-5 h-5 text-[#0A4DA6]" />,
     title: "Trust & Safety",
-    desc: "Our govt-verified badge builds instant credibility with guests.",
+    desc: "Our Tirvona Verified badge builds instant credibility with guests.",
   },
   {
     icon: <Star className="w-5 h-5 text-[#0A4DA6]" />,
@@ -184,7 +188,9 @@ const PartnerPage: React.FC = () => {
                   <p
                     className={`text-2xl font-black mt-1 ${plan.highlight ? "text-white" : "text-[#0B192C] dark:text-white"}`}
                   >
-                    {plan.price}
+                    {plan.price === null
+                      ? plan.priceLabel
+                      : `${formatCurrency(plan.price)}/mo`}
                   </p>
                   <p
                     className={`text-xs mt-1 leading-relaxed ${plan.highlight ? "text-blue-100" : "text-gray-500"}`}

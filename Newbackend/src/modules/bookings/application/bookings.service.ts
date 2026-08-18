@@ -14,6 +14,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import Razorpay from "razorpay";
 import { TransactionService } from "../../../common/database/transaction.service";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
+import { canManageAllAshrams, isAshramOwner } from "../../../common/auth/ashram-access";
 import {
   BOOKING_REPOSITORY,
   type BookingRepository,
@@ -36,6 +37,7 @@ import type {
   CreateBookingDto,
   UpdateBookingStatusDto,
 } from "../presentation/dtos/booking.dto";
+import { BookingIdentityService } from "./booking-identity.service";
 import { BookingPricingService } from "./booking-pricing.service";
 
 @Injectable()
@@ -44,6 +46,7 @@ export class BookingsService {
     @Inject(BOOKING_REPOSITORY) private readonly repository: BookingRepository,
     private readonly transactions: TransactionService,
     private readonly pricing: BookingPricingService,
+    private readonly identity: BookingIdentityService,
     private readonly config: ConfigService,
     @InjectModel("Booking") private readonly bookings: Model<any>,
     @InjectModel("BookingStatusHistory") private readonly history: Model<any>,
@@ -79,7 +82,10 @@ export class BookingsService {
   private async scopedAshrams(
     user: AuthenticatedUser,
   ): Promise<string[] | null> {
-    if (["super_admin", "national_admin", "support"].includes(user.role))
+    if (
+      ["national_admin", "support"].includes(user.role) ||
+      canManageAllAshrams(user)
+    )
       return null;
     if (["state_admin", "government_admin", "govt_admin"].includes(user.role)) {
       if (!user.state) return [];
@@ -103,7 +109,7 @@ export class BookingsService {
           .lean()
       ).map((a: any) => String(a._id));
     }
-    if (user.role === "owner")
+    if (isAshramOwner(user))
       return (
         await this.ashrams
           .find({ ownerId: user.id, deletedAt: null })
@@ -122,8 +128,9 @@ export class BookingsService {
     user: AuthenticatedUser,
     booking: any,
   ): Promise<void> {
-    if (["super_admin", "support"].includes(user.role)) return;
-    if (!["owner", "manager", "reception"].includes(user.role))
+    if (user.role === "support" || canManageAllAshrams(user))
+      return;
+    if (!isAshramOwner(user) && !["manager", "reception"].includes(user.role))
       throw new ForbiddenException("You cannot manage ashram bookings.");
     const scope = await this.scopedAshrams(user);
     if (
@@ -205,11 +212,18 @@ export class BookingsService {
         if (!reserved.modifiedCount)
           throw new ConflictException("This offer is no longer available");
       }
+      // Issued inside the session so the visitor number is committed with the
+      // booking and released if this transaction aborts or is retried.
+      const identityCode = await this.identity.issueForBooking(
+        dto.ashramId,
+        session,
+      );
       const [created] = await this.bookings.create(
         [
           {
             bookingId: bookingReference(),
             reservationNumber: reservationReference(),
+            identityCode,
             customerId: user.id,
             ashramId: dto.ashramId,
             roomId: dto.roomId,
@@ -819,13 +833,17 @@ export class BookingsService {
     query: BookingDashboardQueryDto,
   ): Promise<any> {
     const scope = await this.scopedAshrams(user);
-    const filter: any = {
-      ...(query.status ? { status: query.status } : {}),
-      ...(query.ashramId ? { ashramId: query.ashramId } : {}),
-      ...(scope === null ? {} : { ashramId: { $in: scope } }),
-    };
     if (query.ashramId && scope !== null && !scope.includes(query.ashramId))
       throw new ForbiddenException("You do not have access to this ashram.");
+    const filter: any = {
+      ...(query.status ? { status: query.status } : {}),
+      ...(query.paymentStatus ? { paymentStatus: query.paymentStatus } : {}),
+      ...(query.ashramId
+        ? { ashramId: query.ashramId }
+        : scope === null
+          ? {}
+          : { ashramId: { $in: scope } }),
+    };
     if (query.search)
       filter.$or = [
         { bookingId: new RegExp(query.search, "i") },

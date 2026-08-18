@@ -51,6 +51,27 @@ import TirvonaMap from "../../../components/TirvonaMap";
 import { hasValidCoordinates } from "../../../utils/geo";
 
 /**
+ * Pick a usable bay as soon as a visitor chooses their vehicle. EV charging
+ * bays are preferred for EVs; otherwise the lowest live total wins, with
+ * availability used as the tie-breaker. Visitors may still choose another
+ * compatible bay from the list.
+ */
+const recommendedSlotType = (
+  slots: ParkingSlotTypeAvailability[],
+  vehicle: ParkingVehicleTypeCode,
+) =>
+  [...slots]
+    .filter((slot) => slot.isAvailable && slot.availableCount > 0)
+    .sort((left, right) => {
+      if (vehicle === "ev" && left.hasEvCharging !== right.hasEvCharging)
+        return left.hasEvCharging ? -1 : 1;
+      const leftTotal = left.pricing?.totalAmount ?? Number.MAX_SAFE_INTEGER;
+      const rightTotal = right.pricing?.totalAmount ?? Number.MAX_SAFE_INTEGER;
+      if (leftTotal !== rightTotal) return leftTotal - rightTotal;
+      return right.availableCount - left.availableCount;
+    })[0];
+
+/**
  * Parking detail & area selection.
  *
  * Everything a visitor needs before committing: photos, map link, amenities,
@@ -129,7 +150,11 @@ export const ParkingDetailPage: React.FC = () => {
         if (cancelled) return;
         if (res.data?.success) {
           setParking(res.data.data);
-          setSlotTypes(res.data.data.slotTypes || []);
+          const nextSlots = res.data.data.slotTypes || [];
+          setSlotTypes(nextSlots);
+          setSelectedSlotType(
+            recommendedSlotType(nextSlots, vehicleType)?.slotTypeId || "",
+          );
           // Navigating between listings must not leave the gallery pointing at
           // an index the new listing may not have.
           setActiveImage(0);
@@ -161,8 +186,11 @@ export const ParkingDetailPage: React.FC = () => {
         vehicleType,
       });
       if (res.data?.success) {
-        setSlotTypes(res.data.data.slotTypes || []);
-        setSelectedSlotType("");
+        const nextSlots = res.data.data.slotTypes || [];
+        setSlotTypes(nextSlots);
+        setSelectedSlotType(
+          recommendedSlotType(nextSlots, vehicleType)?.slotTypeId || "",
+        );
       }
     } catch (err) {
       setError(
@@ -732,7 +760,10 @@ export const ParkingDetailPage: React.FC = () => {
                 <VehicleTypePicker
                   options={vehicleTypes}
                   value={vehicleType}
-                  onChange={setVehicleType}
+                  onChange={(nextVehicle) => {
+                    setSelectedSlotType("");
+                    setVehicleType(nextVehicle);
+                  }}
                   supported={parking.supportedVehicleTypes}
                   compact
                 />
@@ -749,9 +780,10 @@ export const ParkingDetailPage: React.FC = () => {
               )}
 
               {/* Areas */}
+              {false && (
               <div className="space-y-2">
                 <span className="flex items-center justify-between text-[10px] tracking-wider font-bold text-gray-400">
-                  Select an area
+                  Parking area selected automatically
                   {checkingAvailability && (
                     <Loader2
                       size={12}
@@ -794,6 +826,11 @@ export const ParkingDetailPage: React.FC = () => {
                                     />
                                   )}
                                   {slot.name}
+                                  {isSelected && (
+                                    <span className="rounded-full bg-[#0A4DA6]/10 px-2 py-0.5 text-[8px] font-black text-[#0A4DA6]">
+                                      Best match
+                                    </span>
+                                  )}
                                 </p>
                                 <p
                                   className={`text-[10px] font-bold ${availabilityTone(slot.availableCount, slot.totalCapacity)}`}
@@ -832,8 +869,14 @@ export const ParkingDetailPage: React.FC = () => {
                   </ul>
                 )}
               </div>
+              )}
 
               {/* Fare summary */}
+              {checkingAvailability && (
+                <div className="flex items-center justify-center gap-2 rounded-2xl bg-blue-50 px-3 py-4 text-xs font-bold text-[#0A4DA6] dark:bg-blue-950/30">
+                  <Loader2 size={14} className="animate-spin" /> Calculating parking amount...
+                </div>
+              )}
               {selected?.pricing && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
@@ -883,10 +926,14 @@ export const ParkingDetailPage: React.FC = () => {
               <button
                 type="button"
                 onClick={handleProceed}
-                disabled={!selected}
+                disabled={!selected || checkingAvailability}
                 className="w-full bg-[#0A4DA6] hover:bg-[#083D85] disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-extrabold px-5 py-3 rounded-full shadow-md transition-all active:scale-95 cursor-pointer"
               >
-                {selected ? "Continue to Booking" : "Select a parking area"}
+                {checkingAvailability
+                  ? "Finding the best available bay..."
+                  : selected?.pricing
+                    ? `Continue to Payment · ${formatCurrency(selected.pricing.totalAmount)}`
+                    : "No compatible bay available"}
               </button>
 
               <p className="text-[10px] text-gray-400 font-medium text-center leading-relaxed">

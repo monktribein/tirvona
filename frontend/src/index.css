@@ -2,6 +2,15 @@
 
 @variant dark (&:where(.dark, .dark *));
 
+html[lang="hi"] body {
+  font-family: "Nirmala UI", "Noto Sans Devanagari", Mangal, "Plus Jakarta Sans", sans-serif;
+}
+
+html[lang="hi"] .tracking-wider,
+html[lang="hi"] .tracking-widest {
+  letter-spacing: normal;
+}
+
 @theme {
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
@@ -116,6 +125,14 @@ body {
 h1, h2, h3, h4, h5, h6 {
   font-family: "Plus Jakarta Sans", "Inter", sans-serif;
   letter-spacing: -0.025em;
+  text-transform: capitalize;
+}
+
+/* Existing long-form records keep their original wording, with a correctly
+   capitalized opening character. Input values are normalized before save by
+   the shared text-case handler. */
+p::first-letter {
+  text-transform: uppercase;
 }
 
 /* Smooth, GPU-friendly default transitions for interactive elements */

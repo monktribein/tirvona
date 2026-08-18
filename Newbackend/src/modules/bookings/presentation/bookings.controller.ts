@@ -89,6 +89,7 @@ export class BookingsController {
   @Get("dashboard")
   @Roles(
     "owner",
+    "stay_admin",
     "manager",
     "reception",
     "housekeeping",

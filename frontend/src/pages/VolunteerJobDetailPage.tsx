@@ -58,6 +58,8 @@ export const VolunteerJobDetailPage: React.FC = () => {
   const [availability, setAvailability] = useState("Immediate (Next 7 Days)");
   const [motivation, setMotivation] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [alreadyApplied, setAlreadyApplied] = useState(false);
+  const [checkingApplication, setCheckingApplication] = useState(false);
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior });
@@ -98,6 +100,10 @@ export const VolunteerJobDetailPage: React.FC = () => {
 
   const handleApplyClick = () => {
     if (!job) return;
+    if (alreadyApplied) {
+      navigate("/profile/volunteer");
+      return;
+    }
     if (!user) {
       const targetUrl = `/volunteer/${job._id}`;
       setGuestPendingIntent({
@@ -110,6 +116,25 @@ export const VolunteerJobDetailPage: React.FC = () => {
     }
     setIsApplyModalOpen(true);
   };
+
+  useEffect(() => {
+    if (!user || !job) {
+      setAlreadyApplied(false);
+      return;
+    }
+    setCheckingApplication(true);
+    volunteerService
+      .getMyApplications({ jobId: job._id })
+      .then((response) =>
+        setAlreadyApplied(
+          (response.data?.data || []).some(
+            (application: any) => application.status !== "rejected",
+          ),
+        ),
+      )
+      .catch(() => setAlreadyApplied(false))
+      .finally(() => setCheckingApplication(false));
+  }, [job, user]);
 
   useEffect(() => {
     if (!user || !job) return;
@@ -220,6 +245,7 @@ export const VolunteerJobDetailPage: React.FC = () => {
         );
         setIsApplyModalOpen(false);
         setMotivation("");
+        setAlreadyApplied(true);
       }
     } catch (err) {
       console.error("Application submission error:", err);
@@ -267,39 +293,19 @@ export const VolunteerJobDetailPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen pt-24 pb-24 text-left">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-        {/* Breadcrumb Navigation */}
-        <div className="flex items-center gap-2 text-xs font-extrabold text-gray-400 overflow-x-auto whitespace-nowrap">
-          <Link to="/" className="hover:text-[#0A4DA6] transition-colors">
-            Home
-          </Link>
-          <span>/</span>
-          <Link
-            to="/volunteer"
-            className="hover:text-[#0A4DA6] transition-colors"
-          >
-            Volunteer & Careers
-          </Link>
-          <span>/</span>
-          <span className="text-[#0A4DA6]">{job.city}</span>
-          <span>/</span>
-          <span className="text-[#0B192C] dark:text-white truncate max-w-xs">
-            {job.title}
-          </span>
-        </div>
-
+    <div className="min-h-screen pb-24 pt-4 text-left sm:pt-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         {/* Back Link */}
-        <Link
+        {/* <Link
           to="/volunteer"
           className="inline-flex items-center gap-1.5 text-xs font-black text-[#0A4DA6] hover:underline cursor-pointer"
         >
           <ChevronLeft size={14} /> View All Opportunities Directory
-        </Link>
+        </Link> */}
 
         {/* Main Job Hero Header Card */}
-        <div className="bg-white dark:bg-[#0B192C] border border-gray-150 dark:border-slate-800 rounded-[32px] p-6 sm:p-8 shadow-sm space-y-6 relative overflow-hidden">
-          <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-[#0A4DA6] via-[#E58C28] to-[#0A4DA6]" />
+        <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 sm:p-8 shadow-lg space-y-6 relative overflow-hidden">
+          {/* <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-[#0A4DA6] via-[#E58C28] to-[#0A4DA6]" /> */}
 
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-3 flex-1">
@@ -309,7 +315,7 @@ export const VolunteerJobDetailPage: React.FC = () => {
                 </span>
                 {job.isGovtVerified && (
                   <span className="px-3 py-1 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50 rounded-full text-xs font-bold flex items-center gap-1">
-                    <ShieldCheck size={13} /> Govt Verified Seva
+                    <ShieldCheck size={13} /> Tirvona Verified Seva
                   </span>
                 )}
                 <span
@@ -359,9 +365,10 @@ export const VolunteerJobDetailPage: React.FC = () => {
               <button
                 type="button"
                 onClick={handleApplyClick}
-                className="w-full py-3 px-6 bg-[#0A4DA6] hover:bg-[#083b80] text-white font-black rounded-full text-xs shadow-lg shadow-[#0A4DA6]/25 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-98"
+                disabled={checkingApplication}
+                className={`w-full py-3 px-6 text-white font-black rounded-full text-xs shadow-lg flex items-center justify-center gap-2 transition-all active:scale-98 disabled:opacity-60 ${alreadyApplied ? "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20" : "bg-[#0A4DA6] hover:bg-[#083b80] shadow-[#0A4DA6]/25"}`}
               >
-                Apply for Seva <ArrowRight size={14} />
+                {checkingApplication ? "Checking..." : alreadyApplied ? "Already Applied" : "Apply for Seva"} <ArrowRight size={14} />
               </button>
 
               <span className="text-[10px] font-bold text-gray-400">
@@ -521,9 +528,10 @@ export const VolunteerJobDetailPage: React.FC = () => {
               <button
                 type="button"
                 onClick={handleApplyClick}
-                className="w-full py-3.5 bg-[#0A4DA6] hover:bg-[#083b80] text-white font-black rounded-full text-xs shadow-lg shadow-[#0A4DA6]/25 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-98"
+                disabled={checkingApplication}
+                className={`w-full py-3.5 text-white font-black rounded-full text-xs shadow-lg flex items-center justify-center gap-2 transition-all active:scale-98 disabled:opacity-60 ${alreadyApplied ? "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20" : "bg-[#0A4DA6] hover:bg-[#083b80] shadow-[#0A4DA6]/25"}`}
               >
-                Apply Now <ArrowRight size={14} />
+                {checkingApplication ? "Checking..." : alreadyApplied ? "View My Application" : "Apply Now"} <ArrowRight size={14} />
               </button>
 
               <div className="pt-3 border-t border-gray-100 dark:border-slate-800 space-y-2 text-[11px] font-bold text-gray-500">

@@ -4,6 +4,7 @@ import type { RoomCategoryRequestItem } from "../../../services/approval.service
 import { useNotifications } from "../../../contexts/NotificationContext";
 import { getErrorMessage } from "../../../lib/api";
 import { humanizeLabel } from "../../../utils/labels";
+import { formatCurrency, getFormattingLocale } from "../../../utils/format";
 import { EnterprisePageHeader } from "../../shared";
 import {
   Bed,
@@ -102,7 +103,7 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
       {/* Header */}
       <EnterprisePageHeader
         title="Room Category Approval Engine"
-        subtitle="Review and validate structural room category additions requested by Stay Admins across ashrams."
+        subtitle="Review and validate structural room category additions requested by Ashram Owners across ashrams."
         icon={<Layers size={22} />}
         badgeText="Super Admin Console"
       />
@@ -166,7 +167,7 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
                 <tr className="border-b border-gray-100 dark:border-slate-800 text-gray-400 font-bold text-[10px] tracking-wider">
                   <th className="py-3 px-4">Request ID</th>
                   <th className="py-3 px-4">Ashram Name</th>
-                  <th className="py-3 px-4">Stay Admin</th>
+                  <th className="py-3 px-4">Ashram Owner</th>
                   <th className="py-3 px-4">Category Name</th>
                   <th className="py-3 px-4">Capacity / Price</th>
                   <th className="py-3 px-4">Created Date</th>
@@ -189,7 +190,7 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
                     <td className="py-3.5 px-4">
                       <div className="flex flex-col">
                         <span className="font-bold">
-                          {req.stayAdminId?.name || "Stay Admin"}
+                          {req.stayAdminId?.name || "Ashram Owner"}
                         </span>
                         <span className="text-[10px] text-gray-400">
                           {req.stayAdminId?.email}
@@ -204,11 +205,11 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
                         {req.categoryData?.maxGuests} Guests
                       </span>
                       <span className="text-gray-400 block text-[10px]">
-                        ₹{req.categoryData?.suggestedBasePrice} / night
+                        {formatCurrency(req.categoryData?.suggestedBasePrice)} / night
                       </span>
                     </td>
                     <td className="py-3.5 px-4 text-gray-500 font-semibold">
-                      {new Date(req.createdAt).toLocaleDateString("en-IN", {
+                      {new Date(req.createdAt).toLocaleDateString(getFormattingLocale(), {
                         month: "short",
                         day: "numeric",
                         year: "numeric",
@@ -279,7 +280,7 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
               </div>
               <div>
                 <span className="text-gray-400 block text-[10px] font-bold">
-                  Stay Admin
+                  Ashram Owner
                 </span>
                 <span className="font-bold text-gray-700 dark:text-gray-200">
                   {selectedRequest.stayAdminId?.name}
@@ -298,7 +299,7 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
                   Suggested Price
                 </span>
                 <span className="font-bold text-[#0A4DA6]">
-                  ₹{selectedRequest.categoryData?.suggestedBasePrice} / night
+                  {formatCurrency(selectedRequest.categoryData?.suggestedBasePrice)} / night
                 </span>
               </div>
               <div>
@@ -314,7 +315,7 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
                   Submitted Date
                 </span>
                 <span className="font-semibold text-gray-600 dark:text-gray-300">
-                  {new Date(selectedRequest.createdAt).toLocaleDateString()}
+                  {new Date(selectedRequest.createdAt).toLocaleDateString(getFormattingLocale())}
                 </span>
               </div>
             </div>

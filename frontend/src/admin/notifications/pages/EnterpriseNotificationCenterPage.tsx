@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { getFormattingLocale } from "../../../utils/format";
 import {
   Clock,
   Search,
@@ -9,72 +9,154 @@ import {
   Radio,
   RefreshCw,
   Printer,
+  CheckCheck,
 } from "lucide-react";
 import { enterpriseNotificationService } from "../../../services";
 import { useNotifications } from "../../../contexts/NotificationContext";
 import { getErrorMessage } from "../../../lib/api";
 import { humanizeLabel } from "../../../utils/labels";
 import { EnterprisePageHeader } from "../../shared";
+import { NotificationSoundSettings } from "../components/NotificationSoundSettings";
+
+/** How often the feed re-reads the server while the tab is in the foreground. */
+const REFRESH_INTERVAL_MS = 15_000;
+
+interface FeedRow {
+  id: string;
+  source: "notification" | "activity";
+  time: number;
+  title: string;
+  detail: string;
+  module: string;
+  severity: string;
+  actor: string;
+  actorMeta: string;
+  isRead: boolean;
+}
 
 export const EnterpriseNotificationCenterPage: React.FC = () => {
-  const { subSection } = useParams<{ subSection?: string }>();
-  const navigate = useNavigate();
   const { addNotification } = useNotifications();
-
-  // Active View Tab: 'dashboard' | 'all' | 'activities' | 'auth-logs' | 'bookings' | 'payments' | 'tickets' | 'cms' | 'timeline' | 'security'
-  const activeSection = subSection || "dashboard";
 
   const [stats, setStats] = useState<any>(null);
   const [activities, setActivities] = useState<any[]>([]);
   const [notificationsList, setNotificationsList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
 
   // Filter States
   const [searchTerm, setSearchTerm] = useState("");
-  const moduleFilter = "all";
+  const [appliedSearch, setAppliedSearch] = useState("");
   const [severityFilter, setSeverityFilter] = useState("all");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<"table" | "timeline">("table");
 
-  const fetchCenterData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [statsRes, actRes, notifRes] = await Promise.all([
-        enterpriseNotificationService.getStats(),
-        enterpriseNotificationService.getActivities({
-          module:
-            activeSection === "auth-logs"
-              ? "AUTH"
-              : activeSection === "bookings"
-                ? "BOOKING"
-                : activeSection === "payments"
-                  ? "PAYMENT"
-                  : activeSection === "cms"
-                    ? "BANNER"
-                    : moduleFilter,
-          severity: severityFilter,
-          search: searchTerm,
-        }),
-        enterpriseNotificationService.getNotifications({
-          severity: severityFilter,
-          search: searchTerm,
-        }),
-      ]);
+  // Typing must not fire a request per keystroke, and the background refresh
+  // must not wipe the box out from under the user.
+  useEffect(() => {
+    const timer = window.setTimeout(() => setAppliedSearch(searchTerm), 400);
+    return () => window.clearTimeout(timer);
+  }, [searchTerm]);
 
-      if (statsRes.data?.success) setStats(statsRes.data.data);
-      if (actRes.data?.success) setActivities(actRes.data.data || []);
-      if (notifRes.data?.success)
-        setNotificationsList(notifRes.data.data || []);
-    } catch (err) {
-      console.warn("Fetch Enterprise Notifications Error:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [activeSection, moduleFilter, searchTerm, severityFilter]);
+  // `background` refreshes leave the spinner alone so the polling tick does not
+  // make the whole page flicker every 15 seconds.
+  const fetchCenterData = useCallback(
+    async (background = false) => {
+      if (!background) setLoading(true);
+      try {
+        const [statsRes, actRes, notifRes] = await Promise.all([
+          enterpriseNotificationService.getStats(),
+          enterpriseNotificationService.getActivities({
+            severity: severityFilter,
+            search: appliedSearch,
+          }),
+          enterpriseNotificationService.getNotifications({
+            severity: severityFilter,
+            search: appliedSearch,
+          }),
+        ]);
+
+        if (statsRes.data?.success) setStats(statsRes.data.data);
+        if (actRes.data?.success) setActivities(actRes.data.data || []);
+        if (notifRes.data?.success)
+          setNotificationsList(notifRes.data.data || []);
+        setLastSyncedAt(new Date());
+      } catch (err) {
+        console.warn("Fetch Enterprise Notifications Error:", err);
+      } finally {
+        if (!background) setLoading(false);
+      }
+    },
+    [appliedSearch, severityFilter],
+  );
 
   useEffect(() => {
     fetchCenterData();
   }, [fetchCenterData]);
+
+  // Live feed. A hidden tab is not watching, so it does not poll — and it
+  // catches up the moment it comes back to the foreground.
+  const refreshRef = useRef(fetchCenterData);
+  refreshRef.current = fetchCenterData;
+  useEffect(() => {
+    const tick = () => {
+      if (!document.hidden) void refreshRef.current(true);
+    };
+    const timer = window.setInterval(tick, REFRESH_INTERVAL_MS);
+    const onVisible = () => {
+      if (!document.hidden) void refreshRef.current(true);
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, []);
+
+  const feed: FeedRow[] = useMemo(() => {
+    const rows: FeedRow[] = [
+      ...notificationsList.map((item: any) => ({
+        id: String(item._id),
+        source: "notification" as const,
+        time: new Date(item.createdAt || item.updatedAt || 0).getTime(),
+        title: item.title || humanizeLabel(item.type) || "Notification",
+        detail: item.message || "",
+        module: item.module || "notification",
+        severity: item.severity || "info",
+        actor: item.recipientName || humanizeLabel(item.recipientRole) || "All admins",
+        actorMeta: humanizeLabel(item.type) || "In-app",
+        isRead: Boolean(item.isRead),
+      })),
+      ...activities.map((item: any) => ({
+        id: String(item._id || item.activityId),
+        source: "activity" as const,
+        time: new Date(item.timestamp || item.createdAt || 0).getTime(),
+        title: humanizeLabel(item.action) || "System activity",
+        detail: item.description || "",
+        module: item.module || "SYSTEM",
+        severity: item.severity || "info",
+        actor: item.userName || item.userEmail || "System",
+        actorMeta: [humanizeLabel(item.role), item.ipAddress, item.apiEndpoint]
+          .filter(Boolean)
+          .join(" • "),
+        isRead: true,
+      })),
+    ];
+    return rows.sort((a, b) => b.time - a.time);
+  }, [notificationsList, activities]);
+
+  // Only `notifications` rows can be marked read, deleted or bulk-actioned —
+  // telemetry is an append-only audit trail.
+  const actionableIds = useMemo(
+    () => feed.filter((r) => r.source === "notification").map((r) => r.id),
+    [feed],
+  );
+  const allSelected =
+    actionableIds.length > 0 && selectedIds.length === actionableIds.length;
+
+  const toggleSelected = (id: string) =>
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
 
   const handleSeed = async () => {
     try {
@@ -98,11 +180,28 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
     try {
       await enterpriseNotificationService.deleteNotification(id);
       addNotification("Deleted", "Notification removed.", "info");
-      setNotificationsList((prev) => prev.filter((x) => x._id !== id));
+      setNotificationsList((prev) => prev.filter((x) => String(x._id) !== id));
+      setSelectedIds((prev) => prev.filter((x) => x !== id));
     } catch (err) {
       addNotification(
         "Delete Error",
         getErrorMessage(err, "Could not delete."),
+        "error",
+      );
+    }
+  };
+
+  const handleMarkRead = async (id: string) => {
+    try {
+      await enterpriseNotificationService.markRead(id);
+      setNotificationsList((prev) =>
+        prev.map((x) => (String(x._id) === id ? { ...x, isRead: true } : x)),
+      );
+      fetchCenterData(true);
+    } catch (err) {
+      addNotification(
+        "Update Error",
+        getErrorMessage(err, "Could not mark as read."),
         "error",
       );
     }
@@ -129,17 +228,23 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
   };
 
   const handleExportCSV = () => {
-    const exportData =
-      activeSection === "activities" || activeSection === "timeline"
-        ? activities
-        : notificationsList;
-    if (exportData.length === 0) return;
-
-    const headers = "ID,Module,Action,Description,Severity,Timestamp\n";
-    const rows = exportData
-      .map(
-        (x) =>
-          `"${x._id || x.activityId}","${x.module || ""}","${x.action || ""}","${(x.description || x.message || "").replace(/"/g, '""')}","${x.severity || "info"}","${x.createdAt || x.timestamp || ""}"`,
+    if (feed.length === 0) return;
+    const headers = "Timestamp,Source,Module,Title,Details,Actor,Severity\n";
+    const cell = (value: unknown) =>
+      `"${String(value ?? "").replace(/"/g, '""')}"`;
+    const rows = feed
+      .map((row) =>
+        [
+          new Date(row.time).toISOString(),
+          row.source,
+          row.module,
+          row.title,
+          row.detail,
+          row.actor,
+          row.severity,
+        ]
+          .map(cell)
+          .join(","),
       )
       .join("\n");
 
@@ -149,13 +254,11 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute(
-      "download",
-      `tirvona_telemetry_${activeSection}_${Date.now()}.csv`,
-    );
+    link.setAttribute("download", `tirvona_notifications_${Date.now()}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const getSeverityBadge = (severity: string) => {
@@ -189,16 +292,34 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
     }
   };
 
+  const sourceBadge = (source: FeedRow["source"]) => (
+    <span
+      className={`px-2 py-0.5 rounded-full text-[9px] font-black tracking-wider ${
+        source === "notification"
+          ? "bg-[#EBF2FA] text-[#0A4DA6] dark:bg-[#0A4DA6]/20 dark:text-blue-300"
+          : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+      }`}
+    >
+      {source === "notification" ? "Notification" : "Activity"}
+    </span>
+  );
+
+  const emptyMessage = loading
+    ? "Loading the live feed…"
+    : appliedSearch || severityFilter !== "all"
+      ? "No notifications match this filter."
+      : "No notifications or system activity recorded yet.";
+
   return (
     <div className="space-y-6 text-left w-full">
       {/* Header Banner */}
       <EnterprisePageHeader
-        title="Enterprise Telemetry & Activity Center"
-        subtitle="Real-time platform telemetry, authentication logs, security events, and live Socket.IO feeds."
+        title="Notification Center"
+        subtitle="Every platform notification, authentication log, payment audit and system event in one live feed."
         icon={<Radio size={22} className="animate-pulse" />}
-        badgeText="Telemetry Live"
         actions={
           <div className="flex flex-wrap items-center gap-2">
+            <NotificationSoundSettings />
             <button
               onClick={handleExportCSV}
               className="px-3.5 py-2 rounded-full border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900 text-gray-700 dark:text-gray-200 text-xs font-bold flex items-center gap-1.5 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
@@ -211,25 +332,28 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
             >
               <Printer size={14} /> Print
             </button>
-            <button
+            {/* <button
               onClick={handleSeed}
               className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-full text-xs font-extrabold flex items-center gap-1.5 shadow-md cursor-pointer transition-all"
             >
               <Sparkles size={14} /> Seed Telemetry
-            </button>
+            </button> */}
             <button
-              onClick={fetchCenterData}
+              onClick={() => fetchCenterData()}
               className="p-2.5 bg-gray-50 dark:bg-slate-900 hover:bg-gray-100 dark:hover:bg-slate-800 border border-gray-100 dark:border-slate-800 rounded-full text-gray-500 cursor-pointer transition-colors"
               title="Refresh"
             >
-              <RefreshCw size={16} className={loading ? "animate-spin text-[#0A4DA6]" : ""} />
+              <RefreshCw
+                size={16}
+                className={loading ? "animate-spin text-[#0A4DA6]" : ""}
+              />
             </button>
           </div>
         }
       />
 
       {/* Real-time Dashboard Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
           <span className="text-[10px] text-gray-400 font-bold block">
             Today's Notifications
@@ -256,56 +380,12 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
         </div>
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
           <span className="text-[10px] text-gray-400 font-bold block">
-            Failed Logins
-          </span>
-          <span className="text-2xl font-black text-gray-800 dark:text-gray-200 mt-1 block">
-            {stats?.failedLogins ?? 0}
-          </span>
-        </div>
-        <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
-          <span className="text-[10px] text-gray-400 font-bold block">
             Failed Payments
           </span>
           <span className="text-2xl font-black text-gray-800 dark:text-gray-200 mt-1 block">
             {stats?.failedPayments ?? 0}
           </span>
         </div>
-        <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
-          <span className="text-[10px] text-gray-400 font-bold block">
-            Server / API Errors
-          </span>
-          <span className="text-2xl font-black text-gray-800 dark:text-gray-200 mt-1 block">
-            {stats?.apiErrors ?? 0}
-          </span>
-        </div>
-      </div>
-
-      {/* Sub-Section Navigation Tabs */}
-      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none border-b border-gray-200 dark:border-slate-800">
-        {[
-          { key: "dashboard", label: "Overview Dashboard" },
-          { key: "all", label: "All Notifications" },
-          { key: "activities", label: "System Activities" },
-          { key: "auth-logs", label: "Authentication Logs" },
-          { key: "bookings", label: "Bookings Telemetry" },
-          { key: "payments", label: "Payment Audit" },
-          { key: "cms", label: "Banner CMS Queue" },
-          { key: "timeline", label: "Chronological Timeline" },
-        ].map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() =>
-              navigate(`/admin/enterprise-notifications/${tab.key}`)
-            }
-            className={`px-4 py-2 rounded-xl text-xs font-extrabold whitespace-nowrap transition-all cursor-pointer ${
-              activeSection === tab.key
-                ? "bg-[#0A4DA6] text-white shadow-md shadow-[#0A4DA6]/20"
-                : "bg-white dark:bg-[#0B192C] text-gray-500 hover:text-gray-900 dark:hover:text-white border border-gray-100 dark:border-slate-800"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
       </div>
 
       {/* Filter Bar & Controls */}
@@ -358,6 +438,12 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
             </>
           )}
 
+          <span className="hidden sm:block text-[10px] font-bold text-gray-400 mr-1">
+            {lastSyncedAt
+              ? `Updated ${lastSyncedAt.toLocaleTimeString(getFormattingLocale())}`
+              : "Connecting…"}
+          </span>
+
           <div className="flex bg-gray-100 dark:bg-slate-800 p-1 rounded-xl">
             <button
               onClick={() => setViewMode("table")}
@@ -376,7 +462,7 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
       </div>
 
       {/* Main Content Area */}
-      {viewMode === "timeline" || activeSection === "timeline" ? (
+      {viewMode === "timeline" ? (
         /* Chronological Timeline View */
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 shadow-sm space-y-6">
           <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white flex items-center gap-2">
@@ -384,41 +470,51 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
             System Timeline
           </h3>
 
-          <div className="relative pl-6 border-l-2 border-gray-100 dark:border-slate-800 space-y-6">
-            {activities.map((item, idx) => (
-              <div key={item._id || idx} className="relative group">
-                <div className="absolute -left-[31px] top-1.5 w-4 h-4 rounded-full bg-[#0A4DA6] border-4 border-white dark:border-[#0B192C]" />
+          {feed.length === 0 ? (
+            <p className="text-xs font-semibold text-gray-400 py-6">
+              {emptyMessage}
+            </p>
+          ) : (
+            <div className="relative pl-6 border-l-2 border-gray-100 dark:border-slate-800 space-y-6">
+              {feed.map((item) => (
+                <div key={`${item.source}-${item.id}`} className="relative group">
+                  <div
+                    className={`absolute -left-[31px] top-1.5 w-4 h-4 rounded-full border-4 border-white dark:border-[#0B192C] ${
+                      item.source === "notification" && !item.isRead
+                        ? "bg-amber-500"
+                        : "bg-[#0A4DA6]"
+                    }`}
+                  />
 
-                <div className="bg-gray-50 dark:bg-slate-900/60 p-4 rounded-2xl border border-gray-100 dark:border-slate-800 space-y-2">
-                  <div className="flex justify-between items-start">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-xs text-[#0B192C] dark:text-white">
-                        {humanizeLabel(item.action)}
+                  <div className="bg-gray-50 dark:bg-slate-900/60 p-4 rounded-2xl border border-gray-100 dark:border-slate-800 space-y-2">
+                    <div className="flex justify-between items-start gap-3">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-bold text-xs text-[#0B192C] dark:text-white">
+                          {item.title}
+                        </span>
+                        {sourceBadge(item.source)}
+                        {getSeverityBadge(item.severity)}
+                      </div>
+                      <span className="text-[10px] text-gray-400 font-semibold whitespace-nowrap">
+                        {new Date(item.time).toLocaleString(
+                          getFormattingLocale(),
+                        )}
                       </span>
-                      {getSeverityBadge(item.severity)}
                     </div>
-                    <span className="text-[10px] text-gray-400 font-semibold">
-                      {new Date(
-                        item.timestamp || item.createdAt,
-                      ).toLocaleString()}
-                    </span>
-                  </div>
 
-                  <p className="text-xs text-gray-600 dark:text-gray-300 font-medium">
-                    {item.description}
-                  </p>
+                    <p className="text-xs text-gray-600 dark:text-gray-300 font-medium">
+                      {item.detail}
+                    </p>
 
-                  <div className="flex items-center gap-4 text-[10px] text-gray-400 pt-1 font-mono">
-                    <span>
-                      User: {item.userName} ({humanizeLabel(item.role)})
-                    </span>
-                    <span>IP: {item.ipAddress}</span>
-                    <span>Endpoint: {item.apiEndpoint}</span>
+                    <div className="flex items-center gap-4 text-[10px] text-gray-400 pt-1 font-mono">
+                      <span>{item.actor}</span>
+                      {item.actorMeta && <span>{item.actorMeta}</span>}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       ) : (
         /* Standard Data Table View */
@@ -427,6 +523,18 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="border-b border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900 text-gray-400 font-extrabold text-[10px] tracking-wider">
+                  <th className="py-4 px-4 w-10">
+                    <input
+                      type="checkbox"
+                      aria-label="Select all notifications"
+                      checked={allSelected}
+                      disabled={actionableIds.length === 0}
+                      onChange={(e) =>
+                        setSelectedIds(e.target.checked ? actionableIds : [])
+                      }
+                      className="accent-[#0A4DA6] cursor-pointer"
+                    />
+                  </th>
                   <th className="py-4 px-6">Timestamp</th>
                   <th className="py-4 px-6">Module / Action</th>
                   <th className="py-4 px-6">User / Actor</th>
@@ -436,52 +544,101 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
-                {activities.map((item, idx) => (
-                  <tr
-                    key={item._id || idx}
-                    className="hover:bg-gray-50/50 dark:hover:bg-slate-900/40"
-                  >
-                    <td className="py-4 px-6 font-mono text-gray-400 whitespace-nowrap">
-                      {new Date(
-                        item.timestamp || item.createdAt,
-                      ).toLocaleString()}
-                    </td>
-                    <td className="py-4 px-6">
-                      <div className="flex flex-col">
-                        <span className="font-extrabold text-[#0B192C] dark:text-white">
-                          {humanizeLabel(item.action)}
-                        </span>
-                        <span className="text-[10px] text-[#0A4DA6] font-bold">
-                          {humanizeLabel(item.module)}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="py-4 px-6">
-                      <div className="flex flex-col">
-                        <span className="font-semibold text-gray-800 dark:text-gray-200">
-                          {item.userName}
-                        </span>
-                        <span className="text-[10px] text-gray-400">
-                          {humanizeLabel(item.role)} • {item.ipAddress}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="py-4 px-6 font-medium text-gray-600 dark:text-gray-300 max-w-xs truncate">
-                      {item.description}
-                    </td>
-                    <td className="py-4 px-6">
-                      {getSeverityBadge(item.severity)}
-                    </td>
-                    <td className="py-4 px-6 text-right">
-                      <button
-                        onClick={() => handleDeleteNotif(item._id)}
-                        className="p-1.5 text-gray-400 hover:text-rose-600 rounded-lg transition-colors"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                {feed.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={7}
+                      className="py-10 px-6 text-center text-gray-400 font-semibold"
+                    >
+                      {emptyMessage}
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  feed.map((item) => (
+                    <tr
+                      key={`${item.source}-${item.id}`}
+                      className={`hover:bg-gray-50/50 dark:hover:bg-slate-900/40 ${
+                        item.source === "notification" && !item.isRead
+                          ? "bg-amber-50/40 dark:bg-amber-950/10"
+                          : ""
+                      }`}
+                    >
+                      <td className="py-4 px-4">
+                        {item.source === "notification" && (
+                          <input
+                            type="checkbox"
+                            aria-label={`Select ${item.title}`}
+                            checked={selectedIds.includes(item.id)}
+                            onChange={() => toggleSelected(item.id)}
+                            className="accent-[#0A4DA6] cursor-pointer"
+                          />
+                        )}
+                      </td>
+                      <td className="py-4 px-6 font-mono text-gray-400 whitespace-nowrap">
+                        {new Date(item.time).toLocaleString(
+                          getFormattingLocale(),
+                        )}
+                      </td>
+                      <td className="py-4 px-6">
+                        <div className="flex flex-col gap-1">
+                          <span className="font-extrabold text-[#0B192C] dark:text-white">
+                            {item.title}
+                          </span>
+                          <span className="flex items-center gap-1.5">
+                            <span className="text-[10px] text-[#0A4DA6] font-bold">
+                              {humanizeLabel(item.module)}
+                            </span>
+                            {sourceBadge(item.source)}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-4 px-6">
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-gray-800 dark:text-gray-200">
+                            {item.actor}
+                          </span>
+                          <span className="text-[10px] text-gray-400">
+                            {item.actorMeta}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-4 px-6 font-medium text-gray-600 dark:text-gray-300 max-w-xs truncate">
+                        {item.detail}
+                      </td>
+                      <td className="py-4 px-6">
+                        {getSeverityBadge(item.severity)}
+                      </td>
+                      <td className="py-4 px-6 text-right whitespace-nowrap">
+                        {/* Telemetry is an append-only audit trail, so only
+                            notification rows get write actions. */}
+                        {item.source === "notification" ? (
+                          <>
+                            {!item.isRead && (
+                              <button
+                                onClick={() => handleMarkRead(item.id)}
+                                title="Mark as read"
+                                className="p-1.5 text-gray-400 hover:text-emerald-600 rounded-lg transition-colors"
+                              >
+                                <CheckCheck size={14} />
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleDeleteNotif(item.id)}
+                              title="Delete notification"
+                              className="p-1.5 text-gray-400 hover:text-rose-600 rounded-lg transition-colors"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </>
+                        ) : (
+                          <span className="text-[10px] text-gray-300 dark:text-slate-700 font-bold">
+                            Audit log
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

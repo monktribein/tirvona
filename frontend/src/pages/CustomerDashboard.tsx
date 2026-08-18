@@ -4,6 +4,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { useNotifications } from "../contexts/NotificationContext";
 import { bookingService, reviewService } from "../services";
 import { getErrorMessage } from "../lib/api";
+import { formatCurrency } from "../utils/format";
 import { EnterpriseStatusBadge } from "../admin/shared";
 import {
   MapPin,
@@ -246,7 +247,7 @@ export const CustomerDashboard: React.FC = () => {
                       Total Paid
                     </span>
                     <span className="text-xs font-extrabold text-[#0B192C] dark:text-white">
-                      ₹{b.pricing?.totalAmount}
+                      {formatCurrency(b.pricing?.totalAmount)}
                     </span>
                   </div>
 

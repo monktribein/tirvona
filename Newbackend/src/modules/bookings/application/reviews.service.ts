@@ -182,7 +182,7 @@ export class ReviewsService {
     if (!review) throw new NotFoundException("Review not found");
 
     const isAuthor = String(review.customerId) === user.id;
-    const isAdminOrOwner = ["super_admin", "owner", "manager"].includes(
+    const isAdminOrOwner = ["super_admin", "ashram_admin", "ashram_owner", "owner", "manager"].includes(
       user.role,
     );
 

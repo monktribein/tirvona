@@ -1,4 +1,5 @@
 import React from "react";
+import { useLanguage } from "../../../contexts/LanguageContext";
 import {
   CheckCircle,
   Clock,
@@ -33,6 +34,7 @@ export const EnterpriseStatusBadge: React.FC<EnterpriseStatusBadgeProps> = ({
   label,
   size = "md",
 }) => {
+  const { t } = useLanguage();
   const normStatus = String(status || "").toLowerCase();
   const displayLabel = label || normStatus.replace(/_/g, " ");
 
@@ -42,6 +44,7 @@ export const EnterpriseStatusBadge: React.FC<EnterpriseStatusBadgeProps> = ({
       case "approved":
       case "confirmed":
       case "verified":
+      case "accepted":
         return {
           bg: "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/50",
           icon: <CheckCircle size={12} className="shrink-0" />,
@@ -50,9 +53,22 @@ export const EnterpriseStatusBadge: React.FC<EnterpriseStatusBadgeProps> = ({
       case "pending":
       case "draft":
       case "scheduled":
+      case "applied":
         return {
           bg: "bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-900/50",
           icon: <Clock size={12} className="shrink-0 animate-pulse" />,
+        };
+
+      case "shortlisted":
+        return {
+          bg: "bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-900/50",
+          icon: <ShieldCheck size={12} className="shrink-0" />,
+        };
+
+      case "interviewed":
+        return {
+          bg: "bg-violet-50 dark:bg-violet-950/60 text-violet-700 dark:text-violet-300 border-violet-200 dark:border-violet-900/50",
+          icon: <RefreshCw size={12} className="shrink-0" />,
         };
 
       case "rejected":
@@ -98,7 +114,7 @@ export const EnterpriseStatusBadge: React.FC<EnterpriseStatusBadgeProps> = ({
       className={`inline-flex items-center gap-1.5 font-black tracking-wider rounded-full border shadow-2xs ${style.bg} ${sizeClasses}`}
     >
       {style.icon}
-      <span className="capitalize">{displayLabel}</span>
+      <span className="capitalize">{t(displayLabel)}</span>
     </span>
   );
 };

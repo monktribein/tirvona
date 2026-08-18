@@ -24,7 +24,7 @@ import {
 export const isParkingRole = (
   parkingRoles?: string[],
   role?: string,
-  email?: string,
+  _email?: string,
 ): boolean => {
   if (Array.isArray(parkingRoles) && parkingRoles.length > 0) return true;
   if (role) {
@@ -41,16 +41,6 @@ export const isParkingRole = (
     )
       return true;
   }
-  if (email) {
-    const normEmail = email.toLowerCase().trim();
-    if (
-      normEmail.includes("parking") ||
-      normEmail.includes("guard") ||
-      normEmail.endsWith("parking.test") ||
-      normEmail.endsWith("parking.dev")
-    )
-      return true;
-  }
   return false;
 };
 
@@ -59,22 +49,36 @@ export const getRoleDefaultDashboard = (
   parkingRoles?: string[],
   email?: string,
 ): string => {
-  // A grant or parking role outranks the account role: a parking partner is
-  // usually a `customer` on paper, and their work lives on the parking dashboard.
+  const normalizedRole = role?.toLowerCase().trim();
+
+  // Parking is an additional assignment for accommodation administrators and
+  // owners, not their primary account identity. They always enter their main
+  // accommodation dashboard and can open Parking Operations from its sidebar.
+  // This check also protects legacy sessions until the database role migration
+  // has completed.
+  if (["ashram_admin", "stay_admin"].includes(normalizedRole || ""))
+    return "/ashram-admin/dashboard";
+  if (["ashram_owner", "owner"].includes(normalizedRole || ""))
+    return "/ashram-owner/dashboard";
+
+  // For accounts whose primary role has no separate management console, an
+  // active parking grant remains their operational landing page.
   if (isParkingRole(parkingRoles, role, email)) {
     return "/parking/dashboard";
   }
   if (!role) return "/profile";
 
-  const normalizedRole = role.toLowerCase().trim();
-
   switch (normalizedRole) {
     case "super_admin":
       return "/admin/dashboard";
 
-    case "owner":
-    case "stay_admin":
-      return "/owner/dashboard";
+    case "ashram_admin":
+    case "stay_admin": // legacy session
+      return "/ashram-admin/dashboard";
+
+    case "ashram_owner":
+    case "owner": // legacy session
+      return "/ashram-owner/dashboard";
 
     case "district_officer":
     case "district_admin":
@@ -147,7 +151,8 @@ export const getRoleDefaultDashboard = (
 export const normalizeRole = (role?: string): string => {
   if (!role) return "customer";
   const r = role.toLowerCase().trim();
-  if (["owner", "stay_admin"].includes(r)) return "owner";
+  if (r === "owner") return "ashram_owner";
+  if (r === "stay_admin") return "ashram_admin";
   if (["district_officer", "district_admin"].includes(r))
     return "district_officer";
   if (["manager", "ashram_manager"].includes(r)) return "manager";
@@ -183,6 +188,11 @@ export const hasRoleAccess = (
   const userNorm = normalizeRole(userRole);
   if (userRole === "super_admin" || userNorm === "super_admin") return true;
 
+  if (
+    userNorm === "ashram_admin" &&
+    allowedRoles.some((allowed) => normalizeRole(allowed) === "ashram_owner")
+  )
+    return true;
   return allowedRoles.some((allowed) => {
     const allowedNorm = normalizeRole(allowed);
     return allowed === userRole || allowedNorm === userNorm;

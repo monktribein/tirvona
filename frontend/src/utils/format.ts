@@ -2,6 +2,10 @@
  * Tirvona Global Currency & Regional Formatting Utilities
  * Standardizes Indian Rupee (₹) and Indian Numbering System across the platform.
  */
+import { getActiveLanguage } from "./language";
+
+export const getFormattingLocale = () =>
+  getActiveLanguage() === "hi" ? "hi-IN-u-nu-deva" : "en-IN";
 
 export const SUPPORTED_CURRENCIES = [
   { code: "INR", symbol: "₹", label: "₹ INR", name: "Indian Rupee" },
@@ -10,6 +14,43 @@ export const SUPPORTED_CURRENCIES = [
 
 export const CURRENCY_SYMBOL = "₹";
 export const CURRENCY_CODE = "INR";
+
+export interface ExchangeRateSnapshot {
+  usdToInr: number;
+  updatedAt: string;
+  source: string;
+  sourceUrl: string;
+}
+
+const EXCHANGE_RATE_STORAGE_KEY = "tirvona_usd_inr_exchange_rate";
+let currentExchangeRate: ExchangeRateSnapshot | null = null;
+
+export const getExchangeRateSnapshot = (): ExchangeRateSnapshot | null => {
+  if (currentExchangeRate) return currentExchangeRate;
+  try {
+    const stored = localStorage.getItem(EXCHANGE_RATE_STORAGE_KEY);
+    if (!stored) return null;
+    const parsed = JSON.parse(stored) as ExchangeRateSnapshot;
+    if (!Number.isFinite(parsed.usdToInr) || parsed.usdToInr <= 0) return null;
+    currentExchangeRate = parsed;
+    return parsed;
+  } catch {
+    return null;
+  }
+};
+
+export const setExchangeRateSnapshot = (snapshot: ExchangeRateSnapshot) => {
+  if (!Number.isFinite(snapshot.usdToInr) || snapshot.usdToInr <= 0) return;
+  currentExchangeRate = snapshot;
+  try {
+    localStorage.setItem(EXCHANGE_RATE_STORAGE_KEY, JSON.stringify(snapshot));
+    window.dispatchEvent(
+      new CustomEvent("exchange_rate_changed", { detail: snapshot }),
+    );
+  } catch {
+    // The in-memory rate remains usable when storage is unavailable.
+  }
+};
 
 export const getActiveCurrency = (): "INR" | "USD" => {
   try {
@@ -56,12 +97,25 @@ export const formatCurrency = (
   const currency = overrideCurrency || getActiveCurrency();
 
   if (currency === "USD") {
-    // Standard exchange conversion rate: 1 INR ≈ $0.012 USD
-    const usdAmount = safeNumber * 0.012;
-    return `$${usdAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const rate = getExchangeRateSnapshot();
+    if (!rate) return "$—";
+    return new Intl.NumberFormat(
+      getActiveLanguage() === "hi" ? "hi-IN-u-nu-deva" : "en-US",
+      {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+      },
+    ).format(safeNumber / rate.usdToInr);
   }
 
-  return `₹${safeNumber.toLocaleString("en-IN")}`;
+  return new Intl.NumberFormat(getFormattingLocale(), {
+    style: "currency",
+    currency: "INR",
+    minimumFractionDigits: Number.isInteger(safeNumber) ? 0 : 2,
+    maximumFractionDigits: 2,
+  }).format(safeNumber);
 };
 
 /**
@@ -75,7 +129,7 @@ export const formatIndianNumber = (
   const numeric =
     typeof amount === "number" ? amount : parseFloat(String(amount || 0));
   const safeNumber = isNaN(numeric) ? 0 : numeric;
-  return safeNumber.toLocaleString("en-IN");
+  return safeNumber.toLocaleString(getFormattingLocale());
 };
 
 /**
@@ -83,7 +137,7 @@ export const formatIndianNumber = (
  */
 export const formatDateIN = (value?: string | Date | null): string => {
   if (!value) return "—";
-  return new Date(value).toLocaleDateString("en-IN", {
+  return new Date(value).toLocaleDateString(getFormattingLocale(), {
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -95,7 +149,7 @@ export const formatDateIN = (value?: string | Date | null): string => {
  */
 export const formatDateTimeIN = (value?: string | Date | null): string => {
   if (!value) return "—";
-  return new Date(value).toLocaleString("en-IN", {
+  return new Date(value).toLocaleString(getFormattingLocale(), {
     day: "2-digit",
     month: "short",
     year: "numeric",

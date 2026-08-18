@@ -18,16 +18,35 @@ export class BookingFinanceController {
   async summary(
     @CurrentUser() user: AuthenticatedUser,
     @Query("ownerId") ownerId?: string,
+    @Query("ashramId") ashramId?: string,
   ) {
-    return { success: true, data: await this.service.summary(user, ownerId) };
+    return {
+      success: true,
+      data: await this.service.summary(user, ownerId, ashramId),
+    };
+  }
+  @Get("payments")
+  @Roles("owner", "finance_manager", "super_admin")
+  async payments(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query("ashramId") ashramId?: string,
+  ) {
+    return {
+      success: true,
+      data: await this.service.paymentList(user, ashramId),
+    };
   }
   @Get("settlements")
   @Roles("owner", "finance_manager", "super_admin")
   async settlements(
     @CurrentUser() user: AuthenticatedUser,
     @Query("ownerId") ownerId?: string,
+    @Query("ashramId") ashramId?: string,
   ) {
-    return { success: true, data: await this.service.list(user, ownerId) };
+    return {
+      success: true,
+      data: await this.service.list(user, ownerId, ashramId),
+    };
   }
   @Post("settlements")
   @Roles("owner", "finance_manager", "super_admin")
@@ -48,8 +67,14 @@ export class BookingFinanceController {
   }
   @Get("refunds")
   @Roles("owner", "finance_manager", "support", "super_admin")
-  async refunds(@CurrentUser() user: AuthenticatedUser) {
-    return { success: true, data: await this.service.refundQueue(user) };
+  async refunds(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query("ashramId") ashramId?: string,
+  ) {
+    return {
+      success: true,
+      data: await this.service.refundQueue(user, ashramId),
+    };
   }
   @Post("refunds/:id/process")
   @Roles("finance_manager", "super_admin")

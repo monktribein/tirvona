@@ -1,9 +1,3 @@
-# Render Blueprint — deploy the Tirvona backend API + frontend SPA.
-# In Render: New → Blueprint → point at this repo. Render reads this file and
-# creates both services. Secrets marked `sync: false` are prompted for in the
-# dashboard (never stored in git).
-#
-# Docs: https://render.com/docs/blueprint-spec
 
 services:
   # ── Backend API + Socket.io (persistent server, so real-time works) ─────────
@@ -98,6 +92,37 @@ services:
         sync: false
       - key: EMAIL_REPLY_TO
         value: support@tirvona.com
+      # ── Smart Contact QR ────────────────────────────────────────────────
+      # Its own database, so the module can later move to its own cluster
+      # without a migration. Leave the URI unset to reuse the platform
+      # cluster; the dbName below still keeps the collections separate.
+      - key: SMART_CONTACT_MONGODB_URI
+        sync: false
+      - key: SMART_CONTACT_MONGODB_DB_NAME
+        value: tirvona_smart_contact
+      # The origin printed QR codes encode. Deliberately NOT derived from
+      # CLIENT_URL: this value is baked into physical visiting cards and can
+      # never change afterwards, so moving the marketing site must not be able
+      # to invalidate artwork already in circulation.
+      - key: SMART_CONTACT_PUBLIC_BASE_URL
+        value: https://www.tirvona.com
+      # "/" means no path segment: profiles are https://www.tirvona.com/{slug}.
+      # Set to "c" to serve them under /c/{slug} instead. Changing this after
+      # cards are printed invalidates every QR already in circulation.
+      - key: SMART_CONTACT_PUBLIC_PATH_PREFIX
+        value: /
+      # Origin the console builds QR/vCard download links against.
+      - key: SMART_CONTACT_API_BASE_URL
+        sync: false
+      - key: SMART_CONTACT_INACTIVE_EMAIL
+        value: partners@tirvona.com
+      # Optional QR branding. The logo is embedded in SVG output only.
+      - key: SMART_CONTACT_QR_LOGO_URL
+        sync: false
+      # Salts the per-visitor analytics hash. Set it to something random and
+      # long — reusing JWT_SECRET is the fallback, not the intent.
+      - key: SMART_CONTACT_SESSION_SALT
+        sync: false
 
   # ── Frontend SPA (static site) ──────────────────────────────────────────────
   - type: web
@@ -106,13 +131,38 @@ services:
     rootDir: frontend
     buildCommand: npm ci && npm run build
     staticPublishPath: dist
-    # SPA fallback so client-side routes resolve to index.html.
+    # Smart Contact profiles live at the site ROOT (/{slug}), which a static
+    # host cannot tell apart from a real page (/parking). So every SPA page is
+    # named explicitly and the contact page is the fallback for everything
+    # else. Order is load-bearing.
+    #
+    # Adding a page to the SPA? Add it here too. `npm run build` runs
+    # scripts/check-spa-routes.mjs, which fails the build if this drifts —
+    # a missing entry would otherwise serve "Contact not found" silently.
+    #
+    # Vercel is the production host for this app; these rules mirror
+    # frontend/vercel.json so a Render deploy behaves identically.
     routes:
       - type: rewrite
-        source: /*
+        source: /
         destination: /index.html
+      - type: rewrite
+        source: >-
+          /:page(about|admin|ashram|ashram-admin|ashram-owner|blog|booking|books|cancellation-policy|careers|circuits|contact|cookie-policy|dashboard|destinations|events|faq|featured-banner|govt-guidelines|handicrafts|help|local|local-guides|login|marketplace|offers|owner|owner-guide|parking|partner|pilgrimage-circuits|press|privacy|profile|public|puja-items|refund-policy|register|religious-products|reset-password|restaurants|search|services|shops|staff|stay-policies|support|temples|terms|transport|travel-guides|video|volunteer)
+        destination: /index.html
+      - type: rewrite
+        source: >-
+          /:page(about|admin|ashram|ashram-admin|ashram-owner|blog|booking|books|cancellation-policy|careers|circuits|contact|cookie-policy|dashboard|destinations|events|faq|featured-banner|govt-guidelines|handicrafts|help|local|local-guides|login|marketplace|offers|owner|owner-guide|parking|partner|pilgrimage-circuits|press|privacy|profile|public|puja-items|refund-policy|register|religious-products|reset-password|restaurants|search|services|shops|staff|stay-policies|support|temples|terms|transport|travel-guides|video|volunteer)/:rest*
+        destination: /index.html
+      # Legacy: QR codes generated while profiles lived under /c/ keep working.
+      - type: rewrite
+        source: /c/:slug
+        destination: /smart-contact.html
+      # Anything else is treated as a profile slug.
+      - type: rewrite
+        source: /*
+        destination: /smart-contact.html
     envVars:
-      # Point the SPA at the deployed API (e.g. https://tirvona-api.onrender.com).
       - key: VITE_API_URL
         sync: false
       - key: VITE_GOOGLE_CLIENT_ID

@@ -8,14 +8,17 @@ import {
 } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import bcrypt from "bcryptjs";
+import { randomBytes } from "node:crypto";
 import type { Model } from "mongoose";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import type {
   CreateAccountDto,
   CreateStaffDto,
   SuspendUserDto,
+  UpdateAccountDto,
   UserQueryDto,
 } from "../presentation/user.dto";
+import { canManageAllAshrams } from "../../../common/auth/ashram-access";
 const escapeRegex = (value: string): string =>
   value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 @Injectable()
@@ -45,16 +48,27 @@ export class UsersService {
       const value = { $regex: escapeRegex(query.search), $options: "i" };
       filter.$or = [{ name: value }, { email: value }, { phone: value }];
     }
-    return this.users
+    const rows = await this.users
       .find(filter)
+      .select("+aadhaarCardUrl +panCardUrl")
       .sort({ createdAt: -1 })
       .skip((query.page - 1) * query.limit)
       .limit(query.limit)
       .lean();
+    return rows.map((row: any) => {
+      const { aadhaarCardUrl, panCardUrl, ...safe } = row;
+      // Never leaves the service, even if a projection lets it through.
+      delete safe.passwordHash;
+      return {
+        ...safe,
+        hasAadhaarCard: Boolean(aadhaarCardUrl?.trim()),
+        hasPanCard: Boolean(panCardUrl?.trim()),
+      };
+    });
   }
   async staff(actor: AuthenticatedUser): Promise<any[]> {
     const ids =
-      actor.role === "super_admin"
+      canManageAllAshrams(actor)
         ? await this.ashrams.distinct("_id")
         : await this.ashrams.distinct("_id", { ownerId: actor.id });
     return this.users
@@ -72,7 +86,9 @@ export class UsersService {
   ): Promise<any> {
     const ashram = await this.ashrams.findOne({
       _id: dto.ashramId,
-      ...(actor.role === "super_admin" ? {} : { ownerId: actor.id }),
+      ...(canManageAllAshrams(actor)
+        ? {}
+        : { ownerId: actor.id }),
     });
     if (!ashram) throw new ForbiddenException("You do not own this ashram");
     if (
@@ -106,7 +122,7 @@ export class UsersService {
     if (!user || !["manager", "reception", "housekeeping"].includes(user.role))
       throw new NotFoundException("Staff member not found");
     if (
-      actor.role !== "super_admin" &&
+      !canManageAllAshrams(actor) &&
       !(await this.ashrams.exists({
         _id: user.employerAshramId,
         ownerId: actor.id,
@@ -126,34 +142,72 @@ export class UsersService {
   ): Promise<{ user: any; tempPassword: string }> {
     if (await this.users.exists({ email: dto.email.toLowerCase() }))
       throw new ConflictException("Email address already registered");
+    if (await this.users.exists({ phone: dto.phone.trim() }))
+      throw new ConflictException("Phone number already registered");
+    const isPilgrim = dto.role === "customer";
+    if (
+      !isPilgrim &&
+      (!dto.aadhaarCardUrl?.trim() ||
+        !dto.panCardUrl?.trim())
+    )
+      throw new BadRequestException(
+        "Aadhaar card and PAN card are mandatory for role accounts",
+      );
     const tempPassword =
-      dto.password || `Tirvona#${Math.floor(1000 + Math.random() * 9000)}`;
+      dto.password || `Tirvona#${randomBytes(8).toString("base64url")}9!`;
+    const accountData: Record<string, unknown> = { ...dto };
+    delete accountData.password;
+    // Old frontend bundles used to submit a profile photo during IAM
+    // onboarding. Never persist that legacy field through this endpoint.
+    delete accountData.avatarUrl;
     const user = await this.users.create({
-      ...dto,
+      ...accountData,
       email: dto.email.toLowerCase(),
-      phone:
-        dto.phone ||
-        `+91${Math.floor(7000000000 + Math.random() * 2999999999)}`,
+      phone: dto.phone.trim(),
       passwordHash: await bcrypt.hash(tempPassword, 12),
-      role: dto.role || "customer",
-      status: dto.status || "active",
+      status: "active",
+      permissions:
+        dto.role === "ashram_admin" ? ["ashrams.manage_all"] : [],
       employeeId: `EMP-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
-      username:
-        dto.username ||
-        `usr_${dto.name.toLowerCase().replace(/\s+/g, "_")}_${Math.floor(100 + Math.random() * 900)}`,
-      dob: dto.dob ? new Date(dto.dob) : undefined,
-      joiningDate: dto.joiningDate ? new Date(dto.joiningDate) : new Date(),
+      username: `usr_${dto.name.toLowerCase().replace(/\s+/g, "_")}_${Math.floor(100 + Math.random() * 900)}`,
+      joiningDate: new Date(),
       isVerified: true,
     });
     await this.audit(actor, "USER_ACCOUNT_CREATED", {
       targetUserId: user._id,
       role: user.role,
     });
-    return { user, tempPassword };
+    const safeUser = user.toObject();
+    delete safeUser.passwordHash;
+    delete safeUser.aadhaarCardUrl;
+    delete safeUser.panCardUrl;
+    return { user: safeUser, tempPassword };
   }
   private async row(id: string): Promise<any> {
     const row = await this.users.findById(id);
     if (!row) throw new NotFoundException("User not found");
+    return row;
+  }
+  async updateAccount(
+    actor: AuthenticatedUser,
+    id: string,
+    dto: UpdateAccountDto,
+  ): Promise<any> {
+    const email = dto.email.trim().toLowerCase();
+    const phone = dto.phone.trim();
+    if (await this.users.exists({ _id: { $ne: id }, email }))
+      throw new ConflictException("Email address already registered");
+    if (await this.users.exists({ _id: { $ne: id }, phone }))
+      throw new ConflictException("Phone number already registered");
+    const row = await this.row(id);
+    Object.assign(row, {
+      name: dto.name.trim(),
+      email,
+      phone,
+      gender: dto.gender,
+    });
+    await row.save();
+    await this.audit(actor, "USER_ACCOUNT_UPDATED", { targetUserId: id });
     return row;
   }
   async status(
@@ -165,8 +219,14 @@ export class UsersService {
       throw new BadRequestException("You cannot suspend your own account");
     const row = await this.row(id);
     row.status = status;
-    if (status === "suspended")
-      row.tokenVersion = Number(row.tokenVersion ?? 0) + 1;
+    row.isSuspended = status === "suspended";
+    if (status === "active") {
+      row.suspensionType = "none";
+      row.suspensionEndDate = undefined;
+    } else if (status === "suspended") {
+      row.suspensionType = "temporary";
+    }
+    row.tokenVersion = Number(row.tokenVersion ?? 0) + 1;
     await row.save();
     await this.audit(actor, "USER_STATUS_UPDATE", { targetUserId: id, status });
     return row;
@@ -220,18 +280,45 @@ export class UsersService {
     await this.audit(actor, "USER_REACTIVATED", { targetUserId: id });
     return row;
   }
-  async role(actor: AuthenticatedUser, id: string, role: string): Promise<any> {
-    const row = await this.row(id);
+  async role(
+    actor: AuthenticatedUser,
+    id: string,
+    dto: { role: string; aadhaarCardUrl?: string; panCardUrl?: string },
+  ): Promise<any> {
+    const row = await this.users
+      .findById(id)
+      .select("+aadhaarCardUrl +panCardUrl");
+    if (!row) throw new NotFoundException("User not found");
+    const aadhaarCardUrl =
+      dto.aadhaarCardUrl?.trim() || row.aadhaarCardUrl?.trim();
+    const panCardUrl = dto.panCardUrl?.trim() || row.panCardUrl?.trim();
+    if (dto.role !== "customer" && (!aadhaarCardUrl || !panCardUrl))
+      throw new BadRequestException(
+        "Upload an Aadhaar card and PAN card before assigning an operational role",
+      );
     const oldRole = row.role;
-    row.role = role;
+    row.role = dto.role;
+    if (dto.aadhaarCardUrl?.trim())
+      row.aadhaarCardUrl = dto.aadhaarCardUrl.trim();
+    if (dto.panCardUrl?.trim()) row.panCardUrl = dto.panCardUrl.trim();
+    row.permissions =
+      dto.role === "ashram_admin"
+        ? [...new Set([...(row.permissions ?? []), "ashrams.manage_all"])]
+        : (row.permissions ?? []).filter(
+            (permission: string) => permission !== "ashrams.manage_all",
+          );
     row.tokenVersion = Number(row.tokenVersion ?? 0) + 1;
     await row.save();
     await this.audit(actor, "USER_ROLE_CHANGED", {
       targetUserId: id,
       oldRole,
-      role,
+      role: dto.role,
     });
-    return row;
+    const safeUser = row.toObject();
+    delete safeUser.passwordHash;
+    delete safeUser.aadhaarCardUrl;
+    delete safeUser.panCardUrl;
+    return safeUser;
   }
   async permissions(
     actor: AuthenticatedUser,
@@ -239,7 +326,16 @@ export class UsersService {
     permissions: string[],
   ): Promise<any> {
     const row = await this.row(id);
-    row.permissions = [...new Set(permissions)];
+    row.permissions = [
+      ...new Set(
+        permissions.filter(
+          (permission) =>
+            permission !== "ashrams.manage_all" ||
+            row.role === "ashram_admin" ||
+            row.role === "super_admin",
+        ),
+      ),
+    ];
     row.tokenVersion = Number(row.tokenVersion ?? 0) + 1;
     await row.save();
     await this.audit(actor, "USER_PERMISSIONS_UPDATED", {
@@ -277,6 +373,34 @@ export class UsersService {
     await row.save();
     await this.audit(actor, "USER_SOFT_DELETED", { targetUserId: id });
     return row;
+  }
+  async bulkSoftDelete(
+    actor: AuthenticatedUser,
+    ids: string[],
+  ): Promise<number> {
+    const uniqueIds = [...new Set(ids)].filter((id) => id !== actor.id);
+    if (!uniqueIds.length)
+      throw new BadRequestException(
+        "Select at least one account other than your own",
+      );
+    const now = new Date();
+    const result = await this.users.updateMany(
+      { _id: { $in: uniqueIds }, isDeleted: { $ne: true } },
+      {
+        $set: {
+          status: "deleted",
+          isDeleted: true,
+          deletedAt: now,
+          deletedBy: actor.id,
+        },
+        $inc: { tokenVersion: 1 },
+      },
+    );
+    await this.audit(actor, "USER_BULK_SOFT_DELETED", {
+      requestedIds: uniqueIds,
+      deletedCount: result.modifiedCount,
+    });
+    return result.modifiedCount;
   }
   async restore(actor: AuthenticatedUser, id: string): Promise<any> {
     const row = await this.row(id);

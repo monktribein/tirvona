@@ -8,6 +8,7 @@ import { InjectModel } from "@nestjs/mongoose";
 import type { Model } from "mongoose";
 import { TransactionService } from "../../../common/database/transaction.service";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
+import { canManageAllAshrams, isAshramOwner } from "../../../common/auth/ashram-access";
 import { financialReference } from "../domain/booking.utils";
 import type {
   CompleteSettlementDto,
@@ -31,21 +32,58 @@ export class BookingFinanceService {
   private async owner(
     user: AuthenticatedUser,
     requested?: string,
-  ): Promise<string> {
-    if (user.role === "owner") return user.id;
+  ): Promise<string | null> {
+    if (isAshramOwner(user)) return user.id;
+    if (canManageAllAshrams(user))
+      return requested ?? null;
     if (["finance_manager", "super_admin"].includes(user.role) && requested)
       return requested;
     throw new ForbiddenException("An owner scope is required");
   }
-  async summary(user: AuthenticatedUser, requested?: string): Promise<any> {
+  private async ashramScope(
+    user: AuthenticatedUser,
+    requested?: string,
+  ): Promise<string[] | null> {
+    if (user.role === "finance_manager" || canManageAllAshrams(user))
+      return requested ? [requested] : null;
+    if (!isAshramOwner(user))
+      throw new ForbiddenException("An owner scope is required");
+    const owned = (await this.ashrams.distinct("_id", { ownerId: user.id })).map(
+      String,
+    );
+    if (requested && !owned.includes(requested))
+      throw new ForbiddenException("You do not manage that ashram");
+    return requested ? [requested] : owned;
+  }
+  async summary(
+    user: AuthenticatedUser,
+    requested?: string,
+    ashramId?: string,
+  ): Promise<any> {
     const ownerId = await this.owner(user, requested);
+    const scope = await this.ashramScope(user, ashramId);
     const [row] = await this.commissions.aggregate([
       {
         $match: {
-          ownerId:
-            this.commissions.db.base.Types.ObjectId.createFromHexString(
-              ownerId,
-            ),
+          ...(ownerId
+            ? {
+                ownerId:
+                  this.commissions.db.base.Types.ObjectId.createFromHexString(
+                    ownerId,
+                  ),
+              }
+            : {}),
+          ...(scope === null
+            ? {}
+            : {
+                ashramId: {
+                  $in: scope.map((id) =>
+                    this.commissions.db.base.Types.ObjectId.createFromHexString(
+                      id,
+                    ),
+                  ),
+                },
+              }),
         },
       },
       {
@@ -85,15 +123,55 @@ export class BookingFinanceService {
       }
     );
   }
-  async list(user: AuthenticatedUser, requested?: string): Promise<any[]> {
+  async paymentList(
+    user: AuthenticatedUser,
+    ashramId?: string,
+  ): Promise<any[]> {
+    const scope = await this.ashramScope(user, ashramId);
+    const rows = await this.payments
+      .find(scope === null ? {} : { ashramId: { $in: scope } })
+      .populate({
+        path: "bookingId",
+        select:
+          "bookingId reservationNumber customerId status paymentStatus checkInDate checkOutDate pricing",
+        populate: { path: "customerId", select: "name email phone" },
+      })
+      .populate("userId", "name email phone")
+      .populate("ashramId", "name ashramCode")
+      .select("-gateway.signature -idempotencyKey")
+      .sort({ createdAt: -1 })
+      .lean();
+    return rows.map((payment: any) => ({
+      ...payment,
+      bookedBy: payment.bookingId?.customerId ?? payment.userId ?? null,
+      paidBy: payment.userId ?? payment.bookingId?.customerId ?? null,
+    }));
+  }
+  async list(
+    user: AuthenticatedUser,
+    requested?: string,
+    ashramId?: string,
+  ): Promise<any[]> {
     const ownerId = await this.owner(user, requested);
-    return this.settlements.find({ ownerId }).sort({ createdAt: -1 }).lean();
+    const scope = await this.ashramScope(user, ashramId);
+    return this.settlements
+      .find({
+        ...(ownerId ? { ownerId } : {}),
+        ...(scope === null ? {} : { ashramIds: { $in: scope } }),
+      })
+      .populate("ashramIds", "name ashramCode")
+      .sort({ createdAt: -1 })
+      .lean();
   }
   async create(
     user: AuthenticatedUser,
     dto: CreateSettlementDto,
   ): Promise<any> {
     const ownerId = await this.owner(user, dto.ownerId);
+    if (!ownerId)
+      throw new BadRequestException(
+        "Select an ashram owner before creating a settlement",
+      );
     return this.transactions.run(async (session) => {
       const filter: any = {
         ownerId,
@@ -195,15 +273,15 @@ export class BookingFinanceService {
       return row;
     });
   }
-  async refundQueue(user: AuthenticatedUser): Promise<any[]> {
+  async refundQueue(
+    user: AuthenticatedUser,
+    ashramId?: string,
+  ): Promise<any[]> {
     const filter: any = {};
-    if (user.role === "owner") {
-      const ids = await this.ashrams
-        .find({ ownerId: user.id })
-        .select("_id")
-        .lean();
-      const bookings = await this.commissions
-        .find({ ashramId: { $in: ids.map((x: any) => x._id) } })
+    if (isAshramOwner(user)) {
+      const ids = await this.ashramScope(user, ashramId);
+      const bookings = await this.payments
+        .find({ ashramId: { $in: ids ?? [] } })
         .select("bookingId")
         .lean();
       filter.bookingId = { $in: bookings.map((x: any) => x.bookingId) };
@@ -211,6 +289,13 @@ export class BookingFinanceService {
       !["finance_manager", "super_admin", "support"].includes(user.role)
     )
       throw new ForbiddenException("Not authorized for refunds");
+    else if (ashramId) {
+      const bookings = await this.payments
+        .find({ ashramId })
+        .select("bookingId")
+        .lean();
+      filter.bookingId = { $in: bookings.map((x: any) => x.bookingId) };
+    }
     return this.refunds
       .find(filter)
       .populate("bookingId paymentId requestedBy")

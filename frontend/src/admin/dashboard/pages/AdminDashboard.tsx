@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { analyticsService } from "../../../services";
 import { useAuth } from "../../../contexts/AuthContext";
-import { formatCurrency, formatIndianNumber } from "../../../utils/format";
+import { formatCurrency, formatIndianNumber, getFormattingLocale } from "../../../utils/format";
 import { humanizeLabel } from "../../../utils/labels";
 import {
   AlertTriangle,
@@ -169,6 +169,9 @@ const niceCeiling = (value: number): number => {
 };
 
 const compactCurrency = (value: number): string => {
+  const fullyFormatted = formatCurrency(value);
+  if (fullyFormatted.startsWith("$") || getFormattingLocale().startsWith("hi"))
+    return fullyFormatted;
   if (Math.abs(value) >= 10_000_000)
     return `₹${(value / 10_000_000).toFixed(1)}Cr`;
   if (Math.abs(value) >= 100_000) return `₹${(value / 100_000).toFixed(1)}L`;
@@ -962,7 +965,7 @@ export const AdminDashboard: React.FC = () => {
               <QuickPill
                 icon={<Building2 size={18} />}
                 tone="bg-blue-100 text-blue-600"
-                label="Verified ashrams"
+                label="Tirvona Verified ashrams"
                 value={`${formatIndianNumber(system?.ashrams?.approved ?? 0)} active`}
               />
               <QuickPill
@@ -1244,7 +1247,7 @@ export const AdminDashboard: React.FC = () => {
                 <div key={log._id} className="flex items-start gap-4">
                   <span className="w-32 text-[11px] font-semibold text-gray-500 shrink-0 tabular-nums">
                     {log.timestamp
-                      ? new Date(log.timestamp).toLocaleString("en-IN", {
+                      ? new Date(log.timestamp).toLocaleString(getFormattingLocale(), {
                           day: "2-digit",
                           month: "short",
                           hour: "2-digit",

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ashramService } from "../services";
+import { formatCurrency } from "../utils/format";
 import { FileUploader } from "../components/FileUploader";
 import TirvonaMap from "../components/TirvonaMap";
 import { ImageGalleryManager } from "../admin/shared/components/ImageGalleryManager";
@@ -243,21 +244,23 @@ const RULE_PRESETS = [
 ];
 
 const ASHRAM_TYPES = [
-  "Vedantic Ashram",
-  "Yoga Retreat",
-  "Dharamsala",
-  "Buddhist Monastery",
-  "Jain Dharmashala",
-  "Sikh Gurudwara Rest House",
-  "Temple Trust Stay",
-  "Spiritual Retreat Center",
+  { value: "ashram", label: "Ashram" },
+  { value: "dharamshala", label: "Dharamshala" },
+  { value: "homestay", label: "Homestay" },
 ];
+
+const normalizeAshramType = (value: unknown): string => {
+  const normalized = String(value ?? "").trim().toLowerCase();
+  if (!normalized) return "";
+  if (/dharam|dharma/.test(normalized)) return "dharamshala";
+  if (/home\s*stay|guest\s*house|rest\s*house|temple\s*trust\s*stay/.test(normalized))
+    return "homestay";
+  return "ashram";
+};
 
 const TRUST_TYPES = [
   "Public Charitable Trust",
   "Religious Trust",
-  "Section 8 Company",
-  "Society Registered under Societies Act",
   "Temple Trust",
   "Private Trust",
 ];
@@ -435,7 +438,11 @@ const AddAshramWizardPage: React.FC = () => {
   const navigate = useNavigate();
   const backPath = window.location.pathname.startsWith("/admin")
     ? "/admin/manage/ashrams/all"
-    : "/owner/ashrams";
+    : window.location.pathname.startsWith("/ashram-admin")
+      ? "/ashram-admin/ashrams"
+      : window.location.pathname.startsWith("/ashram-owner")
+        ? "/ashram-owner/ashrams"
+        : "/owner/ashrams";
   const [searchParams] = useSearchParams();
   const editId = searchParams.get("edit");
   const STEPS = editId ? CONFIG_STEPS : BASIC_STEPS;
@@ -478,7 +485,7 @@ const AddAshramWizardPage: React.FC = () => {
               ...prev,
               name: ashram.name || "",
               tagline: ashram.tagline || "",
-              ashramType: ashram.ashramType || "",
+              ashramType: normalizeAshramType(ashram.ashramType),
               description: ashram.description || "",
               history: ashram.history || "",
               foundedBy: ashram.foundedBy || "",
@@ -503,7 +510,9 @@ const AddAshramWizardPage: React.FC = () => {
               trustName: ashram.trust?.trustName || "",
               trustRegNo: ashram.trust?.trustRegNo || "",
               panNo: ashram.trust?.panNo || "",
-              trustType: ashram.trust?.trustType || "",
+              trustType: TRUST_TYPES.includes(ashram.trust?.trustType)
+                ? ashram.trust.trustType
+                : "",
               registeredBy: ashram.trust?.registeredBy || "",
               coverImageUrl: ashram.images?.[0] || "",
               galleryUrls: ashram.images?.slice(1) || [],
@@ -677,11 +686,11 @@ const AddAshramWizardPage: React.FC = () => {
       foundedBy: formData.foundedBy,
       establishedYear: formData.establishedYear,
       address: {
-        street: formData.street,
-        city: formData.city,
-        district: formData.district,
-        state: formData.state,
-        pincode: formData.pincode,
+        street: String(formData.street).trim(),
+        city: String(formData.city).trim(),
+        district: String(formData.district).trim(),
+        state: String(formData.state).trim(),
+        pincode: String(formData.pincode).trim(),
         coordinates:
           formData.lat && formData.lng
             ? {
@@ -958,9 +967,9 @@ const AddAshramWizardPage: React.FC = () => {
                   onChange={(e) => set("ashramType", e.target.value)}
                 >
                   <option value="">— Select Type —</option>
-                  {ASHRAM_TYPES.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
+                  {ASHRAM_TYPES.map((type) => (
+                    <option key={type.value} value={type.value}>
+                      {type.label}
                     </option>
                   ))}
                 </Select>
@@ -1092,6 +1101,9 @@ const AddAshramWizardPage: React.FC = () => {
               </Field>
               <Field label="PIN Code" required>
                 <Input
+                  name="postal-code"
+                  autoComplete="postal-code"
+                  inputMode="numeric"
                   placeholder="249201"
                   value={formData.pincode}
                   onChange={(e) => set("pincode", e.target.value)}
@@ -2171,46 +2183,33 @@ const AddAshramWizardPage: React.FC = () => {
             <SectionHeader
               icon={<FileCheck size={22} />}
               title="Verification Documents"
-              subtitle="Upload document URLs for KYC verification by the District Officer."
+              subtitle="Upload verification documents for review by the District Officer."
             />
             <div className="p-4 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/30 rounded-2xl">
               <p className="text-xs font-semibold text-amber-700 dark:text-amber-500 flex items-start gap-2">
                 <AlertCircle size={14} className="flex-shrink-0 mt-0.5" />
                 Physical verification by a Tirvona District Inspector is
-                required after submission. Please upload scanned PDF links from
-                Cloudinary or Google Drive (make sure links are public /
-                shareable).
+                required after submission. Upload clear PDF or image copies of
+                each required document.
               </p>
             </div>
             <Field
-              label="Trust Deed Document URL"
+              label="Trust Deed Document"
               hint="Scanned copy of the registered trust deed"
             >
-              <Input
-                placeholder="https://res.cloudinary.com/.../trust_deed.pdf"
-                value={formData.trustDeedUrl}
-                onChange={(e) => set("trustDeedUrl", e.target.value)}
-              />
+              <FileUploader folder="ashram-documents" accept="image/*,.pdf,application/pdf" label="Upload trust deed" currentUrl={formData.trustDeedUrl} onUploaded={(url) => set("trustDeedUrl", url)} />
             </Field>
             <Field
-              label="Fire Safety Certificate URL"
+              label="Fire Safety Certificate"
               hint="Latest fire safety audit certificate"
             >
-              <Input
-                placeholder="https://res.cloudinary.com/.../fire_cert.pdf"
-                value={formData.fireSafetyCertUrl}
-                onChange={(e) => set("fireSafetyCertUrl", e.target.value)}
-              />
+              <FileUploader folder="ashram-documents" accept="image/*,.pdf,application/pdf" label="Upload fire safety certificate" currentUrl={formData.fireSafetyCertUrl} onUploaded={(url) => set("fireSafetyCertUrl", url)} />
             </Field>
             <Field
-              label="Land Ownership / Lease Document URL"
+              label="Land Ownership / Lease Document"
               hint="Registry or lease certificate for the property"
             >
-              <Input
-                placeholder="https://res.cloudinary.com/.../land_ownership.pdf"
-                value={formData.landOwnershipUrl}
-                onChange={(e) => set("landOwnershipUrl", e.target.value)}
-              />
+              <FileUploader folder="ashram-documents" accept="image/*,.pdf,application/pdf" label="Upload ownership or lease document" currentUrl={formData.landOwnershipUrl} onUploaded={(url) => set("landOwnershipUrl", url)} />
             </Field>
             <Field
               label="Additional Notes for Verification Team"
@@ -2479,7 +2478,7 @@ const AddAshramWizardPage: React.FC = () => {
                           Bed Rate
                         </span>
                         <span className="text-sm font-extrabold text-[#0B192C] dark:text-white">
-                          ₹{r.basePrice} / night
+                          {formatCurrency(r.basePrice)} / night
                         </span>
                       </div>
                     </div>

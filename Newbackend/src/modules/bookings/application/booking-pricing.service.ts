@@ -12,6 +12,7 @@ import {
   resolveBookingAddon,
   roundMoney,
 } from "../domain/booking.utils";
+import { resolvePlatformFee } from "../../platform-settings/domain/platform-fee";
 import type { CreateBookingDto } from "../presentation/dtos/booking.dto";
 import { startOfToday } from "./offers.service";
 
@@ -173,14 +174,17 @@ export class BookingPricingService {
     // The platform fee is charged on the booking value, so it is derived
     // before any coupon is applied — a discount reduces what the guest pays,
     // not the basis on which the fee is assessed.
-    const platformFee =
-      policy?.platformFeePercent != null
-        ? Math.round((originalAmount * policy.platformFeePercent) / 100)
-        : settings?.platformFee?.enabled === false
-          ? 0
-          : settings?.platformFee?.type === "percentage"
-            ? Math.round((originalAmount * settings.platformFee.value) / 100)
-            : Number(settings?.platformFee?.value ?? 49);
+    //
+    // Delegated to the shared resolver so the global on/off switch is tested
+    // before the per-ashram policy percentage. The precedence used to run the
+    // other way round, which let a `booking_policies` row keep charging a fee
+    // at checkout while the Super Admin console reported the engine Disabled.
+    const platformFee = resolvePlatformFee({
+      settings: settings?.platformFee,
+      scope: "ashram_booking",
+      baseAmount: originalAmount,
+      policyPercent: policy?.platformFeePercent,
+    });
     // GST is charged on the platform fee alone. The stay, add-on services,
     // extra-guest charge and donation are supplied by the ashram and carry no
     // GST here, so the taxable base is the fee — not the booking value.

@@ -25,7 +25,7 @@ const OVERSIGHT_ROLES = [
 export class AnalyticsController {
   constructor(private readonly service: AnalyticsService) {}
   @Get("dashboard")
-  @Roles("owner", "manager", "staff", "super_admin")
+  @Roles("owner", "stay_admin", "manager", "staff", "super_admin")
   async dashboard(
     @CurrentUser() user: AuthenticatedUser,
     @Query("ashramId") ashramId?: string,

@@ -17,6 +17,7 @@ import { Public } from "../../../common/decorators/public.decorator";
 import { Roles } from "../../../common/decorators/roles.decorator";
 import { CommunityService } from "../application/community.service";
 import {
+  AdminUpdateVisitorArticleDto,
   ApplicationStatusDto,
   ArticleCommentDto,
   ReviewVisitorArticleDto,
@@ -54,14 +55,11 @@ export class VolunteerController {
   @Public() @Get("jobs") jobs(@Query() query: Record<string, string>) {
     return this.community.jobs(query);
   }
-  @Get("owner/jobs") @Roles("owner", "manager", "super_admin") ownerJobs(
+  @Get("owner/jobs") @Roles("owner", "stay_admin", "manager", "super_admin") ownerJobs(
     @CurrentUser() user: AuthenticatedUser,
     @Query() query: Record<string, string>,
   ) {
-    return this.community.jobs(
-      query,
-      user.role === "super_admin" ? undefined : user.id,
-    );
+    return this.community.managedJobs(user, query);
   }
   @Public() @Get("jobs/:id") job(@Param("id") id: string) {
     return this.community.job(id);
@@ -74,33 +72,41 @@ export class VolunteerController {
   ) {
     return this.community.apply(user, dto);
   }
-  @Post("jobs") @Roles("owner", "manager", "super_admin") create(
+  @Get("applications/mine")
+  @Roles("customer", "volunteer", "owner", "manager", "super_admin")
+  myApplications(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() query: Record<string, string>,
+  ) {
+    return this.community.myApplications(user, query);
+  }
+  @Post("jobs") @Roles("owner", "stay_admin", "manager", "super_admin") create(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: VolunteerJobDto,
   ) {
     return this.community.createJob(user, dto);
   }
-  @Put("jobs/:id") @Roles("owner", "manager", "super_admin") update(
+  @Put("jobs/:id") @Roles("owner", "stay_admin", "manager", "super_admin") update(
     @CurrentUser() user: AuthenticatedUser,
     @Param("id") id: string,
     @Body() dto: UpdateVolunteerJobDto,
   ) {
     return this.community.updateJob(user, id, dto);
   }
-  @Delete("jobs/:id") @Roles("owner", "manager", "super_admin") remove(
+  @Delete("jobs/:id") @Roles("owner", "stay_admin", "manager", "super_admin") remove(
     @CurrentUser() user: AuthenticatedUser,
     @Param("id") id: string,
   ) {
     return this.community.deleteJob(user, id);
   }
-  @Get("applications") @Roles("owner", "manager", "super_admin") applications(
+  @Get("applications") @Roles("owner", "stay_admin", "manager", "super_admin") applications(
     @CurrentUser() user: AuthenticatedUser,
     @Query() query: Record<string, string>,
   ) {
     return this.community.applications(user, query);
   }
   @Put("applications/:id/status")
-  @Roles("owner", "manager", "super_admin")
+  @Roles("owner", "stay_admin", "manager", "super_admin")
   status(
     @CurrentUser() user: AuthenticatedUser,
     @Param("id") id: string,
@@ -149,6 +155,22 @@ export class VisitorArticlesController {
   ) {
     return this.community.updateArticle(user, id, dto);
   }
+  // Administrator copy-edit. Order against the visitor's `@Put(":id")` above
+  // does not matter: `:id` matches a single segment, so it can never swallow
+  // the two-segment `admin/:id`.
+  @Put("admin/:id") @Roles("owner", "manager", "super_admin") adminUpdate(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("id") id: string,
+    @Body() dto: AdminUpdateVisitorArticleDto,
+  ) {
+    return this.community.adminUpdateArticle(user, id, dto);
+  }
+  @Delete(":id") @Roles("owner", "manager", "super_admin") remove(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("id") id: string,
+  ) {
+    return this.community.deleteArticle(user, id);
+  }
   @Post(":id/review") @Roles("owner", "manager", "super_admin") review(
     @CurrentUser() user: AuthenticatedUser,
     @Param("id") id: string,
@@ -172,6 +194,6 @@ export class VisitorArticlesController {
     @Param("id") id: string,
     @Body() dto: ArticleCommentDto,
   ) {
-    return this.community.commentArticle(user, id, dto.comment);
+    return this.community.commentArticle(user, id, dto.comment, dto.parentId);
   }
 }

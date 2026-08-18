@@ -5,6 +5,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { EnterpriseButton } from "../../admin/shared";
+import { formatCurrency } from "../../utils/format";
 
 export const ProfileWishlistPage: React.FC = () => {
   const wishlistItems = [
@@ -69,7 +70,7 @@ export const ProfileWishlistPage: React.FC = () => {
 
               <div className="pt-3 border-t border-gray-100 dark:border-slate-800 flex justify-between items-center">
                 <span className="text-base font-black text-[#0A4DA6]">
-                  ₹{item.price}{" "}
+                  {formatCurrency(item.price)}{" "}
                   <span className="text-[10px] text-gray-400 font-normal">
                     /night
                   </span>

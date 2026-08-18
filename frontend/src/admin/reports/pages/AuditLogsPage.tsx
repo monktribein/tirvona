@@ -3,6 +3,7 @@ import { RefreshCw, Clock, History } from "lucide-react";
 import { analyticsService } from "../../../services";
 import { EnterprisePageHeader } from "../../shared";
 import { humanizeLabel } from "../../../utils/labels";
+import { getFormattingLocale } from "../../../utils/format";
 
 export const AuditLogsPage: React.FC = () => {
   const [logs, setLogs] = useState<any[]>([]);
@@ -78,7 +79,7 @@ export const AuditLogsPage: React.FC = () => {
                   >
                     <td className="py-4 px-6 text-gray-500 font-semibold flex items-center gap-1.5 whitespace-nowrap">
                       <Clock size={12} className="text-[#0A4DA6]" />{" "}
-                      {new Date(log.timestamp).toLocaleString()}
+                      {new Date(log.timestamp).toLocaleString(getFormattingLocale())}
                     </td>
                     <td className="py-4 px-6">
                       <span className="px-2.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-[#0B192C] dark:text-accent rounded-full text-[9px] font-bold">
@@ -114,7 +115,7 @@ export const AuditLogsPage: React.FC = () => {
                 <div className="flex justify-between items-center text-[10px]">
                   <span className="text-gray-400 flex items-center gap-1">
                     <Clock size={10} className="text-[#0A4DA6]" />{" "}
-                    {new Date(log.timestamp).toLocaleString()}
+                    {new Date(log.timestamp).toLocaleString(getFormattingLocale())}
                   </span>
                   <span className="px-2.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-[#0B192C] dark:text-accent rounded-full text-[8.5px] font-bold">
                     {humanizeLabel(log.module)}

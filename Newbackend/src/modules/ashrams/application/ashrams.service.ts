@@ -9,6 +9,9 @@ import { randomUUID } from "node:crypto";
 import { InjectModel } from "@nestjs/mongoose";
 import type { Model } from "mongoose";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
+import { canManageAllAshrams, isAshramOwner } from "../../../common/auth/ashram-access";
+import { PARKING_MODEL } from "../../parking/domain/parking.constants";
+import { parkingPartnerCode } from "../../parking/domain/parking.utils";
 import type {
   AshramDocumentsDto,
   AshramQueryDto,
@@ -50,14 +53,151 @@ const slugify = (value: string): string =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "") || "ashram";
 
+const normalizeAshramAddress = (
+  address: Record<string, any> = {},
+  legacy: Record<string, any> = {},
+): Record<string, any> => {
+  const text = (...values: unknown[]): string =>
+    String(values.find((value) => value !== undefined && value !== null && String(value).trim()) ?? "").trim();
+  return {
+    ...address,
+    street: text(
+      address.street,
+      address.streetAddress,
+      address.addressLine,
+      legacy.street,
+      legacy.streetAddress,
+      legacy.addressLine,
+    ),
+    city: text(address.city, legacy.city),
+    district: text(address.district, legacy.district),
+    state: text(address.state, legacy.state),
+    pincode: text(
+      address.pincode,
+      address.pinCode,
+      address.postalCode,
+      address.zipCode,
+      legacy.pincode,
+      legacy.pinCode,
+      legacy.postalCode,
+      legacy.zipCode,
+    ),
+  };
+};
+
+const assertCompleteAddress = (address: Record<string, any>): void => {
+  const missing = ["street", "city", "district", "state", "pincode"].filter(
+    (field) => !String(address[field] ?? "").trim(),
+  );
+  if (missing.length)
+    throw new BadRequestException(
+      `Ashram address is missing: ${missing.join(", ")}`,
+    );
+};
+
 @Injectable()
 export class AshramsService {
   constructor(
     @InjectModel("Ashram") readonly ashrams: Model<any>,
     @InjectModel("Room") readonly rooms: Model<any>,
+    /** Read-only: guards a room category against removal while it is in use. */
+    @InjectModel("Booking") readonly bookings: Model<any>,
     @InjectModel("BookingInventory") readonly inventory: Model<any>,
     @InjectModel("BookingAddon") readonly addons: Model<any>,
+    @InjectModel(PARKING_MODEL.Partner) readonly parkingPartners: Model<any>,
+    @InjectModel(PARKING_MODEL.Staff) readonly parkingStaff: Model<any>,
   ) { }
+
+  async ownerParking(user: AuthenticatedUser): Promise<any> {
+    const partner = await this.parkingPartners
+      .findOne({ userId: user.id })
+      .select("-bankAccount.accountNumber")
+      .lean();
+    const grant = partner
+      ? await this.parkingStaff
+          .findOne({
+            userId: user.id,
+            partnerId: partner._id,
+            parkingRole: "parking_partner",
+          })
+          .lean()
+      : null;
+    return { partner, grant };
+  }
+
+  async onboardOwnerParking(
+    user: AuthenticatedUser,
+    body: Record<string, any>,
+  ): Promise<any> {
+    const businessName = String(body.businessName ?? "").trim();
+    if (!businessName)
+      throw new BadRequestException("A parking business name is required");
+
+    const ownedAshrams = await this.ashrams
+      .find({ ownerId: user.id, deletedAt: null })
+      .select("_id name address")
+      .lean();
+    if (!ownedAshrams.length)
+      throw new ForbiddenException(
+        "Create an ashram listing before adding its parking facility",
+      );
+
+    let partner = await this.parkingPartners.findOne({ userId: user.id });
+    if (!partner) {
+      partner = await this.parkingPartners.create({
+        userId: user.id,
+        partnerCode: parkingPartnerCode(),
+        businessName,
+        contactPerson: String(body.contactPerson ?? user.name ?? "").trim(),
+        contactEmail: String(body.contactEmail ?? "").trim().toLowerCase(),
+        contactPhone: String(body.contactPhone ?? "").trim(),
+        address: body.address ?? {},
+        status: "pending",
+        isVerified: false,
+        notes: "Self-service application from Ashram Owner portal",
+      });
+    } else if (["pending", "rejected"].includes(partner.status)) {
+      partner.businessName = businessName;
+      partner.contactPerson = String(
+        body.contactPerson ?? partner.contactPerson ?? "",
+      ).trim();
+      partner.contactEmail = String(
+        body.contactEmail ?? partner.contactEmail ?? "",
+      )
+        .trim()
+        .toLowerCase();
+      partner.contactPhone = String(
+        body.contactPhone ?? partner.contactPhone ?? "",
+      ).trim();
+      partner.address = body.address ?? partner.address;
+      partner.status = "pending";
+      partner.rejectionReason = "";
+      await partner.save();
+    }
+
+    const grant = await this.parkingStaff.findOneAndUpdate(
+      {
+        userId: user.id,
+        partnerId: partner._id,
+        parkingRole: "parking_partner",
+      },
+      {
+        $set: {
+          status: "active",
+          locationIds: [],
+          assignedBy: user.id,
+          phone: String(body.contactPhone ?? "").trim(),
+        },
+        $setOnInsert: {
+          userId: user.id,
+          partnerId: partner._id,
+          parkingRole: "parking_partner",
+        },
+      },
+      { upsert: true, new: true },
+    );
+    return { partner, grant, ashrams: ownedAshrams };
+  }
 
   async publicList(query: AshramQueryDto): Promise<any> {
     const filter: Record<string, any> = { status: "approved", deletedAt: null };
@@ -86,13 +226,37 @@ export class AshramsService {
       ];
     }
     if (query.type) {
-      const value = { $regex: escapeRegex(query.type), $options: "i" };
-      filter.$and = [
-        ...(filter.$and ?? []),
-        {
-          $or: [{ ashramType: value }, { name: value }, { description: value }],
-        },
+      const requestedTypes = [
+        ...new Set(
+          query.type
+            .split(",")
+            .map((type) => type.trim().toLowerCase())
+            .map((type) => (type === "temple" ? "homestay" : type))
+            .filter((type) => ["ashram", "dharamshala", "homestay"].includes(type)),
+        ),
       ];
+      const legacyPatterns: Record<string, RegExp> = {
+        ashram: /ashram|retreat|monastery/i,
+        dharamshala: /dharam|dharma/i,
+        homestay: /home\s*stay|guest\s*house|rest\s*house|temple\s*trust\s*stay/i,
+      };
+      const patterns = requestedTypes.map((type) => legacyPatterns[type]);
+      if (patterns.length) {
+        filter.$and = [
+          ...(filter.$and ?? []),
+          {
+            $or: [
+              { ashramType: { $in: patterns } },
+              {
+                $and: [
+                  { $or: [{ ashramType: { $exists: false } }, { ashramType: "" }] },
+                  { name: { $in: patterns } },
+                ],
+              },
+            ],
+          },
+        ];
+      }
     }
     if (query.amenities)
       filter.amenities = {
@@ -148,7 +312,7 @@ export class AshramsService {
             if (
               day?.isClosed ||
               (day &&
-                day.totalInventory -
+                room.totalInventory -
                 day.bookedCount -
                 day.heldCount -
                 day.maintenanceCount <
@@ -318,9 +482,9 @@ export class AshramsService {
    * the same pair `assertScope` accepts on a write.
    */
   async listForUser(user: AuthenticatedUser): Promise<any[]> {
-    if (user.role === "super_admin")
+    if (canManageAllAshrams(user))
       return this.ashrams.find({ deletedAt: null }).sort({ createdAt: -1 });
-    if (user.role === "owner")
+    if (isAshramOwner(user))
       return this.ashrams
         .find({ ownerId: user.id, deletedAt: null })
         .sort({ createdAt: -1 });
@@ -338,7 +502,8 @@ export class AshramsService {
 
   assertScope(user: AuthenticatedUser, ashram: any): void {
     if (!ashram) throw new NotFoundException("Ashram not found");
-    if (user.role === "super_admin") return;
+    if (canManageAllAshrams(user))
+      return;
     if (String(ashram.ownerId) === user.id) return;
     if (
       user.employerAshramId === String(ashram._id) ||
@@ -351,6 +516,8 @@ export class AshramsService {
   async create(user: AuthenticatedUser, dto: SaveAshramDto): Promise<any> {
     assertNoInlineMedia(dto);
     const { rooms = [], ...payload } = dto;
+    payload.address = normalizeAshramAddress(payload.address, payload as any);
+    assertCompleteAddress(payload.address);
     const legalIdentifiers = [
       ["trust.trustRegNo", payload.trust?.trustRegNo],
       ["trust.panNo", payload.trust?.panNo],
@@ -432,6 +599,13 @@ export class AshramsService {
     }
     const payload = { ...dto };
     delete payload.rooms;
+    if (payload.address) {
+      payload.address = normalizeAshramAddress(
+        payload.address,
+        ashram.address?.toObject?.() ?? ashram.address ?? {},
+      );
+      assertCompleteAddress(payload.address);
+    }
     Object.assign(ashram, payload, { updatedBy: user.id });
     await ashram.save();
     return ashram;
@@ -529,13 +703,88 @@ export class AshramsService {
     id: string,
     dto: Partial<CreateRoomDto>,
   ): Promise<any> {
-    const room = await this.rooms.findById(id);
+    const room = await this.rooms.findOne({ _id: id, deletedAt: null });
     if (!room) throw new NotFoundException("Room not found");
     const ashram = await this.ashrams.findById(room.ashramId);
     this.assertScope(user, ashram);
-    Object.assign(room, dto);
+    // `ashramId` is never taken from the payload: a room's availability,
+    // bookings and inventory are all keyed to its ashram, so re-parenting it
+    // would orphan them. Everything else is applied as sent.
+    const { ashramId: _ignored, ...received } = dto;
+    void _ignored;
+
+    // Only fields the client actually sent are applied. `UpdateRoomDto`
+    // declares `status` in its own body, so with ES2022 class-field semantics
+    // every validated instance carries `status: undefined` as an own key even
+    // when the request never mentioned it. `Object.assign` then handed that
+    // `undefined` to Mongoose, which unsets the path — and schema defaults do
+    // not re-apply on update, so a room lost its status entirely. Editing only
+    // the base price silently dropped a room out of "active".
+    const patch = Object.fromEntries(
+      Object.entries(received).filter(([, value]) => value !== undefined),
+    ) as Partial<CreateRoomDto>;
+
+    if (patch.totalInventory !== undefined) {
+      const inventoryDays = await this.inventory
+        .find({ roomId: room._id })
+        .select("bookedCount heldCount maintenanceCount")
+        .lean();
+      const committed = inventoryDays.reduce(
+        (maximum: number, day: any) =>
+          Math.max(
+            maximum,
+            Number(day.bookedCount ?? 0) +
+              Number(day.heldCount ?? 0) +
+              Number(day.maintenanceCount ?? 0),
+          ),
+        0,
+      );
+      if (patch.totalInventory < committed)
+        throw new ConflictException(
+          `Total units cannot be below ${committed}; that many units are already booked, held, or blocked on an inventory date.`,
+        );
+    }
+    Object.assign(room, patch);
     await room.save();
+    // Existing calendar rows snapshot capacity for atomic booking holds. Keep
+    // every snapshot aligned with the edited room category immediately.
+    if (patch.totalInventory !== undefined)
+      await this.inventory.updateMany(
+        { roomId: room._id },
+        { $set: { totalInventory: room.totalInventory } },
+      );
     return room;
+  }
+
+  /**
+   * Retire a room category.
+   *
+   * Soft delete, because bookings, inventory rows and availability records
+   * carry a required reference to the room and a printed invoice must still
+   * resolve what was booked. The room leaves every listing either way.
+   *
+   * Refused while a stay is still live against it — a guest holding a
+   * confirmed reservation would otherwise find their room category gone.
+   */
+  async deleteRoom(user: AuthenticatedUser, id: string): Promise<any> {
+    const room = await this.rooms.findOne({ _id: id, deletedAt: null });
+    if (!room) throw new NotFoundException("Room not found");
+    const ashram = await this.ashrams.findById(room.ashramId);
+    this.assertScope(user, ashram);
+
+    const liveBookings = await this.bookings.countDocuments({
+      roomId: room._id,
+      status: { $in: ["pending", "confirmed", "checked_in"] },
+    });
+    if (liveBookings > 0)
+      throw new ConflictException(
+        `This room has ${liveBookings} active booking(s). Cancel or complete them before removing it.`,
+      );
+
+    room.deletedAt = new Date();
+    room.status = "under_maintenance";
+    await room.save();
+    return { deleted: true, roomId: String(room._id) };
   }
 
   async setAvailability(
@@ -548,10 +797,18 @@ export class AshramsService {
     const ashram = await this.ashrams.findById(room.ashramId);
     this.assertScope(user, ashram);
     const date = new Date(`${dto.date}T00:00:00.000Z`);
+    const existing = await this.inventory.findOne({ roomId, date }).lean();
+    const committed =
+      Number(existing?.bookedCount ?? 0) + Number(existing?.heldCount ?? 0);
+    if (committed + dto.maintenanceCount > room.totalInventory)
+      throw new ConflictException(
+        `Only ${Math.max(0, room.totalInventory - committed)} unit(s) can be blocked; the rest are already booked or held.`,
+      );
     return this.inventory.findOneAndUpdate(
       { roomId, date },
       {
         $set: {
+          totalInventory: room.totalInventory,
           maintenanceCount: dto.maintenanceCount,
           customPrice: dto.customPrice,
         },
@@ -559,7 +816,6 @@ export class AshramsService {
           ashramId: room.ashramId,
           roomId,
           date,
-          totalInventory: room.totalInventory,
           heldCount: 0,
           bookedCount: 0,
         },

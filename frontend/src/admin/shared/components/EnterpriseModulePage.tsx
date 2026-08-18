@@ -7,7 +7,17 @@ import LocalHubEnterpriseDrawer from "./LocalHubEnterpriseDrawer";
 import { EnterprisePageHeader } from "./EnterprisePageHeader";
 import { useNotifications } from "../../../contexts/NotificationContext";
 import api, { getErrorMessage } from "../../../lib/api";
+import {
+  ashramService,
+  marketplaceService,
+  offerService,
+  roomService,
+  userService,
+} from "../../../services";
+import { parkingAdminService } from "../../../modules/parking/services/parking.service";
 import { humanizeLabel } from "../../../utils/labels";
+import { formatCurrency, getFormattingLocale } from "../../../utils/format";
+import { formatInline } from "../utils/recordFormat";
 import {
   Image,
   Tag as TagIcon,
@@ -24,6 +34,8 @@ import {
   Printer,
   Sparkles,
   Plus,
+  BarChart3,
+  BookOpen,
 } from "lucide-react";
 
 interface CmsRequest {
@@ -63,6 +75,13 @@ export const EnterpriseModulePage: React.FC<{
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any | null>(null);
   const [formData, setFormData] = useState<Record<string, any>>({});
+  const [bannerEntities, setBannerEntities] = useState<Record<string, any[]>>({});
+  const [featuredAshramSearch, setFeaturedAshramSearch] = useState("");
+  // Creating a room category needs a real ashram, and creating a seasonal
+  // price needs a real room — neither is a free-text field, and the server
+  // rejects the record without one. Loaded only while the room module is open.
+  const [roomAshramOptions, setRoomAshramOptions] = useState<any[]>([]);
+  const [roomCategoryOptions, setRoomCategoryOptions] = useState<any[]>([]);
 
   // Local Hub 7-Section Enterprise Drawer State
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -80,12 +99,155 @@ export const EnterpriseModulePage: React.FC<{
 
   const title = `${formatTitle(activeModule)}${activeSubKey ? ` — ${formatTitle(activeSubKey)}` : ""}`;
 
+  const pageTitles: Record<string, string> = {
+    "users:pilgrims": "Pilgrim Accounts",
+    "users:owners": "Ashram Owner Accounts",
+    "users:content-managers": "Content Managers",
+    "users:staff": "Staff Members",
+    "users:roles": "Roles & Permissions",
+    "institution:all": "Institution Profiles",
+    "institution:trusts": "Trust & Legal Bodies",
+    "institution_contacts:all": "Contacts Directory",
+    "institution_locations:all": "Institution Locations & GPS",
+    "institution_audits:all": "Institution Quality & Audit",
+    "ashrams:all": "All Ashrams",
+    "ashrams:approved": "Approved Ashrams",
+    "ashrams:rejected": "Rejected Ashrams",
+    "rooms:all": "Room Categories",
+    "rooms:availability": "Room Availability",
+    "rooms:pricing": "Room Pricing",
+    "rooms:inventory": "Room Inventory",
+    "bookings:all": "All Bookings",
+    "bookings:pending": "Pending Bookings",
+    "bookings:confirmed": "Confirmed Bookings",
+    "bookings:checked_in": "Checked-in Stays",
+    "bookings:checked_out": "Checked-out Stays",
+    "bookings:completed": "Completed Stays",
+    "bookings:cancelled": "Cancelled Bookings",
+    "bookings:expired": "Expired Bookings",
+    "bookings:no_show": "No-show Bookings",
+    "bookings:refunded": "Refunded Bookings",
+    "bookings:refunds": "Booking Refund Requests",
+    "offers:all": "All Offers",
+    "offers:featured": "Featured Offers",
+    "blogs:all": "All Blogs",
+    "blogs:categories": "Blog Categories",
+    "blogs:authors": "Author Approvals",
+    "planner:circuits": "Spiritual Circuits",
+    "planner:temples": "Temple Directory",
+    "planner:routes": "Yatra Routes",
+    "planner:itineraries": "Itineraries",
+    "planner:rituals": "Ritual Packages",
+    "local:transport": "Local Transport Services",
+    "local:guides": "Local Guides",
+    "local:restaurants": "Restaurants",
+    "local:medical": "Medical Services",
+    "local:emergency": "Emergency Services",
+    "local:shops": "Local Shops",
+    "local:photography": "Photography Services",
+    "local:events": "Local Events",
+    "marketplace:products": "Marketplace Products",
+    "marketplace:categories": "Marketplace Categories",
+    "marketplace:vendors": "Marketplace Vendors",
+    "marketplace:orders": "Marketplace Orders",
+    "marketplace:waitlist": "Marketplace Waitlist",
+    "marketplace:newsletter": "Marketplace Newsletter",
+    "banner:homepage": "Homepage Banner Management",
+    "featured_banner:homepage": "Featured Banner Management",
+    "parking_partners:all": "Parking Partners",
+    "parking_partners:pending": "Pending Parking Partners",
+    "parking_locations:all": "Parking Locations",
+    "parking_bookings:all": "Parking Bookings",
+    "parking_bookings:checked_in": "Vehicles On-Site",
+    "parking_slot_types:all": "Parking Slot Types",
+    "parking_slots:all": "Parking Slots",
+    "parking_pricing:all": "Parking Pricing Rules",
+    "parking_commissions:pending": "Pending Parking Commissions",
+    "parking_transactions:all": "Parking Transactions",
+    "parking_scan_logs:all": "Parking Scan Logs",
+    "parking_reviews:all": "Parking Reviews",
+    "reports:revenue": "Revenue Reports",
+    "reports:bookings": "Booking Telemetry",
+  };
+  const displayTitle = pageTitles[`${activeModule}:${activeSubKey || "all"}`] || title;
+  // `displayTitle` names the list ("All Blogs"), which reads wrong as a form
+  // heading — "Create All Blogs". Drop the "All " and singularise for the noun
+  // that describes one record.
+  const recordLabel =
+    displayTitle
+      .replace(/^All\s+/i, "")
+      .replace(/ies$/, "y")
+      .replace(/([^s])s$/, "$1") || displayTitle;
+
   useEffect(() => {
     fetchModuleData();
     if (activeModule === "banner") {
       fetchPendingCmsRequests();
     }
   }, [activeModule, activeSubKey]);
+
+  useEffect(() => {
+    if (activeModule !== "featured_banner") return;
+    void Promise.allSettled([
+      ashramService.search({ limit: "100" }),
+      marketplaceService.getProducts({ limit: 100 }),
+      offerService.getPublicOffers({ limit: "100" }),
+      api.get("/services/events"),
+      ashramService.destinations(),
+    ]).then((results) => {
+      const value = (index: number) =>
+        results[index].status === "fulfilled"
+          ? (results[index] as PromiseFulfilledResult<any>).value.data?.data || []
+          : [];
+      setBannerEntities({
+        ashram: value(0),
+        marketplace: value(1),
+        offer: value(2),
+        event: value(3),
+        destination: value(4),
+      });
+    });
+  }, [activeModule]);
+
+  // Every ashram and every room category on the platform, for the pickers the
+  // room forms need. Read through /admin/crud so a Super Admin sees all of
+  // them, not only properties they happen to own.
+  useEffect(() => {
+    if (activeModule !== "rooms") return;
+    let cancelled = false;
+
+    // /admin/crud caps a page at 100 rows, so a single request would quietly
+    // truncate the picker on a platform with more properties than that. Paged
+    // through to a sane ceiling instead of guessing a limit the server ignores.
+    const fetchAllPages = async (path: string): Promise<any[]> => {
+      const rows: any[] = [];
+      for (let page = 1; page <= 10; page += 1) {
+        const separator = path.includes("?") ? "&" : "?";
+        const res = await api.get(`${path}${separator}limit=100&page=${page}`);
+        if (!res.data?.success) break;
+        rows.push(...(res.data.data || []));
+        if (page >= (res.data.totalPages || 1)) break;
+      }
+      return rows;
+    };
+
+    void Promise.allSettled([
+      fetchAllPages("/admin/crud/ashrams"),
+      fetchAllPages("/admin/crud/rooms?subKey=all"),
+    ]).then((results) => {
+      if (cancelled) return;
+      const value = (index: number) =>
+        results[index].status === "fulfilled"
+          ? (results[index] as PromiseFulfilledResult<any[]>).value
+          : [];
+      setRoomAshramOptions(value(0));
+      setRoomCategoryOptions(value(1));
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeModule]);
 
   const fetchPendingCmsRequests = async () => {
     try {
@@ -172,10 +334,21 @@ export const EnterpriseModulePage: React.FC<{
     try {
       // Must go through the shared `api` client: /admin/crud is authenticated,
       // and raw axios sends no Authorization header (it would 401).
+      // Reports read the live ledgers, not the `booking_reports` queue. That
+      // collection only holds export jobs a user asked for and TTLs them away,
+      // so /admin/crud/reports was almost always empty — which is what made
+      // both report pages render "No records found" on a busy platform.
       const endpoint =
-        activeModule === "bookings" && activeSubKey === "refunds"
+        activeModule === "reports"
+          ? activeSubKey === "bookings"
+            ? // The dashboard DTO caps `limit` at 100; asking for more is a 400.
+              "/bookings/dashboard?limit=100"
+            : "/booking-finance/payments"
+          : activeModule === "bookings" && activeSubKey === "refunds"
           ? "/booking-finance/refunds"
-          : `/admin/crud/${activeModule}${activeSubKey ? `?subKey=${activeSubKey}` : ""}`;
+          : activeModule === "bookings"
+            ? `/bookings/dashboard?limit=100${activeSubKey === "refunded" ? "&paymentStatus=refunded" : activeSubKey && activeSubKey !== "all" ? `&status=${encodeURIComponent(activeSubKey)}` : ""}`
+            : `/admin/crud/${activeModule}${activeSubKey ? `?subKey=${activeSubKey}` : ""}`;
       const res = await api.get(endpoint);
       if (res.data?.success) {
         setData(res.data.data || []);
@@ -202,18 +375,74 @@ export const EnterpriseModulePage: React.FC<{
   // settlement run, scan logs are an audit trail, and a staff grant carries
   // authorisation rules that a plain field update would bypass — all of them
   // change through /parking/admin, which enforces the transition.
+  // `reports` reads the payment and booking ledgers directly, so every row is
+  // a derived record — editing or deleting one here would mean rewriting
+  // settled money.
   const READ_ONLY_MODULES = new Set([
+    "reports",
+    "bookings",
     "parking_bookings",
     "parking_commissions",
     "parking_transactions",
     "parking_scan_logs",
     "parking_staff",
   ]);
+  // The three faces of the room module. Each writes to a different place, so
+  // they are named once here rather than re-tested at every call site.
+  const isRoomInventoryView =
+    activeModule === "rooms" &&
+    ["availability", "inventory"].includes(activeSubKey);
+  const isRoomPricingView =
+    activeModule === "rooms" &&
+    ["pricing", "season_pricing"].includes(activeSubKey);
+  /** Room Categories — the structural records themselves. */
+  const isRoomCategoryView = activeModule === "rooms" && !isRoomInventoryView && !isRoomPricingView;
   const isReadOnlyFinance =
     (activeModule === "bookings" && activeSubKey === "refunds") ||
     READ_ONLY_MODULES.has(activeModule);
 
   // Custom Form & Column Definitions per Feature Area
+  // The fallback shape, named so a case can opt back into it (a sub-key that
+  // resolves to a different collection than its module's own config expects).
+  const genericModuleConfig = {
+    icon: <Building size={20} className="text-[#0A4DA6]" />,
+    columns: defaultColumns || [
+      {
+        key: "name",
+        label: "Record Name / Title",
+        render: (v: any, item: any) =>
+          v || item.title || item.bookingId || item._id,
+      },
+      {
+        key: "category",
+        label: "Category / Tag",
+        render: (v: any, item: any) => v || item.department || item.type || "General",
+      },
+      {
+        key: "owner",
+        label: "Managed By",
+        render: (v: any, item: any) => v || item.customerId?.name || "System Admin",
+      },
+      {
+        key: "status",
+        label: "Status",
+        render: (v: any) => v || "active",
+      },
+    ],
+    fields: [
+      { name: "name", label: "Record Name", type: "text", required: true },
+      { name: "title", label: "Title / Subject", type: "text" },
+      { name: "category", label: "Category", type: "text" },
+      { name: "details", label: "Description", type: "textarea" },
+      {
+        name: "status",
+        label: "Status",
+        type: "select",
+        options: ["active", "pending", "approved", "rejected", "archived"],
+      },
+    ],
+  };
+
   const getModuleConfig = () => {
     switch (activeModule) {
       case "banner":
@@ -356,6 +585,11 @@ export const EnterpriseModulePage: React.FC<{
               type: "text",
               required: true,
             },
+            { name: "street", label: "Street Address", type: "text", required: true },
+            { name: "district", label: "District", type: "text", required: true },
+            { name: "state", label: "State", type: "text", required: true },
+            { name: "pincode", label: "Pincode", type: "text", required: true },
+            { name: "description", label: "Description", type: "textarea" },
             {
               name: "isVerified",
               label: "Verification Status",
@@ -364,6 +598,10 @@ export const EnterpriseModulePage: React.FC<{
             },
             { name: "email", label: "Contact Email", type: "email" },
             { name: "phone", label: "Contact Phone", type: "text" },
+            { name: "trustDeedUrl", label: "Trust Deed", type: "text" },
+            { name: "fireSafetyCertificateUrl", label: "Fire Safety Certificate", type: "text" },
+            { name: "landOwnershipUrl", label: "Land Ownership Document", type: "text" },
+            { name: "uploadNotes", label: "Document Notes", type: "textarea" },
             {
               name: "status",
               label: "Status",
@@ -607,12 +845,12 @@ export const EnterpriseModulePage: React.FC<{
               key: "entryAt",
               label: "Entry",
               render: (v: any) =>
-                v ? new Date(v).toLocaleString("en-IN") : "—",
+                v ? new Date(v).toLocaleString(getFormattingLocale()) : "—",
             },
             {
               key: "pricing",
               label: "Amount",
-              render: (v: any) => `₹${v?.totalAmount ?? 0}`,
+              render: (v: any) => formatCurrency(v?.totalAmount ?? 0),
             },
             { key: "paymentStatus", label: "Payment" },
             { key: "status", label: "Status" },
@@ -716,17 +954,17 @@ export const EnterpriseModulePage: React.FC<{
             {
               key: "baseFee",
               label: "Base Fee",
-              render: (v: any) => `₹${v ?? 0}`,
+              render: (v: any) => formatCurrency(v ?? 0),
             },
             {
               key: "hourlyRate",
               label: "Hourly",
-              render: (v: any) => `₹${v ?? 0}`,
+              render: (v: any) => formatCurrency(v ?? 0),
             },
             {
               key: "dailyRate",
               label: "Daily",
-              render: (v: any) => `₹${v ?? 0}`,
+              render: (v: any) => formatCurrency(v ?? 0),
             },
           ],
           fields: [
@@ -790,18 +1028,18 @@ export const EnterpriseModulePage: React.FC<{
             {
               key: "grossAmount",
               label: "Gross",
-              render: (v: any) => `₹${v ?? 0}`,
+              render: (v: any) => formatCurrency(v ?? 0),
             },
             {
               key: "commissionAmount",
               label: "Commission",
               render: (v: any, item: any) =>
-                `₹${v ?? 0} (${item.commissionPercent ?? 0}%)`,
+                `${formatCurrency(v ?? 0)} (${item.commissionPercent ?? 0}%)`,
             },
             {
               key: "partnerEarning",
               label: "Partner Earning",
-              render: (v: any) => `₹${v ?? 0}`,
+              render: (v: any) => formatCurrency(v ?? 0),
             },
             { key: "settlementStatus", label: "Settlement" },
           ],
@@ -818,7 +1056,7 @@ export const EnterpriseModulePage: React.FC<{
             {
               key: "amount",
               label: "Amount",
-              render: (v: any) => `₹${v ?? 0}`,
+              render: (v: any) => formatCurrency(v ?? 0),
             },
             {
               key: "partnerId",
@@ -829,7 +1067,7 @@ export const EnterpriseModulePage: React.FC<{
               key: "occurredAt",
               label: "Occurred",
               render: (v: any) =>
-                v ? new Date(v).toLocaleString("en-IN") : "—",
+                v ? new Date(v).toLocaleString(getFormattingLocale()) : "—",
             },
           ],
           fields: [],
@@ -856,7 +1094,7 @@ export const EnterpriseModulePage: React.FC<{
               key: "scannedAt",
               label: "Scanned At",
               render: (v: any) =>
-                v ? new Date(v).toLocaleString("en-IN") : "—",
+                v ? new Date(v).toLocaleString(getFormattingLocale()) : "—",
             },
           ],
           fields: [],
@@ -899,62 +1137,580 @@ export const EnterpriseModulePage: React.FC<{
           ],
         };
 
-      default:
+      // ── Blogs ──────────────────────────────────────────────────────────────
+      // The public feed reads title/slug/excerpt/coverImage/author and only
+      // shows `status: published`. The generic form collected none of that,
+      // which is why a console-authored post never reached the homepage.
+      case "blogs":
+        // Only the post list. `blogs/authors` and `blogs/categories` resolve to
+        // different collections and keep the generic config.
+        if (activeSubKey && activeSubKey !== "all") return genericModuleConfig;
         return {
-          icon: <Building size={20} className="text-[#0A4DA6]" />,
-          columns: defaultColumns || [
+          icon: <BookOpen size={20} className="text-[#0A4DA6]" />,
+          columns: [
             {
-              key: "name",
-              label: "Record Name / Title",
-              render: (v: any, item: any) =>
-                v || item.title || item.bookingId || item._id,
+              key: "coverImage",
+              label: "Cover",
+              render: (value: any, item: any) => {
+                const src = value || item.image || item.imageUrl;
+                return (
+                  <div className="w-12 h-10 rounded-lg overflow-hidden border border-gray-200 dark:border-slate-800 bg-slate-900 shrink-0">
+                    {src ? (
+                      <img
+                        src={src}
+                        alt="Cover"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : null}
+                  </div>
+                );
+              },
             },
             {
-              key: "category",
-              label: "Category / Tag",
-              render: (v: any, item: any) =>
-                v || item.department || item.type || "General",
+              key: "title",
+              label: "Article Title",
+              render: (value: any, item: any) => value || item.name || "—",
+            },
+            { key: "category", label: "Category" },
+            {
+              key: "contentType",
+              label: "Type",
+              render: (value: any) => humanizeLabel(value || "article"),
             },
             {
-              key: "owner",
-              label: "Managed By",
-              render: (v: any, item: any) =>
-                v || item.customerId?.name || "System Admin",
+              key: "author",
+              label: "Author",
+              render: (value: any, item: any) =>
+                value?.name || item.authorId?.name || "Tirvona Editorial",
+            },
+            {
+              key: "views",
+              label: "Views",
+              render: (value: any) => Number(value || 0),
             },
             {
               key: "status",
               label: "Status",
-              render: (v: any) => v || "active",
+              // "published" is the only value the public feed accepts.
+              render: (value: any) => humanizeLabel(value || "draft"),
             },
           ],
           fields: [
             {
-              name: "name",
-              label: "Record Name",
+              name: "title",
+              label: "Article Title",
               type: "text",
               required: true,
             },
-            { name: "title", label: "Title / Subject", type: "text" },
-            { name: "category", label: "Category", type: "text" },
-            { name: "details", label: "Description", type: "textarea" },
+            {
+              name: "slug",
+              label: "URL Slug (auto-generated when blank)",
+              type: "text",
+            },
+            {
+              name: "category",
+              label: "Category",
+              type: "select",
+              options: [
+                "spiritual",
+                "pilgrimage",
+                "temples",
+                "festivals",
+                "travel",
+                "wellness",
+                "food",
+                "culture",
+              ],
+            },
+            {
+              name: "contentType",
+              label: "Content Type",
+              type: "select",
+              options: ["article", "video"],
+            },
+            { name: "videoUrl", label: "Video URL (for video posts)", type: "text" },
+            { name: "coverImage", label: "Featured Image URL", type: "text" },
+            // Same wording as the Visitor Article form, so both blog surfaces
+            // ask for the same things by the same names.
+            {
+              name: "excerpt",
+              label: "Short Description",
+              type: "textarea",
+            },
+            {
+              name: "content",
+              label: "Article Body Content",
+              type: "textarea",
+              required: true,
+            },
+            { name: "tags", label: "Tags (comma separated)", type: "text" },
+            {
+              name: "status",
+              label: "Publish Status",
+              type: "select",
+              // Only "published" appears on the homepage and /blog.
+              options: ["published", "draft", "archived"],
+            },
+          ],
+        };
+
+      // ── Reports & Audit ────────────────────────────────────────────────────
+      // Revenue reads the settled payment ledger; telemetry reads the booking
+      // pipeline. Both are read-only views of live data.
+      case "reports":
+        if (activeSubKey === "bookings") {
+          return {
+            icon: <BarChart3 size={20} className="text-[#0A4DA6]" />,
+            columns: [
+              { key: "bookingId", label: "Booking ID" },
+              {
+                key: "customerId",
+                label: "Guest",
+                render: (value: any) =>
+                  value?.name || value?.email || value?.phone || "—",
+              },
+              {
+                key: "ashramId",
+                label: "Ashram",
+                render: (value: any) => value?.name || "—",
+              },
+              {
+                key: "checkInDate",
+                label: "Check-in",
+                render: (value: any) =>
+                  value
+                    ? new Date(value).toLocaleDateString(getFormattingLocale())
+                    : "—",
+              },
+              {
+                key: "checkOutDate",
+                label: "Check-out",
+                render: (value: any) =>
+                  value
+                    ? new Date(value).toLocaleDateString(getFormattingLocale())
+                    : "—",
+              },
+              {
+                key: "guestsCount",
+                label: "Guests / Rooms",
+                render: (value: any, item: any) =>
+                  value == null && item.roomsBookedCount == null
+                    ? "—"
+                    : `${value ?? 0} guest${value === 1 ? "" : "s"} · ${item.roomsBookedCount ?? 0} room${item.roomsBookedCount === 1 ? "" : "s"}`,
+              },
+              {
+                key: "pricing",
+                label: "Booking Value",
+                render: (value: any) =>
+                  formatCurrency(Number(value?.totalAmount) || 0),
+              },
+              { key: "paymentStatus", label: "Payment" },
+              { key: "status", label: "Booking Status" },
+            ],
+            fields: [],
+          };
+        }
+        return {
+          icon: <BarChart3 size={20} className="text-[#0A4DA6]" />,
+          columns: [
+            {
+              key: "transactionId",
+              label: "Transaction Reference",
+              render: (value: any, item: any) =>
+                value ||
+                item.gateway?.paymentId ||
+                item.gateway?.orderId ||
+                (item._id ? String(item._id).slice(-10).toUpperCase() : "—"),
+            },
+            {
+              key: "bookingId",
+              label: "Booking",
+              render: (value: any) =>
+                value?.bookingId || value?.reservationNumber || "—",
+            },
+            {
+              key: "ashramId",
+              label: "Ashram",
+              render: (value: any) => value?.name || "—",
+            },
+            {
+              key: "paidBy",
+              label: "Paid By",
+              render: (value: any, item: any) => {
+                const payer = value || item.bookedBy || item.userId;
+                return payer?.name || payer?.email || payer?.phone || "—";
+              },
+            },
+            {
+              key: "amount",
+              label: "Amount",
+              render: (value: any) => formatCurrency(Number(value) || 0),
+            },
+            {
+              key: "method",
+              label: "Payment Method",
+              render: (value: any) => (value ? humanizeLabel(value) : "—"),
+            },
+            { key: "status", label: "Payment Status" },
+            {
+              key: "paidAt",
+              label: "Paid On",
+              render: (value: any, item: any) => {
+                const when = value || item.createdAt;
+                return when
+                  ? new Date(when).toLocaleString(getFormattingLocale())
+                  : "—";
+              },
+            },
+          ],
+          fields: [],
+        };
+
+      case "bookings":
+        if (activeSubKey === "refunds") {
+          return {
+            icon: <Calendar size={20} className="text-[#0A4DA6]" />,
+            columns: [
+              { key: "refundReference", label: "Refund Reference" },
+              {
+                key: "bookingId",
+                label: "Booking",
+                render: (value: any) =>
+                  value?.bookingId || value?.reservationNumber || "Booking unavailable",
+              },
+              {
+                key: "requestedBy",
+                label: "Requested By",
+                render: (value: any) => value?.name || value?.email || "User unavailable",
+              },
+              {
+                key: "amount",
+                label: "Refund Amount",
+                render: (value: any) => formatCurrency(Number(value) || 0),
+              },
+              { key: "reason", label: "Reason" },
+              { key: "status", label: "Refund Status" },
+            ],
+            fields: [],
+          };
+        }
+        return {
+          icon: <Calendar size={20} className="text-[#0A4DA6]" />,
+          columns: [
+            { key: "bookingId", label: "Booking ID" },
+            {
+              key: "customerId",
+              label: "Guest",
+              render: (value: any) =>
+                value?.name || value?.email || value?.phone || "Guest unavailable",
+            },
+            {
+              key: "ashramId",
+              label: "Ashram",
+              render: (value: any) => value?.name || "Ashram unavailable",
+            },
+            {
+              key: "roomId",
+              label: "Room Category",
+              render: (value: any) => value?.name || "Room unavailable",
+            },
+            {
+              key: "checkInDate",
+              label: "Check-in",
+              render: (value: any) =>
+                value ? new Date(value).toLocaleDateString(getFormattingLocale()) : "—",
+            },
+            {
+              key: "checkOutDate",
+              label: "Check-out",
+              render: (value: any) =>
+                value ? new Date(value).toLocaleDateString(getFormattingLocale()) : "—",
+            },
+            { key: "paymentStatus", label: "Payment" },
+            {
+              key: "pricing",
+              label: "Total",
+              render: (value: any) =>
+                formatCurrency(Number(value?.totalAmount || 0)),
+            },
+            { key: "status", label: "Booking Status" },
+          ],
+          fields: [],
+        };
+
+      case "rooms":
+        if (["availability", "inventory"].includes(activeSubKey)) {
+          return {
+            icon: <Calendar size={20} className="text-[#0A4DA6]" />,
+            columns: [
+              {
+                key: "ashramId",
+                label: "Ashram",
+                render: (value: any) => value?.name || "—",
+              },
+              {
+                key: "roomId",
+                label: "Room Category",
+                render: (value: any) => value?.name || "—",
+              },
+              {
+                key: "date",
+                label: "Date",
+                render: (value: any) =>
+                  value ? new Date(value).toLocaleDateString(getFormattingLocale()) : "—",
+              },
+              { key: "totalInventory", label: "Total" },
+              { key: "bookedCount", label: "Booked" },
+              { key: "heldCount", label: "Held" },
+              { key: "maintenanceCount", label: "Maintenance" },
+              {
+                key: "customPrice",
+                label: "Custom Price",
+                render: (value: any) =>
+                  value == null ? "Base price" : formatCurrency(Number(value)),
+              },
+              {
+                key: "isClosed",
+                label: "Closed",
+                render: (value: any) => (value ? "Yes" : "No"),
+              },
+            ],
+            // Booked and held units are deliberately absent: those are written
+            // by the reservation flow, and editing them here would oversell the
+            // room. Everything an operator legitimately controls for a night —
+            // capacity, blocked units, an override rate, a full stop-sell — is
+            // present, matching the owner's own availability form.
+            fields: [
+              {
+                name: "totalInventory",
+                label: "Total Units",
+                type: "number",
+                required: true,
+              },
+              {
+                name: "maintenanceCount",
+                label: "Blocked / Maintenance Units",
+                type: "number",
+              },
+              {
+                name: "customPrice",
+                label: "Custom Price (blank = base price)",
+                type: "number",
+              },
+              {
+                name: "isClosed",
+                label: "Stop Sell",
+                type: "select",
+                options: ["false", "true"],
+              },
+              { name: "note", label: "Internal Note", type: "text" },
+            ],
+          };
+        }
+        if (["pricing", "season_pricing"].includes(activeSubKey)) {
+          return {
+            icon: <TagIcon size={20} className="text-[#0A4DA6]" />,
+            columns: [
+              {
+                key: "ashramId",
+                label: "Ashram",
+                render: (value: any) => value?.name || "—",
+              },
+              {
+                key: "roomId",
+                label: "Room Category",
+                render: (value: any) => value?.name || "All rooms",
+              },
+              { key: "name", label: "Pricing Rule" },
+              { key: "priceType", label: "Price Type" },
+              {
+                key: "validFrom",
+                label: "Valid From",
+                render: (value: any) =>
+                  value ? new Date(value).toLocaleDateString(getFormattingLocale()) : "Always",
+              },
+              {
+                key: "validUntil",
+                label: "Valid Until",
+                render: (value: any) =>
+                  value ? new Date(value).toLocaleDateString(getFormattingLocale()) : "Always",
+              },
+              { key: "multiplier", label: "Multiplier" },
+              {
+                key: "overridePrice",
+                label: "Effective Price",
+                render: (value: any) =>
+                  value == null ? "—" : formatCurrency(Number(value)),
+              },
+              { key: "minStay", label: "Minimum Stay" },
+              {
+                key: "isActive",
+                label: "Active",
+                render: (value: any) => (value === false ? "No" : "Yes"),
+              },
+            ],
+            // A base row edits the room's own `basePrice`; a seasonal row edits
+            // one entry of its `pricingRules`. The server routes the write by
+            // the row's id, so one field set serves both — on a base row the
+            // seasonal-only fields are simply ignored.
+            fields: [
+              { name: "name", label: "Pricing Rule Name", type: "text" },
+              { name: "validFrom", label: "Valid From", type: "date" },
+              { name: "validUntil", label: "Valid Until", type: "date" },
+              {
+                name: "multiplier",
+                label: "Peak Multiplier (e.g. 1.5)",
+                type: "number",
+              },
+              {
+                name: "overridePrice",
+                label: "Effective Price (₹)",
+                type: "number",
+                required: true,
+              },
+            ],
+          };
+        }
+        return {
+          icon: <Building size={20} className="text-[#0A4DA6]" />,
+          columns: [
+            {
+              key: "ashramId",
+              label: "Ashram",
+              render: (value: any) => value?.name || "Ashram unavailable",
+            },
+            { key: "name", label: "Room Category" },
+            { key: "type", label: "Stay Type" },
+            { key: "acType", label: "AC / Ventilation" },
+            { key: "capacity", label: "Capacity" },
+            { key: "totalInventory", label: "Total Units" },
+            {
+              key: "basePrice",
+              label: "Base Price",
+              render: (value: any) => formatCurrency(Number(value) || 0),
+            },
+            { key: "status", label: "Status" },
+          ],
+          fields: [
+            { name: "name", label: "Room Category Name", type: "text", required: true },
+            {
+              name: "type",
+              label: "Stay Type",
+              type: "select",
+              options: ["private_room", "dormitory", "family_room", "hall"],
+            },
+            {
+              name: "acType",
+              label: "AC / Ventilation",
+              type: "select",
+              options: ["AC", "Non-AC"],
+            },
+            { name: "capacity", label: "Capacity", type: "number", required: true },
+            { name: "totalInventory", label: "Total Units", type: "number", required: true },
+            { name: "basePrice", label: "Base Price", type: "number", required: true },
             {
               name: "status",
               label: "Status",
               type: "select",
-              options: [
-                "active",
-                "pending",
-                "approved",
-                "rejected",
-                "archived",
-              ],
+              options: ["active", "under_maintenance"],
             },
           ],
         };
+
+      case "featured_banner":
+        return {
+          icon: <Sparkles size={20} className="text-[#0A4DA6]" />,
+          columns: [
+            { key: "title", label: "Featured Banner Title" },
+            { key: "eventName", label: "Event / Festival" },
+            { key: "relatedAshramName", label: "Linked Ashram" },
+            { key: "location", label: "Location" },
+            { key: "startDate", label: "Start Date" },
+            { key: "status", label: "Status" },
+          ],
+          fields: [
+            { name: "title", label: "Featured Banner Title", type: "text", required: true },
+            { name: "subtitle", label: "Subtitle / Caption", type: "text", required: true },
+            { name: "description", label: "Full Description / Content", type: "textarea", required: true },
+            { name: "eventName", label: "Event / Festival Name", type: "text", required: true },
+            { name: "eventDetails", label: "Event / Festival Details", type: "textarea", required: true },
+            { name: "startDate", label: "Start Date & Time", type: "datetime-local", required: true },
+            { name: "endDate", label: "End Date & Time", type: "datetime-local" },
+            { name: "timing", label: "Timings", type: "text" },
+            { name: "location", label: "Location", type: "text", required: true },
+            {
+              name: "relatedContentType",
+              label: "Related Tirvona Content Type",
+              type: "select",
+              options: ["event", "ashram", "offer", "destination", "marketplace"],
+              required: true,
+            },
+            { name: "ctaText", label: "CTA Button Text", type: "text", required: true },
+            { name: "ctaUrl", label: "Book Now / Explore Destination", type: "text" },
+            {
+              name: "status",
+              label: "Status",
+              type: "select",
+              options: ["active", "inactive"],
+            },
+          ],
+        };
+
+      default:
+        return genericModuleConfig;
     }
   };
 
   const moduleConfig = getModuleConfig();
+  const featuredAshrams = Array.isArray(bannerEntities.ashram)
+    ? bannerEntities.ashram
+    : [];
+  const featuredStates = Array.from(
+    new Set(
+      featuredAshrams
+        .map((item: any) => item.address?.state || item.state || "")
+        .filter(Boolean),
+    ),
+  ).sort((a, b) => String(a).localeCompare(String(b)));
+  const featuredDistricts = Array.from(
+    new Set(
+      featuredAshrams
+        .filter(
+          (item: any) =>
+            !formData.relatedState ||
+            (item.address?.state || item.state) === formData.relatedState,
+        )
+        .map(
+          (item: any) =>
+            item.address?.district ||
+            item.district ||
+            item.address?.city ||
+            item.city ||
+            "",
+        )
+        .filter(Boolean),
+    ),
+  ).sort((a, b) => String(a).localeCompare(String(b)));
+  const filteredFeaturedAshrams = featuredAshrams.filter((item: any) => {
+    const state = item.address?.state || item.state || "";
+    const district =
+      item.address?.district ||
+      item.district ||
+      item.address?.city ||
+      item.city ||
+      "";
+    const query = featuredAshramSearch.trim().toLowerCase();
+    const matchesSearch =
+      !query ||
+      [item.name, item.ashramCode, district, state]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(query));
+    return (
+      matchesSearch &&
+      (!formData.relatedState || state === formData.relatedState) &&
+      (!formData.relatedDistrict || district === formData.relatedDistrict)
+    );
+  });
 
   const handleEditOpen = (item: any) => {
     setEditingItem(item);
@@ -963,6 +1719,7 @@ export const EnterpriseModulePage: React.FC<{
       initial.city = item.address.city;
     }
     setFormData(initial);
+    setFeaturedAshramSearch("");
     setIsModalOpen(true);
   };
 
@@ -973,15 +1730,161 @@ export const EnterpriseModulePage: React.FC<{
       initialData.category = "hero_banner";
       initialData.deviceType = "both";
       initialData.status = "active";
+    } else if (activeModule === "featured_banner") {
+      initialData.relatedContentType = "event";
+      initialData.ctaText = "Book Now";
+      initialData.status = "active";
+    } else if (activeModule === "blogs" && (!activeSubKey || activeSubKey === "all")) {
+      // "published" is the only status the public feed accepts, so it is the
+      // default — a Super Admin writing a post means to publish it.
+      initialData.status = "published";
+      initialData.contentType = "article";
+      initialData.category = "spiritual";
+    } else if (isRoomCategoryView) {
+      initialData.ashramId = roomAshramOptions[0]?._id || "";
+      initialData.type = "private_room";
+      initialData.acType = "Non-AC";
+      initialData.capacity = 2;
+      initialData.totalInventory = 10;
+      initialData.basePrice = 800;
+      initialData.status = "active";
+    } else if (isRoomPricingView) {
+      initialData.sourceRoomId = roomCategoryOptions[0]?._id || "";
+      initialData.multiplier = 1;
     }
     setFormData(initialData);
+    setFeaturedAshramSearch("");
     setIsModalOpen(true);
+  };
+
+  /** Tells the console a room write landed, so open room pages re-read. */
+  const announceRoomsChanged = () => {
+    localStorage.setItem("tirvona:rooms-updated", Date.now().toString());
+    window.dispatchEvent(new Event("tirvona:rooms-updated"));
   };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const bannerCategory = formData.category || "hero_banner";
+      // Editing a category goes through /rooms, which enforces the same
+      // committed-units rule the owner console obeys. Creating one goes through
+      // /admin/crud, the only path that accepts an explicit ashramId.
+      if (isRoomCategoryView && editingItem?._id) {
+        await roomService.update(editingItem._id, {
+          name: String(formData.name || "").trim(),
+          type: formData.type,
+          acType: formData.acType,
+          capacity: Number(formData.capacity),
+          totalInventory: Number(formData.totalInventory),
+          basePrice: Number(formData.basePrice),
+          status: formData.status,
+        });
+        announceRoomsChanged();
+        addNotification("Room Updated", "Room and inventory data are now live.", "success");
+        setIsModalOpen(false);
+        fetchModuleData();
+        return;
+      }
+      if (isRoomCategoryView) {
+        if (!formData.ashramId) {
+          addNotification(
+            "Ashram Required",
+            "Pick the ashram this room category belongs to.",
+            "error",
+          );
+          return;
+        }
+        await api.post("/admin/crud/rooms?subKey=all", {
+          ashramId: formData.ashramId,
+          name: String(formData.name || "").trim(),
+          type: formData.type || "private_room",
+          acType: formData.acType || "Non-AC",
+          capacity: Number(formData.capacity) || 1,
+          totalInventory: Number(formData.totalInventory) || 1,
+          basePrice: Number(formData.basePrice) || 0,
+          status: formData.status || "active",
+        });
+        announceRoomsChanged();
+        addNotification("Room Category Created", "The category is now bookable.", "success");
+        setIsModalOpen(false);
+        fetchModuleData();
+        return;
+      }
+      // A pricing row is written back to the room it was derived from. `_id`
+      // carries which kind it is (`base:` / `embedded:`); `sourceRoomId` names
+      // the room when a brand-new seasonal rule is being added.
+      if (isRoomPricingView) {
+        const sourceRoomId = editingItem?.sourceRoomId || formData.sourceRoomId;
+        if (!sourceRoomId) {
+          addNotification(
+            "Room Required",
+            "Pick the room category this price applies to.",
+            "error",
+          );
+          return;
+        }
+        await api.post(`/admin/crud/rooms?subKey=${activeSubKey || "pricing"}`, {
+          _id: editingItem?._id,
+          sourceRoomId,
+          name: formData.name,
+          validFrom: formData.validFrom || undefined,
+          validUntil: formData.validUntil || undefined,
+          multiplier: Number(formData.multiplier) || 1,
+          overridePrice: Number(formData.overridePrice) || 0,
+        });
+        announceRoomsChanged();
+        addNotification("Pricing Updated", "The new rate is live for new bookings.", "success");
+        setIsModalOpen(false);
+        fetchModuleData();
+        return;
+      }
+      // A daily inventory row. `isClosed` arrives as a select string, and the
+      // server stores a boolean.
+      if (isRoomInventoryView && editingItem?._id) {
+        await api.post(
+          `/admin/crud/rooms?subKey=${activeSubKey || "availability"}`,
+          {
+            _id: editingItem._id,
+            totalInventory: Number(formData.totalInventory) || 0,
+            maintenanceCount: Number(formData.maintenanceCount) || 0,
+            customPrice:
+              formData.customPrice === "" || formData.customPrice == null
+                ? null
+                : Number(formData.customPrice),
+            isClosed: String(formData.isClosed) === "true",
+            note: formData.note || "",
+          },
+        );
+        announceRoomsChanged();
+        addNotification("Availability Updated", "The calendar now reflects this change.", "success");
+        setIsModalOpen(false);
+        fetchModuleData();
+        return;
+      }
+      if (activeModule === "parking_locations") {
+        const parkingPhotos = Array.from(
+          new Set(
+            [
+              formData.coverImage,
+              ...(Array.isArray(formData.images) ? formData.images : []),
+            ].filter(
+              (value): value is string =>
+                typeof value === "string" && value.trim().length > 0,
+            ),
+          ),
+        );
+        if (parkingPhotos.length < 3) {
+          addNotification(
+            "Three Parking Photos Required",
+            `Upload ${3 - parkingPhotos.length} more real parking photo${3 - parkingPhotos.length === 1 ? "" : "s"}. The map does not count as a gallery image.`,
+            "warning",
+          );
+          return;
+        }
+      }
+      const isHomepageBanner = activeModule === "banner";
+      const isFeaturedBanner = activeModule === "featured_banner";
+      const bannerCategory = isHomepageBanner ? formData.category || "hero_banner" : undefined;
       const bannerImage =
         formData.image ||
         formData.coverImage ||
@@ -1012,18 +1915,23 @@ export const EnterpriseModulePage: React.FC<{
           }
           : {}),
         title: formData.title || "",
-        category: bannerCategory,
-        section: bannerCategory,
-        deviceType: formData.deviceType || "both",
+        ...(isHomepageBanner
+          ? {
+              category: bannerCategory,
+              section: bannerCategory,
+              deviceType: formData.deviceType || "both",
+            }
+          : {}),
         status: formData.status || "active",
         image: bannerImage,
         imageUrl: bannerImage,
+        gallery: Array.isArray(formData.gallery) ? formData.gallery : [],
       };
 
       const endpoint = `/admin/crud/${activeModule}${activeSubKey ? `?subKey=${activeSubKey}` : ""}`;
       await api.post(endpoint, payload);
 
-      if (activeModule === "banner") {
+      if (isHomepageBanner) {
         try {
           const reqRes = await api.post("/cms/request-change", {
             page: "homepage",
@@ -1052,8 +1960,10 @@ export const EnterpriseModulePage: React.FC<{
       }
 
       addNotification(
-        "Saved & Published Live",
-        `Banner updated and published live on homepage.`,
+        isFeaturedBanner ? "Featured Banner Published" : "Saved & Published Live",
+        isFeaturedBanner
+          ? "The Featured Sacred Event section is now updated on the public homepage."
+          : "Banner updated and published live on homepage.",
         "success",
       );
       setIsModalOpen(false);
@@ -1069,6 +1979,77 @@ export const EnterpriseModulePage: React.FC<{
 
   const handleDirectSave = async (savedData: any) => {
     try {
+      // The table's own "Edit Record" panel lands here, so each of the three
+      // room views has to be routed to the place it actually writes. Sending
+      // all of them to /rooms/:id — as this once did — meant a pricing or
+      // availability row was addressed as though it were a room category.
+      if (isRoomCategoryView && savedData._id) {
+        await roomService.update(savedData._id, {
+          name: String(savedData.name || "").trim(),
+          type: savedData.type,
+          acType: savedData.acType,
+          capacity: Number(savedData.capacity),
+          totalInventory: Number(savedData.totalInventory),
+          basePrice: Number(savedData.basePrice),
+          status: savedData.status,
+        });
+        announceRoomsChanged();
+        addNotification("Saved Successfully", "Room and inventory data are now live.", "success");
+        fetchModuleData();
+        return;
+      }
+      if (isRoomPricingView && savedData._id) {
+        await api.post(`/admin/crud/rooms?subKey=${activeSubKey || "pricing"}`, {
+          _id: savedData._id,
+          sourceRoomId: savedData.sourceRoomId || savedData.roomId?._id,
+          name: savedData.name,
+          validFrom: savedData.validFrom || undefined,
+          validUntil: savedData.validUntil || undefined,
+          multiplier: Number(savedData.multiplier) || 1,
+          overridePrice: Number(savedData.overridePrice) || 0,
+        });
+        announceRoomsChanged();
+        addNotification("Pricing Updated", "The new rate is live for new bookings.", "success");
+        fetchModuleData();
+        return;
+      }
+      if (isRoomInventoryView && savedData._id) {
+        await api.post(
+          `/admin/crud/rooms?subKey=${activeSubKey || "availability"}`,
+          {
+            _id: savedData._id,
+            totalInventory: Number(savedData.totalInventory) || 0,
+            maintenanceCount: Number(savedData.maintenanceCount) || 0,
+            customPrice:
+              savedData.customPrice === "" || savedData.customPrice == null
+                ? null
+                : Number(savedData.customPrice),
+            isClosed:
+              savedData.isClosed === true || String(savedData.isClosed) === "true",
+            note: savedData.note || "",
+          },
+        );
+        announceRoomsChanged();
+        addNotification("Availability Updated", "The calendar now reflects this change.", "success");
+        fetchModuleData();
+        return;
+      }
+      if (activeModule === "parking_partners" && savedData._id) {
+        const editablePartner = { ...savedData };
+        delete editablePartner.status;
+        delete editablePartner.isVerified;
+        delete editablePartner.createdAt;
+        delete editablePartner.updatedAt;
+        delete editablePartner.__v;
+        await api.post("/admin/crud/parking_partners", editablePartner);
+        addNotification(
+          "Partner Updated",
+          "Parking partner details were updated without changing approval status.",
+          "success",
+        );
+        fetchModuleData();
+        return;
+      }
       const cityVal = savedData.city || savedData.address?.city || "";
       let isVerifiedVal = false;
       if (
@@ -1092,6 +2073,40 @@ export const EnterpriseModulePage: React.FC<{
             },
           }
           : {}),
+        ...(activeModule === "ashrams"
+          ? {
+            ownerId:
+              savedData.ownerId?._id ?? savedData.ownerId ?? undefined,
+            address: {
+              ...(savedData.address || {}),
+              street: savedData.street || savedData.address?.street || "",
+              city: cityVal,
+              district: savedData.district || savedData.address?.district || "",
+              state: savedData.state || savedData.address?.state || "",
+              pincode: savedData.pincode || savedData.address?.pincode || "",
+            },
+            contact: {
+              ...(savedData.contact || {}),
+              email: savedData.email || savedData.contact?.email || "",
+              phone: savedData.phone || savedData.contact?.phone || "",
+            },
+            documents: {
+              ...(savedData.documents || {}),
+              trustDeedUrl:
+                savedData.trustDeedUrl || savedData.documents?.trustDeedUrl || "",
+              fireSafetyCertificateUrl:
+                savedData.fireSafetyCertificateUrl ||
+                savedData.documents?.fireSafetyCertificateUrl ||
+                "",
+              landOwnershipUrl:
+                savedData.landOwnershipUrl ||
+                savedData.documents?.landOwnershipUrl ||
+                "",
+              uploadNotes:
+                savedData.uploadNotes || savedData.documents?.uploadNotes || "",
+            },
+          }
+          : {}),
         status: savedData.status || "approved",
       };
 
@@ -1111,6 +2126,23 @@ export const EnterpriseModulePage: React.FC<{
 
   const handleDelete = async (id: string) => {
     try {
+      // Only a category is a room of its own. A pricing row lives inside its
+      // room and an availability row is a calendar record, so both go through
+      // /admin/crud — sending them to /rooms/:id deleted the wrong thing.
+      if (isRoomCategoryView) {
+        await roomService.remove(id);
+        announceRoomsChanged();
+        addNotification("Room Removed", "The room category was removed safely.", "success");
+        fetchModuleData();
+        return;
+      }
+      if (isRoomPricingView || isRoomInventoryView) {
+        await api.delete(crudDeletePath(id));
+        announceRoomsChanged();
+        addNotification("Removed", "The record was removed.", "info");
+        fetchModuleData();
+        return;
+      }
       const itemToDelete = data.find((x) => (x._id || x.id) === id);
       await api.delete(crudDeletePath(id));
 
@@ -1156,6 +2188,20 @@ export const EnterpriseModulePage: React.FC<{
 
   const handleBulkApprove = async (ids: string[]) => {
     try {
+      if (activeModule === "parking_partners") {
+        await Promise.all(
+          ids.map((id) =>
+            parkingAdminService.updatePartnerStatus(id, { status: "active" }),
+          ),
+        );
+        addNotification(
+          "Parking Partners Approved",
+          `${ids.length} parking partner(s) activated.`,
+          "success",
+        );
+        fetchModuleData();
+        return;
+      }
       await Promise.all(
         ids.map((id) => {
           const item = data.find((d) => (d._id || d.id) === id);
@@ -1187,6 +2233,23 @@ export const EnterpriseModulePage: React.FC<{
 
   const handleBulkReject = async (ids: string[]) => {
     try {
+      if (activeModule === "parking_partners") {
+        await Promise.all(
+          ids.map((id) =>
+            parkingAdminService.updatePartnerStatus(id, {
+              status: "rejected",
+              rejectionReason: "Rejected from parking partner administration",
+            }),
+          ),
+        );
+        addNotification(
+          "Parking Partners Rejected",
+          `${ids.length} parking partner(s) rejected.`,
+          "warning",
+        );
+        fetchModuleData();
+        return;
+      }
       await Promise.all(
         ids.map((id) => {
           const item = data.find((d) => (d._id || d.id) === id);
@@ -1218,6 +2281,49 @@ export const EnterpriseModulePage: React.FC<{
 
   const handleToggleStatus = async (item: any) => {
     try {
+      if (activeModule === "parking_partners") {
+        const nextStatus = item.status === "active" ? "suspended" : "active";
+        const response = await parkingAdminService.updatePartnerStatus(
+          item._id || item.id,
+          { status: nextStatus },
+        );
+        if (!response.data?.success)
+          throw new Error(response.data?.message || "Partner status was not updated");
+        addNotification(
+          nextStatus === "active" ? "Parking Partner Approved" : "Parking Partner Suspended",
+          `${item.businessName || "Parking partner"} is now ${nextStatus}.`,
+          nextStatus === "active" ? "success" : "warning",
+        );
+        fetchModuleData();
+        return;
+      }
+      if (activeModule === "rooms") {
+        const nextStatus = item.status === "active" ? "under_maintenance" : "active";
+        await roomService.update(item._id, { status: nextStatus });
+        localStorage.setItem("tirvona:rooms-updated", Date.now().toString());
+        window.dispatchEvent(new Event("tirvona:rooms-updated"));
+        addNotification("Status Updated", `Status changed to ${nextStatus}.`, "success");
+        fetchModuleData();
+        return;
+      }
+      if (activeModule === "ashrams") {
+        const currentlyActive = ["active", "approved"].includes(
+          String(item.status || "").toLowerCase(),
+        );
+        const nextStatus = currentlyActive ? "suspended" : "approved";
+        await api.post("/admin/crud/ashrams", {
+          ...item,
+          status: nextStatus,
+          isVerified: nextStatus === "approved",
+        });
+        addNotification(
+          nextStatus === "approved" ? "Ashram Reactivated" : "Ashram Suspended",
+          `${item.name || "Ashram"} is now ${nextStatus}.`,
+          nextStatus === "approved" ? "success" : "warning",
+        );
+        fetchModuleData();
+        return;
+      }
       const currentStatus =
         item.status || (item.isVerified ? "approved" : "pending");
       const nextStatus =
@@ -1255,7 +2361,7 @@ export const EnterpriseModulePage: React.FC<{
     const headers = cols.map((c) => c.label).join(",");
     const rows = data.map((row) =>
       keys
-        .map((k) => `"${(row[k] !== undefined && row[k] !== null ? String(row[k]) : "").replace(/"/g, '""')}"`)
+        .map((k) => `"${formatInline(row[k]).replace(/"/g, '""')}"`)
         .join(","),
     );
     const csvContent =
@@ -1280,7 +2386,7 @@ export const EnterpriseModulePage: React.FC<{
     <div className="space-y-6 text-left w-full">
       {/* Page Module Banner Header */}
       <EnterprisePageHeader
-        title={title}
+        title={displayTitle}
         subtitle="Enterprise administration, lifecycle controls, and status monitoring console."
         icon={moduleConfig.icon}
         actions={
@@ -1297,7 +2403,10 @@ export const EnterpriseModulePage: React.FC<{
             >
               <Printer size={14} /> Print
             </button>
-            {!isReadOnlyFinance && (
+            {/* Daily availability rows are generated by the booking engine for
+              a specific room and date, so they are edited rather than authored
+              here. Categories and prices are both created from this button. */}
+            {!isReadOnlyFinance && !isRoomInventoryView && (
               <button
                 onClick={
                   activeModule === "ashrams" || activeModule === "ashram"
@@ -1309,7 +2418,11 @@ export const EnterpriseModulePage: React.FC<{
                 <Plus size={16} />{" "}
                 {activeModule === "banner"
                   ? "Add New Banner"
-                  : `Add New ${formatTitle(activeModule).replace(/s$/, "")}`}
+                  : isRoomCategoryView
+                    ? "Add Room Category"
+                    : isRoomPricingView
+                      ? "Add Seasonal Price"
+                      : `Add New ${formatTitle(activeModule).replace(/s$/, "")}`}
               </button>
             )}
           </div>
@@ -1367,11 +2480,23 @@ export const EnterpriseModulePage: React.FC<{
         </div>
       )}
       <EnterpriseDataTable
-        title={title}
+        title={displayTitle}
         columns={moduleConfig.columns}
         data={data}
         loading={loading}
         hideAddButton={true}
+        formFields={moduleConfig.fields}
+        showImageManager={[
+          "ashrams",
+          "banner",
+          "featured_banner",
+          "blogs",
+          "marketplace",
+          "local",
+          "temples",
+          "events",
+          "parking_locations",
+        ].includes(activeModule)}
         onSave={isReadOnlyFinance ? undefined : (item) => handleDirectSave(item)}
         onManage={
           activeModule === "local"
@@ -1382,17 +2507,33 @@ export const EnterpriseModulePage: React.FC<{
             : undefined
         }
         onDelete={isReadOnlyFinance ? undefined : (id) => handleDelete(id)}
+        // Bulk delete posts straight to /admin/crud, which cannot honour the
+        // live-booking refusal that guards a single category delete, and a base
+        // price is not a deletable row at all. Approve/reject have no meaning
+        // for any room record.
         onBulkDelete={
-          isReadOnlyFinance ? undefined : (ids) => handleBulkDelete(ids)
+          isReadOnlyFinance || activeModule === "rooms" ? undefined : (ids) => handleBulkDelete(ids)
         }
         onBulkApprove={
-          isReadOnlyFinance ? undefined : (ids) => handleBulkApprove(ids)
+          isReadOnlyFinance || activeModule === "rooms" ? undefined : (ids) => handleBulkApprove(ids)
         }
         onBulkReject={
-          isReadOnlyFinance ? undefined : (ids) => handleBulkReject(ids)
+          isReadOnlyFinance || activeModule === "rooms" ? undefined : (ids) => handleBulkReject(ids)
         }
         onToggleStatus={
           isReadOnlyFinance ? undefined : (item) => handleToggleStatus(item)
+        }
+        onResetOwnerPassword={
+          activeModule === "ashrams"
+            ? async (ownerId, password) => {
+                await userService.resetPassword(ownerId, password);
+                addNotification(
+                  "Owner Password Changed",
+                  "The owner password was changed securely and existing sessions were invalidated.",
+                  "success",
+                );
+              }
+            : undefined
         }
       />
 
@@ -1424,7 +2565,7 @@ export const EnterpriseModulePage: React.FC<{
           >
             <div className="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-3">
               <h3 className="font-extrabold text-base sm:text-lg text-[#0B192C] dark:text-white">
-                {editingItem ? `Edit ${title}` : `Create ${title}`}
+                {editingItem ? `Edit ${recordLabel}` : `Create New ${recordLabel}`}
               </h3>
               <button
                 type="button"
@@ -1466,8 +2607,234 @@ export const EnterpriseModulePage: React.FC<{
                     images: urls,
                   }));
                 }}
-                label={`${title} Image & Gallery Manager`}
+                label={`${displayTitle} Image & Gallery Manager`}
+                minimumImages={activeModule === "parking_locations" ? 3 : 0}
               />
+
+              {activeModule === "featured_banner" && (
+                <div className="space-y-4 rounded-2xl border border-blue-100 bg-blue-50/60 p-4 dark:border-slate-800 dark:bg-slate-900/60">
+                  <div>
+                    <label className="mb-1.5 block font-bold text-gray-700 dark:text-gray-300">
+                      Search Ashrams
+                    </label>
+                    <input
+                      type="search"
+                      value={featuredAshramSearch}
+                      onChange={(event) => setFeaturedAshramSearch(event.target.value)}
+                      placeholder="Search by Ashram name, code, district or state..."
+                      className="w-full rounded-xl border border-blue-200 bg-white p-3 font-semibold text-gray-800 outline-none focus:border-[#0A4DA6] dark:border-slate-700 dark:bg-[#0B192C] dark:text-white"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                    <div>
+                      <label className="mb-1.5 block font-bold text-gray-700 dark:text-gray-300">
+                        State <span className="text-rose-500">*</span>
+                      </label>
+                      <select
+                        required
+                        value={formData.relatedState || ""}
+                        onChange={(event) =>
+                          setFormData({
+                            ...formData,
+                            relatedState: event.target.value,
+                            relatedDistrict: "",
+                            relatedAshramId: "",
+                            relatedAshramName: "",
+                            ctaUrl: String(formData.ctaUrl || "").startsWith("/ashram/")
+                              ? ""
+                              : formData.ctaUrl,
+                          })
+                        }
+                        className="w-full rounded-xl border border-blue-200 bg-white p-3 font-bold text-[#0A4DA6] outline-none dark:border-slate-700 dark:bg-[#0B192C]"
+                      >
+                        <option value="">Select State</option>
+                        {featuredStates.map((state) => (
+                          <option key={String(state)} value={String(state)}>{String(state)}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="mb-1.5 block font-bold text-gray-700 dark:text-gray-300">
+                        District <span className="text-rose-500">*</span>
+                      </label>
+                      <select
+                        required
+                        disabled={!formData.relatedState}
+                        value={formData.relatedDistrict || ""}
+                        onChange={(event) =>
+                          setFormData({
+                            ...formData,
+                            relatedDistrict: event.target.value,
+                            relatedAshramId: "",
+                            relatedAshramName: "",
+                            ctaUrl: String(formData.ctaUrl || "").startsWith("/ashram/")
+                              ? ""
+                              : formData.ctaUrl,
+                          })
+                        }
+                        className="w-full rounded-xl border border-blue-200 bg-white p-3 font-bold text-[#0A4DA6] outline-none disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-[#0B192C]"
+                      >
+                        <option value="">Select District</option>
+                        {featuredDistricts.map((district) => (
+                          <option key={String(district)} value={String(district)}>{String(district)}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="mb-1.5 block font-bold text-gray-700 dark:text-gray-300">
+                        Ashram <span className="text-rose-500">*</span>
+                      </label>
+                      <select
+                        required
+                        disabled={!formData.relatedDistrict}
+                        value={formData.relatedAshramId || ""}
+                        onChange={(event) => {
+                          const selected = featuredAshrams.find(
+                            (item: any) => String(item._id || item.id) === event.target.value,
+                          );
+                          const ashramId = String(selected?._id || selected?.id || "");
+                          setFormData({
+                            ...formData,
+                            relatedAshramId: ashramId,
+                            relatedAshramName: selected?.name || "",
+                            relatedAshramSlug: selected?.slug || "",
+                            ctaUrl: formData.ctaUrl || (ashramId ? `/ashram/${ashramId}` : ""),
+                          });
+                        }}
+                        className="w-full rounded-xl border border-blue-200 bg-white p-3 font-bold text-[#0A4DA6] outline-none disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-[#0B192C]"
+                      >
+                        <option value="">Select Ashram</option>
+                        {filteredFeaturedAshrams.map((item: any) => {
+                          const value = String(item._id || item.id);
+                          return <option key={value} value={value}>{item.name || item.ashramCode || value}</option>;
+                        })}
+                      </select>
+                    </div>
+                  </div>
+
+                  <p className="text-[10px] font-semibold text-gray-500">
+                    The selected State, District and Ashram control the destination route and which Ashram offers appear on the Featured Banner detail page.
+                  </p>
+
+                  <div className="border-t border-blue-100 pt-4 dark:border-slate-700">
+                  <label className="mb-1.5 block font-bold text-gray-700 dark:text-gray-300">
+                    Related Tirvona Content <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    required
+                    value={formData.linkedEntityId || ""}
+                    onChange={(event) => {
+                      const selected = (bannerEntities[formData.relatedContentType] || []).find(
+                        (item: any) => String(item._id || item.id || item.slug || item.city || item.name) === event.target.value,
+                      );
+                      if (!selected) {
+                        setFormData({ ...formData, linkedEntityId: "" });
+                        return;
+                      }
+                      const entityId = String(selected._id || selected.id || selected.slug || selected.city || selected.name);
+                      const entityName = selected.name || selected.title || selected.city || selected.label || entityId;
+                      const entitySlug = selected.slug || selected.code || "";
+                      const entityImage = selected.coverImageUrl || selected.coverImage || selected.imageUrl || selected.image || selected.images?.[0] || "";
+                      setFormData({
+                        ...formData,
+                        linkedEntityId: entityId,
+                        linkedEntitySlug: entitySlug,
+                        linkedEntityName: entityName,
+                        title: formData.title || entityName,
+                        description: formData.description || selected.description || selected.about || selected.excerpt || "",
+                        location: formData.location || selected.address?.city || selected.city || selected.location || "",
+                        image: formData.image || entityImage,
+                        coverImage: formData.coverImage || entityImage,
+                        imageUrl: formData.imageUrl || entityImage,
+                      });
+                    }}
+                    className="w-full rounded-xl border border-blue-200 bg-white p-3 font-bold text-[#0A4DA6] outline-none dark:border-slate-700 dark:bg-[#0B192C]"
+                  >
+                    <option value="">Select related {humanizeLabel(formData.relatedContentType || "content")}</option>
+                    {(bannerEntities[formData.relatedContentType] || []).map((item: any) => {
+                      const value = String(item._id || item.id || item.slug || item.city || item.name);
+                      const label = item.name || item.title || item.city || item.label || value;
+                      return <option key={value} value={value}>{label}</option>;
+                    })}
+                  </select>
+                  <p className="mt-1.5 text-[10px] font-semibold text-gray-500">
+                    Selecting content links this banner to its live Tirvona record and pre-fills available details. You can still customize the banner copy and CTA below.
+                  </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Room forms need a real parent record, which the generic field
+                renderer cannot express: its selects carry plain strings, while
+                these need an id as the value and a name as the label. Locked
+                once the record exists — neither a category nor a price can be
+                moved to another property. */}
+              {isRoomCategoryView && (
+                <div className="space-y-1">
+                  <label className="font-bold text-gray-700 dark:text-gray-300">
+                    Ashram <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    required
+                    disabled={!!editingItem}
+                    value={
+                      formData.ashramId ||
+                      editingItem?.ashramId?._id ||
+                      ""
+                    }
+                    onChange={(e) =>
+                      setFormData({ ...formData, ashramId: e.target.value })
+                    }
+                    className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold text-[#0A4DA6] disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    <option value="">Select an ashram</option>
+                    {roomAshramOptions.map((a: any) => (
+                      <option key={String(a._id)} value={String(a._id)}>
+                        {a.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {isRoomPricingView && (
+                <div className="space-y-1">
+                  <label className="font-bold text-gray-700 dark:text-gray-300">
+                    Room Category <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    required
+                    disabled={!!editingItem}
+                    value={
+                      formData.sourceRoomId ||
+                      editingItem?.sourceRoomId ||
+                      editingItem?.roomId?._id ||
+                      ""
+                    }
+                    onChange={(e) =>
+                      setFormData({ ...formData, sourceRoomId: e.target.value })
+                    }
+                    className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold text-[#0A4DA6] disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    <option value="">Select a room category</option>
+                    {roomCategoryOptions.map((room: any) => (
+                      <option key={String(room._id)} value={String(room._id)}>
+                        {room.name}
+                        {room.ashramId?.name ? ` — ${room.ashramId.name}` : ""}
+                      </option>
+                    ))}
+                  </select>
+                  {editingItem?.priceType === "Base price" && (
+                    <p className="mt-1.5 text-[10px] font-semibold text-gray-500">
+                      This is the room's own base price. Saving updates the
+                      category's rate directly; the seasonal fields are ignored.
+                    </p>
+                  )}
+                </div>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                 {moduleConfig.fields.map((f) => (
@@ -1486,7 +2853,17 @@ export const EnterpriseModulePage: React.FC<{
                           formData[f.name] || (f.options ? f.options[0] : "")
                         }
                         onChange={(e) =>
-                          setFormData({ ...formData, [f.name]: e.target.value })
+                          setFormData({
+                            ...formData,
+                            [f.name]: e.target.value,
+                            ...(f.name === "relatedContentType"
+                              ? {
+                                  linkedEntityId: "",
+                                  linkedEntitySlug: "",
+                                  linkedEntityName: "",
+                                }
+                              : {}),
+                          })
                         }
                         className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold text-[#0A4DA6]"
                       >

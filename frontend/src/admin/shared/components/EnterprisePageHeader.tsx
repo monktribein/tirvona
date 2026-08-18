@@ -1,4 +1,5 @@
 import React from "react";
+import { useLanguage } from "../../../contexts/LanguageContext";
 
 interface EnterprisePageHeaderProps {
   title: string;
@@ -15,6 +16,7 @@ export const EnterprisePageHeader: React.FC<EnterprisePageHeaderProps> = ({
   badgeText,
   actions,
 }) => {
+  const { t } = useLanguage();
   return (
     <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[28px] shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-all">
       <div className="flex items-center gap-3.5">
@@ -26,17 +28,17 @@ export const EnterprisePageHeader: React.FC<EnterprisePageHeaderProps> = ({
         <div className="space-y-0.5">
           <div className="flex items-center gap-2.5">
             <h2 className="text-xl sm:text-2xl font-black text-[#0B192C] dark:text-white tracking-tight">
-              {title}
+              {t(title)}
             </h2>
             {badgeText && (
               <span className="px-3 py-0.5 bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 rounded-full text-xs font-black border border-amber-200 dark:border-amber-900/50">
-                {badgeText}
+                {t(badgeText)}
               </span>
             )}
           </div>
           {subtitle && (
             <p className="text-xs text-gray-400 font-semibold leading-relaxed">
-              {subtitle}
+              {t(subtitle)}
             </p>
           )}
         </div>

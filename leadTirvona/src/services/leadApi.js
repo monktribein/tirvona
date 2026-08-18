@@ -1,13 +1,3 @@
-/**
- * leadApi.js — the only place this app talks to a server.
- *
- * Points at the Lead Collection module in the Tirvona API
- * (`/api/lead-collection/...`). That module runs on its own database and its
- * own token scope, so nothing here can reach platform data even by accident.
- *
- * The token is a field-agent token, kept under its own localStorage key so it
- * can never be confused with the main site's `ab_token`.
- */
 
 const RAW_BASE = (import.meta.env.VITE_LEAD_API_URL || 'http://localhost:5000')
   .trim()

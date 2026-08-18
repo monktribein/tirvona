@@ -83,12 +83,15 @@ const ADMIN_COLLECTIONS: Record<string, string> = {
   users: "users",
   ashrams: "ashrams",
   rooms: "rooms",
+  room_inventory: "booking_daily_availability",
+  room_pricing: "booking_pricing",
   bookings: "booking_bookings",
   offers: "booking_coupons",
   blogs: "blogposts",
   authors: "blogauthors",
   comments: "blogcomments",
   banner: "banners",
+  featured_banner: "featured_banners",
   marketplace: "marketplaceproducts",
   categories: "marketplacecategories",
   orders: "marketplaceorders",
@@ -148,11 +151,17 @@ const BOOKING = {
 // passwordHash does not apply here. redact() strips it on the way out either
 // way, but an explicit projection keeps it out of the query to begin with.
 const ACCOUNT = { ref: "Admin_users", select: "name email phone role" };
+const ASHRAM = { ref: "Admin_ashrams", select: "name ashramCode" };
+const ROOM = { ref: "Admin_rooms", select: "name type acType" };
 
 export const ADMIN_REFS: Record<
   string,
   Record<string, { ref: string; select: string }>
 > = {
+  ashrams: { ownerId: ACCOUNT },
+  rooms: { ashramId: ASHRAM },
+  room_inventory: { ashramId: ASHRAM, roomId: ROOM },
+  room_pricing: { ashramId: ASHRAM, roomId: ROOM },
   parking_locations: { partnerId: PARTNER },
   parking_bookings: {
     locationId: LOCATION,

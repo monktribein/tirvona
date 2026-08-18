@@ -15,8 +15,11 @@ import {
   type Notification,
 } from "../../contexts/NotificationContext";
 import { Link } from "react-router-dom";
+import { useLanguage } from "../../contexts/LanguageContext";
+import { formatIndianNumber, getFormattingLocale } from "../../utils/format";
 
 export const NotificationDropdown: React.FC = () => {
+  const { t } = useLanguage();
   const {
     notifications,
     unreadCount,
@@ -61,14 +64,14 @@ export const NotificationDropdown: React.FC = () => {
       <button
         onClick={() => setIsOpen((prev) => !prev)}
         className="p-2 rounded-full text-[#0B192C] dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-slate-800 transition-all cursor-pointer relative flex items-center justify-center"
-        title="Live Notifications"
+        title={t("Live Notifications")}
       >
         <Bell size={18} />
         {unreadCount > 0 && (
           <>
             <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-rose-500 rounded-full animate-ping" />
             <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-rose-500 rounded-full flex items-center justify-center text-[8px] font-black text-white">
-              {unreadCount > 9 ? "9+" : unreadCount}
+              {unreadCount > 9 ? `${formatIndianNumber(9)}+` : formatIndianNumber(unreadCount)}
             </span>
           </>
         )}
@@ -85,12 +88,12 @@ export const NotificationDropdown: React.FC = () => {
               </div>
               <div>
                 <h3 className="text-xs font-black text-[#0B192C] dark:text-white tracking-wider">
-                  Notifications
+                  {t("Notifications")}
                 </h3>
                 <p className="text-[10px] text-gray-500 font-bold">
                   {unreadCount > 0
                     ? `${unreadCount} unread updates`
-                    : "All caught up"}
+                    : t("All caught up")}
                 </p>
               </div>
             </div>
@@ -101,14 +104,14 @@ export const NotificationDropdown: React.FC = () => {
                   <button
                     onClick={markAllAsRead}
                     className="p-1.5 text-gray-400 hover:text-[#0A4DA6] dark:hover:text-amber-400 transition-colors text-[10px] font-bold flex items-center gap-1 cursor-pointer"
-                    title="Mark all as read"
+                    title={t("Mark all as read")}
                   >
                     <CheckCheck size={14} />
                   </button>
                   <button
                     onClick={clearNotifications}
                     className="p-1.5 text-gray-400 hover:text-rose-500 transition-colors text-[10px] font-bold cursor-pointer"
-                    title="Clear all"
+                    title={t("Clear all")}
                   >
                     <Trash2 size={14} />
                   </button>
@@ -132,10 +135,10 @@ export const NotificationDropdown: React.FC = () => {
                   <ShieldCheck size={20} />
                 </div>
                 <p className="text-xs font-black text-gray-700 dark:text-gray-300">
-                  No new notifications
+                  {t("No new notifications")}
                 </p>
                 <p className="text-[11px] text-gray-400 font-medium">
-                  You will receive real-time booking and system updates here.
+                  {t("You will receive real-time booking and system updates here.")}
                 </p>
               </div>
             ) : (
@@ -149,13 +152,13 @@ export const NotificationDropdown: React.FC = () => {
                   <div className="mt-0.5">{getIcon(notif.type)}</div>
                   <div className="flex-grow min-w-0 pr-4">
                     <h4 className="text-xs font-extrabold text-[#0B192C] dark:text-white leading-tight">
-                      {notif.title}
+                      {t(notif.title)}
                     </h4>
                     <p className="text-[11px] text-gray-600 dark:text-gray-300 font-medium mt-0.5 leading-relaxed">
-                      {notif.message}
+                      {t(notif.message)}
                     </p>
                     <span className="text-[9px] font-bold text-gray-400 mt-1 block">
-                      {new Date(notif.timestamp).toLocaleTimeString([], {
+                      {new Date(notif.timestamp).toLocaleTimeString(getFormattingLocale(), {
                         hour: "2-digit",
                         minute: "2-digit",
                       })}
@@ -165,7 +168,7 @@ export const NotificationDropdown: React.FC = () => {
                   <button
                     onClick={() => removeNotification(notif.id)}
                     className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-rose-500 transition-opacity absolute right-2 top-3 cursor-pointer"
-                    title="Dismiss"
+                    title={t("Dismiss")}
                   >
                     <X size={12} />
                   </button>
@@ -181,7 +184,7 @@ export const NotificationDropdown: React.FC = () => {
               onClick={() => setIsOpen(false)}
               className="text-[11px] font-extrabold text-[#0A4DA6] dark:text-[#E58C28] hover:underline block"
             >
-              View All Notifications Center →
+              {t("View All Notifications Center →")}
             </Link>
           </div>
         </div>

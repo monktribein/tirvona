@@ -2,16 +2,20 @@ import type {
   ParkingBookingStatus,
   ParkingVehicleTypeCode,
 } from "../types/parking.types";
+import {
+  formatCurrency as formatGlobalCurrency,
+  getFormattingLocale,
+} from "../../../utils/format";
 
 // Display helpers for the Parking module.
 
-/** Indian rupee formatting, matching how prices read elsewhere on the site. */
+/** Currency formatting shared with every public Tirvona module. */
 export const formatCurrency = (amount: number | undefined | null) =>
-  `₹${Number(amount || 0).toLocaleString("en-IN")}`;
+  formatGlobalCurrency(amount);
 
 export const formatDateTime = (value?: string | null) => {
   if (!value) return "—";
-  return new Date(value).toLocaleString("en-IN", {
+  return new Date(value).toLocaleString(getFormattingLocale(), {
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -22,7 +26,7 @@ export const formatDateTime = (value?: string | null) => {
 
 export const formatTime = (value?: string | null) => {
   if (!value) return "—";
-  return new Date(value).toLocaleTimeString("en-IN", {
+  return new Date(value).toLocaleTimeString(getFormattingLocale(), {
     hour: "2-digit",
     minute: "2-digit",
   });
@@ -30,7 +34,7 @@ export const formatTime = (value?: string | null) => {
 
 export const formatDate = (value?: string | null) => {
   if (!value) return "—";
-  return new Date(value).toLocaleDateString("en-IN", {
+  return new Date(value).toLocaleDateString(getFormattingLocale(), {
     day: "2-digit",
     month: "short",
     year: "numeric",

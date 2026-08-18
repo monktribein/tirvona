@@ -44,6 +44,14 @@ export class LeadAgentController {
     };
   }
 
+  private scope(agent: AuthenticatedLeadUser) {
+    return {
+      capturedBy: agent.id,
+      state: agent.state,
+      district: agent.district,
+    };
+  }
+
   @Get()
   async list(
     @CurrentLeadAgent() agent: AuthenticatedLeadUser,

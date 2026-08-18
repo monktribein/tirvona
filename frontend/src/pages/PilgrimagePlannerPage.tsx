@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { formatCurrency } from "../utils/format";
 import { useNavigate } from "react-router-dom";
 import {
   Compass,
@@ -466,7 +467,7 @@ export const PilgrimagePlannerPage: React.FC = () => {
                       Transport (AC Bus / Innova)
                     </span>
                     <span className="font-black text-gray-800 dark:text-gray-200">
-                      ₹8,500 / person
+                      {formatCurrency(8500)} / person
                     </span>
                   </div>
                   <div className="flex justify-between py-2 border-b border-gray-100 dark:border-slate-800">
@@ -474,7 +475,7 @@ export const PilgrimagePlannerPage: React.FC = () => {
                       Ashram Room (7 Nights)
                     </span>
                     <span className="font-black text-gray-800 dark:text-gray-200">
-                      ₹6,200 / person
+                      {formatCurrency(6200)} / person
                     </span>
                   </div>
                   <div className="flex justify-between py-2 border-b border-gray-100 dark:border-slate-800">
@@ -482,7 +483,7 @@ export const PilgrimagePlannerPage: React.FC = () => {
                       Satvik Meals & Prasad
                     </span>
                     <span className="font-black text-gray-800 dark:text-gray-200">
-                      ₹3,500 / person
+                      {formatCurrency(3500)} / person
                     </span>
                   </div>
                   <div className="flex justify-between py-2 border-b border-gray-100 dark:border-slate-800">
@@ -490,12 +491,12 @@ export const PilgrimagePlannerPage: React.FC = () => {
                       VIP Darshan & Guide Passes
                     </span>
                     <span className="font-black text-gray-800 dark:text-gray-200">
-                      ₹1,500 / person
+                      {formatCurrency(1500)} / person
                     </span>
                   </div>
                   <div className="flex justify-between py-3 text-sm font-black text-[#0A4DA6] dark:text-amber-400">
                     <span>Total Estimated Cost</span>
-                    <span>₹19,700 per pilgrim</span>
+                    <span>{formatCurrency(19700)} per pilgrim</span>
                   </div>
                 </div>
               </div>

@@ -6,6 +6,7 @@ import {
 import { InjectModel } from "@nestjs/mongoose";
 import type { Model } from "mongoose";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
+import { canManageAllAshrams, isAshramOwner } from "../../../common/auth/ashram-access";
 import type { UpdateHousekeepingDto } from "../presentation/housekeeping.dto";
 
 @Injectable()
@@ -17,8 +18,8 @@ export class HousekeepingService {
     @InjectModel("BookingAuditLog") private readonly audits: Model<any>,
   ) {}
   private async scope(user: AuthenticatedUser): Promise<string[] | null> {
-    if (user.role === "super_admin") return null;
-    if (user.role === "owner")
+    if (canManageAllAshrams(user)) return null;
+    if (isAshramOwner(user))
       return (
         await this.ashrams.find({ ownerId: user.id }).select("_id").lean()
       ).map((a: any) => String(a._id));

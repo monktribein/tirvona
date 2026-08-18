@@ -12,13 +12,15 @@ export class NotificationOutboxService {
     private readonly queue: Queue<NotificationJob>,
     @InjectModel("BookingNotification") private readonly booking: Model<any>,
     @InjectModel("ParkingNotification") private readonly parking: Model<any>,
+    @InjectModel("CommunityNotification") private readonly community: Model<any>,
   ) {}
   @Interval(15_000) async dispatch(): Promise<void> {
     await this.enqueue("booking", this.booking);
     await this.enqueue("parking", this.parking);
+    await this.enqueue("community", this.community);
   }
   private async enqueue(
-    domain: "booking" | "parking",
+    domain: "booking" | "parking" | "community",
     model: Model<any>,
   ): Promise<void> {
     const rows = await model

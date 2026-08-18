@@ -1,4 +1,6 @@
 import React from "react";
+import { useLanguage } from "../../../contexts/LanguageContext";
+import { formatIndianNumber } from "../../../utils/format";
 import { ArrowUpRight, ArrowDownRight } from "lucide-react";
 
 interface EnterpriseStatsCardProps {
@@ -22,6 +24,7 @@ export const EnterpriseStatsCard: React.FC<EnterpriseStatsCardProps> = ({
   badgeText,
   badgeColor = "bg-[#0A4DA6]/10 text-[#0A4DA6] border-[#0A4DA6]/20",
 }) => {
+  const { t } = useLanguage();
   return (
     <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 shadow-lg shadow-gray-200/40 dark:shadow-none hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 space-y-3">
       <div className="flex justify-between items-start">
@@ -33,18 +36,18 @@ export const EnterpriseStatsCard: React.FC<EnterpriseStatsCardProps> = ({
           <span
             className={`px-2.5 py-0.5 rounded-full text-[10px] font-black tracking-wider border ${badgeColor}`}
           >
-            {badgeText}
+            {t(badgeText)}
           </span>
         )}
       </div>
 
       <div className="space-y-1">
         <span className="text-xs text-gray-400 font-bold tracking-wider block">
-          {title}
+          {t(title)}
         </span>
         <div className="flex items-baseline gap-2">
           <span className="text-2xl sm:text-3xl font-black text-[#0B192C] dark:text-white tracking-tight">
-            {value}
+            {typeof value === "number" ? formatIndianNumber(value) : value}
           </span>
 
           {change && (
@@ -67,7 +70,7 @@ export const EnterpriseStatsCard: React.FC<EnterpriseStatsCardProps> = ({
 
       {description && (
         <p className="text-[11px] text-gray-400 font-medium leading-relaxed">
-          {description}
+          {t(description)}
         </p>
       )}
     </div>

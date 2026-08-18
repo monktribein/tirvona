@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import api from "../lib/api";
 import { toast } from "../lib/toast";
+import { formatCurrency } from "../utils/format";
 import {
   Search,
   Phone,
@@ -341,7 +342,7 @@ export const SacredDirectoryModulePage: React.FC = () => {
                   <div>
                     {item.price > 0 ? (
                       <span className="text-xs font-black text-[#0A4DA6] dark:text-amber-400">
-                        ₹{item.price}
+                        {formatCurrency(item.price)}
                       </span>
                     ) : (
                       <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950 px-2.5 py-1 rounded-full">

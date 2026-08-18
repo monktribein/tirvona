@@ -11,6 +11,7 @@ import { Types, type Model } from "mongoose";
 import { createHash, randomUUID } from "node:crypto";
 import Razorpay from "razorpay";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
+import { canManageAllAshrams, isAshramOwner } from "../../../common/auth/ashram-access";
 import { calculateRefund } from "../domain/refund-calculator";
 import {
   REFUND_TRANSITIONS,
@@ -25,7 +26,7 @@ const FINANCE_ROLES = ["finance_manager"];
 /** May triage and reject, never approve a payout. */
 const SUPPORT_ROLES = ["support"];
 /** See only refunds against their own ashrams. */
-const ASHRAM_ROLES = ["owner", "manager"];
+const ASHRAM_ROLES = ["ashram_owner", "owner", "manager"];
 
 @Injectable()
 export class RefundsService {
@@ -53,7 +54,7 @@ export class RefundsService {
     user: AuthenticatedUser,
   ): Promise<Record<string, any>> {
     if (
-      PLATFORM_ROLES.includes(user.role) ||
+      PLATFORM_ROLES.includes(user.role) || canManageAllAshrams(user) ||
       FINANCE_ROLES.includes(user.role) ||
       SUPPORT_ROLES.includes(user.role)
     )
@@ -61,7 +62,7 @@ export class RefundsService {
 
     if (ASHRAM_ROLES.includes(user.role)) {
       const ids =
-        user.role === "owner"
+        isAshramOwner(user)
           ? (await this.ashrams.find({ ownerId: user.id }).distinct("_id"))
           : [
             ...new Set(

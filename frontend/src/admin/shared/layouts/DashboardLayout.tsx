@@ -6,6 +6,7 @@ import GlobalSearch, {
   type SearchableLink,
 } from "../components/GlobalSearch";
 import { isParkingRole } from "../../../utils/roleRedirect";
+import { useLanguage } from "../../../contexts/LanguageContext";
 import {
   LayoutDashboard,
   Bed,
@@ -35,6 +36,9 @@ import {
   Landmark,
   Car,
   Undo2,
+  ContactRound,
+  Sparkles,
+  DollarSign,
 } from "lucide-react";
 
 interface NavGroup {
@@ -48,9 +52,12 @@ const getFormattedRole = (role?: string): string => {
   switch (role) {
     case "super_admin":
       return "Super Admin";
-    case "owner":
+    case "ashram_admin":
     case "stay_admin":
-      return "Stay Admin";
+      return "Ashram Admin";
+    case "ashram_owner":
+    case "owner":
+      return "Ashram Owner";
     case "support":
       return "Support";
     case "reception":
@@ -90,6 +97,8 @@ export const DashboardLayout: React.FC = () => {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+  const [languageOpen, setLanguageOpen] = useState(false);
+  const { language, setLanguage, t } = useLanguage();
 
   // Auto-expand ONLY the single parent group that contains the current active route
   React.useEffect(() => {
@@ -156,22 +165,14 @@ export const DashboardLayout: React.FC = () => {
   // Super Admin Categorized Navigation Groups
   const superAdminGroups: NavGroup[] = [
     {
-      groupName: "User management",
+      groupName: "User & Access Management",
       icon: <Users size={15} />,
       links: [
-        { label: "Users & IAM", path: "/admin/users" },
-        { label: "Pilgrims", path: "/admin/manage/users/pilgrims" },
-        { label: "Owners", path: "/admin/manage/users/owners" },
-        {
-          label: "Content Managers",
-          path: "/admin/manage/users/content-managers",
-        },
-        { label: "Staff Members", path: "/admin/manage/users/staff" },
-        { label: "Roles & Permissions", path: "/admin/manage/users/roles" },
+        { label: "All User Accounts", path: "/admin/users" },
       ],
     },
     {
-      groupName: "Institution master data",
+      groupName: "Institution Management",
       icon: <Landmark size={15} />,
       links: [
         { label: "Institution Profiles", path: "/admin/manage/institution" },
@@ -191,40 +192,42 @@ export const DashboardLayout: React.FC = () => {
       ],
     },
     {
-      groupName: "Ashram management",
+      groupName: "Ashram Management",
       icon: <Building size={15} />,
       links: [
         { label: "All Ashrams", path: "/admin/manage/ashrams/all" },
         { label: "Pending Verification", path: "/admin/verifications" },
         { label: "Approved Ashrams", path: "/admin/manage/ashrams/approved" },
         { label: "Rejected Ashrams", path: "/admin/manage/ashrams/rejected" },
-        {
-          label: "Room Categories",
-          path: "/admin/manage/ashrams/room-categories",
-        },
-        {
-          label: "Category Approvals",
-          path: "/admin/approvals/room-categories",
-        },
       ],
     },
     {
-      groupName: "Room management",
+      groupName: "Room & Inventory Management",
       icon: <Bed size={15} />,
       links: [
         {
-          label: "Category Approvals",
+          label: "Room Category Approvals",
           path: "/admin/approvals/room-categories",
         },
-        { label: "Rooms", path: "/admin/manage/rooms/all" },
-        { label: "Availability", path: "/admin/manage/rooms/availability" },
-        { label: "Pricing", path: "/admin/manage/rooms/pricing" },
-        { label: "Platform Pricing", path: "/admin/settings/pricing" },
-        { label: "Inventory", path: "/admin/manage/rooms/inventory" },
+        { label: "Room Categories", path: "/admin/manage/rooms/all" },
+        { label: "Room Availability", path: "/admin/manage/rooms/availability" },
+        { label: "Room Pricing", path: "/admin/manage/rooms/pricing" },
+        { label: "Room Inventory", path: "/admin/manage/rooms/inventory" },
       ],
     },
     {
-      groupName: "Bookings",
+      // Its own section rather than a link under Room & Inventory: this is the
+      // platform's own fee, charged on top of whatever a property prices its
+      // rooms at, and it reaches systems beyond stays. Filed under rooms it
+      // read as a per-room setting, which is the opposite of what it is.
+      groupName: "Platform Fee & Pricing",
+      icon: <DollarSign size={15} />,
+      links: [
+        { label: "Platform Fee Settings", path: "/admin/settings/pricing" },
+      ],
+    },
+    {
+      groupName: "Booking Management",
       icon: <Calendar size={15} />,
       links: [
         { label: "All Bookings", path: "/admin/manage/bookings/all" },
@@ -233,60 +236,67 @@ export const DashboardLayout: React.FC = () => {
           label: "Confirmed Bookings",
           path: "/admin/manage/bookings/confirmed",
         },
+        { label: "Checked-in Stays", path: "/admin/manage/bookings/checked_in" },
+        { label: "Checked-out Stays", path: "/admin/manage/bookings/checked_out" },
         { label: "Completed Stays", path: "/admin/manage/bookings/completed" },
-        { label: "Cancelled", path: "/admin/manage/bookings/cancelled" },
-        { label: "Refund Requests", path: "/admin/manage/bookings/refunds" },
+        { label: "Cancelled Bookings", path: "/admin/manage/bookings/cancelled" },
+        { label: "Expired Bookings", path: "/admin/manage/bookings/expired" },
+        { label: "No-show Bookings", path: "/admin/manage/bookings/no_show" },
+        { label: "Refunded Bookings", path: "/admin/manage/bookings/refunded" },
       ],
     },
     {
       // Parking keeps one module key per collection rather than
       // parking/<section>: the console resolves a sub-key against a shared
       // alias table, where "bookings" already means ashram bookings.
-      groupName: "Parking management",
+      groupName: "Parking Management",
       icon: <Car size={15} />,
       links: [
-        { label: "⚡ Parking Console", path: "/parking/dashboard" },
-        { label: "Control Center", path: "/admin/parking/control" },
-        { label: "Staff & Roles", path: "/admin/parking/roles" },
-        { label: "Partners", path: "/admin/manage/parking_partners/all" },
+        { label: "Parking Operations Dashboard", path: "/parking/dashboard" },
+        { label: "Parking Control Center", path: "/admin/parking/control" },
+        { label: "Parking Staff & Roles", path: "/admin/parking/roles" },
+        { label: "Parking Partners", path: "/admin/manage/parking_partners/all" },
         {
-          label: "Pending Partners",
+          label: "Pending Parking Partners",
           path: "/admin/manage/parking_partners/pending",
         },
-        { label: "Locations", path: "/admin/manage/parking_locations/all" },
-        { label: "Bookings", path: "/admin/manage/parking_bookings/all" },
+        { label: "Parking Locations", path: "/admin/manage/parking_locations/all" },
+        { label: "Parking Bookings", path: "/admin/manage/parking_bookings/all" },
         {
           label: "Vehicles On-Site",
           path: "/admin/manage/parking_bookings/checked_in",
         },
-        { label: "Slot Types", path: "/admin/manage/parking_slot_types/all" },
-        { label: "Slots", path: "/admin/manage/parking_slots/all" },
-        { label: "Pricing Rules", path: "/admin/manage/parking_pricing/all" },
+        { label: "Parking Slot Types", path: "/admin/manage/parking_slot_types/all" },
+        { label: "Parking Slots", path: "/admin/manage/parking_slots/all" },
+        { label: "Parking Pricing Rules", path: "/admin/manage/parking_pricing/all" },
         {
-          label: "Commissions",
+          label: "Pending Parking Commissions",
           path: "/admin/manage/parking_commissions/pending",
         },
         {
-          label: "Transactions",
+          label: "Parking Transactions",
           path: "/admin/manage/parking_transactions/all",
         },
-        { label: "Scan Logs", path: "/admin/manage/parking_scan_logs/all" },
-        { label: "Reviews", path: "/admin/manage/parking_reviews/all" },
+        { label: "Parking Scan Logs", path: "/admin/manage/parking_scan_logs/all" },
+        { label: "Parking Reviews", path: "/admin/manage/parking_reviews/all" },
       ],
     },
     {
-      groupName: "Offers & blogs",
+      groupName: "Content & Promotions",
       icon: <Tag size={15} />,
       links: [
         { label: "All Offers", path: "/admin/manage/offers/all" },
         { label: "Featured Offers", path: "/admin/manage/offers/featured" },
         { label: "All Blogs", path: "/admin/manage/blogs/all" },
+        // Pilgrim-written stay stories. A separate collection from All Blogs,
+        // and the one the public blog feed is actually full of.
+        { label: "Visitor Articles", path: "/admin/articles" },
         { label: "Blog Categories", path: "/admin/manage/blogs/categories" },
         { label: "Author Approvals", path: "/admin/manage/blogs/authors" },
       ],
     },
     {
-      groupName: "Planner & circuits",
+      groupName: "Pilgrimage Planning",
       icon: <Compass size={15} />,
       links: [
         { label: "Spiritual Circuits", path: "/admin/manage/planner/circuits" },
@@ -297,40 +307,47 @@ export const DashboardLayout: React.FC = () => {
       ],
     },
     {
-      groupName: "Local hub",
+      groupName: "Local Services Management",
       icon: <Compass size={15} />,
       links: [
-        { label: "Transport", path: "/admin/manage/local/transport" },
-        { label: "Guides", path: "/admin/manage/local/guides" },
+        { label: "Local Transport Services", path: "/admin/manage/local/transport" },
+        { label: "Local Guides", path: "/admin/manage/local/guides" },
         { label: "Restaurants", path: "/admin/manage/local/restaurants" },
-        { label: "Medical", path: "/admin/manage/local/medical" },
-        { label: "Emergency", path: "/admin/manage/local/emergency" },
-        { label: "Shops", path: "/admin/manage/local/shops" },
-        { label: "Photography", path: "/admin/manage/local/photography" },
-        { label: "Events", path: "/admin/manage/local/events" },
+        { label: "Medical Services", path: "/admin/manage/local/medical" },
+        { label: "Emergency Services", path: "/admin/manage/local/emergency" },
+        { label: "Local Shops", path: "/admin/manage/local/shops" },
+        { label: "Photography Services", path: "/admin/manage/local/photography" },
+        { label: "Local Events", path: "/admin/manage/local/events" },
       ],
     },
     {
-      groupName: "Marketplace",
+      groupName: "Marketplace Management",
       icon: <ShoppingBag size={15} />,
       links: [
-        { label: "Products", path: "/admin/manage/marketplace/products" },
-        { label: "Categories", path: "/admin/manage/marketplace/categories" },
-        { label: "Vendors", path: "/admin/manage/marketplace/vendors" },
-        { label: "Orders", path: "/admin/manage/marketplace/orders" },
-        { label: "Waitlist", path: "/admin/manage/marketplace/waitlist" },
-        { label: "Newsletter", path: "/admin/manage/marketplace/newsletter" },
+        { label: "Marketplace Products", path: "/admin/manage/marketplace/products" },
+        { label: "Marketplace Categories", path: "/admin/manage/marketplace/categories" },
+        { label: "Marketplace Vendors", path: "/admin/manage/marketplace/vendors" },
+        { label: "Marketplace Orders", path: "/admin/manage/marketplace/orders" },
+        { label: "Marketplace Waitlist", path: "/admin/manage/marketplace/waitlist" },
+        { label: "Marketplace Newsletter", path: "/admin/manage/marketplace/newsletter" },
       ],
     },
     {
-      groupName: "Banner management",
+      groupName: "Homepage Banners",
       icon: <Image size={15} />,
       links: [
-        { label: "Banner Management", path: "/admin/manage/banner/homepage" },
+        { label: "Homepage Banner Management", path: "/admin/manage/banner/homepage" },
       ],
     },
     {
-      groupName: "Lead Collection",
+      groupName: "Featured Banner",
+      icon: <Sparkles size={15} />,
+      links: [
+        { label: "Featured Banner Management", path: "/admin/manage/featured_banner/homepage" },
+      ],
+    },
+    {
+      groupName: "Lead Collection Management",
       icon: <ClipboardList size={15} />,
       links: [
         { label: "All Leads", path: "/admin/lead-collection/leads" },
@@ -338,7 +355,38 @@ export const DashboardLayout: React.FC = () => {
       ],
     },
     {
-      groupName: "Refund requests",
+      // Smart Contact QR — permanent QR profiles for representatives.
+      // The status filters are query strings on one page rather than separate
+      // routes, so the list keeps a single source of truth for its data.
+      groupName: "Smart Contact Profiles",
+      icon: <ContactRound size={15} />,
+      links: [
+        { label: "All Profiles", path: "/admin/smart-contacts" },
+        { label: "Active", path: "/admin/smart-contacts?status=ACTIVE" },
+        { label: "Disabled", path: "/admin/smart-contacts?status=SUSPENDED" },
+        {
+          label: "Employees",
+          path: "/admin/smart-contacts?category=employee",
+        },
+        { label: "Partners", path: "/admin/smart-contacts?category=partner" },
+        {
+          label: "District Partners",
+          path: "/admin/smart-contacts?category=district-partner",
+        },
+        { label: "QR Analytics", path: "/admin/smart-contacts/analytics" },
+      ],
+    },
+    {
+      // The platform manages every ashram's openings and applications from
+      // here; the same page scoped to one owner lives at /owner/volunteer.
+      groupName: "Volunteer Management",
+      icon: <Heart size={15} />,
+      links: [
+        { label: "Openings & Applications", path: "/admin/volunteer" },
+      ],
+    },
+    {
+      groupName: "Refund Management",
       icon: <Undo2 size={15} />,
       links: [
         { label: "Refund Queue", path: "/admin/refunds" },
@@ -346,7 +394,7 @@ export const DashboardLayout: React.FC = () => {
       ],
     },
     {
-      groupName: "Reports & audit",
+      groupName: "Reports & Audit",
       icon: <BarChart3 size={15} />,
       links: [
         { label: "Revenue Reports", path: "/admin/manage/reports/revenue" },
@@ -355,78 +403,79 @@ export const DashboardLayout: React.FC = () => {
       ],
     },
     {
-      groupName: "Enterprise notifications",
+      // No dropdown: every section (all notifications, system activities,
+      // auth logs, bookings telemetry, payment audit, CMS queue, timeline)
+      // is a tab on the one dashboard page, so a second copy of that list in
+      // the sidebar only duplicated navigation the page already provides.
+      // Matching `label` to `groupName` renders this as a flat link.
+      groupName: "Notification Center",
       icon: <Bell size={15} />,
       links: [
         {
-          label: "Dashboard",
-          path: "/admin/enterprise-notifications/dashboard",
-        },
-        {
-          label: "All Notifications",
-          path: "/admin/enterprise-notifications/all",
-        },
-        {
-          label: "System Activities",
-          path: "/admin/enterprise-notifications/activities",
-        },
-        {
-          label: "Authentication Logs",
-          path: "/admin/enterprise-notifications/auth-logs",
-        },
-        {
-          label: "Bookings Telemetry",
-          path: "/admin/enterprise-notifications/bookings",
-        },
-        {
-          label: "Payment Audit",
-          path: "/admin/enterprise-notifications/payments",
-        },
-        {
-          label: "Banner CMS Queue",
-          path: "/admin/enterprise-notifications/cms",
-        },
-        {
-          label: "Audit Timeline",
-          path: "/admin/enterprise-notifications/timeline",
+          // The base path (subSection is optional and defaults to the
+          // dashboard) so the link stays highlighted whichever tab is open.
+          label: "Notification Center",
+          path: "/admin/enterprise-notifications",
         },
       ],
     },
   ];
 
+  const accommodationRole = user?.role || "";
+  const ownerBase = ["ashram_admin", "stay_admin"].includes(accommodationRole)
+    ? "/ashram-admin"
+    : ["ashram_owner", "owner"].includes(accommodationRole)
+      ? "/ashram-owner"
+      : "/owner";
   const ownerGroups: NavGroup[] = [
     {
       groupName: "Ashram management",
       icon: <Building size={15} />,
       links: [
-        { label: "Manage Ashrams", path: "/owner/ashrams" },
-        { label: "Add-On Services", path: "/owner/add-ons" },
+        { label: "Manage Ashrams", path: `${ownerBase}/ashrams` },
+        { label: "Add-On Services", path: `${ownerBase}/add-ons` },
       ],
     },
     {
       groupName: "Room management",
       icon: <Bed size={15} />,
       links: [
-        { label: "Manage Rooms", path: "/owner/rooms" },
-        { label: "Inventory Calendar", path: "/owner/calendar" },
+        { label: "Manage Rooms", path: `${ownerBase}/rooms` },
+        { label: "Inventory Calendar", path: `${ownerBase}/calendar` },
       ],
     },
     {
       groupName: "Offers & deals",
       icon: <Tag size={15} />,
-      links: [{ label: "Offers & Deals", path: "/owner/offers" }],
+      links: [{ label: "Offers & Deals", path: `${ownerBase}/offers` }],
     },
     {
       groupName: "Volunteer & careers",
       icon: <Heart size={15} />,
-      links: [{ label: "Volunteer & Careers", path: "/owner/volunteer" }],
+      links: [{ label: "Volunteer & Careers", path: `${ownerBase}/volunteer` }],
     },
     {
       groupName: "Staff & users",
       icon: <Users size={15} />,
       links: [
-        { label: "Users & Guests", path: "/owner/users" },
-        { label: "Staff Management", path: "/owner/staff" },
+        { label: "Users & Guests", path: `${ownerBase}/users` },
+        { label: "Staff Management", path: `${ownerBase}/staff` },
+      ],
+    },
+    {
+      groupName: "Bookings & finance",
+      icon: <Calendar size={15} />,
+      links: [
+        { label: "All Bookings", path: `${ownerBase}/bookings` },
+        { label: "Payments & Payouts", path: `${ownerBase}/payments` },
+      ],
+    },
+    {
+      groupName: "Parking Management",
+      icon: <Car size={15} />,
+      links: [
+        { label: "My Ashram Parking", path: `${ownerBase}/parking` },
+        { label: "Parking Operations", path: "/parking/dashboard" },
       ],
     },
   ];
@@ -493,7 +542,10 @@ export const DashboardLayout: React.FC = () => {
         groups: superAdminGroups,
       };
     }
-    if (userHasParkingRole) {
+    if (
+      userHasParkingRole &&
+      !["owner", "stay_admin", "ashram_owner", "ashram_admin"].includes(user?.role || "")
+    ) {
       return {
         topLink: {
           label: "Parking Console",
@@ -503,11 +555,11 @@ export const DashboardLayout: React.FC = () => {
         groups: parkingGroups,
       };
     }
-    if (["owner", "stay_admin"].includes(user?.role || "")) {
+    if (["owner", "stay_admin", "ashram_owner", "ashram_admin"].includes(user?.role || "")) {
       return {
         topLink: {
           label: "Overview Dashboard",
-          path: "/owner/dashboard",
+          path: `${ownerBase}/dashboard`,
           icon: <LayoutDashboard size={16} className="text-[#E58C28]" />,
         },
         groups: ownerGroups,
@@ -520,12 +572,22 @@ export const DashboardLayout: React.FC = () => {
           path: "/owner/dashboard",
           icon: <LayoutDashboard size={16} className="text-[#E58C28]" />,
         },
-        groups: ownerGroups.map((group) => ({
-          ...group,
-          links: group.links.filter(
-            (link) => !["/owner/staff", "/owner/users"].includes(link.path),
-          ),
-        })),
+        groups: ownerGroups
+          .map((group) => ({
+            ...group,
+            links: group.links.filter(
+              (link) =>
+                ![
+                  "/owner/staff",
+                  "/owner/users",
+                  "/owner/bookings",
+                  "/owner/payments",
+                  "/owner/parking",
+                  "/parking/dashboard",
+                ].includes(link.path),
+            ),
+          }))
+          .filter((group) => group.links.length > 0),
       };
     }
     if (user?.role === "staff") {
@@ -675,12 +737,12 @@ export const DashboardLayout: React.FC = () => {
   // Flatten the same tree the sidebar renders, so global search can only ever
   // offer pages this role actually has — no second list to keep in sync.
   const searchableLinks: SearchableLink[] = [
-    { label: navData.topLink.label, path: navData.topLink.path, group: "Overview" },
+    { label: t(navData.topLink.label), path: navData.topLink.path, group: t("Overview") },
     ...navData.groups.flatMap((group) =>
       group.links.map((link) => ({
-        label: link.label,
+        label: t(link.label),
         path: link.path,
-        group: group.groupName,
+        group: t(group.groupName),
       })),
     ),
   ];
@@ -731,7 +793,7 @@ export const DashboardLayout: React.FC = () => {
               Tirvona
             </span>
             <span className="text-[10px] font-extrabold text-[#0A4DA6]">
-              {getFormattedRole(user?.role)}
+              {t(getFormattedRole(user?.role))}
             </span>
           </div>
         </div>
@@ -751,7 +813,7 @@ export const DashboardLayout: React.FC = () => {
                 }`}
             >
               {navData.topLink.icon}
-              <span>{navData.topLink.label}</span>
+              <span>{t(navData.topLink.label)}</span>
             </Link>
           )}
 
@@ -779,7 +841,7 @@ export const DashboardLayout: React.FC = () => {
                     }`}
                 >
                   {group.icon}
-                  <span>{group.groupName}</span>
+                  <span>{t(group.groupName)}</span>
                 </Link>
               );
             }
@@ -800,7 +862,7 @@ export const DashboardLayout: React.FC = () => {
                 >
                   <div className="flex items-center gap-2">
                     {group.icon}
-                    <span>{group.groupName}</span>
+                    <span>{t(group.groupName)}</span>
                   </div>
                   {isOpen ? (
                     <ChevronDown size={12} />
@@ -825,7 +887,7 @@ export const DashboardLayout: React.FC = () => {
                             : "text-slate-600 dark:text-gray-400 hover:text-[#0A4DA6] hover:bg-[#F0F5FA]"
                             }`}
                         >
-                          <span className="truncate">{link.label}</span>
+                          <span className="truncate">{t(link.label)}</span>
                         </Link>
                       );
                     })}
@@ -848,7 +910,7 @@ export const DashboardLayout: React.FC = () => {
               {user.name}
             </span>
             <span className="text-[10px] text-[#0A4DA6] font-black tracking-wider">
-              {getFormattedRole(user.role)}
+              {t(getFormattedRole(user.role))}
             </span>
           </div>
         </div>
@@ -857,7 +919,7 @@ export const DashboardLayout: React.FC = () => {
           className="w-full flex items-center justify-center gap-2 py-2.5 bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100 transition-all rounded-full text-xs font-black cursor-pointer"
         >
           <LogOut size={14} />
-          <span>Sign Out</span>
+          <span>{t("Sign Out")}</span>
         </button>
       </div>
     </>
@@ -872,7 +934,7 @@ export const DashboardLayout: React.FC = () => {
           <button
             onClick={() => setSidebarOpen(true)}
             className="lg:hidden p-2 rounded-full hover:bg-blue-50 text-[#0B192C] dark:text-white transition-colors"
-            aria-label="Open navigation menu"
+            aria-label={t("Open navigation menu")}
           >
             <Menu size={20} />
           </button>
@@ -894,7 +956,7 @@ export const DashboardLayout: React.FC = () => {
                 Tirvona
               </span>
               <span className="text-[10px] font-extrabold text-[#0A4DA6] tracking-wider leading-none">
-                {getFormattedRole(user?.role)}
+                {t(getFormattedRole(user?.role))}
               </span>
             </div>
           </Link>
@@ -907,15 +969,51 @@ export const DashboardLayout: React.FC = () => {
 
         {/* Right: Notifications + Public Portal Action Button */}
         <div className="flex items-center gap-3 shrink-0">
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setLanguageOpen((open) => !open)}
+              className="h-9 px-3 rounded-full border border-blue-100 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-black text-[#0A4DA6] dark:text-blue-300 flex items-center gap-1.5 hover:bg-blue-50 dark:hover:bg-slate-800"
+              aria-label={t("Language")}
+            >
+              <Globe size={14} /> {language === "hi" ? "हिंदी" : "EN"}
+              <ChevronDown size={12} />
+            </button>
+            {languageOpen && (
+              <div className="absolute right-0 top-full mt-2 w-36 rounded-xl border border-blue-100 dark:border-slate-700 bg-white dark:bg-[#0B192C] shadow-xl overflow-hidden z-50">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLanguage("en");
+                    setLanguageOpen(false);
+                  }}
+                  className={`w-full px-3 py-2.5 text-left text-xs font-bold ${language === "en" ? "bg-blue-50 text-[#0A4DA6] dark:bg-slate-800" : "text-slate-600 dark:text-slate-300"}`}
+                >
+                  English
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLanguage("hi");
+                    setLanguageOpen(false);
+                  }}
+                  className={`w-full px-3 py-2.5 text-left text-xs font-bold ${language === "hi" ? "bg-blue-50 text-[#0A4DA6] dark:bg-slate-800" : "text-slate-600 dark:text-slate-300"}`}
+                >
+                  हिंदी
+                </button>
+              </div>
+            )}
+          </div>
+
           {/* Notifications Dropdown */}
           <NotificationDropdown />
 
           {/* Public Portal Action Button */}
           <Link
-            to="/"
+            to="/public"
             className="text-xs font-extrabold px-4 py-2 rounded-full bg-[#0A4DA6] hover:bg-[#083b80] text-white transition-all flex items-center gap-1.5 shadow-md shadow-[#0A4DA6]/20 cursor-pointer shrink-0"
           >
-            <Globe size={14} className="text-[#E58C28]" /> Public Portal{" "}
+            <Globe size={14} className="text-[#E58C28]" /> {t("Public Portal")}{" "}
             <ArrowRight size={12} />
           </Link>
         </div>
@@ -939,7 +1037,7 @@ export const DashboardLayout: React.FC = () => {
               <button
                 onClick={() => setSidebarOpen(false)}
                 className="absolute top-4 right-4 p-2 text-slate-500 hover:text-slate-800 rounded-full hover:bg-slate-100 transition-colors z-20"
-                aria-label="Close menu"
+                aria-label={t("Close menu")}
               >
                 <X size={20} />
               </button>

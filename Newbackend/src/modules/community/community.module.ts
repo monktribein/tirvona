@@ -20,5 +20,6 @@ import {
     CommunityService,
     { provide: COMMUNITY_REPOSITORY, useClass: MongooseCommunityRepository },
   ],
+  exports: [MongooseModule],
 })
 export class CommunityModule {}

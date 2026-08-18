@@ -14,6 +14,7 @@ import {
 import { Inject } from "@nestjs/common";
 import { AuthService } from "../application/auth.service";
 import {
+  ChangeMyPasswordDto,
   CompleteGoogleDto,
   CreateOwnerStaffDto,
   ForgotPasswordDto,
@@ -189,6 +190,24 @@ export class AuthController {
     if (dto.phone !== undefined) user.phone = dto.phone;
     await user.save();
     return { success: true, data: await this.auth.session(user) };
+  }
+
+  @Put("me/password")
+  @ApiBearerAuth()
+  async changeMyPassword(
+    @CurrentUser() current: AuthenticatedUser,
+    @Body() dto: ChangeMyPasswordDto,
+  ) {
+    const user = await this.auth.changeMyPassword(
+      current.id,
+      dto.currentPassword,
+      dto.newPassword,
+    );
+    return {
+      success: true,
+      message: "Password updated successfully.",
+      data: await this.auth.session(user),
+    };
   }
 
   @Get("owner-staff") @Roles("super_admin") async staff(

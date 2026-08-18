@@ -109,7 +109,7 @@ export const VerificationQueuePage: React.FC = () => {
   return (
     <div className="space-y-6 text-left w-full">
       <EnterprisePageHeader
-        title="Government Ashram Verification Queue"
+        title="Tirvona Ashram Verification Queue"
         subtitle="Screen trust deeds, review local fire certificates, and submit inspection decisions."
         icon={<ShieldCheck size={22} />}
         badgeText={`${pendingList.length} PENDING INSPECTIONS`}
