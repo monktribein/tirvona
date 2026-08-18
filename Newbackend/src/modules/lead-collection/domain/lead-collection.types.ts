@@ -10,6 +10,8 @@ export interface AuthenticatedLeadUser {
   role: LeadUserRole;
   status: string;
   region: string;
+  state: string;
+  district: string;
 }
 
 /** Payload carried by a lead-scope JWT. */
@@ -30,6 +32,8 @@ export interface LeadUserRecord {
   role: LeadUserRole;
   status: string;
   region: string;
+  state: string;
+  district: string;
   employeeCode: string;
   notes: string;
   lastLoginAt: Date | null;
@@ -56,6 +60,7 @@ export interface LeadRecord {
   location: {
     address: string;
     city: string;
+    district: string;
     state: string;
     coordinates: LeadCoordinates;
   };
@@ -75,6 +80,9 @@ export interface LeadRecord {
   capturedBy: Types.ObjectId | null;
   capturedByName: string;
   capturedAt: Date;
+  assignedAgentId?: Types.ObjectId | null;
+  assignedAgentName?: string;
+  assignedAgentCode?: string;
   reviewedByAdminId: string;
   reviewedByAdminName: string;
   reviewedAt: Date | null;

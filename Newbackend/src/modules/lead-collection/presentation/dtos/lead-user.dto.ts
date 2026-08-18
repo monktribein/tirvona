@@ -19,12 +19,14 @@ export class CreateLeadUserDto {
   @IsString() @MinLength(2) @MaxLength(120) name!: string;
   @IsString() @MinLength(10) @MaxLength(20) phone!: string;
   @IsOptional() @IsEmail() @MaxLength(160) email?: string;
-  @IsString() @MinLength(6) @MaxLength(128) password!: string;
+  @IsString() @MinLength(8) @MaxLength(128) password!: string;
   @IsOptional() @IsIn(LEAD_USER_ROLES as unknown as string[]) role?:
     | "field_agent"
-    | "field_supervisor";
+    | "field_supervisor"
+    | "lead_executive";
   @IsOptional() @IsIn(LEAD_USER_STATUSES as unknown as string[]) status?: string;
-  @IsOptional() @IsString() @MaxLength(120) region?: string;
+  @IsString() @MinLength(2) @MaxLength(120) state!: string;
+  @IsString() @MinLength(2) @MaxLength(120) district!: string;
   @IsOptional() @IsString() @MaxLength(40) employeeCode?: string;
   @IsOptional() @IsString() @MaxLength(500) notes?: string;
 }
@@ -40,21 +42,30 @@ export class UpdateLeadUserDto {
   @IsOptional() @IsEmail() @MaxLength(160) email?: string;
   @IsOptional() @IsIn(LEAD_USER_ROLES as unknown as string[]) role?:
     | "field_agent"
-    | "field_supervisor";
+    | "field_supervisor"
+    | "lead_executive";
   @IsOptional() @IsIn(LEAD_USER_STATUSES as unknown as string[]) status?: string;
-  @IsOptional() @IsString() @MaxLength(120) region?: string;
+  @IsOptional() @IsString() @MinLength(2) @MaxLength(120) state?: string;
+  @IsOptional() @IsString() @MinLength(2) @MaxLength(120) district?: string;
   @IsOptional() @IsString() @MaxLength(40) employeeCode?: string;
   @IsOptional() @IsString() @MaxLength(500) notes?: string;
 }
 
+export class CreateLeadRegionDto {
+  @IsString() @MinLength(2) @MaxLength(120) state!: string;
+  @IsString() @MinLength(2) @MaxLength(120) district!: string;
+}
+
 export class ResetLeadUserPasswordDto {
-  @IsString() @MinLength(6) @MaxLength(128) password!: string;
+  @IsString() @MinLength(8) @MaxLength(128) password!: string;
 }
 
 export class LeadUserQueryDto {
   @IsOptional() @IsIn(LEAD_USER_STATUSES as unknown as string[]) status?: string;
   @IsOptional() @IsIn(LEAD_USER_ROLES as unknown as string[]) role?: string;
   @IsOptional() @IsString() @MaxLength(120) search?: string;
+  @IsOptional() @IsString() @MaxLength(120) state?: string;
+  @IsOptional() @IsString() @MaxLength(120) district?: string;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) page?: number = 1;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100) limit?: number =
     20;

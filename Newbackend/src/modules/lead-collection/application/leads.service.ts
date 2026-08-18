@@ -41,6 +41,12 @@ export interface LeadStats {
   capturedLast7Days: number;
 }
 
+interface AgentLeadScope {
+  capturedBy: string;
+  state?: string;
+  district?: string;
+}
+
 /**
  * Read/write access to the `leads` collection.
  *
@@ -70,7 +76,10 @@ export class LeadsService {
    * so a partial fix (lat but no lng) yields no Point at all instead of an
    * index-breaking half-coordinate.
    */
-  private toDocument(dto: SaveLeadDto): Record<string, unknown> {
+  private toDocument(
+    dto: SaveLeadDto,
+    jurisdiction?: { state: string; district: string },
+  ): Record<string, unknown> {
     const lat = dto.location?.coordinates?.lat ?? null;
     const lng = dto.location?.coordinates?.lng ?? null;
     const hasFix = typeof lat === "number" && typeof lng === "number";
@@ -80,7 +89,9 @@ export class LeadsService {
       location: {
         address: dto.location?.address?.trim() ?? "",
         city: dto.location?.city?.trim() ?? "",
-        state: dto.location?.state?.trim() ?? "",
+        district:
+          jurisdiction?.district ?? dto.location?.district?.trim() ?? "",
+        state: jurisdiction?.state ?? dto.location?.state?.trim() ?? "",
         coordinates: { lat, lng },
       },
       geo: hasFix ? { type: "Point", coordinates: [lng, lat] } : undefined,
@@ -102,6 +113,12 @@ export class LeadsService {
         mode: dto.meeting?.requested ? (dto.meeting.mode ?? "") : "",
       },
       images: dto.images ?? [],
+      assignedAgentId:
+        dto.assignedAgentId && Types.ObjectId.isValid(dto.assignedAgentId)
+          ? new Types.ObjectId(dto.assignedAgentId)
+          : null,
+      assignedAgentName: dto.assignedAgentName?.trim() ?? "",
+      assignedAgentCode: dto.assignedAgentCode?.trim() ?? "",
     };
   }
 
@@ -131,12 +148,16 @@ export class LeadsService {
 
   async list(
     query: LeadQueryDto,
-    scope?: { capturedBy: string },
+    scope?: AgentLeadScope,
   ): Promise<LeadListResult> {
     const filter = this.buildFilter(query);
     // An agent's own view is a hard scope, applied after the query filters so
     // a crafted `capturedBy` in the querystring cannot widen it.
-    if (scope) filter.capturedBy = this.objectId(scope.capturedBy);
+    if (scope) {
+      filter.capturedBy = this.objectId(scope.capturedBy);
+      if (scope.state) filter["location.state"] = scope.state;
+      if (scope.district) filter["location.district"] = scope.district;
+    }
 
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
@@ -152,11 +173,18 @@ export class LeadsService {
     return { items, total, page, limit };
   }
 
-  async findOne(id: string, scope?: { capturedBy: string }): Promise<LeadRecord> {
+  async findOne(id: string, scope?: AgentLeadScope): Promise<LeadRecord> {
     const row = await this.leads.findById(this.objectId(id)).lean<LeadRecord>();
     if (!row) throw new NotFoundException("Lead not found");
     if (scope && String(row.capturedBy ?? "") !== scope.capturedBy)
       throw new ForbiddenException("This lead belongs to another agent");
+    if (
+      scope?.state &&
+      scope?.district &&
+      (row.location.state !== scope.state ||
+        row.location.district !== scope.district)
+    )
+      throw new ForbiddenException("This lead is outside your assigned region");
     return row;
   }
 
@@ -166,7 +194,10 @@ export class LeadsService {
     agent: AuthenticatedLeadUser,
   ): Promise<LeadRecord> {
     const created = await this.leads.create({
-      ...this.toDocument(dto),
+      ...this.toDocument(dto, {
+        state: agent.state,
+        district: agent.district,
+      }),
       status: "pending",
       capturedBy: new Types.ObjectId(agent.id),
       capturedByName: agent.name,
@@ -189,7 +220,7 @@ export class LeadsService {
   async update(
     id: string,
     dto: SaveLeadDto,
-    scope?: { capturedBy: string },
+    scope?: AgentLeadScope,
   ): Promise<LeadRecord> {
     const existing = await this.findOne(id, scope);
     // An agent can correct a typo before anyone has looked at the lead; once
@@ -199,7 +230,12 @@ export class LeadsService {
         "This lead has already been reviewed and can no longer be edited",
       );
 
-    const update = this.toDocument(dto);
+    const update = this.toDocument(
+      dto,
+      scope?.state && scope?.district
+        ? { state: scope.state, district: scope.district }
+        : undefined,
+    );
     // `geo` is `undefined` when the fix was cleared — $set would store null and
     // break the sparse 2dsphere index, so unset it instead.
     const unset = update.geo === undefined ? { geo: "" } : undefined;
@@ -245,7 +281,7 @@ export class LeadsService {
 
   async remove(
     id: string,
-    scope?: { capturedBy: string },
+    scope?: AgentLeadScope,
   ): Promise<{ id: string }> {
     await this.findOne(id, scope);
     await this.leads.findByIdAndDelete(this.objectId(id));
@@ -256,10 +292,103 @@ export class LeadsService {
    * Counters for the console header. Computed in one aggregation rather than
    * eight `countDocuments` round trips.
    */
-  async stats(scope?: { capturedBy: string }): Promise<LeadStats> {
-    const match = scope
+  async stats(scope?: AgentLeadScope): Promise<LeadStats> {
+    const match: Record<string, unknown> = scope
       ? { capturedBy: this.objectId(scope.capturedBy) }
       : {};
+    if (scope?.state) match["location.state"] = scope.state;
+    if (scope?.district) match["location.district"] = scope.district;
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+    const [row] = await this.leads.aggregate<LeadStats>([
+      { $match: match },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: 1 },
+          pending: { $sum: { $cond: [{ $eq: ["$status", "pending"] }, 1, 0] } },
+          approved: {
+            $sum: { $cond: [{ $eq: ["$status", "approved"] }, 1, 0] },
+          },
+          rejected: {
+            $sum: { $cond: [{ $eq: ["$status", "rejected"] }, 1, 0] },
+          },
+          converted: {
+            $sum: { $cond: [{ $eq: ["$status", "converted"] }, 1, 0] },
+          },
+          interested: {
+            $sum: { $cond: [{ $eq: ["$interest", "Interested"] }, 1, 0] },
+          },
+          meetingsRequested: {
+            $sum: { $cond: [{ $eq: ["$meeting.requested", true] }, 1, 0] },
+          },
+          capturedLast7Days: {
+            $sum: { $cond: [{ $gte: ["$capturedAt", sevenDaysAgo] }, 1, 0] },
+          },
+        },
+      },
+      { $project: { _id: 0 } },
+    ]);
+
+    return (
+      row ?? {
+        total: 0,
+        pending: 0,
+        approved: 0,
+        rejected: 0,
+        converted: 0,
+        interested: 0,
+        meetingsRequested: 0,
+        capturedLast7Days: 0,
+      }
+    );
+  }
+
+  // ── Supervisor-scoped queries ───────────────────────────────────────────
+
+  /**
+   * Leads within a district, optionally filtered by a specific agent.
+   * Used by the supervisor dashboard to view their team's work.
+   */
+  async listByDistrict(
+    query: LeadQueryDto,
+    state: string,
+    district: string,
+    agentId?: string,
+  ): Promise<LeadListResult> {
+    const filter = this.buildFilter(query);
+    const districtRegex = new RegExp(escapeRegex(district.trim()), "i");
+    filter.$or = [
+      { "location.district": districtRegex },
+      { "location.city": districtRegex },
+      { "location.address": districtRegex },
+    ];
+    if (agentId) filter.capturedBy = this.objectId(agentId);
+
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+    const [items, total] = await Promise.all([
+      this.leads
+        .find(filter)
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean<LeadRecord[]>(),
+      this.leads.countDocuments(filter),
+    ]);
+    return { items, total, page, limit };
+  }
+
+  /** Stats aggregated across an entire district rather than a single agent. */
+  async statsByDistrict(state: string, district: string): Promise<LeadStats> {
+    const districtRegex = new RegExp(escapeRegex(district.trim()), "i");
+    const match: Record<string, unknown> = {
+      $or: [
+        { "location.district": districtRegex },
+        { "location.city": districtRegex },
+        { "location.address": districtRegex },
+      ],
+    };
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
     const [row] = await this.leads.aggregate<LeadStats>([
@@ -306,3 +435,4 @@ export class LeadsService {
     );
   }
 }
+

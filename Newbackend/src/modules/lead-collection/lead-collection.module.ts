@@ -9,7 +9,11 @@ import { LeadDatabaseModule } from "./infrastructure/lead-database.module";
 import { LeadAdminController } from "./presentation/lead-admin.controller";
 import { LeadAgentController } from "./presentation/lead-agent.controller";
 import { LeadAuthController } from "./presentation/lead-auth.controller";
+import { LeadSupervisorController } from "./presentation/lead-supervisor.controller";
 import { LeadAgentGuard } from "./presentation/guards/lead-agent.guard";
+import { LeadSupervisorGuard } from "./presentation/guards/lead-supervisor.guard";
+import { UploadsModule } from "../uploads/uploads.module";
+import { AshramsModule } from "../ashrams/ashrams.module";
 
 /**
  * Lead Collection — the backend for the leadTirvona field app.
@@ -22,7 +26,9 @@ import { LeadAgentGuard } from "./presentation/guards/lead-agent.guard";
  *  - its accounts live in `lead_users` and are unrelated to platform `users`;
  *  - its tokens carry their own issuer/audience, so neither population's
  *    tokens work on the other's routes;
- *  - it imports nothing from another feature module, and exports nothing.
+ *  - it exports nothing; lead data and identities remain isolated, while its
+ *    admin region catalogue reads platform ashram state/district pairs and
+ *    uploads reuse the platform Cloudinary service;
  *
  * The one intentional seam is the admin console: `LeadAdminController` is
  * gated by the platform's `super_admin` role, because Tirvona staff review
@@ -34,6 +40,8 @@ import { LeadAgentGuard } from "./presentation/guards/lead-agent.guard";
 @Module({
   imports: [
     LeadDatabaseModule,
+    UploadsModule,
+    AshramsModule,
     JwtModule.registerAsync({
       useFactory: () => {
         const config = leadCollectionConfig();
@@ -48,8 +56,19 @@ import { LeadAgentGuard } from "./presentation/guards/lead-agent.guard";
       },
     }),
   ],
-  controllers: [LeadAuthController, LeadAgentController, LeadAdminController],
-  providers: [LeadAuthService, LeadUsersService, LeadsService, LeadAgentGuard],
+  controllers: [
+    LeadAuthController,
+    LeadAgentController,
+    LeadAdminController,
+    LeadSupervisorController,
+  ],
+  providers: [
+    LeadAuthService,
+    LeadUsersService,
+    LeadsService,
+    LeadAgentGuard,
+    LeadSupervisorGuard,
+  ],
 })
 export class LeadCollectionModule implements NestModule {
   /**
@@ -64,6 +83,10 @@ export class LeadCollectionModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {
     consumer
       .apply(json({ limit: "12mb" }))
-      .forRoutes("lead-collection/agent/leads", "lead-collection/admin/leads");
+      .forRoutes(
+        "lead-collection/agent/leads",
+        "lead-collection/admin/leads",
+        "lead-collection/supervisor/agents",
+      );
   }
 }
