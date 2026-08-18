@@ -113,12 +113,6 @@ export class LeadsService {
         mode: dto.meeting?.requested ? (dto.meeting.mode ?? "") : "",
       },
       images: dto.images ?? [],
-      assignedAgentId:
-        dto.assignedAgentId && Types.ObjectId.isValid(dto.assignedAgentId)
-          ? new Types.ObjectId(dto.assignedAgentId)
-          : null,
-      assignedAgentName: dto.assignedAgentName?.trim() ?? "",
-      assignedAgentCode: dto.assignedAgentCode?.trim() ?? "",
     };
   }
 
@@ -343,96 +337,4 @@ export class LeadsService {
       }
     );
   }
-
-  // ── Supervisor-scoped queries ───────────────────────────────────────────
-
-  /**
-   * Leads within a district, optionally filtered by a specific agent.
-   * Used by the supervisor dashboard to view their team's work.
-   */
-  async listByDistrict(
-    query: LeadQueryDto,
-    state: string,
-    district: string,
-    agentId?: string,
-  ): Promise<LeadListResult> {
-    const filter = this.buildFilter(query);
-    const districtRegex = new RegExp(escapeRegex(district.trim()), "i");
-    filter.$or = [
-      { "location.district": districtRegex },
-      { "location.city": districtRegex },
-      { "location.address": districtRegex },
-    ];
-    if (agentId) filter.capturedBy = this.objectId(agentId);
-
-    const page = query.page ?? 1;
-    const limit = query.limit ?? 20;
-    const [items, total] = await Promise.all([
-      this.leads
-        .find(filter)
-        .sort({ createdAt: -1 })
-        .skip((page - 1) * limit)
-        .limit(limit)
-        .lean<LeadRecord[]>(),
-      this.leads.countDocuments(filter),
-    ]);
-    return { items, total, page, limit };
-  }
-
-  /** Stats aggregated across an entire district rather than a single agent. */
-  async statsByDistrict(state: string, district: string): Promise<LeadStats> {
-    const districtRegex = new RegExp(escapeRegex(district.trim()), "i");
-    const match: Record<string, unknown> = {
-      $or: [
-        { "location.district": districtRegex },
-        { "location.city": districtRegex },
-        { "location.address": districtRegex },
-      ],
-    };
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-
-    const [row] = await this.leads.aggregate<LeadStats>([
-      { $match: match },
-      {
-        $group: {
-          _id: null,
-          total: { $sum: 1 },
-          pending: { $sum: { $cond: [{ $eq: ["$status", "pending"] }, 1, 0] } },
-          approved: {
-            $sum: { $cond: [{ $eq: ["$status", "approved"] }, 1, 0] },
-          },
-          rejected: {
-            $sum: { $cond: [{ $eq: ["$status", "rejected"] }, 1, 0] },
-          },
-          converted: {
-            $sum: { $cond: [{ $eq: ["$status", "converted"] }, 1, 0] },
-          },
-          interested: {
-            $sum: { $cond: [{ $eq: ["$interest", "Interested"] }, 1, 0] },
-          },
-          meetingsRequested: {
-            $sum: { $cond: [{ $eq: ["$meeting.requested", true] }, 1, 0] },
-          },
-          capturedLast7Days: {
-            $sum: { $cond: [{ $gte: ["$capturedAt", sevenDaysAgo] }, 1, 0] },
-          },
-        },
-      },
-      { $project: { _id: 0 } },
-    ]);
-
-    return (
-      row ?? {
-        total: 0,
-        pending: 0,
-        approved: 0,
-        rejected: 0,
-        converted: 0,
-        interested: 0,
-        meetingsRequested: 0,
-        capturedLast7Days: 0,
-      }
-    );
-  }
 }
-
