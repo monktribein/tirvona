@@ -16,7 +16,6 @@ import { LeadUsersService } from "../application/lead-users.service";
 import type { AuthenticatedLeadUser } from "../domain/lead-collection.types";
 import { CurrentLeadAgent } from "./decorators/current-lead-agent.decorator";
 import { LeadQueryDto, SaveLeadDto } from "./dtos/lead.dto";
-import { LeadUserQueryDto } from "./dtos/lead-user.dto";
 import { LeadAgentGuard } from "./guards/lead-agent.guard";
 
 /**
@@ -34,7 +33,7 @@ export class LeadAgentController {
   constructor(
     private readonly leads: LeadsService,
     private readonly leadUsers: LeadUsersService,
-  ) {}
+  ) { }
 
   private scope(agent: AuthenticatedLeadUser) {
     return {
@@ -43,7 +42,6 @@ export class LeadAgentController {
       district: agent.district,
     };
   }
-
 
   @Get()
   async list(
@@ -65,17 +63,13 @@ export class LeadAgentController {
   }
 
   @Get("field-agents")
-  async listDistrictFieldAgents(
-    @CurrentLeadAgent() agent: AuthenticatedLeadUser,
-    @Query() query: LeadUserQueryDto,
-  ) {
+  async listDistrictFieldAgents(@CurrentLeadAgent() agent: AuthenticatedLeadUser) {
     const result = await this.leadUsers.listByDistrict(
-      agent?.state || "",
-      agent?.district || "",
+      agent.state || "",
+      agent.district || "",
       {
-        ...query,
-        role: query?.role || "field_agent",
-        limit: query?.limit || 1000,
+        role: "field_agent",
+        limit: 1000,
       },
     );
     return {
