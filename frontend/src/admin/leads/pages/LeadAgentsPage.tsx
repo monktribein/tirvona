@@ -54,7 +54,7 @@ interface AgentForm {
   phone: string;
   email: string;
   password: string;
-  role: "field_agent" | "field_supervisor";
+  role: "field_agent" | "field_supervisor" | "lead_executive";
   state: string;
   district: string;
   employeeCode: string;
@@ -572,6 +572,7 @@ export const LeadAgentsPage: React.FC = () => {
               }
             >
               <option value="field_agent">Field agent</option>
+              <option value="lead_executive">Lead executive</option>
               <option value="field_supervisor">Field supervisor</option>
             </select>
           </Field>

@@ -51,7 +51,7 @@ export interface LeadUser {
   name: string;
   phone: string;
   email?: string;
-  role: "field_agent" | "field_supervisor";
+  role: "field_agent" | "field_supervisor" | "lead_executive";
   status: "active" | "suspended";
   region?: string;
   state?: string;

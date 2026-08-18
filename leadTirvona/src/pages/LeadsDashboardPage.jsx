@@ -2,10 +2,10 @@
  * LeadsDashboardPage.jsx — Clean Layout & Horizontal Scroll Slider Grid
  */
 import React, { useState } from 'react';
-import { Search, PlusCircle, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, PlusCircle, Filter } from 'lucide-react';
 import LeadCard from '../components/LeadCard';
 
-export default function LeadsDashboardPage({ leads, onApproveLead, onDeleteLead, onNavigateCreate }) {
+export default function LeadsDashboardPage({ leads, onApproveLead, onDeleteLead, onNavigateCreate, onEditLead }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [interestFilter, setInterestFilter] = useState('ALL');
@@ -22,14 +22,6 @@ export default function LeadsDashboardPage({ leads, onApproveLead, onDeleteLead,
 
   const pendingCount  = leads.filter((l) => l.status === 'pending').length;
   const approvedCount = leads.filter((l) => l.status === 'approved').length;
-
-  const scrollSlider = (direction) => {
-    const slider = document.getElementById('leads-slider-container');
-    if (slider) {
-      const scrollAmount = direction === 'left' ? -380 : 380;
-      slider.scrollBy({ left: scrollAmount, behavior: 'smooth' });
-    }
-  };
 
   const inputClass = "w-full min-h-[44px] px-3.5 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/20 focus:border-[#0A4DA6] transition-all placeholder:text-[#94A3B8]";
 
@@ -114,47 +106,26 @@ export default function LeadsDashboardPage({ leads, onApproveLead, onDeleteLead,
         </div>
       </div>
 
-      {/* Leads Horizontal Slider Header with Controls */}
+      {/* Leads Count Header */}
       {filtered.length > 0 && (
         <div className="flex items-center justify-between pt-2 px-1">
           <span className="text-xs font-extrabold text-[#64748B] uppercase tracking-wider">
             Showing {filtered.length} Lead Record(s)
           </span>
-
-          {/* Slider Controls */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => scrollSlider('left')}
-              className="p-2 rounded-full bg-white border border-[#E2E8F0] text-slate-700 hover:text-[#0A4DA6] hover:border-[#0A4DA6] shadow-2xs transition-all cursor-pointer"
-              title="Scroll left"
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <button
-              onClick={() => scrollSlider('right')}
-              className="p-2 rounded-full bg-white border border-[#E2E8F0] text-slate-700 hover:text-[#0A4DA6] hover:border-[#0A4DA6] shadow-2xs transition-all cursor-pointer"
-              title="Scroll right"
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
         </div>
       )}
 
-      {/* Lead Cards Horizontal Slider */}
+      {/* Lead Cards — Vertical List */}
       {filtered.length > 0 ? (
-        <div
-          id="leads-slider-container"
-          className="flex items-stretch gap-4 sm:gap-6 overflow-x-auto pb-4 pt-1 snap-x snap-mandatory scroll-smooth no-scrollbar"
-        >
+        <div className="space-y-2">
           {filtered.map((lead) => (
-            <div key={lead.id} className="snap-start shrink-0 w-[300px] sm:w-[360px] md:w-[380px]">
-              <LeadCard
-                lead={lead}
-                onApprove={onApproveLead}
-                onDelete={onDeleteLead}
-              />
-            </div>
+            <LeadCard
+              key={lead.id}
+              lead={lead}
+              onApprove={onApproveLead}
+              onDelete={onDeleteLead}
+              onEdit={onEditLead}
+            />
           ))}
         </div>
       ) : (
