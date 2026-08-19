@@ -1,14 +1,20 @@
-/**
- * LeadsDashboardPage.jsx — Clean Layout & Horizontal Scroll Slider Grid
- */
 import React, { useState } from 'react';
 import { Search, PlusCircle, Filter } from 'lucide-react';
 import LeadCard from '../components/LeadCard';
+import AppointmentModal from '../components/AppointmentModal';
 
-export default function LeadsDashboardPage({ leads, onApproveLead, onDeleteLead, onNavigateCreate, onEditLead }) {
+export default function LeadsDashboardPage({
+  leads,
+  onApproveLead,
+  onDeleteLead,
+  onNavigateCreate,
+  onEditLead,
+  onUpdateAppointment
+}) {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [interestFilter, setInterestFilter] = useState('ALL');
+  const [selectedLeadForAppointment, setSelectedLeadForAppointment] = useState(null);
 
   const filtered = leads.filter((lead) => {
     const q = searchQuery.toLowerCase();
@@ -20,8 +26,9 @@ export default function LeadsDashboardPage({ leads, onApproveLead, onDeleteLead,
     return matchSearch && matchStatus && matchInterest;
   });
 
-  const pendingCount  = leads.filter((l) => l.status === 'pending').length;
-  const approvedCount = leads.filter((l) => l.status === 'approved').length;
+  const pendingCount     = leads.filter((l) => l.status === 'pending').length;
+  const approvedCount    = leads.filter((l) => l.status === 'approved').length;
+  const appointmentCount = leads.filter((l) => Boolean(l.meeting?.requested && l.meeting?.time)).length;
 
   const inputClass = "w-full min-h-[44px] px-3.5 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/20 focus:border-[#0A4DA6] transition-all placeholder:text-[#94A3B8]";
 
@@ -47,12 +54,13 @@ export default function LeadsDashboardPage({ leads, onApproveLead, onDeleteLead,
         </button>
       </div>
 
-      {/* Stats Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+      {/* Stats Summary Cards — 4 Cards (Submitted, Pending, Approved, Appointments) */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         {[
           { label: 'Total Submitted',      value: leads.length },
           { label: 'Pending Approval',     value: pendingCount },
           { label: 'Approved & Converted', value: approvedCount },
+          { label: 'Total Appointments',   value: appointmentCount },
         ].map((stat) => (
           <div key={stat.label} className="bg-white border border-[#E2E8F0] rounded-2xl p-4 shadow-xs flex items-center justify-between">
             <div>
@@ -125,6 +133,7 @@ export default function LeadsDashboardPage({ leads, onApproveLead, onDeleteLead,
               onApprove={onApproveLead}
               onDelete={onDeleteLead}
               onEdit={onEditLead}
+              onBookAppointment={(l) => setSelectedLeadForAppointment(l)}
             />
           ))}
         </div>
@@ -142,6 +151,18 @@ export default function LeadsDashboardPage({ leads, onApproveLead, onDeleteLead,
           </button>
         </div>
       )}
+
+      {/* Appointment Booking Modal */}
+      <AppointmentModal
+        isOpen={Boolean(selectedLeadForAppointment)}
+        onClose={() => setSelectedLeadForAppointment(null)}
+        lead={selectedLeadForAppointment}
+        onSaveAppointment={async (leadId, meetingData) => {
+          if (onUpdateAppointment) {
+            await onUpdateAppointment(leadId, meetingData);
+          }
+        }}
+      />
     </div>
   );
 }

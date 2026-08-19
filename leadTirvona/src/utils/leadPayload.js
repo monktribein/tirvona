@@ -23,37 +23,54 @@ const compact = (object) =>
     Object.entries(object).filter(([, value]) => value !== undefined)
   );
 
-export const toApiLead = (lead) => ({
-  name: (lead.name || '').trim(),
-  location: {
-    address: lead.location?.address || '',
-    city: lead.location?.city || '',
-    district: lead.location?.district || '',
-    state: lead.location?.state || '',
-    coordinates: compact({
-      lat: numberOrUndefined(lead.location?.coordinates?.lat),
-      lng: numberOrUndefined(lead.location?.coordinates?.lng)
-    })
-  },
-  roomInventory: compact({
-    totalRooms: numberOrUndefined(lead.roomInventory?.totalRooms),
-    roomPrice: numberOrUndefined(lead.roomInventory?.roomPrice),
-    onlineRooms: numberOrUndefined(lead.roomInventory?.onlineRooms),
-    offlineRooms: numberOrUndefined(lead.roomInventory?.offlineRooms)
-  }),
-  contact: {
-    ownerName: lead.contact?.ownerName || '',
-    phone: lead.contact?.phone || ''
-  },
-  notes: lead.notes || '',
-  interest: lead.interest || 'Interested',
-  meeting: {
-    requested: Boolean(lead.meeting?.requested),
-    time: lead.meeting?.requested ? lead.meeting.time || '' : '',
-    mode: lead.meeting?.requested ? lead.meeting.mode || '' : ''
-  },
-  images: Array.isArray(lead.images) ? lead.images.slice(0, 10) : []
-});
+export const toApiLead = (lead) => {
+  const payload = {};
+  if (lead.name !== undefined && lead.name !== '') payload.name = String(lead.name).trim();
+  if (lead.location) {
+    payload.location = {
+      address: lead.location?.address || '',
+      googleMapsUrl: lead.location?.googleMapsUrl || lead.googleMapsUrl || '',
+      city: lead.location?.city || '',
+      district: lead.location?.district || '',
+      state: lead.location?.state || '',
+      coordinates: compact({
+        lat: numberOrUndefined(lead.location?.coordinates?.lat),
+        lng: numberOrUndefined(lead.location?.coordinates?.lng)
+      })
+    };
+  }
+  if (lead.roomInventory) {
+    payload.roomInventory = compact({
+      totalRooms: numberOrUndefined(lead.roomInventory?.totalRooms),
+      roomPrice: numberOrUndefined(lead.roomInventory?.roomPrice),
+      onlineRooms: numberOrUndefined(lead.roomInventory?.onlineRooms),
+      offlineRooms: numberOrUndefined(lead.roomInventory?.offlineRooms)
+    });
+  }
+  if (lead.contact) {
+    payload.contact = {
+      ownerName: lead.contact?.ownerName || '',
+      phone: lead.contact?.phone || ''
+    };
+  }
+  if (lead.notes !== undefined) payload.notes = lead.notes;
+  if (lead.agentNotes !== undefined) payload.agentNotes = lead.agentNotes;
+  if (lead.interest !== undefined) payload.interest = lead.interest;
+  if (lead.meeting !== undefined) {
+    payload.meeting = {
+      requested: Boolean(lead.meeting?.requested),
+      time: lead.meeting?.requested ? lead.meeting.time || '' : '',
+      mode: lead.meeting?.requested ? lead.meeting.mode || '' : ''
+    };
+  }
+  if (Array.isArray(lead.images)) {
+    payload.images = lead.images.slice(0, 10);
+  }
+  if (lead.assignedAgentId !== undefined) payload.assignedAgentId = lead.assignedAgentId;
+  if (lead.assignedAgentName !== undefined) payload.assignedAgentName = lead.assignedAgentName;
+  if (lead.assignedAgentCode !== undefined) payload.assignedAgentCode = lead.assignedAgentCode;
+  return payload;
+};
 
 /**
  * Server record → the shape the existing cards render. Keeps `id` alongside

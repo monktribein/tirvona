@@ -79,46 +79,109 @@ export class LeadsService {
   private toDocument(
     dto: SaveLeadDto,
     jurisdiction?: { state: string; district: string },
+    existing?: LeadRecord,
   ): Record<string, unknown> {
-    const lat = dto.location?.coordinates?.lat ?? null;
-    const lng = dto.location?.coordinates?.lng ?? null;
+    const lat =
+      dto.location?.coordinates?.lat !== undefined
+        ? dto.location.coordinates.lat
+        : (existing?.location?.coordinates?.lat ?? null);
+    const lng =
+      dto.location?.coordinates?.lng !== undefined
+        ? dto.location.coordinates.lng
+        : (existing?.location?.coordinates?.lng ?? null);
     const hasFix = typeof lat === "number" && typeof lng === "number";
 
     return {
-      name: dto.name.trim(),
+      name: (dto.name ?? existing?.name ?? "").trim(),
       location: {
-        address: dto.location?.address?.trim() ?? "",
-        city: dto.location?.city?.trim() ?? "",
+        address:
+          dto.location?.address !== undefined
+            ? dto.location.address.trim()
+            : (existing?.location?.address ?? ""),
+        googleMapsUrl:
+          dto.location?.googleMapsUrl !== undefined
+            ? dto.location.googleMapsUrl.trim()
+            : (existing?.location?.googleMapsUrl ?? ""),
+        city:
+          dto.location?.city !== undefined
+            ? dto.location.city.trim()
+            : (existing?.location?.city ?? ""),
         district:
-          jurisdiction?.district ?? dto.location?.district?.trim() ?? "",
-        state: jurisdiction?.state ?? dto.location?.state?.trim() ?? "",
+          jurisdiction?.district ??
+          (dto.location?.district !== undefined
+            ? dto.location.district.trim()
+            : (existing?.location?.district ?? "")),
+        state:
+          jurisdiction?.state ??
+          (dto.location?.state !== undefined
+            ? dto.location.state.trim()
+            : (existing?.location?.state ?? "")),
         coordinates: { lat, lng },
       },
       geo: hasFix ? { type: "Point", coordinates: [lng, lat] } : undefined,
       roomInventory: {
-        totalRooms: dto.roomInventory?.totalRooms ?? null,
-        roomPrice: dto.roomInventory?.roomPrice ?? null,
-        onlineRooms: dto.roomInventory?.onlineRooms ?? null,
-        offlineRooms: dto.roomInventory?.offlineRooms ?? null,
+        totalRooms:
+          dto.roomInventory?.totalRooms !== undefined
+            ? dto.roomInventory.totalRooms
+            : (existing?.roomInventory?.totalRooms ?? null),
+        roomPrice:
+          dto.roomInventory?.roomPrice !== undefined
+            ? dto.roomInventory.roomPrice
+            : (existing?.roomInventory?.roomPrice ?? null),
+        onlineRooms:
+          dto.roomInventory?.onlineRooms !== undefined
+            ? dto.roomInventory.onlineRooms
+            : (existing?.roomInventory?.onlineRooms ?? null),
+        offlineRooms:
+          dto.roomInventory?.offlineRooms !== undefined
+            ? dto.roomInventory.offlineRooms
+            : (existing?.roomInventory?.offlineRooms ?? null),
       },
       contact: {
-        ownerName: dto.contact?.ownerName?.trim() ?? "",
-        phone: dto.contact?.phone?.trim() ?? "",
+        ownerName:
+          dto.contact?.ownerName !== undefined
+            ? dto.contact.ownerName.trim()
+            : (existing?.contact?.ownerName ?? ""),
+        phone:
+          dto.contact?.phone !== undefined
+            ? dto.contact.phone.trim()
+            : (existing?.contact?.phone ?? ""),
       },
-      notes: dto.notes?.trim() ?? "",
-      interest: dto.interest ?? "Interested",
+      notes: dto.notes !== undefined ? dto.notes.trim() : (existing?.notes ?? ""),
+      agentNotes:
+        dto.agentNotes !== undefined
+          ? dto.agentNotes.trim()
+          : (existing?.agentNotes ?? ""),
+      interest: dto.interest ?? existing?.interest ?? "Interested",
       meeting: {
-        requested: dto.meeting?.requested ?? false,
-        time: dto.meeting?.requested ? (dto.meeting.time ?? "") : "",
-        mode: dto.meeting?.requested ? (dto.meeting.mode ?? "") : "",
+        requested:
+          dto.meeting?.requested !== undefined
+            ? dto.meeting.requested
+            : (existing?.meeting?.requested ?? false),
+        time:
+          dto.meeting?.time !== undefined
+            ? dto.meeting.time.trim()
+            : (existing?.meeting?.time ?? ""),
+        mode:
+          dto.meeting?.mode !== undefined
+            ? dto.meeting.mode
+            : (existing?.meeting?.mode ?? ""),
       },
-      images: dto.images ?? [],
+      images: dto.images ?? existing?.images ?? [],
       assignedAgentId:
-        dto.assignedAgentId && Types.ObjectId.isValid(dto.assignedAgentId)
-          ? new Types.ObjectId(dto.assignedAgentId)
-          : null,
-      assignedAgentName: dto.assignedAgentName?.trim() ?? "",
-      assignedAgentCode: dto.assignedAgentCode?.trim() ?? "",
+        dto.assignedAgentId !== undefined
+          ? dto.assignedAgentId && Types.ObjectId.isValid(dto.assignedAgentId)
+            ? new Types.ObjectId(dto.assignedAgentId)
+            : null
+          : (existing?.assignedAgentId ?? null),
+      assignedAgentName:
+        dto.assignedAgentName !== undefined
+          ? dto.assignedAgentName.trim()
+          : (existing?.assignedAgentName ?? ""),
+      assignedAgentCode:
+        dto.assignedAgentCode !== undefined
+          ? dto.assignedAgentCode.trim()
+          : (existing?.assignedAgentCode ?? ""),
     };
   }
 
@@ -193,6 +256,9 @@ export class LeadsService {
     dto: SaveLeadDto,
     agent: AuthenticatedLeadUser,
   ): Promise<LeadRecord> {
+    if (!dto.name || !dto.name.trim()) {
+      throw new BadRequestException("Stay name is required");
+    }
     const created = await this.leads.create({
       ...this.toDocument(dto, {
         state: agent.state,
@@ -208,6 +274,9 @@ export class LeadsService {
 
   /** Capture on an agent's behalf, by an admin working the console. */
   async createAsAdmin(dto: SaveLeadDto): Promise<LeadRecord> {
+    if (!dto.name || !dto.name.trim()) {
+      throw new BadRequestException("Stay name is required");
+    }
     const created = await this.leads.create({
       ...this.toDocument(dto),
       status: dto.status ?? "pending",
@@ -235,6 +304,7 @@ export class LeadsService {
       scope?.state && scope?.district
         ? { state: scope.state, district: scope.district }
         : undefined,
+      existing,
     );
     // `geo` is `undefined` when the fix was cleared — $set would store null and
     // break the sparse 2dsphere index, so unset it instead.

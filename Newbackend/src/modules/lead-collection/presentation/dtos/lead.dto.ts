@@ -39,6 +39,7 @@ class LeadCoordinatesDto {
 
 class LeadLocationDto {
   @IsOptional() @IsString() @MaxLength(300) address?: string;
+  @IsOptional() @IsString() @MaxLength(1000) googleMapsUrl?: string;
   @IsOptional() @IsString() @MaxLength(120) city?: string;
   @IsOptional() @IsString() @MaxLength(120) district?: string;
   @IsOptional() @IsString() @MaxLength(120) state?: string;
@@ -73,7 +74,7 @@ class LeadMeetingDto {
 }
 
 export class SaveLeadDto {
-  @IsString() @MinLength(2) @MaxLength(200) name!: string;
+  @IsOptional() @IsString() @MinLength(2) @MaxLength(200) name?: string;
   @IsOptional() @ValidateNested() @Type(() => LeadLocationDto)
   location?: LeadLocationDto;
   @IsOptional() @ValidateNested() @Type(() => LeadRoomInventoryDto)
@@ -81,6 +82,7 @@ export class SaveLeadDto {
   @IsOptional() @ValidateNested() @Type(() => LeadContactDto)
   contact?: LeadContactDto;
   @IsOptional() @IsString() @MaxLength(5000) notes?: string;
+  @IsOptional() @IsString() @MaxLength(5000) agentNotes?: string;
   @IsOptional() @IsIn(LEAD_INTERESTS as unknown as string[]) interest?: string;
   @IsOptional() @ValidateNested() @Type(() => LeadMeetingDto)
   meeting?: LeadMeetingDto;

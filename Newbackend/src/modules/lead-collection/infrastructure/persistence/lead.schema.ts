@@ -21,6 +21,7 @@ export const LeadSchema = new Schema(
 
     location: {
       address: { type: String, trim: true, default: "" },
+      googleMapsUrl: { type: String, trim: true, default: "" },
       city: { type: String, trim: true, default: "", index: true },
       district: { type: String, trim: true, default: "", index: true },
       state: { type: String, trim: true, default: "" },
@@ -54,6 +55,7 @@ export const LeadSchema = new Schema(
     },
 
     notes: { type: String, trim: true, default: "" },
+    agentNotes: { type: String, trim: true, default: "" },
     interest: {
       type: String,
       enum: LEAD_INTERESTS,
@@ -115,6 +117,8 @@ export const LeadSchema = new Schema(
 
 LeadSchema.index({ status: 1, createdAt: -1 });
 LeadSchema.index({ capturedBy: 1, createdAt: -1 });
+LeadSchema.index({ "meeting.requested": 1, createdAt: -1 });
 LeadSchema.index({ "location.city": 1, status: 1 });
+LeadSchema.index({ "location.district": 1, status: 1 });
 // Sparse: leads captured without a GPS fix carry no `geo` at all.
 LeadSchema.index({ geo: "2dsphere" }, { sparse: true });
