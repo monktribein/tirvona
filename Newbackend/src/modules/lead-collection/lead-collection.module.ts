@@ -10,6 +10,7 @@ import { LeadAdminController } from "./presentation/lead-admin.controller";
 import { LeadAgentController } from "./presentation/lead-agent.controller";
 import { LeadAuthController } from "./presentation/lead-auth.controller";
 import { LeadSupervisorController } from "./presentation/lead-supervisor.controller";
+import { LeadUploadController } from "./presentation/lead-upload.controller";
 import { LeadAgentGuard } from "./presentation/guards/lead-agent.guard";
 import { LeadSupervisorGuard } from "./presentation/guards/lead-supervisor.guard";
 import { UploadsModule } from "../uploads/uploads.module";
@@ -61,6 +62,7 @@ import { AshramsModule } from "../ashrams/ashrams.module";
     LeadAgentController,
     LeadAdminController,
     LeadSupervisorController,
+    LeadUploadController,
   ],
   providers: [
     LeadAuthService,

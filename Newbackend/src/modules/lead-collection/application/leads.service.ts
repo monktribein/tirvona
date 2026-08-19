@@ -41,8 +41,10 @@ export interface LeadStats {
   capturedLast7Days: number;
 }
 
-interface AgentLeadScope {
+export interface AgentLeadScope {
   capturedBy: string;
+  role?: string;
+  employeeCode?: string;
   state?: string;
   district?: string;
 }
@@ -217,7 +219,32 @@ export class LeadsService {
     // An agent's own view is a hard scope, applied after the query filters so
     // a crafted `capturedBy` in the querystring cannot widen it.
     if (scope) {
-      filter.capturedBy = this.objectId(scope.capturedBy);
+      const agentObjId = Types.ObjectId.isValid(scope.capturedBy)
+        ? this.objectId(scope.capturedBy)
+        : null;
+
+      if (scope.role === "field_agent") {
+        // Field agent sees leads captured by them OR assigned to them
+        const accessOr: Record<string, unknown>[] = [];
+        if (agentObjId) {
+          accessOr.push({ capturedBy: agentObjId });
+          accessOr.push({ assignedAgentId: agentObjId });
+        }
+        if (scope.employeeCode?.trim()) {
+          accessOr.push({ assignedAgentCode: scope.employeeCode.trim() });
+        }
+        if (accessOr.length > 0) {
+          if (filter.$or) {
+            filter.$and = [{ $or: filter.$or }, { $or: accessOr }];
+            delete filter.$or;
+          } else {
+            filter.$or = accessOr;
+          }
+        }
+      } else if (agentObjId) {
+        filter.capturedBy = agentObjId;
+      }
+
       if (scope.state) filter["location.state"] = scope.state;
       if (scope.district) filter["location.district"] = scope.district;
     }
@@ -239,8 +266,20 @@ export class LeadsService {
   async findOne(id: string, scope?: AgentLeadScope): Promise<LeadRecord> {
     const row = await this.leads.findById(this.objectId(id)).lean<LeadRecord>();
     if (!row) throw new NotFoundException("Lead not found");
-    if (scope && String(row.capturedBy ?? "") !== scope.capturedBy)
-      throw new ForbiddenException("This lead belongs to another agent");
+    if (scope) {
+      const isOwner = String(row.capturedBy ?? "") === scope.capturedBy;
+      const isAssigned =
+        (row.assignedAgentId && String(row.assignedAgentId) === scope.capturedBy) ||
+        (scope.employeeCode && row.assignedAgentCode === scope.employeeCode);
+
+      if (scope.role === "field_agent") {
+        if (!isOwner && !isAssigned) {
+          throw new ForbiddenException("This lead is not assigned to you");
+        }
+      } else if (!isOwner) {
+        throw new ForbiddenException("This lead belongs to another agent");
+      }
+    }
     if (
       scope?.state &&
       scope?.district &&
@@ -290,6 +329,7 @@ export class LeadsService {
     id: string,
     dto: SaveLeadDto,
     scope?: AgentLeadScope,
+    actor?: AuthenticatedLeadUser,
   ): Promise<LeadRecord> {
     const existing = await this.findOne(id, scope);
     // An agent can correct a typo before anyone has looked at the lead; once
@@ -311,6 +351,22 @@ export class LeadsService {
     const unset = update.geo === undefined ? { geo: "" } : undefined;
     if (unset) delete update.geo;
     if (!scope && dto.status) update.status = dto.status;
+
+    // Track field agent update / verification
+    if (actor?.role === "field_agent" || scope?.role === "field_agent") {
+      (update as any).fieldVerified = true;
+      (update as any).fieldVerifiedAt = new Date();
+      (update as any).fieldVerifiedByName =
+        actor?.name || existing.assignedAgentName || "";
+      if (actor?.id && Types.ObjectId.isValid(actor.id)) {
+        (update as any).fieldVerifiedById = new Types.ObjectId(actor.id);
+      }
+      (update as any).lastUpdatedByName = actor?.name || "";
+      (update as any).lastUpdatedByRole = actor?.role || "field_agent";
+    } else if (actor) {
+      (update as any).lastUpdatedByName = actor.name;
+      (update as any).lastUpdatedByRole = actor.role;
+    }
 
     const row = await this.leads
       .findByIdAndUpdate(
@@ -363,11 +419,28 @@ export class LeadsService {
    * eight `countDocuments` round trips.
    */
   async stats(scope?: AgentLeadScope): Promise<LeadStats> {
-    const match: Record<string, unknown> = scope
-      ? { capturedBy: this.objectId(scope.capturedBy) }
-      : {};
-    if (scope?.state) match["location.state"] = scope.state;
-    if (scope?.district) match["location.district"] = scope.district;
+    const match: Record<string, unknown> = {};
+    if (scope) {
+      const agentObjId = Types.ObjectId.isValid(scope.capturedBy)
+        ? this.objectId(scope.capturedBy)
+        : null;
+
+      if (scope.role === "field_agent") {
+        const accessOr: Record<string, unknown>[] = [];
+        if (agentObjId) {
+          accessOr.push({ capturedBy: agentObjId });
+          accessOr.push({ assignedAgentId: agentObjId });
+        }
+        if (scope.employeeCode?.trim()) {
+          accessOr.push({ assignedAgentCode: scope.employeeCode.trim() });
+        }
+        if (accessOr.length > 0) match.$or = accessOr;
+      } else if (agentObjId) {
+        match.capturedBy = agentObjId;
+      }
+      if (scope.state) match["location.state"] = scope.state;
+      if (scope.district) match["location.district"] = scope.district;
+    }
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
     const [row] = await this.leads.aggregate<LeadStats>([

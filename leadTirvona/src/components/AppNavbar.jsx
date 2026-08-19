@@ -99,7 +99,7 @@ export default function AppNavbar({
                 }`}
               >
                 <PlusCircle size={15} className={activePage === 'create' ? 'text-[#0A4DA6]' : 'text-gray-400'} />
-                <span>{t('Create Lead')}</span>
+                <span>{agent?.role === 'field_agent' ? t('Update Lead') : t('Create Lead')}</span>
               </button>
 
               <button
@@ -226,7 +226,7 @@ export default function AppNavbar({
               >
                 <span className="flex items-center gap-2">
                   <PlusCircle size={16} />
-                  <span>Create Lead</span>
+                  <span>{agent?.role === 'field_agent' ? 'Update Lead' : 'Create Lead'}</span>
                 </span>
               </button>
 

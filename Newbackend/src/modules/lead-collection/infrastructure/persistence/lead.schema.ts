@@ -102,6 +102,18 @@ export const LeadSchema = new Schema(
     assignedAgentName: { type: String, default: "" },
     assignedAgentCode: { type: String, default: "" },
 
+    // Field Agent Verification & Updates
+    fieldVerified: { type: Boolean, default: false, index: true },
+    fieldVerifiedAt: { type: Date, default: null },
+    fieldVerifiedByName: { type: String, default: "" },
+    fieldVerifiedById: {
+      type: SchemaTypes.ObjectId,
+      ref: "LeadCollectionUser",
+      default: null,
+    },
+    lastUpdatedByName: { type: String, default: "" },
+    lastUpdatedByRole: { type: String, default: "" },
+
     // Review trail. Platform-user ids as plain strings — see lead-user.schema.
     reviewedByAdminId: { type: String, default: "" },
     reviewedByAdminName: { type: String, default: "" },

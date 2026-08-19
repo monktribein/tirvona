@@ -18,6 +18,7 @@ const INITIAL_FORM = {
 };
 
 export default function CreateLeadPage({
+  agentRole = null,
   onSubmitLead,
   onSuccessNavigate,
   attendanceCoordinates,
@@ -40,7 +41,8 @@ export default function CreateLeadPage({
   const videoRef = useRef(null);
   const cameraStreamRef = useRef(null);
 
-  // Restore draft from localStorage if available
+  // Restore draft from localStorage if available (not for field agents — they
+  // only ever edit an existing lead via the dashboard, never create from scratch).
   const [formData, setFormData] = useState(() => {
     if (editingLead) {
       return {
@@ -69,6 +71,8 @@ export default function CreateLeadPage({
         images: Array.isArray(editingLead.images) ? editingLead.images : []
       };
     }
+    // Field agents should never see a stale draft — skip restoration.
+    if (agentRole === 'field_agent') return INITIAL_FORM;
     try {
       const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
       if (savedDraft) {
@@ -174,13 +178,15 @@ export default function CreateLeadPage({
   }, [assignedJurisdiction?.state, assignedJurisdiction?.district]);
 
   // Auto-save form draft to localStorage whenever fields change
+  // (skip for field agents — they only update existing leads, never create)
   useEffect(() => {
+    if (agentRole === 'field_agent') return;
     try {
       localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(formData));
     } catch (e) {
       console.warn('Failed to save lead form draft:', e);
     }
-  }, [formData]);
+  }, [formData, agentRole]);
 
   const clearFormDraft = () => {
     try {
@@ -381,13 +387,19 @@ export default function CreateLeadPage({
         uploadedUrls.push(uploaded.url);
       }
 
-      handleChange('images', [...formData.images, ...uploadedUrls].slice(0, 10));
+      setFormData((prev) => ({
+        ...prev,
+        images: [...prev.images, ...uploadedUrls].slice(0, 10)
+      }));
       setUploadStatus('Files uploaded');
       setTimeout(() => setUploadStatus(''), 3000);
     } catch (err) {
       console.error('Failed to upload attachments:', err);
       if (uploadedUrls.length) {
-        handleChange('images', [...formData.images, ...uploadedUrls].slice(0, 10));
+        setFormData((prev) => ({
+          ...prev,
+          images: [...prev.images, ...uploadedUrls].slice(0, 10)
+        }));
       }
       alert(err?.message || 'Failed to upload the selected files. Please try again.');
     } finally {
@@ -473,7 +485,10 @@ export default function CreateLeadPage({
   };
 
   const removeImage = (idx) => {
-    handleChange('images', formData.images.filter((_, i) => i !== idx));
+    setFormData((prev) => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== idx)
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -543,10 +558,10 @@ export default function CreateLeadPage({
         <div className="flex flex-row items-start sm:items-center justify-between gap-2 sm:gap-3 pb-4 sm:pb-6 border-b border-[#E2E8F0] mb-5 sm:mb-6">
           <div className="min-w-0 flex-1">
             <h1 className="text-base sm:text-2xl font-extrabold text-[#0F172A] tracking-tight">
-              {editingLead ? 'Edit Ashram Lead' : 'Ashram Onboarding Form'}
+              {editingLead ? 'Edit Ashram Lead' : (agentRole === 'field_agent' ? 'Update Ashram Lead' : 'Ashram Onboarding Form')}
             </h1>
             <p className="text-[11px] sm:text-xs text-[#64748B] font-medium mt-0.5">
-              {editingLead ? 'Update Field Verification & Contact Registration' : 'Field Verification & Contact Registration'}
+              {editingLead ? 'Update Field Verification & Contact Registration' : (agentRole === 'field_agent' ? 'Field Lead Verification & Details Update' : 'Field Verification & Contact Registration')}
             </p>
           </div>
 
@@ -978,7 +993,7 @@ export default function CreateLeadPage({
               ) : (
                 <>
                   <Send size={16} />
-                  <span>{editingLead ? 'Update Lead Verification' : 'Submit Lead Entry'}</span>
+                  <span>{editingLead ? 'Update Lead Verification' : (agentRole === 'field_agent' ? 'Submit Updated Lead' : 'Submit Lead Entry')}</span>
                 </>
               )}
             </button>
