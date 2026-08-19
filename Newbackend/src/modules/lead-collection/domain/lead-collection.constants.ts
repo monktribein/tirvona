@@ -51,3 +51,10 @@ export const LEAD_INTERESTS = [
 ] as const;
 
 export const LEAD_MEETING_MODES = ["Call", "In-person"] as const;
+
+export const DEFAULT_LEAD_REGIONS = [
+  { state: "Uttar Pradesh", district: "Mathura" },
+  { state: "Uttar Pradesh", district: "Vrindavan" },
+  { state: "Uttarakhand", district: "Dehradun" },
+  { state: "Uttarakhand", district: "Haridwar" },
+] as const;

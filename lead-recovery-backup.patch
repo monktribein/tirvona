@@ -1,0 +1,1348 @@
+diff --git a/frontend/src/admin/leads/pages/LeadAgentsPage.tsx b/frontend/src/admin/leads/pages/LeadAgentsPage.tsx
+index c16084a..f277d0f 100644
+--- a/frontend/src/admin/leads/pages/LeadAgentsPage.tsx
++++ b/frontend/src/admin/leads/pages/LeadAgentsPage.tsx
+@@ -54,7 +54,7 @@ interface AgentForm {
+   phone: string;
+   email: string;
+   password: string;
+-  role: "field_agent" | "field_supervisor";
++  role: "field_agent" | "field_supervisor" | "lead_executive";
+   state: string;
+   district: string;
+   employeeCode: string;
+@@ -572,6 +572,7 @@ export const LeadAgentsPage: React.FC = () => {
+               }
+             >
+               <option value="field_agent">Field agent</option>
++              <option value="lead_executive">Lead executive</option>
+               <option value="field_supervisor">Field supervisor</option>
+             </select>
+           </Field>
+diff --git a/frontend/src/services/leadCollection.service.ts b/frontend/src/services/leadCollection.service.ts
+index f628c93..6a6b54b 100644
+--- a/frontend/src/services/leadCollection.service.ts
++++ b/frontend/src/services/leadCollection.service.ts
+@@ -51,7 +51,7 @@ export interface LeadUser {
+   name: string;
+   phone: string;
+   email?: string;
+-  role: "field_agent" | "field_supervisor";
++  role: "field_agent" | "field_supervisor" | "lead_executive";
+   status: "active" | "suspended";
+   region?: string;
+   state?: string;
+diff --git a/leadTirvona/src/App.jsx b/leadTirvona/src/App.jsx
+index b450d9a..2a526ee 100644
+--- a/leadTirvona/src/App.jsx
++++ b/leadTirvona/src/App.jsx
+@@ -7,6 +7,7 @@ import ToastNotification from './components/ToastNotification';
+ import CreateLeadPage from './pages/CreateLeadPage';
+ import LeadsDashboardPage from './pages/LeadsDashboardPage';
+ import ApprovedAshramsPage from './pages/ApprovedAshramsPage';
++import SupervisorDashboard from './pages/SupervisorDashboard';
+ import { useLeadStorage } from './hooks/useLeadStorage';
+ import { useLeadAuth } from './hooks/useLeadAuth';
+ 
+@@ -20,6 +21,9 @@ export default function App() {
+     useLeadStorage(isSignedIn);
+ 
+   const handlePageChange = (page) => {
++    if (page !== 'create') {
++      setEditingLeadData(null);
++    }
+     setActivePage(page);
+     if (window.lenisInstance) {
+       window.lenisInstance.scrollTo(0, { duration: 1.2 });
+@@ -33,6 +37,65 @@ export default function App() {
+     setAttendanceState(null);
+   };
+ 
++  const [supervisorMode, setSupervisorMode] = useState('console'); // 'console' | 'field_portal'
++  const [editingLeadData, setEditingLeadData] = useState(null);
++
++  const handleOpenFieldPortal = (lead = null) => {
++    setEditingLeadData(lead);
++    setSupervisorMode('field_portal');
++    setActivePage('create');
++  };
++
++  const handleBackToConsole = () => {
++    setSupervisorMode('console');
++    setEditingLeadData(null);
++  };
++
++  const handleSaveLead = async (leadPayload, leadId = null) => {
++    if (leadId) {
++      try {
++        await leadApi.updateLead(leadId, leadPayload);
++        if (toast?.message) {
++          // hook toast
++        }
++        setSupervisorMode('console');
++        setEditingLeadData(null);
++        return true;
++      } catch (err) {
++        console.error(err);
++        return null;
++      }
++    }
++    return addLead(leadPayload);
++  };
++
++  if (isSignedIn && agent?.role === 'field_supervisor' && supervisorMode === 'console') {
++    return (
++      <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
++        <SupervisorDashboard
++          supervisor={agent}
++          onLogout={handleLogout}
++          onOpenFieldPortal={handleOpenFieldPortal}
++        />
++        <footer className="mt-auto text-center py-4 px-6 border-t border-[#E2E8F0] bg-white flex items-center justify-center">
++          <a
++            href="https://tirvona.com"
++            target="_blank"
++            rel="noopener noreferrer"
++            className="inline-flex items-center gap-2 text-sm font-extrabold text-[#0B192C] hover:text-[#0A4DA6] transition-colors group"
++          >
++            <img
++              src="/logo.png"
++              alt="Tirvona Logo"
++              className="h-6 w-auto object-contain group-hover:scale-105 transition-transform"
++            />
++            <span>Tirvona</span>
++          </a>
++        </footer>
++      </div>
++    );
++  }
++
+   return (
+     <div className="min-h-screen flex flex-col bg-[#F8FAFC]/70 font-sans antialiased selection:bg-[#0A4DA6]/10 selection:text-[#0A4DA6]">
+       <AppNavbar
+@@ -45,6 +108,7 @@ export default function App() {
+         onAttendanceUpdated={setAttendanceState}
+         onLogin={login}
+         onLogout={handleLogout}
++        onBackToSupervisorConsole={agent?.role === 'field_supervisor' ? handleBackToConsole : null}
+       />
+ 
+       <main className="flex-1 transition-opacity duration-300 ease-in-out">
+@@ -61,13 +125,22 @@ export default function App() {
+           </div>
+         ) : activePage === 'create' ? (
+           <CreateLeadPage
+-            onSubmitLead={addLead}
+-            onSuccessNavigate={() => handlePageChange('dashboard')}
++            onSubmitLead={handleSaveLead}
++            onSuccessNavigate={() => {
++              setEditingLeadData(null);
++              if (agent?.role === 'field_supervisor') {
++                handleBackToConsole();
++              } else {
++                handlePageChange('dashboard');
++              }
++            }}
+             attendanceCoordinates={attendanceState?.checkInCoords}
+             assignedJurisdiction={{
+               state: agent?.state,
+               district: agent?.district
+             }}
++            editingLead={editingLeadData}
++            onBackToConsole={agent?.role === 'field_supervisor' ? handleBackToConsole : null}
+           />
+         ) : activePage === 'dashboard' ? (
+           <LeadsDashboardPage
+@@ -75,6 +148,10 @@ export default function App() {
+             onApproveLead={approveLead}
+             onDeleteLead={removeLead}
+             onNavigateCreate={() => handlePageChange('create')}
++            onEditLead={(lead) => {
++              setEditingLeadData(lead);
++              handlePageChange('create');
++            }}
+           />
+         ) : activePage === 'approved' ? (
+           <ApprovedAshramsPage
+diff --git a/leadTirvona/src/components/AppNavbar.jsx b/leadTirvona/src/components/AppNavbar.jsx
+index 3ca1443..eec755a 100644
+--- a/leadTirvona/src/components/AppNavbar.jsx
++++ b/leadTirvona/src/components/AppNavbar.jsx
+@@ -1,10 +1,8 @@
+-/**
+- * AppNavbar.jsx — Tirvona Floating Navbar with Login & Attendance Popup Integration
+- */
+ import React, { useState, useEffect } from 'react';
+-import { PlusCircle, LayoutDashboard, Building2, Menu, X, UserCheck, MapPin } from 'lucide-react';
++import { PlusCircle, LayoutDashboard, Building2, Menu, X, UserCheck, MapPin, ArrowLeft } from 'lucide-react';
+ import LoginModal from './LoginModal';
+ import AttendanceModal from './AttendanceModal';
++import { useLanguage } from '../context/LanguageContext';
+ 
+ export default function AppNavbar({
+   activePage,
+@@ -15,8 +13,10 @@ export default function AppNavbar({
+   attendanceState,
+   onAttendanceUpdated,
+   onLogin,
+-  onLogout
++  onLogout,
++  onBackToSupervisorConsole = null
+ }) {
++  const { t } = useLanguage();
+   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+   const [showHeader, setShowHeader] = useState(true);
+   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+@@ -64,121 +64,132 @@ export default function AppNavbar({
+   return (
+     <>
+       <header
+-        className={`sticky top-0 z-50 pt-2 sm:pt-3 pb-2 sm:pb-3 pointer-events-none transition-all duration-300 ease-in-out transform ${
++        className={`sticky top-0 z-50 pt-3 pb-2 transition-all duration-300 ease-in-out transform ${
+           showHeader || mobileMenuOpen
+             ? 'translate-y-0 opacity-100'
+             : '-translate-y-full opacity-0'
+         }`}
+       >
+-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pointer-events-auto">
++        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+           
+-          {/* Floating Rounded Navbar Container */}
+-          <div className="bg-white/95 backdrop-blur-md border border-[#E58C28]/40 rounded-full px-4 sm:px-6 py-2.5 flex items-center justify-between w-full shadow-sm hover:shadow-md transition-shadow relative">
++          {/* Floating Rounded Navbar Container (Exact Tirvona Reference Replica) */}
++          <div className="bg-white/95 backdrop-blur-md border border-gray-200/80 rounded-full px-5 sm:px-8 py-2.5 flex items-center justify-between gap-6 w-full shadow-[0_2px_20px_-4px_rgba(0,0,0,0.06)]">
+             
+-            {/* Left Brand Logo Image */}
++            {/* Left Brand Logo */}
+             <div className="flex items-center shrink-0">
+-              <a href="https://tirvona.com" target="_blank" rel="noopener noreferrer">
++              <a href="https://tirvona.com" target="_blank" rel="noopener noreferrer" className="flex items-center">
+                 <img
+                   src="/logo.png"
+-                  alt="Tirvona Sacred Destinations"
+-                  className="h-8 sm:h-9 w-auto object-contain cursor-pointer hover:scale-105 transition-transform"
++                  alt="Tirvona"
++                  className="h-8 sm:h-9 w-auto object-contain cursor-pointer hover:opacity-90 transition-opacity"
+                 />
+               </a>
+             </div>
+ 
+-            {/* Centered Navigation Tabs */}
+-            <nav className="hidden md:flex items-center gap-1 sm:gap-2 absolute left-1/2 -translate-x-1/2">
++            {/* Centered Main Navigation Items */}
++            <nav className="hidden lg:flex items-center gap-6 xl:gap-8">
+               <button
+                 onClick={() => handleNavClick('create')}
+-                className={`px-3.5 sm:px-4 py-1.5 rounded-full font-bold text-xs sm:text-[13px] tracking-tight transition-all cursor-pointer ${
++                className={`text-xs sm:text-[13px] font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
+                   activePage === 'create'
+-                    ? 'bg-[#0A4DA6] text-white shadow-xs'
+-                    : 'text-slate-700 hover:text-[#0A4DA6] hover:bg-slate-100/90'
++                    ? 'text-[#0A4DA6] font-extrabold'
++                    : 'text-[#0B192C] hover:text-[#0A4DA6]'
+                 }`}
+               >
+-                <span className="flex items-center gap-1.5">
+-                  <PlusCircle size={14} />
+-                  <span>Create Lead</span>
+-                </span>
++                <PlusCircle size={15} className={activePage === 'create' ? 'text-[#0A4DA6]' : 'text-gray-400'} />
++                <span>{t('Create Lead')}</span>
+               </button>
+ 
+               <button
+                 onClick={() => handleNavClick('dashboard')}
+-                className={`px-3.5 sm:px-4 py-1.5 rounded-full font-bold text-xs sm:text-[13px] tracking-tight transition-all cursor-pointer ${
++                className={`text-xs sm:text-[13px] font-semibold transition-colors cursor-pointer flex items-center gap-2 ${
+                   activePage === 'dashboard'
+-                    ? 'bg-[#0A4DA6] text-white shadow-xs'
+-                    : 'text-slate-700 hover:text-[#0A4DA6] hover:bg-slate-100/90'
++                    ? 'text-[#0A4DA6] font-extrabold'
++                    : 'text-[#0B192C] hover:text-[#0A4DA6]'
+                 }`}
+               >
+-                <span className="flex items-center gap-1.5">
+-                  <LayoutDashboard size={14} />
+-                  <span>Leads Dashboard</span>
+-                  <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
+-                    activePage === 'dashboard' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-800'
+-                  }`}>
+-                    {leadCount}
+-                  </span>
++                <LayoutDashboard size={15} className={activePage === 'dashboard' ? 'text-[#0A4DA6]' : 'text-gray-400'} />
++                <span>{t('Leads Dashboard')}</span>
++                <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full transition-colors ${
++                  activePage === 'dashboard'
++                    ? 'bg-[#0A4DA6] text-white'
++                    : 'bg-blue-50 text-[#0A4DA6] border border-blue-100'
++                }`}>
++                  {leadCount}
+                 </span>
+               </button>
+ 
+               <button
+                 onClick={() => handleNavClick('approved')}
+-                className={`px-3.5 sm:px-4 py-1.5 rounded-full font-bold text-xs sm:text-[13px] tracking-tight transition-all cursor-pointer ${
++                className={`text-xs sm:text-[13px] font-semibold transition-colors cursor-pointer flex items-center gap-2 ${
+                   activePage === 'approved'
+-                    ? 'bg-[#0A4DA6] text-white shadow-xs'
+-                    : 'text-slate-700 hover:text-[#0A4DA6] hover:bg-slate-100/90'
++                    ? 'text-[#0A4DA6] font-extrabold'
++                    : 'text-[#0B192C] hover:text-[#0A4DA6]'
+                 }`}
+               >
+-                <span className="flex items-center gap-1.5">
+-                  <Building2 size={14} />
+-                  <span>Approved Ashrams</span>
+-                  <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
+-                    activePage === 'approved' ? 'bg-white/20 text-white' : 'bg-[#0A4DA6]/10 text-[#0A4DA6]'
+-                  }`}>
+-                    {approvedCount}
+-                  </span>
++                <Building2 size={15} className={activePage === 'approved' ? 'text-[#0A4DA6]' : 'text-gray-400'} />
++                <span>{t('Approved Ashrams')}</span>
++                <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full transition-colors ${
++                  activePage === 'approved'
++                    ? 'bg-[#0A4DA6] text-white'
++                    : 'bg-blue-50 text-[#0A4DA6] border border-blue-100'
++                }`}>
++                  {approvedCount}
+                 </span>
+               </button>
+             </nav>
+ 
+-            {/* Right Side Login / Attendance Button */}
+-            <div className="flex items-center gap-2 shrink-0">
++            {/* Right Side Actions: Primary Action, Attendance & Profile */}
++            <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
+               {user ? (
+-                <div className="flex items-center gap-2">
++                <>
++                  {onBackToSupervisorConsole && (
++                    <button
++                      onClick={onBackToSupervisorConsole}
++                      className="hidden sm:inline-flex items-center gap-2 px-4 py-2 bg-[#0A4DA6] hover:bg-[#083D85] text-white rounded-full text-xs font-extrabold transition-all shadow-xs cursor-pointer"
++                      title={t('Supervisor Console')}
++                    >
++                      <LayoutDashboard size={14} />
++                      <span>{t('Supervisor Console')}</span>
++                    </button>
++                  )}
++
+                   <button
+                     onClick={() => setIsAttendanceModalOpen(true)}
+-                    className="text-xs font-extrabold text-white bg-[#0A4DA6] hover:bg-[#083D85] transition-all px-3.5 py-1.5 rounded-full flex items-center gap-1.5 cursor-pointer shadow-2xs"
+-                    title="Open Attendance Check-In / Check-Out Modal"
++                    className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 text-xs font-semibold text-[#0B192C] hover:text-[#0A4DA6] hover:bg-slate-50 border border-gray-200 rounded-full transition-colors cursor-pointer shadow-2xs"
++                    title={t('Attendance')}
+                   >
+-                    <MapPin size={13} />
+-                    <span>Attendance</span>
++                    <MapPin size={13} className="text-[#0A4DA6]" />
++                    <span>{t('Attendance')}</span>
+                     {attendanceState?.checkedIn && (
+-                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
++                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                     )}
+                   </button>
+ 
+                   <button
+                     onClick={handleLogout}
+-                    className="hidden sm:flex text-xs font-extrabold text-[#0A4DA6] bg-[#0A4DA6]/10 hover:bg-[#0A4DA6]/20 transition-all px-3.5 py-1.5 rounded-full border border-[#0A4DA6]/20 items-center gap-1.5 cursor-pointer"
+-                    title="Click to logout"
++                    className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-[#0A4DA6] bg-blue-50/70 hover:bg-blue-100/70 border border-blue-200/80 rounded-full transition-colors cursor-pointer"
++                    title={t('Sign Out')}
+                   >
+-                    <UserCheck size={13} />
+-                    <span>{user.name?.split(' ')[0] || 'Agent'}</span>
++                    <div className="w-5 h-5 rounded-full bg-[#0A4DA6] text-white flex items-center justify-center text-[10px] font-black shrink-0">
++                      {user.name?.slice(0, 1).toUpperCase() || 'U'}
++                    </div>
++                    <span className="hidden sm:inline">{user.name?.split(' ')[0] || 'User'}</span>
+                   </button>
+-                </div>
++                </>
+               ) : (
+                 <button
+                   onClick={() => setIsLoginModalOpen(true)}
+-                  className="text-xs font-extrabold text-[#0A4DA6] hover:text-white hover:bg-[#0A4DA6] transition-all px-4 py-1.5 rounded-full border border-[#0A4DA6] flex items-center justify-center cursor-pointer shadow-2xs"
++                  className="px-5 py-2 text-xs font-extrabold bg-[#0A4DA6] hover:bg-[#083D85] text-white rounded-full transition-all shadow-xs cursor-pointer"
+                 >
+-                  Login
++                  {t('Sign In')}
+                 </button>
+               )}
+ 
+               {/* Mobile Hamburger Toggle */}
+               <button
+                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+-                className="md:hidden p-2 text-slate-700 hover:text-[#0A4DA6] rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
++                className="lg:hidden p-2 text-slate-700 hover:text-[#0A4DA6] rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
+                 aria-label="Toggle navigation menu"
+               >
+                 {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+@@ -187,33 +198,46 @@ export default function AppNavbar({
+ 
+           </div>
+ 
+-          {/* Mobile Dropdown Menu */}
++          {/* Mobile Dropdown Drawer */}
+           {mobileMenuOpen && (
+-            <div className="md:hidden mt-2 bg-white border border-[#E2E8F0] rounded-2xl p-4 shadow-lg flex flex-col gap-2 transition-all">
++            <div className="lg:hidden mt-2 bg-white border border-gray-200 rounded-2xl p-4 shadow-xl flex flex-col gap-2 transition-all">
++              {onBackToSupervisorConsole && (
++                <button
++                  onClick={() => {
++                    setMobileMenuOpen(false);
++                    onBackToSupervisorConsole();
++                  }}
++                  className="w-full flex items-center gap-2.5 p-3 rounded-xl bg-[#0A4DA6] text-white font-extrabold text-xs shadow-xs"
++                >
++                  <LayoutDashboard size={16} />
++                  <span>Supervisor Console</span>
++                </button>
++              )}
++
+               <button
+                 onClick={() => handleNavClick('create')}
+-                className={`w-full flex items-center justify-between p-3 rounded-xl font-bold text-sm transition-colors ${
+-                  activePage === 'create' ? 'bg-[#0A4DA6] text-white' : 'text-slate-700 hover:bg-slate-50'
++                className={`w-full flex items-center justify-between p-3 rounded-xl font-bold text-xs transition-colors ${
++                  activePage === 'create' ? 'bg-[#0A4DA6] text-white' : 'text-[#0B192C] hover:bg-slate-50'
+                 }`}
+               >
+                 <span className="flex items-center gap-2">
+                   <PlusCircle size={16} />
+-                  <span>Create Lead Entry</span>
++                  <span>Create Lead</span>
+                 </span>
+               </button>
+ 
+               <button
+                 onClick={() => handleNavClick('dashboard')}
+-                className={`w-full flex items-center justify-between p-3 rounded-xl font-bold text-sm transition-colors ${
+-                  activePage === 'dashboard' ? 'bg-[#0A4DA6] text-white' : 'text-slate-700 hover:bg-slate-50'
++                className={`w-full flex items-center justify-between p-3 rounded-xl font-bold text-xs transition-colors ${
++                  activePage === 'dashboard' ? 'bg-[#0A4DA6] text-white' : 'text-[#0B192C] hover:bg-slate-50'
+                 }`}
+               >
+                 <span className="flex items-center gap-2">
+                   <LayoutDashboard size={16} />
+                   <span>Leads Dashboard</span>
+                 </span>
+-                <span className={`text-xs font-extrabold px-2.5 py-0.5 rounded-full ${
+-                  activePage === 'dashboard' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-800'
++                <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
++                  activePage === 'dashboard' ? 'bg-white/20 text-white' : 'bg-blue-50 text-[#0A4DA6]'
+                 }`}>
+                   {leadCount}
+                 </span>
+@@ -221,22 +245,22 @@ export default function AppNavbar({
+ 
+               <button
+                 onClick={() => handleNavClick('approved')}
+-                className={`w-full flex items-center justify-between p-3 rounded-xl font-bold text-sm transition-colors ${
+-                  activePage === 'approved' ? 'bg-[#0A4DA6] text-white' : 'text-slate-700 hover:bg-slate-50'
++                className={`w-full flex items-center justify-between p-3 rounded-xl font-bold text-xs transition-colors ${
++                  activePage === 'approved' ? 'bg-[#0A4DA6] text-white' : 'text-[#0B192C] hover:bg-slate-50'
+                 }`}
+               >
+                 <span className="flex items-center gap-2">
+                   <Building2 size={16} />
+                   <span>Approved Ashrams</span>
+                 </span>
+-                <span className={`text-xs font-extrabold px-2.5 py-0.5 rounded-full ${
+-                  activePage === 'approved' ? 'bg-white/20 text-white' : 'bg-[#0A4DA6]/10 text-[#0A4DA6]'
++                <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
++                  activePage === 'approved' ? 'bg-white/20 text-white' : 'bg-blue-50 text-[#0A4DA6]'
+                 }`}>
+                   {approvedCount}
+                 </span>
+               </button>
+ 
+-              <div className="pt-2 border-t border-[#E2E8F0] mt-1 space-y-2">
++              <div className="pt-2 border-t border-gray-100 mt-1 space-y-2">
+                 {user ? (
+                   <>
+                     <button
+@@ -244,16 +268,16 @@ export default function AppNavbar({
+                         setMobileMenuOpen(false);
+                         setIsAttendanceModalOpen(true);
+                       }}
+-                      className="w-full flex items-center justify-center gap-2 p-2.5 rounded-xl bg-[#0A4DA6] text-xs font-bold text-white shadow-xs"
++                      className="w-full flex items-center justify-center gap-2 p-2.5 rounded-xl border border-gray-200 text-xs font-bold text-[#0B192C] hover:bg-slate-50"
+                     >
+-                      <MapPin size={14} />
+-                      <span>Open Attendance Check-In</span>
++                      <MapPin size={14} className="text-[#0A4DA6]" />
++                      <span>Attendance Check-In</span>
+                     </button>
+                     <button
+                       onClick={handleLogout}
+                       className="w-full flex items-center justify-center gap-2 p-2 rounded-xl border border-red-200 text-xs font-bold text-red-600 bg-red-50"
+                     >
+-                      <span>Logout Agent</span>
++                      <span>Sign Out ({user.name})</span>
+                     </button>
+                   </>
+                 ) : (
+@@ -264,7 +288,7 @@ export default function AppNavbar({
+                     }}
+                     className="w-full flex items-center justify-center gap-2 p-2.5 rounded-xl bg-[#0A4DA6] text-xs font-bold text-white shadow-xs"
+                   >
+-                    Login
++                    Sign In
+                   </button>
+                 )}
+               </div>
+diff --git a/leadTirvona/src/components/AttendanceModal.jsx b/leadTirvona/src/components/AttendanceModal.jsx
+index 393233a..1ab95bf 100644
+--- a/leadTirvona/src/components/AttendanceModal.jsx
++++ b/leadTirvona/src/components/AttendanceModal.jsx
+@@ -1,14 +1,11 @@
+-/**
+- * AttendanceModal.jsx — Tirvona Field Agent Attendance & Geo-Tag Check-In / Check-Out
+- * Opens immediately after login.
+- * Captures live GPS coordinates (latitude, longitude) + exact timestamp on Check-In and Check-Out.
+- */
+ import React, { useState } from 'react';
+-import { X, MapPin, Clock, CheckCircle2, LogOut, Navigation, AlertCircle, Calendar } from 'lucide-react';
++import { X, MapPin, Clock, CheckCircle2, LogOut, Navigation, AlertCircle, Calendar, ShieldCheck } from 'lucide-react';
+ import { useGeolocation } from '../hooks/useGeolocation';
+ import { buildGoogleMapsUrl } from '../utils/formatDate';
++import { useLanguage } from '../context/LanguageContext';
+ 
+ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpdated }) {
++  const { t } = useLanguage();
+   const { isCapturing, gpsError, captureCurrentLocation } = useGeolocation();
+   const [attendance, setAttendance] = useState({
+     checkedIn: false,
+@@ -22,6 +19,31 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
+ 
+   if (!isOpen) return null;
+ 
++  const isSupervisor = user?.role === 'supervisor' || user?.role === 'field_supervisor';
++  const isLeadExecutive = user?.role === 'lead_executive';
++  const roleTitle = isSupervisor
++    ? t('Supervisor Attendance')
++    : isLeadExecutive
++    ? t('Lead Executive Attendance')
++    : t('Field Agent Attendance');
++  const roleSubtitle = isSupervisor
++    ? `${user?.district ? `${user.district} ` : ''}District Geotag & Location Console`
++    : isLeadExecutive
++    ? `${user?.district ? `${user.district} ` : ''}Executive Geotag & Location Console`
++    : 'Geotag Attendance & Location Check-In Console';
++  const userInitials = user?.name
++    ? user.name.slice(0, 2).toUpperCase()
++    : isSupervisor
++    ? 'SP'
++    : isLeadExecutive
++    ? 'LE'
++    : 'FA';
++  const badgeLabel = isSupervisor
++    ? t('Supervisor')
++    : isLeadExecutive
++    ? t('Lead Executive')
++    : t('Active Shift');
++
+   const handleCheckIn = () => {
+     setStatusMsg('Capturing Geotag location...');
+     captureCurrentLocation((coords) => {
+@@ -82,10 +104,10 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
+             <img src="/logo.png" alt="Tirvona Logo" className="h-10 w-auto object-contain" />
+           </div>
+           <h2 className="text-xl sm:text-2xl font-extrabold text-[#0F172A] tracking-tight">
+-            Field Agent Attendance
++            {roleTitle}
+           </h2>
+           <p className="text-xs text-[#64748B] font-medium">
+-            Geotag Attendance &amp; Location Check-In Console
++            {roleSubtitle}
+           </p>
+         </div>
+ 
+@@ -93,15 +115,19 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
+         <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl p-4 flex items-center justify-between">
+           <div className="flex items-center gap-3">
+             <div className="w-10 h-10 rounded-full bg-[#0A4DA6]/10 text-[#0A4DA6] font-extrabold flex items-center justify-center text-sm">
+-              FA
++              {userInitials}
+             </div>
+             <div>
+-              <h3 className="text-sm font-extrabold text-[#0F172A]">{user?.name || 'Field Lead Agent'}</h3>
++              <h3 className="text-sm font-extrabold text-[#0F172A]">{user?.name || (isSupervisor ? 'Field Supervisor' : 'Field Lead Agent')}</h3>
+               <p className="text-xs font-medium text-[#64748B]">Phone: {user?.phone || '+91 9876543210'}</p>
+             </div>
+           </div>
+-          <span className="text-[10px] font-extrabold uppercase px-3 py-1 rounded-full bg-[#0A4DA6]/10 text-[#0A4DA6] border border-[#0A4DA6]/20">
+-            Active Shift
++          <span className={`text-[10px] font-extrabold uppercase px-3 py-1 rounded-full border ${
++            isSupervisor
++              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
++              : 'bg-[#0A4DA6]/10 text-[#0A4DA6] border-[#0A4DA6]/20'
++          }`}>
++            {badgeLabel}
+           </span>
+         </div>
+ 
+@@ -135,7 +161,7 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
+           >
+             <div className="flex items-center gap-1.5">
+               <MapPin size={16} />
+-              <span>{attendance.checkedIn ? 'Checked In' : 'Check In'}</span>
++              <span>{attendance.checkedIn ? t('Checked In') : t('Check In')}</span>
+             </div>
+             {isCapturing && !attendance.checkedIn && (
+               <span className="text-[10px] opacity-80 font-normal">Capturing Geotag...</span>
+@@ -157,7 +183,7 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
+           >
+             <div className="flex items-center gap-1.5">
+               <LogOut size={16} />
+-              <span>{attendance.checkedOut ? 'Checked Out' : 'Check Out'}</span>
++              <span>{attendance.checkedOut ? t('Checked Out') : t('Check Out')}</span>
+             </div>
+             {isCapturing && attendance.checkedIn && !attendance.checkedOut && (
+               <span className="text-[10px] opacity-80 font-normal">Capturing Geotag...</span>
+@@ -168,14 +194,14 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
+         {/* Live Attendance Geotag Logs */}
+         <div className="space-y-2.5 pt-2 border-t border-[#E2E8F0]">
+           <h4 className="text-xs font-bold text-[#64748B] tracking-wider uppercase">
+-            Attendance Log Record
++            {t('Attendance Log Record')}
+           </h4>
+ 
+           {/* Check-In Log Details */}
+           <div className="p-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl space-y-1 text-xs">
+             <div className="flex items-center justify-between font-extrabold text-[#0F172A]">
+               <span className="flex items-center gap-1 text-[#0A4DA6]">
+-                <Clock size={13} /> Check-In Status
++                <Clock size={13} /> {t('Check-In Status')}
+               </span>
+               <span>{attendance.checkedIn ? 'COMPLETED' : 'PENDING'}</span>
+             </div>
+@@ -198,7 +224,7 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
+           <div className="p-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl space-y-1 text-xs">
+             <div className="flex items-center justify-between font-extrabold text-[#0F172A]">
+               <span className="flex items-center gap-1 text-[#0B192C]">
+-                <Clock size={13} /> Check-Out Status
++                <Clock size={13} /> {t('Check-Out Status')}
+               </span>
+               <span>{attendance.checkedOut ? 'COMPLETED' : 'PENDING'}</span>
+             </div>
+@@ -224,7 +250,7 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
+             onClick={onClose}
+             className="w-full py-2.5 bg-[#F8FAFC] hover:bg-slate-100 border border-[#E2E8F0] text-[#0F172A] font-extrabold rounded-xl text-xs transition-colors cursor-pointer"
+           >
+-            Continue to Field Dashboard
++            {isSupervisor ? t('Continue to Dashboard') : t('Continue to Field Dashboard')}
+           </button>
+         </div>
+ 
+diff --git a/leadTirvona/src/components/LeadCard.jsx b/leadTirvona/src/components/LeadCard.jsx
+index a3a242a..4f783ce 100644
+--- a/leadTirvona/src/components/LeadCard.jsx
++++ b/leadTirvona/src/components/LeadCard.jsx
+@@ -1,200 +1,102 @@
+ /**
+- * LeadCard.jsx — Clean & Spacious Tirvona Property Card
+- * Single-line stay title truncation, clean spacing, and modern status pill badge.
++ * LeadCard.jsx — Compact Horizontal Row Layout
++ * Three sections: Name | Date | Action Icons (Call, WhatsApp, Edit, Delete)
+  */
+-import React, { useState } from 'react';
++import React from 'react';
+ import {
+-  MapPin, Phone, User, Calendar, Clock,
+-  CheckCircle2, Trash2, FileText, Camera
++  Phone, Trash2, Pencil, MapPin, MessageCircle
+ } from 'lucide-react';
+-import { formatDate, formatMeetingDateTime } from '../utils/formatDate';
++import { formatDate } from '../utils/formatDate';
+ 
+-export default function LeadCard({ lead, onApprove, onDelete }) {
+-  const [showFullNotes, setShowFullNotes] = useState(false);
++export default function LeadCard({ lead, onApprove, onDelete, onEdit }) {
++  const phone = lead.contact?.phone || '';
++  // Clean phone number for tel: and wa.me links
++  const cleanPhone = phone.replace(/[^0-9+]/g, '');
++  const waPhone = cleanPhone.startsWith('+') ? cleanPhone.slice(1) : cleanPhone;
+ 
+   return (
+-    <div className="bg-white border border-[#E2E8F0] rounded-2xl p-5 sm:p-6 shadow-xs hover:shadow-md transition-all duration-300 flex flex-col justify-between h-full min-w-[300px] sm:min-w-[350px]">
+-      <div>
+-        
+-        {/* Top Header Row — Single Line Title + Horizontal Badges */}
+-        <div className="flex items-start justify-between gap-3 mb-3.5 pb-3 border-b border-[#E2E8F0]">
+-          <div className="min-w-0 flex-1">
+-            {/* Single Line Stay Name with Truncation (...) */}
+-            <h3 className="text-base font-extrabold text-[#0F172A] tracking-tight truncate" title={lead.name}>
+-              {lead.name}
+-            </h3>
+-            <p className="text-xs font-medium text-[#64748B] flex items-center gap-1 mt-1 truncate">
+-              <MapPin size={13} className="text-[#0A4DA6] shrink-0" />
+-              <span className="truncate">
+-                {lead.location.address ? `${lead.location.address}, ` : ''}{lead.location.city}, {lead.location.state}
+-              </span>
+-            </p>
+-          </div>
++    <div className="bg-white border border-[#E2E8F0] rounded-xl px-4 py-3 shadow-xs hover:shadow-md transition-all duration-200 flex items-center gap-3">
+ 
+-          {/* Badges Stack */}
+-          <div className="flex flex-col items-end gap-1 shrink-0">
+-            <span className="text-[10px] font-extrabold tracking-wider px-2.5 py-0.5 rounded-full uppercase bg-[#0A4DA6]/10 text-[#0A4DA6] border border-[#0A4DA6]/20">
+-              {lead.interest}
+-            </span>
+-            <span className={`text-[10px] font-extrabold tracking-wider uppercase px-2.5 py-0.5 rounded-full border ${
+-              lead.status === 'approved'
+-                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+-                : 'bg-amber-50 text-amber-700 border-amber-200'
+-            }`}>
+-              {lead.status === 'approved' ? '✓ Approved' : '⏳ Pending'}
+-            </span>
+-          </div>
+-        </div>
+-
+-        {/* Details Grid */}
+-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs py-3 px-3.5 bg-[#F8FAFC] rounded-xl mb-3.5 border border-[#E2E8F0]">
+-          {lead.contact.ownerName && (
+-            <div className="flex items-center gap-1.5 text-[#64748B] font-medium truncate">
+-              <User size={13} className="text-[#0A4DA6] shrink-0" />
+-              <span className="truncate">Contact: <strong className="text-[#0F172A] font-bold">{lead.contact.ownerName}</strong></span>
+-            </div>
+-          )}
+-          {lead.contact.phone && (
+-            <div className="flex items-center gap-1.5 text-[#64748B] font-medium">
+-              <Phone size={13} className="text-[#0A4DA6] shrink-0" />
+-              <strong className="text-[#0F172A] font-bold">{lead.contact.phone}</strong>
+-            </div>
+-          )}
+-          {lead.createdAt && (
+-            <div className="flex items-center gap-1.5 text-[#64748B] font-medium sm:col-span-2">
+-              <Calendar size={13} className="text-[#0A4DA6] shrink-0" />
+-              <span>Submitted: <strong className="text-[#0F172A] font-bold">{formatDate(lead.createdAt)}</strong></span>
+-            </div>
+-          )}
++      {/* Section 1 — Name, Location & Status */}
++      <div className="flex-1 min-w-0">
++        <div className="flex items-center gap-2">
++          <h3
++            className="text-sm font-bold text-[#0F172A] truncate"
++            title={lead.name}
++          >
++            {lead.name}
++          </h3>
++          <span className={`shrink-0 text-[9px] font-extrabold tracking-wider uppercase px-2 py-0.5 rounded-full border ${
++            lead.status === 'approved'
++              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
++              : 'bg-amber-50 text-amber-700 border-amber-200'
++          }`}>
++            {lead.status === 'approved' ? '✓ Approved' : 'Pending'}
++          </span>
+         </div>
+-
+-        {/* Room Inventory Stats */}
+-        {lead.roomInventory && (lead.roomInventory.totalRooms || lead.roomInventory.roomPrice) && (
+-          <div className="mb-3.5 p-2.5 bg-[#F8FAFC] rounded-xl border border-[#E2E8F0] grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-center text-xs">
+-            {lead.roomInventory.totalRooms && (
+-              <div>
+-                <span className="text-[10px] font-bold text-[#64748B] block">Total</span>
+-                <strong className="text-[#0F172A] font-extrabold">{lead.roomInventory.totalRooms} rms</strong>
+-              </div>
+-            )}
+-            {lead.roomInventory.roomPrice && (
+-              <div>
+-                <span className="text-[10px] font-bold text-[#64748B] block">Price</span>
+-                <strong className="text-[#0A4DA6] font-extrabold">₹{lead.roomInventory.roomPrice}</strong>
+-              </div>
+-            )}
+-            {lead.roomInventory.onlineRooms && (
+-              <div>
+-                <span className="text-[10px] font-bold text-[#64748B] block">Online</span>
+-                <strong className="text-[#0F172A] font-extrabold">{lead.roomInventory.onlineRooms}</strong>
+-              </div>
+-            )}
+-            {lead.roomInventory.offlineRooms && (
+-              <div>
+-                <span className="text-[10px] font-bold text-[#64748B] block">Offline</span>
+-                <strong className="text-[#0F172A] font-extrabold">{lead.roomInventory.offlineRooms}</strong>
+-              </div>
+-            )}
+-          </div>
++        {(lead.location?.city || lead.location?.state) && (
++          <p className="text-[11px] text-[#64748B] flex items-center gap-1 mt-0.5 truncate">
++            <MapPin size={11} className="text-[#0A4DA6] shrink-0" />
++            <span className="truncate">
++              {lead.location.city}{lead.location.state ? `, ${lead.location.state}` : ''}
++            </span>
++          </p>
+         )}
++      </div>
+ 
+-        {/* Discussion Notes Snippet */}
+-        {lead.notes && (
+-          <div className="mb-3.5 p-2.5 bg-[#F8FAFC] rounded-xl border border-[#E2E8F0]">
+-            <div className="flex items-center gap-1.5 text-xs font-bold text-[#0F172A] mb-1">
+-              <FileText size={13} className="text-[#0A4DA6]" />
+-              <span>Discussion Notes</span>
+-            </div>
+-            <p className="text-xs text-[#64748B] leading-relaxed">
+-              {showFullNotes || lead.notes.length <= 100
+-                ? lead.notes
+-                : `${lead.notes.slice(0, 100)}...`}
+-            </p>
+-            {lead.notes.length > 100 && (
+-              <button
+-                onClick={() => setShowFullNotes(!showFullNotes)}
+-                className="text-[11px] font-bold text-[#0A4DA6] hover:underline mt-1 block cursor-pointer"
+-              >
+-                {showFullNotes ? 'Show Less' : 'Read Full Notes'}
+-              </button>
+-            )}
+-          </div>
++      {/* Section 2 — Date */}
++      <div className="shrink-0 text-right hidden sm:block">
++        {lead.createdAt && (
++          <span className="text-[11px] font-semibold text-[#64748B] whitespace-nowrap">
++            {formatDate(lead.createdAt)}
++          </span>
+         )}
++      </div>
+ 
+-        {/* Meeting Request Indicator */}
+-        {lead.meeting?.requested && (
+-          <div className="mb-3.5 p-2.5 bg-amber-50 border border-amber-200/80 rounded-xl text-xs flex items-center justify-between text-amber-900 font-medium">
+-            <span className="flex items-center gap-1 font-bold">
+-              <Clock size={13} className="text-amber-600" />
+-              <span>Meeting ({lead.meeting.mode || 'Call'})</span>
+-            </span>
+-            <span className="text-[11px] font-bold text-amber-700">
+-              {formatMeetingDateTime(lead.meeting.time)}
+-            </span>
+-          </div>
++      {/* Section 3 — Action Icons */}
++      <div className="flex items-center gap-1 shrink-0">
++        {/* Phone Call */}
++        {cleanPhone && (
++          <a
++            href={`tel:${cleanPhone}`}
++            className="p-2 rounded-full text-[#0A4DA6] hover:bg-[#0A4DA6]/10 transition-colors"
++            title={`Call ${phone}`}
++          >
++            <Phone size={16} />
++          </a>
+         )}
+ 
+-        {/* Cloudinary image and PDF attachments */}
+-        {lead.images && lead.images.length > 0 && (
+-          <div className="mb-3.5 space-y-1">
+-            <span className="text-[11px] font-bold text-[#64748B] flex items-center gap-1">
+-              <Camera size={12} className="text-[#0A4DA6]" />
+-              <span>Attachments ({lead.images.length})</span>
+-            </span>
+-            <div className="flex items-center gap-2 overflow-x-auto pb-1">
+-              {lead.images.map((attachment, idx) => {
+-                const isPdf =
+-                  /\.pdf(?:$|[?#])/i.test(attachment) ||
+-                  attachment.includes('/raw/upload/');
+-                return isPdf ? (
+-                  <a
+-                    key={idx}
+-                    href={attachment}
+-                    target="_blank"
+-                    rel="noopener noreferrer"
+-                    title={`Open PDF ${idx + 1}`}
+-                    className="w-11 h-11 rounded-lg border border-[#E2E8F0] bg-slate-50 text-[#0A4DA6] shrink-0 flex items-center justify-center"
+-                  >
+-                    <FileText size={20} />
+-                  </a>
+-                ) : (
+-                  <a key={idx} href={attachment} target="_blank" rel="noopener noreferrer">
+-                    <img
+-                      src={attachment}
+-                      alt={`Attachment ${idx + 1}`}
+-                      className="w-11 h-11 object-cover rounded-lg border border-[#E2E8F0] shrink-0"
+-                    />
+-                  </a>
+-                );
+-              })}
+-            </div>
+-          </div>
++        {/* WhatsApp */}
++        {cleanPhone && (
++          <a
++            href={`https://wa.me/${waPhone}`}
++            target="_blank"
++            rel="noopener noreferrer"
++            className="p-2 rounded-full text-emerald-600 hover:bg-emerald-50 transition-colors"
++            title={`WhatsApp ${phone}`}
++          >
++            <MessageCircle size={16} />
++          </a>
+         )}
+-      </div>
+ 
+-      {/* Card Action Buttons */}
+-      <div className="pt-3 border-t border-[#E2E8F0] flex items-center gap-2">
+-        {lead.status === 'pending' ? (
++        {/* Edit */}
++        {onEdit && (
+           <button
+-            onClick={() => onApprove(lead)}
+-            className="flex-1 min-h-[42px] bg-[#0A4DA6] hover:bg-[#083D85] text-white font-extrabold rounded-full text-xs shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
++            onClick={() => onEdit(lead)}
++            className="p-2 rounded-full text-slate-400 hover:text-[#0A4DA6] hover:bg-[#0A4DA6]/10 transition-colors cursor-pointer"
++            title="Edit lead"
+           >
+-            <CheckCircle2 size={15} />
+-            <span>Approve &amp; Convert</span>
++            <Pencil size={16} />
+           </button>
+-        ) : (
+-          <div className="flex-1 min-h-[42px] bg-emerald-50 border border-emerald-200 text-emerald-700 font-extrabold rounded-full text-xs flex items-center justify-center gap-1.5 select-none">
+-            <CheckCircle2 size={15} />
+-            <span>Approved &amp; Converted</span>
+-          </div>
+         )}
+ 
++        {/* Delete */}
+         <button
+           onClick={() => {
+-            if (confirm(`Delete lead entry "${lead.name}"?`)) onDelete(lead.id);
++            if (confirm(`Delete lead "${lead.name}"?`)) onDelete(lead.id);
+           }}
+-          className="p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors cursor-pointer"
+-          title="Delete lead entry"
++          className="p-2 rounded-full text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
++          title="Delete lead"
+         >
+           <Trash2 size={16} />
+         </button>
+diff --git a/leadTirvona/src/main.jsx b/leadTirvona/src/main.jsx
+index 7fc35ba..e86b711 100644
+--- a/leadTirvona/src/main.jsx
++++ b/leadTirvona/src/main.jsx
+@@ -1,13 +1,18 @@
+ import React from 'react';
+ import ReactDOM from 'react-dom/client';
+ import App from './App.jsx';
++import { LanguageProvider } from './context/LanguageContext';
+ import './styles.css';
++import tirvonaFaviconUrl from '../../frontend/public/logo.png';
++
+ // Keep the lead app browser tab aligned with the canonical Tirvona logo.
+ const favicon = document.querySelector('link[rel="icon"]');
+-if (favicon) favicon.href = '/logo.png';
++if (favicon) favicon.href = tirvonaFaviconUrl;
+ 
+ ReactDOM.createRoot(document.getElementById('root')).render(
+   <React.StrictMode>
+-    <App />
++    <LanguageProvider>
++      <App />
++    </LanguageProvider>
+   </React.StrictMode>
+ );
+diff --git a/leadTirvona/src/pages/CreateLeadPage.jsx b/leadTirvona/src/pages/CreateLeadPage.jsx
+index c02c960..fc332b1 100644
+--- a/leadTirvona/src/pages/CreateLeadPage.jsx
++++ b/leadTirvona/src/pages/CreateLeadPage.jsx
+@@ -9,6 +9,7 @@ const DRAFT_STORAGE_KEY = 'tirvona_create_lead_draft';
+ 
+ const INITIAL_FORM = {
+   name: '', address: '', city: '', state: '', district: '',
++  assignedAgentId: '', assignedAgentName: '', assignedAgentCode: '',
+   totalRooms: '', roomPrice: '', onlineRooms: '', offlineRooms: '',
+   ownerName: '', phone: '', notes: '',
+   interest: 'Interested',
+@@ -20,7 +21,9 @@ export default function CreateLeadPage({
+   onSubmitLead,
+   onSuccessNavigate,
+   attendanceCoordinates,
+-  assignedJurisdiction
++  assignedJurisdiction,
++  editingLead = null,
++  onBackToConsole = null
+ }) {
+   const [currentDateTime, setCurrentDateTime] = useState('');
+   const [isListening, setIsListening] = useState(false);
+@@ -37,6 +40,31 @@ export default function CreateLeadPage({
+ 
+   // Restore draft from localStorage if available
+   const [formData, setFormData] = useState(() => {
++    if (editingLead) {
++      return {
++        name: editingLead.name || '',
++        address: editingLead.location?.address || editingLead.address || '',
++        city: editingLead.location?.city || editingLead.city || '',
++        state: editingLead.location?.state || editingLead.state || assignedJurisdiction?.state || '',
++        district: editingLead.location?.district || editingLead.district || assignedJurisdiction?.district || '',
++        assignedAgentId: editingLead.assignedAgentId || '',
++        assignedAgentName: editingLead.assignedAgentName || '',
++        assignedAgentCode: editingLead.assignedAgentCode || '',
++        totalRooms: editingLead.roomInventory?.totalRooms ?? editingLead.totalRooms ?? '',
++        roomPrice: editingLead.roomInventory?.roomPrice ?? editingLead.roomPrice ?? '',
++        onlineRooms: editingLead.roomInventory?.onlineRooms ?? editingLead.onlineRooms ?? '',
++        offlineRooms: editingLead.roomInventory?.offlineRooms ?? editingLead.offlineRooms ?? '',
++        ownerName: editingLead.contact?.ownerName || editingLead.ownerName || '',
++        phone: editingLead.contact?.phone || editingLead.phone || '',
++        notes: editingLead.notes || '',
++        interest: editingLead.interest || 'Interested',
++        meetingRequested: editingLead.meeting?.requested ?? true,
++        meetingTime: editingLead.meeting?.time || '',
++        meetingMode: editingLead.meeting?.mode || 'Call',
++        coordinates: editingLead.location?.coordinates || { lat: '', lng: '' },
++        images: Array.isArray(editingLead.images) ? editingLead.images : []
++      };
++    }
+     try {
+       const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
+       if (savedDraft) {
+@@ -55,6 +83,35 @@ export default function CreateLeadPage({
+     return INITIAL_FORM;
+   });
+ 
++  // If editingLead changes, update formData
++  useEffect(() => {
++    if (editingLead) {
++      setFormData({
++        name: editingLead.name || '',
++        address: editingLead.location?.address || editingLead.address || '',
++        city: editingLead.location?.city || editingLead.city || '',
++        state: editingLead.location?.state || editingLead.state || assignedJurisdiction?.state || '',
++        district: editingLead.location?.district || editingLead.district || assignedJurisdiction?.district || '',
++        assignedAgentId: editingLead.assignedAgentId || '',
++        assignedAgentName: editingLead.assignedAgentName || '',
++        assignedAgentCode: editingLead.assignedAgentCode || '',
++        totalRooms: editingLead.roomInventory?.totalRooms ?? editingLead.totalRooms ?? '',
++        roomPrice: editingLead.roomInventory?.roomPrice ?? editingLead.roomPrice ?? '',
++        onlineRooms: editingLead.roomInventory?.onlineRooms ?? editingLead.onlineRooms ?? '',
++        offlineRooms: editingLead.roomInventory?.offlineRooms ?? editingLead.offlineRooms ?? '',
++        ownerName: editingLead.contact?.ownerName || editingLead.ownerName || '',
++        phone: editingLead.contact?.phone || editingLead.phone || '',
++        notes: editingLead.notes || '',
++        interest: editingLead.interest || 'Interested',
++        meetingRequested: editingLead.meeting?.requested ?? true,
++        meetingTime: editingLead.meeting?.time || '',
++        meetingMode: editingLead.meeting?.mode || 'Call',
++        coordinates: editingLead.location?.coordinates || { lat: '', lng: '' },
++        images: Array.isArray(editingLead.images) ? editingLead.images : []
++      });
++    }
++  }, [editingLead, assignedJurisdiction?.state, assignedJurisdiction?.district]);
++
+   const hasAttendanceCoordinates =
+     attendanceCoordinates?.lat !== undefined &&
+     attendanceCoordinates?.lat !== null &&
+@@ -83,6 +140,33 @@ export default function CreateLeadPage({
+     }));
+   }, [assignedJurisdiction?.state, assignedJurisdiction?.district]);
+ 
++  // Load field agents in the assigned district for assignment dropdown
++  const [fieldAgents, setFieldAgents] = useState([]);
++  const [loadingAgents, setLoadingAgents] = useState(false);
++
++  useEffect(() => {
++    let isMounted = true;
++    async function loadAgents() {
++      setLoadingAgents(true);
++      try {
++        const params = {};
++        if (assignedJurisdiction?.district) params.district = assignedJurisdiction.district;
++        if (assignedJurisdiction?.state) params.state = assignedJurisdiction.state;
++        const res = await leadApi.listFieldAgents(params);
++        const list = Array.isArray(res) ? res : (res?.data || res?.items || []);
++        if (isMounted && Array.isArray(list)) {
++          setFieldAgents(list);
++        }
++      } catch (err) {
++        console.warn('Could not load district field agents:', err);
++      } finally {
++        if (isMounted) setLoadingAgents(false);
++      }
++    }
++    loadAgents();
++    return () => { isMounted = false; };
++  }, [assignedJurisdiction?.state, assignedJurisdiction?.district]);
++
+   // Auto-save form draft to localStorage whenever fields change
+   useEffect(() => {
+     try {
+@@ -339,7 +423,7 @@ export default function CreateLeadPage({
+     // Awaited: when the submit goes to the API it can fail, and clearing the
+     // form before knowing that would lose everything the agent just captured
+     // on site.
+-    const created = await onSubmitLead({
++    const payload = {
+       name: formData.name.trim(),
+       location: {
+         address: formData.address.trim(),
+@@ -366,12 +450,17 @@ export default function CreateLeadPage({
+         mode: formData.meetingRequested ? formData.meetingMode : ''
+       },
+       images: formData.images,
+-      status: 'pending'
+-    });
++      assignedAgentId: formData.assignedAgentId || null,
++      assignedAgentName: formData.assignedAgentName || '',
++      assignedAgentCode: formData.assignedAgentCode || '',
++      status: editingLead?.status || 'pending'
++    };
+ 
+-    if (created === null) return;
++    const res = await onSubmitLead(payload, editingLead?._id || editingLead?.id);
+ 
+-    clearFormDraft();
++    if (res === null) return;
++
++    if (!editingLead) clearFormDraft();
+     onSuccessNavigate();
+   };
+ 
+@@ -384,21 +473,20 @@ export default function CreateLeadPage({
+       {/* Form Container */}
+       <div className="bg-white border border-[#E2E8F0] rounded-2xl sm:rounded-3xl p-4 sm:p-7 shadow-xs">
+         
+-        {/* Header Title (Icon Removed) */}
++        {/* Header Title */}
+         <div className="flex flex-row items-start sm:items-center justify-between gap-2 sm:gap-3 pb-4 sm:pb-6 border-b border-[#E2E8F0] mb-5 sm:mb-6">
+           <div className="min-w-0 flex-1">
+             <h1 className="text-base sm:text-2xl font-extrabold text-[#0F172A] tracking-tight">
+-              Ashram Onboarding Form
++              {editingLead ? 'Edit Ashram Lead' : 'Ashram Onboarding Form'}
+             </h1>
+             <p className="text-[11px] sm:text-xs text-[#64748B] font-medium mt-0.5">
+-              Field Verification &amp; Contact Registration
++              {editingLead ? 'Update Field Verification & Contact Registration' : 'Field Verification & Contact Registration'}
+             </p>
+           </div>
+ 
+           <div className="flex items-center gap-1.5 sm:gap-2 bg-white border border-[#E2E8F0] rounded-xl px-2 py-1.5 sm:px-3.5 sm:py-2 shrink-0 shadow-2xs">
+             <Calendar size={12} className="text-[#0A4DA6] shrink-0 sm:w-[13px] sm:h-[13px]" />
+             <div>
+-              {/* <span className="text-[9px] font-bold tracking-wider text-[#64748B] uppercase block">Timestamp</span> */}
+               <span className="text-[9px] min-[390px]:text-[10px] sm:text-xs font-bold text-[#0F172A] whitespace-nowrap">{currentDateTime}</span>
+             </div>
+           </div>
+@@ -445,6 +533,29 @@ export default function CreateLeadPage({
+                   className={`${inputClass} cursor-not-allowed opacity-80`}
+                   value={assignedJurisdiction?.district || ''} />
+               </div>
++              <div>
++                <label className={labelClass}>
++                  Field Agent {loadingAgents && <span className="text-[10px] text-[#0A4DA6] font-normal">(Loading...)</span>}
++                </label>
++                <select
++                  className={inputClass}
++                  value={formData.assignedAgentId || ''}
++                  onChange={(e) => {
++                    const agentId = e.target.value;
++                    const selected = fieldAgents.find(a => (a._id || a.id) === agentId);
++                    handleChange('assignedAgentId', agentId);
++                    handleChange('assignedAgentName', selected ? selected.name : '');
++                    handleChange('assignedAgentCode', selected ? (selected.employeeCode || selected.phone || '') : '');
++                  }}
++                >
++                  <option value="">Select Field Agent (Optional)</option>
++                  {fieldAgents.map((agent) => (
++                    <option key={agent._id || agent.id} value={agent._id || agent.id}>
++                      {agent.name} {agent.employeeCode ? `(ID: ${agent.employeeCode})` : (agent.phone ? `(${agent.phone})` : '')}
++                    </option>
++                  ))}
++                </select>
++              </div>
+             </div>
+ 
+             {/* Room Capacity & Pricing Sub-Block (Icons Removed) */}
+@@ -753,7 +864,7 @@ export default function CreateLeadPage({
+               ) : (
+                 <>
+                   <Send size={16} />
+-                  <span>Submit Lead Entry</span>
++                  <span>{editingLead ? 'Update Lead Verification' : 'Submit Lead Entry'}</span>
+                 </>
+               )}
+             </button>
+diff --git a/leadTirvona/src/pages/LeadsDashboardPage.jsx b/leadTirvona/src/pages/LeadsDashboardPage.jsx
+index 76bfc90..1075d14 100644
+--- a/leadTirvona/src/pages/LeadsDashboardPage.jsx
++++ b/leadTirvona/src/pages/LeadsDashboardPage.jsx
+@@ -2,10 +2,10 @@
+  * LeadsDashboardPage.jsx — Clean Layout & Horizontal Scroll Slider Grid
+  */
+ import React, { useState } from 'react';
+-import { Search, PlusCircle, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
++import { Search, PlusCircle, Filter } from 'lucide-react';
+ import LeadCard from '../components/LeadCard';
+ 
+-export default function LeadsDashboardPage({ leads, onApproveLead, onDeleteLead, onNavigateCreate }) {
++export default function LeadsDashboardPage({ leads, onApproveLead, onDeleteLead, onNavigateCreate, onEditLead }) {
+   const [searchQuery, setSearchQuery] = useState('');
+   const [statusFilter, setStatusFilter] = useState('ALL');
+   const [interestFilter, setInterestFilter] = useState('ALL');
+@@ -23,14 +23,6 @@ export default function LeadsDashboardPage({ leads, onApproveLead, onDeleteLead,
+   const pendingCount  = leads.filter((l) => l.status === 'pending').length;
+   const approvedCount = leads.filter((l) => l.status === 'approved').length;
+ 
+-  const scrollSlider = (direction) => {
+-    const slider = document.getElementById('leads-slider-container');
+-    if (slider) {
+-      const scrollAmount = direction === 'left' ? -380 : 380;
+-      slider.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+-    }
+-  };
+-
+   const inputClass = "w-full min-h-[44px] px-3.5 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/20 focus:border-[#0A4DA6] transition-all placeholder:text-[#94A3B8]";
+ 
+   return (
+@@ -114,47 +106,26 @@ export default function LeadsDashboardPage({ leads, onApproveLead, onDeleteLead,
+         </div>
+       </div>
+ 
+-      {/* Leads Horizontal Slider Header with Controls */}
++      {/* Leads Count Header */}
+       {filtered.length > 0 && (
+         <div className="flex items-center justify-between pt-2 px-1">
+           <span className="text-xs font-extrabold text-[#64748B] uppercase tracking-wider">
+             Showing {filtered.length} Lead Record(s)
+           </span>
+-
+-          {/* Slider Controls */}
+-          <div className="flex items-center gap-2">
+-            <button
+-              onClick={() => scrollSlider('left')}
+-              className="p-2 rounded-full bg-white border border-[#E2E8F0] text-slate-700 hover:text-[#0A4DA6] hover:border-[#0A4DA6] shadow-2xs transition-all cursor-pointer"
+-              title="Scroll left"
+-            >
+-              <ChevronLeft size={16} />
+-            </button>
+-            <button
+-              onClick={() => scrollSlider('right')}
+-              className="p-2 rounded-full bg-white border border-[#E2E8F0] text-slate-700 hover:text-[#0A4DA6] hover:border-[#0A4DA6] shadow-2xs transition-all cursor-pointer"
+-              title="Scroll right"
+-            >
+-              <ChevronRight size={16} />
+-            </button>
+-          </div>
+         </div>
+       )}
+ 
+-      {/* Lead Cards Horizontal Slider */}
++      {/* Lead Cards — Vertical List */}
+       {filtered.length > 0 ? (
+-        <div
+-          id="leads-slider-container"
+-          className="flex items-stretch gap-4 sm:gap-6 overflow-x-auto pb-4 pt-1 snap-x snap-mandatory scroll-smooth no-scrollbar"
+-        >
++        <div className="space-y-2">
+           {filtered.map((lead) => (
+-            <div key={lead.id} className="snap-start shrink-0 w-[300px] sm:w-[360px] md:w-[380px]">
+-              <LeadCard
+-                lead={lead}
+-                onApprove={onApproveLead}
+-                onDelete={onDeleteLead}
+-              />
+-            </div>
++            <LeadCard
++              key={lead.id}
++              lead={lead}
++              onApprove={onApproveLead}
++              onDelete={onDeleteLead}
++              onEdit={onEditLead}
++            />
+           ))}
+         </div>
+       ) : (
+diff --git a/leadTirvona/src/services/leadApi.js b/leadTirvona/src/services/leadApi.js
+index 07244b8..54cbc13 100644
+--- a/leadTirvona/src/services/leadApi.js
++++ b/leadTirvona/src/services/leadApi.js
+@@ -1,3 +1,13 @@
++/**
++ * leadApi.js — the only place this app talks to a server.
++ *
++ * Points at the Lead Collection module in the Tirvona API
++ * (`/api/lead-collection/...`). That module runs on its own database and its
++ * own token scope, so nothing here can reach platform data even by accident.
++ *
++ * The token is a field-agent token, kept under its own localStorage key so it
++ * can never be confused with the main site's `ab_token`.
++ */
+ 
+ const RAW_BASE = (import.meta.env.VITE_LEAD_API_URL || 'http://localhost:5000')
+   .trim()
+@@ -10,22 +20,34 @@ const TOKEN_KEY = 'tirvona_lead_token';
+ const AGENT_KEY = 'tirvona_lead_agent';
+ 
+ export const leadSession = {
+-  getToken: () => localStorage.getItem(TOKEN_KEY),
++  getToken: () =>
++    sessionStorage.getItem(TOKEN_KEY) || localStorage.getItem(TOKEN_KEY),
++  isPersistent: () => Boolean(localStorage.getItem(TOKEN_KEY)),
+   getAgent: () => {
+     try {
+-      const raw = localStorage.getItem(AGENT_KEY);
++      const storage = sessionStorage.getItem(TOKEN_KEY)
++        ? sessionStorage
++        : localStorage;
++      const raw = storage.getItem(AGENT_KEY);
+       return raw ? JSON.parse(raw) : null;
+     } catch {
+       return null;
+     }
+   },
+-  save: (token, agent) => {
+-    localStorage.setItem(TOKEN_KEY, token);
+-    localStorage.setItem(AGENT_KEY, JSON.stringify(agent));
++  save: (token, agent, persistent = false) => {
++    localStorage.removeItem(TOKEN_KEY);
++    localStorage.removeItem(AGENT_KEY);
++    sessionStorage.removeItem(TOKEN_KEY);
++    sessionStorage.removeItem(AGENT_KEY);
++    const storage = persistent ? localStorage : sessionStorage;
++    storage.setItem(TOKEN_KEY, token);
++    storage.setItem(AGENT_KEY, JSON.stringify(agent));
+   },
+   clear: () => {
+     localStorage.removeItem(TOKEN_KEY);
+     localStorage.removeItem(AGENT_KEY);
++    sessionStorage.removeItem(TOKEN_KEY);
++    sessionStorage.removeItem(AGENT_KEY);
+   }
+ };
+ 
+@@ -36,7 +58,8 @@ export const leadSession = {
+  */
+ async function request(path, { method = 'GET', body, auth = true } = {}) {
+   const headers = { Accept: 'application/json' };
+-  if (body) headers['Content-Type'] = 'application/json';
++  const isFormData = body instanceof FormData;
++  if (body && !isFormData) headers['Content-Type'] = 'application/json';
+ 
+   const token = leadSession.getToken();
+   if (auth && token) headers.Authorization = `Bearer ${token}`;
+@@ -44,7 +67,7 @@ async function request(path, { method = 'GET', body, auth = true } = {}) {
+   const response = await fetch(`${LEAD_API_BASE}${path}`, {
+     method,
+     headers,
+-    body: body ? JSON.stringify(body) : undefined
++    body: body ? (isFormData ? body : JSON.stringify(body)) : undefined
+   });
+ 
+   let payload = null;
+@@ -89,6 +112,15 @@ export const leadApi = {
+ 
+   myStats: () => request('/agent/leads/stats'),
+ 
++  uploadAttachment: (file, source = 'picker') => {
++    const form = new FormData();
++    form.append('file', file);
++    form.append('source', source === 'camera' ? 'camera' : 'picker');
++    return request('/agent/uploads', { method: 'POST', body: form });
++  },
++
++  listFieldAgents: () => request('/agent/leads/field-agents'),
++
+   createLead: (lead) =>
+     request('/agent/leads', { method: 'POST', body: lead }),
+ 
