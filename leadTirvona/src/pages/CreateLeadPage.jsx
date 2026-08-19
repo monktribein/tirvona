@@ -8,10 +8,10 @@ import { leadApi } from '../services/leadApi';
 const DRAFT_STORAGE_KEY = 'tirvona_create_lead_draft';
 
 const INITIAL_FORM = {
-  name: '', address: '', city: '', state: '', district: '',
+  name: '', address: '', googleMapsUrl: '', city: '', state: '', district: '',
   assignedAgentId: '', assignedAgentName: '', assignedAgentCode: '',
   totalRooms: '', roomPrice: '', onlineRooms: '', offlineRooms: '',
-  ownerName: '', phone: '', notes: '',
+  ownerName: '', phone: '', notes: '', agentNotes: '',
   interest: 'Interested',
   meetingRequested: true, meetingTime: '', meetingMode: 'Call',
   coordinates: { lat: '', lng: '' }, images: []
@@ -27,7 +27,9 @@ export default function CreateLeadPage({
 }) {
   const [currentDateTime, setCurrentDateTime] = useState('');
   const [isListening, setIsListening] = useState(false);
+  const [isListeningAgentNotes, setIsListeningAgentNotes] = useState(false);
   const recognitionRef = useRef(null);
+  const agentNotesRecognitionRef = useRef(null);
 
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState('');
@@ -44,6 +46,7 @@ export default function CreateLeadPage({
       return {
         name: editingLead.name || '',
         address: editingLead.location?.address || editingLead.address || '',
+        googleMapsUrl: editingLead.location?.googleMapsUrl || editingLead.googleMapsUrl || '',
         city: editingLead.location?.city || editingLead.city || '',
         state: editingLead.location?.state || editingLead.state || assignedJurisdiction?.state || '',
         district: editingLead.location?.district || editingLead.district || assignedJurisdiction?.district || '',
@@ -57,6 +60,7 @@ export default function CreateLeadPage({
         ownerName: editingLead.contact?.ownerName || editingLead.ownerName || '',
         phone: editingLead.contact?.phone || editingLead.phone || '',
         notes: editingLead.notes || '',
+        agentNotes: editingLead.agentNotes || '',
         interest: editingLead.interest || 'Interested',
         meetingRequested: editingLead.meeting?.requested ?? true,
         meetingTime: editingLead.meeting?.time || '',
@@ -89,6 +93,7 @@ export default function CreateLeadPage({
       setFormData({
         name: editingLead.name || '',
         address: editingLead.location?.address || editingLead.address || '',
+        googleMapsUrl: editingLead.location?.googleMapsUrl || editingLead.googleMapsUrl || '',
         city: editingLead.location?.city || editingLead.city || '',
         state: editingLead.location?.state || editingLead.state || assignedJurisdiction?.state || '',
         district: editingLead.location?.district || editingLead.district || assignedJurisdiction?.district || '',
@@ -102,6 +107,7 @@ export default function CreateLeadPage({
         ownerName: editingLead.contact?.ownerName || editingLead.ownerName || '',
         phone: editingLead.contact?.phone || editingLead.phone || '',
         notes: editingLead.notes || '',
+        agentNotes: editingLead.agentNotes || '',
         interest: editingLead.interest || 'Interested',
         meetingRequested: editingLead.meeting?.requested ?? true,
         meetingTime: editingLead.meeting?.time || '',
@@ -273,6 +279,64 @@ export default function CreateLeadPage({
     }
   };
 
+  const toggleAgentNotesVoiceDictation = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert('Speech Recognition API is not supported in this browser. Please use Chrome, Edge, or Safari.');
+      return;
+    }
+
+    if (isListeningAgentNotes) {
+      if (agentNotesRecognitionRef.current) {
+        agentNotesRecognitionRef.current.stop();
+      }
+      setIsListeningAgentNotes(false);
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-IN';
+
+      recognition.onstart = () => {
+        setIsListeningAgentNotes(true);
+      };
+
+      recognition.onresult = (event) => {
+        let finalTranscript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript + ' ';
+          }
+        }
+        if (finalTranscript) {
+          setFormData(prev => ({
+            ...prev,
+            agentNotes: (prev.agentNotes ? prev.agentNotes + ' ' : '') + finalTranscript
+          }));
+        }
+      };
+
+      recognition.onerror = (err) => {
+        console.error('Speech recognition error:', err);
+        setIsListeningAgentNotes(false);
+      };
+
+      recognition.onend = () => {
+        setIsListeningAgentNotes(false);
+      };
+
+      agentNotesRecognitionRef.current = recognition;
+      recognition.start();
+    } catch (err) {
+      console.error('Failed to initialize speech recognition:', err);
+      setIsListeningAgentNotes(false);
+    }
+  };
+
   const handleFileChange = async (e, source = 'picker') => {
     const files = Array.from(e.target.files);
     if (!files.length) return;
@@ -427,6 +491,7 @@ export default function CreateLeadPage({
       name: formData.name.trim(),
       location: {
         address: formData.address.trim(),
+        googleMapsUrl: formData.googleMapsUrl?.trim() || '',
         city: formData.city.trim(),
         district: assignedJurisdiction?.district || formData.district,
         state: assignedJurisdiction?.state || formData.state,
@@ -443,6 +508,7 @@ export default function CreateLeadPage({
       },
       contact: { phone: formData.phone.trim(), ownerName: formData.ownerName.trim() },
       notes: formData.notes.trim(),
+      agentNotes: formData.agentNotes?.trim() || '',
       interest: formData.interest,
       meeting: {
         requested: formData.meetingRequested,
@@ -514,6 +580,12 @@ export default function CreateLeadPage({
                 <input type="text" placeholder="e.g. Main Road, Swargashram"
                   className={inputClass} value={formData.address}
                   onChange={(e) => handleChange('address', e.target.value)} />
+              </div>
+              <div>
+                <label className={labelClass}>Google Map Profile / URL</label>
+                <input type="url" placeholder="e.g. https://maps.app.goo.gl/... or Google Maps link"
+                  className={inputClass} value={formData.googleMapsUrl || ''}
+                  onChange={(e) => handleChange('googleMapsUrl', e.target.value)} />
               </div>
               <div>
                 <label className={labelClass}>City <span className="text-[#EF4444]">*</span></label>
@@ -759,7 +831,49 @@ export default function CreateLeadPage({
             )}
           </div>
 
-          {/* SECTION 7: Image Upload (Icon Removed) */}
+          {/* SECTION 5: Discussion Notes (For Field Agent) */}
+          <div className="space-y-2 pb-5 border-b border-[#E2E8F0]">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs sm:text-sm font-extrabold text-[#0F172A] block">
+                5. Discussion Notes (For Field Agent)
+              </span>
+
+              {/* Speech-to-Text Voice Dictation Mic Button */}
+              <button
+                type="button"
+                onClick={toggleAgentNotesVoiceDictation}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold transition-all cursor-pointer border ${
+                  isListeningAgentNotes
+                    ? 'bg-red-500 text-white border-red-500 animate-pulse'
+                    : 'bg-[#0A4DA6]/10 text-[#0A4DA6] border-[#0A4DA6]/30 hover:bg-[#0A4DA6]/20'
+                }`}
+                title={isListeningAgentNotes ? 'Click to stop voice recording' : 'Click to speak and dictate notes'}
+              >
+                {isListeningAgentNotes ? (
+                  <>
+                    <MicOff size={13} />
+                    <span>Listening...</span>
+                  </>
+                ) : (
+                  <>
+                    <Mic size={13} />
+                    <span>Speech to Text</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            <textarea rows={3}
+              placeholder={isListeningAgentNotes ? "Listening to your voice... Speak now!" : "Type discussion notes for field agent or click Speech to Text to dictate..."}
+              className={`w-full px-3.5 py-2.5 bg-[#F8FAFC] border rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/20 focus:border-[#0A4DA6] transition-all placeholder:text-[#94A3B8] min-h-[80px] ${
+                isListeningAgentNotes ? 'border-red-400 bg-red-50/20' : 'border-[#E2E8F0]'
+              }`}
+              value={formData.agentNotes || ''}
+              onChange={(e) => handleChange('agentNotes', e.target.value)}
+            />
+          </div>
+
+          {/* SECTION 6: Image Upload (Icon Removed) */}
           <div className="space-y-3 pb-2">
             <span className="text-xs sm:text-sm font-extrabold text-[#0F172A] flex items-center justify-between gap-1.5">
               <span>6. Ashram Attachments</span>

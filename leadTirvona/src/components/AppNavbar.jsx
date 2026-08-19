@@ -48,11 +48,13 @@ export default function AppNavbar({
     setMobileMenuOpen(false);
   };
 
-  // Authenticate, then immediately open the Attendance geotag popup. Errors
-  // are thrown back to the modal, which is where they are shown.
+  // Authenticate, then immediately open the Attendance geotag popup only for field agents.
+  // Errors are thrown back to the modal, which is where they are shown.
   const handleLoginSuccess = async (phone, password, remember) => {
     const signedIn = await onLogin(phone, password, remember);
-    setIsAttendanceModalOpen(true);
+    if (signedIn && signedIn.role === 'field_agent') {
+      setIsAttendanceModalOpen(true);
+    }
     return signedIn;
   };
 
@@ -154,17 +156,19 @@ export default function AppNavbar({
                     </button>
                   )}
 
-                  <button
-                    onClick={() => setIsAttendanceModalOpen(true)}
-                    className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 text-xs font-semibold text-[#0B192C] hover:text-[#0A4DA6] hover:bg-slate-50 border border-gray-200 rounded-full transition-colors cursor-pointer shadow-2xs"
-                    title={t('Attendance')}
-                  >
-                    <MapPin size={13} className="text-[#0A4DA6]" />
-                    <span>{t('Attendance')}</span>
-                    {attendanceState?.checkedIn && (
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                    )}
-                  </button>
+                  {user.role === 'field_agent' && (
+                    <button
+                      onClick={() => setIsAttendanceModalOpen(true)}
+                      className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 text-xs font-semibold text-[#0B192C] hover:text-[#0A4DA6] hover:bg-slate-50 border border-gray-200 rounded-full transition-colors cursor-pointer shadow-2xs"
+                      title={t('Attendance')}
+                    >
+                      <MapPin size={13} className="text-[#0A4DA6]" />
+                      <span>{t('Attendance')}</span>
+                      {attendanceState?.checkedIn && (
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      )}
+                    </button>
+                  )}
 
                   <button
                     onClick={handleLogout}
@@ -263,16 +267,18 @@ export default function AppNavbar({
               <div className="pt-2 border-t border-gray-100 mt-1 space-y-2">
                 {user ? (
                   <>
-                    <button
-                      onClick={() => {
-                        setMobileMenuOpen(false);
-                        setIsAttendanceModalOpen(true);
-                      }}
-                      className="w-full flex items-center justify-center gap-2 p-2.5 rounded-xl border border-gray-200 text-xs font-bold text-[#0B192C] hover:bg-slate-50"
-                    >
-                      <MapPin size={14} className="text-[#0A4DA6]" />
-                      <span>Attendance Check-In</span>
-                    </button>
+                    {user.role === 'field_agent' && (
+                      <button
+                        onClick={() => {
+                          setMobileMenuOpen(false);
+                          setIsAttendanceModalOpen(true);
+                        }}
+                        className="w-full flex items-center justify-center gap-2 p-2.5 rounded-xl border border-gray-200 text-xs font-bold text-[#0B192C] hover:bg-slate-50"
+                      >
+                        <MapPin size={14} className="text-[#0A4DA6]" />
+                        <span>Attendance Check-In</span>
+                      </button>
+                    )}
                     <button
                       onClick={handleLogout}
                       className="w-full flex items-center justify-center gap-2 p-2 rounded-xl border border-red-200 text-xs font-bold text-red-600 bg-red-50"

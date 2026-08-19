@@ -59,6 +59,7 @@ export interface LeadRecord {
   name: string;
   location: {
     address: string;
+    googleMapsUrl?: string;
     city: string;
     district: string;
     state: string;
@@ -73,6 +74,7 @@ export interface LeadRecord {
   };
   contact: { ownerName: string; phone: string };
   notes: string;
+  agentNotes?: string;
   interest: string;
   meeting: { requested: boolean; time: string; mode: string };
   images: string[];

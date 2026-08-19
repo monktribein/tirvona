@@ -17,7 +17,7 @@ export default function App() {
   const { agent, checking, isSignedIn, login, logout } = useLeadAuth();
   // The session drives the data source: signed in reads the API, signed out
   // falls back to the local demo set.
-  const { leads, approvedAshrams, toast, addLead, approveLead, removeLead } =
+  const { leads, approvedAshrams, toast, addLead, approveLead, removeLead, updateAppointment } =
     useLeadStorage(isSignedIn);
 
   const handlePageChange = (page) => {
@@ -146,12 +146,13 @@ export default function App() {
           <LeadsDashboardPage
             leads={leads}
             onApproveLead={approveLead}
-            onDeleteLead={removeLead}
+            onDeleteLead={agent?.role === 'field_supervisor' ? removeLead : null}
             onNavigateCreate={() => handlePageChange('create')}
             onEditLead={(lead) => {
               setEditingLeadData(lead);
               handlePageChange('create');
             }}
+            onUpdateAppointment={updateAppointment}
           />
         ) : activePage === 'approved' ? (
           <ApprovedAshramsPage
