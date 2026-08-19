@@ -10,6 +10,8 @@ import ApprovedAshramsPage from './pages/ApprovedAshramsPage';
 import SupervisorDashboard from './pages/SupervisorDashboard';
 import { useLeadStorage } from './hooks/useLeadStorage';
 import { useLeadAuth } from './hooks/useLeadAuth';
+import { leadApi } from './services/leadApi';
+import { toApiLead } from './utils/leadPayload';
 
 export default function App() {
   const [activePage, setActivePage] = useState('create');
@@ -17,8 +19,17 @@ export default function App() {
   const { agent, checking, isSignedIn, login, logout } = useLeadAuth();
   // The session drives the data source: signed in reads the API, signed out
   // falls back to the local demo set.
-  const { leads, approvedAshrams, toast, addLead, approveLead, removeLead, updateAppointment } =
-    useLeadStorage(isSignedIn);
+  const {
+    leads,
+    approvedAshrams,
+    toast,
+    showToast,
+    addLead,
+    approveLead,
+    removeLead,
+    updateAppointment,
+    refreshAll
+  } = useLeadStorage(isSignedIn);
 
   const handlePageChange = (page) => {
     if (page !== 'create') {
@@ -54,15 +65,16 @@ export default function App() {
   const handleSaveLead = async (leadPayload, leadId = null) => {
     if (leadId) {
       try {
-        await leadApi.updateLead(leadId, leadPayload);
-        if (toast?.message) {
-          // hook toast
-        }
+        const apiPayload = toApiLead(leadPayload);
+        await leadApi.updateLead(leadId, apiPayload);
+        await refreshAll();
+        showToast('Lead verification and details updated!');
         setSupervisorMode('console');
         setEditingLeadData(null);
         return true;
       } catch (err) {
-        console.error(err);
+        console.error('Failed to update lead:', err);
+        showToast(err?.message || 'Failed to update lead', 'error');
         return null;
       }
     }
@@ -125,6 +137,7 @@ export default function App() {
           </div>
         ) : activePage === 'create' ? (
           <CreateLeadPage
+            agentRole={agent?.role}
             onSubmitLead={handleSaveLead}
             onSuccessNavigate={() => {
               setEditingLeadData(null);
@@ -144,6 +157,7 @@ export default function App() {
           />
         ) : activePage === 'dashboard' ? (
           <LeadsDashboardPage
+            agentRole={agent?.role}
             leads={leads}
             onApproveLead={approveLead}
             onDeleteLead={agent?.role === 'field_supervisor' ? removeLead : null}
@@ -152,7 +166,7 @@ export default function App() {
               setEditingLeadData(lead);
               handlePageChange('create');
             }}
-            onUpdateAppointment={updateAppointment}
+            onUpdateAppointment={agent?.role !== 'field_agent' ? updateAppointment : null}
           />
         ) : activePage === 'approved' ? (
           <ApprovedAshramsPage

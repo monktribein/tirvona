@@ -12,6 +12,7 @@ export interface AuthenticatedLeadUser {
   region: string;
   state: string;
   district: string;
+  employeeCode?: string;
 }
 
 /** Payload carried by a lead-scope JWT. */
@@ -85,6 +86,12 @@ export interface LeadRecord {
   assignedAgentId?: Types.ObjectId | null;
   assignedAgentName?: string;
   assignedAgentCode?: string;
+  fieldVerified?: boolean;
+  fieldVerifiedAt?: Date | null;
+  fieldVerifiedByName?: string;
+  fieldVerifiedById?: Types.ObjectId | null;
+  lastUpdatedByName?: string;
+  lastUpdatedByRole?: string;
   reviewedByAdminId: string;
   reviewedByAdminName: string;
   reviewedAt: Date | null;

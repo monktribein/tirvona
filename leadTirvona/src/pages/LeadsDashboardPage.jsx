@@ -4,6 +4,7 @@ import LeadCard from '../components/LeadCard';
 import AppointmentModal from '../components/AppointmentModal';
 
 export default function LeadsDashboardPage({
+  agentRole = null,
   leads,
   onApproveLead,
   onDeleteLead,
@@ -50,17 +51,17 @@ export default function LeadsDashboardPage({
           className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 sm:px-6 min-h-[44px] bg-[#0A4DA6] hover:bg-[#083D85] text-white font-extrabold rounded-full text-xs sm:text-sm shadow-sm transition-all cursor-pointer shrink-0"
         >
           <PlusCircle size={16} />
-          New Lead Entry
+          {agentRole === 'field_agent' ? 'Update Lead' : 'New Lead Entry'}
         </button>
       </div>
 
-      {/* Stats Summary Cards — 4 Cards (Submitted, Pending, Approved, Appointments) */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+      {/* Stats Summary Cards */}
+      <div className={`grid gap-3 sm:gap-4 ${onUpdateAppointment ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-1 sm:grid-cols-3'}`}>
         {[
           { label: 'Total Submitted',      value: leads.length },
           { label: 'Pending Approval',     value: pendingCount },
           { label: 'Approved & Converted', value: approvedCount },
-          { label: 'Total Appointments',   value: appointmentCount },
+          ...(onUpdateAppointment ? [{ label: 'Total Appointments', value: appointmentCount }] : []),
         ].map((stat) => (
           <div key={stat.label} className="bg-white border border-[#E2E8F0] rounded-2xl p-4 shadow-xs flex items-center justify-between">
             <div>
@@ -84,28 +85,30 @@ export default function LeadsDashboardPage({
           />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-4 pt-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* Status Filter */}
           <div className="flex items-center gap-2">
-            <Filter size={14} className="text-[#64748B] shrink-0" />
+            <Filter size={15} className="text-[#64748B] shrink-0" />
             <select
-              className={inputClass}
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
+              className={inputClass}
             >
-              <option value="ALL">All Statuses</option>
-              <option value="pending">Pending Approval</option>
-              <option value="approved">Approved</option>
+              <option value="ALL">All Statuses ({leads.length})</option>
+              <option value="pending">Pending Approval ({pendingCount})</option>
+              <option value="approved">Approved / Converted ({approvedCount})</option>
             </select>
           </div>
 
+          {/* Interest Filter */}
           <div className="flex items-center gap-2">
-            <Filter size={14} className="text-[#64748B] shrink-0" />
+            <Filter size={15} className="text-[#64748B] shrink-0" />
             <select
-              className={inputClass}
               value={interestFilter}
               onChange={(e) => setInterestFilter(e.target.value)}
+              className={inputClass}
             >
-              <option value="ALL">All Interest Levels</option>
+              <option value="ALL">All Owner Sentiment</option>
               <option value="Interested">Interested</option>
               <option value="Not Interested">Not Interested</option>
               <option value="Follow-up Required">Follow-up Required</option>
@@ -114,14 +117,10 @@ export default function LeadsDashboardPage({
         </div>
       </div>
 
-      {/* Leads Count Header */}
-      {filtered.length > 0 && (
-        <div className="flex items-center justify-between pt-2 px-1">
-          <span className="text-xs font-extrabold text-[#64748B] uppercase tracking-wider">
-            Showing {filtered.length} Lead Record(s)
-          </span>
-        </div>
-      )}
+      {/* Record Counter Banner */}
+      <div className="text-[11px] font-extrabold uppercase tracking-wider text-[#64748B] px-1">
+        Showing {filtered.length} Lead Record(s)
+      </div>
 
       {/* Lead Cards — Vertical List */}
       {filtered.length > 0 ? (
@@ -133,7 +132,7 @@ export default function LeadsDashboardPage({
               onApprove={onApproveLead}
               onDelete={onDeleteLead}
               onEdit={onEditLead}
-              onBookAppointment={(l) => setSelectedLeadForAppointment(l)}
+              onBookAppointment={onUpdateAppointment ? (l) => setSelectedLeadForAppointment(l) : null}
             />
           ))}
         </div>

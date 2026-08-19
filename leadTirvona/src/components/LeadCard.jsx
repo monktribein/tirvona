@@ -34,6 +34,16 @@ export default function LeadCard({ lead, onApprove, onDelete, onEdit, onBookAppo
             <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${lead.status === 'approved' ? 'bg-emerald-500' : 'bg-[#0A4DA6]'}`} />
             <span>{lead.status === 'approved' ? 'Approved' : 'Pending Review'}</span>
           </span>
+
+          {lead.fieldVerified ? (
+            <span className="shrink-0 text-[10px] font-bold tracking-wide px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 inline-flex items-center gap-1">
+              <span>✓ Field Verified ({lead.fieldVerifiedByName || lead.assignedAgentName || 'Agent'})</span>
+            </span>
+          ) : lead.assignedAgentName ? (
+            <span className="shrink-0 text-[10px] font-bold tracking-wide px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 inline-flex items-center gap-1">
+              <span>Assigned: {lead.assignedAgentName}</span>
+            </span>
+          ) : null}
         </div>
         {(lead.location?.city || lead.location?.state) && (
           <p className="text-[11px] text-[#64748B] flex items-center gap-1 mt-0.5 truncate">
@@ -60,21 +70,23 @@ export default function LeadCard({ lead, onApprove, onDelete, onEdit, onBookAppo
         )}
 
         <div className="flex items-center gap-1 shrink-0 ml-auto sm:ml-0">
-          {/* Book Appointment Button */}
-          <button
-            onClick={() => onBookAppointment && onBookAppointment(lead)}
-            className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full text-[11px] sm:text-xs font-bold transition-all shadow-2xs cursor-pointer ${
-              lead.meeting?.requested && lead.meeting?.time
-                ? 'bg-[#0A4DA6] text-white border border-[#0A4DA6] hover:bg-[#083D85]'
-                : 'bg-[#0A4DA6]/10 text-[#0A4DA6] border border-[#0A4DA6]/20 hover:bg-[#0A4DA6] hover:text-white'
-            }`}
-            title={lead.meeting?.requested && lead.meeting?.time ? `Appointment: ${lead.meeting.time} (${lead.meeting.mode || 'In-person'})` : 'Book an Appointment'}
-          >
-            <Calendar size={12} className={lead.meeting?.requested && lead.meeting?.time ? 'text-white' : 'text-[#0A4DA6]'} />
-            <span className="whitespace-nowrap">
-              {lead.meeting?.requested && lead.meeting?.time ? 'Appointment Set' : 'Book Appointment'}
-            </span>
-          </button>
+          {/* Book Appointment Button (Hidden for Field Agent) */}
+          {onBookAppointment && (
+            <button
+              onClick={() => onBookAppointment(lead)}
+              className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full text-[11px] sm:text-xs font-bold transition-all shadow-2xs cursor-pointer ${
+                lead.meeting?.requested && lead.meeting?.time
+                  ? 'bg-[#0A4DA6] text-white border border-[#0A4DA6] hover:bg-[#083D85]'
+                  : 'bg-[#0A4DA6]/10 text-[#0A4DA6] border border-[#0A4DA6]/20 hover:bg-[#0A4DA6] hover:text-white'
+              }`}
+              title={lead.meeting?.requested && lead.meeting?.time ? `Appointment: ${lead.meeting.time} (${lead.meeting.mode || 'In-person'})` : 'Book an Appointment'}
+            >
+              <Calendar size={12} className={lead.meeting?.requested && lead.meeting?.time ? 'text-white' : 'text-[#0A4DA6]'} />
+              <span className="whitespace-nowrap">
+                {lead.meeting?.requested && lead.meeting?.time ? 'Appointment Set' : 'Book Appointment'}
+              </span>
+            </button>
+          )}
 
           {/* Phone Call */}
           {cleanPhone && (
