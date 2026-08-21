@@ -24,16 +24,6 @@ import {
 } from "lucide-react";
 import { EnterprisePageHeader } from "../../shared";
 
-/**
- * Chart ink, as CSS custom properties.
- *
- * Series hues are slots 1 and 2 of the validated categorical palette, stepped
- * separately for each surface (white in light, #0B192C in dark) rather than
- * flipped automatically. Both sets clear the lightness band, chroma floor,
- * CVD separation and normal-vision floor against the surface they actually
- * render on. Grid and axis are hairline chrome, deliberately one shade off the
- * surface so they never compete with the data.
- */
 const VIZ_TOKENS = `
 .tv-viz {
   --viz-series-1: #2a78d6;
@@ -71,11 +61,6 @@ interface SeriesPoint {
 
 type Metric = "gross" | "revenue" | "bookings";
 
-/**
- * How each metric reads a point. Booked value is the default because it is the
- * activity signal: a stay settled at the counter carries no `amountPaid` at
- * all, so a collected-only chart flatlines on a platform that is working fine.
- */
 const METRIC: Record<
   Metric,
   {
@@ -158,7 +143,6 @@ const RANGE_LABEL: Record<Range, string> = {
   yearly: "last 5 years",
 };
 
-/** Round a maximum up to a readable axis ceiling (1, 2, 5 × a power of ten). */
 const niceCeiling = (value: number): number => {
   if (!Number.isFinite(value) || value <= 0) return 1;
   const magnitude = 10 ** Math.floor(Math.log10(value));
@@ -196,10 +180,6 @@ const EmptyState: React.FC<{ message: string; hint?: string }> = ({
   </div>
 );
 
-// ── Booking / revenue trend ─────────────────────────────────────────────────
-// Two series on ONE axis: a booking paid through the gateway vs one settled at
-// the counter. The metric toggle swaps what the single axis measures — never
-// two scales on one plot.
 const TrendChart: React.FC<{
   series: SeriesPoint[];
   metric: Metric;
@@ -235,7 +215,6 @@ const TrendChart: React.FC<{
   const formatValue = (value: number) =>
     spec.money ? formatCurrency(value) : formatIndianNumber(value);
 
-  // Only every nth label is drawn so ticks never overlap on a 14-point axis.
   const labelStride = Math.ceil(series.length / 7);
 
   return (
@@ -273,7 +252,6 @@ const TrendChart: React.FC<{
           </linearGradient>
         </defs>
 
-        {/* Solid hairline grid — never dashed. */}
         {ticks.map((t) => {
           const y = padTop + plotH - t * plotH;
           return (
@@ -321,7 +299,6 @@ const TrendChart: React.FC<{
           strokeLinejoin="round"
         />
 
-        {/* x-axis labels */}
         {series.map((point, i) =>
           i % labelStride === 0 || i === series.length - 1 ? (
             <text
@@ -337,7 +314,6 @@ const TrendChart: React.FC<{
           ) : null,
         )}
 
-        {/* Crosshair for the hovered bucket */}
         {hovered !== null && (
           <line
             x1={xAt(hovered)}
@@ -349,8 +325,6 @@ const TrendChart: React.FC<{
           />
         )}
 
-        {/* Endpoint markers, direct-labelled so the latest value is readable
-            without hovering. 8px across with a 2px surface ring. */}
         {series.length > 0 &&
           (
             [
@@ -372,7 +346,6 @@ const TrendChart: React.FC<{
             );
           })}
 
-        {/* Hovered points sit above the crosshair. */}
         {hovered !== null &&
           (
             [
@@ -391,7 +364,6 @@ const TrendChart: React.FC<{
             />
           ))}
 
-        {/* Full-height hit columns: the target is the whole band, not the dot. */}
         {series.map((point, i) => (
           <rect
             key={point.bucket}
@@ -446,7 +418,6 @@ const TrendChart: React.FC<{
   );
 };
 
-/** The WCAG-clean twin of the trend chart — every plotted value, as text. */
 const TrendTable: React.FC<{
   series: SeriesPoint[];
   metric: Metric;
@@ -484,9 +455,6 @@ const TrendTable: React.FC<{
   );
 };
 
-// ── Channel split ───────────────────────────────────────────────────────────
-// Two categories is a stacked bar, not a donut: a two-slice pie asks the reader
-// to compare arcs when a single length does it exactly.
 const ChannelSplit: React.FC<{ channels: Overview["channels"] }> = ({
   channels,
 }) => {
@@ -501,7 +469,6 @@ const ChannelSplit: React.FC<{ channels: Overview["channels"] }> = ({
 
   return (
     <div className="space-y-3">
-      {/* 2px surface gap between segments rather than a border. */}
       <div className="flex w-full h-9 rounded-lg overflow-hidden gap-[2px]">
         {channels
           .filter((c) => c.count > 0)
@@ -553,9 +520,6 @@ const ChannelSplit: React.FC<{ channels: Overview["channels"] }> = ({
   );
 };
 
-// ── Ranked horizontal bars ──────────────────────────────────────────────────
-// One series, so every bar takes slot 1 — bar length already encodes magnitude
-// and a value-ramp would spend the identity channel re-saying it.
 const RankedBars: React.FC<{
   rows: { key: string; label: string; sub?: string; value: number }[];
   format: (value: number) => string;
@@ -591,7 +555,6 @@ const RankedBars: React.FC<{
   );
 };
 
-/** Single-series mini area — no axis, no labels; the stat tile carries both. */
 const Sparkline: React.FC<{ values: number[] }> = ({ values }) => {
   if (values.length < 2 || values.every((v) => v === 0))
     return <div className="h-10" />;
@@ -750,7 +713,6 @@ export const AdminDashboard: React.FC = () => {
 
   useEffect(() => {
     load(range, overview === null);
-    // `overview` is read only to choose the loading style, not to re-trigger.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [range, load]);
 
@@ -830,7 +792,6 @@ export const AdminDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Enterprise Page Header */}
       <EnterprisePageHeader
         title="Executive Dashboard"
         subtitle={`Live platform telemetry for ${user?.name || "Super Admin"} · ${RANGE_LABEL[range]}`}
@@ -864,11 +825,9 @@ export const AdminDashboard: React.FC = () => {
         }
       />
 
-      {/* Hold the previous render at reduced opacity while refetching. */}
       <div
         className={`space-y-6 transition-opacity ${refreshing ? "opacity-60" : "opacity-100"}`}
       >
-        {/* ── ROW 1: trend + channel/status ── */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           <div className="lg:col-span-8 bg-white dark:bg-[#0B192C] rounded-2xl border border-gray-200 dark:border-slate-800 p-6 shadow-sm space-y-5">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -885,9 +844,6 @@ export const AdminDashboard: React.FC = () => {
                     comparable={overview?.trend.comparable ?? false}
                   />
                 </div>
-                {/* Booked value sits beside collected cash: a platform whose
-                    stays are settled at the counter reads as zero revenue
-                    otherwise, which is true but useless on its own. */}
                 <div className="text-xs text-gray-500 font-medium">
                   of{" "}
                   <strong className="text-[#0B192C] dark:text-white font-black">
@@ -908,7 +864,6 @@ export const AdminDashboard: React.FC = () => {
               </div>
 
               <div className="flex flex-col items-end gap-2">
-                {/* Legend — always present for two series. */}
                 <div className="flex gap-4 text-xs font-semibold">
                   <span className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300">
                     <span
@@ -997,9 +952,6 @@ export const AdminDashboard: React.FC = () => {
               <ChannelSplit channels={overview?.channels ?? []} />
             </div>
 
-            {/* Revenue by stream. The headline figures are the platform
-                total; this is what keeps stays and parking distinguishable —
-                parking used to be missing from the dashboard entirely. */}
             {(overview?.modules ?? []).length > 0 && (
               <div className="bg-white dark:bg-[#0B192C] rounded-2xl border border-gray-200 dark:border-slate-800 p-6 shadow-sm">
                 <h3 className="text-base font-bold text-[#0B192C] dark:text-white tracking-tight mb-4">
@@ -1043,7 +995,6 @@ export const AdminDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* ── ROW 2: stat tiles ── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           <StatTile
             label="Booked value"
@@ -1095,7 +1046,6 @@ export const AdminDashboard: React.FC = () => {
           />
         </div>
 
-        {/* ── ROW 3: recent bookings + top ashrams ── */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           <div className="lg:col-span-7 bg-white dark:bg-[#0B192C] rounded-2xl border border-gray-200 dark:border-slate-800 p-6 shadow-sm space-y-4">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
@@ -1222,7 +1172,6 @@ export const AdminDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* ── ROW 4: audit activity ── */}
         <div className="bg-white dark:bg-[#0B192C] rounded-2xl border border-gray-200 dark:border-slate-800 p-6 shadow-sm space-y-4">
           <div className="flex justify-between items-center border-b border-gray-200 dark:border-slate-800 pb-3">
             <h3 className="text-base font-bold text-[#0B192C] dark:text-white tracking-tight">

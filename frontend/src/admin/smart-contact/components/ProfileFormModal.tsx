@@ -90,7 +90,6 @@ const BLANK: FormState = {
   category: "employee",
 };
 
-/** Mirrors the server's slugify so the preview matches what will be saved. */
 const previewSlug = (value: string): string =>
   value
     .normalize("NFKD")
@@ -99,14 +98,6 @@ const previewSlug = (value: string): string =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 
-/**
- * Create / edit form for a Smart Contact profile (spec §19).
- *
- * The slug gets more prominence than an ordinary field because it is the one
- * value here that is effectively permanent — every printed QR encodes it. On
- * edit it is locked behind an explicit confirmation, which is also what the
- * API requires.
- */
 export const ProfileFormModal: React.FC<{
   profile?: SmartContactProfile;
   onClose: () => void;
@@ -155,9 +146,6 @@ export const ProfileFormModal: React.FC<{
 
     setSaving(true);
     try {
-      // Empty strings are sent as-is so clearing a field actually clears it;
-      // the exception is the slug, which is omitted entirely when locked so
-      // the server never sees an attempted change.
       const payload: Record<string, unknown> = { ...form };
       if (slugLocked) delete payload.slug;
       else payload.slug = derivedSlug;
@@ -282,11 +270,6 @@ export const ProfileFormModal: React.FC<{
           )}
 
           <Field label="Photograph">
-            {/*
-              Reuses the platform's existing uploader, so this module never
-              handles file bytes — the Cloudinary pipeline that already does
-              validation and transformation stays the only upload path.
-            */}
             <FileUploader
               folder="smart-contact/photos"
               currentUrl={form.photoUrl}

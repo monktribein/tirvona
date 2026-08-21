@@ -20,17 +20,6 @@ import { getErrorMessage } from "../../../lib/api";
 import { parkingAdminService } from "../../../modules/parking/services/parking.service";
 import { formatCurrency } from "../../../utils/format";
 
-/**
- * Parking Control Center.
- *
- * The generic admin console at /admin/manage/parking_* lists and searches every
- * parking table, but it can only $set fields. The actions here are workflow
- * transitions with side effects the console deliberately cannot express:
- * approving a partner verifies it and un-suspends its locations, suspending one
- * cascades to every location it owns, settling writes a payout batch across many
- * commission rows, and a refund cancels the booking and releases its slot.
- */
-
 type Tab = "overview" | "partners" | "locations" | "commissions";
 
 const TABS: { key: Tab; label: string }[] = [
@@ -91,8 +80,6 @@ export const ParkingControlCenterPage: React.FC = () => {
     setLoading(true);
     setError("");
     try {
-      // Each panel is independent, so one failing endpoint should not blank the
-      // whole page — settle for what resolved and report the rest.
       const [analyticsRes, partnersRes, locationsRes, commissionsRes] =
         await Promise.allSettled([
           parkingAdminService.analytics(),
@@ -104,9 +91,6 @@ export const ParkingControlCenterPage: React.FC = () => {
           }),
         ]);
 
-      // Clear a section that failed instead of leaving its previous response on
-      // screen beside an error — stale rows next to a red banner read as live
-      // data, and name every call that broke rather than only the first.
       setAnalytics(
         analyticsRes.status === "fulfilled"
           ? (analyticsRes.value.data?.data ?? null)
@@ -218,8 +202,6 @@ export const ParkingControlCenterPage: React.FC = () => {
       "Parking Updated",
     );
 
-  // Commission rows are settled per partner, so group the pending ones and show
-  // what a payout would actually release before it is triggered.
   const payoutsByPartner = useMemo(() => {
     const groups = new Map<
       string,

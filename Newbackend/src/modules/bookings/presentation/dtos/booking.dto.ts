@@ -82,6 +82,14 @@ export class UpdateBookingStatusDto {
   @IsOptional() @IsString() note?: string;
 }
 
+export class AdminUpdateBookingDto {
+  @IsOptional() @IsString() @MinLength(1) @MaxLength(50)
+  assignedRoomNumber?: string;
+
+  @IsOptional() @IsString() @MaxLength(1000)
+  specialRequests?: string;
+}
+
 export class ValidatePromoDto {
   @IsString() promoCode: string;
   @Type(() => Number) @IsNumber() @Min(0) bookingAmount: number;
@@ -102,11 +110,6 @@ export class SaveOfferDto {
   discountType: string;
   @Type(() => Number) @IsNumber() @Min(0) discountValue: number;
   @IsString() validTill: string;
-  /**
-   * The single ashram this coupon is redeemable at. Null clears the binding
-   * and makes the coupon platform-wide again — `@IsOptional()` passes both
-   * null and undefined, so the two cases stay distinguishable downstream.
-   */
   @IsOptional() @IsMongoId() ashramId?: string | null;
   @IsOptional()
   @Type(() => Number)
@@ -146,14 +149,6 @@ export class SaveOfferDto {
   status?: string;
 }
 
-/**
- * Editing an offer is a partial write.
- *
- * `SaveOfferDto` demands title, description, code, discount and expiry because
- * creating an offer without them is meaningless. Reusing it for PUT forced the
- * console to resend the entire record to flip one field, so a status toggle
- * failed validation before it reached the service.
- */
 export class UpdateOfferDto extends PartialType(SaveOfferDto) {}
 
 export class UpdateOfferStatusDto {
@@ -163,8 +158,6 @@ export class UpdateOfferStatusDto {
 
 export class ReviewRatingDto {
   @Type(() => Number) @IsNumber() @Min(1) @Max(5) overall: number;
-  // Sub-scores are optional: a visitor leaving a one-line impression should not
-  // have to grade five separate dimensions.
   @IsOptional() @Type(() => Number) @IsNumber() @Min(1) @Max(5)
   cleanliness?: number;
   @IsOptional() @Type(() => Number) @IsNumber() @Min(1) @Max(5)
@@ -175,11 +168,6 @@ export class ReviewRatingDto {
   valueForMoney?: number;
 }
 export class CreateReviewDto {
-  /**
-   * Supplied when the review relates to a specific stay. Omitting it posts an
-   * unverified visitor review; the server decides the `verifiedStay` flag from
-   * the caller's own booking history either way, so it is never client-claimed.
-   */
   @IsOptional() @IsMongoId() bookingId?: string;
   @IsMongoId() ashramId: string;
   @IsObject()

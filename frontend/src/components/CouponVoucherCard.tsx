@@ -27,21 +27,18 @@ export const CouponVoucherCard: React.FC<CouponVoucherCardProps> = ({
   const offerType = offer.offerType || offer.category || "OFFER";
   const promoCode = offer.promoCode || "";
 
-  // Dynamic image
   const imageSrc =
     offer.bannerImage ||
     offer.thumbnailImage ||
     offer.image ||
     "";
 
-  // Location & ashram, shown only when the offer is actually tied to one.
   const targetAshram =
     offer.ashramId || (offer.applicableAshrams && offer.applicableAshrams[0]);
   const city =
     offer.ashramId?.address?.city || targetAshram?.address?.city || "";
   const ashramName = targetAshram?.name || "";
 
-  // Validity text & Expiry check
   const rawValid =
     offer.validUntil || offer.validity || offer.expiryDate || offer.validTill;
   const validityText = rawValid
@@ -70,7 +67,6 @@ export const CouponVoucherCard: React.FC<CouponVoucherCardProps> = ({
         return parsed.getTime() < Date.now();
       }
 
-      // Format like "30 Jun 2026" or "31 Dec 2026"
       const parts = rawValid.trim().split(/\s+/);
       if (parts.length === 3) {
         const day = parseInt(parts[0], 10);
@@ -89,10 +85,7 @@ export const CouponVoucherCard: React.FC<CouponVoucherCardProps> = ({
 
   const isExpired = checkIsExpired();
 
-  // Determine theme: Green for Weekend/Retreat/FixedAmount, Orange for Mahakumbh/Percentage
   const lowerType = offerType.toLowerCase();
-  // "FixedAmount" is the retired spelling; the API's value is "Flat Amount".
-  // Both are matched so legacy rows keep the theme they have always rendered.
   const isFlatDiscount =
     offer.discountType === "Flat Amount" || offer.discountType === "FixedAmount";
   const isGreenTheme =
@@ -145,8 +138,6 @@ export const CouponVoucherCard: React.FC<CouponVoucherCardProps> = ({
           subtext: "ON ALL PACKAGES",
         };
 
-  // Discount formatting. No value means no discount is claimed — the stub
-  // renders its badge without a figure rather than defaulting to "20% OFF".
   const rawDiscount = offer.discountValue ?? offer.discountPercentage;
   const hasDiscount = rawDiscount !== undefined && rawDiscount !== null && rawDiscount !== "";
   const discountValue = rawDiscount;
@@ -182,18 +173,15 @@ export const CouponVoucherCard: React.FC<CouponVoucherCardProps> = ({
           : "w-full max-w-[640px]"
       } ${className}`}
     >
-      {/* 🎟️ LEFT TICKET STUB - ALWAYS ON LEFT IN BOTH MOBILE AND DESKTOP */}
       <div
         className={`relative shrink-0 w-24 xs:w-28 sm:w-32 md:w-36 max-w-[145px] ${theme.stubBg} text-white p-2 sm:p-4 flex flex-col items-center justify-between text-center overflow-hidden border-r-2 border-dashed border-white/30`}
       >
-        {/* Top Pill Badge */}
         <div
           className={`relative z-10 border ${theme.stubPillBorder} px-1.5 sm:px-3 py-0.5 rounded-full text-[8px] sm:text-[10px] md:text-xs font-extrabold text-white tracking-wider backdrop-blur-sm shadow-sm whitespace-nowrap`}
         >
           {offerType}
         </div>
 
-        {/* Big Discount Section */}
         <div className="relative z-10 my-auto space-y-0.5 w-full">
           {hasDiscount ? (
             <>
@@ -238,7 +226,6 @@ export const CouponVoucherCard: React.FC<CouponVoucherCardProps> = ({
           )}
         </div>
 
-        {/* Spiritual Watermark Silhouette at bottom of stub */}
         <div className="relative z-10 opacity-75 mt-0.5 pointer-events-none">
           {isGreenTheme ? (
             <svg
@@ -266,14 +253,11 @@ export const CouponVoucherCard: React.FC<CouponVoucherCardProps> = ({
           )}
         </div>
 
-        {/* ✂️ Circular Ticket Cut-out Notches - strictly at top & bottom of vertical junction */}
         <div className="absolute -top-3 right-0 translate-x-1/2 w-5 sm:w-6 h-5 sm:h-6 rounded-full bg-white dark:bg-slate-950 border border-gray-200 dark:border-slate-800 z-20" />
         <div className="absolute -bottom-3 right-0 translate-x-1/2 w-5 sm:w-6 h-5 sm:h-6 rounded-full bg-white dark:bg-slate-950 border border-gray-200 dark:border-slate-800 z-20" />
       </div>
 
-      {/* 🎟️ RIGHT MAIN TICKET BODY */}
       <div className="relative flex-1 p-3 sm:p-5 md:p-6 flex flex-col justify-between space-y-1.5 sm:space-y-3 bg-[#FAF9F6] dark:bg-[#0B192C] overflow-hidden">
-        {/* Faded Background Image Overlay */}
         {imageSrc ? (
           <div className="absolute right-0 top-0 bottom-0 w-1/2 sm:w-5/12 overflow-hidden pointer-events-none opacity-25 dark:opacity-20">
             <img
@@ -285,7 +269,6 @@ export const CouponVoucherCard: React.FC<CouponVoucherCardProps> = ({
           </div>
         ) : null}
 
-        {/* Floating Top Right Badge */}
         <div
           className={`absolute top-0 right-2 sm:right-5 ${theme.badgeBg} text-white px-2 sm:px-3 py-0.5 sm:py-1 rounded-b-lg sm:rounded-b-xl text-[8px] sm:text-[10px] md:text-xs font-extrabold tracking-wider shadow-sm flex items-center gap-1 z-10`}
         >
@@ -293,10 +276,7 @@ export const CouponVoucherCard: React.FC<CouponVoucherCardProps> = ({
           <span>{theme.badgeText}</span>
         </div>
 
-        {/* Content Container */}
         <div className="relative z-10 space-y-1 sm:space-y-1.5 pr-2 sm:pr-16 pt-0.5 sm:pt-1">
-          {/* Location & Ashram. Omitted entirely for a platform-wide offer that
-            names no ashram — inventing one would misstate where it applies. */}
           {(city || ashramName) && (
             <div className="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-xs md:text-sm font-bold text-gray-700 dark:text-gray-300">
               <MapPin
@@ -315,21 +295,16 @@ export const CouponVoucherCard: React.FC<CouponVoucherCardProps> = ({
             </div>
           )}
 
-          {/* Offer Title */}
           <h3 className="font-black text-xs sm:text-base md:text-xl text-[#0B192C] dark:text-white leading-tight tracking-tight group-hover:text-[#E65100] transition-colors line-clamp-1">
             {offerTitle}
           </h3>
 
-          {/* Description */}
           <p className="text-[10px] sm:text-xs md:text-sm text-gray-600 dark:text-gray-300 leading-relaxed font-medium line-clamp-2">
             {description}
           </p>
         </div>
 
-        {/* Bottom Row: Coupon Code Box (Left) & Book Now CTA with Validity (Right) */}
         <div className="relative z-10 flex flex-wrap sm:flex-nowrap items-center justify-between gap-1.5 sm:gap-3 pt-1.5 sm:pt-2">
-          {/* Coupon Code Box. Never rendered without a real code — offering a
-            fabricated one to copy would fail at checkout. */}
           {promoCode ? (
             <div
               onClick={handleCopy}
@@ -368,7 +343,6 @@ export const CouponVoucherCard: React.FC<CouponVoucherCardProps> = ({
             </div>
           )}
 
-          {/* Right Action: Book Button & Valid Till Subtext */}
           <div className="flex flex-col items-end gap-0.5 sm:gap-1 shrink-0">
             {isExpired ? (
               <button
@@ -395,8 +369,6 @@ export const CouponVoucherCard: React.FC<CouponVoucherCardProps> = ({
               </button>
             )}
 
-            {/* An offer with no expiry on record says so, rather than
-              borrowing a date from another campaign. */}
             <div
               className={`flex items-center gap-0.5 sm:gap-1 text-[8px] sm:text-[10px] md:text-[11px] font-semibold ${
                 isExpired

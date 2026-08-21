@@ -43,15 +43,6 @@ import {
   UpdateSmartContactProfileDto,
 } from "./dtos/smart-contact-profile.dto";
 
-/**
- * The Smart Contact console surface (spec §18–§20, §33, §36).
- *
- * Gated by the platform's own auth, exactly as Lead Collection's admin
- * controller is: these are Tirvona staff using their normal login. The role
- * list is Smart Contact's own vocabulary (spec §36) and `super_admin` passes
- * regardless — `RolesGuard` short-circuits on it — so naming a role here never
- * requires touching the platform's role catalogue.
- */
 @ApiTags("Smart Contact")
 @ApiBearerAuth()
 @Roles(...SMART_CONTACT_ADMIN_ROLES)
@@ -75,13 +66,6 @@ export class SmartContactAdminController {
     return request.ip ?? "";
   }
 
-  // ── Profiles ─────────────────────────────────────────────────────────────
-
-  /**
-   * The console list. Headline counters are joined in from the event log in
-   * one grouped aggregation rather than per row, so the page stays at two
-   * queries regardless of page size.
-   */
   @Get()
   async list(@Query() query: SmartContactProfileQueryDto) {
     const page = await this.profiles.list(query as never);
@@ -123,10 +107,6 @@ export class SmartContactAdminController {
     return { success: true, data: { profile, qrCodes } };
   }
 
-  /**
-   * A preview of the .vcf the public endpoint would serve right now.
-   * Lets an admin confirm a change landed without printing anything.
-   */
   @Get(":id/vcard-preview")
   async vcardPreview(@Param("id") id: string) {
     const profile = await this.profiles.findById(id);
@@ -176,8 +156,6 @@ export class SmartContactAdminController {
     };
   }
 
-  // ── Lifecycle (spec §21, §22) ────────────────────────────────────────────
-
   @Post(":id/activate")
   @HttpCode(200)
   async activate(
@@ -218,13 +196,6 @@ export class SmartContactAdminController {
     };
   }
 
-  /**
-   * Archive, the terminal state — the module's stand-in for delete.
-   *
-   * Spec §22 forbids removing a profile whose cards are in circulation, so
-   * there is no delete endpoint at all. Archiving keeps the URL resolving to
-   * the notice for as long as the printed cards exist.
-   */
   @Post(":id/archive")
   @HttpCode(200)
   async archive(
@@ -244,19 +215,6 @@ export class SmartContactAdminController {
     };
   }
 
-  /**
-   * Permanent bulk deletion — the one route that really removes a profile.
-   *
-   * Archiving is the module's normal end state (spec §22) precisely because a
-   * freed slug stops resolving and any printed QR carrying it dies. That makes
-   * this the wrong tool for a representative who has left and the right one
-   * for clearing drafts and test rows, which archiving only hides. Restricted
-   * to `super_admin`: the wider Smart Contact admin roles can archive, but
-   * nobody below the top role can destroy.
-   *
-   * The response reports how many QR assets were registered against the
-   * selection, so the console can say plainly what was just invalidated.
-   */
   @Post("bulk-delete")
   @Roles("super_admin")
   @HttpCode(200)
@@ -275,8 +233,6 @@ export class SmartContactAdminController {
       data: result,
     };
   }
-
-  // ── QR assets (spec §17, §20) ────────────────────────────────────────────
 
   @Get(":id/qr")
   async listQr(@Param("id") id: string) {
@@ -327,18 +283,6 @@ export class SmartContactAdminController {
     };
   }
 
-  /**
-   * Renders a registered QR asset in one of the three formats (spec §13).
-   *
-   * The format is its own path segment rather than a filename extension:
-   * Express 5's router treats a dot as a literal, and `:qrId.:format` parses
-   * in a way that varies between versions. The downloaded file still gets its
-   * extension from `Content-Disposition`, which is what names it on disk.
-   *
-   * Rendering is pure: it reads `destinationUrl` off the row, which is
-   * immutable, so this endpoint cannot change what a QR points at no matter
-   * how often it is called (spec §20).
-   */
   @Get(":id/qr/:qrId/download/:format")
   async renderRegisteredQr(
     @Param("id") id: string,
@@ -348,9 +292,6 @@ export class SmartContactAdminController {
     @Res() response: Response,
   ): Promise<void> {
     const asset = await this.qrCodes.findOne(id, qrId);
-    // A card layout needs the identity as well as the URL; the plain symbol
-    // does not, so the profile is only read when it is actually going on the
-    // artwork.
     const profile =
       query.layout === "card" ? await this.profiles.findById(id) : null;
     await this.sendQr(
@@ -363,10 +304,6 @@ export class SmartContactAdminController {
     );
   }
 
-  /**
-   * Renders the profile's canonical QR without registering an asset — the
-   * "Preview QR" control in spec §20.
-   */
   @Get(":id/qr-preview/:format")
   async previewQr(
     @Param("id") id: string,
@@ -413,20 +350,15 @@ export class SmartContactAdminController {
       "Content-Disposition",
       `attachment; filename="${filename}.${rendered.extension}"`,
     );
-    // Artwork for a given URL is deterministic, so it is safe to cache — but
-    // privately, since the URL is behind an admin session.
     response.setHeader("Cache-Control", "private, max-age=300");
     response.send(rendered.body);
   }
-
-  // ── Analytics (spec §24–§27) ─────────────────────────────────────────────
 
   @Get(":id/analytics")
   async profileAnalytics(
     @Param("id") id: string,
     @Query() query: SmartContactAnalyticsQueryDto,
   ) {
-    // Resolve first so an unknown id 404s rather than returning empty charts.
     await this.profiles.findById(id);
     return {
       success: true,

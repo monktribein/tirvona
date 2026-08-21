@@ -1,6 +1,3 @@
-/**
- * ImageUploader.jsx — Mobile & Tablet Responsive Photo Attachment Dropzone
- */
 import React, { useState } from 'react';
 import { Upload, X, Loader2, CheckCircle2 } from 'lucide-react';
 import { compressMultipleImages } from '../utils/imageCompressor';
@@ -44,7 +41,6 @@ export default function ImageUploader({ images = [], onChange }) {
   return (
     <div className="bg-white border border-[#E2E8F0] rounded-2xl p-4 sm:p-6 lg:p-7 shadow-xs">
       
-      {/* Section Header (Blue Icon Container Removed) */}
       <div className="flex items-center justify-between pb-4 sm:pb-6 border-b border-[#E2E8F0] mb-4 sm:mb-6">
         <div>
           <h2 className="text-sm sm:text-base font-extrabold text-[#0F172A]">Ashram Photos Attachment</h2>
@@ -69,7 +65,6 @@ export default function ImageUploader({ images = [], onChange }) {
         </div>
       </div>
 
-      {/* Upload Dropzone */}
       <div
         className="flex flex-col items-center justify-center p-6 sm:p-8 border-2 border-dashed border-[#E2E8F0] rounded-xl cursor-pointer hover:border-[#0A4DA6] hover:bg-[#0A4DA6]/5 transition-all text-center mb-4"
         onClick={() => document.getElementById('photo-file-input')?.click()}
@@ -87,7 +82,6 @@ export default function ImageUploader({ images = [], onChange }) {
         />
       </div>
 
-      {/* Uploaded Images Preview Grid */}
       {images.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
           {images.map((src, idx) => (

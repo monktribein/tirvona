@@ -49,13 +49,6 @@ interface ReportBundle {
   popular?: { name: string; bookings: number; revenue: number }[];
 }
 
-/**
- * Parking Partner / Manager operations dashboard.
- *
- * Today's revenue, live occupancy, expected traffic, and the arrival/departure
- * board. Everything shown is already scoped server-side to the facilities the
- * signed-in user is assigned to.
- */
 export const ParkingPartnerDashboardPage: React.FC = () => {
   const [stats, setStats] = useState<ParkingDashboardStats | null>(null);
   const [locations, setLocations] = useState<
@@ -152,7 +145,6 @@ export const ParkingPartnerDashboardPage: React.FC = () => {
         </div>
       )}
 
-      {/* Stat tiles */}
       {stats && (
         <motion.section
           initial={{ opacity: 0, y: 10 }}
@@ -225,7 +217,6 @@ export const ParkingPartnerDashboardPage: React.FC = () => {
       )}
 
       <div className="grid lg:grid-cols-3 gap-5">
-        {/* Arrivals / departures board */}
         <section className="lg:col-span-2 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 space-y-4 shadow-sm">
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <h2 className="font-extrabold text-sm text-[#0B192C] dark:text-white">
@@ -314,9 +305,7 @@ export const ParkingPartnerDashboardPage: React.FC = () => {
           )}
         </section>
 
-        {/* Side column */}
         <div className="space-y-5">
-          {/* Locations */}
           <section className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 space-y-3 shadow-sm">
             <h2 className="inline-flex items-center gap-2 font-extrabold text-sm text-[#0B192C] dark:text-white">
               <Building2 size={15} className="text-[#0A4DA6] stroke-[2.5]" />
@@ -372,7 +361,6 @@ export const ParkingPartnerDashboardPage: React.FC = () => {
             )}
           </section>
 
-          {/* Peak hours */}
           {reports.peakHours && reports.peakHours.length > 0 && (
             <section className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 space-y-3 shadow-sm">
               <h2 className="inline-flex items-center gap-2 font-extrabold text-sm text-[#0B192C] dark:text-white">
@@ -380,8 +368,6 @@ export const ParkingPartnerDashboardPage: React.FC = () => {
                 Peak Hours
               </h2>
 
-              {/* Simple bar chart — no charting library needed for 24 bars, and
-                  it keeps the module free of an extra dependency. */}
               <div
                 className="flex items-end gap-0.5 h-24"
                 role="img"
@@ -410,7 +396,6 @@ export const ParkingPartnerDashboardPage: React.FC = () => {
             </section>
           )}
 
-          {/* Report summary */}
           {reports.revenue && (
             <section className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 space-y-2.5 shadow-sm">
               <h2 className="font-extrabold text-sm text-[#0B192C] dark:text-white">

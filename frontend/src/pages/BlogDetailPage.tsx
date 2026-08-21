@@ -28,25 +28,17 @@ export const BlogDetailPage: React.FC = () => {
   const [hasLiked, setHasLiked] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
 
-  // New comment state
   const [userName, setUserName] = useState("");
   const [commentText, setCommentText] = useState("");
   const [submittingComment, setSubmittingComment] = useState(false);
-  // Which collection this slug resolved to. Comments and likes live on
-  // different endpoints for the two, and posting to the wrong one 404s.
   const [source, setSource] = useState<"blog" | "visitor">("blog");
   const [articleId, setArticleId] = useState("");
-  // Open reply box, keyed by the comment being replied to.
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
 
   const fetchPostDetail = useCallback(async () => {
     setLoading(true);
     try {
-      // A slug belongs to either a platform blog post or a visitor article, so
-      // one of these two lookups is *expected* to 404. `skipToast` keeps that
-      // expected miss from raising "Article or video not found" on a page that
-      // then loads perfectly from the other source.
       const res = await api
         .get(`/blog/posts/${slug}`, { skipToast: true })
         .catch(() => null);
@@ -56,7 +48,6 @@ export const BlogDetailPage: React.FC = () => {
         setData(res.data.data);
         setLikes(res.data.data.post.likes || 0);
       } else {
-        // Fallback to Verified Visitor Article API
         const vRes = await visitorArticleService.getPublicArticleBySlug(slug!);
         if (vRes.data?.success) {
           const va = vRes.data.data.article;
@@ -147,11 +138,6 @@ export const BlogDetailPage: React.FC = () => {
     window.print();
   };
 
-  /**
-   * Posts a comment or a reply against whichever collection this article came
-   * from. The visitor-article endpoint is authenticated (it records who said
-   * it), while platform blog comments are open to anyone.
-   */
   const submitComment = async (text: string, parentId?: string) => {
     const body = text.trim();
     if (!body) return false;
@@ -198,7 +184,6 @@ export const BlogDetailPage: React.FC = () => {
     }
   };
 
-  /** Avatar, name, badges and date — shared by comments and their replies. */
   const renderCommentHeader = (c: any) => (
     <div className="flex justify-between items-center gap-2">
       <div className="flex items-center gap-2 flex-wrap min-w-0">
@@ -225,12 +210,6 @@ export const BlogDetailPage: React.FC = () => {
     </div>
   );
 
-  /**
-   * The slider's photos: the cover first, then the gallery, de-duplicated
-   * (the cover is often repeated as the first gallery entry). Falls back to
-   * the house image only when the article has no photos *and* no video —
-   * a video-only article should not be padded with a stock picture.
-   */
   const heroImages: string[] = (() => {
     const post = data?.post;
     if (!post) return [];
@@ -246,7 +225,6 @@ export const BlogDetailPage: React.FC = () => {
     return post.videoUrl ? [] : ["/blogs/rishikesh_ashram_1785404729056.png"];
   })();
 
-  // Replies count toward the total the heading advertises.
   const totalComments = (data?.comments ?? []).reduce(
     (sum: number, c: any) => sum + 1 + (c.replies?.length ?? 0),
     0,
@@ -368,7 +346,6 @@ export const BlogDetailPage: React.FC = () => {
   return (
     <div className="min-h-screen pb-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-1 sm:pt-3 space-y-8">
-        {/* 1. Centered Header Section (Matching 2nd image UI) */}
         <div className="text-center space-y-3 max-w-4xl mx-auto py-2">
           <div className="flex items-center justify-center gap-2 flex-wrap">
             <span className="px-3.5 py-1 rounded-full bg-blue-50 dark:bg-blue-950/40 text-[#0A4DA6] dark:text-blue-300 border border-blue-100 dark:border-slate-800 text-[11px] font-black tracking-wider flex items-center gap-1.5 shadow-xs">
@@ -418,7 +395,6 @@ export const BlogDetailPage: React.FC = () => {
             </span>
           </p>
 
-          {/* Action Buttons Toolbar */}
           <div className="flex items-center justify-center gap-2 pt-2">
             <button
               onClick={handleLike}
@@ -470,11 +446,7 @@ export const BlogDetailPage: React.FC = () => {
           </div>
         </div>
 
-        {/* 2. Main Hero Image Block (Clean image without dark text overlay) */}
         <div className="space-y-4">
-          {/* Cover plus gallery, auto-advancing. Photo and video are
-              independent, so the slider only appears when there are photos;
-              a video-only article goes straight to the player below. */}
           {heroImages.length > 0 && (
             <AutoImageSlider
               images={heroImages}
@@ -483,7 +455,6 @@ export const BlogDetailPage: React.FC = () => {
             />
           )}
 
-          {/* Uploaded experience video, when the author attached one. */}
           {post.videoUrl && (
             <video
               src={post.videoUrl}
@@ -495,13 +466,9 @@ export const BlogDetailPage: React.FC = () => {
 
         </div>
 
-        {/* 3. Main 2-Column Desktop Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Main Content Area (2 Cols - All inside ONE single container card) */}
           <div className="lg:col-span-2">
-            {/* ONE Single Main Container Card */}
             <div className="bg-white dark:bg-[#0B192C] rounded-[32px] p-6 sm:p-10 border border-gray-100 dark:border-slate-800 shadow-sm space-y-8">
-              {/* Embedded Video Player if post is video or has youtube URL */}
               {(post.contentType === "video" ||
                 post.youtubeUrl ||
                 post.youtubeVideoId) && (
@@ -532,12 +499,10 @@ export const BlogDetailPage: React.FC = () => {
                 </div>
               )}
 
-              {/* Formatted Article Text Content */}
               <div className="space-y-4">
                 {renderFormattedContent(post.content)}
               </div>
 
-              {/* Sample Pull Quote */}
               <div className="my-6 p-6 rounded-2xl bg-blue-50/70 dark:bg-slate-900/80 border-l-4 border-[#0A4DA6] space-y-2">
                 <p className="font-['Kalam'] text-base sm:text-lg font-bold text-[#0A4DA6] dark:text-amber-400">
                   "Every pilgrimage is a sacred inward journey towards peace,
@@ -548,7 +513,6 @@ export const BlogDetailPage: React.FC = () => {
                 </span>
               </div>
 
-              {/* Image Gallery */}
               {post.gallery?.length > 0 && (
                 <div className="space-y-3 pt-2">
                   <h4 className="font-black text-base text-[#0B192C] dark:text-white">
@@ -571,7 +535,6 @@ export const BlogDetailPage: React.FC = () => {
                 </div>
               )}
 
-              {/* Integrated Comments Section */}
               <div className="pt-6 border-t border-gray-100 dark:border-slate-800 space-y-6">
                 <h3 className="font-black text-xl text-[#0B192C] dark:text-white flex items-center gap-2">
                   <MessageSquare size={20} className="text-[#0A4DA6]" />
@@ -580,7 +543,6 @@ export const BlogDetailPage: React.FC = () => {
                   </span>
                 </h3>
 
-                {/* Add Comment Form */}
                 <form
                   onSubmit={handleAddComment}
                   className="space-y-3 p-5 rounded-2xl bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800"
@@ -588,8 +550,6 @@ export const BlogDetailPage: React.FC = () => {
                   <h5 className="font-bold text-xs text-[#0B192C] dark:text-white">
                     Leave a Devotional Comment
                   </h5>
-                  {/* Visitor-article comments are signed by the account that
-                      posts them, so there is no name to type. */}
                   {source === "blog" && (
                     <input
                       type="text"
@@ -620,7 +580,6 @@ export const BlogDetailPage: React.FC = () => {
                   </button>
                 </form>
 
-                {/* Comments List */}
                 <div className="space-y-4">
                   {totalComments === 0 && (
                     <p className="text-xs font-semibold text-gray-400 py-2">
@@ -637,7 +596,6 @@ export const BlogDetailPage: React.FC = () => {
                         {c.comment}
                       </p>
 
-                      {/* Replies, one level deep. */}
                       {c.replies?.length > 0 && (
                         <div className="pl-9 space-y-3 pt-1">
                           {c.replies.map((r: any) => (
@@ -654,8 +612,6 @@ export const BlogDetailPage: React.FC = () => {
                         </div>
                       )}
 
-                      {/* Replying is only wired for visitor articles; platform
-                          blog comments have no threading on the API. */}
                       {source === "visitor" && (
                         <div className="pl-9 pt-1">
                           {replyTo === c._id ? (
@@ -716,9 +672,7 @@ export const BlogDetailPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Right Static Sidebar (Desktop Only - 1 Col) */}
           <div className="space-y-6">
-            {/* Sidebar Author Card with Passport Size Image */}
             <div className="bg-white dark:bg-[#0B192C] rounded-[32px] p-6 border border-gray-100 dark:border-slate-800 shadow-sm space-y-4">
               <div className="pt-2 border-t border-gray-100 dark:border-slate-800 space-y-3">
                 <h5 className="font-black text-xs text-gray-400 tracking-wider">
@@ -758,7 +712,6 @@ export const BlogDetailPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Book Ashram CTA Box */}
               <div className="bg-gradient-to-br from-[#0B192C] to-[#0A4DA6] text-white p-6 rounded-2xl space-y-3 text-center shadow-lg">
                 <Sparkles size={24} className="text-amber-400 mx-auto" />
                 <h5 className="font-black text-sm">Planning a Pilgrimage?</h5>

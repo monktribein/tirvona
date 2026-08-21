@@ -118,7 +118,6 @@ export const VideoDetailPage: React.FC = () => {
   return (
     <div className="min-h-screen pb-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-1 sm:pt-3 space-y-8">
-        {/* 2. Embedded 16:9 Responsive Video Player Container */}
         <div className="relative rounded-[32px] overflow-hidden shadow-2xl bg-black border border-gray-800 aspect-video w-full">
           <iframe
             src={embedUrl}
@@ -129,11 +128,8 @@ export const VideoDetailPage: React.FC = () => {
           />
         </div>
 
-        {/* 3. Main 2-Column Desktop Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Main Content Area (2 Cols) */}
           <div className="lg:col-span-2 space-y-8">
-            {/* Video Header & Meta Details */}
             <div className="bg-white dark:bg-[#0B192C] rounded-[32px] p-6 sm:p-8 border border-gray-100 dark:border-slate-800 shadow-sm space-y-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex flex-wrap items-center gap-2">
@@ -180,7 +176,6 @@ export const VideoDetailPage: React.FC = () => {
                 {post.title}
               </h1>
 
-              {/* Channel & Author Bar */}
               <div className="flex flex-wrap items-center justify-between gap-4 py-4 border-y border-gray-100 dark:border-slate-800">
                 <div className="flex items-center gap-3">
                   <img
@@ -219,12 +214,10 @@ export const VideoDetailPage: React.FC = () => {
                 </button>
               </div>
 
-              {/* Description */}
               <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 leading-relaxed font-medium whitespace-pre-line">
                 {post.content}
               </div>
 
-              {/* Tags */}
               {post.tags?.length > 0 && (
                 <div className="pt-4 border-t border-gray-100 dark:border-slate-800 flex flex-wrap gap-2">
                   {post.tags.map((tag: string, i: number) => (
@@ -239,7 +232,6 @@ export const VideoDetailPage: React.FC = () => {
               )}
             </div>
 
-            {/* Author Profile Card */}
             <div className="bg-white dark:bg-[#0B192C] rounded-[32px] p-6 sm:p-8 border border-gray-100 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row items-center sm:items-start gap-6">
               <img
                 src={
@@ -267,7 +259,6 @@ export const VideoDetailPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Comments Section */}
             <div className="bg-white dark:bg-[#0B192C] rounded-[32px] p-6 sm:p-8 border border-gray-100 dark:border-slate-800 shadow-sm space-y-6">
               <h3 className="font-black text-xl text-[#0B192C] dark:text-white flex items-center gap-2">
                 <MessageSquare size={20} className="text-red-600" />
@@ -302,7 +293,6 @@ export const VideoDetailPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Right Static Sidebar (Desktop Only) */}
           <div className="space-y-6">
             <div className="bg-white dark:bg-[#0B192C] rounded-[32px] p-6 border border-gray-100 dark:border-slate-800 shadow-sm space-y-4">
               <h5 className="font-black text-xs text-gray-400 tracking-wider">
@@ -338,7 +328,6 @@ export const VideoDetailPage: React.FC = () => {
                 ))}
               </div>
 
-              {/* Ashram Booking Banner */}
               <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white p-6 rounded-2xl space-y-3 text-center shadow-lg border border-indigo-500/20">
                 <Sparkles size={24} className="text-amber-400 mx-auto" />
                 <h5 className="font-black text-sm">Experience Sacred Stays</h5>
@@ -356,7 +345,6 @@ export const VideoDetailPage: React.FC = () => {
           </div>
         </div>
 
-        {/* 4. Pre-Footer CTA Banner */}
         <div className="mt-12 bg-gradient-to-r from-[#0B192C] via-[#0A4DA6] to-[#0B192C] text-white rounded-[32px] p-8 sm:p-10 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-6 border border-white/10">
           <div className="space-y-2 text-center md:text-left max-w-2xl">
             <span className="px-3.5 py-1 rounded-full bg-white/10 text-amber-300 text-xs font-black tracking-wider">

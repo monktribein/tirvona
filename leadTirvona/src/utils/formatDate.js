@@ -1,6 +1,3 @@
-/**
- * formatDate.js — Clean Tirvona styling helpers
- */
 
 export const formatDate = (isoString) => {
   if (!isoString) return 'N/A';
@@ -38,9 +35,6 @@ export const buildGoogleMapsUrl = (lat, lng) => {
   return `https://www.google.com/maps?q=${lat},${lng}`;
 };
 
-/**
- * Returns clean Tailwind badge styles matching Tirvona's subtle pill design
- */
 export const getInterestBadgeStyle = (interest) => {
   switch (interest) {
     case 'Interested':

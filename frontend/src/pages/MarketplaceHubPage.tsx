@@ -192,13 +192,6 @@ const ProductCard: React.FC<{
   );
 };
 
-/**
- * Detail view for a picked product.
- *
- * A modal rather than a route because the app has no product-detail page and
- * inventing one would mean touching the router; the record is fetched from the
- * same public endpoint the listing uses, so nothing here is mocked.
- */
 const ProductModal: React.FC<{
   product: Product;
   onClose: () => void;
@@ -216,8 +209,6 @@ const ProductModal: React.FC<{
       .then((res) => {
         if (!cancelled && res.data?.data) setDetail(res.data.data);
       })
-      // The listing row is already a complete product, so a failed refetch just
-      // means the modal shows what the grid had rather than an error.
       .catch(() => undefined)
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -431,11 +422,6 @@ export const MarketplaceHubPage: React.FC = () => {
   const { add: addLineToCart, close: closeCart } = useCart();
   const requestId = useRef(0);
 
-  /**
-   * `displayPrice` is only for the cart's indicative subtotal — checkout
-   * re-prices every line from the catalogue, so a stale figure here can never
-   * become the amount charged.
-   */
   const addToCart = useCallback(
     (product: Product) => {
       addLineToCart({
@@ -502,7 +488,6 @@ export const MarketplaceHubPage: React.FC = () => {
           ...(category ? { category } : {}),
           ...(sortBy !== "featured" ? { sortBy } : {}),
         });
-        // A slower earlier request must not overwrite a newer result.
         if (ticket !== requestId.current) return;
         const rows: Product[] = res.data?.data ?? [];
         setProducts((prev) => (append ? [...prev, ...rows] : rows));
@@ -530,12 +515,6 @@ export const MarketplaceHubPage: React.FC = () => {
   const hasMore = products.length < total;
   const activeFilters = Boolean(search || category);
 
-  /**
-   * Filter options come from the products themselves as well as the category
-   * collection, because that collection is currently empty while products do
-   * carry a `category` value — sourcing it from categories alone left the
-   * dropdown with nothing but "All categories" in it.
-   */
   const categoryOptions = useMemo(() => {
     const seen = new Map<string, string>();
     for (const value of [
@@ -570,7 +549,6 @@ export const MarketplaceHubPage: React.FC = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 space-y-6">
-        {/* One filter row above everything it scopes. */}
         <div className="flex flex-col lg:flex-row lg:items-center gap-3">
           <div className="relative flex-1">
             <Search
@@ -666,8 +644,6 @@ export const MarketplaceHubPage: React.FC = () => {
             </button>
           </div>
         ) : products.length === 0 ? (
-          // An empty catalogue is the original "coming soon" state, kept for
-          // the genuinely-empty case instead of being shown unconditionally.
           <div className="text-center py-10 space-y-6">
             {activeFilters ? (
               <>

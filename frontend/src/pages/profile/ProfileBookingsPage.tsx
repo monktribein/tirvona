@@ -56,12 +56,6 @@ const FALLBACK_IMAGE: Record<string, string> = {
     "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E",
 };
 
-/**
- * The visitor's bookings across every engine on the platform.
- *
- * Replaces the previous hardcoded sample list: stays and parking are now both
- * fetched live, merged, and split across the three tabs by real status.
- */
 export const ProfileBookingsPage: React.FC = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -90,7 +84,6 @@ export const ProfileBookingsPage: React.FC = () => {
     [bookings, activeTab, kindFilter],
   );
 
-  /** Cancel through whichever engine owns the booking. */
   const handleCancel = async (booking: UnifiedBooking) => {
     if (cancellingId) return;
     const ok = await confirmAction({
@@ -128,7 +121,6 @@ export const ProfileBookingsPage: React.FC = () => {
     }
   };
 
-  // Signed out — the list is per-account, so there is nothing to show.
   if (!authLoading && !user) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
@@ -158,7 +150,6 @@ export const ProfileBookingsPage: React.FC = () => {
   return (
     <div className="min-h-screen pb-24 text-left">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-1 sm:pt-3 space-y-5">
-        {/* Tabs — counts are live */}
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-full p-2 shadow-lg flex items-center justify-center gap-1 sm:gap-2 max-w-lg mx-auto text-[11px] sm:text-xs font-extrabold">
           {TABS.map((tab) => (
             <button
@@ -175,7 +166,6 @@ export const ProfileBookingsPage: React.FC = () => {
           ))}
         </div>
 
-        {/* Type filter — only worth showing once both kinds exist */}
         {counts.stays > 0 && counts.parking > 0 && (
           <div className="flex items-center justify-center gap-1.5">
             {(
@@ -216,7 +206,6 @@ export const ProfileBookingsPage: React.FC = () => {
           </div>
         )}
 
-        {/* One engine down — say so rather than silently under-reporting. */}
         {partialFailures.length > 0 && (
           <div className="flex items-start gap-2.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/40 text-amber-800 dark:text-amber-300 rounded-2xl px-4 py-3">
             <AlertCircle size={15} className="shrink-0 mt-0.5" />
@@ -233,7 +222,6 @@ export const ProfileBookingsPage: React.FC = () => {
           </div>
         )}
 
-        {/* List */}
         {loading ? (
           <div className="space-y-4">
             {Array.from({ length: 3 }).map((_, i) => (
@@ -351,7 +339,6 @@ export const ProfileBookingsPage: React.FC = () => {
                       {b.meta ? ` • ${b.meta}` : ""}
                     </p>
 
-                    {/* The desk code & assigned room number */}
                     <div className="flex flex-wrap items-center gap-2 mt-1.5">
                       {b.checkInCode && (
                         <p className="inline-flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 px-2.5 py-1 rounded-full text-[10px] font-black">
@@ -490,7 +477,6 @@ export const ProfileBookingsPage: React.FC = () => {
           </div>
         )}
 
-        {/* Printable Booking Receipt Modal */}
         {selectedReceipt && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
             <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] max-w-md w-full p-6 space-y-4 shadow-2xl relative text-left">

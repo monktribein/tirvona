@@ -46,7 +46,6 @@ export const VolunteerJobDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Application Modal State
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
   const [applicantName, setApplicantName] = useState("");
   const [email, setEmail] = useState("");
@@ -68,7 +67,6 @@ export const VolunteerJobDetailPage: React.FC = () => {
     }
   }, [jobId]);
 
-  // Profile Auto-Fill hook integration
   useEffect(() => {
     if (autoFill.isLoggedIn) {
       if (autoFill.name && !applicantName) setApplicantName(autoFill.name);
@@ -295,17 +293,8 @@ export const VolunteerJobDetailPage: React.FC = () => {
   return (
     <div className="min-h-screen pb-24 pt-4 text-left sm:pt-6">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-        {/* Back Link */}
-        {/* <Link
-          to="/volunteer"
-          className="inline-flex items-center gap-1.5 text-xs font-black text-[#0A4DA6] hover:underline cursor-pointer"
-        >
-          <ChevronLeft size={14} /> View All Opportunities Directory
-        </Link> */}
 
-        {/* Main Job Hero Header Card */}
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 sm:p-8 shadow-lg space-y-6 relative overflow-hidden">
-          {/* <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-[#0A4DA6] via-[#E58C28] to-[#0A4DA6]" /> */}
 
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-3 flex-1">
@@ -351,7 +340,6 @@ export const VolunteerJobDetailPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Apply Action Widget */}
             <div className="bg-gray-50 dark:bg-slate-900/90 border border-gray-200 dark:border-slate-800 rounded-2xl p-5 shrink-0 flex flex-col items-center justify-center space-y-3 text-center md:w-64">
               <div className="text-center">
                 <span className="text-[10px] font-extrabold text-gray-400 block">
@@ -377,7 +365,6 @@ export const VolunteerJobDetailPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Key Specs Quick Grid Bar */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 border-t border-gray-100 dark:border-slate-800 text-xs font-bold text-gray-700 dark:text-gray-200">
             <div className="p-3 bg-gray-50/80 dark:bg-slate-900/60 rounded-2xl border border-gray-100 dark:border-slate-800 flex items-center gap-2.5">
               <HomeIcon size={18} className="text-emerald-500 shrink-0" />
@@ -433,11 +420,8 @@ export const VolunteerJobDetailPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Detailed Sections Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left 2-Column: Responsibilities, Requirements, Benefits */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Overview / About Section */}
             <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-4 shadow-sm">
               <h3 className="text-sm font-extrabold tracking-wider text-[#0A4DA6]">
                 About This Seva Opportunity
@@ -452,7 +436,6 @@ export const VolunteerJobDetailPage: React.FC = () => {
               </p>
             </div>
 
-            {/* Key Responsibilities */}
             {job.responsibilities && job.responsibilities.length > 0 && (
               <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-4 shadow-sm">
                 <h3 className="text-sm font-extrabold tracking-wider text-[#0A4DA6] flex items-center gap-2">
@@ -471,7 +454,6 @@ export const VolunteerJobDetailPage: React.FC = () => {
               </div>
             )}
 
-            {/* Requirements & Eligibility */}
             {job.requirements && job.requirements.length > 0 && (
               <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-4 shadow-sm">
                 <h3 className="text-sm font-extrabold tracking-wider text-[#0A4DA6] flex items-center gap-2">
@@ -491,7 +473,6 @@ export const VolunteerJobDetailPage: React.FC = () => {
               </div>
             )}
 
-            {/* Benefits & Perks */}
             {job.benefits && job.benefits.length > 0 && (
               <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-4 shadow-sm">
                 <h3 className="text-sm font-extrabold tracking-wider text-[#0A4DA6] flex items-center gap-2">
@@ -511,9 +492,7 @@ export const VolunteerJobDetailPage: React.FC = () => {
             )}
           </div>
 
-          {/* Right 1-Column: Ashram Contact & Quick Apply Sidecard */}
           <div className="space-y-6">
-            {/* Apply Sidebox */}
             <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 shadow-sm space-y-5 relative overflow-hidden">
               <div className="absolute top-0 inset-x-0 h-1 bg-[#0A4DA6]" />
               <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white flex items-center gap-2">
@@ -556,7 +535,6 @@ export const VolunteerJobDetailPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Ashram Contact & Office Info */}
             <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 shadow-sm space-y-4">
               <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white flex items-center gap-2">
                 <Building2 size={16} className="text-[#0A4DA6]" /> Ashram
@@ -599,7 +577,6 @@ export const VolunteerJobDetailPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Application Form Modal (Direct Single-Job Application) */}
       {isApplyModalOpen && (
         <EnterpriseModal
           isOpen={isApplyModalOpen}

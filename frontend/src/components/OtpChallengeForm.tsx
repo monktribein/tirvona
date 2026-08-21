@@ -2,21 +2,11 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ShieldCheck, ArrowRight, RotateCcw, Loader2 } from "lucide-react";
 import type { OtpChallenge } from "../contexts/AuthContext";
 
-/**
- * Only the display fields are required, so this component serves both the
- * regular OTP challenge and the pre-account Google one (which carries a
- * `googleToken` instead of an `otpToken`).
- */
 type ChallengeView = Pick<OtpChallenge, "channel"> &
   Partial<Pick<OtpChallenge, "sentTo">>;
 
 interface Props {
   challenge: ChallengeView;
-  /**
-   * Fallback destination to display. The server's already-masked
-   * `challenge.sentTo` is preferred when present, since the channel may differ
-   * from what the user typed (e.g. SMS switched off → code emailed instead).
-   */
   destination: string;
   title?: string;
   onVerify: (otp: string) => Promise<{ success: boolean; message?: string }>;
@@ -25,7 +15,6 @@ interface Props {
   onVerified: () => void;
 }
 
-// Masks the destination so a shoulder-surfer cannot read the full address.
 const maskDestination = (value: string) => {
   if (value.includes("@")) {
     const [local, domain] = value.split("@");
@@ -38,11 +27,6 @@ const maskDestination = (value: string) => {
     : value;
 };
 
-/**
- * OTP entry step. Styled with the exact input/button classes already used by the
- * login and register cards so it drops into either without changing the page
- * layout, palette or spacing.
- */
 const OTP_LENGTH = 6;
 
 type Status = "idle" | "verifying" | "success" | "error";
@@ -62,20 +46,16 @@ export const OtpChallengeForm: React.FC<Props> = ({
   const [status, setStatus] = useState<Status>("idle");
   const [cooldown, setCooldown] = useState(30);
   const inputRef = useRef<HTMLInputElement>(null);
-  // Guards against the auto-submit effect firing twice for the same code.
   const submittedRef = useRef("");
 
   const busy = status === "verifying" || status === "success";
 
-  // Resend cooldown mirrors the server-side 30s window.
   useEffect(() => {
     if (cooldown <= 0) return;
     const timer = setTimeout(() => setCooldown((c) => c - 1), 1000);
     return () => clearTimeout(timer);
   }, [cooldown]);
 
-  // Focus the field as soon as the step appears, so the code can be typed or
-  // pasted (or filled from an SMS/email autofill) without a click.
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
@@ -87,8 +67,6 @@ export const OtpChallengeForm: React.FC<Props> = ({
       const res = await onVerify(code);
 
       if (res.success) {
-        // Hold on the success state briefly so the tick is actually seen
-        // before the page navigates away.
         setStatus("success");
         setTimeout(onVerified, 900);
         return;
@@ -96,7 +74,6 @@ export const OtpChallengeForm: React.FC<Props> = ({
 
       setStatus("error");
       setError(res.message || "Invalid OTP");
-      // Clear and refocus so the next attempt needs no extra interaction.
       setTimeout(() => {
         setOtp("");
         submittedRef.current = "";
@@ -107,11 +84,6 @@ export const OtpChallengeForm: React.FC<Props> = ({
     [onVerify, onVerified],
   );
 
-  // Auto-submit once the final digit lands — no button press needed.
-  //
-  // A short grace window first: verification spends one of only 5 attempts, so
-  // a mistyped last digit must not be submitted before the user can backspace.
-  // Any edit inside the window cancels the pending submit.
   useEffect(() => {
     if (otp.length !== OTP_LENGTH || busy) return;
     if (submittedRef.current === otp) return;
@@ -203,8 +175,6 @@ export const OtpChallengeForm: React.FC<Props> = ({
             }`}
           />
 
-          {/* Indeterminate bar: the code auto-submits, so this is the only cue
-              that something is happening between the 6th digit and the result. */}
           <div className="h-[3px] rounded-full overflow-hidden relative bg-transparent">
             {status === "verifying" && (
               <div className="otp-progress absolute inset-0" />
@@ -212,8 +182,6 @@ export const OtpChallengeForm: React.FC<Props> = ({
           </div>
         </div>
 
-        {/* The button stays for accessibility and as a manual fallback, but the
-            code normally verifies itself the moment the last digit is entered. */}
         <button
           type="submit"
           disabled={busy || otp.length !== OTP_LENGTH}

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   Search,
   Trash2,
@@ -141,8 +141,6 @@ function extractAllImages(item: any): string[] {
     if (item[key]) addIfImage(item[key]);
   });
 
-  // Scan the complete record as well so nested galleries, documents and
-  // module-specific image fields all appear in the unified view/editor.
   Object.values(item).forEach(addIfImage);
 
   return Array.from(new Set(foundUrls));
@@ -153,6 +151,26 @@ export interface TableColumn {
   label: string;
   render?: (value: any, item: any) => React.ReactNode;
 }
+
+const safeCellContent = (content: React.ReactNode): React.ReactNode => {
+  if (
+    content == null ||
+    typeof content === "string" ||
+    typeof content === "number" ||
+    typeof content === "boolean" ||
+    React.isValidElement(content)
+  ) {
+    return content;
+  }
+
+  if (Array.isArray(content)) {
+    return content.map((child, index) => (
+      <React.Fragment key={index}>{safeCellContent(child)}</React.Fragment>
+    ));
+  }
+
+  return formatInline(content);
+};
 
 export interface EnterpriseDataTableProps {
   title: string;
@@ -178,6 +196,10 @@ export interface EnterpriseDataTableProps {
     options?: string[];
   }>;
   showImageManager?: boolean;
+  detailVariant?: "cards" | "table";
+  statusOptions?: string[];
+  bulkDeleteLabel?: string;
+  deleteLabel?: string;
 }
 
 export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
@@ -198,6 +220,10 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
   hideAddButton = false,
   formFields,
   showImageManager = true,
+  detailVariant = "cards",
+  statusOptions,
+  bulkDeleteLabel = "Bulk Delete",
+  deleteLabel = "Delete",
 }) => {
   const { t } = useLanguage();
   const tableLoading = isLoading || loading;
@@ -207,7 +233,6 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
-  // Modal States
   const [detailItem, setDetailItem] = useState<any | null>(null);
   const [isDetailEditing, setIsDetailEditing] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -218,7 +243,6 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
   const [passwordChangeError, setPasswordChangeError] = useState("");
   const [passwordChanging, setPasswordChanging] = useState(false);
 
-  // Form State for Create/Edit
   const [formData, setFormData] = useState<Record<string, any>>({});
   const resolvedFormFields = useMemo<
     NonNullable<EnterpriseDataTableProps["formFields"]>
@@ -233,10 +257,8 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
     [formFields, columns],
   );
 
-  // Filtered & Searched Data
   const filteredData = useMemo(() => {
     return data.filter((item) => {
-      // Search check
       const searchMatch =
         !searchTerm ||
         Object.values(item).some((val) =>
@@ -244,7 +266,6 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
             .toLowerCase()
             .includes(searchTerm.toLowerCase()),
         );
-      // Status check
       const statusMatch =
         statusFilter === "all" ||
         (item.status &&
@@ -253,14 +274,25 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
     });
   }, [data, searchTerm, statusFilter]);
 
-  // Paginated Data
   const totalPages = Math.max(1, Math.ceil(filteredData.length / itemsPerPage));
   const paginatedData = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
     return filteredData.slice(start, start + itemsPerPage);
   }, [filteredData, currentPage, itemsPerPage]);
 
-  // Selection Logic
+  useEffect(() => {
+    setCurrentPage(1);
+    setSelectedIds([]);
+  }, [title]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter]);
+
+  useEffect(() => {
+    setCurrentPage((page) => Math.min(page, totalPages));
+  }, [totalPages]);
+
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
       setSelectedIds(paginatedData.map((item) => item._id || item.id));
@@ -275,15 +307,12 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
     );
   };
 
-  // CSV Export
   const handleExportCSV = () => {
     if (filteredData.length === 0) return;
     const keys = columns.map((c) => c.key);
     const headers = columns.map((c) => c.label).join(",");
     const rows = filteredData.map((row) =>
       keys
-        // formatInline keeps nested values readable; String() would export
-        // "[object Object]" for address, contact, rating and friends.
         .map((k) => `"${formatInline(row[k]).replace(/"/g, '""')}"`)
         .join(","),
     );
@@ -301,12 +330,10 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
     document.body.removeChild(link);
   };
 
-  // Print
   const handlePrint = () => {
     window.print();
   };
 
-  // Form Submit
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (onSave) {
@@ -545,9 +572,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
 
   return (
     <div className="space-y-6 text-left w-full">
-      {/* Controls & Search Toolbar */}
       <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-4 rounded-[20px] shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
-        {/* Search Input */}
         <div className="relative w-full md:w-80">
           <Search
             className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
@@ -562,7 +587,6 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
           />
         </div>
 
-        {/* Filter & Per-Page Controls */}
         <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
           <div className="flex items-center gap-2">
             <span className="text-xs text-gray-400 font-bold">{t("Status")}:</span>
@@ -576,6 +600,18 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
               <option value="pending">{t("Pending")}</option>
               <option value="rejected">{t("Rejected / Suspended")}</option>
               <option value="cancelled">{t("Cancelled")}</option>
+              {(statusOptions || [])
+                .filter(
+                  (status) =>
+                    !["all", "active", "pending", "rejected", "cancelled"].includes(
+                      status,
+                    ),
+                )
+                .map((status) => (
+                  <option key={status} value={status}>
+                    {humanizeKey(status)}
+                  </option>
+                ))}
             </select>
           </div>
 
@@ -597,7 +633,6 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
         </div>
       </div>
 
-      {/* Bulk Action Toolbar */}
       {selectedIds.length > 0 && (
         <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 p-4 rounded-[20px] flex items-center justify-between animate-in fade-in">
           <span className="text-xs font-bold text-amber-800 dark:text-amber-300">
@@ -634,14 +669,13 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                 }}
                 className="px-3 py-1.5 rounded-full bg-rose-600 text-white text-xs font-bold flex items-center gap-1 cursor-pointer hover:bg-rose-700"
               >
-                <Trash2 size={14} /> {t("Bulk Delete")}
+                <Trash2 size={14} /> {t(bulkDeleteLabel)}
               </button>
             )}
           </div>
         </div>
       )}
 
-      {/* Enterprise Data Table */}
       <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] shadow-sm overflow-hidden">
         {tableLoading ? (
           <div className="h-64 flex items-center justify-center text-gray-400 text-xs font-bold animate-pulse">
@@ -714,9 +748,11 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                             key={col.key}
                             className="py-3.5 px-4 font-medium text-[#0B192C] dark:text-gray-200"
                           >
-                            {col.render
-                              ? col.render(item[col.key], item)
-                              : formatInline(item[col.key])}
+                            {safeCellContent(
+                              col.render
+                                ? col.render(item[col.key], item)
+                                : formatInline(item[col.key]),
+                            )}
                           </td>
                         ))}
                          {!columns.some((column) => column.key === "status") && <td className="py-3.5 px-4">
@@ -753,7 +789,6 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
           </div>
         )}
 
-        {/* Pagination Footer */}
         <div className="p-4 border-t border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/30 flex flex-col sm:flex-row items-center justify-between gap-4">
           <span className="text-xs text-gray-400 font-medium">
             Showing{" "}
@@ -786,11 +821,9 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
         </div>
       </div>
 
-      {/* Unified Edit / View record modal */}
       {detailItem && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-4xl w-full rounded-[28px] p-6 space-y-6 text-left shadow-2xl animate-in zoom-in-95 duration-150">
-            {/* Header */}
             <div className="flex justify-between items-start border-b border-gray-100 dark:border-slate-800 pb-4">
               <div className="space-y-1 text-left">
                 <div className="flex items-center gap-2.5 flex-wrap">
@@ -798,6 +831,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                     {detailItem.name ||
                       detailItem.title ||
                       detailItem.businessName ||
+                      detailItem.bookingId ||
                       detailItem.bookingCode ||
                       detailItem.email ||
                       "Record Details"}
@@ -828,7 +862,6 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
               </button>
             </div>
 
-            {/* One complete record view shared by every Super Admin module. */}
             <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
               {isDetailEditing ? (
                 <form id="unified-record-edit-form" onSubmit={handleDetailSubmit}>
@@ -837,7 +870,6 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
               ) : (
                 <>
               <div className="space-y-5">
-                  {/* Photo & Media Showcase */}
                   {(() => {
                     const gallery = extractAllImages(detailItem);
                     if (gallery.length === 0) return null;
@@ -851,7 +883,6 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                         </div>
 
                         <div className="space-y-2">
-                            {/* Main Cover Image Preview */}
                             <div className="h-40 rounded-xl overflow-hidden relative border border-gray-200 dark:border-slate-800 bg-slate-950">
                               <img
                                 src={gallery[0]}
@@ -867,7 +898,6 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                                 </span>
                               </div>
                             </div>
-                            {/* Thumbnails */}
                             {gallery.length > 1 && (
                               <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 pt-1">
                                 {gallery.slice(1).map((imgUrl, idx) => (
@@ -895,7 +925,45 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                     );
                   })()}
 
-                  {/* Formatted Information Cards */}
+                  {detailVariant === "table" ? (
+                    <div className="overflow-hidden rounded-2xl border border-gray-200 dark:border-slate-800">
+                      <table className="w-full border-collapse text-xs">
+                        <tbody>
+                          {Object.entries(detailItem)
+                            .filter(
+                              ([key]) =>
+                                ![
+                                  "__v",
+                                  "_id",
+                                  "id",
+                                  "images",
+                                  "gallery",
+                                  "coverImage",
+                                  "coverImageUrl",
+                                  "imageUrl",
+                                ].includes(key),
+                            )
+                            .map(([key, value], index) => (
+                              <tr
+                                key={key}
+                                className={
+                                  index % 2 === 0
+                                    ? "bg-gray-50/80 dark:bg-slate-900/60"
+                                    : "bg-white dark:bg-[#0B192C]"
+                                }
+                              >
+                                <th className="w-1/3 border-r border-b border-gray-200 dark:border-slate-800 px-4 py-3 text-left align-top text-[10px] font-extrabold uppercase tracking-wider text-gray-500">
+                                  {humanizeKey(key)}
+                                </th>
+                                <td className="border-b border-gray-200 dark:border-slate-800 px-4 py-3 align-top font-semibold text-[#0B192C] dark:text-white">
+                                  <RecordValue value={value} />
+                                </td>
+                              </tr>
+                            ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                     {Object.entries(detailItem)
                       .filter(
@@ -935,6 +1003,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                         </div>
                       ))}
                   </div>
+                  )}
                 </div>
               {(detailItem.createdAt || detailItem.updatedAt) && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
@@ -1078,7 +1147,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                       }}
                       className="px-5 py-2.5 rounded-full bg-rose-50 text-rose-600 text-xs font-extrabold cursor-pointer"
                     >
-                      {confirmingDelete ? "Confirm Delete" : "Delete"}
+                      {confirmingDelete ? `Confirm ${deleteLabel}` : deleteLabel}
                     </button>
                   )}
                   <button
@@ -1109,7 +1178,6 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
         </div>
       )}
 
-      {/* Create Form Modal. Editing stays inside the unified record modal. */}
       {isCreateOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <form

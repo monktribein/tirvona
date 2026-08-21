@@ -10,8 +10,6 @@ export const USER_ROLES = [
   "district_officer",
   "ashram_admin",
   "ashram_owner",
-  // Legacy values remain accepted until the idempotent role migration has
-  // upgraded every deployed database.
   "stay_admin",
   "owner",
   "manager",

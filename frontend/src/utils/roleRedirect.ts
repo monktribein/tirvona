@@ -1,26 +1,9 @@
-/**
- * Role → Default Dashboard Landing Page Mapping
- * Centralized enterprise system to redirect users to their role-specific dashboard upon login.
- */
 import {
   clearGuestPendingIntent,
   getGuestPendingIntent,
   safeLocalReturnUrl,
 } from "./guestGate";
 
-/**
- * Whether an account holds a parking role.
- *
- * Driven by `parkingRoles` on the session — the ACTIVE grants in
- * `parking_staff` — because parking authorisation is not a value of
- * `User.role`. A guard or partner reads `role: "customer"`, identical to a
- * pilgrim, so the grant list is the only thing that tells them apart.
- *
- * This used to sniff the email address for "parking" or "guard", which routed
- * any pilgrim named e.g. `guardian@…` into the parking dashboard and, because
- * the route rejected their account role, bounced them off their own profile.
- * Identity is never inferred from an address.
- */
 export const isParkingRole = (
   parkingRoles?: string[],
   role?: string,
@@ -51,18 +34,11 @@ export const getRoleDefaultDashboard = (
 ): string => {
   const normalizedRole = role?.toLowerCase().trim();
 
-  // Parking is an additional assignment for accommodation administrators and
-  // owners, not their primary account identity. They always enter their main
-  // accommodation dashboard and can open Parking Operations from its sidebar.
-  // This check also protects legacy sessions until the database role migration
-  // has completed.
   if (["ashram_admin", "stay_admin"].includes(normalizedRole || ""))
     return "/ashram-admin/dashboard";
   if (["ashram_owner", "owner"].includes(normalizedRole || ""))
     return "/ashram-owner/dashboard";
 
-  // For accounts whose primary role has no separate management console, an
-  // active parking grant remains their operational landing page.
   if (isParkingRole(parkingRoles, role, email)) {
     return "/parking/dashboard";
   }
@@ -145,9 +121,6 @@ export const getRoleDefaultDashboard = (
   }
 };
 
-/**
- * Normalizes role string to standard RBAC identifier.
- */
 export const normalizeRole = (role?: string): string => {
   if (!role) return "customer";
   const r = role.toLowerCase().trim();
@@ -175,9 +148,6 @@ export const normalizeRole = (role?: string): string => {
   return r;
 };
 
-/**
- * Validates whether user holds access to an allowed route capability.
- */
 export const hasRoleAccess = (
   userRole?: string,
   allowedRoles?: string[],
@@ -199,11 +169,6 @@ export const hasRoleAccess = (
   });
 };
 
-/**
- * Resolves post-login target URL:
- * 1. Restores pending guest intent (e.g. Ashram booking, Volunteer application, Marketplace cart)
- * 2. Falls back to role default dashboard landing page.
- */
 export const getPostLoginRedirect = (
   userRole?: string,
   requestedRedirect?: string | null,
@@ -212,35 +177,23 @@ export const getPostLoginRedirect = (
 ): { url: string; hasPendingIntent: boolean } => {
   const dashboard = getRoleDefaultDashboard(userRole, parkingRoles, userEmail);
 
-  // Operational accounts always enter their role console. Public Login links
-  // include the current page as a redirect, but that must only be restored for
-  // customer/pilgrim accounts, never for staff or management roles.
   if (dashboard !== "/profile") {
     clearGuestPendingIntent();
     return { url: dashboard, hasPendingIntent: false };
   }
 
-  // An explicit ?redirect= is deliberate — the visitor followed a link that
-  // demanded a session — so it always wins.
   const explicit = safeLocalReturnUrl(requestedRedirect);
   if (explicit) return { url: explicit, hasPendingIntent: true };
 
   const intent = getGuestPendingIntent();
   const stored = safeLocalReturnUrl(intent?.returnUrl);
 
-  // A stored intent exists to resume work in progress — a half-finished
-  // booking, a cart. A "generic" one records only that some protected URL was
-  // opened while signed out, and it lives in sessionStorage for an hour, which
-  // is long enough to hijack an unrelated later sign-in and strand staff on a
-  // pilgrim page instead of their console. Honour it when it represents real
-  // work, or when the account has no console of its own to land on.
   const isResumable = Boolean(
     intent && (intent.type !== "generic" || intent.data),
   );
   if (stored && (isResumable || dashboard === "/profile"))
     return { url: stored, hasPendingIntent: true };
 
-  // Declining it: drop it too, or it hijacks the next sign-in as well.
   if (stored) clearGuestPendingIntent();
   return { url: dashboard, hasPendingIntent: false };
 };

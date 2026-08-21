@@ -8,15 +8,6 @@ import type { Model } from "mongoose";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import type { RefundPolicyInput } from "../domain/refund-calculator";
 
-/**
- * The policy used when nothing is configured.
- *
- * Deliberately conservative — no fee or tax returned, donations kept — so an
- * unconfigured platform never refunds more than the stay itself. It is a
- * documented default rather than a hidden constant: it is snapshotted onto
- * every calculation that uses it, so a refund settled before any policy was
- * created still shows exactly which rules applied.
- */
 export const FALLBACK_POLICY: RefundPolicyInput & { name: string } = {
   name: "Platform default (no policy configured)",
   cancellationWindows: [
@@ -40,15 +31,6 @@ export class RefundPolicyService {
     @InjectModel("RefundAuditLog") private readonly audit: Model<any>,
   ) {}
 
-  /**
-   * Resolve the one policy that governs a refund.
-   *
-   * Most specific wins: a policy scoped to this ashram beats one scoped to the
-   * module, which beats a global one. Within the same scope the higher
-   * `priority` wins, then the most recently updated. Returning a single policy
-   * rather than merging several keeps the applied rules explainable to a
-   * customer disputing an amount.
-   */
   async resolve(
     module: string,
     ashramId?: string | null,
@@ -95,7 +77,6 @@ export class RefundPolicyService {
     return policy;
   }
 
-  /** Reject rules that cannot be satisfied before they can misprice a refund. */
   private validate(dto: Record<string, any>): void {
     for (const window of dto.cancellationWindows ?? []) {
       if (window.refundPercent < 0 || window.refundPercent > 100)
@@ -115,7 +96,6 @@ export class RefundPolicyService {
       throw new BadRequestException(
         "A percentage processing fee cannot exceed 100 percent",
       );
-    // GST is only reclaimable alongside the fee it was charged on.
     if (dto.refundGst === true && dto.refundPlatformFee === false)
       throw new BadRequestException(
         "GST can only be refunded when the platform fee it was charged on is also refunded",
@@ -163,10 +143,6 @@ export class RefundPolicyService {
     return after;
   }
 
-  /**
-   * Soft delete only. Settled refunds reference the policy that produced them,
-   * and an operator must still be able to see which rules were applied.
-   */
   async remove(user: AuthenticatedUser, id: string): Promise<any> {
     const policy = await this.policies.findOneAndUpdate(
       { _id: id, isDeleted: false },
@@ -184,10 +160,6 @@ export class RefundPolicyService {
     return { success: true };
   }
 
-  /**
-   * Price a hypothetical refund without creating one, so an operator can see
-   * what a policy change would do before saving it.
-   */
   preview(dto: Record<string, any>): RefundPolicyInput {
     this.validate(dto);
     return dto as RefundPolicyInput;

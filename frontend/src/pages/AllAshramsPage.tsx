@@ -29,11 +29,9 @@ export const AllAshramsPage: React.FC = () => {
   const [ownerUsers, setOwnerUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Search & Filter
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCity, setSelectedCity] = useState("All");
 
-  // Edit Modal State
   const [selectedAshram, setSelectedAshram] = useState<any | null>(null);
   const [editFormData, setEditFormData] = useState<any>({
     name: "",
@@ -60,13 +58,11 @@ export const AllAshramsPage: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Fetch all ashrams (Master Owner / Super Admin gets all)
       const ashramRes = await api.get("/ashrams/my-listings/all");
       if (ashramRes.data.success) {
         setAshrams(ashramRes.data.data);
       }
 
-      // Fetch all staff / owner users for reassignment dropdown
       const usersRes = await api.get("/auth/owner-staff");
       if (usersRes.data.success) {
         setOwnerUsers(
@@ -174,7 +170,6 @@ export const AllAshramsPage: React.FC = () => {
     }
   };
 
-  // Dynamic city filter options from fetched ashrams
   const cities = React.useMemo(() => {
     const set = new Set<string>();
     ashrams.forEach((a) => {
@@ -198,12 +193,10 @@ export const AllAshramsPage: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      {/* Clean Text Header */}
       <div className="text-center space-y-2.5 max-w-3xl mx-auto py-2">
         <p className="font-['Kalam'] text-2xl sm:text-4xl lg:text-5xl font-bold text-[#E58C28]">
           Registered Ashrams &amp; Dharamshalas
         </p>
-        {/* Decorative Saffron Underline Divider */}
         <div className="flex items-center justify-center gap-2.5 my-1.5">
           <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
           <Sparkles
@@ -218,7 +211,6 @@ export const AllAshramsPage: React.FC = () => {
         </p>
       </div>
 
-      {/* Stats Summary Bar */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-1">
           <div className="text-xs font-bold text-gray-400 tracking-wider">
@@ -264,9 +256,7 @@ export const AllAshramsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Search & City Filter Bar */}
       <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
-        {/* City Filter Pills */}
         <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
           {cities.map((c) => (
             <button
@@ -283,7 +273,6 @@ export const AllAshramsPage: React.FC = () => {
           ))}
         </div>
 
-        {/* Search Input */}
         <div className="relative w-full sm:w-72">
           <Search
             size={14}
@@ -299,7 +288,6 @@ export const AllAshramsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Ashrams Directory Cards */}
       {loading ? (
         <div className="space-y-4">
           <div className="h-64 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-3xl animate-pulse" />
@@ -330,7 +318,6 @@ export const AllAshramsPage: React.FC = () => {
                 className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[32px] p-6 shadow-sm flex flex-col justify-between space-y-5"
               >
                 <div className="space-y-4">
-                  {/* Title & Status */}
                   <div className="flex items-start justify-between gap-3 border-b border-gray-100 dark:border-slate-850 pb-4">
                     <div>
                       <h3 className="font-extrabold text-lg text-[#0B192C] dark:text-white">
@@ -363,7 +350,6 @@ export const AllAshramsPage: React.FC = () => {
                     </span>
                   </div>
 
-                  {/* Assigned Owner User Info */}
                   <div className="bg-blue-50/60 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/40 rounded-2xl p-3 flex items-center justify-between text-xs">
                     <div className="flex items-center gap-2">
                       <Users
@@ -381,13 +367,11 @@ export const AllAshramsPage: React.FC = () => {
                     </span>
                   </div>
 
-                  {/* Description Snippet */}
                   <p className="text-xs text-gray-600 dark:text-gray-300 line-clamp-2 leading-relaxed font-semibold">
                     {ashram.description ||
                       "Spiritual Ashram lodging & accommodation."}
                   </p>
 
-                  {/* Amenities */}
                   <div className="flex flex-wrap gap-1.5">
                     {(Array.isArray(ashram.amenities) &&
                     ashram.amenities.length > 0
@@ -404,7 +388,6 @@ export const AllAshramsPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Actions */}
                 <div className="pt-4 border-t border-gray-100 dark:border-slate-800 flex items-center justify-between gap-2">
                   <button
                     onClick={() => handleOpenEditModal(ashram)}
@@ -438,7 +421,6 @@ export const AllAshramsPage: React.FC = () => {
         </div>
       )}
 
-      {/* ══════════════════════ MASTER EDIT ASHRAM MODAL ══════════════════════ */}
       {selectedAshram && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
@@ -543,7 +525,6 @@ export const AllAshramsPage: React.FC = () => {
                 />
               </div>
 
-              {/* Address Fields */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div>
                   <label className="block text-[10px] font-black text-gray-400 mb-1">
@@ -653,7 +634,6 @@ export const AllAshramsPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* ════════════ Image Gallery Manager ════════════ */}
               <div className="bg-gray-50/80 dark:bg-slate-900/80 border border-gray-100 dark:border-slate-800 rounded-2xl p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <label className="text-[10px] font-black text-gray-400 flex items-center gap-1.5">
@@ -665,7 +645,6 @@ export const AllAshramsPage: React.FC = () => {
                   </span>
                 </div>
 
-                {/* Thumbnails Grid */}
                 {editFormData.images && editFormData.images.length > 0 ? (
                   <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
                     {editFormData.images.map((imgUrl: string, idx: number) => (
@@ -696,7 +675,6 @@ export const AllAshramsPage: React.FC = () => {
                   </p>
                 )}
 
-                {/* Direct Upload from Device & URL Input */}
                 <div className="space-y-2 pt-1">
                   <FileUploader
                     folder="ashrams"

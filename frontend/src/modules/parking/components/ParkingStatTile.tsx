@@ -9,9 +9,6 @@ interface ParkingStatTileProps {
   tone?: "primary" | "success" | "warning" | "danger" | "neutral";
 }
 
-// Dashboard stat tile. Mirrors the shape of the platform's EnterpriseStatsCard
-// while carrying the parking module's own tone set.
-
 const TONES: Record<string, { chip: string; value: string }> = {
   primary: {
     chip: "bg-blue-50 dark:bg-blue-900/30 text-[#0A4DA6] dark:text-blue-300",

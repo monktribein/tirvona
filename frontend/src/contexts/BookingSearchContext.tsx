@@ -47,10 +47,6 @@ const isYMD = (value: unknown): value is string => {
   );
 };
 
-/**
- * Removes stale/invalid search dates before they reach a calendar or API call.
- * Check-in may be today; check-out must be at least the following day.
- */
 export const normalizeBookingDates = (
   checkIn?: string,
   checkOut?: string,
@@ -83,7 +79,6 @@ export const getStoredBookingSearch = (): BookingSearchState => {
       };
     }
   } catch  {
-    // Fallback to default
   }
   return {
     destination: "",

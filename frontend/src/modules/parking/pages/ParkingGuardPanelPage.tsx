@@ -31,18 +31,6 @@ import ParkingStatusBadge from "../components/ParkingStatusBadge";
 
 type Mode = "verify" | "check-in" | "check-out";
 
-/**
- * Security Guard panel.
- *
- * Four actions and no more: verify a pass, check a vehicle in, check it out,
- * and look a plate up when a phone is dead. There is no delete, no pricing, no
- * refund and no management control anywhere on this screen — the API enforces
- * the same restriction, so the UI is not the only thing holding the line.
- *
- * Built for one-handed use at a gate: large targets, a persistent result card,
- * and an input that keeps focus so a hardware scanner (which types the token
- * and presses Enter) works without any tapping at all.
- */
 export const ParkingGuardPanelPage: React.FC = () => {
   const [context, setContext] = useState<ParkingGuardContext | null>(null);
   const [locationId, setLocationId] = useState("");
@@ -64,13 +52,9 @@ export const ParkingGuardPanelPage: React.FC = () => {
 
   const inputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  // `busy` as a ref as well: the auto-fire timer and the camera loop both read
-  // it outside React's render cycle, where the state value is a stale closure.
   const busyRef = useRef(false);
   const lastSubmittedRef = useRef("");
 
-  // Which facilities this guard is posted to. A guard with one post gets it
-  // preselected so the screen is immediately usable.
   useEffect(() => {
     (async () => {
       try {
@@ -98,8 +82,6 @@ export const ParkingGuardPanelPage: React.FC = () => {
     })();
   }, []);
 
-  // Keep the scanner input focused between scans — a hardware reader types into
-  // whatever holds focus, so losing it means the next scan goes nowhere.
   const refocus = useCallback(() => {
     window.setTimeout(() => inputRef.current?.focus(), 60);
   }, []);
@@ -113,20 +95,10 @@ export const ParkingGuardPanelPage: React.FC = () => {
     setPlate("");
     setResult(null);
     setMessage("");
-    // Clear the guard against re-sending, so the SAME vehicle can legitimately
-    // be scanned again — an entry followed by an exit, for instance.
     lastSubmittedRef.current = "";
     refocus();
   };
 
-  /**
-   * Camera scanning via the browser's own BarcodeDetector.
-   *
-   * Deliberately no QR library: the native detector is hardware-accelerated,
-   * adds nothing to the bundle, and is present in the Chromium browsers a gate
-   * terminal actually runs. Where it is missing the panel says so and the
-   * scanner box, gate code and plate lookup all still work.
-   */
   const cameraSupported =
     typeof window !== "undefined" && "BarcodeDetector" in window;
 
@@ -134,8 +106,6 @@ export const ParkingGuardPanelPage: React.FC = () => {
     if (!cameraOn) return;
     let cancelled = false;
     let timer = 0;
-    // Held locally, not on a ref: cleanup must stop the stream THIS run opened,
-    // whatever a later run may have replaced the ref with.
     let activeStream: MediaStream | null = null;
     const video = videoRef.current;
 
@@ -173,7 +143,6 @@ export const ParkingGuardPanelPage: React.FC = () => {
                 await submitToken(value);
               }
             } catch {
-              // A single failed frame is normal while focusing; keep polling.
             }
           }
           if (!cancelled) timer = window.setTimeout(tick, 350);
@@ -193,7 +162,6 @@ export const ParkingGuardPanelPage: React.FC = () => {
     return () => {
       cancelled = true;
       window.clearTimeout(timer);
-      // Release the device, or the camera light stays on after leaving.
       activeStream?.getTracks().forEach((track) => track.stop());
       if (video) video.srcObject = null;
     };
@@ -203,8 +171,6 @@ export const ParkingGuardPanelPage: React.FC = () => {
     const value = raw.trim();
     if (!value || !locationId || busyRef.current) return;
 
-    // Remember what was sent so the auto-fire watcher cannot send it twice —
-    // a duplicate check-in is a real scan against the booking, not a no-op.
     lastSubmittedRef.current = value;
     busyRef.current = true;
     setBusy(true);
@@ -245,14 +211,6 @@ export const ParkingGuardPanelPage: React.FC = () => {
     void submitToken(token);
   };
 
-  /**
-   * Fire as soon as a whole code lands, so the gate needs no keypress or tap.
-   *
-   * A hardware reader that sends Enter already submitted via the form; this
-   * covers the ones that do not, and pasting. The short delay lets a reader
-   * finish typing — it emits characters one at a time, and an 8-character gate
-   * code passes the completeness test at its last character either way.
-   */
   useEffect(() => {
     if (!autoScan || manualMode || busy || !locationId) return;
     const value = token.trim();
@@ -260,7 +218,6 @@ export const ParkingGuardPanelPage: React.FC = () => {
       return;
     const timer = window.setTimeout(() => void submitToken(value), 250);
     return () => window.clearTimeout(timer);
-    // submitToken closes over mode/locationId, both in the dependency list.
   }, [token, autoScan, manualMode, busy, locationId, mode]);
 
   const handleLookup = async (e: React.FormEvent) => {
@@ -334,7 +291,6 @@ export const ParkingGuardPanelPage: React.FC = () => {
           </p>
         </header>
 
-        {/* Post selector */}
         {context.locations.length > 1 && (
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-4 shadow-sm">
             <label
@@ -365,7 +321,6 @@ export const ParkingGuardPanelPage: React.FC = () => {
 
         {locationId && (
           <>
-            {/* Mode */}
             <div className="grid grid-cols-3 gap-2">
               {(
                 [
@@ -393,7 +348,6 @@ export const ParkingGuardPanelPage: React.FC = () => {
               ))}
             </div>
 
-            {/* Scan / lookup */}
             <section className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 space-y-3 shadow-sm">
               {!manualMode ? (
                 <form onSubmit={handleScan} className="space-y-3">
@@ -461,9 +415,6 @@ export const ParkingGuardPanelPage: React.FC = () => {
                     type="text"
                     value={token}
                     onChange={(e) => setToken(e.target.value)}
-                    // Both inputs resolve to the same pass: the scanner reads
-                    // the sealed token, and the gate code printed under the QR
-                    // is accepted for a screen the scanner will not read.
                     placeholder="Point the scanner here, or type e.g. H24R-BGTB"
                     autoComplete="off"
                     autoFocus
@@ -540,7 +491,6 @@ export const ParkingGuardPanelPage: React.FC = () => {
               </button>
             </section>
 
-            {/* Result */}
             <AnimatePresence mode="wait">
               {message && (
                 <motion.section
@@ -554,7 +504,6 @@ export const ParkingGuardPanelPage: React.FC = () => {
                       : "bg-rose-50 dark:bg-rose-950/30 border-rose-300 dark:border-rose-800"
                   }`}
                 >
-                  {/* Verdict banner — readable at arm's length */}
                   <div
                     className={`px-5 py-4 flex items-center gap-3 ${
                       resultTone === "success"
@@ -577,7 +526,6 @@ export const ParkingGuardPanelPage: React.FC = () => {
 
                   {result && (
                     <div className="p-5 space-y-4">
-                      {/* Plate — the single most important thing on this screen */}
                       <div className="text-center space-y-1">
                         <p className="text-[9px] tracking-wider font-bold text-gray-500 dark:text-gray-400">
                           Vehicle
@@ -690,7 +638,6 @@ export const ParkingGuardPanelPage: React.FC = () => {
               )}
             </AnimatePresence>
 
-            {/* Scope reminder */}
             <p className="flex items-start gap-1.5 text-[10px] text-gray-400 font-medium leading-relaxed px-1">
               <AlertCircle size={11} className="shrink-0 mt-0.5 stroke-[2.5]" />
               You can only scan passes issued for your assigned parking

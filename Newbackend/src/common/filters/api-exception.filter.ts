@@ -7,14 +7,6 @@ import {
 } from "@nestjs/common";
 import type { Request, Response } from "express";
 
-/**
- * Translate a database-layer failure into the status it actually deserves.
- *
- * Mongoose reports a rejected write as a plain `Error`, which this filter would
- * otherwise report as 500 — telling an administrator the server broke when the
- * truth is that their input was rejected, or that a code is already taken.
- * Returns null for anything that is genuinely not a client error.
- */
 const databaseFailure = (
   exception: unknown,
 ): { status: number; message: string } | null => {
@@ -74,9 +66,6 @@ export class ApiExceptionFilter implements ExceptionFilter {
       });
       return;
     }
-    // Errors raised outside Nest still carry a meaningful status — body-parser
-    // reports 413 for an oversized payload, for instance. Reporting those as
-    // 500 hides what the caller actually needs to fix.
     const carried = (exception as { status?: unknown; statusCode?: unknown })
       ?.status;
     const carriedCode = (exception as { statusCode?: unknown })?.statusCode;

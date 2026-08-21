@@ -37,11 +37,6 @@ export class UpdateAddressDto extends AddressDto {}
 
 class OrderItemDto {
   @IsMongoId() productId!: string;
-  /**
-   * Quantity only. Price is deliberately NOT accepted from the client — the
-   * server reads it from the catalogue at checkout, so a tampered payload
-   * cannot set its own price.
-   */
   @Type(() => Number) @IsInt() @Min(1) @Max(20) quantity!: number;
 }
 
@@ -53,10 +48,8 @@ export class CreateMarketplaceOrderDto {
   @Type(() => OrderItemDto)
   items!: OrderItemDto[];
 
-  /** An existing saved address... */
   @IsOptional() @IsMongoId() addressId?: string;
 
-  /** ...or a new one to use (and optionally save) for this order. */
   @IsOptional()
   @ValidateNested()
   @Type(() => AddressDto)

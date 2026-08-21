@@ -66,7 +66,6 @@ export const VolunteerHubPage: React.FC = () => {
     searchParams.get("meals") === "true",
   );
 
-  // Application Modal State
   const [selectedJob, setSelectedJob] = useState<VolunteerJobItem | null>(null);
   const [appliedJobIds, setAppliedJobIds] = useState<Set<string>>(new Set());
 
@@ -88,7 +87,6 @@ export const VolunteerHubPage: React.FC = () => {
       .catch(() => setAppliedJobIds(new Set()));
   }, [user]);
 
-  // Auto-open job modal if returning from login with jobId query param
   useEffect(() => {
     const jobIdParam = searchParams.get("jobId");
     if (jobIdParam && jobs.length > 0) {
@@ -189,7 +187,6 @@ export const VolunteerHubPage: React.FC = () => {
     skills,
   ]);
 
-  // Smart Auto-Fill profile effect
   useEffect(() => {
     if (autoFill.isLoggedIn) {
       if (autoFill.name && !applicantName) setApplicantName(autoFill.name);
@@ -357,13 +354,11 @@ export const VolunteerHubPage: React.FC = () => {
 
   return (
     <div className="min-h-screen pb-20 text-left">
-      {/* Clean Text Header */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6">
         <div className="text-center space-y-2.5 max-w-3xl mx-auto py-2">
           <p className="font-['Kalam'] text-2xl sm:text-4xl lg:text-5xl font-bold text-[#E58C28]">
             Serve with Devotion, Build Your Career
           </p>
-          {/* Decorative Saffron Underline Divider */}
           <div className="flex items-center justify-center gap-2.5 my-1.5">
             <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
             <Sparkles
@@ -380,7 +375,6 @@ export const VolunteerHubPage: React.FC = () => {
         </div>
       </div>
 
-      {/* ── 2. Search & Category Filters Bar ── */}
       <section
         id="openings"
         className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 relative z-20 space-y-6"
@@ -427,7 +421,6 @@ export const VolunteerHubPage: React.FC = () => {
             </div>
           </form>
 
-          {/* Type Pills */}
           <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none pt-1">
             {types.map((t) => {
               const isActive = selectedType === t.id;
@@ -448,7 +441,6 @@ export const VolunteerHubPage: React.FC = () => {
             })}
           </div>
 
-          {/* Checkboxes & Toolbar */}
           <div className="flex flex-wrap items-center justify-between gap-4 text-xs pt-2 border-t border-gray-100 dark:border-slate-800 font-bold text-gray-500">
             <div className="flex items-center gap-4 flex-wrap">
               <label className="flex items-center gap-2 cursor-pointer">
@@ -488,7 +480,6 @@ export const VolunteerHubPage: React.FC = () => {
           </div>
         </div>
 
-        {/* ── 3. Openings Grid ── */}
         {loading ? (
           <div className="py-20 text-center space-y-3">
             <div className="w-10 h-10 border-4 border-[#0A4DA6] border-t-transparent rounded-full animate-spin mx-auto" />
@@ -521,7 +512,6 @@ export const VolunteerHubPage: React.FC = () => {
                 className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-5 shadow-lg hover:shadow-2xl transition-all flex flex-col justify-between space-y-4 group relative overflow-hidden"
               >
                 <div className="space-y-3">
-                  {/* Card Header */}
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-2xl bg-[#0A4DA6]/10 text-[#0A4DA6] flex items-center justify-center font-black text-sm">
@@ -543,7 +533,6 @@ export const VolunteerHubPage: React.FC = () => {
                     />
                   </div>
 
-                  {/* Title & Department */}
                   <div>
                     <Link
                       to={`/volunteer/${job._id}`}
@@ -558,7 +547,6 @@ export const VolunteerHubPage: React.FC = () => {
                     </span>
                   </div>
 
-                  {/* Badges */}
                   <div className="grid grid-cols-2 gap-2 text-[11px] font-extrabold text-gray-600 dark:text-gray-300 pt-1">
                     <div className="flex items-center gap-1.5 bg-gray-50 dark:bg-slate-900/60 p-2 rounded-xl border border-gray-100 dark:border-slate-800/80">
                       <HomeIcon
@@ -596,7 +584,6 @@ export const VolunteerHubPage: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Stipend Banner */}
                   <div className="bg-[#E58C28]/10 border border-[#E58C28]/25 rounded-2xl p-2.5 text-center">
                     <span className="text-xs font-black text-[#E58C28]">
                       {job.stipend}
@@ -604,7 +591,6 @@ export const VolunteerHubPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Footer Action */}
                 <div className="pt-2 border-t border-gray-100 dark:border-slate-800 flex items-center justify-between gap-2">
                   <Link
                     to={`/volunteer/${job._id}`}
@@ -626,7 +612,6 @@ export const VolunteerHubPage: React.FC = () => {
         )}
       </section>
 
-      {/* ── 4. Application Modal ── */}
       {selectedJob && (
         <EnterpriseModal
           isOpen={!!selectedJob}

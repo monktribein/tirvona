@@ -2,17 +2,6 @@ import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { Types } from "mongoose";
 import { GovernanceService } from "./governance.service";
 
-/**
- * The Super Admin room console writes to three different places behind one
- * endpoint, and two of them are not collections at all.
- *
- * `rooms?subKey=pricing` is an assembled view: a room's own `basePrice` and
- * each entry of its `pricingRules` array are listed as rows carrying a
- * composite id (`base:<roomId>`, `embedded:<roomId>:<ruleId>`) rather than an
- * ObjectId. Left to the generic path those rows are read as brand-new records
- * and inserted as junk, which is why the page shipped read-only. These pin the
- * routing that makes it editable.
- */
 describe("super admin room console writes", () => {
   const ROOM_ID = new Types.ObjectId().toHexString();
   const superAdmin = { id: "u1", role: "super_admin" } as never;

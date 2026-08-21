@@ -65,11 +65,6 @@ export const BookingCouponSchema = new Schema(
     clicksCount: Number,
     redemptionsCount: Number,
     revenueGenerated: Number,
-    // An offer that has already been redeemed cannot be removed outright — a
-    // booking's `appliedOfferId` and every redemption row still point at it, and
-    // those references are immutable. Deleting one archives it instead: it
-    // leaves every listing, public and administrative, but the financial trail
-    // survives. Offers that were never redeemed are removed for real.
     deletedAt: { type: Date, default: null, index: true },
     deletedBy: id("User"),
     createdBy: id("User"),
@@ -113,6 +108,7 @@ export const BookingNotificationSchema = new Schema(
     event: { type: String, required: true },
     title: { type: String, required: true },
     message: { type: String, required: true },
+    recipientPhone: String,
     channel: {
       type: String,
       enum: ["in_app", "email", "sms", "push", "socket"],
@@ -139,16 +135,10 @@ export const BookingReviewSchema = new Schema(
   {
     customerId: id("User", true),
     ashramId: id("Ashram", true),
-    // Optional: a review may come from a past guest (carrying the booking it
-    // relates to) or from a visitor who has not stayed. `verifiedStay` is what
-    // distinguishes them on screen, so the absence of a booking is a normal
-    // state rather than incomplete data.
     bookingId: id("Booking"),
     verifiedStay: { type: Boolean, default: false, index: true },
     rating: {
       overall: { type: Number, required: true, min: 1, max: 5 },
-      // Sub-scores are optional so a short review is not a form-filling chore;
-      // the overall score is the one every review must carry.
       cleanliness: { type: Number, min: 1, max: 5 },
       service: { type: Number, min: 1, max: 5 },
       location: { type: Number, min: 1, max: 5 },
@@ -164,14 +154,6 @@ export const BookingReviewSchema = new Schema(
   },
   opts("booking_reviews"),
 );
-// Sparse, because most reviews now carry no booking at all and a plain unique
-// index would permit only ONE such document across the whole collection.
-// PARTIAL, not sparse. The schema stores `bookingId: null` for a visitor
-// review, and a sparse index only skips documents where the field is ABSENT —
-// an explicit null is still indexed, so two visitor reviews collided on a
-// duplicate null and the second one anywhere on the platform failed.
-// Restricting the index to real ObjectIds keeps "one review per booking" while
-// leaving null-booking reviews unconstrained.
 BookingReviewSchema.index(
   { bookingId: 1 },
   {
@@ -179,8 +161,6 @@ BookingReviewSchema.index(
     partialFilterExpression: { bookingId: { $type: "objectId" } },
   },
 );
-// One review per person per ashram, which is what stops a single account from
-// burying a property under repeat posts.
 BookingReviewSchema.index({ customerId: 1, ashramId: 1 }, { unique: true });
 BookingReviewSchema.index({ ashramId: 1, status: 1, createdAt: -1 });
 BookingReviewSchema.index({ status: 1, createdAt: -1 });

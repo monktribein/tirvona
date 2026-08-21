@@ -79,7 +79,6 @@ export class VisitorArticleDto {
   @IsString() @MaxLength(350) shortDescription: string;
   @IsString() @MaxLength(50000) content: string;
   @IsString() featuredImage: string;
-  /** Optional uploaded clip shown above the article body. */
   @IsOptional() @IsString() @MaxLength(600) videoUrl?: string;
   @IsOptional() @IsArray() galleryImages?: string[];
   @IsOptional() @IsArray() tags?: string[];
@@ -87,13 +86,6 @@ export class VisitorArticleDto {
   @IsOptional() @IsIn(["draft", "pending"]) status?: string;
 }
 export class UpdateVisitorArticleDto extends PartialType(VisitorArticleDto) {}
-/**
- * What an administrator may change on someone else's article.
- *
- * Deliberately narrower than the visitor's own edit: `bookingId` is the proof
- * of stay the article rests on and `status` moves through the review endpoint,
- * so neither is editable here. This is a copy-edit, not a re-authoring.
- */
 export class AdminUpdateVisitorArticleDto {
   @IsOptional() @IsString() @MaxLength(200) title?: string;
   @IsOptional() @IsString() category?: string;
@@ -110,6 +102,5 @@ export class ReviewVisitorArticleDto {
 }
 export class ArticleCommentDto {
   @IsString() @MaxLength(2000) comment: string;
-  /** Set to reply to an existing comment. Threads are one level deep. */
   @IsOptional() @IsString() parentId?: string;
 }

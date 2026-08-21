@@ -16,13 +16,11 @@ import { CurrencyProvider, useCurrency } from "./contexts/CurrencyContext";
 import { LanguageProvider, useLanguage } from "./contexts/LanguageContext";
 import { installAutomaticTextCase } from "./utils/textCase";
 
-// Layouts (eager — always needed)
 import PublicLayout from "./layouts/PublicLayout";
 import DashboardLayout from "./layouts/DashboardLayout";
 import PageLoader from "./components/PageLoader";
 import AuthReturnRestorer from "./components/AuthReturnRestorer";
 
-// Pages (lazy — code-split so each route loads its own chunk)
 const HomePage = lazy(() => import("./pages/HomePage"));
 const BannerDetailPage = lazy(() => import("./pages/BannerDetailPage"));
 const SearchPage = lazy(() => import("./pages/SearchPage"));
@@ -31,15 +29,12 @@ const FaqPage = lazy(() => import("./pages/FaqPage"));
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const RegisterPage = lazy(() => import("./pages/RegisterPage"));
 const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
-// Company
 const AboutPage = lazy(() => import("./pages/AboutPage"));
 const CareersPage = lazy(() => import("./pages/CareersPage"));
 const PartnerPage = lazy(() => import("./pages/PartnerPage"));
 const PressPage = lazy(() => import("./pages/PressPage"));
-// Support
 const HelpCenterPage = lazy(() => import("./pages/HelpCenterPage"));
 const ContactPage = lazy(() => import("./pages/ContactPage"));
-// Static Policy + Info Pages
 import {
   CancellationPolicyPage,
   GovtGuidelinesPage,
@@ -65,6 +60,9 @@ const OwnerAddOnsPage = lazy(() => import("./pages/owner/OwnerAddOnsPage"));
 const OwnerBookingCenterPage = lazy(
   () => import("./pages/OwnerBookingCenterPage"),
 );
+const PayoutManagementPage = lazy(
+  () => import("./admin/payouts/PayoutManagementPage"),
+);
 const OwnerParkingSetupPage = lazy(
   () => import("./pages/owner/OwnerParkingSetupPage"),
 );
@@ -80,8 +78,6 @@ const StaffManagementPage = lazy(() => import("./pages/StaffManagementPage"));
 const OwnerGuestsPage = lazy(() => import("./pages/OwnerGuestsPage"));
 const ReceptionCheckinPage = lazy(() => import("./pages/ReceptionCheckinPage"));
 const HousekeepingPage = lazy(() => import("./pages/HousekeepingPage"));
-// Parking System — a self-contained module. Lazy-loaded so it ships as its own
-// chunk and adds nothing to the initial bundle of any existing route.
 const ParkingHubPage = lazy(
   () => import("./modules/parking/pages/ParkingHubPage"),
 );
@@ -99,6 +95,38 @@ const ParkingMyBookingsPage = lazy(
 );
 const ParkingGuardPanelPage = lazy(
   () => import("./modules/parking/pages/ParkingGuardPanelPage"),
+);
+const AartiHubPage = lazy(() => import("./modules/aarti/pages/AartiHubPage"));
+const AartiDetailPage = lazy(
+  () => import("./modules/aarti/pages/AartiDetailPage"),
+);
+const AartiCheckoutPage = lazy(
+  () => import("./modules/aarti/pages/AartiCheckoutPage"),
+);
+const AartiBookingDetailPage = lazy(
+  () => import("./modules/aarti/pages/AartiBookingDetailPage"),
+);
+const AartiMyBookingsPage = lazy(
+  () => import("./modules/aarti/pages/AartiMyBookingsPage"),
+);
+const AartiGatePage = lazy(() => import("./modules/aarti/pages/AartiGatePage"));
+const LivePoojaPage = lazy(
+  () => import("./modules/aarti/pages/LivePoojaPage"),
+);
+const OwnerAartiSessionsPage = lazy(
+  () => import("./modules/aarti/pages/OwnerAartiSessionsPage"),
+);
+const OwnerLivePoojaPage = lazy(
+  () => import("./modules/aarti/pages/OwnerLivePoojaPage"),
+);
+const OwnerAartiBookingsPage = lazy(
+  () => import("./modules/aarti/pages/OwnerAartiBookingsPage"),
+);
+const AartiControlCenterPage = lazy(
+  () => import("./admin/aarti/pages/AartiControlCenterPage"),
+);
+const AartiApprovalsPage = lazy(
+  () => import("./admin/aarti/pages/AartiApprovalsPage"),
 );
 const ParkingPartnerDashboardPage = lazy(
   () => import("./modules/parking/pages/ParkingPartnerDashboardPage"),
@@ -156,14 +184,11 @@ const RefundPoliciesPage = lazy(
   () => import("./admin/refunds/pages/RefundPoliciesPage"),
 );
 
-// Lead Collection — console for the standalone leadTirvona field app.
 const LeadCollectionPage = lazy(
   () => import("./admin/leads/pages/LeadCollectionPage"),
 );
 const LeadAgentsPage = lazy(() => import("./admin/leads/pages/LeadAgentsPage"));
 
-// Smart Contact QR — console for the permanent QR contact profiles. The public
-// page those QR codes resolve to is a separate app in SmarID/.
 const SmartContactProfilesPage = lazy(
   () => import("./admin/smart-contact/pages/SmartContactProfilesPage"),
 );
@@ -174,19 +199,10 @@ const SmartContactAnalyticsPage = lazy(
   () => import("./admin/smart-contact/pages/SmartContactAnalyticsPage"),
 );
 
-// Sacred Services Ecosystem & Media Hub Pages
 const namedPage = <T extends Record<string, React.ComponentType<any>>>(
   loader: () => Promise<T>,
   name: keyof T,
 ) => lazy(() => loader().then((module) => ({ default: module[name] })));
-const PilgrimageCircuitsPage = namedPage(
-  () => import("./pages/PilgrimageCircuitsPage"),
-  "PilgrimageCircuitsPage",
-);
-const PilgrimageCircuitDetailPage = namedPage(
-  () => import("./pages/PilgrimageCircuitDetailPage"),
-  "PilgrimageCircuitDetailPage",
-);
 const TemplesPage = namedPage(
   () => import("./pages/TemplesPage"),
   "TemplesPage",
@@ -211,11 +227,51 @@ const VideoDetailPage = namedPage(
   () => import("./pages/VideoDetailPage"),
   "VideoDetailPage",
 );
-const PilgrimagePlannerPage = namedPage(
-  () => import("./pages/PilgrimagePlannerPage"),
-  "PilgrimagePlannerPage",
+const EventsHubPage = lazy(
+  () => import("./modules/events/pages/EventsHubPage"),
 );
-const EventsFestivalsPage = lazy(() => import("./pages/EventsFestivalsPage"));
+const EventDetailPage = lazy(
+  () => import("./modules/events/pages/EventDetailPage"),
+);
+const EventMyPassesPage = lazy(
+  () => import("./modules/events/pages/EventMyPassesPage"),
+);
+const EventPassPage = lazy(
+  () => import("./modules/events/pages/EventPassPage"),
+);
+const EventGatePage = lazy(
+  () => import("./modules/events/pages/EventGatePage"),
+);
+const OwnerEventsPage = lazy(
+  () => import("./modules/events/pages/OwnerEventsPage"),
+);
+const OwnerEventRegistrationsPage = lazy(
+  () => import("./modules/events/pages/OwnerEventRegistrationsPage"),
+);
+const EventControlCenterPage = lazy(
+  () => import("./admin/events/pages/EventControlCenterPage"),
+);
+const EventApprovalsPage = lazy(
+  () => import("./admin/events/pages/EventApprovalsPage"),
+);
+const CircuitsHubPage = lazy(
+  () => import("./modules/pilgrimage/pages/CircuitsHubPage"),
+);
+const CircuitDetailPage = lazy(
+  () => import("./modules/pilgrimage/pages/CircuitDetailPage"),
+);
+const ItineraryPlannerPage = lazy(
+  () => import("./modules/pilgrimage/pages/ItineraryPlannerPage"),
+);
+const OwnerCircuitsPage = lazy(
+  () => import("./modules/pilgrimage/pages/OwnerCircuitsPage"),
+);
+const CircuitControlCenterPage = lazy(
+  () => import("./admin/pilgrimage/pages/CircuitControlCenterPage"),
+);
+const CircuitApprovalsPage = lazy(
+  () => import("./admin/pilgrimage/pages/CircuitApprovalsPage"),
+);
 const LocalServicesHubPage = lazy(() => import("./pages/LocalServicesHubPage"));
 const ServicesHubPage = lazy(() => import("./pages/ServicesHubPage"));
 const MarketplaceHubPage = lazy(() => import("./pages/MarketplaceHubPage"));
@@ -236,7 +292,6 @@ const OwnerVolunteerPage = lazy(
   () => import("./pages/owner/OwnerVolunteerPage"),
 );
 
-// Customer Profile Pages
 const ProfileMainPage = lazy(() => import("./pages/profile/ProfileMainPage"));
 
 import {
@@ -246,12 +301,6 @@ import {
 import { setGuestPendingIntent } from "./utils/guestGate";
 import { smoothScrollEngine } from "./utils/smoothScroll";
 
-/**
- * `/` is the visitor landing page only. Once an operational account has an
- * authenticated session, reopening Tirvona (or being sent away from a route
- * it cannot access) must return it to its own console instead of exposing the
- * public homepage. Customer/pilgrim accounts intentionally keep the homepage.
- */
 const RoleAwareHome: React.FC = () => {
   const { user, loading } = useAuth();
 
@@ -271,7 +320,6 @@ const RoleAwareHome: React.FC = () => {
   );
 };
 
-// Protected Route Wrapper Component
 const ProtectedRoute: React.FC<{
   children: React.ReactNode;
   allowedRoles?: string[];
@@ -310,7 +358,6 @@ const ProtectedRoute: React.FC<{
   return <>{children}</>;
 };
 
-// Scroll to top on navigation or search query change
 const ScrollToTop: React.FC = () => {
   const { pathname, search } = useLocation();
 
@@ -324,8 +371,6 @@ const ScrollToTop: React.FC = () => {
 };
 
 const AppContent: React.FC = () => {
-  // Subscribing the route shell ensures every mounted module re-renders when
-  // either the selected currency or the live rate changes.
   useCurrency();
   useLanguage();
   useEffect(() => {
@@ -343,12 +388,8 @@ const AppContent: React.FC = () => {
       <AuthReturnRestorer />
       <Suspense fallback={<PageLoader />}>
         <Routes>
-          {/* Public Routes */}
           <Route element={<PublicLayout />}>
             <Route path="/" element={<RoleAwareHome />} />
-            {/* Operational accounts normally redirect from `/` to their own
-              console. This explicit route is the intentional escape hatch
-              used by the dashboard's Public Portal button. */}
             <Route path="/public" element={<HomePage />} />
             <Route path="/featured-banner/:bannerId" element={<BannerDetailPage />} />
             <Route path="/search" element={<SearchPage />} />
@@ -357,40 +398,31 @@ const AppContent: React.FC = () => {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
-            {/* Links mailed before the token moved to the query string used a
-                path segment. Kept so reset emails already sitting in inboxes
-                still open the form instead of the 404 page. */}
             <Route
               path="/reset-password/:token"
               element={<ResetPasswordPage />}
             />
-            {/* Company */}
             <Route path="/about" element={<AboutPage />} />
             <Route path="/careers" element={<CareersPage />} />
             <Route path="/partner" element={<PartnerPage />} />
             <Route path="/press" element={<PressPage />} />
-            {/* Support */}
             <Route path="/help" element={<HelpCenterPage />} />
             <Route path="/contact" element={<ContactPage />} />
             <Route
               path="/cancellation-policy"
               element={<CancellationPolicyPage />}
             />
-            {/* Information */}
             <Route path="/govt-guidelines" element={<GovtGuidelinesPage />} />
             <Route path="/owner-guide" element={<OwnerGuidePage />} />
             <Route path="/stay-policies" element={<StayPoliciesPage />} />
-            {/* Legal */}
             <Route path="/terms" element={<TermsPage />} />
             <Route path="/privacy" element={<PrivacyPage />} />
             <Route path="/refund-policy" element={<RefundPolicyPage />} />
             <Route path="/cookie-policy" element={<CookiePolicyPage />} />
-            {/* Offers & Promotions Directory */}
             <Route path="/offers" element={<OffersPage />} />
             <Route path="/offers/:offerId" element={<OfferDetailPage />} />
             <Route path="/offers/category/:category" element={<OffersPage />} />
             <Route path="/offers/city/:city" element={<OffersPage />} />
-            {/* Marketplace Directory & Dedicated Landing Pages */}
             <Route
               path="/marketplace/categories"
               element={<MarketplaceCategoriesPage />}
@@ -404,29 +436,28 @@ const AppContent: React.FC = () => {
               element={<MarketplaceCategoryDetailPage />}
             />
 
-            {/* Sacred Services Ecosystem Modules */}
             <Route
               path="/pilgrimage-circuits"
-              element={<PilgrimageCircuitsPage />}
+              element={<CircuitsHubPage />}
             />
             <Route
               path="/pilgrimage-circuits/:slug"
-              element={<PilgrimageCircuitDetailPage />}
+              element={<CircuitDetailPage />}
             />
-            <Route path="/circuits" element={<PilgrimageCircuitsPage />} />
+            <Route path="/circuits" element={<CircuitsHubPage />} />
             <Route
               path="/circuits/:slug"
-              element={<PilgrimageCircuitDetailPage />}
+              element={<CircuitDetailPage />}
             />
-            <Route path="/destinations" element={<PilgrimageCircuitsPage />} />
+            <Route path="/destinations" element={<CircuitsHubPage />} />
             <Route
               path="/destinations/:slug"
-              element={<PilgrimageCircuitDetailPage />}
+              element={<CircuitDetailPage />}
             />
             <Route path="/temples" element={<TemplesPage />} />
             <Route path="/temples/:slug" element={<TempleDetailPage />} />
-            <Route path="/events" element={<EventsFestivalsPage />} />
-            <Route path="/events/:slug" element={<EventsFestivalsPage />} />
+            <Route path="/events" element={<EventsHubPage />} />
+            <Route path="/events/:idOrSlug" element={<EventDetailPage />} />
             <Route
               path="/travel-guides"
               element={<SacredDirectoryModulePage />}
@@ -452,15 +483,13 @@ const AppContent: React.FC = () => {
               element={<SacredDirectoryModulePage />}
             />
 
-            {/* Spiritual Media & Knowledge Hub Routes */}
             <Route path="/blog" element={<BlogListPage />} />
             <Route path="/blog/:slug" element={<BlogDetailPage />} />
             <Route path="/video/:slug" element={<VideoDetailPage />} />
 
-            {/* Dedicated Cards Routes */}
             <Route
               path="/destinations/planner"
-              element={<PilgrimagePlannerPage />}
+              element={<ItineraryPlannerPage />}
             />
             <Route path="/local" element={<LocalServicesHubPage />} />
             <Route path="/services" element={<ServicesHubPage />} />
@@ -476,15 +505,15 @@ const AppContent: React.FC = () => {
             />
             <Route path="/careers" element={<VolunteerHubPage />} />
 
-            {/* ── Parking System (public discovery) ──
-              Static segments are declared before the `/parking/:slug` catch-all
-              so a listing slug can never shadow them. */}
             <Route path="/parking" element={<ParkingHubPage />} />
             <Route path="/parking/:slug" element={<ParkingDetailPage />} />
 
+            <Route path="/aarti" element={<AartiHubPage />} />
+            <Route path="/live-pooja" element={<LivePoojaPage />} />
+            <Route path="/aarti/:id" element={<AartiDetailPage />} />
+
           </Route>
 
-          {/* Customer account and booking data always require a live session. */}
           <Route
             element={
               <ProtectedRoute>
@@ -522,15 +551,6 @@ const AppContent: React.FC = () => {
             />
           </Route>
 
-          {/* ── Parking System (authenticated) ──
-            Only a signed-in session is required here, deliberately: parking
-            roles are grants in the `parking_staff` collection, not values of
-            `User.role`, so `allowedRoles` cannot express them. The real
-            authorisation is the capability check the parking API performs on
-            every request, and each panel renders an explicit "not assigned"
-            state when the caller holds no grant. React Router ranks these
-            static paths above `/parking/:slug`, so no listing slug can shadow
-            them. */}
           <Route
             element={
               <ProtectedRoute>
@@ -543,10 +563,16 @@ const AppContent: React.FC = () => {
               path="/parking/booking/:id"
               element={<ParkingBookingDetailPage />}
             />
+            <Route path="/aarti/checkout" element={<AartiCheckoutPage />} />
+            <Route
+              path="/aarti/booking/:id"
+              element={<AartiBookingDetailPage />}
+            />
+            <Route path="/profile/aarti" element={<AartiMyBookingsPage />} />
+            <Route path="/profile/events" element={<EventMyPassesPage />} />
+            <Route path="/events/pass/:id" element={<EventPassPage />} />
           </Route>
 
-          {/* Smart Parking Role Dashboard (Partners, Managers, Guards, Admins).
-            All operational parking pages render inside DashboardLayout console. */}
           <Route
             element={
               <ProtectedRoute>
@@ -568,10 +594,10 @@ const AppContent: React.FC = () => {
               path="/parking/my-bookings"
               element={<ParkingMyBookingsPage />}
             />
+            <Route path="/aarti/gate" element={<AartiGatePage />} />
+            <Route path="/events/gate" element={<EventGatePage />} />
           </Route>
 
-          {/* Property management. Staff portals are isolated below so a reception
-            or housekeeping account cannot open owner administration pages. */}
           <Route
             element={
               <ProtectedRoute allowedRoles={["ashram_owner", "ashram_admin", "owner", "stay_admin", "manager"]}>
@@ -651,12 +677,48 @@ const AppContent: React.FC = () => {
             <Route path="/ashram-owner/bookings" element={<OwnerBookingCenterPage key="ashram-owner-bookings" initialView="bookings" />} />
             <Route path="/ashram-admin/payments" element={<OwnerBookingCenterPage key="ashram-admin-payments" initialView="payments" />} />
             <Route path="/ashram-owner/payments" element={<OwnerBookingCenterPage key="ashram-owner-payments" initialView="payments" />} />
+            <Route path="/owner/payouts" element={<PayoutManagementPage />} />
+            <Route path="/ashram-admin/payouts" element={<PayoutManagementPage />} />
+            <Route path="/ashram-owner/payouts" element={<PayoutManagementPage />} />
             <Route
               path="/owner/parking"
               element={<OwnerParkingSetupPage />}
             />
             <Route path="/ashram-admin/parking" element={<OwnerParkingSetupPage />} />
             <Route path="/ashram-owner/parking" element={<OwnerParkingSetupPage />} />
+            <Route path="/owner/aarti" element={<OwnerAartiSessionsPage />} />
+            <Route path="/ashram-admin/aarti" element={<OwnerAartiSessionsPage />} />
+            <Route path="/ashram-owner/aarti" element={<OwnerAartiSessionsPage />} />
+            <Route path="/owner/aarti/bookings" element={<OwnerAartiBookingsPage />} />
+            <Route
+              path="/ashram-admin/aarti/bookings"
+              element={<OwnerAartiBookingsPage />}
+            />
+            <Route
+              path="/ashram-owner/aarti/bookings"
+              element={<OwnerAartiBookingsPage />}
+            />
+            <Route path="/owner/live-pooja" element={<OwnerLivePoojaPage />} />
+            <Route path="/ashram-admin/live-pooja" element={<OwnerLivePoojaPage />} />
+            <Route path="/ashram-owner/live-pooja" element={<OwnerLivePoojaPage />} />
+            <Route path="/owner/events" element={<OwnerEventsPage />} />
+            <Route path="/ashram-admin/events" element={<OwnerEventsPage />} />
+            <Route path="/ashram-owner/events" element={<OwnerEventsPage />} />
+            <Route
+              path="/owner/events/registrations"
+              element={<OwnerEventRegistrationsPage />}
+            />
+            <Route
+              path="/ashram-admin/events/registrations"
+              element={<OwnerEventRegistrationsPage />}
+            />
+            <Route
+              path="/ashram-owner/events/registrations"
+              element={<OwnerEventRegistrationsPage />}
+            />
+            <Route path="/owner/circuits" element={<OwnerCircuitsPage />} />
+            <Route path="/ashram-admin/circuits" element={<OwnerCircuitsPage />} />
+            <Route path="/ashram-owner/circuits" element={<OwnerCircuitsPage />} />
           </Route>
 
           <Route
@@ -688,11 +750,6 @@ const AppContent: React.FC = () => {
               </ProtectedRoute>
             }
           >
-            {/* Owners and the platform share one offers console. The
-              owner-specific wizard at ./pages/OwnerOffersPage drifted from it
-              until the two disagreed on discounts, expiry and ashram binding;
-              that file is left in place, unused, so this is easy to revert.
-              Scope is role-aware inside the page. */}
             <Route path="/owner/offers" element={<AdminOffersPage />} />
             <Route path="/ashram-admin/offers" element={<AdminOffersPage />} />
             <Route path="/ashram-owner/offers" element={<AdminOffersPage />} />
@@ -700,7 +757,6 @@ const AppContent: React.FC = () => {
 
 
 
-          {/* Support Tickets shared across Roles */}
           <Route
             element={
               <ProtectedRoute
@@ -722,7 +778,6 @@ const AppContent: React.FC = () => {
             <Route path="/support" element={<SupportTicketsPage />} />
           </Route>
 
-          {/* Jurisdiction-scoped verification roles */}
           <Route
             element={
               <ProtectedRoute
@@ -767,8 +822,7 @@ const AppContent: React.FC = () => {
             }
           >
             <Route path="/admin/audit-logs" element={<AuditLogsPage />} />
-            {/* Lead Collection. Declared before /admin/manage/:moduleKey so
-              the generic console cannot shadow it. */}
+            <Route path="/admin/payouts" element={<PayoutManagementPage />} />
             <Route
               path="/admin/lead-collection/leads"
               element={<LeadCollectionPage />}
@@ -777,8 +831,6 @@ const AppContent: React.FC = () => {
               path="/admin/lead-collection/agents"
               element={<LeadAgentsPage />}
             />
-            {/* Smart Contact QR. `/analytics` is declared before the `:id`
-              route so the literal segment is not swallowed as a profile id. */}
             <Route
               path="/admin/smart-contacts"
               element={<SmartContactProfilesPage />}
@@ -807,10 +859,6 @@ const AppContent: React.FC = () => {
               path="/admin/enterprise-notifications/:subSection?"
               element={<EnterpriseNotificationCenterPage />}
             />
-            {/* Parking. The workflow actions (partner approval, payout
-              settlement, refunds) live here rather than in the generic console,
-              which can only $set fields. Declared before
-              /admin/manage/:moduleKey so neither shadows the other. */}
             <Route
               path="/admin/parking/control"
               element={<ParkingControlCenterPage />}
@@ -818,6 +866,42 @@ const AppContent: React.FC = () => {
             <Route
               path="/admin/parking/roles"
               element={<ParkingStaffRolesPage />}
+            />
+            <Route
+              path="/admin/aarti/control"
+              element={<AartiControlCenterPage />}
+            />
+            <Route
+              path="/admin/aarti/approvals"
+              element={<AartiApprovalsPage />}
+            />
+            <Route
+              path="/admin/aarti/bookings"
+              element={<OwnerAartiBookingsPage />}
+            />
+            <Route
+              path="/admin/live-pooja"
+              element={<OwnerLivePoojaPage />}
+            />
+            <Route
+              path="/admin/events/control"
+              element={<EventControlCenterPage />}
+            />
+            <Route
+              path="/admin/events/approvals"
+              element={<EventApprovalsPage />}
+            />
+            <Route
+              path="/admin/events/registrations"
+              element={<OwnerEventRegistrationsPage />}
+            />
+            <Route
+              path="/admin/circuits/control"
+              element={<CircuitControlCenterPage />}
+            />
+            <Route
+              path="/admin/circuits/approvals"
+              element={<CircuitApprovalsPage />}
             />
             <Route
               path="/admin/approvals/room-categories"
@@ -846,9 +930,6 @@ const AppContent: React.FC = () => {
             />
           </Route>
 
-          {/* Refund queue. Wider than the policy screen: finance and support
-            work the queue, but only the platform rewrites the rules. The
-            server re-checks every action regardless. */}
           <Route
             element={
               <ProtectedRoute
@@ -905,10 +986,6 @@ const AppContent: React.FC = () => {
             />
           </Route>
 
-          {/* Volunteer openings & applications for the whole platform. The same
-            page serves an owner at /owner/volunteer; scope is role-aware
-            inside, and the API already returns every ashram's openings to a
-            super admin while limiting an owner to their own. */}
           <Route
             element={
               <ProtectedRoute allowedRoles={["super_admin", "national_admin"]}>
@@ -917,10 +994,6 @@ const AppContent: React.FC = () => {
             }
           >
             <Route path="/admin/volunteer" element={<OwnerVolunteerPage />} />
-            {/* Same review console the owner uses, at platform scope. The API
-                already allowed super_admin to review an article; only the
-                listing and this route were missing, so an administrator could
-                not reach the articles that fill the public blog feed. */}
             <Route
               path="/admin/articles"
               element={<OwnerVisitorArticlesPage />}
@@ -978,7 +1051,6 @@ const AppContent: React.FC = () => {
             />
           </Route>
 
-          {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>

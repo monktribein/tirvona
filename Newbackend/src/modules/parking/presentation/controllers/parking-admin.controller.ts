@@ -189,12 +189,6 @@ export class ParkingAdminController {
     };
   }
 
-  /**
-   * Parking roles are grants in `parking_staff`, not values of `User.role`, so
-   * they are invisible to the user-management console. These three routes are
-   * the platform-wide view of them; the partner-scoped equivalents on
-   * /parking/partner answer only for a caller who holds grants of their own.
-   */
   @Get("staff")
   @ParkingCapabilities(PARKING_CAPABILITIES.MANAGE_STAFF)
   async staff(@Query() query: Record<string, string>) {

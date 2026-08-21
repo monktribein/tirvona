@@ -29,13 +29,6 @@ import {
 } from "./dtos/lead-user.dto";
 import { LeadDecisionDto, LeadQueryDto, SaveLeadDto } from "./dtos/lead.dto";
 
-/**
- * The super admin console surface for Lead Collection.
- *
- * Guarded by the platform's own auth — these are Tirvona staff, not field
- * agents — and restricted to `super_admin`. Two resources: the leads
- * themselves and the `lead_users` accounts that capture them.
- */
 @ApiTags("Lead Collection")
 @ApiBearerAuth()
 @Roles("super_admin")
@@ -49,8 +42,6 @@ export class LeadAdminController {
   private actor(user: AuthenticatedUser): LeadAdminActor {
     return { id: user.id, name: user.name };
   }
-
-  // ── Leads ────────────────────────────────────────────────────────────────
 
   @Get("leads")
   async listLeads(@Query() query: LeadQueryDto) {
@@ -113,11 +104,6 @@ export class LeadAdminController {
     };
   }
 
-  /**
-   * Marks an approved lead as having been turned into a live ashram listing.
-   * A bookkeeping flag only — this module never writes to the platform's
-   * `ashrams` collection, so onboarding stays an explicit, human step.
-   */
   @Post("leads/:id/convert")
   @HttpCode(200)
   async convertLead(
@@ -154,8 +140,6 @@ export class LeadAdminController {
       data: await this.leads.remove(id),
     };
   }
-
-  // ── Lead users (field agents) ────────────────────────────────────────────
 
   @Get("regions")
   async listRegions() {

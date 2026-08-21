@@ -147,8 +147,6 @@ export const RefundPoliciesPage: React.FC = () => {
 
   useEffect(() => {
     load();
-    // Ashram list powers the property-scoped option; a failure just means that
-    // scope is unavailable, not that the page is broken.
     ashramService
       .search({ limit: "100" })
       .then((res) => setAshrams(res.data?.data ?? []))
@@ -170,11 +168,6 @@ export const RefundPoliciesPage: React.FC = () => {
         : current,
     );
 
-  /**
-   * GST can only be refunded alongside the platform fee it was charged on —
-   * the server rejects the other combination outright, so the form makes it
-   * unreachable rather than letting an operator hit a 400.
-   */
   const setPlatformFee = (value: boolean) =>
     set({ refundPlatformFee: value, ...(value ? {} : { refundGst: false }) });
 
@@ -220,7 +213,6 @@ export const RefundPoliciesPage: React.FC = () => {
     if (!deleteTarget?._id) return;
     const target = deleteTarget;
     setDeleteTarget(null);
-    // Optimistic: the row disappears, and returns if the server refuses.
     const previous = policies;
     setPolicies((current) => current.filter((p) => p._id !== target._id));
     try {
@@ -427,7 +419,6 @@ export const RefundPoliciesPage: React.FC = () => {
         </div>
       )}
 
-      {/* Editor */}
       <EnterpriseModal
         isOpen={draft !== null}
         onClose={() => setDraft(null)}

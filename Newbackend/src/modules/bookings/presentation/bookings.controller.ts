@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   Param,
@@ -18,6 +19,7 @@ import { Roles } from "../../../common/decorators/roles.decorator";
 import { BookingsService } from "../application/bookings.service";
 import {
   AssignRoomDto,
+  AdminUpdateBookingDto,
   BookingDashboardQueryDto,
   CancelBookingDto,
   CheckinDto,
@@ -30,20 +32,6 @@ import {
 @Controller("bookings")
 export class BookingsController {
   constructor(private readonly service: BookingsService) {}
-  /**
-   * Price a prospective booking without creating anything.
-   *
-   * The booking page used to re-implement the pricing rules client-side to
-   * show a total, which meant the figure a guest agreed to and the figure the
-   * gateway charged were computed by two different pieces of code. They drifted
-   * — peak-season multipliers, platform-fee settings and coupon rounding all
-   * live on the server — and the guest saw one number and paid another. This
-   * returns the same `quote()` the booking and payment-order paths use, so the
-   * amount displayed is by construction the amount charged.
-   *
-   * Read-only: it resolves the room, inventory, add-ons, policy and coupon, and
-   * writes nothing. Throttled because it is called as the guest edits a form.
-   */
   @Post("quote")
   @Public()
   @HttpCode(200)
@@ -151,6 +139,31 @@ export class BookingsController {
     return {
       success: true,
       data: await this.service.updateStatus(id, user, dto),
+    };
+  }
+  @Put(":id/admin")
+  @Roles("super_admin")
+  async adminUpdate(
+    @Param("id") id: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: AdminUpdateBookingDto,
+  ) {
+    return {
+      success: true,
+      message: "Booking details updated successfully",
+      data: await this.service.adminUpdate(id, user, dto),
+    };
+  }
+  @Delete(":id/admin")
+  @Roles("super_admin")
+  async adminArchive(
+    @Param("id") id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return {
+      success: true,
+      message: "Unpaid booking archived successfully",
+      data: await this.service.adminArchive(id, user),
     };
   }
   @Post(":id/checkin")

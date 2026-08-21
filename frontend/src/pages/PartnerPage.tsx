@@ -100,7 +100,6 @@ const PartnerPage: React.FC = () => {
 
   return (
     <div className="pb-20">
-      {/* Hero */}
       <section className="bg-[#0B192C] text-white py-16 px-4 sm:px-6 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-[#D4AF37]/5 rounded-full blur-[80px] pointer-events-none" />
         <div className="max-w-4xl mx-auto text-center relative z-10 space-y-4">
@@ -126,7 +125,6 @@ const PartnerPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Benefits */}
       <section className="max-w-5xl mx-auto px-4 sm:px-6 py-14 space-y-10">
         <div className="text-center space-y-2">
           <h2
@@ -154,7 +152,6 @@ const PartnerPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Plans */}
       <section className="bg-gray-50 dark:bg-slate-900/50 py-14 px-4 sm:px-6">
         <div className="max-w-5xl mx-auto space-y-10">
           <div className="text-center space-y-2">
@@ -224,7 +221,6 @@ const PartnerPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Registration Form */}
       <section
         id="register-form"
         className="max-w-2xl mx-auto px-4 sm:px-6 py-14"

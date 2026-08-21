@@ -443,11 +443,6 @@ export class CommunityService {
     };
   }
   async ownerArticles(user: AuthenticatedUser, status?: string): Promise<any> {
-    // A platform administrator sees every ashram's articles, not just the ones
-    // they happen to own. `reviewArticle` below already exempts super_admin, so
-    // the intent was there — but the listing filtered on `ownerId` with no
-    // exemption, which handed an administrator an empty page and no way to
-    // reach the article they were allowed to review.
     const scope: Record<string, unknown> = canManageAllAshrams(user)
       ? {}
       : { ownerId: user.id };
@@ -465,11 +460,6 @@ export class CommunityService {
       data,
     };
   }
-  /**
-   * The article, plus the check that this administrator may act on it.
-   * Mirrors `reviewArticle`: a platform admin may touch any article, an ashram
-   * owner only their own.
-   */
   private async articleForAdmin(
     user: AuthenticatedUser,
     id: string,
@@ -487,8 +477,6 @@ export class CommunityService {
     dto: AdminUpdateVisitorArticleDto,
   ): Promise<any> {
     await this.articleForAdmin(user, id);
-    // Only the keys actually supplied, so a partial form never blanks a field
-    // the administrator left untouched.
     const update = Object.fromEntries(
       Object.entries(dto).filter(([, value]) => value !== undefined),
     );
@@ -504,8 +492,6 @@ export class CommunityService {
 
   async deleteArticle(user: AuthenticatedUser, id: string): Promise<any> {
     const article = await this.articleForAdmin(user, id);
-    // Comments, likes and status history reference the article; leaving them
-    // behind would keep counting toward totals for a post nobody can open.
     await Promise.all([
       this.repository.removeMany("comments", { articleId: article._id }),
       this.repository.removeMany("likes", { articleId: article._id }),
@@ -618,9 +604,6 @@ export class CommunityService {
     );
     article.viewsCount = Number(article.viewsCount ?? 0) + 1;
     const [comments, relatedArticles] = await Promise.all([
-      // Ascending, so a thread reads in the order it was written. Nesting
-      // happens below; the client receives top-level comments each carrying
-      // their own `replies`.
       this.repository.list(
         "comments",
         { articleId: article._id, isApproved: { $ne: false } },
@@ -649,12 +632,6 @@ export class CommunityService {
     };
   }
 
-  /**
-   * Groups a flat comment list into top-level entries carrying their replies.
-   * Replies are one level deep, so a single pass is enough. An orphaned reply
-   * (its parent was removed) is promoted to top level rather than dropped —
-   * losing someone's words silently is worse than showing them unthreaded.
-   */
   private threadComments(rows: any[]): any[] {
     const byId = new Map<string, any>();
     const roots: any[] = [];
@@ -715,8 +692,6 @@ export class CommunityService {
     });
     if (!article) throw new NotFoundException("Article not found.");
     if (parentId) {
-      // A reply has to hang off a comment on *this* article, or a crafted id
-      // would graft a thread from one article onto another.
       const parent = await this.repository.one("comments", {
         _id: parentId,
         articleId: id,
@@ -734,7 +709,6 @@ export class CommunityService {
       userId: user.id,
       userName: user.name || "Verified Pilgrim",
       userRole: user.role,
-      // Marks the article's own author, so their replies can be badged.
       isAuthor: String(article.visitorId?._id ?? article.visitorId) === user.id,
       comment: comment.trim(),
       isApproved: true,

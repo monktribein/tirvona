@@ -41,8 +41,6 @@ export const AdminPlatformSettingsPage: React.FC = () => {
     label: "Tirvona Platform Fee",
     appliesTo: DEFAULT_PLATFORM_FEE_SCOPES,
   });
-  // GST charged on the platform fee. The stay is never taxed, so this is the
-  // only rate that reaches a booking total.
   const [platformFeeGstRate, setPlatformFeeGstRate] = useState<number>(18);
 
   useEffect(() => {
@@ -56,9 +54,6 @@ export const AdminPlatformSettingsPage: React.FC = () => {
       if (res.data?.success && res.data.data) {
         const data = res.data.data;
         if (data.platformFee)
-          // A row saved before `appliesTo` existed carries none, and spreading
-          // it raw would leave the control unchecked — reading back as "levy
-          // nowhere" for a platform that is in fact charging on stays.
           setPlatformFee({
             ...data.platformFee,
             appliesTo: platformFeeScopesOf(data.platformFee),
@@ -78,10 +73,6 @@ export const AdminPlatformSettingsPage: React.FC = () => {
     e.preventDefault();
     setSaving(true);
     try {
-      // Sent field by field rather than spreading `platformFee`. The state is
-      // seeded from the server response, so spreading it would echo back any
-      // extra key the API includes (_id, timestamps) — and the endpoint rejects
-      // unknown properties outright, which fails the whole save.
       const res = await platformSettingsService.updateSettings({
         platformFee: {
           enabled: platformFee.enabled,
@@ -93,8 +84,6 @@ export const AdminPlatformSettingsPage: React.FC = () => {
         platformFeeGstRate,
       });
       if (res.data?.success) {
-        // Re-seed from what the server actually stored, so the toggle can never
-        // sit showing a state the database does not hold.
         if (res.data.data?.platformFee)
           setPlatformFee({
             ...res.data.data.platformFee,
@@ -126,20 +115,15 @@ export const AdminPlatformSettingsPage: React.FC = () => {
         : [...p.appliesTo, scope],
     }));
 
-  // The preview models an ashram stay, so it is gated on that scope for the
-  // same reason the checkout is: a fee shown here that the booking page will
-  // not charge is exactly the drift this screen exists to rule out.
   const chargesAshramStays =
     platformFee.enabled && platformFee.appliesTo.includes("ashram_booking");
 
-  // Sample Live Preview calculations based on a ₹1,000 stay
   const sampleStayCost = 1000;
   const samplePlatformFee = !chargesAshramStays
     ? 0
     : platformFee.type === "percentage"
       ? Math.round((sampleStayCost * platformFee.value) / 100)
       : Math.round(platformFee.value);
-  // Mirrors BookingPricingService.quote: GST applies to the fee, not the stay.
   const sampleGst = roundMoney((samplePlatformFee * platformFeeGstRate) / 100);
   const sampleTotal = roundMoney(
     sampleStayCost + samplePlatformFee + sampleGst,
@@ -147,7 +131,6 @@ export const AdminPlatformSettingsPage: React.FC = () => {
 
   return (
     <div className="space-y-6 text-left w-full">
-      {/* Header */}
       <EnterprisePageHeader
         title="Platform Pricing & Fee Settings"
         subtitle="Configure the Tirvona Platform Fee (Flat ₹ or Percentage %) and tax rates applied across all booking checkouts."
@@ -159,7 +142,6 @@ export const AdminPlatformSettingsPage: React.FC = () => {
         <div className="h-64 bg-gray-50 dark:bg-slate-900 rounded-3xl animate-pulse" />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Form */}
           <form
             onSubmit={handleSave}
             className="lg:col-span-2 bg-white dark:bg-[#0B192C] p-6 rounded-[28px] border border-gray-100 dark:border-slate-800 shadow-sm space-y-6"
@@ -189,7 +171,6 @@ export const AdminPlatformSettingsPage: React.FC = () => {
               </button>
             </div>
 
-            {/* Pricing Model Selector */}
             <div className="space-y-2">
               <label className="text-[10px] font-extrabold tracking-wider text-gray-400">
                 Pricing Model
@@ -231,7 +212,6 @@ export const AdminPlatformSettingsPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Value & Label Inputs */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-semibold">
               <div className="space-y-1.5">
                 <label className="text-[10px] font-extrabold text-gray-400">
@@ -271,7 +251,6 @@ export const AdminPlatformSettingsPage: React.FC = () => {
               </div>
             </div>
 
-            {/* GST Rate */}
             <div className="space-y-1.5 text-xs font-semibold">
               <label className="text-[10px] font-extrabold text-gray-400">
                 GST on platform fee (%)
@@ -288,7 +267,6 @@ export const AdminPlatformSettingsPage: React.FC = () => {
               />
             </div>
 
-            {/* Which booking systems the fee is levied on */}
             <div className="space-y-2">
               <div className="flex items-baseline justify-between gap-3">
                 <label className="text-[10px] font-extrabold tracking-wider text-gray-400">
@@ -380,7 +358,6 @@ export const AdminPlatformSettingsPage: React.FC = () => {
             </div>
           </form>
 
-          {/* Live Checkout Preview */}
           <div className="bg-white dark:bg-[#0B192C] p-6 rounded-[28px] border border-gray-100 dark:border-slate-800 shadow-sm space-y-4">
             <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white flex items-center gap-2 border-b border-gray-50 dark:border-slate-850 pb-3">
               <Calculator size={16} className="text-[#0A4DA6]" /> Live Checkout

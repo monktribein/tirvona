@@ -38,6 +38,12 @@ services:
         value: true
       - key: SWAGGER_ENABLED
         value: false
+      # Authenticated users get independent 120/min buckets. This wider limit
+      # is the separate shared-IP abuse ceiling for large office networks.
+      - key: THROTTLE_IP_ABUSE_LIMIT
+        value: 30000
+      - key: THROTTLE_IP_ABUSE_TTL_MS
+        value: 60000
       - key: PARKING_QR_SECRET
         sync: false
       - key: ENCRYPTION_KEY
@@ -80,6 +86,31 @@ services:
         value: 4
       - key: MSG91_COUNTRY_CODE
         value: 91
+      # WhatsApp remains non-sending until explicitly enabled with dry-run off.
+      - key: WHATSAPP_ENABLED
+        value: false
+      - key: WHATSAPP_DRY_RUN
+        value: true
+      - key: AK_NEXUS_API_BASE_URL
+        value: https://app.aknexus.in/api
+      - key: AK_NEXUS_API_TOKEN
+        sync: false
+      - key: AK_NEXUS_ACCOUNT_ID
+        sync: false
+      - key: AK_NEXUS_WHATSAPP_TEMPLATE_AUTH_OTP
+        sync: false
+      - key: AK_NEXUS_WHATSAPP_TEMPLATE_BOOKING_CONFIRMATION
+        sync: false
+      - key: AK_NEXUS_WHATSAPP_TEMPLATE_PAYMENT_SUCCESS
+        sync: false
+      - key: AK_NEXUS_WHATSAPP_TEMPLATE_PAYMENT_FAILURE
+        sync: false
+      - key: AK_NEXUS_WHATSAPP_TEMPLATE_CANCELLATION
+        sync: false
+      - key: AK_NEXUS_WHATSAPP_TEMPLATE_REFUND
+        sync: false
+      - key: AK_NEXUS_WHATSAPP_TEMPLATE_CHECKIN_REMINDER
+        sync: false
       # Transactional email (OTP, password reset, notifications, messages).
       - key: RESEND_API_KEY
         sync: false
@@ -148,11 +179,11 @@ services:
         destination: /index.html
       - type: rewrite
         source: >-
-          /:page(about|admin|ashram|ashram-admin|ashram-owner|blog|booking|books|cancellation-policy|careers|circuits|contact|cookie-policy|dashboard|destinations|events|faq|featured-banner|govt-guidelines|handicrafts|help|local|local-guides|login|marketplace|offers|owner|owner-guide|parking|partner|pilgrimage-circuits|press|privacy|profile|public|puja-items|refund-policy|register|religious-products|reset-password|restaurants|search|services|shops|staff|stay-policies|support|temples|terms|transport|travel-guides|video|volunteer)
+          /:page(aarti|about|admin|ashram|ashram-admin|ashram-owner|blog|booking|books|cancellation-policy|careers|circuits|contact|cookie-policy|dashboard|destinations|events|faq|featured-banner|govt-guidelines|handicrafts|help|live-pooja|local|local-guides|login|marketplace|offers|owner|owner-guide|parking|partner|pilgrimage-circuits|press|privacy|profile|public|puja-items|refund-policy|register|religious-products|reset-password|restaurants|search|services|shops|staff|stay-policies|support|temples|terms|transport|travel-guides|video|volunteer)
         destination: /index.html
       - type: rewrite
         source: >-
-          /:page(about|admin|ashram|ashram-admin|ashram-owner|blog|booking|books|cancellation-policy|careers|circuits|contact|cookie-policy|dashboard|destinations|events|faq|featured-banner|govt-guidelines|handicrafts|help|local|local-guides|login|marketplace|offers|owner|owner-guide|parking|partner|pilgrimage-circuits|press|privacy|profile|public|puja-items|refund-policy|register|religious-products|reset-password|restaurants|search|services|shops|staff|stay-policies|support|temples|terms|transport|travel-guides|video|volunteer)/:rest*
+          /:page(aarti|about|admin|ashram|ashram-admin|ashram-owner|blog|booking|books|cancellation-policy|careers|circuits|contact|cookie-policy|dashboard|destinations|events|faq|featured-banner|govt-guidelines|handicrafts|help|live-pooja|local|local-guides|login|marketplace|offers|owner|owner-guide|parking|partner|pilgrimage-circuits|press|privacy|profile|public|puja-items|refund-policy|register|religious-products|reset-password|restaurants|search|services|shops|staff|stay-policies|support|temples|terms|transport|travel-guides|video|volunteer)/:rest*
         destination: /index.html
       # Legacy: QR codes generated while profiles lived under /c/ keep working.
       - type: rewrite

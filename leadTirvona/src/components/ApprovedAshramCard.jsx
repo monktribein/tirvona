@@ -1,6 +1,3 @@
-/**
- * ApprovedAshramCard.jsx — Clean Tirvona Approved Stay Card (No MongoDB Technical Code Block)
- */
 import React from 'react';
 import { MapPin, ShieldCheck, Phone, User, Calendar, CheckCircle2 } from 'lucide-react';
 import { formatDate } from '../utils/formatDate';
@@ -9,7 +6,6 @@ export default function ApprovedAshramCard({ ashram }) {
   return (
     <div className="bg-white border border-[#E2E8F0] rounded-2xl p-6 sm:p-7 shadow-xs hover:shadow-sm transition-all duration-300 flex flex-col justify-between">
       <div>
-        {/* Header Title Bar & Verified Badge */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E2E8F0] pb-4 mb-4">
           <div>
             <h3 className="text-lg font-extrabold text-[#0F172A] leading-snug">{ashram.name}</h3>
@@ -27,7 +23,6 @@ export default function ApprovedAshramCard({ ashram }) {
           </div>
         </div>
 
-        {/* Info Detail Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-medium p-4 bg-[#F8FAFC] rounded-xl border border-[#E2E8F0]">
           <div className="flex items-center gap-2 text-[#64748B]">
             <User size={13} className="text-[#0A4DA6] shrink-0" />

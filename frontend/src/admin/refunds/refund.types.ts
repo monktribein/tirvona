@@ -1,11 +1,3 @@
-/**
- * Shared refund shapes and presentation rules for the admin console.
- *
- * The status list, transition rules and role authority mirror the server
- * exactly. They exist here to decide what to *offer* — the server is still the
- * authority and re-checks every action, so a stale client can never widen what
- * a user is actually allowed to do.
- */
 
 export const REFUND_STATUSES = [
   "pending",
@@ -28,7 +20,6 @@ export const REFUND_MODULES = [
   "service_booking",
 ] as const;
 
-/** Mirrors REFUND_TRANSITIONS on the server. */
 export const REFUND_TRANSITIONS: Record<RefundStatus, RefundStatus[]> = {
   pending: ["under_review", "approved", "rejected", "cancelled"],
   under_review: ["approved", "rejected", "cancelled"],
@@ -40,11 +31,8 @@ export const REFUND_TRANSITIONS: Record<RefundStatus, RefundStatus[]> = {
   cancelled: [],
 };
 
-/** Roles that may approve a payout or push money to the gateway. */
 const APPROVER_ROLES = ["super_admin", "national_admin", "finance_manager"];
-/** Roles that may triage and reject, but never release money. */
 const REVIEWER_ROLES = [...APPROVER_ROLES, "support"];
-/** Only the platform may rewrite the rules themselves. */
 const POLICY_ROLES = ["super_admin", "national_admin"];
 
 export const canApproveRefunds = (role?: string): boolean =>
@@ -54,12 +42,6 @@ export const canReviewRefunds = (role?: string): boolean =>
 export const canManagePolicies = (role?: string): boolean =>
   POLICY_ROLES.includes(role ?? "");
 
-/**
- * Status tone. Deliberately not the shared EnterpriseStatusBadge palette —
- * refund states carry money meaning that the generic active/pending/rejected
- * mapping does not express (a `failed` gateway attempt is retryable, a
- * `rejected` claim is final).
- */
 export const REFUND_STATUS_TONE: Record<RefundStatus, string> = {
   pending:
     "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-900/50",
@@ -166,7 +148,6 @@ export interface RefundSummary {
   settledAmount: number;
 }
 
-/** Populated refs arrive as objects; unpopulated ones as raw ids. */
 export const refName = (
   value: RefundRequest["customerId"] | RefundRequest["ashramId"],
 ): string =>
@@ -182,6 +163,5 @@ export const calcOf = (
     ? request.calculationId
     : null;
 
-/** The net payout, taken from the calculation when it is populated. */
 export const netAmountOf = (request: RefundRequest): number =>
   calcOf(request)?.netRefundable ?? request.requestedAmount ?? 0;

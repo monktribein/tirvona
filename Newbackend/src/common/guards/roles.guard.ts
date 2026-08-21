@@ -14,12 +14,6 @@ export class RolesGuard implements CanActivate {
   constructor(private readonly reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    // `@Public()` wins over a class-level gate. A route declared public is
-    // reached without a session, so there is no user to hold a role or a
-    // permission — evaluating the inherited requirement would reject every
-    // anonymous caller and make the decorator a no-op on any guarded
-    // controller. The route still opts in explicitly; nothing becomes public
-    // by omission.
     if (
       this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
         context.getHandler(),
@@ -44,8 +38,6 @@ export class RolesGuard implements CanActivate {
       if (role === "stay_admin") return ASHRAM_ADMIN_ROLE;
       return role;
     });
-    // The platform Ashram Admin may operate every accommodation endpoint that
-    // an individual owner can, while an owner never inherits global access.
     if (
       actual === ASHRAM_ADMIN_ROLE &&
       canonicalAllowed.includes(ASHRAM_OWNER_ROLE)

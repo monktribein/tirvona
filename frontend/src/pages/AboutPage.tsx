@@ -26,7 +26,6 @@ import {
 
 const AboutPage: React.FC = () => {
   useEffect(() => {
-    // Dynamic SEO Metadata management
     const originalTitle = document.title;
     document.title =
       "About Tirvona™ | India's Digital Infrastructure for Religious Destinations";
@@ -172,7 +171,6 @@ const AboutPage: React.FC = () => {
 
   return (
     <div className="min-h-screen text-slate-900 dark:text-slate-100 transition-colors duration-300">
-      {/* ================= 1. HERO SECTION ================= */}
       <header className="bg-[#0B192C] text-white py-16 sm:py-24 px-4 sm:px-6 lg:px-8 relative overflow-hidden border-b border-slate-800">
         <div className="absolute top-0 right-1/4 w-96 h-96 bg-[#0A4DA6]/20 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-1/3 w-80 h-80 bg-[#D4AF37]/10 rounded-full blur-3xl pointer-events-none" />
@@ -222,7 +220,6 @@ const AboutPage: React.FC = () => {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 space-y-16 sm:space-y-24">
-        {/* ================= 2. ABOUT TIRVONA ================= */}
         <section aria-labelledby="about-tirvona-heading" className="space-y-6">
           <div className="text-center max-w-3xl mx-auto space-y-3">
             <h2
@@ -253,9 +250,7 @@ const AboutPage: React.FC = () => {
           </div>
         </section>
 
-        {/* ================= 3 & 4. VISION & MISSION ================= */}
         <section aria-label="Vision and Mission" className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Vision */}
           <article className="bg-white dark:bg-[#0B192C] border border-slate-200 dark:border-slate-800 rounded-3xl p-8 sm:p-10 shadow-sm hover:border-[#D4AF37]/50 transition-all flex flex-col justify-between space-y-6">
             <div className="space-y-4">
               <div className="w-14 h-14 rounded-2xl bg-[#0A4DA6]/10 dark:bg-white/5 border border-[#0A4DA6]/20 dark:border-white/10 flex items-center justify-center text-[#0A4DA6] dark:text-[#D4AF37]">
@@ -273,7 +268,6 @@ const AboutPage: React.FC = () => {
             </div>
           </article>
 
-          {/* Mission */}
           <article className="bg-white dark:bg-[#0B192C] border border-slate-200 dark:border-slate-800 rounded-3xl p-8 sm:p-10 shadow-sm hover:border-[#D4AF37]/50 transition-all flex flex-col justify-between space-y-6">
             <div className="space-y-4">
               <div className="w-14 h-14 rounded-2xl bg-[#0A4DA6]/10 dark:bg-white/5 border border-[#0A4DA6]/20 dark:border-white/10 flex items-center justify-center text-[#0A4DA6] dark:text-[#D4AF37]">
@@ -292,7 +286,6 @@ const AboutPage: React.FC = () => {
           </article>
         </section>
 
-        {/* ================= 5. WHAT WE OFFER ================= */}
         <section aria-labelledby="what-we-offer-heading" className="space-y-10">
           <div className="text-center max-w-3xl mx-auto space-y-3">
             <h2
@@ -332,7 +325,6 @@ const AboutPage: React.FC = () => {
           </div>
         </section>
 
-        {/* ================= 6. WHY TIRVONA ================= */}
         <section aria-labelledby="why-tirvona-heading" className="space-y-10">
           <div className="text-center max-w-3xl mx-auto space-y-3">
             <h2
@@ -367,7 +359,6 @@ const AboutPage: React.FC = () => {
           </div>
         </section>
 
-        {/* ================= 7. OUR COMMITMENT ================= */}
         <section aria-labelledby="our-commitment-heading">
           <div className="bg-gradient-to-br from-[#0B192C] via-[#0E2440] to-[#0B192C] border border-slate-800 rounded-3xl p-8 sm:p-12 text-white shadow-xl space-y-6 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-[#D4AF37]/10 rounded-full blur-3xl pointer-events-none" />
@@ -396,7 +387,6 @@ const AboutPage: React.FC = () => {
           </div>
         </section>
 
-        {/* ================= 8. DEVELOPED & MANAGED BY BIZWOKE NOVA ================= */}
         <section
           aria-labelledby="bizwoke-nova-heading"
           className="bg-white dark:bg-[#0B192C] border border-slate-200 dark:border-slate-800 rounded-3xl p-8 sm:p-12 shadow-sm space-y-8"
@@ -445,7 +435,6 @@ const AboutPage: React.FC = () => {
           </div>
         </section>
 
-        {/* ================= 9. JOIN THE DIGITAL TRANSFORMATION ================= */}
         <section
           aria-labelledby="join-transformation-heading"
           className="bg-gradient-to-r from-[#0A4DA6] to-[#0B192C] rounded-3xl p-8 sm:p-12 text-center text-white shadow-lg space-y-6 relative overflow-hidden"
@@ -484,7 +473,6 @@ const AboutPage: React.FC = () => {
           </div>
         </section>
 
-        {/* ================= 10. FOOTER STATEMENT ================= */}
         <footer className="pt-8 pb-12 border-t border-slate-200 dark:border-slate-800 text-center space-y-3">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-[#0B192C] dark:text-[#D4AF37]">
             Tirvona™

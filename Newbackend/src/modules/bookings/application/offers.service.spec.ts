@@ -20,11 +20,6 @@ const lean = (row: unknown) => ({
   lean: jest.fn().mockResolvedValue(row),
 });
 
-/**
- * A row exactly as the schemaless administration console leaves it: no
- * `ownerId`, no `description`. The typed schema marks both required, which is
- * what made every write against these rows fail.
- */
 const legacyRow = (extra: Record<string, unknown> = {}) => ({
   _id: new Types.ObjectId(OFFER_ID),
   offerTitle: "Mahakumbh",
@@ -34,11 +29,9 @@ const legacyRow = (extra: Record<string, unknown> = {}) => ({
   ...extra,
 });
 
-/** The `{ $set: … }` argument a targeted update is expected to issue. */
 type SetUpdate = { $set: Record<string, any> };
 
 const build = (row: unknown = legacyRow()) => {
-  // Mirrors the query builder `mine()` walks: find → sort → populate → lean.
   const findChain: any = {
     sort: jest.fn(() => findChain),
     populate: jest.fn(() => findChain),
@@ -67,7 +60,6 @@ const build = (row: unknown = legacyRow()) => {
     ashrams as never,
   );
 
-  /** The `$set` payload of the nth call, unwrapped for assertions. */
   const setOf = (
     calls: [Record<string, any>, SetUpdate, ...unknown[]][],
     call = 0,
@@ -92,10 +84,6 @@ describe("OffersService administration actions", () => {
     );
   });
 
-  /**
-   * The original defect. `remove()` hydrated the document and called `.save()`,
-   * which re-validated every required field and threw on console-authored rows.
-   */
   it("deletes a never-redeemed legacy row without re-validating it", async () => {
     const { service, offers } = build();
     const result = await service.remove(asUser(), OFFER_ID);
@@ -115,7 +103,6 @@ describe("OffersService administration actions", () => {
     const update = setOf(offers.updateOne.mock.calls as never);
     expect(update.deletedAt).toBeInstanceOf(Date);
     expect(update.status).toBe("disabled");
-    // The unique index would otherwise block re-creating the same campaign.
     expect(update.promoCode).toMatch(/^KUMBH2026-DELETED-\d+$/);
   });
 
@@ -137,7 +124,6 @@ describe("OffersService administration actions", () => {
     });
     const update = setOf(offers.findOneAndUpdate.mock.calls as never);
     expect(update.status).toBe("disabled");
-    // Nothing else may be touched — a toggle must not blank the record out.
     expect(Object.keys(update).sort()).toEqual(["status", "updatedBy"]);
   });
 

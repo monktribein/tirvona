@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { User as UserIcon, Phone, ArrowRight, ShieldCheck } from "lucide-react";
 
 interface Props {
-  /** Verified Google address, shown read-only so the user knows what they joined with. */
   email: string;
   suggestedName?: string;
   onSubmit: (
@@ -13,14 +12,6 @@ interface Props {
   onCancel: () => void;
 }
 
-/**
- * Final step of Google sign-up: collect the name and mobile number the account
- * cannot be created without. Rendered as a modal over the auth page, using the
- * same card, inputs and buttons as the rest of the auth flow.
- *
- * Deliberately not dismissible by backdrop click — abandoning here means no
- * account is created at all, so leaving is an explicit choice.
- */
 export const CompleteProfileModal: React.FC<Props> = ({
   email,
   suggestedName = "",
@@ -33,7 +24,6 @@ export const CompleteProfileModal: React.FC<Props> = ({
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Lock background scrolling while the modal is open.
   useEffect(() => {
     const previous = document.body.style.overflow;
     document.body.style.overflow = "hidden";

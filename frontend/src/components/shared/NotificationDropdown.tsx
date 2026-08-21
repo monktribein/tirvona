@@ -30,7 +30,6 @@ export const NotificationDropdown: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Close on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -60,7 +59,6 @@ export const NotificationDropdown: React.FC = () => {
 
   return (
     <div className="relative" ref={dropdownRef}>
-      {/* Bell Trigger Button */}
       <button
         onClick={() => setIsOpen((prev) => !prev)}
         className="p-2 rounded-full text-[#0B192C] dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-slate-800 transition-all cursor-pointer relative flex items-center justify-center"
@@ -77,10 +75,8 @@ export const NotificationDropdown: React.FC = () => {
         )}
       </button>
 
-      {/* Notification Center Dropdown */}
       {isOpen && (
         <div className="absolute right-0 mt-3 w-80 sm:w-96 bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 rounded-3xl shadow-2xl z-50 overflow-hidden text-left animate-in fade-in zoom-in-95 duration-150">
-          {/* Dropdown Header */}
           <div className="p-4 bg-gray-50/80 dark:bg-slate-900/80 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-full bg-[#0A4DA6]/10 text-[#0A4DA6] flex items-center justify-center">
@@ -126,8 +122,6 @@ export const NotificationDropdown: React.FC = () => {
             </div>
           </div>
 
-          {/* Notifications List. `overscroll-contain` keeps the page behind the
-              dropdown still once this list bottoms out. */}
           <div className="max-h-80 overflow-y-auto overscroll-contain divide-y divide-gray-100 dark:divide-slate-800 scrollbar-none">
             {notifications.length === 0 ? (
               <div className="py-10 text-center space-y-2">
@@ -177,7 +171,6 @@ export const NotificationDropdown: React.FC = () => {
             )}
           </div>
 
-          {/* Footer Link */}
           <div className="p-2.5 bg-gray-50 dark:bg-slate-900 border-t border-gray-100 dark:border-slate-800 text-center">
             <Link
               to="/profile/notifications"

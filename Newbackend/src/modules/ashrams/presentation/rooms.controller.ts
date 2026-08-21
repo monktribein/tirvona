@@ -66,12 +66,6 @@ export class RoomsController {
       data: await this.service.setAvailability(user, id, dto),
     };
   }
-  /**
-   * Visitor-facing availability. `@Public` overrides the controller-level
-   * `@Roles`, which is why this is a separate route rather than a flag on the
-   * owner calendar: a pilgrim needs price and free-count only, never the
-   * held/booked/maintenance split.
-   */
   @Public()
   @Get(":id/availability-calendar")
   @Header("Cache-Control", "no-store")

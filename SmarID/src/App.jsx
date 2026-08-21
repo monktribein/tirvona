@@ -4,20 +4,12 @@ import { InactiveNotice } from "./components/InactiveNotice";
 import { CardHeader, ProfileIdentity } from "./components/ProfileHeader";
 import { useDocumentMeta, useSmartContact } from "./hooks/useSmartContact";
 
-/**
- * The Tirvona Smart Contact page (spec §4–§8), laid out as an identity card.
- *
- * There is no router. One URL shape, one view — pulling in react-router would
- * add a dependency and a bundle for a slug this app reads straight off
- * `location.pathname`, against a two-second budget on mobile data (spec §39).
- */
 const Shell = ({ children }) => (
   <div className="page">
     <div className="page-main">{children}</div>
   </div>
 );
 
-/** Notice states reuse the card chrome so they still read as a Tirvona badge. */
 const NoticeCard = ({ icon, title, children }) => (
   <main className="card card-notice">
     <CardHeader />
@@ -39,11 +31,6 @@ const App = () => {
   if (status === "loading") {
     return (
       <Shell>
-        {/*
-          A skeleton in the final layout's shape, not a spinner: the page
-          reflows less when the data lands, and someone on a slow connection
-          sees the card taking form rather than an indefinite wait.
-        */}
         <main className="card" aria-busy="true" aria-live="polite">
           <CardHeader />
           <div className="card-body">
@@ -58,7 +45,6 @@ const App = () => {
     );
   }
 
-  // A bare URL with no slug — an incomplete link, not a missing person.
   if (status === "no-slug") {
     return (
       <Shell>
@@ -121,7 +107,6 @@ const App = () => {
     );
   }
 
-  // Spec §22 — a profile that is no longer active never renders contact data.
   if (!profile.isActive) {
     return (
       <Shell>

@@ -15,26 +15,15 @@ import type {
   ValidatePromoDto,
 } from "../presentation/dtos/booking.dto";
 
-/** Rows an administrator deleted are invisible to every read path. */
 const NOT_DELETED = { deletedAt: null };
 
-/**
- * An expiry date covers the whole of the day it names.
- *
- * The form submits a date with no time, which parses to midnight — so an offer
- * saved as "valid till 10 Aug" expired at the very start of 10 Aug. Every
- * redemption check compares `validTill >= now`, so such a coupon was rejected
- * as invalid from the moment it was created, and its countdown read zero.
- */
 const endOfDay = (value: string | Date): Date => {
   const date = new Date(value);
-  // A full timestamp is honoured as given; only a bare date is extended.
   if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value.trim()))
     date.setHours(23, 59, 59, 999);
   return date;
 };
 
-/** The mirror of `endOfDay`: a start date opens at the beginning of its day. */
 const startOfDay = (value: string | Date): Date => {
   const date = new Date(value);
   if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value.trim()))
@@ -42,29 +31,12 @@ const startOfDay = (value: string | Date): Date => {
   return date;
 };
 
-/**
- * Midnight today, used as the lower bound when filtering on `validTill`.
- *
- * Coupons written before expiries were stored end-of-day carry a midnight
- * stamp, so comparing them against the current instant drops them a full day
- * early. Comparing against the start of today instead honours the rule the
- * date was always meant to express — valid through the day it names — for
- * existing rows as well as new ones, with no migration.
- */
 export const startOfToday = (): Date => {
   const date = new Date();
   date.setHours(0, 0, 0, 0);
   return date;
 };
 
-/**
- * The instant a stored expiry actually lapses: the end of the day it names.
- *
- * Applied to values already in the database, where a legacy row's midnight
- * stamp would otherwise expire the coupon a day early. Unlike `endOfDay` this
- * extends unconditionally, because a stored `validTill` is always a date the
- * offer is meant to remain usable through.
- */
 const redeemableUntil = (value: Date | string): Date => {
   const date = new Date(value);
   date.setHours(23, 59, 59, 999);
@@ -73,7 +45,6 @@ const redeemableUntil = (value: Date | string): Date => {
 
 @Injectable()
 export class OffersService {
-  /** What a card needs to name an ashram and link to its booking page. */
   static readonly ASHRAM_CARD_FIELDS = "name slug address.city address.state";
 
   constructor(
@@ -83,13 +54,6 @@ export class OffersService {
     @InjectModel("Ashram") private readonly ashrams: Model<any>,
   ) {}
 
-  /**
-   * A malformed id is the caller's mistake, not a server fault.
-   *
-   * Without this Mongoose raises a CastError deep inside the query and the
-   * request surfaces as an opaque 500, which is indistinguishable from a real
-   * outage to whoever is looking at the console.
-   */
   private objectId(id: string): Types.ObjectId {
     if (!Types.ObjectId.isValid(id))
       throw new BadRequestException("That offer id is not valid");
@@ -144,16 +108,9 @@ export class OffersService {
           Math.min(100, Math.max(1, Number(query.limit) || 20)),
       )
       .limit(Math.min(100, Math.max(1, Number(query.limit) || 20)))
-      // The listing card links straight to the ashram the coupon belongs to
-      // and prints its city, so the reference has to arrive resolved. Without
-      // this it is a bare id and the card can only render a dead link.
       .populate("ashramId", OffersService.ASHRAM_CARD_FIELDS)
       .lean();
   }
-  /**
-   * @param countView false when an administrator is inspecting the record, so
-   * reviewing an offer in the console does not inflate its public view count.
-   */
   async one(id: string, countView = true): Promise<any> {
     const _id = this.objectId(id);
     const projection =
@@ -195,9 +152,6 @@ export class OffersService {
   ): Promise<void> {
     if (canManageAllAshrams(user) || String(row.ownerId) === user.id) return;
     const scope = await this.ownerAshrams(user);
-    // `one()` populates the ashram refs, so a reference here may already be a
-    // document. Stringifying that yields "[object Object]" and the comparison
-    // silently never matches, locking legitimate owners out of their own offer.
     const refId = (value: any): string =>
       String(value?._id ?? value);
     const ids = [row.ashramId, ...(row.applicableAshrams ?? [])]
@@ -206,14 +160,11 @@ export class OffersService {
     if (!ids.some((id) => scope.includes(id)))
       throw new ForbiddenException("You do not have access to this offer");
   }
-  /** Public wrapper over the scope check, for reads the controller has loaded. */
   async assertReadable(user: AuthenticatedUser, row: any): Promise<void> {
     return this.assertOfferScope(user, row);
   }
 
   async mine(user: AuthenticatedUser): Promise<any[]> {
-    // Resolved here too: the console lists which ashram each coupon is bound
-    // to, and the edit form preselects that ashram's destination.
     if (canManageAllAshrams(user))
       return this.offers
         .find(NOT_DELETED)
@@ -237,11 +188,6 @@ export class OffersService {
   async save(user: AuthenticatedUser, dto: SaveOfferDto): Promise<any> {
     const scope = await this.ownerAshrams(user);
     if (!canManageAllAshrams(user)) {
-      // Only the platform may publish a coupon that is valid everywhere.
-      // Without this an owner could omit `ashramId` and mint a discount
-      // redeemable against every ashram on the platform, including ones they
-      // have nothing to do with — the scope check below only fired when an
-      // ashram was named, so leaving it out bypassed authorisation entirely.
       if (!dto.ashramId)
         throw new ForbiddenException(
           "Select which of your ashrams this coupon applies to",
@@ -270,14 +216,6 @@ export class OffersService {
     });
   }
 
-  /**
-   * Keep the two ashram fields in agreement.
-   *
-   * Booking validation checks `ashramId` *and* `applicableAshrams`
-   * independently, so a coupon naming one ashram while listing others is
-   * unredeemable everywhere. Binding to a single ashram therefore makes it the
-   * only entry; clearing the binding removes the restriction from both.
-   */
   private ashramBinding(
     dto: SaveOfferDto | UpdateOfferDto,
   ): Record<string, any> {
@@ -285,17 +223,6 @@ export class OffersService {
     if (!dto.ashramId) return { ashramId: null, applicableAshrams: [] };
     return { ashramId: dto.ashramId, applicableAshrams: [dto.ashramId] };
   }
-  /**
-   * Load an offer for a write, having checked the caller may touch it.
-   *
-   * Returns a plain object rather than a hydrated document on purpose. Rows
-   * predating this module — anything the generic administration console wrote
-   * through its schemaless `Admin_offers` model — can be missing fields the
-   * typed schema marks required. Calling `.save()` on one re-validates the
-   * whole document and throws, which is what turned every delete into a 500.
-   * Every write below is a targeted update instead, so an edit is judged on
-   * what it actually changes.
-   */
   private async loadForWrite(
     user: AuthenticatedUser,
     id: string,
@@ -314,10 +241,6 @@ export class OffersService {
     dto: UpdateOfferDto,
   ): Promise<any> {
     const row = await this.loadForWrite(user, id);
-    // Re-binding a coupon to a different ashram is a write against that
-    // ashram; owning the coupon is not enough to point it somewhere else.
-    // Clearing the binding is likewise reserved to the platform, otherwise an
-    // owner could widen their own coupon to every ashram by editing it.
     if (dto.ashramId !== undefined && !canManageAllAshrams(user)) {
       if (!dto.ashramId)
         throw new ForbiddenException(
@@ -333,8 +256,6 @@ export class OffersService {
       updatedBy: user.id,
     };
     delete patch.extra;
-    // `undefined` in a $set is dropped by Mongoose, but an explicitly cleared
-    // optional field has to survive, so only absent keys are stripped.
     for (const key of Object.keys(patch))
       if (patch[key] === undefined) delete patch[key];
 
@@ -345,7 +266,6 @@ export class OffersService {
     if (dto.validFrom !== undefined)
       patch.validFrom = startOfDay(dto.validFrom);
     if (dto.maximumRedemptions !== undefined) {
-      // Redemptions already spent are not returned by raising the cap.
       const used = Math.max(
         0,
         (row.maximumRedemptions ?? 0) - (row.remainingRedemptions ?? 0),
@@ -372,16 +292,6 @@ export class OffersService {
     return this.update(user, id, { status } as UpdateOfferDto);
   }
 
-  /**
-   * Remove an offer.
-   *
-   * An offer nobody ever redeemed is deleted outright, which also frees its
-   * promo code for reuse — the code carries a unique index, so leaving a dead
-   * row behind would block anyone re-creating the same campaign. Once it has
-   * been redeemed the row is archived instead: bookings reference it and those
-   * references are immutable. The code is released either way, so the outcome
-   * an administrator sees is the same.
-   */
   async remove(
     user: AuthenticatedUser,
     id: string,
@@ -432,8 +342,6 @@ export class OffersService {
     const max = rest.maximumRedemptions ?? 100;
     return this.offers.create({
       ...rest,
-      // A legacy row may carry no owner at all; the copy is a new record and
-      // must satisfy the typed schema, so it falls back to its creator.
       ownerId: rest.ownerId ?? user.id,
       offerTitle: `${rest.offerTitle ?? "Offer"} Copy`,
       promoCode: `${rest.promoCode ?? "OFFER"}-COPY-${Date.now().toString().slice(-4)}`,
@@ -449,17 +357,8 @@ export class OffersService {
       updatedBy: user.id,
     });
   }
-  /**
-   * Check a promo code against a prospective booking.
-   *
-   * Each rejection names its own reason. A single "invalid or not applicable"
-   * for every case left a guest with a code that plainly exists no way to tell
-   * whether it had expired, was meant for another ashram, or needed a larger
-   * booking — and left support guessing too.
-   */
   async validate(dto: ValidatePromoDto): Promise<any> {
     const now = new Date();
-    // Fetched on the code alone, so each condition can be reported separately.
     const offer = await this.offers
       .findOne({
         ...NOT_DELETED,
@@ -484,7 +383,6 @@ export class OffersService {
         "This promo code has been fully redeemed",
       );
 
-    // The ashram binding. `ashramId` may arrive populated, so compare on the id.
     const boundAshramId = String(offer.ashramId?._id ?? offer.ashramId ?? "");
     if (boundAshramId && boundAshramId !== dto.ashramId)
       throw new BadRequestException(
@@ -505,10 +403,6 @@ export class OffersService {
       throw new BadRequestException(
         `This promo code needs a booking of at least ₹${offer.minimumBookingAmount}`,
       );
-    // `bookingAmount` is the full payable figure the booking page quoted —
-    // stay, services, donation, platform fee and its GST — because that is
-    // what a discount comes off. Rounded to paise, not to whole rupees, so the
-    // preview matches the amount checkout charges to the last decimal.
     let discount =
       offer.discountType === "Percentage"
         ? (dto.bookingAmount * offer.discountValue) / 100

@@ -14,8 +14,6 @@ import {
 } from "lucide-react";
 import { amenityLabel } from "../utils/parkingFormat";
 
-// Amenity chips for a parking facility.
-
 const ICONS: Record<string, React.ReactNode> = {
   covered: <Umbrella size={14} className="stroke-[2.5]" />,
   cctv: <Video size={14} className="stroke-[2.5]" />,

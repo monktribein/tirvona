@@ -1,24 +1,3 @@
-/**
- * useLeadStorage.js
- *
- * The single state bridge between the lead pages and wherever leads actually
- * live. Two modes, chosen by whether an agent is signed in:
- *
- *  - **Signed in** — leads are read from and written to the Lead Collection
- *    API, scoped server-side to that agent. Approval is not offered: only a
- *    Tirvona super admin can decide a lead, from the admin console.
- *  - **Signed out** — the original localStorage demo, so the UI can still be
- *    walked through without a backend running.
- *
- * Exposes:
- *  - leads            → the agent's captures (or the local demo set)
- *  - approvedAshrams  → approved leads, shown as Tirvona ashram documents
- *  - toast            → active toast notification
- *  - addLead()        → submit a new field lead
- *  - approveLead()    → demo-only; explains itself when signed in
- *  - removeLead()     → delete a lead
- *  - resetToDemo()    → restore the local demo data
- */
 import { useState, useEffect, useCallback } from 'react';
 import { leadApi } from '../services/leadApi';
 import { toApiLead, fromApiLead, toApprovedAshram } from '../utils/leadPayload';
@@ -43,7 +22,6 @@ export function useLeadStorage(isSignedIn = false) {
 
     setLoading(true);
     try {
-      // limit=100: a field agent's own history, not a paginated console view.
       const page = await leadApi.listMyLeads({ limit: 100 });
       const rows = page.items || [];
       setLeads(rows.map(fromApiLead));

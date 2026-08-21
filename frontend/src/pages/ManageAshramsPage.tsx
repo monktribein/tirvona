@@ -36,7 +36,6 @@ export const ManageAshramsPage: React.FC = () => {
   const [ashrams, setAshrams] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Edit Ashram Modal
   const [editAshram, setEditAshram] = useState<any | null>(null);
   const [editFormData, setEditFormData] = useState<any>({
     name: "",
@@ -49,7 +48,6 @@ export const ManageAshramsPage: React.FC = () => {
   const [newImageUrl, setNewImageUrl] = useState("");
   const [editLoading, setEditLoading] = useState(false);
 
-  // Upload Docs State
   const [uploadDeedId, setUploadDeedId] = useState<string | null>(null);
   const [trustDeedUrl, setTrustDeedUrl] = useState("");
   const [fireSafetyUrl, setFireSafetyUrl] = useState("");
@@ -202,7 +200,6 @@ export const ManageAshramsPage: React.FC = () => {
 
   return (
     <div className="space-y-8 text-left w-full">
-      {/* Top Banner Header */}
       <div className="bg-gradient-to-r from-[#0B192C] via-[#0A4DA6] to-[#0B192C] rounded-[28px] p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-amber-300 text-xs font-bold backdrop-blur-md">
@@ -226,7 +223,6 @@ export const ManageAshramsPage: React.FC = () => {
         </button>
       </div>
 
-      {/* Main Content Area */}
       {loading ? (
         <div className="space-y-4">
           <div className="h-64 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-[28px] animate-pulse" />
@@ -258,7 +254,6 @@ export const ManageAshramsPage: React.FC = () => {
               key={ashram._id}
               className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[32px] p-6 sm:p-8 shadow-sm space-y-6"
             >
-              {/* Header Title Bar */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 dark:border-slate-800 pb-6">
                 <div className="space-y-1.5">
                   <div className="flex items-center gap-3 flex-wrap">
@@ -293,7 +288,6 @@ export const ManageAshramsPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Quick Action Buttons */}
                 <div className="flex items-center gap-2 flex-wrap shrink-0">
                   <button
                     onClick={() => handleOpenEdit(ashram)}
@@ -327,9 +321,7 @@ export const ManageAshramsPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Grid Section: Overview, History, Amenities, Rules */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Column 1: Overview & Spiritual History */}
                 <div className="lg:col-span-2 space-y-6">
                   <div className="bg-gray-50/70 dark:bg-slate-900/70 border border-gray-100 dark:border-slate-800 rounded-2xl p-5 space-y-3">
                     <h3 className="text-xs font-black tracking-wider text-gray-400 flex items-center gap-2">
@@ -352,7 +344,6 @@ export const ManageAshramsPage: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Amenities */}
                   <div className="space-y-3">
                     <h3 className="text-xs font-black tracking-wider text-gray-400">
                       Ashram Facilities & Services
@@ -382,9 +373,7 @@ export const ManageAshramsPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Column 2: Rules, Guidelines & KYC Verification */}
                 <div className="space-y-6">
-                  {/* Daily Guidelines & Rules */}
                   <div className="bg-gray-50/70 dark:bg-slate-900/70 border border-gray-100 dark:border-slate-800 rounded-2xl p-5 space-y-3">
                     <h3 className="text-xs font-black tracking-wider text-gray-400 flex items-center gap-2">
                       <Sun size={14} className="text-[#E58C28]" /> Sacred
@@ -408,7 +397,6 @@ export const ManageAshramsPage: React.FC = () => {
                     </ul>
                   </div>
 
-                  {/* KYC Legal Verification */}
                   <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-5 space-y-3">
                     <h3 className="text-xs font-black tracking-wider text-emerald-600 flex items-center gap-2">
                       <FileCheck size={14} /> Tirvona Verification
@@ -441,7 +429,6 @@ export const ManageAshramsPage: React.FC = () => {
         </div>
       )}
 
-      {/* ══════════════════════ EDIT ASHRAM DETAILS MODAL ══════════════════════ */}
       {editAshram && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
@@ -554,7 +541,6 @@ export const ManageAshramsPage: React.FC = () => {
                 />
               </div>
 
-              {/* ════════════ Image Gallery Manager ════════════ */}
               <div className="bg-gray-50/80 dark:bg-slate-900/80 border border-gray-100 dark:border-slate-800 rounded-2xl p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <label className="text-[10px] font-black text-gray-400 flex items-center gap-1.5">
@@ -566,7 +552,6 @@ export const ManageAshramsPage: React.FC = () => {
                   </span>
                 </div>
 
-                {/* Thumbnails Grid */}
                 {editFormData.images && editFormData.images.length > 0 ? (
                   <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
                     {editFormData.images.map((imgUrl: string, idx: number) => (
@@ -597,7 +582,6 @@ export const ManageAshramsPage: React.FC = () => {
                   </p>
                 )}
 
-                {/* Direct Upload from Device & URL Input */}
                 <div className="space-y-2 pt-1">
                   <FileUploader
                     folder="ashrams"
@@ -646,7 +630,6 @@ export const ManageAshramsPage: React.FC = () => {
         </div>
       )}
 
-      {/* KYC Upload Modal */}
       {uploadDeedId && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-md w-full rounded-[28px] p-6 space-y-4 text-left">

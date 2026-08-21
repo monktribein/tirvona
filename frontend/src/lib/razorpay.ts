@@ -1,5 +1,3 @@
-// Loads the Razorpay Checkout script once and opens the payment modal.
-// Used only when the backend reports a real (non-demo) order.
 import { toast } from "./toast";
 
 let scriptPromise: Promise<boolean> | null = null;
@@ -36,8 +34,6 @@ export interface RazorpayResult {
   razorpay_signature: string;
 }
 
-// Opens the checkout modal and resolves with the payment result, or rejects if
-// the user closes the modal / the script fails to load.
 export const openRazorpayCheckout = (
   order: RazorpayOrder,
   prefill: { name?: string; email?: string; contact?: string },

@@ -87,7 +87,6 @@ export const HousekeepingPage: React.FC = () => {
         </button>
       </div>
 
-      {/* Status summary */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
           {

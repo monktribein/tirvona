@@ -63,7 +63,6 @@ describe("VcardService", () => {
   it("terminates every line with CRLF, which iOS requires", () => {
     const vcf = service.build(profile());
     expect(vcf).toContain("\r\n");
-    // No bare LF anywhere.
     expect(/[^\r]\n/.test(vcf)).toBe(false);
   });
 
@@ -110,10 +109,8 @@ describe("VcardService", () => {
         displayName: "रविन्द्र भारद्वाज".repeat(8),
       }),
     );
-    // Every folded continuation begins with a single space.
     const folded = vcf.split("\r\n").filter((line) => line.startsWith(" "));
     expect(folded.length).toBeGreaterThan(0);
-    // Unfolding restores intact text — no U+FFFD from a mid-sequence cut.
     const unfolded = vcf.replace(/\r\n /g, "");
     expect(unfolded).not.toContain("�");
     expect(unfolded).toContain("रविन्द्र भारद्वाज");

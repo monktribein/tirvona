@@ -100,7 +100,6 @@ const HelpCenterPage: React.FC = () => {
 
   return (
     <div className="pb-20">
-      {/* Hero */}
       <section className="bg-[#0B192C] text-white py-14 px-4 sm:px-6 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-[#0A4DA6]/10 rounded-full blur-[80px] pointer-events-none" />
         <div className="max-w-3xl mx-auto text-center relative z-10 space-y-5">
@@ -129,7 +128,6 @@ const HelpCenterPage: React.FC = () => {
         </div>
       </section>
 
-      {/* FAQ accordion */}
       <section className="max-w-3xl mx-auto px-4 sm:px-6 py-12 space-y-8">
         {filtered.length === 0 ? (
           <div className="text-center py-16 space-y-3">
@@ -199,7 +197,6 @@ const HelpCenterPage: React.FC = () => {
         )}
       </section>
 
-      {/* Still need help */}
       <section className="max-w-2xl mx-auto px-4 sm:px-6 pb-14">
         <div className="bg-[#0A4DA6] text-white rounded-3xl p-8 text-center space-y-4">
           <h2

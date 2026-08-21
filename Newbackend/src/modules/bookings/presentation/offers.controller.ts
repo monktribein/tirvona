@@ -79,13 +79,6 @@ export class OffersController {
       data,
     };
   }
-  /**
-   * The administrative read of a single offer.
-   *
-   * Declared before the public `:id` route so it wins the match, and it does
-   * not count a view — an administrator opening the record in the console is
-   * not a pilgrim looking at the promotion.
-   */
   @Get("manage/:id")
   @Roles("owner", "manager", "offer_manager", "super_admin")
   async manageOne(
@@ -145,8 +138,6 @@ export class OffersController {
     const result = await this.service.remove(user, id);
     return {
       success: true,
-      // An archived offer keeps its financial trail. Saying so is the honest
-      // report — the row is gone from every listing either way.
       message: result.archived
         ? `Offer archived — it was redeemed ${result.redemptions} time(s), so its booking records are preserved`
         : "Offer deleted successfully",

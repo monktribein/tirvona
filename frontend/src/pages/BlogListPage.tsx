@@ -90,13 +90,11 @@ export const BlogListPage: React.FC = () => {
 
   return (
     <div className="min-h-screen pb-16">
-      {/* Primary Clean Text Header (Matching all other section headers on the site) */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 mb-6">
         <div className="text-center space-y-2.5 max-w-3xl mx-auto py-2">
           <p className="font-['Kalam'] text-2xl sm:text-4xl lg:text-5xl font-bold text-[#E58C28]">
             Sacred Articles &amp; Knowledge Hub
           </p>
-          {/* Decorative Saffron Underline Divider */}
           <div className="flex items-center justify-center gap-2.5 my-1.5">
             <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
             <Sparkles
@@ -109,7 +107,6 @@ export const BlogListPage: React.FC = () => {
             Explore authentic temple history, travel guides, live video
             documentaries, ashram experiences, and mahaprasad stories.
           </p>
-          {/* Integrated Search Bar */}
           <form
             onSubmit={handleSearch}
             className="max-w-xl mx-auto pt-3 flex items-center relative z-10"
@@ -134,7 +131,6 @@ export const BlogListPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Post Grid */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-8">
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -171,7 +167,6 @@ export const BlogListPage: React.FC = () => {
                   className="bg-white dark:bg-[#0B192C] rounded-3xl border border-gray-100 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between cursor-pointer group"
                 >
                   <div>
-                    {/* Image / Video Thumbnail Container */}
                     <div className="relative h-52 overflow-hidden bg-slate-900">
                       <img
                         src={item.coverImage}
@@ -184,7 +179,6 @@ export const BlogListPage: React.FC = () => {
                         }}
                       />
 
-                      {/* Dynamic Video Overlay Detection */}
                       {isVideo ? (
                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                           <div className="w-12 h-12 rounded-full bg-red-600/90 text-white flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform">
@@ -226,7 +220,6 @@ export const BlogListPage: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Author Strip Footer */}
                   <div className="px-6 py-4 flex items-center justify-between border-t border-gray-50 dark:border-slate-800/50 mt-auto shrink-0 h-16">
                     <div className="flex items-center gap-2 min-w-0 flex-1 pr-2">
                       <img

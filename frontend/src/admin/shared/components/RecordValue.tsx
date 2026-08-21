@@ -7,11 +7,6 @@ import {
   isEmptyValue,
 } from "../utils/recordFormat";
 
-/**
- * Readable rendering for record values coming back from the API — nested
- * objects, arrays, ISO dates and booleans — in place of raw JSON dumps.
- */
-
 const MAX_DEPTH = 3;
 const IMAGE_ASSET = /\.(jpe?g|png|webp|gif|svg|avif|heic)($|\?)/i;
 const PDF_ASSET = /\.pdf($|\?)/i;
@@ -45,7 +40,6 @@ const AssetValue: React.FC<{ url: string }> = ({ url }) => {
   );
 };
 
-/** Renders any value — scalar, array or nested object — as readable markup. */
 export const RecordValue: React.FC<{ value: unknown; depth?: number }> = ({
   value,
   depth = 0,
@@ -123,10 +117,6 @@ export const RecordValue: React.FC<{ value: unknown; depth?: number }> = ({
   return <span className="break-words">{text}</span>;
 };
 
-/**
- * A whole record as labelled rows — used wherever a payload used to be dumped
- * into a <pre> block (approval payloads, CMS old/new versions).
- */
 export const RecordFieldList: React.FC<{
   data: unknown;
   emptyLabel?: string;

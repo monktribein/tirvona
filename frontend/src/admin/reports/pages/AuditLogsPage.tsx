@@ -59,7 +59,6 @@ export const AuditLogsPage: React.FC = () => {
         <div className="h-40 bg-gray-50 border border-gray-100 rounded-[24px] animate-pulse" />
       ) : (
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] shadow-sm overflow-hidden">
-          {/* Desktop Table View */}
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
@@ -108,7 +107,6 @@ export const AuditLogsPage: React.FC = () => {
             </table>
           </div>
 
-          {/* Mobile Cards View */}
           <div className="block md:hidden divide-y divide-gray-100 dark:divide-slate-800">
             {logs.map((log) => (
               <div key={log._id} className="p-5 space-y-3">

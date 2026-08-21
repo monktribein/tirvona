@@ -50,12 +50,6 @@ import VehicleTypePicker from "../components/VehicleTypePicker";
 import TirvonaMap from "../../../components/TirvonaMap";
 import { hasValidCoordinates } from "../../../utils/geo";
 
-/**
- * Pick a usable bay as soon as a visitor chooses their vehicle. EV charging
- * bays are preferred for EVs; otherwise the lowest live total wins, with
- * availability used as the tie-breaker. Visitors may still choose another
- * compatible bay from the list.
- */
 const recommendedSlotType = (
   slots: ParkingSlotTypeAvailability[],
   vehicle: ParkingVehicleTypeCode,
@@ -71,13 +65,6 @@ const recommendedSlotType = (
       return right.availableCount - left.availableCount;
     })[0];
 
-/**
- * Parking detail & area selection.
- *
- * Everything a visitor needs before committing: photos, map link, amenities,
- * opening hours, live availability per area with real pricing, reviews and
- * terms. Choosing an area carries the selection into checkout.
- */
 export const ParkingDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const [searchParams] = useSearchParams();
@@ -112,9 +99,6 @@ export const ParkingDetailPage: React.FC = () => {
   const [selectedSlotType, setSelectedSlotType] = useState<string>("");
   const [vehicleTypes, setVehicleTypes] = useState<ParkingVehicleType[]>([]);
 
-  // Gallery. Mirrors the ashram detail page so both listing types behave
-  // identically: tap the hero to open the lightbox, swipe on mobile, arrow
-  // keys and Escape while the lightbox is open.
   const [activeImage, setActiveImage] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const touchStartX = useRef(0);
@@ -129,12 +113,10 @@ export const ParkingDetailPage: React.FC = () => {
         const res = await parkingDiscoveryService.getVehicleTypes();
         if (res.data?.success) setVehicleTypes(res.data.data || []);
       } catch {
-        // Non-fatal — the picker simply renders empty.
       }
     })();
   }, []);
 
-  // Initial load.
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -155,8 +137,6 @@ export const ParkingDetailPage: React.FC = () => {
           setSelectedSlotType(
             recommendedSlotType(nextSlots, vehicleType)?.slotTypeId || "",
           );
-          // Navigating between listings must not leave the gallery pointing at
-          // an index the new listing may not have.
           setActiveImage(0);
         }
       } catch (err) {
@@ -169,12 +149,9 @@ export const ParkingDetailPage: React.FC = () => {
     return () => {
       cancelled = true;
     };
-    // Only re-fetch the whole page when the listing changes; window changes go
-    // through refreshAvailability below, which is much cheaper.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
 
-  /** Re-price and re-check availability when the window or vehicle changes. */
   const refreshAvailability = useCallback(async () => {
     if (!parking) return;
     setCheckingAvailability(true);
@@ -206,7 +183,6 @@ export const ParkingDetailPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entryAt, exitAt, vehicleType]);
 
-  // ── Gallery navigation ─────────────────────────────────────────────────────
   const galleryImages = useMemo(() => {
     if (!parking) return [] as string[];
     const list = parking.images?.length ? parking.images : [parking.coverImage];
@@ -229,13 +205,11 @@ export const ParkingDetailPage: React.FC = () => {
 
   const onHeroTouchEnd = (e: React.TouchEvent) => {
     const dx = e.changedTouches[0].clientX - touchStartX.current;
-    // Ignore anything under 40px so a tap-to-open-lightbox is not read as a swipe.
     if (Math.abs(dx) <= 40) return;
     if (dx < 0) nextImage();
     else prevImage();
   };
 
-  // Keyboard navigation while the lightbox is open.
   useEffect(() => {
     if (!lightboxOpen) return;
     const onKey = (e: KeyboardEvent) => {
@@ -260,8 +234,6 @@ export const ParkingDetailPage: React.FC = () => {
       exitAt: new Date(exitAt).toISOString(),
     });
 
-    // Send an unauthenticated visitor to log in first, then straight back here —
-    // the same pattern the stay booking flow uses.
     if (!user) {
       const returnUrl = `/parking/checkout?${params.toString()}`;
       setGuestPendingIntent({
@@ -275,8 +247,6 @@ export const ParkingDetailPage: React.FC = () => {
   };
 
   if (loading) {
-    // Mirrors the real layout — centred title block, 16:9 hero, thumbnails —
-    // so the page does not jump when the data arrives.
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2 pb-16 space-y-10">
         <div className="flex flex-col items-center gap-3 pb-4">
@@ -331,9 +301,6 @@ export const ParkingDetailPage: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2 pb-16 space-y-10">
-      {/* ── Title header ──
-          Same centred treatment as the ashram detail page: status chip + city
-          line, large display title, then the address. */}
       <div className="flex flex-col items-center text-center gap-3 pb-4">
         <div className="flex flex-wrap items-center justify-center gap-2">
           <span className="px-3 py-1 bg-[#0A4DA6] text-white text-[9px] font-extrabold rounded-full flex items-center gap-1 shadow-sm tracking-wider">
@@ -369,7 +336,6 @@ export const ParkingDetailPage: React.FC = () => {
         </p>
       </div>
 
-      {/* ── Hero + thumbnail gallery ── */}
       <div className="space-y-3 -mt-4">
         <div
           className="relative w-full aspect-video rounded-[24px] overflow-hidden shadow-sm cursor-zoom-in group bg-gray-100 dark:bg-slate-900"
@@ -439,7 +405,6 @@ export const ParkingDetailPage: React.FC = () => {
         )}
       </div>
 
-      {/* ── Lightbox ── */}
       {lightboxOpen && galleryImages.length > 0 && (
         <div
           className="fixed inset-0 z-[70] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
@@ -499,9 +464,7 @@ export const ParkingDetailPage: React.FC = () => {
       )}
 
       <div className="grid lg:grid-cols-3 gap-5">
-        {/* Left column */}
         <div className="lg:col-span-2 space-y-5">
-          {/* Quick facts */}
           <section className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             {[
               {
@@ -552,7 +515,6 @@ export const ParkingDetailPage: React.FC = () => {
             </section>
           )}
 
-          {/* Amenities */}
           {parking.amenities?.length > 0 && (
             <section className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 space-y-3 shadow-sm">
               <h2 className="font-extrabold text-sm text-[#0B192C] dark:text-white">
@@ -565,7 +527,6 @@ export const ParkingDetailPage: React.FC = () => {
             </section>
           )}
 
-          {/* Nearby */}
           {parking.nearbyDestinations?.length > 0 && (
             <section className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 space-y-3 shadow-sm">
               <h2 className="font-extrabold text-sm text-[#0B192C] dark:text-white">
@@ -595,7 +556,6 @@ export const ParkingDetailPage: React.FC = () => {
             </section>
           )}
 
-          {/* Location map */}
           {hasValidCoordinates(parking.latitude, parking.longitude) && (
             <section className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 space-y-3 shadow-sm">
               <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -647,7 +607,6 @@ export const ParkingDetailPage: React.FC = () => {
             </section>
           )}
 
-          {/* Reviews */}
           <section className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 space-y-3 shadow-sm">
             <h2 className="font-extrabold text-sm text-[#0B192C] dark:text-white">
               Reviews{" "}
@@ -689,7 +648,6 @@ export const ParkingDetailPage: React.FC = () => {
             )}
           </section>
 
-          {/* Terms */}
           {parking.termsAndConditions && (
             <section className="bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 rounded-[24px] p-5 space-y-2">
               <h2 className="inline-flex items-center gap-2 font-extrabold text-sm text-amber-900 dark:text-amber-200">
@@ -703,7 +661,6 @@ export const ParkingDetailPage: React.FC = () => {
           )}
         </div>
 
-        {/* Booking rail */}
         <div className="lg:col-span-1">
           <div className="space-y-4">
             <section className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 space-y-4 shadow-lg">
@@ -711,7 +668,6 @@ export const ParkingDetailPage: React.FC = () => {
                 Book your bay
               </h2>
 
-              {/* Window */}
               <div className="space-y-2.5">
                 <div>
                   <label
@@ -752,7 +708,6 @@ export const ParkingDetailPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Vehicle */}
               <div>
                 <span className="block text-[10px] tracking-wider font-bold text-gray-400 mb-2">
                   Vehicle
@@ -779,7 +734,6 @@ export const ParkingDetailPage: React.FC = () => {
                 </p>
               )}
 
-              {/* Areas */}
               {false && (
               <div className="space-y-2">
                 <span className="flex items-center justify-between text-[10px] tracking-wider font-bold text-gray-400">
@@ -871,7 +825,6 @@ export const ParkingDetailPage: React.FC = () => {
               </div>
               )}
 
-              {/* Fare summary */}
               {checkingAvailability && (
                 <div className="flex items-center justify-center gap-2 rounded-2xl bg-blue-50 px-3 py-4 text-xs font-bold text-[#0A4DA6] dark:bg-blue-950/30">
                   <Loader2 size={14} className="animate-spin" /> Calculating parking amount...
@@ -941,7 +894,6 @@ export const ParkingDetailPage: React.FC = () => {
               </p>
             </section>
 
-            {/* Navigate */}
             {parking.googleMapsUrl && (
               <a
                 href={parking.googleMapsUrl}

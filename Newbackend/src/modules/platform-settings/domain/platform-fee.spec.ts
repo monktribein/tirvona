@@ -23,8 +23,6 @@ describe("the disabled switch beats everything", () => {
     ).toBe(0));
 
   it("charges nothing when off even if a booking policy sets a percentage", () => {
-    // The regression: a booking_policies row used to be consulted first, so a
-    // ₹200 stay kept attracting a fee while the console read "Disabled".
     expect(
       resolvePlatformFee({
         settings: { ...ENABLED_FLAT, enabled: false },

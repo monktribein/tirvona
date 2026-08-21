@@ -119,16 +119,6 @@ export const ParkingQrCodeSchema = new Schema(
     locationId: { ...id("ParkingLocation", true), index: true },
     customerId: { ...id("User", true), index: true },
     tokenHash: { type: String, required: true },
-    /**
-     * The sealed pass itself, so the same QR can be shown again.
-     *
-     * `sealParkingQr` encrypts with a random IV, so the token cannot be
-     * recomputed from the booking — storing only its hash meant every view had
-     * to mint a fresh pass and revoke the one the visitor was holding. The
-     * payload is already AES-256-GCM sealed under PARKING_QR_SECRET, and
-     * `select: false` keeps it out of ordinary reads; `tokenHash` remains the
-     * lookup key so the scan path is unchanged.
-     */
     token: { type: String, select: false },
     displayCode: { type: String, required: true, uppercase: true, trim: true },
     version: { type: Number, default: 1 },

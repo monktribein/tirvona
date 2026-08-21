@@ -52,7 +52,6 @@ export const EnterpriseModal: React.FC<EnterpriseModalProps> = ({
       <div
         className={`bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 w-full ${maxWidthClass} rounded-[28px] p-6 space-y-5 text-left shadow-2xl animate-in zoom-in-95 duration-150 relative overflow-hidden`}
       >
-        {/* Header */}
         <div className="flex justify-between items-start border-b border-gray-100 dark:border-slate-800 pb-3.5">
           <div className="flex items-center gap-2.5">
             {icon}
@@ -76,12 +75,10 @@ export const EnterpriseModal: React.FC<EnterpriseModalProps> = ({
           </button>
         </div>
 
-        {/* Body */}
         <div className="max-h-[70vh] overflow-y-auto pr-1 text-xs space-y-4">
           {children}
         </div>
 
-        {/* Footer */}
         {footer && (
           <div className="pt-3 border-t border-gray-100 dark:border-slate-800">
             {footer}

@@ -1,13 +1,5 @@
 import api from "../lib/api";
 
-/**
- * Super-admin console client for the Lead Collection subsystem.
- *
- * Every call here goes through the platform's own bearer token — these are
- * Tirvona staff routes. The field agents' own token never touches this file;
- * it lives entirely inside the leadTirvona app.
- */
-
 export type LeadStatus = "pending" | "approved" | "rejected" | "converted";
 export type LeadInterest =
   | "Interested"
@@ -92,7 +84,6 @@ export interface Paged<T> {
 const BASE = "/lead-collection/admin";
 
 export const leadCollectionService = {
-  // ── Leads ──
   listLeads: (params: Record<string, string | number> = {}) =>
     api.get<{ data: Paged<Lead> }>(`${BASE}/leads`, { params }),
   leadStats: () => api.get<{ data: LeadStats }>(`${BASE}/leads/stats`),
@@ -104,14 +95,12 @@ export const leadCollectionService = {
     api.post(`${BASE}/leads/${id}/approve`, { note }),
   rejectLead: (id: string, note?: string) =>
     api.post(`${BASE}/leads/${id}/reject`, { note }),
-  /** Bookkeeping only — the ashram listing itself is still created by hand. */
   convertLead: (id: string, note?: string) =>
     api.post(`${BASE}/leads/${id}/convert`, { note }),
   reopenLead: (id: string, note?: string) =>
     api.post(`${BASE}/leads/${id}/reopen`, { note }),
   deleteLead: (id: string) => api.delete(`${BASE}/leads/${id}`),
 
-  // ── Field agents (lead_users) ──
   listRegions: () => api.get<{ data: LeadRegion[] }>(`${BASE}/regions`),
   addRegion: (state: string, district: string) =>
     api.post(`${BASE}/regions`, { state, district }),

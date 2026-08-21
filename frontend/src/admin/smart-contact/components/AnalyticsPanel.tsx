@@ -32,13 +32,6 @@ const Stat: React.FC<{ label: string; value: string | number; accent?: boolean }
   </div>
 );
 
-/**
- * A minimal bar chart, drawn with divs.
- *
- * The console has no charting library and this is two series over at most 31
- * days — pulling one in for that would cost more bundle than the whole
- * Smart Contact console. Bars are proportional to the largest value in view.
- */
 const ScansOverTime: React.FC<{ series: SmartContactAnalytics["series"] }> = ({
   series,
 }) => {
@@ -99,7 +92,6 @@ const Breakdown: React.FC<{
   );
 };
 
-/** Per-profile analytics (spec §24–§27, §51). */
 export const AnalyticsPanel: React.FC<{ profileId: string }> = ({
   profileId,
 }) => {

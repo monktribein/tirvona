@@ -18,14 +18,6 @@ export interface AuditEntryInput {
   ip?: string;
 }
 
-/**
- * The Smart Contact audit trail (spec §37).
- *
- * Writes are fire-and-forget by design: an audit failure must never roll back
- * a change the admin has already been told succeeded, and the alternative —
- * failing the request — would make the console less reliable than the log it
- * feeds. Failures are logged loudly instead.
- */
 @Injectable()
 export class SmartContactAuditService {
   private readonly logger = new Logger(SmartContactAuditService.name);
@@ -65,7 +57,6 @@ export class SmartContactAuditService {
     await Promise.all(entries.map((entry) => this.record(entry)));
   }
 
-  /** Per-profile history for the console's audit tab. */
   async list(
     profileId: string,
     limit = 100,

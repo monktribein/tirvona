@@ -25,7 +25,6 @@ const build = () => {
   const find = jest.fn((_f: any) => chain());
   const requests = { find, countDocuments: jest.fn().mockResolvedValue(0) };
   const ashrams = { find: jest.fn(() => chain()) };
-  // `owner` scoping resolves ashram ids through .distinct()
   ashrams.find = jest.fn(() => ({ distinct: jest.fn().mockResolvedValue(["ashram-1"]) })) as never;
   const service = new RefundsService(
     requests as never,
@@ -42,10 +41,6 @@ const build = () => {
 };
 
 describe("RefundsService visibility", () => {
-  /**
-   * Scope is a query filter, not a post-fetch check, so another customer's
-   * refund is never loaded into memory at all.
-   */
   it("confines a pilgrim to their own refunds", async () => {
     const { service, find } = build();
 
@@ -96,7 +91,6 @@ describe("RefundsService authority", () => {
     expect(canApprove("super_admin")).toBe(true);
     expect(canApprove("national_admin")).toBe(true);
     expect(canApprove("finance_manager")).toBe(true);
-    // Support triages but must never release money.
     expect(canApprove("support")).toBe(false);
     expect(canApprove("owner")).toBe(false);
     expect(canApprove("customer")).toBe(false);
@@ -124,7 +118,6 @@ describe("Refund state machine", () => {
     expect(() => assert("processing", "refunded")).not.toThrow();
   });
 
-  /** Money must never be released without passing through approval. */
   it("refuses to jump straight from pending to refunded", () => {
     expect(() => assert("pending", "refunded")).toThrow();
     expect(() => assert("pending", "processing")).toThrow();

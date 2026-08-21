@@ -1,10 +1,12 @@
 import {
   BadRequestException,
+  BadGatewayException,
   ConflictException,
   ForbiddenException,
   Inject,
   Injectable,
   NotFoundException,
+  ServiceUnavailableException,
   UnauthorizedException,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
@@ -33,6 +35,9 @@ import {
   ASHRAM_OWNER_ROLE,
   canonicalAshramRole,
 } from "../../../common/auth/ashram-access";
+import { WhatsAppOtpService } from "../../../integrations/whatsapp/services/whatsapp-otp.service";
+import { WhatsAppIntegrationError } from "../../../integrations/whatsapp/errors/whatsapp.errors";
+import { normalizeWhatsAppNumber } from "../../../integrations/whatsapp/utils/whatsapp-phone.util";
 
 @Injectable()
 export class AuthService {
@@ -43,20 +48,9 @@ export class AuthService {
     @InjectModel("AuthChallenge") private readonly challenges: Model<any>,
     @InjectModel("User") private readonly userModel: Model<any>,
     @InjectModel(PARKING_MODEL.Staff) private readonly parkingStaff: Model<any>,
+    private readonly whatsappOtp: WhatsAppOtpService,
   ) {}
 
-  /**
-   * The parking roles an account currently holds.
-   *
-   * Parking authorisation is a grant in `parking_staff`, not a value of
-   * `User.role` — the enum has no parking entries at all — so a security guard
-   * or parking partner still reads `role: "customer"`. Nothing downstream can
-   * tell them apart from a pilgrim without this, which is why it travels on the
-   * session: the client uses it to route to the right dashboard.
-   *
-   * Only ACTIVE grants count; a revoked one leaves the account an ordinary
-   * Visitor. Covered by `parking_staff`'s `{ userId: 1, status: 1 }` index.
-   */
   private async activeParkingRoles(userId: unknown): Promise<string[]> {
     const grants = await this.parkingStaff
       .find({ userId, status: "active" })
@@ -90,9 +84,6 @@ export class AuthService {
       );
     }
     if (user.status !== "active" || user.isDeleted || user.isSuspended) {
-      // A soft-deleted or suspended row keeps `status: "active"`, so reporting
-      // the raw status told those users their account was "active" — which is
-      // both wrong and unactionable. The flags name the reason instead.
       const reason =
         user.isDeleted || user.isSuspended
           ? "suspended"
@@ -101,10 +92,6 @@ export class AuthService {
         `Your account is ${reason}. Contact support.`,
       );
     }
-    // Signing in is password-only. The email OTP belongs to registration,
-    // where it proves the address is reachable before an account exists.
-    // Parking grants are resolved because they ride on the session, not
-    // because they gate anything here.
     const parkingRoles = await this.activeParkingRoles(user._id);
     const normalizedRole = canonicalAshramRole({
       role: user.role,
@@ -150,10 +137,6 @@ export class AuthService {
     };
   }
 
-  /**
-   * `parkingRoles` is passed in by callers that have already resolved it, so a
-   * login costs one lookup rather than two.
-   */
   async session(
     user: UserDocument,
     parkingRoles?: string[],
@@ -173,8 +156,6 @@ export class AuthService {
       status: user.status,
       isVerified: user.isVerified,
       permissions: user.permissions ?? [],
-      // Grant-based roles the account holds. Empty for everyone else, so the
-      // client can treat "has parking roles" as the whole test.
       parkingRoles: parkingRoles ?? (await this.activeParkingRoles(user._id)),
       token,
     };
@@ -219,7 +200,12 @@ export class AuthService {
     return a.length === b.length && timingSafeEqual(a, b);
   }
 
-  private async deliverCode(identifier: string, code: string): Promise<void> {
+  private async deliverCode(
+    identifier: string,
+    code: string,
+    idempotencyKey: string,
+    correlationId?: string,
+  ): Promise<void> {
     const resendApiKey = this.config.get<string>("resendApiKey");
     const msg91AuthKey = this.config.get<string>("msg91AuthKey");
     if (identifier.includes("@") && resendApiKey)
@@ -252,12 +238,41 @@ export class AuthService {
           ],
         }),
       });
+    if (!identifier.includes("@")) {
+      let delivery;
+      try {
+        delivery = await this.whatsappOtp.sendAuthenticationOtp({
+          phone: identifier,
+          code,
+          expiresInMinutes: this.config.get<number>("otpExpiryMinutes") ?? 5,
+          idempotencyKey,
+          correlationId,
+        });
+      } catch (error) {
+        const rejected =
+          error instanceof WhatsAppIntegrationError &&
+          error.code === "PROVIDER_REJECTED";
+        const Exception = rejected
+          ? BadGatewayException
+          : ServiceUnavailableException;
+        throw new Exception({
+          message: "WhatsApp OTP delivery was not accepted. Please try again.",
+          code: "WHATSAPP_OTP_DELIVERY_FAILED",
+        });
+      }
+      if (delivery.status !== "accepted")
+        throw new ServiceUnavailableException({
+          message: "WhatsApp OTP delivery was not accepted. Please try again.",
+          code: "WHATSAPP_OTP_DELIVERY_FAILED",
+        });
+    }
   }
 
   private async createChallenge(
     purpose: string,
     identifier: string,
     payload: Record<string, unknown>,
+    correlationId?: string,
   ): Promise<Record<string, unknown>> {
     const token = randomBytes(32).toString("hex");
     const otpLength = this.config.get<number>("otpLength") ?? 6;
@@ -275,7 +290,12 @@ export class AuthService {
       expiresAt: new Date(Date.now() + expiryMinutes * 60_000),
       resendAvailableAt: new Date(Date.now() + resendCooldownSeconds * 1_000),
     });
-    await this.deliverCode(identifier, code);
+    await this.deliverCode(
+      identifier,
+      code,
+      `auth-otp:${this.digest(token)}`,
+      correlationId,
+    );
     return {
       ...(purpose === "google" ? { googleToken: token } : { otpToken: token }),
       channel: identifier.includes("@") ? "email" : "sms",
@@ -340,10 +360,30 @@ export class AuthService {
     await user.save();
     return this.session(user);
   }
-  async sendPhoneOtp(phone: string): Promise<Record<string, unknown>> {
-    if (!(await this.users.findByPhone(phone)))
+  private async findUserByPhoneInput(phone: string): Promise<UserDocument | null> {
+    const normalized = normalizeWhatsAppNumber(phone);
+    const candidates = [
+      phone.trim(),
+      normalized,
+      normalized?.startsWith("91") && normalized.length === 12
+        ? normalized.slice(2)
+        : undefined,
+      normalized ? `+${normalized}` : undefined,
+    ].filter((value): value is string => Boolean(value));
+    for (const candidate of new Set(candidates)) {
+      const user = await this.users.findByPhone(candidate);
+      if (user) return user;
+    }
+    return null;
+  }
+
+  async sendPhoneOtp(
+    phone: string,
+    correlationId?: string,
+  ): Promise<Record<string, unknown>> {
+    if (!(await this.findUserByPhoneInput(phone)))
       throw new NotFoundException("No account was found for this phone number");
-    return this.createChallenge("phone_login", phone, {});
+    return this.createChallenge("phone_login", phone, {}, correlationId);
   }
   async verifyPhoneOtp(
     phone: string,
@@ -360,7 +400,7 @@ export class AuthService {
       .select("+codeHash +payload");
     if (!row || !this.safeEqual(row.codeHash, this.codeDigest(otp)))
       throw new UnauthorizedException("Invalid OTP");
-    const user = await this.users.findByPhone(phone);
+    const user = await this.findUserByPhoneInput(phone);
     if (!user) throw new NotFoundException("User not found");
     row.consumedAt = new Date();
     await row.save();
@@ -387,14 +427,6 @@ export class AuthService {
     return this.createChallenge(old.purpose, old.identifier, old.payload ?? {});
   }
 
-  /**
-   * The site origin the emailed reset link points at.
-   *
-   * `FRONTEND_URL`/`CLIENT_URL` are documented as comma-separated (they double
-   * as a CORS-style list), and operators do set more than one — so the raw
-   * value is not a URL. The first entry is the canonical site; a trailing
-   * slash is dropped so the link never comes out with `//reset-password`.
-   */
   private siteOrigin(): string {
     return (this.config.get<string>("frontendUrl") ?? "")
       .split(",")[0]
@@ -411,25 +443,17 @@ export class AuthService {
     await user.save();
     const resendApiKey = this.config.get<string>("resendApiKey");
     if (!resendApiKey) {
-      // The endpoint answers "if that account exists, a link has been sent"
-      // either way, so an unconfigured mailer is otherwise silent — and looks
-      // exactly like a working one that nobody received. Say so in the log.
       process.stderr.write(
         "Password reset requested but RESEND_API_KEY is not configured — no email was sent.\n",
       );
       return;
     }
-    // `?token=` and not `/reset-password/<token>`: the SPA has one route,
-    // `/reset-password`, and the page reads the token from the query string.
-    // A path segment matched no route at all, so every emailed link landed on
-    // the 404 page — which is what made password reset unusable.
     const resetUrl = `${this.siteOrigin()}/reset-password?token=${encodeURIComponent(token)}`;
     await new Resend(resendApiKey).emails.send({
       from: this.config.getOrThrow<string>("resendFromEmail"),
       replyTo: this.config.get<string>("resendReplyTo"),
       to: user.email,
       subject: "Reset your Tirvona password",
-      // Some clients strip the anchor, so the raw URL is repeated as text.
       html: `<div style="font-family:Segoe UI,Helvetica,Arial,sans-serif;font-size:15px;color:#0B192C;line-height:1.6">
   <p>Namaste${user.name ? ` ${user.name}` : ""},</p>
   <p>We received a request to reset your Tirvona password. Click the button below to choose a new one. This link expires in 30 minutes and can be used once.</p>

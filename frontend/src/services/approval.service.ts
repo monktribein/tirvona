@@ -94,7 +94,6 @@ export interface ApprovalStatsData {
 }
 
 export const approvalService = {
-  // Submit new generic approval request
   submitRequest: async (payload: ApprovalRequestPayload) => {
     const res = await api.post<{
       success: boolean;
@@ -104,7 +103,6 @@ export const approvalService = {
     return res.data;
   },
 
-  // Get master requests list with filters
   getRequests: async (params?: {
     module?: string;
     status?: string;
@@ -120,7 +118,6 @@ export const approvalService = {
     return res.data;
   },
 
-  // Get Approval Center KPI stats
   getStats: async () => {
     const res = await api.get<{ success: boolean; data: ApprovalStatsData }>(
       "/approvals/requests/stats",
@@ -128,7 +125,6 @@ export const approvalService = {
     return res.data;
   },
 
-  // Get single request details
   getRequestById: async (id: string) => {
     const res = await api.get<{ success: boolean; data: ApprovalRequestItem }>(
       `/approvals/requests/${id}`,
@@ -136,7 +132,6 @@ export const approvalService = {
     return res.data;
   },
 
-  // Review request (Super Admin)
   reviewRequest: async (
     id: string,
     action: "approve" | "reject" | "request_changes" | "under_review",
@@ -153,7 +148,6 @@ export const approvalService = {
     return res.data;
   },
 
-  // Add comment to approval thread
   addComment: async (id: string, text: string) => {
     const res = await api.post<{
       success: boolean;
@@ -163,7 +157,6 @@ export const approvalService = {
     return res.data;
   },
 
-  // Legacy room category specific helpers
   submitRoomCategoryRequest: async (payload: any) => {
     const res = await api.post<{
       success: boolean;

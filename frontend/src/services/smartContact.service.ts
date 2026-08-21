@@ -1,13 +1,5 @@
 import api, { API_BASE_URL, TOKEN_KEY } from "../lib/api";
 
-/**
- * Super-admin console client for Smart Contact QR.
- *
- * Everything here goes through the platform's own bearer token — these are
- * Tirvona staff routes. The public contact page has its own tiny client inside
- * the `SmarID/` app and shares nothing with this file.
- */
-
 export type SmartContactStatus =
   | "DRAFT"
   | "ACTIVE"
@@ -66,7 +58,6 @@ export interface SmartContactProfile {
   updatedBy: { id: string; name: string } | null;
   createdAt: string;
   updatedAt: string;
-  /** Joined in by the list endpoint only. */
   metrics?: SmartContactMetrics;
 }
 
@@ -144,12 +135,6 @@ export interface Paged<T> {
 
 const BASE = "/v1/admin/smart-contacts";
 
-/**
- * QR artwork comes back as binary, not JSON, and the routes are behind the
- * admin bearer token — so a plain `<a href>` cannot fetch it (the browser
- * sends no Authorization header on a navigation). These helpers pull the bytes
- * through the authenticated client and hand the caller a blob URL to click.
- */
 const downloadBlob = async (url: string, filename: string): Promise<void> => {
   const response = await fetch(url, {
     headers: { Authorization: `Bearer ${localStorage.getItem(TOKEN_KEY) ?? ""}` },
@@ -163,16 +148,9 @@ const downloadBlob = async (url: string, filename: string): Promise<void> => {
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();
-  // Revoking immediately can cancel the download in Safari; one tick is enough.
   setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
 };
 
-/**
- * `qr` renders the bare symbol, for dropping into an existing card design.
- * `card` renders the finished 88×55mm contact card with the identity laid out
- * around it — SVG and PDF only, since flattening that layout to PNG would need
- * a server-side SVG rasteriser.
- */
 export type QrLayout = "qr" | "card";
 
 export interface QrRenderOptions {
@@ -197,7 +175,6 @@ export const qrQuery = (options: QrRenderOptions): string => {
 };
 
 export const smartContactService = {
-  // ── Profiles ──
   list: (params: Record<string, string | number> = {}) =>
     api.get<{ data: Paged<SmartContactProfile> }>(BASE, { params }),
   stats: () => api.get<{ data: SmartContactStats }>(`${BASE}/stats`),
@@ -208,17 +185,10 @@ export const smartContactService = {
   create: (data: unknown) => api.post(BASE, data),
   update: (id: string, data: unknown) => api.put(`${BASE}/${id}`, data),
 
-  // ── Lifecycle. Archive is the normal end state: spec §22 keeps a profile
-  //    resolving for as long as its printed cards are circulating. ──
   activate: (id: string) => api.post(`${BASE}/${id}/activate`),
   disable: (id: string) => api.post(`${BASE}/${id}/disable`),
   archive: (id: string) => api.post(`${BASE}/${id}/archive`),
 
-  /**
-   * Permanent bulk deletion — super-admin only, and the one call here that
-   * really removes a profile. A freed slug stops resolving, so any printed QR
-   * carrying it dies; the response reports how many QR assets that affected.
-   */
   bulkDelete: (ids: string[]) =>
     api.post<{
       message: string;
@@ -230,7 +200,6 @@ export const smartContactService = {
       };
     }>(`${BASE}/bulk-delete`, { ids }),
 
-  // ── QR assets ──
   listQr: (id: string) => api.get<{ data: SmartContactQr[] }>(`${BASE}/${id}/qr`),
   generateQr: (
     id: string,
@@ -239,7 +208,6 @@ export const smartContactService = {
   retireQr: (id: string, qrId: string) =>
     api.post(`${BASE}/${id}/qr/${qrId}/retire`),
 
-  /** Inline preview markup for the console, without registering an asset. */
   previewQrUrl: (id: string, format: SmartContactQrFormat = "svg") =>
     `${API_BASE_URL}/api${BASE}/${id}/qr-preview/${format}`,
 
@@ -266,7 +234,6 @@ export const smartContactService = {
       `${filename}.${format}`,
     ),
 
-  // ── Analytics & audit ──
   analytics: (id: string, params: Record<string, string> = {}) =>
     api.get<{ data: SmartContactAnalytics }>(`${BASE}/${id}/analytics`, { params }),
   audit: (id: string) =>

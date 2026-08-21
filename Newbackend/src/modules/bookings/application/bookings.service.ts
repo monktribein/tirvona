@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   Inject,
   Injectable,
+  Logger,
   NotFoundException,
   ServiceUnavailableException,
 } from "@nestjs/common";
@@ -28,6 +29,7 @@ import {
   roundMoney,
 } from "../domain/booking.utils";
 import type {
+  AdminUpdateBookingDto,
   AssignRoomDto,
   BookingDashboardQueryDto,
   CancelBookingDto,
@@ -39,9 +41,12 @@ import type {
 } from "../presentation/dtos/booking.dto";
 import { BookingIdentityService } from "./booking-identity.service";
 import { BookingPricingService } from "./booking-pricing.service";
+import { bookingConfirmedOutboxEvent } from "./booking-notification.factory";
 
 @Injectable()
 export class BookingsService {
+  private readonly logger = new Logger(BookingsService.name);
+
   constructor(
     @Inject(BOOKING_REPOSITORY) private readonly repository: BookingRepository,
     private readonly transactions: TransactionService,
@@ -154,14 +159,6 @@ export class BookingsService {
       );
   }
 
-  /**
-   * The priced breakdown for a prospective booking, for display only.
-   *
-   * Delegates to the same `quote()` that `create()` uses below, so a page
-   * rendering this shows exactly what the booking will cost. Only the pricing
-   * and the applied coupon are returned — the room, policy and inventory rows
-   * it also resolves are internal and have no business on the wire.
-   */
   async quote(dto: CreateBookingDto): Promise<any> {
     const quote = await this.pricing.quote(dto);
     return {
@@ -212,8 +209,6 @@ export class BookingsService {
         if (!reserved.modifiedCount)
           throw new ConflictException("This offer is no longer available");
       }
-      // Issued inside the session so the visitor number is committed with the
-      // booking and released if this transaction aborts or is retried.
       const identityCode = await this.identity.issueForBooking(
         dto.ashramId,
         session,
@@ -399,11 +394,6 @@ export class BookingsService {
 
   private signatureValid(dto: ConfirmBookingPaymentDto): boolean {
     const keySecret = this.config.get<string>("razorpayKeySecret");
-    // No secret means local development against a demo gateway, where there is
-    // no signature to check. Production must never take that path — an
-    // unverified confirmation would mark a booking paid for nothing — so it
-    // refuses instead. Boot validation already demands the keys; this is the
-    // second lock.
     if (!keySecret) return false;
     if (
       !dto.razorpay_order_id ||
@@ -469,19 +459,6 @@ export class BookingsService {
       if (booking.paymentStatus === "fully_paid")
         throw new ConflictException("Booking is already paid");
 
-      /**
-       * The hold may have lapsed while the pilgrim was on the gateway screen.
-       *
-       * This used to reject outright — but the signature has already been
-       * verified above, so the money is real and the gateway has captured it.
-       * Throwing here left the customer charged, the booking expired, and no
-       * record that anything was owed back; every booking on the platform sat
-       * in exactly that state.
-       *
-       * A lapsed hold is therefore recoverable, not fatal: the same nights are
-       * re-acquired, and only if the rooms have genuinely gone to someone else
-       * does the confirmation fail — which is the case a refund exists for.
-       */
       const holdLapsed =
         booking.status !== "pending" ||
         (booking.reservationExpiresAt &&
@@ -620,6 +597,12 @@ export class BookingsService {
       booking.pricing.amountPaid = booking.pricing.totalAmount;
       booking.reservationExpiresAt = null;
       await booking.save({ session });
+      const confirmedNotification = bookingConfirmedOutboxEvent({
+        userId: user.id,
+        customerPhone: user.phone,
+        booking,
+        payment,
+      });
       const [transaction] = await this.financialTransactions.create(
         [
           {
@@ -682,16 +665,7 @@ export class BookingsService {
           { session },
         ),
         this.notifications.create(
-          [
-            {
-              userId: user.id,
-              bookingId: booking._id,
-              ashramId: booking.ashramId,
-              event: "booking_confirmed",
-              title: "Booking confirmed",
-              message: `Your booking ${booking.bookingId} is confirmed.`,
-            },
-          ],
+          [confirmedNotification],
           { session },
         ),
         this.audits.create(
@@ -715,7 +689,15 @@ export class BookingsService {
           { session },
         ),
       ]);
-      // Rate as charged at booking time, not today's setting.
+      this.logger.log(
+        JSON.stringify({
+          event: "booking.outbox_event_staged",
+          eventType: confirmedNotification.event,
+          bookingId: String(booking._id),
+          correlationId: confirmedNotification.meta.correlationId,
+          hasRecipientPhone: Boolean(confirmedNotification.recipientPhone),
+        }),
+      );
       const gstPercent = Number(
         booking.pricing.gstPercent ?? PLATFORM_FEE_GST_PERCENT,
       );
@@ -727,9 +709,6 @@ export class BookingsService {
             bookingId: booking._id,
             customerId: user.id,
             ashramId: booking.ashramId,
-            // Two lines, because only one of them is taxed. The stay is
-            // supplied by the ashram and carries no GST; the platform fee is
-            // Tirvona's own service and is taxed at the recorded rate.
             lineItems: [
               {
                 description: "Ashram stay and selected services",
@@ -782,15 +761,11 @@ export class BookingsService {
               bookingId: booking._id,
               invoiceId: invoice._id,
               ashramId: booking.ashramId,
-              // The taxable value is the platform fee, not the booking total.
               taxableAmount:
                 booking.pricing.gstTaxableAmount ??
                 booking.pricing.platformFee ??
                 0,
               gstPercent,
-              // Halving can leave a stray paise on an odd amount, so the split
-              // is rounded and SGST takes the remainder — cgst + sgst always
-              // adds back to totalTax exactly.
               cgst: roundMoney(booking.pricing.gstAmount / 2),
               sgst: roundMoney(
                 booking.pricing.gstAmount - roundMoney(booking.pricing.gstAmount / 2),
@@ -836,6 +811,7 @@ export class BookingsService {
     if (query.ashramId && scope !== null && !scope.includes(query.ashramId))
       throw new ForbiddenException("You do not have access to this ashram.");
     const filter: any = {
+      deletedAt: null,
       ...(query.status ? { status: query.status } : {}),
       ...(query.paymentStatus ? { paymentStatus: query.paymentStatus } : {}),
       ...(query.ashramId
@@ -865,6 +841,140 @@ export class BookingsService {
       .skip((query.page - 1) * query.limit)
       .limit(query.limit)
       .lean();
+  }
+
+  async adminUpdate(
+    id: string,
+    user: AuthenticatedUser,
+    dto: AdminUpdateBookingDto,
+  ): Promise<any> {
+    if (user.role !== "super_admin")
+      throw new ForbiddenException("Only Super Admin can edit booking details");
+    if (dto.assignedRoomNumber === undefined && dto.specialRequests === undefined)
+      throw new BadRequestException("No editable booking fields were provided");
+
+    await this.transactions.run(async (session) => {
+      const row = await this.bookings.findOne({ _id: id, deletedAt: null }).session(session);
+      if (!row) throw new NotFoundException("Booking not found");
+
+      const updatedFields: string[] = [];
+      if (dto.assignedRoomNumber !== undefined) {
+        if (!["confirmed", "checked_in"].includes(row.status))
+          throw new BadRequestException(
+            "A room number can only be assigned to a confirmed or checked-in booking",
+          );
+        const roomNumber = dto.assignedRoomNumber.trim();
+        const conflict = await this.bookings
+          .exists({
+            _id: { $ne: row._id },
+            deletedAt: null,
+            ashramId: row.ashramId,
+            assignedRoomNumber: roomNumber,
+            status: { $in: ["confirmed", "checked_in"] },
+            checkInDate: { $lt: row.checkOutDate },
+            checkOutDate: { $gt: row.checkInDate },
+          })
+          .session(session);
+        if (conflict)
+          throw new ConflictException(
+            `Room ${roomNumber} is already assigned for overlapping dates`,
+          );
+        await this.assignments.findOneAndUpdate(
+          { bookingId: row._id, status: { $ne: "released" } },
+          {
+            $set: {
+              ashramId: row.ashramId,
+              roomId: row.roomId,
+              roomNumber,
+              assignedBy: user.id,
+              assignedAt: new Date(),
+              status: row.status === "checked_in" ? "occupied" : "assigned",
+            },
+          },
+          { upsert: true, new: true, session },
+        );
+        row.assignedRoomNumber = roomNumber;
+        updatedFields.push("assignedRoomNumber");
+      }
+      if (dto.specialRequests !== undefined) {
+        row.specialRequests = dto.specialRequests.trim();
+        updatedFields.push("specialRequests");
+      }
+      await row.save({ session });
+      await this.audits.create(
+        [
+          {
+            userId: user.id,
+            action: "SUPER_ADMIN_BOOKING_UPDATED",
+            bookingId: row._id,
+            ashramId: row.ashramId,
+            details: { updatedFields },
+          },
+        ],
+        { session },
+      );
+    });
+
+    return this.bookings
+      .findById(id)
+      .populate("customerId", "name email phone")
+      .populate("ashramId", "name address")
+      .populate("roomId", "name type acType")
+      .lean();
+  }
+
+  async adminArchive(id: string, user: AuthenticatedUser): Promise<any> {
+    if (user.role !== "super_admin")
+      throw new ForbiddenException("Only Super Admin can archive bookings");
+    return this.transactions.run(async (session) => {
+      const row = await this.bookings.findOne({ _id: id, deletedAt: null }).session(session);
+      if (!row) throw new NotFoundException("Booking not found");
+      const successfulPayment = await this.payments
+        .exists({ bookingId: row._id, status: "success" })
+        .session(session);
+      if (
+        successfulPayment ||
+        row.paymentStatus === "fully_paid" ||
+        row.gatewayStatus === "success" ||
+        !["pending", "expired", "cancelled"].includes(row.status)
+      )
+        throw new BadRequestException(
+          "Paid or active stay records cannot be deleted; cancel or refund them through the booking workflow",
+        );
+
+      const activeHold = await this.inventoryHolds
+        .findOne({ bookingId: row._id, state: "held" })
+        .session(session);
+      if (activeHold) {
+        await this.repository.releaseInventory({
+          roomId: String(row.roomId),
+          dates: row.occupiedDates,
+          count: row.roomsBookedCount,
+          state: "held",
+          session,
+        });
+        activeHold.state = "released";
+        activeHold.releasedAt = new Date();
+        activeHold.releaseReason = "Archived by Super Admin";
+        await activeHold.save({ session });
+      }
+      row.deletedAt = new Date();
+      row.deletedBy = user.id;
+      await row.save({ session });
+      await this.audits.create(
+        [
+          {
+            userId: user.id,
+            action: "SUPER_ADMIN_BOOKING_ARCHIVED",
+            bookingId: row._id,
+            ashramId: row.ashramId,
+            details: { previousStatus: row.status },
+          },
+        ],
+        { session },
+      );
+      return { id: String(row._id), archived: true };
+    });
   }
 
   async assignRoom(

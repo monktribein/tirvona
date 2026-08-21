@@ -22,13 +22,11 @@ export const CustomerDashboard: React.FC = () => {
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Review states
   const [reviewBookingId, setReviewBookingId] = useState<string | null>(null);
   const [reviewComment, setReviewComment] = useState("");
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewError, setReviewError] = useState("");
 
-  // Cancellation states
   const [cancelBookingId, setCancelBookingId] = useState<string | null>(null);
   const [cancelReason, setCancelReason] = useState(
     "Personal reasons / plan changed",
@@ -117,7 +115,6 @@ export const CustomerDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header card */}
       <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[24px] shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="space-y-1">
           <h2 className="text-xl font-extrabold text-[#0B192C] dark:text-white">
@@ -176,7 +173,6 @@ export const CustomerDashboard: React.FC = () => {
                 key={b._id}
                 className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 shadow-sm space-y-4 flex flex-col justify-between transform hover:scale-[1.01] transition-all"
               >
-                {/* Header */}
                 <div className="flex justify-between items-start border-b border-gray-50 dark:border-slate-850 pb-3">
                   <div className="space-y-1">
                     <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white leading-snug">
@@ -190,7 +186,6 @@ export const CustomerDashboard: React.FC = () => {
                   <EnterpriseStatusBadge status={b.status} />
                 </div>
 
-                {/* Dates */}
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div className="space-y-1">
                     <span className="text-[9px] text-gray-400 font-bold block">
@@ -212,7 +207,6 @@ export const CustomerDashboard: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Counter Pass Details */}
                 {isConfirmed && (
                   <div className="p-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 rounded-2xl flex items-center justify-between">
                     <div>
@@ -232,7 +226,6 @@ export const CustomerDashboard: React.FC = () => {
                   </div>
                 )}
 
-                {/* Refund message if cancelled */}
                 {isCancelled && isRefunded && (
                   <div className="p-3 bg-danger/5 border border-danger/15 rounded-2xl flex items-center gap-2 text-[10px] text-danger font-semibold">
                     <CheckCircle size={14} /> Refund of stay total cost
@@ -240,7 +233,6 @@ export const CustomerDashboard: React.FC = () => {
                   </div>
                 )}
 
-                {/* Footer price & actions */}
                 <div className="pt-3 border-t border-gray-150 dark:border-slate-800 flex justify-between items-center bg-gray-50/50 dark:bg-slate-900/10 px-3 py-2.5 rounded-2xl">
                   <div className="flex flex-col">
                     <span className="text-[9px] text-gray-400 font-bold tracking-wider">
@@ -275,7 +267,6 @@ export const CustomerDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Review Dialog modal */}
       {reviewBookingId && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <form
@@ -342,7 +333,6 @@ export const CustomerDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Cancellation Dialog modal */}
       {cancelBookingId && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <form

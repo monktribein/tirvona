@@ -45,13 +45,6 @@ export const ParkingRoleDashboardPage: React.FC = () => {
   const { user } = useAuth();
   const { addNotification } = useNotifications();
 
-  // Which panel to open on arrival.
-  //
-  // Parking authorisation is a grant in `parking_staff`, not a value of
-  // `User.role` — a guard and a pilgrim both read `customer` — so the account
-  // role cannot decide this. `parkingRoles` carries the active grants; a
-  // Super Admin holds none but sees everything, so it lands on the widest
-  // panel. The selector below still allows switching by hand.
   const grantedRoles = user?.parkingRoles ?? [];
   const [activeRoleView, setActiveRoleView] = useState<
     "partner" | "manager" | "guard"
@@ -62,7 +55,6 @@ export const ParkingRoleDashboardPage: React.FC = () => {
     return "partner";
   });
 
-  // ── Global Stats & Locations State ──
   const [stats, setStats] = useState<ParkingDashboardStats | null>(null);
   const [locations, setLocations] = useState<ParkingLocation[]>([]);
   const [selectedLocationId, setSelectedLocationId] = useState<string>("");
@@ -70,12 +62,10 @@ export const ParkingRoleDashboardPage: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
-  // ── Partner View State ──
   const [partnerReports, setPartnerReports] = useState<any>(null);
   const [partnerBookings, setPartnerBookings] = useState<ParkingBooking[]>([]);
   const [staffList, setStaffList] = useState<any[]>([]);
 
-  // ── Manager View State (Slots & Maintenance) ──
   const [slotTypes, setSlotTypes] = useState<any[]>([]);
   const [slots, setSlots] = useState<any[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>("");
@@ -86,14 +76,12 @@ export const ParkingRoleDashboardPage: React.FC = () => {
   const [manualVehicleType, setManualVehicleType] = useState("car");
   const [manualSlotTypeId] = useState("");
 
-  // ── Guard Scanner View State ──
   const [qrTokenInput, setQrTokenInput] = useState("");
   const [plateSearchInput, setPlateSearchInput] = useState("");
   const [verifying, setVerifying] = useState(false);
   const [scanResult, setScanResult] = useState<any>(null);
   const [scanLogs, setScanLogs] = useState<any[]>([]);
 
-  // Load Dashboard Base Data
   const fetchDashboardData = useCallback(
     async (isSilent = false) => {
       if (!isSilent) setLoading(true);
@@ -128,7 +116,6 @@ export const ParkingRoleDashboardPage: React.FC = () => {
     fetchDashboardData();
   }, [fetchDashboardData]);
 
-  // Load Role-Specific Data when active role or selected location changes
   const fetchRoleData = useCallback(async () => {
     if (activeRoleView === "partner") {
       try {
@@ -178,9 +165,6 @@ export const ParkingRoleDashboardPage: React.FC = () => {
     fetchRoleData();
   }, [fetchRoleData]);
 
-  // ── Actions ──
-
-  // Guard QR Verification
   const handleVerifyQr = async (tokenString?: string) => {
     const tokenToUse = tokenString || qrTokenInput.trim();
     if (!tokenToUse) {
@@ -209,7 +193,6 @@ export const ParkingRoleDashboardPage: React.FC = () => {
     }
   };
 
-  // Guard Check-in Action
   const handleGuardCheckIn = async (tokenString: string) => {
     setVerifying(true);
     try {
@@ -228,7 +211,6 @@ export const ParkingRoleDashboardPage: React.FC = () => {
     }
   };
 
-  // Guard Check-out Action
   const handleGuardCheckOut = async (tokenString: string) => {
     setVerifying(true);
     try {
@@ -247,7 +229,6 @@ export const ParkingRoleDashboardPage: React.FC = () => {
     }
   };
 
-  // Guard Plate Lookup
   const handlePlateLookup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!plateSearchInput.trim()) return;
@@ -273,7 +254,6 @@ export const ParkingRoleDashboardPage: React.FC = () => {
     }
   };
 
-  // Manager Bay Maintenance Toggle
   const handleToggleBayStatus = async (slotId: string, currentStatus: string) => {
     const nextStatus = currentStatus === "available" ? "maintenance" : "available";
     try {
@@ -287,7 +267,6 @@ export const ParkingRoleDashboardPage: React.FC = () => {
     }
   };
 
-  // Manager Manual Check-in Submission
   const handleManualCheckInSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedLocationId || !manualVehicleNo.trim()) {
@@ -334,7 +313,6 @@ export const ParkingRoleDashboardPage: React.FC = () => {
 
   return (
     <div className="space-y-6 text-left w-full">
-      {/* ── Top Header Banner ── */}
       <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 shadow-xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
 
@@ -358,7 +336,6 @@ export const ParkingRoleDashboardPage: React.FC = () => {
             </p>
           </div>
 
-          {/* Location Selector & Refresh */}
           <div className="flex items-center gap-3">
             {locations.length > 0 && (
               <div className="relative">
@@ -393,7 +370,6 @@ export const ParkingRoleDashboardPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Role Switcher Tabs (Available to Admins & Multi-role Managers) */}
         <div className="mt-6 pt-5 border-t border-gray-100 dark:border-slate-800/80 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-2 bg-gray-100/80 dark:bg-slate-900/80 p-1.5 rounded-2xl border border-gray-200/50 dark:border-slate-800">
             <button
@@ -449,13 +425,7 @@ export const ParkingRoleDashboardPage: React.FC = () => {
         </div>
       )}
 
-      {/* ── Key Metrics Grid ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Field names mirror the dashboard payload in ParkingReportService —
-          `todayRevenue`, `occupiedSlots`/`totalSlots`/`occupancyPercent`,
-          `expectedArrivals`/`expectedExits`. There is no separate
-          "completed stays" figure; checked-out bookings come from the status
-          breakdown. */}
         <ParkingStatTile
           icon={IndianRupee}
           label="Today's Revenue"
@@ -486,12 +456,8 @@ export const ParkingRoleDashboardPage: React.FC = () => {
         />
       </div>
 
-      {/* ─────────────────────────────────────────────────────────────────────────────
-          1. PARNER VIEW
-         ───────────────────────────────────────────────────────────────────────────── */}
       {activeRoleView === "partner" && (
         <div className="space-y-6">
-          {/* Revenue & Commission Summary Card */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
               <div className="flex items-center justify-between">
@@ -539,7 +505,6 @@ export const ParkingRoleDashboardPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Peak Hours Breakdown */}
               {partnerReports?.peakHours && partnerReports.peakHours.length > 0 && (
                 <div className="pt-4 border-t border-gray-100 dark:border-slate-800">
                   <h4 className="text-xs font-extrabold text-gray-500 dark:text-gray-400 mb-3">
@@ -564,7 +529,6 @@ export const ParkingRoleDashboardPage: React.FC = () => {
               )}
             </div>
 
-            {/* Assigned Staff & Roster Card */}
             <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white tracking-wider flex items-center gap-2">
@@ -610,7 +574,6 @@ export const ParkingRoleDashboardPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Recent Partner Bookings List */}
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
             <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white tracking-wider flex items-center gap-2">
               <Car size={16} className="text-[#0A4DA6]" /> Facility Booking Roster
@@ -658,12 +621,8 @@ export const ParkingRoleDashboardPage: React.FC = () => {
         </div>
       )}
 
-      {/* ─────────────────────────────────────────────────────────────────────────────
-          2. MANAGER VIEW
-         ───────────────────────────────────────────────────────────────────────────── */}
       {activeRoleView === "manager" && (
         <div className="space-y-6">
-          {/* Manager Operations Bar */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
             <div className="flex items-center gap-3">
               <span className="text-xs font-extrabold text-gray-500">Filter Bays:</span>
@@ -688,7 +647,6 @@ export const ParkingRoleDashboardPage: React.FC = () => {
             </button>
           </div>
 
-          {/* Slot Types & Categories */}
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
             <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white tracking-wider flex items-center gap-2">
               <Layers size={16} className="text-[#0A4DA6]" /> Parking Areas & Slot Categories
@@ -722,7 +680,6 @@ export const ParkingRoleDashboardPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Real-time Parking Bays Grid & Status Toggles */}
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white tracking-wider flex items-center gap-2">
@@ -769,14 +726,9 @@ export const ParkingRoleDashboardPage: React.FC = () => {
         </div>
       )}
 
-      {/* ─────────────────────────────────────────────────────────────────────────────
-          3. SECURITY GUARD VIEW
-         ───────────────────────────────────────────────────────────────────────────── */}
       {activeRoleView === "guard" && (
         <div className="space-y-6">
-          {/* Quick Scanner & Lookup Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* QR Pass Token Scanner */}
             <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white tracking-wider flex items-center gap-2">
@@ -814,7 +766,6 @@ export const ParkingRoleDashboardPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Verified Pass Card Result */}
               {scanResult && !scanResult.error && (
                 <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 space-y-3">
                   <div className="flex items-center justify-between">
@@ -855,7 +806,6 @@ export const ParkingRoleDashboardPage: React.FC = () => {
               )}
             </div>
 
-            {/* License Plate Search */}
             <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
               <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white tracking-wider flex items-center gap-2">
                 <Search size={16} className="text-[#0A4DA6]" /> License Plate Search
@@ -886,7 +836,6 @@ export const ParkingRoleDashboardPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Security Gate Audit Logs */}
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
             <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white tracking-wider flex items-center gap-2">
               <Clock size={16} className="text-[#0A4DA6]" /> Live Gate Scan Log Activity
@@ -928,7 +877,6 @@ export const ParkingRoleDashboardPage: React.FC = () => {
         </div>
       )}
 
-      {/* ── Manual Check-in Modal ── */}
       {showManualCheckInModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4">

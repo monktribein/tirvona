@@ -64,31 +64,23 @@ export const EnterpriseModulePage: React.FC<{
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
 
-  // Pending CMS Approval Requests State
   const [pendingCmsRequests, setPendingCmsRequests] = useState<CmsRequest[]>(
     [],
   );
   const [rejectionModalId, setRejectionModalId] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
 
-  // Form Modal State for Specific Module Editing
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any | null>(null);
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [bannerEntities, setBannerEntities] = useState<Record<string, any[]>>({});
   const [featuredAshramSearch, setFeaturedAshramSearch] = useState("");
-  // Creating a room category needs a real ashram, and creating a seasonal
-  // price needs a real room — neither is a free-text field, and the server
-  // rejects the record without one. Loaded only while the room module is open.
   const [roomAshramOptions, setRoomAshramOptions] = useState<any[]>([]);
   const [roomCategoryOptions, setRoomCategoryOptions] = useState<any[]>([]);
 
-  // Local Hub 7-Section Enterprise Drawer State
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [managingItem, setManagingItem] = useState<any | null>(null);
 
-  // Underscores are separators too — module keys arrive as `parking_partners`
-  // and `institution_contacts`, which rendered with the underscore intact.
   const formatTitle = (str: string) =>
     str
       .replace(/[-_]/g, " ")
@@ -170,9 +162,6 @@ export const EnterpriseModulePage: React.FC<{
     "reports:bookings": "Booking Telemetry",
   };
   const displayTitle = pageTitles[`${activeModule}:${activeSubKey || "all"}`] || title;
-  // `displayTitle` names the list ("All Blogs"), which reads wrong as a form
-  // heading — "Create All Blogs". Drop the "All " and singularise for the noun
-  // that describes one record.
   const recordLabel =
     displayTitle
       .replace(/^All\s+/i, "")
@@ -209,16 +198,10 @@ export const EnterpriseModulePage: React.FC<{
     });
   }, [activeModule]);
 
-  // Every ashram and every room category on the platform, for the pickers the
-  // room forms need. Read through /admin/crud so a Super Admin sees all of
-  // them, not only properties they happen to own.
   useEffect(() => {
     if (activeModule !== "rooms") return;
     let cancelled = false;
 
-    // /admin/crud caps a page at 100 rows, so a single request would quietly
-    // truncate the picker on a platform with more properties than that. Paged
-    // through to a sane ceiling instead of guessing a limit the server ignores.
     const fetchAllPages = async (path: string): Promise<any[]> => {
       const rows: any[] = [];
       for (let page = 1; page <= 10; page += 1) {
@@ -332,12 +315,6 @@ export const EnterpriseModulePage: React.FC<{
     setLoading(true);
     setLoadError("");
     try {
-      // Must go through the shared `api` client: /admin/crud is authenticated,
-      // and raw axios sends no Authorization header (it would 401).
-      // Reports read the live ledgers, not the `booking_reports` queue. That
-      // collection only holds export jobs a user asked for and TTLs them away,
-      // so /admin/crud/reports was almost always empty — which is what made
-      // both report pages render "No records found" on a busy platform.
       const endpoint =
         activeModule === "reports"
           ? activeSubKey === "bookings"
@@ -347,7 +324,7 @@ export const EnterpriseModulePage: React.FC<{
           : activeModule === "bookings" && activeSubKey === "refunds"
           ? "/booking-finance/refunds"
           : activeModule === "bookings"
-            ? `/bookings/dashboard?limit=100${activeSubKey === "refunded" ? "&paymentStatus=refunded" : activeSubKey && activeSubKey !== "all" ? `&status=${encodeURIComponent(activeSubKey)}` : ""}`
+            ? `/bookings/dashboard?limit=100${activeSubKey === "pending" ? "&paymentStatus=pending" : activeSubKey === "refunded" ? "&paymentStatus=refunded" : activeSubKey && activeSubKey !== "all" ? `&status=${encodeURIComponent(activeSubKey)}` : ""}`
             : `/admin/crud/${activeModule}${activeSubKey ? `?subKey=${activeSubKey}` : ""}`;
       const res = await api.get(endpoint);
       if (res.data?.success) {
@@ -370,40 +347,25 @@ export const EnterpriseModulePage: React.FC<{
     }
   };
 
-  // Tables the console shows but must never write. Parking bookings drive slot
-  // occupancy and QR validity, commissions and transactions are written by the
-  // settlement run, scan logs are an audit trail, and a staff grant carries
-  // authorisation rules that a plain field update would bypass — all of them
-  // change through /parking/admin, which enforces the transition.
-  // `reports` reads the payment and booking ledgers directly, so every row is
-  // a derived record — editing or deleting one here would mean rewriting
-  // settled money.
   const READ_ONLY_MODULES = new Set([
     "reports",
-    "bookings",
     "parking_bookings",
     "parking_commissions",
     "parking_transactions",
     "parking_scan_logs",
     "parking_staff",
   ]);
-  // The three faces of the room module. Each writes to a different place, so
-  // they are named once here rather than re-tested at every call site.
   const isRoomInventoryView =
     activeModule === "rooms" &&
     ["availability", "inventory"].includes(activeSubKey);
   const isRoomPricingView =
     activeModule === "rooms" &&
     ["pricing", "season_pricing"].includes(activeSubKey);
-  /** Room Categories — the structural records themselves. */
   const isRoomCategoryView = activeModule === "rooms" && !isRoomInventoryView && !isRoomPricingView;
   const isReadOnlyFinance =
     (activeModule === "bookings" && activeSubKey === "refunds") ||
     READ_ONLY_MODULES.has(activeModule);
 
-  // Custom Form & Column Definitions per Feature Area
-  // The fallback shape, named so a case can opt back into it (a sub-key that
-  // resolves to a different collection than its module's own config expects).
   const genericModuleConfig = {
     icon: <Building size={20} className="text-[#0A4DA6]" />,
     columns: defaultColumns || [
@@ -745,10 +707,6 @@ export const EnterpriseModulePage: React.FC<{
           ],
         };
 
-      // ── Parking ────────────────────────────────────────────────────────────
-      // The console lists and searches these; partner approval, commission
-      // settlement, and refunds live in the Parking Control Center because
-      // they are workflow transitions, not field edits.
       case "parking_partners":
         return {
           icon: <Car size={20} className="text-[#0A4DA6]" />,
@@ -768,8 +726,6 @@ export const EnterpriseModulePage: React.FC<{
             },
             { key: "status", label: "Status" },
           ],
-          // `status` is deliberately absent: approving a partner cascades to
-          // every location it owns, so it goes through the Control Center.
           fields: [
             {
               name: "businessName",
@@ -1137,13 +1093,7 @@ export const EnterpriseModulePage: React.FC<{
           ],
         };
 
-      // ── Blogs ──────────────────────────────────────────────────────────────
-      // The public feed reads title/slug/excerpt/coverImage/author and only
-      // shows `status: published`. The generic form collected none of that,
-      // which is why a console-authored post never reached the homepage.
       case "blogs":
-        // Only the post list. `blogs/authors` and `blogs/categories` resolve to
-        // different collections and keep the generic config.
         if (activeSubKey && activeSubKey !== "all") return genericModuleConfig;
         return {
           icon: <BookOpen size={20} className="text-[#0A4DA6]" />,
@@ -1191,7 +1141,6 @@ export const EnterpriseModulePage: React.FC<{
             {
               key: "status",
               label: "Status",
-              // "published" is the only value the public feed accepts.
               render: (value: any) => humanizeLabel(value || "draft"),
             },
           ],
@@ -1230,8 +1179,6 @@ export const EnterpriseModulePage: React.FC<{
             },
             { name: "videoUrl", label: "Video URL (for video posts)", type: "text" },
             { name: "coverImage", label: "Featured Image URL", type: "text" },
-            // Same wording as the Visitor Article form, so both blog surfaces
-            // ask for the same things by the same names.
             {
               name: "excerpt",
               label: "Short Description",
@@ -1248,15 +1195,11 @@ export const EnterpriseModulePage: React.FC<{
               name: "status",
               label: "Publish Status",
               type: "select",
-              // Only "published" appears on the homepage and /blog.
               options: ["published", "draft", "archived"],
             },
           ],
         };
 
-      // ── Reports & Audit ────────────────────────────────────────────────────
-      // Revenue reads the settled payment ledger; telemetry reads the booking
-      // pipeline. Both are read-only views of live data.
       case "reports":
         if (activeSubKey === "bookings") {
           return {
@@ -1435,7 +1378,18 @@ export const EnterpriseModulePage: React.FC<{
             },
             { key: "status", label: "Booking Status" },
           ],
-          fields: [],
+          fields: [
+            {
+              name: "assignedRoomNumber",
+              label: "Assigned Room Number",
+              type: "text",
+            },
+            {
+              name: "specialRequests",
+              label: "Guest Special Requests",
+              type: "textarea",
+            },
+          ],
         };
 
       case "rooms":
@@ -1475,11 +1429,6 @@ export const EnterpriseModulePage: React.FC<{
                 render: (value: any) => (value ? "Yes" : "No"),
               },
             ],
-            // Booked and held units are deliberately absent: those are written
-            // by the reservation flow, and editing them here would oversell the
-            // room. Everything an operator legitimately controls for a night —
-            // capacity, blocked units, an override rate, a full stop-sell — is
-            // present, matching the owner's own availability form.
             fields: [
               {
                 name: "totalInventory",
@@ -1549,10 +1498,6 @@ export const EnterpriseModulePage: React.FC<{
                 render: (value: any) => (value === false ? "No" : "Yes"),
               },
             ],
-            // A base row edits the room's own `basePrice`; a seasonal row edits
-            // one entry of its `pricingRules`. The server routes the write by
-            // the row's id, so one field set serves both — on a base row the
-            // seasonal-only fields are simply ignored.
             fields: [
               { name: "name", label: "Pricing Rule Name", type: "text" },
               { name: "validFrom", label: "Valid From", type: "date" },
@@ -1735,8 +1680,6 @@ export const EnterpriseModulePage: React.FC<{
       initialData.ctaText = "Book Now";
       initialData.status = "active";
     } else if (activeModule === "blogs" && (!activeSubKey || activeSubKey === "all")) {
-      // "published" is the only status the public feed accepts, so it is the
-      // default — a Super Admin writing a post means to publish it.
       initialData.status = "published";
       initialData.contentType = "article";
       initialData.category = "spiritual";
@@ -1757,7 +1700,6 @@ export const EnterpriseModulePage: React.FC<{
     setIsModalOpen(true);
   };
 
-  /** Tells the console a room write landed, so open room pages re-read. */
   const announceRoomsChanged = () => {
     localStorage.setItem("tirvona:rooms-updated", Date.now().toString());
     window.dispatchEvent(new Event("tirvona:rooms-updated"));
@@ -1766,9 +1708,6 @@ export const EnterpriseModulePage: React.FC<{
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      // Editing a category goes through /rooms, which enforces the same
-      // committed-units rule the owner console obeys. Creating one goes through
-      // /admin/crud, the only path that accepts an explicit ashramId.
       if (isRoomCategoryView && editingItem?._id) {
         await roomService.update(editingItem._id, {
           name: String(formData.name || "").trim(),
@@ -1810,9 +1749,6 @@ export const EnterpriseModulePage: React.FC<{
         fetchModuleData();
         return;
       }
-      // A pricing row is written back to the room it was derived from. `_id`
-      // carries which kind it is (`base:` / `embedded:`); `sourceRoomId` names
-      // the room when a brand-new seasonal rule is being added.
       if (isRoomPricingView) {
         const sourceRoomId = editingItem?.sourceRoomId || formData.sourceRoomId;
         if (!sourceRoomId) {
@@ -1838,8 +1774,6 @@ export const EnterpriseModulePage: React.FC<{
         fetchModuleData();
         return;
       }
-      // A daily inventory row. `isClosed` arrives as a select string, and the
-      // server stores a boolean.
       if (isRoomInventoryView && editingItem?._id) {
         await api.post(
           `/admin/crud/rooms?subKey=${activeSubKey || "availability"}`,
@@ -1979,10 +1913,19 @@ export const EnterpriseModulePage: React.FC<{
 
   const handleDirectSave = async (savedData: any) => {
     try {
-      // The table's own "Edit Record" panel lands here, so each of the three
-      // room views has to be routed to the place it actually writes. Sending
-      // all of them to /rooms/:id — as this once did — meant a pricing or
-      // availability row was addressed as though it were a room category.
+      if (activeModule === "bookings" && activeSubKey !== "refunds") {
+        await api.put(`/bookings/${savedData._id}/admin`, {
+          assignedRoomNumber: savedData.assignedRoomNumber || undefined,
+          specialRequests: savedData.specialRequests ?? "",
+        });
+        addNotification(
+          "Booking Updated",
+          "The editable booking details were updated and audited.",
+          "success",
+        );
+        fetchModuleData();
+        return;
+      }
       if (isRoomCategoryView && savedData._id) {
         await roomService.update(savedData._id, {
           name: String(savedData.name || "").trim(),
@@ -2119,16 +2062,23 @@ export const EnterpriseModulePage: React.FC<{
     }
   };
 
-  // The sub-key decides which collection a record lives in (blogs/authors,
-  // marketplace/orders …), so a delete has to carry it too.
   const crudDeletePath = (id: string) =>
     `/admin/crud/${activeModule}/${id}${activeSubKey ? `?subKey=${activeSubKey}` : ""}`;
 
   const handleDelete = async (id: string) => {
     try {
-      // Only a category is a room of its own. A pricing row lives inside its
-      // room and an availability row is a calendar record, so both go through
-      // /admin/crud — sending them to /rooms/:id deleted the wrong thing.
+      if (activeModule === "bookings" && activeSubKey !== "refunds") {
+        await api.delete(`/bookings/${id}/admin`);
+        addNotification(
+          "Booking Archived",
+          "The unpaid booking was removed from active administration records.",
+          "info",
+        );
+        setData((current) =>
+          current.filter((item) => (item._id || item.id) !== id),
+        );
+        return;
+      }
       if (isRoomCategoryView) {
         await roomService.remove(id);
         announceRoomsChanged();
@@ -2170,11 +2120,21 @@ export const EnterpriseModulePage: React.FC<{
 
   const handleBulkDelete = async (ids: string[]) => {
     try {
-      await Promise.all(ids.map((id) => api.delete(crudDeletePath(id))));
+      const results = await Promise.allSettled(
+        ids.map((id) =>
+          activeModule === "bookings" && activeSubKey !== "refunds"
+            ? api.delete(`/bookings/${id}/admin`)
+            : api.delete(crudDeletePath(id)),
+        ),
+      );
+      const removed = results.filter((result) => result.status === "fulfilled").length;
+      const protectedCount = results.length - removed;
       addNotification(
-        "Bulk Delete Complete",
-        `${ids.length} records removed.`,
-        "info",
+        protectedCount ? "Bulk Archive Partially Completed" : "Bulk Delete Complete",
+        protectedCount
+          ? `${removed} unpaid booking${removed === 1 ? " was" : "s were"} archived. ${protectedCount} paid or active record${protectedCount === 1 ? " was" : "s were"} protected.`
+          : `${removed} records removed.`,
+        protectedCount ? "warning" : "info",
       );
       fetchModuleData();
     } catch (err) {
@@ -2384,7 +2344,6 @@ export const EnterpriseModulePage: React.FC<{
 
   return (
     <div className="space-y-6 text-left w-full">
-      {/* Page Module Banner Header */}
       <EnterprisePageHeader
         title={displayTitle}
         subtitle="Enterprise administration, lifecycle controls, and status monitoring console."
@@ -2403,10 +2362,7 @@ export const EnterpriseModulePage: React.FC<{
             >
               <Printer size={14} /> Print
             </button>
-            {/* Daily availability rows are generated by the booking engine for
-              a specific room and date, so they are edited rather than authored
-              here. Categories and prices are both created from this button. */}
-            {!isReadOnlyFinance && !isRoomInventoryView && (
+            {!isReadOnlyFinance && activeModule !== "bookings" && !isRoomInventoryView && (
               <button
                 onClick={
                   activeModule === "ashrams" || activeModule === "ashram"
@@ -2431,7 +2387,6 @@ export const EnterpriseModulePage: React.FC<{
 
 
 
-      {/* Rejection Modal */}
       {rejectionModalId && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <form
@@ -2473,7 +2428,6 @@ export const EnterpriseModulePage: React.FC<{
         </div>
       )}
 
-      {/* Module Table Data */}
       {loadError && (
         <div className="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-bold text-rose-700">
           {loadError}
@@ -2497,6 +2451,28 @@ export const EnterpriseModulePage: React.FC<{
           "events",
           "parking_locations",
         ].includes(activeModule)}
+        detailVariant={activeModule === "bookings" ? "table" : "cards"}
+        bulkDeleteLabel={
+          activeModule === "bookings" ? "Archive Unpaid" : "Bulk Delete"
+        }
+        deleteLabel={
+          activeModule === "bookings" ? "Archive Unpaid Booking" : "Delete"
+        }
+        statusOptions={
+          activeModule === "bookings"
+            ? [
+                "pending",
+                "confirmed",
+                "checked_in",
+                "checked_out",
+                "completed",
+                "cancelled",
+                "refunded",
+                "no_show",
+                "expired",
+              ]
+            : undefined
+        }
         onSave={isReadOnlyFinance ? undefined : (item) => handleDirectSave(item)}
         onManage={
           activeModule === "local"
@@ -2507,21 +2483,17 @@ export const EnterpriseModulePage: React.FC<{
             : undefined
         }
         onDelete={isReadOnlyFinance ? undefined : (id) => handleDelete(id)}
-        // Bulk delete posts straight to /admin/crud, which cannot honour the
-        // live-booking refusal that guards a single category delete, and a base
-        // price is not a deletable row at all. Approve/reject have no meaning
-        // for any room record.
         onBulkDelete={
           isReadOnlyFinance || activeModule === "rooms" ? undefined : (ids) => handleBulkDelete(ids)
         }
         onBulkApprove={
-          isReadOnlyFinance || activeModule === "rooms" ? undefined : (ids) => handleBulkApprove(ids)
+          isReadOnlyFinance || activeModule === "rooms" || activeModule === "bookings" ? undefined : (ids) => handleBulkApprove(ids)
         }
         onBulkReject={
-          isReadOnlyFinance || activeModule === "rooms" ? undefined : (ids) => handleBulkReject(ids)
+          isReadOnlyFinance || activeModule === "rooms" || activeModule === "bookings" ? undefined : (ids) => handleBulkReject(ids)
         }
         onToggleStatus={
-          isReadOnlyFinance ? undefined : (item) => handleToggleStatus(item)
+          isReadOnlyFinance || activeModule === "bookings" ? undefined : (item) => handleToggleStatus(item)
         }
         onResetOwnerPassword={
           activeModule === "ashrams"
@@ -2537,7 +2509,6 @@ export const EnterpriseModulePage: React.FC<{
         }
       />
 
-      {/* Local Hub 7-Section Full Enterprise Manager Drawer */}
       <LocalHubEnterpriseDrawer
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
@@ -2556,7 +2527,6 @@ export const EnterpriseModulePage: React.FC<{
         }}
       />
 
-      {/* Dedicated Form Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <form
@@ -2577,7 +2547,6 @@ export const EnterpriseModulePage: React.FC<{
             </div>
 
             <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1 text-xs">
-              {/* Universal Image Gallery & Upload Manager */}
               <ImageGalleryManager
                 coverImage={
                   formData.image ||
@@ -2767,11 +2736,6 @@ export const EnterpriseModulePage: React.FC<{
                 </div>
               )}
 
-              {/* Room forms need a real parent record, which the generic field
-                renderer cannot express: its selects carry plain strings, while
-                these need an id as the value and a name as the label. Locked
-                once the record exists — neither a category nor a price can be
-                moved to another property. */}
               {isRoomCategoryView && (
                 <div className="space-y-1">
                   <label className="font-bold text-gray-700 dark:text-gray-300">

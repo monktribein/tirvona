@@ -8,13 +8,6 @@ import type {
   SmartContactStatus,
 } from "./smart-contact.constants";
 
-/**
- * The shape a Smart Contact profile takes once it leaves the persistence
- * layer. Declared independently of the Mongoose document so the services and
- * controllers never depend on the storage engine — the specification's §45
- * assumes PostgreSQL, and this module runs on Mongo, which only stays a
- * detail if nothing above `infrastructure/` knows either way.
- */
 export interface SmartContactProfileView {
   id: string;
   uuid: string;
@@ -51,12 +44,6 @@ export interface SmartContactProfileView {
   updatedAt: string;
 }
 
-/**
- * The public projection (spec §34). A strict subset of the admin view: no
- * actor identities, no timestamps, no internal ids. Privacy (spec §38) is
- * enforced by what this interface omits, not by what the page chooses to
- * render.
- */
 export interface SmartContactPublicView {
   slug: string;
   displayName: string;
@@ -79,14 +66,12 @@ export interface SmartContactPublicView {
   isActive: boolean;
   profileUrl: string;
   vcardUrl: string;
-  /** Present only when the profile is not ACTIVE (spec §22). */
   inactiveNotice?: {
     message: string;
     contactEmail: string;
   };
 }
 
-/** A platform identity, denormalised. Never a ref — see the schema comment. */
 export interface ActorRef {
   id: string;
   name: string;
@@ -105,7 +90,6 @@ export interface SmartContactQrView {
   createdAt: string;
 }
 
-/** Context derived from the request for one analytics event (spec §26, §27). */
 export interface EventContext {
   sessionHash: string;
   deviceType: SmartContactDeviceType;
@@ -130,7 +114,6 @@ export interface AnalyticsTotals {
   emailClicks: number;
   websiteClicks: number;
   directionsClicks: number;
-  /** saveContact / profileViews × 100, per spec §24. */
   conversionRate: number;
 }
 
@@ -155,6 +138,5 @@ export interface SmartContactAnalyticsView {
   geography: AnalyticsBreakdownRow[];
   sources: AnalyticsBreakdownRow[];
   referrers: AnalyticsBreakdownRow[];
-  /** Funnel stages per spec §51, each with conversion from the previous. */
   funnel: { stage: string; count: number; conversionFromPrevious: number }[];
 }

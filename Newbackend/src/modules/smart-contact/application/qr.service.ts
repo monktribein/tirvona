@@ -6,13 +6,9 @@ import {
 } from "../config/smart-contact.config";
 
 export interface QrRenderOptions {
-  /** Pixel width for raster output. Ignored by SVG and PDF, which are vector. */
   size?: number;
-  /** Caption printed beneath the symbol (spec §16). */
   caption?: string;
-  /** Draw the gold accent frame (spec §16). */
   frame?: boolean;
-  /** Knock a hole for the Tirvona logo and place it (spec §15, §16). */
   logo?: boolean;
 }
 
@@ -22,65 +18,27 @@ export interface RenderedQr {
   extension: string;
 }
 
-/**
- * A JPEG to embed in a PDF as an image XObject.
- *
- * JPEG specifically: PDF viewers decode it natively via `/DCTDecode`, so the
- * bytes go in untouched. A PNG would have to be decoded to raw samples and
- * re-deflated, which would mean an image library this module does not need.
- */
 export interface PdfImage {
-  /** Resource name referenced from the content stream, e.g. `Im1`. */
   name: string;
   data: Buffer;
   width: number;
   height: number;
 }
 
-/**
- * Renders the permanent profile URL as printable artwork (spec §12–§16).
- *
- * The one rule the whole product depends on: this service encodes a URL and
- * nothing else. It never receives a phone number, an email or a designation,
- * so it is structurally incapable of baking contact details into printed
- * artwork — which is what spec §2 and §49 require.
- *
- * Error correction is fixed at H (spec §15). That is 30% recovery, which is
- * what buys room for the centre logo; the logo box below is sized well inside
- * that budget so the symbol stays readable off a small visiting card.
- */
 @Injectable()
 export class QrService {
   private readonly config: SmartContactConfig = smartContactConfig();
 
-  /** Quiet zone in modules. 4 is the spec minimum; anything less hurts scans. */
   private static readonly QUIET_ZONE = 4;
 
-  /**
-   * Logo box as a fraction of symbol width.
-   *
-   * 0.18 covers ~3.2% of the symbol's area — comfortably under H's 30% budget,
-   * with the rest left as margin for print bleed and a scuffed card. Spec §15
-   * warns specifically against a logo that eats too many modules; this is the
-   * lever that respects it.
-   */
   private static readonly LOGO_RATIO = 0.18;
 
-  /** The bit matrix for a payload, at error correction level H. */
   private matrix(text: string): { size: number; get: (r: number, c: number) => boolean } {
     const qr = QRCode.create(text, { errorCorrectionLevel: "H" });
     const { size, data } = qr.modules;
     return { size, get: (r, c) => Boolean(data[r * size + c]) };
   }
 
-  /**
-   * Module geometry for a payload: an SVG path drawn on a `grid × grid` unit
-   * square, quiet zone included.
-   *
-   * Exposed so `ContactCardService` can place the symbol inside a larger
-   * layout without duplicating the encoder or the quiet-zone rule — the card
-   * scales this with a transform rather than re-deriving it.
-   */
   qrGeometry(url: string): { path: string; grid: number } {
     const { size: modules, get } = this.matrix(url);
     const quiet = QrService.QUIET_ZONE;
@@ -93,7 +51,6 @@ export class QrService {
     return { path: parts.join(""), grid: modules + quiet * 2 };
   }
 
-  /** Module rectangles in PDF user space, for a symbol of `side` points. */
   qrPdfRects(url: string, originX: number, originY: number, side: number): string[] {
     const { size: modules, get } = this.matrix(url);
     const quiet = QrService.QUIET_ZONE;
@@ -104,7 +61,6 @@ export class QrService {
       for (let col = 0; col < modules; col += 1) {
         if (!get(row, col)) continue;
         const x = originX + (col + quiet) * unit;
-        // PDF's origin is bottom-left; the matrix's is top-left.
         const y = originY + side - (row + quiet + 1) * unit;
         ops.push(
           `${x.toFixed(3)} ${y.toFixed(3)} ${(unit + 0.02).toFixed(3)} ${(unit + 0.02).toFixed(3)} re f`,
@@ -122,20 +78,11 @@ export class QrService {
       .replace(/"/g, "&quot;");
   }
 
-  /**
-   * SVG — the master format (spec §13).
-   *
-   * Hand-built rather than delegated to `QRCode.toString`, because the branded
-   * output needs things that helper cannot express: a gold frame, a caption
-   * band, and a knocked-out centre for the logo. One `<path>` of module rects
-   * keeps the file small enough to paste into a print layout.
-   */
   renderSvg(url: string, options: QrRenderOptions = {}): string {
     const { size: modules, get } = this.matrix(url);
     const quiet = QrService.QUIET_ZONE;
     const grid = modules + quiet * 2;
     const caption = options.caption?.trim() ?? "";
-    // Extra rows of module-space beneath the symbol for the caption text.
     const captionBand = caption ? 3 : 0;
     const height = grid + captionBand;
 
@@ -157,9 +104,6 @@ export class QrService {
         `stroke="${this.config.qrAccentColor}" stroke-width="0.35"/>`
       : "";
 
-    // The knockout is drawn in the light colour so the logo sits on a clean
-    // field; without it the logo would overlay live modules and the decoder
-    // would have to spend its whole error budget on them.
     const logo =
       options.logo && this.config.qrLogoUrl
         ? `<rect x="${logoOrigin.toFixed(2)}" y="${logoOrigin.toFixed(2)}" ` +
@@ -194,28 +138,10 @@ export class QrService {
     );
   }
 
-  /**
-   * PNG for layouts that cannot place vector art (spec §13, §14).
-   *
-   * Delegated to the library's rasteriser rather than composited by hand: the
-   * logo and frame are deliberately omitted here. Overlaying them would mean
-   * decoding and compositing an external image server-side, and a PNG is the
-   * fallback format anyway — spec §13 names SVG as the master, and that is
-   * where the branding lives.
-   */
   async renderPng(url: string, size?: number): Promise<Buffer> {
     return QRCode.toBuffer(url, this.pngOptions(size));
   }
 
-  /**
-   * Encoder options for a raster render. Split out from `renderPng` so the
-   * width clamp is assertable without rasterising — a 2000px symbol is 290ms
-   * in the app but tens of seconds under ts-jest.
-   *
-   * The clamp bounds are practical, not arbitrary: below ~200px a level-H
-   * symbol of this URL stops scanning reliably off a screen, and above 4000px
-   * the buffer is larger than any print workflow needs.
-   */
   pngOptions(size?: number): QRCode.QRCodeToBufferOptions {
     return {
       errorCorrectionLevel: "H",
@@ -226,26 +152,11 @@ export class QrService {
     };
   }
 
-  /**
-   * A print-ready single-page PDF containing the symbol as true vector art.
-   *
-   * Written by hand rather than pulling in a PDF library: the document is a
-   * few thousand rectangles and one optional line of Helvetica, which is less
-   * code than configuring a generator would be — and it keeps the module's
-   * dependency list at what the platform already ships.
-   *
-   * The caption is restricted to WinAnsi-encodable characters because the page
-   * uses a standard Type 1 font with no embedded glyphs. The Hindi caption
-   * from spec §16 therefore has to come from the SVG, which has no such limit;
-   * `pdfCaptionIsRenderable` lets the caller check before asking.
-   */
   renderPdf(url: string, options: QrRenderOptions = {}): Buffer {
     const { size: modules, get } = this.matrix(url);
     const quiet = QrService.QUIET_ZONE;
     const grid = modules + quiet * 2;
 
-    // 72pt = 1in. A 2in symbol is the largest that sits comfortably on a
-    // visiting card and is well above the minimum reliable scan size.
     const symbolPt = 144;
     const unit = symbolPt / grid;
     const caption =
@@ -260,14 +171,9 @@ export class QrService {
     const [lr, lg, lb] = this.hexToRgb(this.config.qrLightColor);
 
     const ops: string[] = [];
-    // Background.
     ops.push(`${lr} ${lg} ${lb} rg`, `0 0 ${pageW} ${pageH} re f`);
     ops.push(`${dr} ${dg} ${db} rg`);
 
-    // PDF's origin is bottom-left and the matrix's is top-left, so the row
-    // index is mirrored. Rectangles are emitted a hair oversized (+0.02pt) so
-    // adjacent modules overlap rather than leaving hairline seams that some
-    // rasterisers render as white gaps through the symbol.
     for (let row = 0; row < modules; row += 1) {
       for (let col = 0; col < modules; col += 1) {
         if (!get(row, col)) continue;
@@ -289,8 +195,6 @@ export class QrService {
     }
 
     if (caption) {
-      // Helvetica's average advance is ~0.5em; good enough to centre a short
-      // caption without embedding font metrics.
       const fontSize = 8;
       const textWidth = caption.length * fontSize * 0.5;
       ops.push(
@@ -306,7 +210,6 @@ export class QrService {
     return this.assemblePdf(ops.join("\n"), pageW, pageH);
   }
 
-  /** Whether a caption survives WinAnsi encoding — see `renderPdf`. */
   pdfCaptionIsRenderable(caption: string): boolean {
     return /^[\x20-\x7E]*$/.test(caption.trim());
   }
@@ -333,23 +236,12 @@ export class QrService {
     ].map((n) => n.toFixed(4)) as [string, string, string];
   }
 
-  /**
-   * Wraps a content stream in the minimum viable PDF 1.4 document.
-   *
-   * The cross-reference table stores each object's absolute byte offset, so
-   * offsets are measured against the assembled buffer as it grows rather than
-   * computed from string lengths — a multi-byte character anywhere in the
-   * caption would otherwise shift every subsequent offset and produce a file
-   * that readers reject.
-   */
   assemblePdf(
     content: string,
     width: number,
     height: number,
     images: PdfImage[] = [],
   ): Buffer {
-    // Objects 1–6 are fixed; images take 7 onward, and the page's resource
-    // dictionary has to name them before the bodies are written.
     const imageRefs = images
       .map((image, index) => `/${image.name} ${7 + index} 0 R`)
       .join(" ");
@@ -362,14 +254,10 @@ export class QrService {
         `/Contents 4 0 R /Resources << /Font << /F1 5 0 R /F2 6 0 R >>${xobject} >> >>`,
       `<< /Length ${Buffer.byteLength(content, "latin1")} >>\nstream\n${content}\nendstream`,
       "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>",
-      // F2 is the bold face the contact card sets names and headings in.
       "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>",
     ];
 
     for (const image of images) {
-      // JPEG goes in verbatim under /DCTDecode — PDF viewers decode JPEG
-      // natively, so there is nothing to convert or re-compress. This is the
-      // whole reason the brand logo can be embedded without an image library.
       objects.push(
         Buffer.concat([
           Buffer.from(
@@ -398,9 +286,6 @@ export class QrService {
     const xref: number[] = [];
     objects.forEach((body, index) => {
       xref.push(offset);
-      // Built as a Buffer, not a template string: an image body holds raw
-      // binary, and concatenating it into a JS string would mangle every byte
-      // above 0x7F and corrupt the stream.
       push(
         Buffer.concat([
           Buffer.from(`${index + 1} 0 obj\n`, "latin1"),
@@ -425,7 +310,6 @@ export class QrService {
     return Buffer.concat(chunks);
   }
 
-  /** Renders whichever format the caller asked for, with response metadata. */
   async render(
     url: string,
     format: "svg" | "png" | "pdf",

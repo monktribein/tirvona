@@ -109,9 +109,6 @@ export const UserManagementPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Filters & Search State. `?q=` is seeded by the console's global search so
-  // a picked account is already filtered to on arrival, rather than leaving the
-  // operator to retype what they just searched for.
   const [searchTerm, setSearchTerm] = useState(
     () => new URLSearchParams(window.location.search).get("q") ?? "",
   );
@@ -121,7 +118,6 @@ export const UserManagementPage: React.FC = () => {
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
 
-  // Single-step, role-aware account onboarding.
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [createStep, setCreateStep] = useState<1 | 2 | 3>(1);
   const [creatingAccount, setCreatingAccount] = useState(false);
@@ -135,7 +131,6 @@ export const UserManagementPage: React.FC = () => {
     panCardUrl: "",
   });
 
-  // Action Modals State
   const [suspendTarget, setSuspendTarget] = useState<ManagedUser | null>(null);
   const [roleTarget, setRoleTarget] = useState<ManagedUser | null>(null);
   const [newSelectedRole, setNewSelectedRole] = useState("staff");
@@ -167,7 +162,6 @@ export const UserManagementPage: React.FC = () => {
     gender: "Male",
   });
 
-  // Suspension Form State
   const [reason, setReason] = useState("Terms Violation");
   const [suspensionType, setSuspensionType] = useState<
     "temporary" | "permanent"
@@ -201,7 +195,6 @@ export const UserManagementPage: React.FC = () => {
     }
   };
 
-  // Create Account Handler
   const handleCreateAccountSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const isPilgrim = newAccountData.role === "customer";
@@ -249,7 +242,6 @@ export const UserManagementPage: React.FC = () => {
     }
   };
 
-  // Suspend Handler
   const handleSuspendSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!suspendTarget || !canModerate) return;
@@ -283,7 +275,6 @@ export const UserManagementPage: React.FC = () => {
     }
   };
 
-  // Reactivate Handler
   const handleReactivate = async (u: ManagedUser) => {
     if (!canModerate) return;
     try {
@@ -305,7 +296,6 @@ export const UserManagementPage: React.FC = () => {
     }
   };
 
-  // Change Role Handler
   const handleChangeRoleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!roleTarget || !canModerate) return;
@@ -378,7 +368,6 @@ export const UserManagementPage: React.FC = () => {
     }
   };
 
-  // Update Permissions Handler
   const handlePermissionsSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!permTarget || !canModerate) return;
@@ -405,7 +394,6 @@ export const UserManagementPage: React.FC = () => {
     }
   };
 
-  // Reset Password Handler
   const handleResetPasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!resetPassTarget || !canModerate) return;
@@ -432,7 +420,6 @@ export const UserManagementPage: React.FC = () => {
     }
   };
 
-  // Delete Handler (Soft / Permanent)
   const handleDeleteSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!deleteTarget || !canModerate) return;
@@ -475,7 +462,6 @@ export const UserManagementPage: React.FC = () => {
     }
   };
 
-  // Restore Handler
   const handleRestore = async (u: ManagedUser) => {
     if (!canModerate) return;
     try {
@@ -537,7 +523,6 @@ export const UserManagementPage: React.FC = () => {
     }
   };
 
-  // Filter & Search Logic
   const filteredUsers = useMemo(() => {
     return users.filter((u) => {
       const searchMatch =
@@ -642,7 +627,6 @@ export const UserManagementPage: React.FC = () => {
 
   return (
     <div className="space-y-6 text-left w-full">
-      {/* ── Page Header & Create Button ── */}
       <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[28px] shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="flex items-center gap-3.5">
           <div className="w-12 h-12 rounded-2xl bg-[#0A4DA6]/10 text-[#0A4DA6] flex items-center justify-center shrink-0 border border-[#0A4DA6]/15">
@@ -687,7 +671,6 @@ export const UserManagementPage: React.FC = () => {
         </div>
       )}
 
-      {/* ── Filters & Search Toolbar ── */}
       <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-4 rounded-[24px] shadow-sm space-y-3">
         <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(260px,1fr)_240px_220px_auto] md:items-end">
           <div className="relative w-full">
@@ -765,7 +748,6 @@ export const UserManagementPage: React.FC = () => {
         )}
       </div>
 
-      {/* ── IAM Data Table ── */}
       {loading ? (
         <div className="h-64 bg-gray-50 border border-gray-100 rounded-[24px] animate-pulse" />
       ) : (
@@ -916,7 +898,6 @@ export const UserManagementPage: React.FC = () => {
         </div>
       )}
 
-      {/* Single-step account creation */}
       {isCreateOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
           <form onSubmit={handleCreateAccountSubmit} className="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-[28px] border border-gray-100 bg-white p-6 text-left shadow-2xl dark:border-slate-800 dark:bg-[#0B192C] sm:p-8">
@@ -963,14 +944,12 @@ export const UserManagementPage: React.FC = () => {
         </div>
       )}
 
-      {/* Legacy wizard is disabled; retained temporarily to avoid mixing this focused fix with unrelated modal code. */}
       {false && isCreateOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <form
             onSubmit={handleCreateAccountSubmit}
             className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-5xl w-full rounded-[28px] p-6 sm:p-8 space-y-6 text-left shadow-2xl animate-in zoom-in-95 duration-150"
           >
-            {/* Header */}
             <div className="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-4">
               <div>
                 <h3 className="font-extrabold text-lg sm:text-xl text-[#0B192C] dark:text-white flex items-center gap-2">
@@ -990,7 +969,6 @@ export const UserManagementPage: React.FC = () => {
               </button>
             </div>
 
-            {/* Step 1: Personal Details */}
             {createStep === 1 && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
                 <div className="space-y-1 sm:col-span-2">
@@ -1086,7 +1064,6 @@ export const UserManagementPage: React.FC = () => {
               </div>
             )}
 
-            {/* Step 2: Role & Designation */}
             {createStep === 2 && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                 <div className="space-y-1">
@@ -1164,7 +1141,6 @@ export const UserManagementPage: React.FC = () => {
               </div>
             )}
 
-            {/* Step 3: Auto Credentials & Permissions */}
             {createStep === 3 && (
               <div className="space-y-4 text-xs">
                 <div className="p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-2xl space-y-3">
@@ -1263,7 +1239,6 @@ export const UserManagementPage: React.FC = () => {
               </div>
             )}
 
-            {/* Multi-step Footer Navigation */}
             <div className="flex justify-between items-center pt-4 border-t border-gray-100 dark:border-slate-800">
               {createStep > 1 ? (
                 <button
@@ -1298,7 +1273,6 @@ export const UserManagementPage: React.FC = () => {
         </div>
       )}
 
-      {/* ── Change Role Modal ── */}
       {roleTarget && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <form
@@ -1416,7 +1390,6 @@ export const UserManagementPage: React.FC = () => {
         </div>
       )}
 
-      {/* Change Account Status Modal */}
       {statusTarget && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <form
@@ -1459,7 +1432,6 @@ export const UserManagementPage: React.FC = () => {
         </div>
       )}
 
-      {/* ── Assign Permissions Modal ── */}
       {permTarget && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <form
@@ -1530,7 +1502,6 @@ export const UserManagementPage: React.FC = () => {
         </div>
       )}
 
-      {/* ── Reset Password Modal ── */}
       {resetPassTarget && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <form
@@ -1613,7 +1584,6 @@ export const UserManagementPage: React.FC = () => {
         </div>
       )}
 
-      {/* ── Soft & Permanent Delete Modal ── */}
       {deleteTarget && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <form
@@ -1711,11 +1681,6 @@ export const UserManagementPage: React.FC = () => {
         </div>
       )}
 
-      {/* Account detail.
-        The eye button has always set `viewingUser`, but nothing ever rendered
-        it — so the click registered and the screen did not change. This is the
-        missing half. Read-only: every state change stays with the dedicated
-        suspend/restore/delete actions, which carry their own confirmations. */}
       {viewingUser && (
         <div
           className="fixed inset-0 z-[70] flex items-start sm:items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm overflow-y-auto"
@@ -1832,8 +1797,6 @@ export const UserManagementPage: React.FC = () => {
                         : ""),
                   },
                 ]
-                  // Blank fields are omitted rather than rendered as "—" rows:
-                  // an account with few details should read short, not padded.
                   .filter((f) => String(f.value ?? "").trim())
                   .map((f) => (
                     <div

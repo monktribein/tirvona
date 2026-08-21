@@ -1,28 +1,13 @@
-/* ─────────────────────────────────────────────────────────────────────────────
-   TirvonaMap — presentation overrides for Leaflet's default chrome.
-   ───────────────────────────────────────────────────────────────────────────── */
 
-/* The attribution badge is off the map surface: the map is created with
-   `attributionControl: false` and the OpenStreetMap credit is rendered as a
-   caption beneath the map instead (see TirvonaMapView.tsx).
-
-   This rule is a safety net, not the mechanism — if a future change re-enables
-   the control, or a plugin adds its own, it still will not appear over the
-   tiles. The credit itself is NOT suppressed; it is only relocated, which
-   OSM's licence permits so long as it stays visible to the viewer. */
 .tirvona-map .leaflet-control-attribution {
   display: none !important;
 }
 
-/* Leaflet assigns high z-index values to panes and controls. Keep all of
-   those values local to the map so tiles, markers and zoom controls can never
-   render over Tirvona's sticky navigation. */
 .tirvona-map {
   isolation: isolate;
   z-index: 0;
 }
 
-/* Zoom buttons, restyled to match the platform's rounded controls. */
 .tirvona-map .leaflet-control-zoom {
   border: none !important;
   border-radius: 12px;
@@ -44,13 +29,11 @@
   color: #0a4da6;
 }
 
-/* The marker is an HTML divIcon, so Leaflet's default box styling has to go. */
 .tirvona-map .tirvona-map-pin {
   background: transparent;
   border: none;
 }
 
-/* Popup, aligned with the platform's card language. */
 .tirvona-map .leaflet-popup-content-wrapper {
   border-radius: 14px;
   box-shadow: 0 6px 20px rgba(11, 25, 44, 0.15);

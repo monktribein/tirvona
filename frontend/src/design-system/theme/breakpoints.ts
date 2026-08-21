@@ -1,4 +1,3 @@
-// Tirvona Enterprise Design System 2.0 - Breakpoint Tokens
 
 export const breakpoints = {
   mobileSm: "320px",

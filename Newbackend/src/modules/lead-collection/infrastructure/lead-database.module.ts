@@ -11,18 +11,6 @@ import { LeadSchema } from "./persistence/lead.schema";
 import { LeadRegionSchema } from "./persistence/lead-region.schema";
 import { LeadUserSchema } from "./persistence/lead-user.schema";
 
-/**
- * A second, named Mongoose connection pointed at the lead database.
- *
- * This is what makes the isolation structural rather than a naming
- * convention: nothing in the lead module can reach a platform model, because
- * its models are registered against `LEAD_CONNECTION` and the platform's are
- * registered against the default one. Repointing `LEAD_MONGODB_URI` at a
- * different cluster is then a config change, not a migration.
- *
- * The pool is deliberately small — the lead app is a handful of field agents
- * and one admin console, not public traffic.
- */
 @Module({
   imports: [
     MongooseModule.forRootAsync({

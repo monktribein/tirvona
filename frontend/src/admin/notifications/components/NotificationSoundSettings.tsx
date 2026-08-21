@@ -12,15 +12,6 @@ import {
   type NotificationSoundConfig,
 } from "../../../lib/notificationSound";
 
-/**
- * Super Admin control for the platform-wide notification tone.
- *
- * One sound, stored in platform settings, played by every dashboard for every
- * role — so this is a platform setting rather than a per-user preference. The
- * upload goes to the same `/uploads` endpoint as every other asset (Cloudinary
- * files audio under its "video" resource type) and only the resulting https
- * URL is persisted.
- */
 export const NotificationSoundSettings: React.FC = () => {
   const { addNotification } = useNotifications();
   const [open, setOpen] = useState(false);
@@ -36,8 +27,6 @@ export const NotificationSoundSettings: React.FC = () => {
   }, [open]);
 
   const handleFile = async (file: File) => {
-    // 5 MB is generous for an alert tone and keeps the dashboard from pulling
-    // a multi-megabyte download on every page load.
     if (file.size > 5 * 1024 * 1024) {
       addNotification(
         "File Too Large",
@@ -96,8 +85,6 @@ export const NotificationSoundSettings: React.FC = () => {
           volume: config.volume,
         },
       });
-      // Update this tab immediately, then re-read so what is shown is what the
-      // server actually stored.
       setNotificationSound(config);
       await refreshNotificationSound();
       addNotification(
@@ -152,7 +139,6 @@ export const NotificationSoundSettings: React.FC = () => {
               </button>
             </div>
 
-            {/* Current file + upload */}
             <div className="space-y-2">
               <label className="text-xs font-bold text-gray-700 dark:text-gray-300">
                 Sound file
@@ -194,7 +180,6 @@ export const NotificationSoundSettings: React.FC = () => {
               </p>
             </div>
 
-            {/* Volume */}
             <div className="space-y-2">
               <label className="text-xs font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
                 <Volume2 size={14} /> Volume ·{" "}
@@ -215,7 +200,6 @@ export const NotificationSoundSettings: React.FC = () => {
               />
             </div>
 
-            {/* Enable toggle */}
             <label className="flex items-center justify-between gap-3 px-3 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl cursor-pointer">
               <span className="text-xs font-bold text-gray-700 dark:text-gray-300">
                 Play this sound for all notifications

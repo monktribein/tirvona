@@ -19,6 +19,5 @@ export interface CommunityRepository {
     upsert?: boolean,
   ): Promise<any | null>;
   remove(model: string, filter: Record<string, unknown>): Promise<any | null>;
-  /** Clears dependent rows (an article's comments, likes, status history). */
   removeMany(model: string, filter: Record<string, unknown>): Promise<number>;
 }

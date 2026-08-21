@@ -1,15 +1,6 @@
 import React from "react";
 import { CardHeader } from "./ProfileHeader";
 
-/**
- * What an obsolete visiting card shows (spec §22).
- *
- * The representative's name stays visible so the visitor knows whose card they
- * are holding, but no contact detail appears — the server already withheld
- * them, and this component has nothing to leak. The point is that an old card
- * degrades into something honest rather than into a dead link or, worse, a
- * number that now belongs to someone else.
- */
 export const InactiveNotice = ({ profile }) => (
   <main className="card card-notice">
     <CardHeader />

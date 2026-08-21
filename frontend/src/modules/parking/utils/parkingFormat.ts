@@ -7,9 +7,6 @@ import {
   getFormattingLocale,
 } from "../../../utils/format";
 
-// Display helpers for the Parking module.
-
-/** Currency formatting shared with every public Tirvona module. */
 export const formatCurrency = (amount: number | undefined | null) =>
   formatGlobalCurrency(amount);
 
@@ -56,13 +53,11 @@ export const formatDistance = (km?: number | null) => {
   return `${km.toFixed(1)} km away`;
 };
 
-/** `datetime-local` input value for a Date — the browser wants local, not ISO. */
 export const toLocalInputValue = (date: Date) => {
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 };
 
-/** Round a Date up to the next half hour — a sensible default entry time. */
 export const nextHalfHour = (from = new Date()) => {
   const d = new Date(from);
   d.setSeconds(0, 0);
@@ -70,18 +65,15 @@ export const nextHalfHour = (from = new Date()) => {
   return d;
 };
 
-/** Earliest valid value for a customer-facing parking datetime input. */
 export const getMinimumParkingEntry = () =>
   toLocalInputValue(nextHalfHour());
 
-/** Parking exit must be at least thirty minutes after entry. */
 export const getMinimumParkingExit = (entryAt: string) => {
   const entry = new Date(entryAt);
   const validEntry = Number.isNaN(entry.getTime()) ? nextHalfHour() : entry;
   return toLocalInputValue(new Date(validEntry.getTime() + 30 * 60_000));
 };
 
-/** Discard old URL/state values before a parking availability request is made. */
 export const normalizeParkingWindow = (entryAt?: string, exitAt?: string) => {
   const minimumEntry = getMinimumParkingEntry();
   const entry = entryAt && entryAt >= minimumEntry ? entryAt : minimumEntry;
@@ -126,7 +118,6 @@ export const amenityLabel = (key: string) =>
   AMENITY_LABELS[key] ||
   key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
-/** Human label for a booking status. */
 export const STATUS_LABELS: Record<ParkingBookingStatus, string> = {
   pending: "Awaiting Payment",
   upcoming: "Upcoming",
@@ -140,13 +131,6 @@ export const STATUS_LABELS: Record<ParkingBookingStatus, string> = {
 export const statusLabel = (status: ParkingBookingStatus) =>
   STATUS_LABELS[status] || status;
 
-/**
- * Tailwind classes per status.
- *
- * The shared EnterpriseStatusBadge already covers the platform's common
- * statuses, but parking adds `upcoming`, `expired` and `no_show`, so the module
- * carries its own palette rather than editing that shared component.
- */
 export const STATUS_STYLES: Record<ParkingBookingStatus, string> = {
   pending:
     "bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-900/50",
@@ -164,7 +148,6 @@ export const STATUS_STYLES: Record<ParkingBookingStatus, string> = {
     "bg-orange-50 dark:bg-orange-950/60 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-900/50",
 };
 
-/** Colour for an availability count, so "2 left" reads as urgent. */
 export const availabilityTone = (available: number, total: number) => {
   if (available <= 0) return "text-rose-600 dark:text-rose-400";
   if (total > 0 && available / total < 0.15)
@@ -172,7 +155,6 @@ export const availabilityTone = (available: number, total: number) => {
   return "text-emerald-600 dark:text-emerald-400";
 };
 
-/** Normalise a plate the way the API does, so client validation agrees. */
 export const normalizeVehicleNumber = (value: string) =>
   String(value || "")
     .toUpperCase()
@@ -181,14 +163,6 @@ export const normalizeVehicleNumber = (value: string) =>
 export const isValidVehicleNumber = (value: string) =>
   /^[A-Z]{2}[0-9]{1,2}[A-Z]{0,3}[0-9]{4}$/.test(normalizeVehicleNumber(value));
 
-/**
- * Whether the scanner box holds something worth sending.
- *
- * Mirrors what the API accepts, so the gate can fire the moment a code lands
- * instead of waiting for Enter or a tap: a sealed pass (`TVNPK1.iv.data.tag`)
- * or an 8-character gate code. Deliberately strict — a half-typed code must not
- * fire and burn a scan, and the guard can always press the button.
- */
 export const isCompleteScanInput = (value: string): boolean => {
   const trimmed = String(value || "").trim();
   if (!trimmed) return false;

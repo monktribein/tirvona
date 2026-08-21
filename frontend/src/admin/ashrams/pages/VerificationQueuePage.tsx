@@ -13,7 +13,6 @@ export const VerificationQueuePage: React.FC = () => {
   const [pendingList, setPendingList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Inspector Action States
   const [actionAshramId, setActionAshramId] = useState<string | null>(null);
   const [comments, setComments] = useState("");
   const [targetStatus, setTargetStatus] = useState<"approved" | "rejected">(
@@ -135,7 +134,6 @@ export const VerificationQueuePage: React.FC = () => {
               key={a._id}
               className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 shadow-sm space-y-5"
             >
-              {/* Header */}
               <div className="flex justify-between items-start border-b border-gray-50 dark:border-slate-850 pb-3">
                 <div>
                   <h3 className="font-bold text-sm text-[#0B192C] dark:text-white">
@@ -150,7 +148,6 @@ export const VerificationQueuePage: React.FC = () => {
                 </span>
               </div>
 
-              {/* Owner KYC contacts */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
                 <div className="space-y-1">
                   <span className="text-[9px] text-gray-450 block font-bold">
@@ -176,7 +173,6 @@ export const VerificationQueuePage: React.FC = () => {
                   )}
                 </div>
 
-                {/* Documents uploaded */}
                 <div className="space-y-1 md:col-span-2">
                   <span className="text-[9px] text-gray-455 block font-bold">
                     KYC Attachments
@@ -214,7 +210,6 @@ export const VerificationQueuePage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Decisions Buttons */}
               <div className="pt-3 border-t border-gray-50 dark:border-slate-850 flex justify-end gap-3">
                 {a.status === "pending_docs" && (
                   <button
@@ -257,7 +252,6 @@ export const VerificationQueuePage: React.FC = () => {
         </div>
       )}
 
-      {/* Decision Modal Dialog */}
       {actionAshramId && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <form

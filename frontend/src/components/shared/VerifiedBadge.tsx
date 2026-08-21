@@ -5,7 +5,6 @@ export interface VerifiedBadgeProps {
   size?: "sm" | "md" | "lg";
   className?: string;
   tooltipText?: string;
-  // Kept for prop interface backward compatibility
   text?: string;
   showText?: boolean;
 }

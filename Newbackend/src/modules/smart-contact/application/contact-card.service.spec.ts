@@ -73,8 +73,6 @@ describe("ContactCardService", () => {
     it("still encodes only the URL in the symbol itself", () => {
       const svg = cards.renderSvg(profile(), URL);
       const { path } = new QrService().qrGeometry(URL);
-      // The card embeds exactly the geometry derived from the URL — the
-      // contact details are laid out as text beside it, never inside it.
       expect(svg).toContain(path);
     });
 
@@ -134,7 +132,6 @@ describe("ContactCardService", () => {
       const text = pdf.toString("latin1");
       expect(text.startsWith("%PDF-1.4")).toBe(true);
       expect(text.trimEnd().endsWith("%%EOF")).toBe(true);
-      // Both the regular and bold faces the card sets text in.
       expect(text).toContain("/BaseFont /Helvetica");
       expect(text).toContain("/BaseFont /Helvetica-Bold");
 
@@ -150,8 +147,6 @@ describe("ContactCardService", () => {
     });
 
     it("keeps xref offsets correct when text carries a smart apostrophe", () => {
-      // The header tagline contains one; it must be folded to ASCII before it
-      // can shift every byte offset in the file.
       const text = cards.renderPdf(profile(), URL).toString("latin1");
       const startxref = Number(/startxref\s+(\d+)/.exec(text)?.[1]);
       expect(text.slice(startxref, startxref + 4)).toBe("xref");

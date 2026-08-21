@@ -9,7 +9,6 @@ export const ReceptionCheckinPage: React.FC = () => {
   const [activeBookings, setActiveBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Counter Check-in verification code
   const [checkInCode, setCheckInCode] = useState("");
   const [verifyingId, setVerifyingId] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
@@ -113,9 +112,6 @@ export const ReceptionCheckinPage: React.FC = () => {
 
   return (
     <div className="space-y-6 text-left w-full">
-      {/* min-w-0 on the text block lets it actually shrink — a flex child
-          defaults to min-width:auto and refuses to go below its content width,
-          which is what pushes the refresh button off a narrow screen. */}
       <div className="flex justify-between items-start sm:items-center gap-3 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-4 sm:p-6 rounded-[24px] shadow-sm">
         <div className="min-w-0">
           <h2 className="text-base font-extrabold text-[#0B192C] dark:text-white">
@@ -233,7 +229,6 @@ export const ReceptionCheckinPage: React.FC = () => {
         </div>
       )}
 
-      {/* Check-In Verification Code Modal */}
       {verifyingId && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <form

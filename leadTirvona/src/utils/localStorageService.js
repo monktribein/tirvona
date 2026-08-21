@@ -1,21 +1,6 @@
-/**
- * localStorageService.js
- *
- * Responsibility: All read/write operations to localStorage for ashram field leads
- * and approved ashram entries. Also handles conversion to Tirvona-compatible MongoDB
- * GeoJSON structure when a lead is approved.
- *
- * localStorage keys used:
- *  - "ashram_leads"      → raw field lead submissions
- *  - "approved_ashrams"  → converted, Tirvona-ready ashram entities
- */
 
 const LEADS_KEY = 'ashram_leads';
 const APPROVED_ASHRAMS_KEY = 'approved_ashrams';
-
-// ---------------------------------------------------------------------------
-// Demo seed data (shown on first load / after reset)
-// ---------------------------------------------------------------------------
 
 const INITIAL_LEADS = [
   {
@@ -83,10 +68,6 @@ const INITIAL_APPROVED_ASHRAMS = [
   }
 ];
 
-// ---------------------------------------------------------------------------
-// Lead CRUD operations
-// ---------------------------------------------------------------------------
-
 export const getLeads = () => {
   try {
     const data = localStorage.getItem(LEADS_KEY);
@@ -134,10 +115,6 @@ export const deleteLead = (leadId) => {
   return filtered;
 };
 
-// ---------------------------------------------------------------------------
-// Approved Ashrams (Tirvona-compatible GeoJSON structure)
-// ---------------------------------------------------------------------------
-
 export const getApprovedAshrams = () => {
   try {
     const data = localStorage.getItem(APPROVED_ASHRAMS_KEY);
@@ -152,10 +129,6 @@ export const getApprovedAshrams = () => {
   }
 };
 
-/**
- * Converts an approved lead into the standard Tirvona Ashram MongoDB document
- * with GeoJSON 2D-sphere location and persists it to "approved_ashrams".
- */
 export const convertLeadToApprovedAshram = (lead) => {
   const existing = getApprovedAshrams();
   if (existing.some((a) => a.leadId === lead.id)) return existing;
@@ -187,10 +160,6 @@ export const convertLeadToApprovedAshram = (lead) => {
   localStorage.setItem(APPROVED_ASHRAMS_KEY, JSON.stringify(updated));
   return tirvonaAshramDocument;
 };
-
-// ---------------------------------------------------------------------------
-// Dev utility: reset storage to initial demo state
-// ---------------------------------------------------------------------------
 
 export const resetToInitialDemoData = () => {
   localStorage.setItem(LEADS_KEY, JSON.stringify(INITIAL_LEADS));

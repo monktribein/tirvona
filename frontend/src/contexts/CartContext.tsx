@@ -12,11 +12,6 @@ export interface CartLine {
   name: string;
   slug?: string;
   image?: string;
-  /**
-   * Last known catalogue price, kept only so the cart can show a subtotal
-   * before the server is asked. It is never sent to the server and never used
-   * to charge anyone — checkout re-prices every line from the catalogue.
-   */
   displayPrice: number;
   quantity: number;
   maxQuantity?: number;
@@ -42,7 +37,6 @@ interface CartContextValue {
 const CartContext = createContext<CartContextValue | undefined>(undefined);
 
 const STORAGE_KEY = "tirvona_cart";
-/** Matches the server-side per-line cap in the order DTO. */
 const MAX_PER_LINE = 20;
 
 const readStored = (): CartLine[] => {
@@ -58,7 +52,6 @@ const readStored = (): CartLine[] => {
         Number.isFinite(line?.quantity),
     );
   } catch {
-    // A corrupted or unreadable cart must not take the whole app down on boot.
     return [];
   }
 };
@@ -73,11 +66,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(lines));
     } catch {
-      // Private-browsing quota failures are not worth interrupting a purchase.
     }
   }, [lines]);
 
-  // Keep tabs in step, so adding an item in one does not vanish in another.
   useEffect(() => {
     const onStorage = (event: StorageEvent) => {
       if (event.key === STORAGE_KEY) setLines(readStored());

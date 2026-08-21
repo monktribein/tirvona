@@ -42,14 +42,6 @@ export interface ProfileListQuery {
   brandId?: string;
 }
 
-/**
- * Profile lifecycle for Smart Contact QR (spec §19–§22, §29).
- *
- * The service exists to protect one guarantee: the URL behind a printed QR
- * keeps resolving, and keeps resolving to the right person. Everything below
- * — the slug rules, the archive-instead-of-delete policy, the audit lines on
- * contact fields — follows from that rather than from CRUD convention.
- */
 @Injectable()
 export class SmartContactProfilesService {
   private readonly config: SmartContactConfig = smartContactConfig();
@@ -57,9 +49,6 @@ export class SmartContactProfilesService {
   constructor(
     @InjectModel(SMART_CONTACT_PROFILE_MODEL, SMART_CONTACT_CONNECTION)
     private readonly profiles: Model<Record<string, any>>,
-    // Injected for permanent deletion only. A profile's QR assets and
-    // analytics events are keyed to its id, so removing the profile without
-    // them would leave rows pointing at nothing.
     @InjectModel(SMART_CONTACT_QR_MODEL, SMART_CONTACT_CONNECTION)
     private readonly qrCodes: Model<Record<string, any>>,
     @InjectModel(SMART_CONTACT_EVENT_MODEL, SMART_CONTACT_CONNECTION)
@@ -67,17 +56,6 @@ export class SmartContactProfilesService {
     private readonly audit: SmartContactAuditService,
   ) {}
 
-  // ── Normalisation ────────────────────────────────────────────────────────
-
-  /**
-   * Derives a URL-safe slug from a name.
-   *
-   * Diacritics are folded rather than stripped so "Ravīndr" and "Ravindr"
-   * produce the same slug; anything still non-alphanumeric after that becomes
-   * a separator. A name written entirely in Devanagari reduces to nothing
-   * here, which is why the caller falls back to an explicit slug rather than
-   * letting an empty string through.
-   */
   slugify(input: string): string {
     return String(input ?? "")
       .normalize("NFKD")
@@ -105,7 +83,6 @@ export class SmartContactProfilesService {
     }
   }
 
-  /** Appends `-2`, `-3`… until the slug is free. */
   private async uniqueSlug(base: string, excludeId?: string): Promise<string> {
     let candidate = base;
     let suffix = 1;
@@ -120,15 +97,6 @@ export class SmartContactProfilesService {
     }
   }
 
-  /**
-   * Normalises a phone to E.164.
-   *
-   * Ten digits are assumed Indian and get a +91, which covers essentially
-   * every number this module will hold; anything already carrying a country
-   * code is preserved. Stored normalised so the vCard's TEL and the wa.me link
-   * never have to re-derive it, and so two admins entering the same number
-   * differently do not produce two different cards.
-   */
   normalisePhone(raw: string | undefined): string {
     const value = String(raw ?? "").trim();
     if (!value) return "";
@@ -142,14 +110,11 @@ export class SmartContactProfilesService {
     return `+${digits}`;
   }
 
-  /** Adds a scheme so the anchor on the public page is not treated as relative. */
   private normaliseWebsite(raw: string | undefined): string {
     const value = String(raw ?? "").trim();
     if (!value) return "";
     return /^https?:\/\//i.test(value) ? value : `https://${value}`;
   }
-
-  // ── Projection ───────────────────────────────────────────────────────────
 
   private toView(doc: Record<string, any>): SmartContactProfileView {
     return {
@@ -193,14 +158,6 @@ export class SmartContactProfilesService {
     };
   }
 
-  /**
-   * The public projection (spec §34).
-   *
-   * A non-ACTIVE profile returns identity but no contact details at all — spec
-   * §22 wants the old card to stop being useful without becoming a dead link,
-   * and leaving a stale phone number reachable would defeat that. The visitor
-   * gets the name they scanned, a clear notice, and a way to reach Tirvona.
-   */
   toPublicView(doc: Record<string, any>): SmartContactPublicView {
     const view = this.toView(doc);
     const isActive = view.status === "ACTIVE";
@@ -247,15 +204,6 @@ export class SmartContactProfilesService {
     };
   }
 
-  // ── Reads ────────────────────────────────────────────────────────────────
-
-  /**
-   * Resolves a slug for the public page.
-   *
-   * `DRAFT` is excluded rather than shown as inactive: a draft has never been
-   * printed, so a request for one is a probe or a typo, and a 404 is the
-   * honest answer. Everything that has ever been live resolves.
-   */
   async findBySlug(slug: string): Promise<Record<string, any>> {
     const doc = await this.profiles
       .findOne({
@@ -294,8 +242,6 @@ export class SmartContactProfilesService {
 
     const search = query.search?.trim();
     if (search) {
-      // Substring search, consistent with the rest of the platform's admin
-      // consoles — an admin looks up "bhard" and expects a hit.
       const rx = new RegExp(escapeRegex(search), "i");
       filter.$or = [
         { displayName: rx },
@@ -322,7 +268,6 @@ export class SmartContactProfilesService {
     return { items: items.map((doc) => this.toView(doc)), total, page, limit };
   }
 
-  /** Status counts for the console's filter chips (spec §18). */
   async stats(): Promise<Record<string, number>> {
     const rows = await this.profiles.aggregate<{ _id: string; count: number }>([
       { $group: { _id: "$status", count: { $sum: 1 } } },
@@ -344,8 +289,6 @@ export class SmartContactProfilesService {
       ),
     };
   }
-
-  // ── Writes ───────────────────────────────────────────────────────────────
 
   private applyDerivedFields(
     input: Record<string, any>,
@@ -383,15 +326,11 @@ export class SmartContactProfilesService {
       );
     }
     this.assertSlugShape(base);
-    // An explicitly requested slug that is taken is an error, not something to
-    // silently rename — the admin may be about to print it.
     if (requested && (await this.profiles.exists({ slug: base }))) {
       throw new ConflictException(`The profile slug "${base}" is already in use.`);
     }
     const slug = requested ? base : await this.uniqueSlug(base);
 
-    // WhatsApp defaults to the primary number; spec §42's button needs one and
-    // the two are the same for almost every representative.
     const whatsapp = payload.whatsappPhone || payload.primaryPhone || "";
 
     const created = await this.profiles.create({
@@ -416,14 +355,6 @@ export class SmartContactProfilesService {
     return this.toView(created.toObject());
   }
 
-  /**
-   * Updates a profile.
-   *
-   * The slug is stripped unless the caller sets `allowSlugChange`, because
-   * changing it invalidates every printed card that encodes it (spec §21).
-   * Contact-field changes each get their own audit line so "who changed the
-   * number, and to what" is answerable without diffing snapshots.
-   */
   async update(
     id: string,
     input: Record<string, any>,
@@ -457,8 +388,6 @@ export class SmartContactProfilesService {
     if ("displayName" in payload && !String(payload.displayName ?? "").trim()) {
       delete payload.displayName;
     }
-    // Status moves belong to the explicit lifecycle methods, which write their
-    // own audit lines; letting a generic update change it would bypass those.
     delete payload.status;
 
     const updated = await this.profiles
@@ -492,13 +421,6 @@ export class SmartContactProfilesService {
     return this.toView(updated);
   }
 
-  /**
-   * Moves a profile through its lifecycle (spec §19, §22).
-   *
-   * There is deliberately no delete. A profile whose cards are circulating can
-   * only ever be archived, so the URL keeps resolving to the notice rather
-   * than to a 404 that leaves the visitor with no idea what they scanned.
-   */
   async setStatus(
     id: string,
     status: SmartContactStatus,
@@ -509,7 +431,6 @@ export class SmartContactProfilesService {
     if (existing.status === status) return this.toView(existing);
 
     if (status === "ACTIVE") {
-      // A card with no way to reach anyone is worse than no card.
       const doc = existing;
       if (!doc.primaryPhone && !doc.email) {
         throw new BadRequestException(
@@ -555,21 +476,6 @@ export class SmartContactProfilesService {
     return this.toView(updated);
   }
 
-  /**
-   * Permanently remove profiles, with everything keyed to them.
-   *
-   * Deliberately the one destructive operation in a module built around
-   * archive-instead-of-delete (spec §22): a slug freed here stops resolving,
-   * so any printed QR that carries it becomes a dead link. That trade is the
-   * caller's to make — the console exists to clear out drafts and test rows,
-   * which archiving only hides — so this reports how many of the selected
-   * profiles have QR assets registered against them rather than refusing.
-   *
-   * Not a transaction: the module runs on its own connection and a standalone
-   * MongoDB has no session support. Children are removed before the profile,
-   * so a failure part-way leaves the profile still resolving rather than a
-   * live slug pointing at nothing.
-   */
   async deleteMany(
     ids: string[],
     actor: ActorRef,
@@ -597,10 +503,6 @@ export class SmartContactProfilesService {
       profileId: { $in: objectIds },
     });
 
-    // QR assets and analytics events are operational data for a live profile
-    // and go with it. The audit trail does not: a log that the logged action
-    // can erase is not an audit trail, so those lines are kept and a
-    // PROFILE_DELETED entry is appended naming the slug that was freed.
     await this.qrCodes.deleteMany({ profileId: { $in: objectIds } });
     await this.events.deleteMany({ profileId: { $in: objectIds } });
     const removed = await this.profiles.deleteMany({ _id: { $in: objectIds } });
@@ -624,7 +526,6 @@ export class SmartContactProfilesService {
     };
   }
 
-  /** Exposed so the QR controller can resolve a profile id without a re-read. */
   async exists(id: string): Promise<boolean> {
     return (
       Types.ObjectId.isValid(id) && Boolean(await this.profiles.exists({ _id: id }))

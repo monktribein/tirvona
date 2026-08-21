@@ -33,7 +33,6 @@ export const ProfileSettingsPage: React.FC = () => {
   return (
     <div className="min-h-screen pb-24 text-left">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-1 sm:pt-3 space-y-6">
-        {/* Security Password Box */}
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 shadow-lg space-y-4">
           <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white tracking-wider flex items-center gap-2">
             <Lock size={16} className="text-[#0A4DA6]" /> Change Password
