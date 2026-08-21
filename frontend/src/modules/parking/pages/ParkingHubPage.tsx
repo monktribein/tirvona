@@ -28,17 +28,9 @@ import ParkingCard from "../components/ParkingCard";
 import TirvonaMap from "../../../components/TirvonaMap";
 import { hasValidCoordinates } from "../../../utils/geo";
 
-/**
- * Parking discovery.
- *
- * The landing page for the Parking module: search by destination or temple,
- * filter, and see live availability before opening a listing.
- */
 export const ParkingHubPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Default the window to the next half hour plus three hours — a realistic
-  // temple visit, and it means the page shows real availability on first load.
   const defaults = useMemo(() => {
     const entry = nextHalfHour();
     const exit = new Date(entry.getTime() + 3 * 3600000);
@@ -92,15 +84,11 @@ export const ParkingHubPage: React.FC = () => {
   const [view, setView] = useState<"list" | "map">("list");
   const [activeMarker, setActiveMarker] = useState<string | null>(null);
 
-  // Only results that actually carry usable coordinates can be mapped; a
-  // listing saved without a position would otherwise land on null island.
   const mappableResults = useMemo(
     () => results.filter((p) => hasValidCoordinates(p.latitude, p.longitude)),
     [results],
   );
 
-  // Filter metadata drives the UI, so a vehicle class added server-side appears
-  // here without a frontend change.
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -116,7 +104,6 @@ export const ParkingHubPage: React.FC = () => {
           setSortOptions(filters.data.data.sortOptions || []);
         }
       } catch {
-        // Non-fatal: search still works with an empty vehicle picker.
       }
     })();
     return () => {
@@ -223,7 +210,6 @@ export const ParkingHubPage: React.FC = () => {
     if ("sortBy" in patch) setSortBy(patch.sortBy as string);
   };
 
-  // Carried onto each card's link so the visitor's dates survive navigation.
   const detailQuery = useMemo(() => {
     const q = new URLSearchParams();
     if (entryAt) q.set("entryAt", entryAt);
@@ -234,13 +220,11 @@ export const ParkingHubPage: React.FC = () => {
 
   return (
     <div className="pb-16 lg:pb-24 overflow-x-hidden">
-      {/* Clean Text Header (Matching all other section headers on the site) */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6">
         <div className="text-center space-y-2 max-w-3xl mx-auto py-2">
           <p className="font-['Kalam'] text-base sm:text-4xl font-bold text-[#E58C28]">
             Sacred Parking Facilities
           </p>
-          {/* Decorative Saffron Underline Divider */}
           <div className="flex items-center justify-center gap-2.5 my-1.5">
             <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
             <Sparkles
@@ -256,7 +240,6 @@ export const ParkingHubPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Search panel below the hero banner */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 relative z-20">
         <ParkingSearchBar
           destination={destination}
@@ -277,10 +260,8 @@ export const ParkingHubPage: React.FC = () => {
         />
       </div>
 
-      {/* Results */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
         <div className="flex flex-col lg:flex-row gap-6">
-          {/* Filters */}
           <div className="lg:w-64 xl:w-72 shrink-0 space-y-3">
             <button
               type="button"
@@ -311,7 +292,6 @@ export const ParkingHubPage: React.FC = () => {
             />
           </div>
 
-          {/* List */}
           <div className="flex-1 min-w-0 space-y-4">
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <h2 className="font-extrabold text-base sm:text-lg text-[#0B192C] dark:text-white">
@@ -320,8 +300,6 @@ export const ParkingHubPage: React.FC = () => {
                   : `${total} parking ${total === 1 ? "option" : "options"}`}
               </h2>
 
-              {/* List / map toggle. Hidden when nothing has coordinates, so the
-                  control is never offered for an empty map. */}
               {mappableResults.length > 0 && (
                 <div className="inline-flex bg-gray-100 dark:bg-slate-800 rounded-full p-0.5">
                   {(

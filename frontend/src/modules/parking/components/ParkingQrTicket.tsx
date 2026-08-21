@@ -9,13 +9,6 @@ interface ParkingQrTicketProps {
   locationName?: string;
 }
 
-/**
- * The visitor's parking pass.
- *
- * Styled as a physical ticket stub — the notched divider is what makes it read
- * as a pass rather than a card, which matters when a guard is looking at it on
- * a phone screen at a gate.
- */
 export const ParkingQrTicket: React.FC<ParkingQrTicketProps> = ({
   booking,
   pass,
@@ -23,9 +16,6 @@ export const ParkingQrTicket: React.FC<ParkingQrTicketProps> = ({
 }) => {
   const linkRef = useRef<HTMLAnchorElement>(null);
 
-  // The QR arrives as a data URL, so the download needs no network round-trip
-  // and works offline once the page is loaded — which is the point, since gates
-  // often have poor signal.
   const handleDownload = () => {
     if (!pass.image) return;
     const a = linkRef.current;
@@ -37,7 +27,6 @@ export const ParkingQrTicket: React.FC<ParkingQrTicketProps> = ({
 
   return (
     <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] overflow-hidden shadow-lg max-w-sm mx-auto w-full">
-      {/* Header */}
       <div className="bg-gradient-to-r from-[#0B192C] via-[#0A4DA6] to-[#0B192C] text-white px-5 py-4 text-center relative overflow-hidden">
         <div className="absolute right-0 top-0 w-40 h-40 bg-[#E58C28]/20 rounded-full blur-3xl pointer-events-none" />
         <div className="relative">
@@ -51,7 +40,6 @@ export const ParkingQrTicket: React.FC<ParkingQrTicketProps> = ({
         </div>
       </div>
 
-      {/* QR */}
       <div className="p-6 flex flex-col items-center gap-3">
         {pass.image ? (
           <div className="bg-white p-3 rounded-2xl border border-gray-100 shadow-sm">
@@ -80,14 +68,12 @@ export const ParkingQrTicket: React.FC<ParkingQrTicketProps> = ({
         </p>
       </div>
 
-      {/* Notched divider — the detail that makes it read as a ticket stub */}
       <div className="relative">
         <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-gray-50 dark:bg-[#070F1B] border border-gray-100 dark:border-slate-800" />
         <div className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-gray-50 dark:bg-[#070F1B] border border-gray-100 dark:border-slate-800" />
         <div className="border-t-2 border-dashed border-gray-200 dark:border-slate-700 mx-5" />
       </div>
 
-      {/* Details */}
       <div className="p-5 space-y-3">
         <dl className="grid grid-cols-2 gap-x-3 gap-y-3 text-left">
           <div>
@@ -159,7 +145,6 @@ export const ParkingQrTicket: React.FC<ParkingQrTicketProps> = ({
           Download QR Pass
         </button>
 
-        {/* Off-screen anchor drives the download without leaving the page. */}
         <a ref={linkRef} className="hidden" aria-hidden="true" href="#download">
           download
         </a>

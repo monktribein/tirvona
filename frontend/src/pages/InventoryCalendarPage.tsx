@@ -6,7 +6,6 @@ import { getErrorMessage } from "../lib/api";
 import { formatCurrency } from "../utils/format";
 import { useAshramSelection, ALL_ASHRAMS } from "../hooks/useAshramSelection";
 
-/** Remembers the category too, so a reload returns to the same calendar. */
 const ROOM_STORAGE_KEY = "tirvona:inventory-room";
 
 export const InventoryCalendarPage: React.FC = () => {
@@ -17,7 +16,6 @@ export const InventoryCalendarPage: React.FC = () => {
   const [calendar, setCalendar] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Override Form State
   const [showOverride, setShowOverride] = useState(false);
   const [targetDate, setTargetDate] = useState("");
   const [customPrice, setCustomPrice] = useState("");
@@ -26,9 +24,6 @@ export const InventoryCalendarPage: React.FC = () => {
   const notifyRef = useRef(addNotification);
   notifyRef.current = addNotification;
 
-  // Same selection rules as Manage Rooms and Add-On Services. "All Ashrams"
-  // matters most here: a calendar is always one room's, and landing on a
-  // property with no categories left the page with nothing to show.
   const {
     ashrams: myAshrams,
     selectedAshramId,
@@ -54,8 +49,6 @@ export const InventoryCalendarPage: React.FC = () => {
     setLoading(true);
     setCalendar([]);
     try {
-      // Under "All Ashrams" the category picker spans every property, so an
-      // empty ashram no longer dead-ends the page.
       const targets = targetsRef.current;
       const results = await Promise.allSettled(
         targets.map((a: any) => ashramService.getManagedById(a._id)),
@@ -74,8 +67,6 @@ export const InventoryCalendarPage: React.FC = () => {
       });
       setMyRooms(rooms);
 
-      // Keep the category the admin is on. Only fall back when it is gone —
-      // switching ashrams, or a category that was removed.
       setSelectedRoomId((current) => {
         if (current && rooms.some((r) => r._id === current)) return current;
         let stored = "";
@@ -125,7 +116,6 @@ export const InventoryCalendarPage: React.FC = () => {
       try {
         localStorage.setItem(ROOM_STORAGE_KEY, selectedRoomId);
       } catch {
-        // Storage unavailable — the category just resets on the next reload.
       }
     } else {
       setCalendar([]);
@@ -213,8 +203,6 @@ export const InventoryCalendarPage: React.FC = () => {
                 aria-label="Active ashram"
                 className="p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none"
               >
-                {/* Pools every property's categories into the picker beside
-                  it, so an ashram with none does not strand the page. */}
                 {myAshrams.length > 1 && (
                   <option value={ALL_ASHRAMS}>
                     All Ashrams ({myAshrams.length})
@@ -240,8 +228,6 @@ export const InventoryCalendarPage: React.FC = () => {
                 {myRooms.length === 0 && <option value="">No room categories</option>}
                 {myRooms.map((room) => (
                   <option key={room._id} value={room._id}>
-                    {/* Qualified by property when the list spans several, since
-                      category names repeat across ashrams. */}
                     {isAllSelected && room.ashramName
                       ? `${room.name} — ${room.ashramName}`
                       : room.name}
@@ -256,7 +242,6 @@ export const InventoryCalendarPage: React.FC = () => {
       {loadingAshrams || loading ? (
         <div className="h-40 bg-gray-50 border border-gray-100 rounded-[24px] animate-pulse" />
       ) : (
-        /* Calendar Grid */
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4">
           {calendar.map((item, index) => (
             <div
@@ -306,7 +291,6 @@ export const InventoryCalendarPage: React.FC = () => {
         </div>
       )}
 
-      {/* Daily Override Modal */}
       {showOverride && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <form

@@ -27,11 +27,6 @@ import {
   UpdateAshramDto,
 } from "./dtos/ashram.dto";
 
-/**
- * Add-on editors round-trip the record they loaded, so the saved payload still
- * carries `_id`, `ashramId`, and timestamps. Strip those instead of rejecting
- * the request the way the global pipe would.
- */
 const addOnBody = new ValidationPipe({ transform: true, whitelist: true });
 
 @ApiTags("Ashrams")
@@ -41,13 +36,6 @@ export class AshramsController {
   @Public() @Get() @Header("Cache-Control", "no-store") list(@Query() query: AshramQueryDto) {
     return this.service.publicList(query);
   }
-  /**
-   * `offer_manager` is included because the offers console builds its ashram
-   * picker from this list. The result stays scoped by `listForUser`, which
-   * gives a non-owner only their `scopedAshramIds` and `employerAshramId` —
-   * so the role grants visibility of the ashrams they already administer,
-   * nothing wider.
-   */
   @Get("my-listings/all")
   @ApiBearerAuth()
   @Roles("owner", "stay_admin", "manager", "offer_manager", "super_admin")
@@ -74,20 +62,10 @@ export class AshramsController {
       data: await this.service.onboardOwnerParking(user, body),
     };
   }
-  /**
-   * The destinations ashrams are actually located in, each with a count.
-   *
-   * Backs the two-step location picker: a destination is chosen first, then
-   * only the ashrams in it are offered. Derived from `address.city` rather
-   * than a fixed list, so a new city appears the moment its first ashram is
-   * published and an emptied one disappears. Declared before `:id` so the
-   * literal segment cannot be swallowed by the detail route.
-   */
   @Public() @Get("destinations") async destinations() {
     const data = await this.service.destinations();
     return { success: true, count: data.length, data };
   }
-  /** The ashrams in one destination, slimmed to what a picker renders. */
   @Public() @Get("destinations/:city") async byDestination(
     @Param("city") city: string,
   ) {
@@ -151,8 +129,6 @@ export class AshramsController {
     const data = await this.service.listAddOns(id);
     return { success: true, count: data.length, data };
   }
-  // Add-on mutations answer with the ashram's whole catalogue: the owner
-  // console renders the list straight from the response.
   @Post(":id/add-ons") @Roles("owner", "stay_admin", "manager") async createAddon(
     @CurrentUser() user: AuthenticatedUser,
     @Param("id") id: string,

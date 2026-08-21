@@ -53,13 +53,6 @@ const DetailRow: React.FC<{ label: string; value?: string }> = ({
   </div>
 );
 
-/**
- * A single Smart Contact profile — the console's working surface (spec §50).
- *
- * Four tabs rather than one long page, because the four jobs are distinct:
- * check the details, get printable artwork, read the numbers, see who changed
- * what. The lifecycle buttons live in the header where they apply to all four.
- */
 export const SmartContactProfileDetailPage: React.FC = () => {
   const { id = "" } = useParams<{ id: string }>();
   const [profile, setProfile] = useState<SmartContactProfile | null>(null);
@@ -205,8 +198,6 @@ export const SmartContactProfileDetailPage: React.FC = () => {
         }
       />
 
-      {/* The permanent URL, given its own band — it is the thing that must
-          never change and the thing an admin most often needs to hand out. */}
       <div className="bg-[#0B192C] text-white rounded-[24px] p-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
         <div className="min-w-0">
           <p className="text-[10px] font-black uppercase tracking-wider text-amber-400">

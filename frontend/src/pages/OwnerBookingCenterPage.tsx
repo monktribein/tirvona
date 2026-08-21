@@ -59,22 +59,63 @@ export const OwnerBookingCenterPage: React.FC<OwnerBookingCenterPageProps> = ({
     setError("");
     try {
       const selected = ashramId || undefined;
-      const [ashramRes, summaryRes, paymentRes, settlementRes, refundRes] =
-        await Promise.all([
-          ashramService.myListings(),
-          bookingFinanceService.summary(selected),
-          bookingFinanceService.payments(selected),
-          bookingFinanceService.settlements(selected),
-          bookingFinanceService.refunds(selected),
-        ]);
+      const results = await Promise.allSettled([
+        ashramService.myListings(),
+        bookingFinanceService.summary(selected),
+        bookingFinanceService.payments(selected),
+        bookingFinanceService.settlements(selected),
+        bookingFinanceService.refunds(selected),
+      ]);
+      const [
+        ashramResult,
+        summaryResult,
+        paymentResult,
+        settlementResult,
+        refundResult,
+      ] = results;
 
-      setAshrams(ashramRes.data?.success ? ashramRes.data.data || [] : []);
-      setSummary(summaryRes.data?.success ? summaryRes.data.data || {} : {});
-      setPayments(paymentRes.data?.success ? paymentRes.data.data || [] : []);
-      setSettlements(
-        settlementRes.data?.success ? settlementRes.data.data || [] : [],
+      if (ashramResult.status === "fulfilled")
+        setAshrams(
+          ashramResult.value.data?.success
+            ? ashramResult.value.data.data || []
+            : [],
+        );
+      if (summaryResult.status === "fulfilled")
+        setSummary(
+          summaryResult.value.data?.success
+            ? summaryResult.value.data.data || {}
+            : {},
+        );
+      if (paymentResult.status === "fulfilled")
+        setPayments(
+          paymentResult.value.data?.success
+            ? paymentResult.value.data.data || []
+            : [],
+        );
+      if (settlementResult.status === "fulfilled")
+        setSettlements(
+          settlementResult.value.data?.success
+            ? settlementResult.value.data.data || []
+            : [],
+        );
+      if (refundResult.status === "fulfilled")
+        setRefunds(
+          refundResult.value.data?.success
+            ? refundResult.value.data.data || []
+            : [],
+        );
+
+      const failedResult = results.find(
+        (result): result is PromiseRejectedResult =>
+          result.status === "rejected",
       );
-      setRefunds(refundRes.data?.success ? refundRes.data.data || [] : []);
+      if (failedResult)
+        setError(
+          getErrorMessage(
+            failedResult.reason,
+            "Some financial data could not be loaded.",
+          ),
+        );
 
       const allBookings: any[] = [];
       let page = 1;

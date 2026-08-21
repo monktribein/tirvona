@@ -48,8 +48,6 @@ export const OwnerGuestsPage: React.FC = () => {
     const loadGuests = async () => {
       setLoading(true);
       try {
-        // The dashboard endpoint applies the signed-in owner's ashram scope on
-        // the server. Guests from another owner can never enter this list.
         const scopedBookings: BookingRecord[] = [];
         let page = 1;
         let batch: BookingRecord[] = [];

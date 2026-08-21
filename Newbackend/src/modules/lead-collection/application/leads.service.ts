@@ -47,14 +47,6 @@ interface AgentLeadScope {
   district?: string;
 }
 
-/**
- * Read/write access to the `leads` collection.
- *
- * Two audiences share it: a field agent, who may only touch what they
- * captured and only while it is still pending, and a super admin, who has
- * full CRUD plus the approve/reject decision. Both funnel through here so the
- * ownership rule lives in one place.
- */
 @Injectable()
 export class LeadsService {
   constructor(
@@ -68,14 +60,6 @@ export class LeadsService {
     return new Types.ObjectId(id);
   }
 
-  /**
-   * Build the persisted shape from a capture payload.
-   *
-   * `geo` is derived here rather than trusted from the client so the GeoJSON
-   * mirror can never drift from the `{ lat, lng }` the console displays, and
-   * so a partial fix (lat but no lng) yields no Point at all instead of an
-   * index-breaking half-coordinate.
-   */
   private toDocument(
     dto: SaveLeadDto,
     jurisdiction?: { state: string; district: string },
@@ -151,8 +135,6 @@ export class LeadsService {
     scope?: AgentLeadScope,
   ): Promise<LeadListResult> {
     const filter = this.buildFilter(query);
-    // An agent's own view is a hard scope, applied after the query filters so
-    // a crafted `capturedBy` in the querystring cannot widen it.
     if (scope) {
       filter.capturedBy = this.objectId(scope.capturedBy);
       if (scope.state) filter["location.state"] = scope.state;
@@ -188,7 +170,6 @@ export class LeadsService {
     return row;
   }
 
-  /** Capture, by a signed-in field agent. */
   async create(
     dto: SaveLeadDto,
     agent: AuthenticatedLeadUser,
@@ -206,7 +187,6 @@ export class LeadsService {
     return this.findOne(created._id.toString());
   }
 
-  /** Capture on an agent's behalf, by an admin working the console. */
   async createAsAdmin(dto: SaveLeadDto): Promise<LeadRecord> {
     const created = await this.leads.create({
       ...this.toDocument(dto),
@@ -223,8 +203,6 @@ export class LeadsService {
     scope?: AgentLeadScope,
   ): Promise<LeadRecord> {
     const existing = await this.findOne(id, scope);
-    // An agent can correct a typo before anyone has looked at the lead; once
-    // it is decided, only an admin may touch it.
     if (scope && existing.status !== "pending")
       throw new ForbiddenException(
         "This lead has already been reviewed and can no longer be edited",
@@ -236,8 +214,6 @@ export class LeadsService {
         ? { state: scope.state, district: scope.district }
         : undefined,
     );
-    // `geo` is `undefined` when the fix was cleared — $set would store null and
-    // break the sparse 2dsphere index, so unset it instead.
     const unset = update.geo === undefined ? { geo: "" } : undefined;
     if (unset) delete update.geo;
     if (!scope && dto.status) update.status = dto.status;
@@ -253,7 +229,6 @@ export class LeadsService {
     return row;
   }
 
-  /** Approve or reject, recording who decided and why. */
   async decide(
     id: string,
     status: "approved" | "rejected" | "converted" | "pending",
@@ -288,10 +263,6 @@ export class LeadsService {
     return { id };
   }
 
-  /**
-   * Counters for the console header. Computed in one aggregation rather than
-   * eight `countDocuments` round trips.
-   */
   async stats(scope?: AgentLeadScope): Promise<LeadStats> {
     const match: Record<string, unknown> = scope
       ? { capturedBy: this.objectId(scope.capturedBy) }
@@ -344,12 +315,6 @@ export class LeadsService {
     );
   }
 
-  // ── Supervisor-scoped queries ───────────────────────────────────────────
-
-  /**
-   * Leads within a district, optionally filtered by a specific agent.
-   * Used by the supervisor dashboard to view their team's work.
-   */
   async listByDistrict(
     query: LeadQueryDto,
     state: string,
@@ -379,7 +344,6 @@ export class LeadsService {
     return { items, total, page, limit };
   }
 
-  /** Stats aggregated across an entire district rather than a single agent. */
   async statsByDistrict(state: string, district: string): Promise<LeadStats> {
     const districtRegex = new RegExp(escapeRegex(district.trim()), "i");
     const match: Record<string, unknown> = {

@@ -80,13 +80,7 @@ export class ParkingScanService {
     token: string,
     locationId: string,
     session?: ClientSession,
-    // The decrypted payload is deliberately not returned: no caller reads it,
-    // and a gate-code scan has none to give.
   ): Promise<{ qr: any; booking: any }> {
-    // Two ways in. A scanner reads the sealed token out of the QR image; a
-    // guard whose scanner will not read the screen types the gate code printed
-    // under it. Only the token path was accepted before, so typing the code the
-    // pass displays most prominently answered "This QR code is not valid."
     const payload = openParkingQr(token);
     const gateCode = payload?.b ? null : normalizeGateCode(token);
     if (!payload?.b && !gateCode)

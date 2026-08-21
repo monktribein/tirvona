@@ -4,13 +4,6 @@ import type {
   ParkingVehicleTypeCode,
 } from "../types/parking.types";
 
-// Parking System — API client.
-//
-// Uses the app's existing axios instance, so the bearer token, base URL and 401
-// handling behave exactly as they do everywhere else. No interceptor is added
-// or changed here.
-
-/** Drop empty values so the query string carries only real filters. */
 const clean = (params: Record<string, unknown>) => {
   const out: Record<string, string> = {};
   Object.entries(params).forEach(([key, value]) => {
@@ -27,8 +20,6 @@ const clean = (params: Record<string, unknown>) => {
   });
   return out;
 };
-
-// ── Public discovery ────────────────────────────────────────────────────────
 
 export const parkingDiscoveryService = {
   search: (
@@ -75,8 +66,6 @@ export const parkingDiscoveryService = {
   getFilterOptions: () => api.get("/parking/filters"),
 };
 
-// ── Visitor bookings ────────────────────────────────────────────────────────
-
 export const parkingBookingService = {
   create: (payload: {
     locationId: string;
@@ -108,14 +97,9 @@ export const parkingBookingService = {
     },
   ) => api.post(`/parking/bookings/${id}/payment`, payload),
 
-  /** Returns the booking's existing pass. Safe to call on every render. */
   getQr: (id: string, format: "png" | "svg" = "png") =>
     api.get(`/parking/bookings/${id}/qr`, { params: { format } }),
 
-  /**
-   * Revokes the current pass and issues a new one — only for a pass that was
-   * lost or shared. Anything the visitor is already holding stops working.
-   */
   reissueQr: (id: string, format: "png" | "svg" = "png") =>
     api.post(`/parking/bookings/${id}/qr/reissue`, null, {
       params: { format },
@@ -145,8 +129,6 @@ export const parkingBookingService = {
   markNotificationsRead: () =>
     api.post("/parking/bookings/notifications/read-all", {}),
 };
-
-// ── Security guard panel ────────────────────────────────────────────────────
 
 export const parkingScanService = {
   myLocations: () => api.get("/parking/scan/my-locations"),
@@ -182,8 +164,6 @@ export const parkingScanService = {
     } = {},
   ) => api.get("/parking/scan/logs", { params: clean(params) }),
 };
-
-// ── Partner & manager ───────────────────────────────────────────────────────
 
 export const parkingPartnerService = {
   dashboard: () => api.get("/parking/partner/dashboard"),
@@ -245,8 +225,6 @@ export const parkingPartnerService = {
     api.put(`/parking/partner/locations/${locationId}/settings`, payload),
 };
 
-// ── Super admin ─────────────────────────────────────────────────────────────
-
 export const parkingAdminService = {
   listPartners: (params: Record<string, unknown> = {}) =>
     api.get("/parking/admin/partners", { params: clean(params) }),
@@ -287,10 +265,6 @@ export const parkingAdminService = {
   seedVehicleTypes: () => api.post("/parking/admin/vehicle-types/seed", {}),
   runSweep: () => api.post("/parking/admin/maintenance/sweep", {}),
 
-  // Parking roles are grants in `parking_staff`, not values of `User.role`, so
-  // they never appear in user management. These are the platform-wide roster;
-  // the /parking/partner equivalents answer only for a caller who already
-  // holds a grant, which a Super Admin never does.
   listStaff: (params: Record<string, unknown> = {}) =>
     api.get("/parking/admin/staff", { params: clean(params) }),
   listRoles: () => api.get("/parking/admin/staff/roles"),

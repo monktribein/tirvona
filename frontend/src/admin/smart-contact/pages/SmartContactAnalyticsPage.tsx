@@ -26,17 +26,6 @@ const Stat: React.FC<{ label: string; value: string | number; accent?: boolean }
   </div>
 );
 
-/**
- * Smart Contacts → QR Analytics (spec §18, §24).
- *
- * Platform-wide totals plus a leaderboard. Per-profile charts live on the
- * profile's own Analytics tab; this page answers "how is the programme doing"
- * rather than "how is this person doing".
- *
- * The leaderboard is sorted client-side over the first page of profiles: the
- * list endpoint already returns metrics per row, so ranking them here avoids
- * adding a second aggregation endpoint for a view that shows ten rows.
- */
 export const SmartContactAnalyticsPage: React.FC = () => {
   const [stats, setStats] = useState<SmartContactStats | null>(null);
   const [profiles, setProfiles] = useState<SmartContactProfile[]>([]);

@@ -31,26 +31,6 @@ const DUPLICATE_KEY = 11_000;
 const isDuplicateKey = (error: unknown): boolean =>
   (error as { code?: number })?.code === DUPLICATE_KEY;
 
-/**
- * Allocator for the Ashram Booking Unique Identity Code (`CCPT-PPPPP-VXXXX`).
- *
- * Two counters, allocated at different moments and with deliberately different
- * transaction semantics:
- *
- * - **Property registration (`PPPPP`)** is permanent and is allocated *outside*
- *   any caller transaction. A registration number that vanished because the
- *   booking that triggered it was rolled back would be re-handed to a different
- *   property later, which is exactly the collision this whole design exists to
- *   prevent. Allocation is idempotent, so a retried transaction re-reads the
- *   same row rather than consuming a second number.
- *
- * - **Visitor sequence (`VXXXX`)** is allocated *inside* the caller's session,
- *   so it rolls back with the booking it belongs to and an abandoned attempt
- *   does not burn a visitor number.
- *
- * Both are one-document `$inc`s, which MongoDB applies atomically — no
- * read-then-write window exists for two callers to race through.
- */
 @Injectable()
 export class BookingIdentityService {
   constructor(
@@ -58,12 +38,9 @@ export class BookingIdentityService {
     private readonly properties: Model<any>,
     @InjectModel("BookingIdentityCounter")
     private readonly counters: Model<any>,
-    // Read-only. The ashram supplies the address and type the code is derived
-    // from; this module never writes to it.
     @InjectModel("Ashram") private readonly ashrams: Model<any>,
   ) {}
 
-  /** Atomically consume and return the next value of one counter scope. */
   private async nextSequence(
     key: string,
     session?: ClientSession,
@@ -93,7 +70,6 @@ export class BookingIdentityService {
     };
   }
 
-  /** The registration for an ashram, or null if it has never been registered. */
   async findPropertyIdentity(
     ashramId: string,
   ): Promise<PropertyIdentity | null> {
@@ -101,16 +77,6 @@ export class BookingIdentityService {
     return row ? this.toIdentity(row) : null;
   }
 
-  /**
-   * The permanent registration for an ashram, creating it on first use.
-   *
-   * Idempotent and safe to call concurrently. Two callers registering the same
-   * brand-new property both consume a candidate number, but only one insert
-   * survives the unique index on `ashramId`; the loser reads the winner's row
-   * and discards its own candidate. That leaves an unused number in the
-   * register — a gap, not a duplicate — which is the correct trade: numbers are
-   * cheap and a collision is not recoverable once a code has been printed.
-   */
   async ensurePropertyIdentity(ashramId: string): Promise<PropertyIdentity> {
     const existing = await this.findPropertyIdentity(ashramId);
     if (existing) return existing;
@@ -154,19 +120,12 @@ export class BookingIdentityService {
       return this.toIdentity(created.toObject());
     } catch (error: unknown) {
       if (!isDuplicateKey(error)) throw error;
-      // Lost the race. The winner's row is authoritative and permanent.
       const winner = await this.findPropertyIdentity(ashramId);
       if (winner) return winner;
       throw error;
     }
   }
 
-  /**
-   * Issue the next identity code for a booking at an ashram.
-   *
-   * Pass the booking's session so the visitor number is committed or discarded
-   * with the booking itself.
-   */
   async issueForBooking(
     ashramId: string,
     session?: ClientSession,

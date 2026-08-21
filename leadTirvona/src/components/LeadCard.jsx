@@ -1,7 +1,3 @@
-/**
- * LeadCard.jsx — Compact Horizontal Row Layout
- * Three sections: Name | Date | Action Icons (Call, WhatsApp, Edit, Delete)
- */
 import React from 'react';
 import {
   Phone, Trash2, Pencil, MapPin, MessageCircle
@@ -10,14 +6,12 @@ import { formatDate } from '../utils/formatDate';
 
 export default function LeadCard({ lead, onApprove, onDelete, onEdit }) {
   const phone = lead.contact?.phone || '';
-  // Clean phone number for tel: and wa.me links
   const cleanPhone = phone.replace(/[^0-9+]/g, '');
   const waPhone = cleanPhone.startsWith('+') ? cleanPhone.slice(1) : cleanPhone;
 
   return (
     <div className="bg-white border border-[#E2E8F0] rounded-xl px-4 py-3 shadow-xs hover:shadow-md transition-all duration-200 flex items-center gap-3">
 
-      {/* Section 1 — Name, Location & Status */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <h3
@@ -44,7 +38,6 @@ export default function LeadCard({ lead, onApprove, onDelete, onEdit }) {
         )}
       </div>
 
-      {/* Section 2 — Date */}
       <div className="shrink-0 text-right hidden sm:block">
         {lead.createdAt && (
           <span className="text-[11px] font-semibold text-[#64748B] whitespace-nowrap">
@@ -53,9 +46,7 @@ export default function LeadCard({ lead, onApprove, onDelete, onEdit }) {
         )}
       </div>
 
-      {/* Section 3 — Action Icons */}
       <div className="flex items-center gap-1 shrink-0">
-        {/* Phone Call */}
         {cleanPhone && (
           <a
             href={`tel:${cleanPhone}`}
@@ -66,7 +57,6 @@ export default function LeadCard({ lead, onApprove, onDelete, onEdit }) {
           </a>
         )}
 
-        {/* WhatsApp */}
         {cleanPhone && (
           <a
             href={`https://wa.me/${waPhone}`}
@@ -79,7 +69,6 @@ export default function LeadCard({ lead, onApprove, onDelete, onEdit }) {
           </a>
         )}
 
-        {/* Edit */}
         {onEdit && (
           <button
             onClick={() => onEdit(lead)}
@@ -90,7 +79,6 @@ export default function LeadCard({ lead, onApprove, onDelete, onEdit }) {
           </button>
         )}
 
-        {/* Delete */}
         <button
           onClick={() => {
             if (confirm(`Delete lead "${lead.name}"?`)) onDelete(lead.id);

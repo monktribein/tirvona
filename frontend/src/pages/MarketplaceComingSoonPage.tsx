@@ -101,7 +101,6 @@ export const MarketplaceComingSoonPage: React.FC = () => {
 
   return (
     <div className="min-h-screen pt-20 sm:pt-24 pb-16">
-      {/* Breadcrumb Bar */}
       <div className="bg-white dark:bg-[#0B192C] border-b border-gray-100 dark:border-slate-800/80 py-3 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto flex items-center gap-2 text-xs font-bold text-gray-500 dark:text-gray-400">
           <Link to="/" className="hover:text-[#0A4DA6]">
@@ -118,7 +117,6 @@ export const MarketplaceComingSoonPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Hero Section */}
       <div className="bg-gradient-to-r from-purple-950 via-indigo-950 to-[#0B192C] text-white py-16 sm:py-20 px-4 sm:px-6 relative overflow-hidden">
         <div className="max-w-4xl mx-auto text-center space-y-6 relative z-10">
           <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-purple-500/20 text-purple-300 text-xs font-black border border-purple-400/30">
@@ -138,7 +136,6 @@ export const MarketplaceComingSoonPage: React.FC = () => {
             and handloom puja apparel directly to your doorstep.
           </p>
 
-          {/* Notify Me Form */}
           <div className="max-w-md mx-auto pt-4">
             {subscribed ? (
               <div className="p-4 rounded-2xl bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-xs font-black flex items-center justify-center gap-2">
@@ -176,7 +173,6 @@ export const MarketplaceComingSoonPage: React.FC = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-12 space-y-12">
-        {/* What's Coming Grid */}
         <div className="space-y-6">
           <div className="text-center space-y-2 max-w-2xl mx-auto">
             <span className="px-3.5 py-1 rounded-full bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 text-[10px] font-black">
@@ -216,7 +212,6 @@ export const MarketplaceComingSoonPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Expansion Roadmap */}
         <div className="bg-white dark:bg-[#0B192C] rounded-[32px] p-6 sm:p-10 border border-gray-100 dark:border-slate-800 shadow-sm space-y-6">
           <div className="text-center space-y-2">
             <h3 className="font-black text-xl text-[#0B192C] dark:text-white">
@@ -253,7 +248,6 @@ export const MarketplaceComingSoonPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Pre-Footer Action Banner */}
         <div className="bg-gradient-to-r from-purple-950 via-slate-900 to-indigo-950 text-white rounded-[32px] p-8 text-center space-y-4 shadow-2xl border border-purple-500/20">
           <h3 className="text-2xl font-black">
             In the Meantime, Explore Sacred Ashrams & Circuits

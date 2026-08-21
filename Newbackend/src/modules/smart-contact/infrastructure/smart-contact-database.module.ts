@@ -13,20 +13,6 @@ import { SmartContactEventSchema } from "./persistence/smart-contact-event.schem
 import { SmartContactProfileSchema } from "./persistence/smart-contact-profile.schema";
 import { SmartContactQrCodeSchema } from "./persistence/smart-contact-qr-code.schema";
 
-/**
- * A third, named Mongoose connection pointed at the Smart Contact database.
- *
- * Same reasoning as `LeadDatabaseModule`: registering these four models
- * against `SMART_CONTACT_CONNECTION` makes the isolation structural rather
- * than a naming convention. No injector in this module can resolve a platform
- * model, and no platform module can resolve one of these — a `populate()`
- * across the boundary does not compile, let alone run. Repointing
- * `SMART_CONTACT_MONGODB_URI` at its own cluster then becomes a config change,
- * which is what spec §43 needs for the module to become a shared NEP service.
- *
- * The pool is small on purpose. Public contact pages are read-heavy but
- * low-volume per profile, and the writes are single-document event inserts.
- */
 @Module({
   imports: [
     MongooseModule.forRootAsync({

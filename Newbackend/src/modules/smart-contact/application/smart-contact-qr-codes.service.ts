@@ -19,14 +19,6 @@ import type {
 } from "../domain/smart-contact.types";
 import { SmartContactAuditService } from "./smart-contact-audit.service";
 
-/**
- * The registry of printed QR assets (spec §17, §30).
- *
- * Rows here describe *where a QR was placed*, never what it looks like. The
- * artwork is regenerated on demand from `destinationUrl`, which is why "
- * Regenerate QR Artwork" in spec §20 cannot change the profile URL: there is
- * no stored image to drift from the record, and the URL field is immutable.
- */
 @Injectable()
 export class SmartContactQrCodesService {
   private readonly config: SmartContactConfig = smartContactConfig();
@@ -37,21 +29,11 @@ export class SmartContactQrCodesService {
     private readonly audit: SmartContactAuditService,
   ) {}
 
-  /**
-   * Builds the human-readable tracking id, e.g. `TSC-RB-00001` (spec §17).
-   *
-   * The initials make it recognisable at a glance; the counter is what
-   * guarantees uniqueness. Two people with the same initials simply continue
-   * the same numeric sequence, so the id stays unique globally rather than
-   * per-person — which is what makes it quotable on its own.
-   */
   private async nextIdentifier(profile: SmartContactProfileView): Promise<string> {
     const initials =
       `${profile.firstName.charAt(0)}${profile.lastName.charAt(0)}`
         .replace(/[^a-zA-Z]/g, "")
         .toUpperCase() || "TC";
-    // Counting documents would reuse an id after a deletion; a max over the
-    // existing sequence never does.
     const [latest] = await this.qrCodes
       .find({ qrIdentifier: /^TSC-/ })
       .sort({ qrIdentifier: -1 })
@@ -86,14 +68,6 @@ export class SmartContactQrCodesService {
     };
   }
 
-  /**
-   * Registers a QR asset for a profile.
-   *
-   * The `?src=` parameter is appended only for non-default placements. A bare
-   * URL produces a slightly denser-free symbol and is what belongs on the
-   * primary visiting card; the tagged variants exist so spec §28's attribution
-   * has something to attribute.
-   */
   async create(
     profile: SmartContactProfileView,
     input: {
@@ -153,12 +127,6 @@ export class SmartContactQrCodesService {
     return this.toView(doc);
   }
 
-  /**
-   * Retires an asset — the placement is out of circulation, but the row stays.
-   *
-   * Deleting it would orphan every event that references it and lose the
-   * history of which card was printed when, so retirement is a status change.
-   */
   async retire(
     profileId: string,
     qrId: string,
@@ -184,11 +152,6 @@ export class SmartContactQrCodesService {
     return this.toView(updated);
   }
 
-  /**
-   * Resolves the `?src=` value on a public request back to a QR row so a scan
-   * can be attributed to the card it came from (spec §28). Returns null when
-   * nothing matches, which is the normal case for a typed URL.
-   */
   async resolveSource(
     profileId: string,
     source: string | undefined,

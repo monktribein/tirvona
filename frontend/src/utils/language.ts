@@ -19,7 +19,6 @@ export const getActiveLanguage = (): "en" | "hi" => {
       if (parsed?.preferences?.language === "hi") return "hi";
     }
   } catch {
-    // fallback
   }
   return "en";
 };
@@ -37,6 +36,5 @@ export const setActiveLanguage = (lang: "en" | "hi") => {
       new CustomEvent("language_changed", { detail: lang }),
     );
   } catch {
-    // ignore
   }
 };

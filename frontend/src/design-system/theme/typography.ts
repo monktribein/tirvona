@@ -1,4 +1,3 @@
-// Tirvona Enterprise Design System 2.0 - Typography Tokens
 
 export const typography = {
   fontFamily: {

@@ -4,15 +4,10 @@ import { motion, useReducedMotion } from "framer-motion";
 interface RevealProps {
   children: React.ReactNode;
   className?: string;
-  /** initial vertical offset in px (slide-in distance) */
   y?: number;
-  /** stagger delay in seconds */
   delay?: number;
 }
 
-// Subtle fade + slide-in-on-scroll wrapper. Animates only transform/opacity
-// (GPU-accelerated), fires once when it enters the viewport, and disables
-// itself when the user prefers reduced motion.
 export const Reveal: React.FC<RevealProps> = ({
   children,
   className,

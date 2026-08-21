@@ -46,13 +46,6 @@ const discountOf = (p: Product) => {
   return Math.round(((list - sale) / list) * 100);
 };
 
-/**
- * Full detail page for a marketplace product.
- *
- * Reached from every product card. Previously those cards led back to the
- * listing (or opened a cramped modal), so there was no addressable page for a
- * product — nothing to link to, bookmark or share.
- */
 const DEFAULT_PRODUCTS: Record<string, Product> = {
   "prasad-1": {
     _id: "prasad-1",
@@ -267,11 +260,8 @@ export const MarketplaceProductDetailPage: React.FC = () => {
 
   return (
     <div className="min-h-screen pb-16">
-      {/* Same shell as the navbar and footer — max-w-7xl with the shared
-          gutters — so the content edge lines up with the header above it. */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Gallery */}
           <div className="space-y-3">
             <div className="relative rounded-3xl overflow-hidden bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800">
               <img
@@ -316,7 +306,6 @@ export const MarketplaceProductDetailPage: React.FC = () => {
             )}
           </div>
 
-          {/* Detail */}
           <div className="space-y-4">
             <div className="space-y-1.5">
               <h1 className="text-xl sm:text-2xl font-black text-[#0B192C] dark:text-white">
@@ -393,8 +382,6 @@ export const MarketplaceProductDetailPage: React.FC = () => {
                     Add to cart
                   </button>
                 </div>
-                {/* Buy now is add-to-cart plus a jump to checkout, so a basket
-                    already in progress is preserved rather than replaced. */}
                 <button
                   onClick={buyNow}
                   className="w-full py-3 rounded-full bg-[#E58C28] hover:bg-amber-600 text-white text-xs font-extrabold flex items-center justify-center gap-2 shadow-md cursor-pointer transition-all"

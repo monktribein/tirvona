@@ -14,6 +14,10 @@ export default defineConfig(({ command, mode }) => {
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "./src"),
+        "lucide-react": path.resolve(
+          __dirname,
+          "./src/design-system/icons/lucide-material-compat.tsx",
+        ),
       },
     },
     // This catalogue is published as CommonJS. Pre-bundle it explicitly so

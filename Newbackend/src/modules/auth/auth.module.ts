@@ -10,14 +10,13 @@ import { AuthController } from "./presentation/auth.controller";
 import { MongooseModule } from "@nestjs/mongoose";
 import { AuthChallengeSchema } from "./infrastructure/auth-challenge.schema";
 import { ParkingModule } from "../parking/parking.module";
+import { WhatsAppModule } from "../../integrations/whatsapp/whatsapp.module";
 
 @Module({
   imports: [
     UsersModule,
-    // Login needs to tell a Guest Visitor from a role holder, and parking roles
-    // are grants in `parking_staff` rather than values of `User.role`.
-    // ParkingModule re-exports MongooseModule, so its models resolve here.
     ParkingModule,
+    WhatsAppModule,
     PassportModule.register({ defaultStrategy: "jwt" }),
     JwtModule.registerAsync({
       inject: [ConfigService],

@@ -30,7 +30,6 @@ export const ImageGalleryManager: React.FC<ImageGalleryManagerProps> = ({
   const { addNotification } = useNotifications();
   const [uploading, setUploading] = useState(false);
 
-  // Filter out any broken/non-string entries
   const validCover = typeof coverImage === "string" ? coverImage : "";
   const validGallery = Array.isArray(gallery)
     ? gallery.filter((x) => typeof x === "string" && x.trim().length > 0)
@@ -42,10 +41,6 @@ export const ImageGalleryManager: React.FC<ImageGalleryManagerProps> = ({
   const handleFileUpload = async (file: File, replaceIdx?: number) => {
     setUploading(true);
     try {
-      // The upload endpoint is the only source of an image reference. There is
-      // deliberately no local base64 fallback: a data URI gets saved into the
-      // record, bloats every listing that reads it, and pushes the save past
-      // the request body limit.
       const formData = new FormData();
       formData.append("file", file);
       formData.append("folder", "admin-gallery");
@@ -145,7 +140,6 @@ export const ImageGalleryManager: React.FC<ImageGalleryManagerProps> = ({
         )}
       </div>
 
-      {/* Prominent Direct File Upload Box (No URL text input needed) */}
       <label className="w-full py-4 px-6 border-2 border-dashed border-[#0A4DA6]/40 dark:border-blue-500/40 hover:border-[#0A4DA6] bg-blue-50/40 dark:bg-slate-800/40 rounded-2xl flex flex-col items-center justify-center gap-2 cursor-pointer transition-all hover:shadow-md">
         {uploading ? (
           <div className="flex items-center gap-2 text-[#0A4DA6] font-bold text-xs">
@@ -187,7 +181,6 @@ export const ImageGalleryManager: React.FC<ImageGalleryManagerProps> = ({
         />
       </label>
 
-      {/* Image Gallery Grid */}
       {allImages.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 pt-2">
           {allImages.map((imgUrl, idx) => {
@@ -207,14 +200,12 @@ export const ImageGalleryManager: React.FC<ImageGalleryManagerProps> = ({
                   className="w-full h-full object-cover"
                 />
 
-                {/* Cover Badge */}
                 {isCover && (
                   <span className="absolute top-1.5 left-1.5 bg-amber-500 text-black text-[9px] font-black px-2 py-0.5 rounded-full shadow flex items-center gap-1">
                     <Star size={10} className="fill-black" /> COVER
                   </span>
                 )}
 
-                {/* Action Overlay Controls */}
                 <div className="absolute inset-0 bg-black/70 backdrop-blur-xs opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-center items-center gap-1.5 p-2">
                   {!isCover && (
                     <button

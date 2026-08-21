@@ -1,9 +1,3 @@
-/**
- * ToastNotification.jsx
- *
- * Tirvona-themed fixed-position notification banner.
- * White card, saffron border, Royal Blue / success green accent.
- */
 import React from 'react';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
 

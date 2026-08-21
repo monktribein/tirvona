@@ -32,7 +32,6 @@ import {
   Package,
 } from "lucide-react";
 
-// ─── Accordion item for mobile footer ────────────────────────────────────────
 const FooterAccordion: React.FC<{
   title: string;
   titleColor?: string;
@@ -64,7 +63,6 @@ const FooterAccordion: React.FC<{
   );
 };
 
-// ─── Main Layout ──────────────────────────────────────────────────────────────
 export const PublicLayout: React.FC = () => {
   const { user, logout } = useAuth();
   const { unreadCount, notifications, markAllAsRead, removeNotification } =
@@ -170,13 +168,11 @@ export const PublicLayout: React.FC = () => {
   const rememberCurrentPage = () =>
     setGuestPendingIntent({ type: "generic", returnUrl: authReturnUrl });
 
-  // Close drawer on route change
   useEffect(() => {
     setDrawerOpen(false);
     setShowNotifications(false);
   }, [location.pathname]);
 
-  // Close notification popover on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
@@ -187,7 +183,6 @@ export const PublicLayout: React.FC = () => {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // Prevent body scroll when drawer is open
   useEffect(() => {
     document.body.style.overflow = drawerOpen ? "hidden" : "";
     return () => {
@@ -203,7 +198,6 @@ export const PublicLayout: React.FC = () => {
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
 
-  // Close profile dropdown on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (
@@ -238,20 +232,11 @@ export const PublicLayout: React.FC = () => {
     if (["ashram_owner", "owner"].includes(user.role))
       return "Ashram Owner Dashboard";
     if (user.role === "support") return "Support Console";
-    // Parking is secondary for platform/ashram management accounts. Only an
-    // account without a higher-priority console should be labelled as parking.
     if (isParkingRole(user.parkingRoles, user.role, user.email))
       return "Parking Dashboard";
     return "My Dashboard";
   };
 
-  /**
-   * Whether this user has a real operational console to jump to.
-   *
-   * A visitor's "dashboard" is just /profile, which the avatar menu already
-   * links to — so the nav button was a duplicate taking up width. Staff and
-   * admin roles land somewhere genuinely different, so they keep the shortcut.
-   */
   const hasOperationalDashboard = () => {
     if (!user) return false;
     if (isParkingRole(user.parkingRoles, user.role, user.email)) return true;
@@ -288,28 +273,23 @@ export const PublicLayout: React.FC = () => {
     { label: "Destinations", to: "/pilgrimage-circuits" },
     { label: "Parking", to: "/parking" },
     { label: "Marketplace", to: "/marketplace" },
-    { label: "Arti Booking", to: "/arti-booking" },
+    { label: "Aarti Booking", to: "/aarti" },
     { label: "Live Pooja", to: "/live-pooja" },
     { label: "Offers", to: "/offers" },
   ];
 
-  // Keep the floating navbar over pages that begin with a full-width hero so
-  // the layout does not introduce a separate white band above the artwork.
   const hasOverlayHero =
     ["/", "/public"].includes(location.pathname) ||
     location.pathname.startsWith("/featured-banner/");
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50/70 dark:bg-[#070F1B] text-foreground transition-colors duration-300">
-      {/* ── Sticky Header (Floating Rounded Navbar) ── */}
       <header
         className={`sticky top-0 z-50 pt-3 pb-3 ${hasOverlayHero ? "-mb-20 lg:-mb-24" : "mb-0"} pointer-events-none transform-gpu transition-all duration-300 ease-out will-change-transform ${navbarVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"}`}
         aria-hidden={!navbarVisible}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pointer-events-auto">
-          {/* Simple Clean Single Floating Navbar Container */}
           <div className="bg-white/95 dark:bg-[#0B192C]/95 backdrop-blur-md border border-gray-200/90 dark:border-slate-800 rounded-full px-4 lg:px-6 py-2 flex items-center justify-between w-full shadow-sm hover:shadow-md transition-shadow">
-            {/* Left Brand Logo Image */}
             <Link to="/" className="flex items-center gap-2 group shrink-0">
               <img
                 src="/logo/logo.png"
@@ -318,7 +298,6 @@ export const PublicLayout: React.FC = () => {
               />
             </Link>
 
-            {/* Desktop nav links */}
             <nav className="hidden lg:flex items-center justify-center gap-0.5 xl:gap-1.5 text-xs font-medium text-[#1E293B] dark:text-gray-200">
               {navLinks.map((link) => {
                 const isActive =
@@ -342,14 +321,11 @@ export const PublicLayout: React.FC = () => {
               })}
             </nav>
 
-            {/* Mobile spacer / menu title */}
             <div className="lg:hidden flex-1 pl-3 text-xs font-semibold text-gray-500">
               {t("Menu")}
             </div>
 
-            {/* Right Side Action & Utility Area */}
             <div className="flex items-center gap-2 lg:gap-3">
-              {/* Currency selector inside navbar with USD and INR options */}
               <div className="relative hidden sm:block" ref={currencyDropdownRef}>
                 <button
                   type="button"
@@ -437,7 +413,6 @@ export const PublicLayout: React.FC = () => {
                 )}
               </div>
 
-              {/* Language Globe Selector inside navbar */}
               <div className="relative hidden sm:block" ref={langDropdownRef}>
                 <button
                   type="button"
@@ -479,20 +454,12 @@ export const PublicLayout: React.FC = () => {
                 )}
               </div>
 
-              {/* User Auth / Action Buttons */}
               {user ? (
                 <div className="flex items-center gap-2">
-                  {/* Marketplace cart — a pilgrim-facing feature, so it is
-                        hidden from console roles alongside the rest of the
-                        visitor menu. */}
                   {!hasOperationalDashboard() && <CartButton />}
 
-                  {/* Notifications Active Bell Dropdown */}
                   <NotificationDropdown />
 
-                  {/* Dashboard Button — staff and admin roles only.
-                        Hidden for visitors, whose dashboard is /profile and is
-                        already one tap away in the avatar menu below. */}
                   {hasOperationalDashboard() && (
                     <Link
                       to={getDashboardPath()}
@@ -505,11 +472,6 @@ export const PublicLayout: React.FC = () => {
                     </Link>
                   )}
 
-                  {/* Profile Avatar Dropdown Trigger.
-                        Icon only — the name and chevron were dropped because the
-                        nav bar had outgrown its width. The name is not lost: it
-                        is the first line of the dropdown, and it stays available
-                        to screen readers and on hover via the label/title. */}
                   <div className="relative" ref={profileRef}>
                     <button
                       onClick={() => setProfileDropdownOpen((prev) => !prev)}
@@ -525,10 +487,8 @@ export const PublicLayout: React.FC = () => {
                       <User size={18} />
                     </button>
 
-                    {/* Profile Dropdown Menu */}
                     {profileDropdownOpen && (
                       <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden z-50 text-xs font-bold text-gray-700 dark:text-gray-200">
-                        {/* User Info Header */}
                         <div className="px-3.5 py-2.5 bg-gradient-to-r from-blue-50/80 to-indigo-50/40 dark:from-slate-800/90 dark:to-slate-900/60 border-b border-gray-100 dark:border-slate-800 flex items-center gap-2.5">
                           <div className="w-8 h-8 rounded-full bg-[#0A4DA6] text-white flex items-center justify-center shrink-0 shadow-sm ring-1 ring-white dark:ring-slate-700">
                             <User size={16} />
@@ -543,7 +503,6 @@ export const PublicLayout: React.FC = () => {
                           </div>
                         </div>
 
-                        {/* Navigation Links */}
                         <div className="p-1.5 space-y-0.5">
                           {hasOperationalDashboard() && (
                             <Link
@@ -560,10 +519,6 @@ export const PublicLayout: React.FC = () => {
                             </Link>
                           )}
 
-                          {/* Pilgrim-only destinations. An account that runs a
-                              console — owner, admin, reception, parking staff —
-                              has no stays, wishlist or personal profile of its
-                              own here, so showing them led to empty pages. */}
                           {!hasOperationalDashboard() && (
                             <>
                               <Link
@@ -621,7 +576,6 @@ export const PublicLayout: React.FC = () => {
                           )}
                         </div>
 
-                        {/* Sign Out */}
                         <div className="p-1.5 border-t border-gray-100 dark:border-slate-800">
                           <button
                             onClick={handleLogout}
@@ -639,8 +593,6 @@ export const PublicLayout: React.FC = () => {
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
-                  {/* A signed-out visitor can still fill a basket; the sign-in
-                      prompt comes at checkout, not before browsing. */}
                   <CartButton />
                   <Link
                     to={`/login?redirect=${encodeURIComponent(authReturnUrl)}`}
@@ -659,7 +611,6 @@ export const PublicLayout: React.FC = () => {
                 </div>
               )}
 
-              {/* Mobile Drawer Hamburger */}
               <button
                 onClick={() => setDrawerOpen(true)}
                 className="lg:hidden p-1.5 text-slate-700 dark:text-gray-200 cursor-pointer"
@@ -672,19 +623,15 @@ export const PublicLayout: React.FC = () => {
         </div>
       </header>
 
-      {/* ── Mobile Sliding Drawer ── */}
-      {/* Backdrop */}
       <div
         className={`lg:hidden fixed inset-0 z-50 transition-opacity duration-300 ${drawerOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
         style={{ background: "rgba(0,0,0,0.55)" }}
         onClick={() => setDrawerOpen(false)}
       />
 
-      {/* Drawer panel — slides from right */}
       <div
         className={`lg:hidden fixed top-0 right-0 h-full w-[85vw] max-w-[320px] bg-white dark:bg-[#0B192C] z-50 flex flex-col shadow-2xl transition-transform duration-300 ease-out ${drawerOpen ? "translate-x-0" : "translate-x-full"}`}
       >
-        {/* Drawer header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-slate-800">
           <Link
             to="/"
@@ -710,9 +657,7 @@ export const PublicLayout: React.FC = () => {
           </button>
         </div>
 
-        {/* Drawer body */}
         <div className="flex-grow overflow-y-auto px-5 py-4 space-y-1">
-          {/* User info (if logged in) */}
           {user && (
             <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-slate-900 rounded-2xl mb-4">
               <div className="w-10 h-10 rounded-full bg-primary/10 text-primary border border-primary/20 flex items-center justify-center font-black text-sm flex-shrink-0">
@@ -729,7 +674,6 @@ export const PublicLayout: React.FC = () => {
             </div>
           )}
 
-          {/* Nav links */}
           <nav className="space-y-1">
             {navLinks.map((link) => {
               const isActive =
@@ -758,11 +702,6 @@ export const PublicLayout: React.FC = () => {
               );
             })}
 
-            {/* Dashboard / profile link if logged in.
-                Kept for every role, unlike the desktop button: this drawer has
-                no other route to the profile, so hiding it for visitors would
-                leave them no way in on mobile. The label follows the role so a
-                visitor is not sent to "Dashboard" and shown their profile. */}
             {user && (
               <Link
                 to={getDashboardPath()}
@@ -780,10 +719,8 @@ export const PublicLayout: React.FC = () => {
             )}
           </nav>
 
-          {/* Divider */}
           <div className="h-px bg-gray-100 dark:bg-slate-800 my-4" />
 
-          {/* Utilities */}
           <div className="space-y-2">
             <button
               onClick={toggleDarkMode}
@@ -869,7 +806,6 @@ export const PublicLayout: React.FC = () => {
           </div>
         </div>
 
-        {/* Drawer footer — auth buttons */}
         <div className="px-5 py-4 border-t border-gray-100 dark:border-slate-800 space-y-3">
           {user ? (
             <button
@@ -905,21 +841,15 @@ export const PublicLayout: React.FC = () => {
         </div>
       </div>
 
-      {/* Cart slide-over. Mounted once at layout level so it stays open across
-          route changes and is reachable from any public page. */}
       <CartDrawer />
 
-      {/* ── Main Content ── */}
       <main className="flex-grow">
         <Outlet />
       </main>
 
-      {/* ── Redesigned Mobile-Optimized Premium Footer ── */}
       <footer className="bg-[#06101E] text-slate-300 pt-10 sm:pt-16 pb-0 relative overflow-hidden border-t border-slate-800/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Main Layout Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-10 lg:gap-12 pb-10 sm:pb-14">
-            {/* Col 1: Brand & Contact Info */}
             <div className="space-y-4">
               <Link to="/" className="flex items-center gap-3 group">
                 <img
@@ -946,7 +876,6 @@ export const PublicLayout: React.FC = () => {
                 grace.
               </p>
 
-              {/* Need Help Box - Mobile friendly side-by-side buttons */}
               <div className="pt-1">
                 <div className="p-3.5 sm:p-4 rounded-2xl bg-slate-900/90 border border-slate-800/80 space-y-2.5">
                   <span className="text-[10px] text-amber-400 font-extrabold tracking-wider block">
@@ -975,9 +904,7 @@ export const PublicLayout: React.FC = () => {
               </div>
             </div>
 
-            {/* Col 2 & 3: Quick Links & Popular Services (Side-by-Side 2-Column Grid on Mobile) */}
             <div className="grid grid-cols-2 gap-5 sm:gap-8 lg:col-span-2">
-              {/* Quick Links */}
               <div className="space-y-3">
                 <h4 className="text-xs sm:text-sm font-black text-white tracking-wider border-l-2 border-[#E58C28] pl-2.5">
                   Quick Links
@@ -1059,7 +986,6 @@ export const PublicLayout: React.FC = () => {
                 </ul>
               </div>
 
-              {/* Popular Services */}
               <div className="space-y-3">
                 <h4 className="text-xs sm:text-sm font-black text-white tracking-wider border-l-2 border-[#0A4DA6] pl-2.5">
                   Popular Services
@@ -1117,7 +1043,6 @@ export const PublicLayout: React.FC = () => {
               </div>
             </div>
 
-            {/* Col 4: Newsletter & Social Connection */}
             <div className="space-y-4">
               <h4 className="text-xs sm:text-sm font-black text-white tracking-wider border-l-2 border-emerald-500 pl-2.5">
                 Stay Connected
@@ -1127,7 +1052,6 @@ export const PublicLayout: React.FC = () => {
                 alerts &amp; exclusive stays.
               </p>
 
-              {/* Clean Responsive Newsletter Form */}
               <form onSubmit={(e) => e.preventDefault()} className="space-y-2">
                 <div className="flex flex-col sm:flex-row gap-2">
                   <input
@@ -1145,7 +1069,6 @@ export const PublicLayout: React.FC = () => {
                 </div>
               </form>
 
-              {/* Social Media Links */}
               <div className="pt-1 space-y-2">
                 <span className="text-[10px] font-extrabold text-slate-400 tracking-wider block">
                   Follow Us
@@ -1213,17 +1136,14 @@ export const PublicLayout: React.FC = () => {
           </div>
         </div>
 
-        {/* BOTTOM SUB-FOOTER BAR */}
         <div className="bg-[#030914] text-slate-400 py-6 border-t border-slate-800/80">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs font-medium">
-            {/* Copyright */}
             <div>
               © {new Date().getFullYear()}{" "}
               <span className="text-white font-black">Tirvona</span>. All Rights
               Reserved.
             </div>
 
-            {/* Legal Links */}
             <div className="flex items-center gap-6 text-xs font-semibold text-slate-400">
               <Link
                 to="/privacy"

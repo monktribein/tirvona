@@ -6,7 +6,6 @@ import CompleteProfileModal from "../components/CompleteProfileModal";
 import useGoogleAuth from "../hooks/useGoogleAuth";
 import { isGoogleConfigured } from "../lib/googleAuth";
 
-// Small multicolor Google mark, matching the one on the login page.
 const GoogleIcon: React.FC = () => (
   <svg className="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
     <path
@@ -59,8 +58,6 @@ export const RegisterPage: React.FC = () => {
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  // Set when a Guest Visitor registration returns an OTP challenge instead of a
-  // session. While it is set, the card shows the OTP step in place of the form.
   const [challenge, setChallenge] = useState<OtpChallenge | null>(null);
 
   const google = useGoogleAuth((userArg) => goAfterSignup(userArg?.role));
@@ -91,7 +88,6 @@ export const RegisterPage: React.FC = () => {
     const res = await registerUser(payload);
     setLoading(false);
     if (res.success) {
-      // New accounts confirm the OTP sent to their email before creation.
       if (res.otpRequired && res.challenge) {
         setChallenge(res.challenge);
         return;
@@ -129,7 +125,6 @@ export const RegisterPage: React.FC = () => {
 
   return (
     <section className="relative w-full min-h-screen bg-[#0B192C] overflow-hidden -mt-24 lg:-mt-28">
-      {/* Full-cover background; section pulled up under the floating navbar so there is no white gap */}
       <img
         src="/auth-page/background.png"
         alt=""
@@ -141,9 +136,7 @@ export const RegisterPage: React.FC = () => {
       <div className="absolute inset-0 bg-gradient-to-r from-[#0B192C]/90 via-[#0B192C]/60 to-[#0A4DA6]/25" />
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-screen grid lg:grid-cols-2 gap-10 lg:gap-12 items-center pt-36 lg:pt-40 pb-16">
-        {/* ── Left: Marketing hero ── */}
         <div className="hidden lg:flex flex-col justify-center text-white space-y-6 max-w-xl">
-          {/* Heading */}
           <div className="space-y-3">
             <h1
               className="font-black leading-[1.08] tracking-tight text-white"
@@ -161,7 +154,6 @@ export const RegisterPage: React.FC = () => {
             </p>
           </div>
 
-          {/* 2x2 Feature Cards Grid */}
           <div className="grid grid-cols-2 gap-3 pt-1">
             {heroFeatures.map((f) => (
               <div
@@ -178,7 +170,6 @@ export const RegisterPage: React.FC = () => {
             ))}
           </div>
 
-          {/* Glass Stats Card */}
           <div className="bg-gradient-to-r from-white/5 to-white/10 backdrop-blur-md border border-white/10 p-4 rounded-2xl flex items-center justify-around shadow-xl">
             {[
               { n: "Free", l: "To Join" },
@@ -200,11 +191,9 @@ export const RegisterPage: React.FC = () => {
           </div>
         </div>
 
-        {/* ── Right: Register card ── */}
         <div className="w-full max-w-[400px] mx-auto lg:ml-auto lg:mr-0 space-y-3">
           <div className="bg-white/95 dark:bg-[#0B192C]/95 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-[24px] shadow-2xl p-5 sm:p-6 space-y-3.5">
             {google.stage === "otp" && google.challenge ? (
-              /* Google sign-up: verify the address before the account exists. */
               <OtpChallengeForm
                 challenge={google.challenge}
                 destination={google.challenge.sentTo || ""}
@@ -212,11 +201,9 @@ export const RegisterPage: React.FC = () => {
                 onVerify={(otp) => google.verifyOtp(otp)}
                 onResend={google.resendOtp}
                 onCancel={google.reset}
-                /* Advancing to the profile modal is handled by the hook. */
                 onVerified={() => {}}
               />
             ) : challenge ? (
-              /* OTP step — same card, same styling, form swapped out. */
               <OtpChallengeForm
                 challenge={challenge}
                 destination={email}
@@ -234,7 +221,6 @@ export const RegisterPage: React.FC = () => {
               />
             ) : (
               <>
-                {/* Brand */}
                 <div className="text-center space-y-1">
                   <img
                     src="/logo/logo.png"
@@ -250,7 +236,6 @@ export const RegisterPage: React.FC = () => {
                   </p>
                 </div>
 
-                {/* Role select */}
                 <div className="grid grid-cols-2 gap-2.5">
                   <button
                     type="button"
@@ -284,8 +269,6 @@ export const RegisterPage: React.FC = () => {
                   </div>
                 )}
 
-                {/* Google sign-up is offered to Guest Visitors only; Ashram Owners
-                must go through the KYC form below. */}
                 {role === "customer" && (
                   <>
                     <button
@@ -397,7 +380,6 @@ export const RegisterPage: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Owner KYC */}
                   {role === "owner" && (
                     <div className="p-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-[16px] space-y-2 animate-in fade-in duration-200">
                       <span className="text-[9px] font-bold text-[#0A4DA6] tracking-wider">
@@ -476,7 +458,6 @@ export const RegisterPage: React.FC = () => {
             )}
           </div>
 
-          {/* Trust badges */}
           <div className="grid grid-cols-3 gap-2 text-white">
             {trustBadges.map((b) => (
               <div
@@ -498,8 +479,6 @@ export const RegisterPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Google sign-up final step: the account is created only when this
-          modal is submitted. */}
       {google.stage === "profile" && (
         <CompleteProfileModal
           email={google.email}

@@ -1,7 +1,3 @@
-/**
- * Tirvona Global Currency & Regional Formatting Utilities
- * Standardizes Indian Rupee (₹) and Indian Numbering System across the platform.
- */
 import { getActiveLanguage } from "./language";
 
 export const getFormattingLocale = () =>
@@ -48,7 +44,6 @@ export const setExchangeRateSnapshot = (snapshot: ExchangeRateSnapshot) => {
       new CustomEvent("exchange_rate_changed", { detail: snapshot }),
     );
   } catch {
-    // The in-memory rate remains usable when storage is unavailable.
   }
 };
 
@@ -62,7 +57,6 @@ export const getActiveCurrency = (): "INR" | "USD" => {
       if (parsed?.preferences?.currency === "USD") return "USD";
     }
   } catch {
-    // fallback to INR
   }
   return "INR";
 };
@@ -80,13 +74,9 @@ export const setActiveCurrency = (currency: "INR" | "USD") => {
       new CustomEvent("currency_changed", { detail: currency }),
     );
   } catch {
-    // ignore
   }
 };
 
-/**
- * Format any number or numeric string as Currency (INR ₹ or USD $)
- */
 export const formatCurrency = (
   amount: number | string | undefined | null,
   overrideCurrency?: "INR" | "USD",
@@ -118,11 +108,6 @@ export const formatCurrency = (
   }).format(safeNumber);
 };
 
-/**
- * Format a number using Indian numbering formatting without the prefix
- * Example outputs:
- *   formatIndianNumber(125000) => "1,25,000"
- */
 export const formatIndianNumber = (
   amount: number | string | undefined | null,
 ): string => {
@@ -132,9 +117,6 @@ export const formatIndianNumber = (
   return safeNumber.toLocaleString(getFormattingLocale());
 };
 
-/**
- * Format Date using Indian Locale standards (DD MMM YYYY)
- */
 export const formatDateIN = (value?: string | Date | null): string => {
   if (!value) return "—";
   return new Date(value).toLocaleDateString(getFormattingLocale(), {
@@ -144,9 +126,6 @@ export const formatDateIN = (value?: string | Date | null): string => {
   });
 };
 
-/**
- * Format DateTime using Indian Locale standards
- */
 export const formatDateTimeIN = (value?: string | Date | null): string => {
   if (!value) return "—";
   return new Date(value).toLocaleString(getFormattingLocale(), {
@@ -158,13 +137,5 @@ export const formatDateTimeIN = (value?: string | Date | null): string => {
   });
 };
 
-/**
- * Round a money amount to paise.
- *
- * Mirrors `roundMoney` in the backend's booking utils. Both sides must agree
- * exactly: this file drives the price a guest is shown before booking, and the
- * server drives the amount actually charged. GST on a platform fee produces
- * fractions (18% of 49 is 8.82), and raw float arithmetic drifts.
- */
 export const roundMoney = (value: number): number =>
   Math.round((value + Number.EPSILON) * 100) / 100;

@@ -1,10 +1,3 @@
-/**
- * LoginModal.jsx — Tirvona field-agent sign-in.
- *
- * Authenticates against the Lead Collection API. Accounts are created by a
- * super admin in the Tirvona console; there is no self-registration here, so
- * a failed sign-in means the account does not exist or the password is wrong.
- */
 import React, { useState } from 'react';
 import { X, Phone, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
 
@@ -18,7 +11,6 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
 
   if (!isOpen) return null;
 
-  // Restrict input strictly to max 10 numeric digits
   const handlePhoneChange = (e) => {
     const numericOnly = e.target.value.replace(/\D/g, '').slice(0, 10);
     setPhone(numericOnly);
@@ -48,8 +40,6 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
       onClose();
       return agent;
     } catch (err) {
-      // The API's own wording — it already distinguishes "wrong credentials"
-      // from "account suspended", which is the difference an agent needs.
       setError(err.message || 'Could not sign you in. Please try again.');
     } finally {
       setLoading(false);
@@ -61,10 +51,8 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F172A]/50 backdrop-blur-xs animate-fadeIn">
       
-      {/* Modal Container */}
       <div className="bg-white border border-[#E2E8F0] rounded-3xl p-6 sm:p-8 w-full max-w-md shadow-xl relative animate-scaleUp text-left">
         
-        {/* Close Button */}
         <button
           onClick={onClose}
           className="absolute top-4 right-4 p-2 text-[#64748B] hover:text-[#0F172A] rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
@@ -73,7 +61,6 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
           <X size={18} />
         </button>
 
-        {/* Modal Header with Real Tirvona Logo */}
         <div className="text-center space-y-2 mb-6">
           <div className="flex items-center justify-center mb-3">
             <img
@@ -90,17 +77,14 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
           </p>
         </div>
 
-        {/* Error Alert */}
         {error && (
           <div className="mb-4 p-3.5 bg-red-50 border border-red-200 rounded-xl text-xs font-semibold text-red-600">
             {error}
           </div>
         )}
 
-        {/* Login Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           
-          {/* Phone Number Field — Restricted to 10 Numbers Only */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-[#64748B] tracking-wider block">
@@ -125,7 +109,6 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
             </div>
           </div>
 
-          {/* Password Field */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-[#64748B] tracking-wider block">
@@ -158,7 +141,6 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
             </div>
           </div>
 
-          {/* Remember Me Checkbox */}
           <div className="flex items-center justify-between pt-1">
             <label className="flex items-center gap-2 cursor-pointer select-none">
               <input
@@ -171,7 +153,6 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
             </label>
           </div>
 
-          {/* Submit CTA Button */}
           <button
             type="submit"
             disabled={loading}
@@ -188,7 +169,6 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
           </button>
         </form>
 
-        {/* Account provisioning note */}
         <div className="mt-6 pt-4 border-t border-[#E2E8F0] text-center">
           <p className="text-[11px] text-[#64748B]">
             Access is limited to accounts created by a Tirvona Super Admin.

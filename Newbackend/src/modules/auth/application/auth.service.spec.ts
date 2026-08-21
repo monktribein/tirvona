@@ -15,6 +15,11 @@ const testConfig = () =>
 describe("AuthService OTP challenge contracts", () => {
   const createService = () => {
     const challenges = { create: jest.fn().mockResolvedValue({}) };
+    const whatsapp = {
+      sendAuthenticationOtp: jest
+        .fn()
+        .mockResolvedValue({ status: "accepted", provider: "ak_nexus" }),
+    };
     const service = new AuthService(
       {} as never,
       {} as never,
@@ -22,18 +27,22 @@ describe("AuthService OTP challenge contracts", () => {
       challenges as never,
       {} as never,
       {} as never,
+      whatsapp as never,
     );
-    return service as unknown as {
-      createChallenge: (
-        purpose: string,
-        identifier: string,
-        payload: Record<string, unknown>,
-      ) => Promise<Record<string, unknown>>;
+    return {
+      service: service as unknown as {
+        createChallenge: (
+          purpose: string,
+          identifier: string,
+          payload: Record<string, unknown>,
+        ) => Promise<Record<string, unknown>>;
+      },
+      whatsapp,
     };
   };
 
   it("returns googleToken for Google email verification", async () => {
-    const challenge = await createService().createChallenge(
+    const challenge = await createService().service.createChallenge(
       "google",
       "pilgrim@example.com",
       {},
@@ -44,11 +53,7 @@ describe("AuthService OTP challenge contracts", () => {
   });
 
   it("returns otpToken for the registration email OTP", async () => {
-    // Registration is where the email OTP lives: it proves the address is
-    // reachable before the account is created. Password login issues no
-    // challenge at all, so "register" and "phone_login" are the only ordinary
-    // OTP purposes left.
-    const challenge = await createService().createChallenge(
+    const challenge = await createService().service.createChallenge(
       "register",
       "pilgrim@example.com",
       {},
@@ -57,23 +62,73 @@ describe("AuthService OTP challenge contracts", () => {
     expect(challenge.otpToken).toEqual(expect.any(String));
     expect(challenge).not.toHaveProperty("googleToken");
   });
+
+  it("hands mobile authentication OTPs to the WhatsApp integration", async () => {
+    const { service, whatsapp } = createService();
+    await service.createChallenge("phone_login", "+919876543210", {});
+    expect(whatsapp.sendAuthenticationOtp).toHaveBeenCalledWith({
+      phone: "+919876543210",
+      code: expect.stringMatching(/^\d{6}$/),
+      expiresInMinutes: 5,
+      idempotencyKey: expect.stringMatching(/^auth-otp:[a-f0-9]{64}$/),
+      correlationId: undefined,
+    });
+  });
+
+  it("does not report a mobile OTP as sent when the provider skips it", async () => {
+    const { service, whatsapp } = createService();
+    whatsapp.sendAuthenticationOtp.mockResolvedValue({
+      status: "skipped",
+      provider: "ak_nexus",
+      reason: "dry_run",
+    });
+    await expect(
+      service.createChallenge("phone_login", "9936968762", {}),
+    ).rejects.toMatchObject({
+      status: 503,
+      response: expect.objectContaining({
+        code: "WHATSAPP_OTP_DELIVERY_FAILED",
+      }),
+    });
+  });
+
+  it("finds a domestic stored phone when login submits country-code digits", async () => {
+    const users = {
+      findByPhone: jest.fn((phone: string) =>
+        Promise.resolve(phone === "9936968762" ? { _id: "user-1" } : null),
+      ),
+    };
+    const whatsapp = {
+      sendAuthenticationOtp: jest
+        .fn()
+        .mockResolvedValue({ status: "accepted", provider: "ak_nexus" }),
+    };
+    const service = new AuthService(
+      users as never,
+      {} as never,
+      testConfig(),
+      { create: jest.fn().mockResolvedValue({}) } as never,
+      {} as never,
+      {} as never,
+      whatsapp as never,
+    );
+
+    await expect(
+      service.sendPhoneOtp("919936968762", "request-otp-1"),
+    ).resolves.toMatchObject({ otpToken: expect.any(String) });
+    expect(users.findByPhone).toHaveBeenNthCalledWith(1, "919936968762");
+    expect(users.findByPhone).toHaveBeenNthCalledWith(2, "9936968762");
+    expect(whatsapp.sendAuthenticationOtp).toHaveBeenCalledWith(
+      expect.objectContaining({
+        phone: "919936968762",
+        correlationId: "request-otp-1",
+      }),
+    );
+  });
 });
 
-/**
- * Signing in takes a password and nothing else, for every account.
- *
- * The email OTP belongs to registration: it proves the address is reachable
- * before the account exists. Once it does, a correct password is sufficient —
- * there is no second factor on login for any role.
- *
- * What login still resolves is the caller's parking grants. Those live in
- * `parking_staff` rather than on `User.role`, so a guard or parking partner
- * reads `role: "customer"` and nothing downstream could tell them apart from a
- * pilgrim without the grants travelling on the session.
- */
 describe("AuthService login issues a session without a second factor", () => {
   const PASSWORD = "correct-horse";
-  // Cheap rounds: this exercises the branch, not bcrypt's cost factor.
   const passwordHash = bcrypt.hashSync(PASSWORD, 4);
 
   const login = async (
@@ -96,7 +151,6 @@ describe("AuthService login issues a session without a second factor", () => {
       save: jest.fn().mockResolvedValue(undefined),
       ...overrides,
     };
-    // Mirrors `.find().select().lean()` in AuthService.activeParkingRoles.
     const parkingStaff = {
       find: jest.fn().mockReturnValue({
         select: jest.fn().mockReturnValue({
@@ -113,6 +167,7 @@ describe("AuthService login issues a session without a second factor", () => {
       { create: jest.fn().mockResolvedValue({}) } as never,
       {} as never,
       parkingStaff as never,
+      { sendAuthenticationOtp: jest.fn() } as never,
     );
     const result = await service.login({
       email: user.email,
@@ -123,7 +178,6 @@ describe("AuthService login issues a session without a second factor", () => {
 
   it("signs a Guest Visitor straight in on password alone", async () => {
     const { result, user } = await login("customer");
-    // No challenge of any kind: the OTP a pilgrim answered belonged to signup.
     expect(result.otpRequired).toBeUndefined();
     expect(result).not.toHaveProperty("challenge");
     expect(result.token).toBe("signed-jwt");
@@ -138,8 +192,6 @@ describe("AuthService login issues a session without a second factor", () => {
   });
 
   it("rejects a wrong password rather than issuing a session", async () => {
-    // The password is the only thing standing in front of an account now, so
-    // its rejection path is the one guarantee this suite cannot omit.
     await expect(login("customer", [], "wrong-password")).rejects.toThrow(
       /Invalid email, phone number, or password/,
     );
@@ -158,8 +210,6 @@ describe("AuthService login issues a session without a second factor", () => {
   });
 
   it("carries the granted parking roles on the session", async () => {
-    // The client cannot tell a guard from a pilgrim otherwise — `role` reads
-    // "customer" for both — so routing to the parking dashboard depends on it.
     const { result } = await login("customer", [
       "parking_manager",
       "security_guard",

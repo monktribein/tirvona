@@ -32,7 +32,6 @@ const MEMORY_KEYS: (keyof UserMemoryProfile)[] = [
   "lastVisitedPage",
 ];
 
-/** Remove Mongo metadata before sending memory back through the strict DTO. */
 const toMemoryPayload = (
   memoryData: Partial<UserMemoryProfile>,
 ): Partial<UserMemoryProfile> => {

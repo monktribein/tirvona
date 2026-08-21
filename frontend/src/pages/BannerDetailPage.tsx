@@ -125,7 +125,6 @@ const BannerDetailPage: React.FC = () => {
           }
         }
       } catch {
-        // Banner details remain useful even if linked content was unpublished.
       }
       if (active) {
         setEntity(linked);

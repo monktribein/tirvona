@@ -42,12 +42,10 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] =
     useState<MarketplaceProductItem | null>(null);
 
-  // Form State
   const [formData, setFormData] = useState<{
     name: string;
     slug: string;
@@ -78,17 +76,14 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
     images: [],
   });
 
-  // Image Upload & URL Toggle State
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [urlInput, setUrlInput] = useState("");
   const [isUploading, setIsUploading] = useState(false);
 
-  // Image File Metadata Tracker (filename & size)
   const [imageMeta, setImageMeta] = useState<
     Record<string, { name: string; size: string }>
   >({});
 
-  // Lightbox Preview Modal State
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
 
   const categories = [
@@ -188,7 +183,6 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
       await marketplaceService.deleteProduct(id);
       addNotification("Deleted", `Product "${name}" deleted.`, "info");
       setProducts((prev) => prev.filter((p) => p._id !== id));
-      // Dispatch real-time auto-sync event
       window.dispatchEvent(new Event("marketplace_updated"));
     } catch (err) {
       addNotification(
@@ -199,7 +193,6 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
     }
   };
 
-  // Image Management Handlers
   const handleFileUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
     replaceIdx: number | null = null,
@@ -402,7 +395,6 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
         }
       }
 
-      // Dispatch real-time cross-component sync event so Landing Page & Public Marketplace refresh immediately!
       window.dispatchEvent(new Event("marketplace_updated"));
 
       setIsModalOpen(false);
@@ -486,7 +478,6 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
 
   return (
     <div className="space-y-6 text-left w-full">
-      {/* ── Page Header (Tirvona Blue Theme) ── */}
       <EnterprisePageHeader
         title="Marketplace Product Catalog"
         subtitle="Manage live products, pricing, inventory & multi-image gallery."
@@ -511,7 +502,6 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
         }
       />
 
-      {/* ── Filters & Search Toolbar ── */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-white dark:bg-[#0B192C] p-4 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm">
         <div className="relative flex items-center">
           <Search size={16} className="absolute left-3 text-gray-400" />
@@ -552,7 +542,6 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* ── Data Table ── */}
       <div className="bg-white dark:bg-[#0B192C] rounded-3xl border border-gray-100 dark:border-slate-800 shadow-sm overflow-hidden">
         {loading ? (
           <div className="py-16 text-center space-y-3">
@@ -607,7 +596,6 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
                       key={p._id}
                       className="hover:bg-gray-50/50 dark:hover:bg-slate-800/40 transition-colors"
                     >
-                      {/* Cover Thumbnail */}
                       <td className="py-3 px-4">
                         <div
                           onClick={() => setPreviewImageUrl(coverImg)}
@@ -629,7 +617,6 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
                         </div>
                       </td>
 
-                      {/* Title & Source */}
                       <td className="py-3 px-4 max-w-xs">
                         <div
                           className="font-extrabold text-[#0B192C] dark:text-white truncate"
@@ -651,14 +638,12 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
                         )}
                       </td>
 
-                      {/* Category */}
                       <td className="py-3 px-4">
                         <span className="px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-950/40 text-[#0A4DA6] dark:text-blue-300 font-extrabold text-[11px] tracking-wide">
                           {humanizeLabel(p.category)}
                         </span>
                       </td>
 
-                      {/* Pricing */}
                       <td className="py-3 px-4">
                         {p.salePrice ? (
                           <div>
@@ -676,7 +661,6 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
                         )}
                       </td>
 
-                      {/* Stock */}
                       <td className="py-3 px-4">
                         {p.status === "out_of_stock" || p.stock <= 0 ? (
                           <span className="px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 font-extrabold text-[10px] border border-red-200 dark:border-red-900 inline-block">
@@ -691,7 +675,6 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
                         )}
                       </td>
 
-                      {/* Images count */}
                       <td className="py-3 px-4">
                         <button
                           onClick={() => handleEditOpen(p)}
@@ -704,12 +687,10 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
                         </button>
                       </td>
 
-                      {/* Status */}
                       <td className="py-3 px-4">
                         <EnterpriseStatusBadge status={p.status || "active"} />
                       </td>
 
-                      {/* Actions */}
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           <button
@@ -753,7 +734,6 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
         )}
       </div>
 
-      {/* ── Product Create / Edit & Image Management Modal ── */}
       <EnterpriseModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -769,7 +749,6 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
           onSubmit={handleSaveProduct}
           className="space-y-5 text-xs font-bold"
         >
-          {/* Section 1: Basic Info */}
           <div className="space-y-3 p-4 bg-gray-50 dark:bg-slate-900/60 rounded-2xl border border-gray-200/60 dark:border-slate-800">
             <h3 className="text-xs font-black text-[#0A4DA6] tracking-wider flex items-center gap-1.5">
               <ShoppingBag size={14} /> Product Overview
@@ -863,7 +842,6 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Section 2: Pricing & Inventory */}
           <div className="space-y-3 p-4 bg-gray-50 dark:bg-slate-900/60 rounded-2xl border border-gray-200/60 dark:border-slate-800">
             <h3 className="text-xs font-black text-[#0A4DA6] tracking-wider flex items-center gap-1.5">
               <Tag size={14} /> Pricing, Stock & Weight
@@ -979,7 +957,6 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Section 3: COMPACT MODERN TIRVONA BLUE PRODUCT IMAGE GALLERY (3-COLUMN GRID) */}
           <div className="space-y-3 p-4 bg-blue-50/40 dark:bg-slate-900/80 rounded-2xl border border-blue-100 dark:border-blue-900/50">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -989,7 +966,6 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
                 </h3>
               </div>
 
-              {/* Compact Action Buttons Header */}
               <div className="flex items-center gap-2">
                 <label className="px-3 py-1.5 bg-[#0A4DA6] hover:bg-blue-900 text-white font-extrabold text-xs rounded-xl flex items-center gap-1.5 shadow-sm cursor-pointer transition-colors shrink-0">
                   <Upload size={13} />
@@ -1014,7 +990,6 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Conditional URL Input Drawer */}
             {showUrlInput && (
               <div className="flex gap-2 p-2 bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-800 rounded-xl transition-all">
                 <input
@@ -1041,7 +1016,6 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
               </div>
             )}
 
-            {/* 3-Column Enterprise Image Grid */}
             {formData.images.length === 0 ? (
               <div className="py-6 text-center space-y-1 bg-white/70 dark:bg-slate-900/60 rounded-xl border border-blue-100 dark:border-blue-950">
                 <ImageIcon
@@ -1071,7 +1045,6 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
                         : "border-gray-200 dark:border-slate-800"
                         } overflow-hidden flex flex-col justify-between group transition-all`}
                     >
-                      {/* Image Thumbnail & Badge Header */}
                       <div className="relative aspect-[4/3] w-full bg-gray-100 dark:bg-slate-800 overflow-hidden">
                         <img
                           src={imgUrl}
@@ -1083,7 +1056,6 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
                           }}
                         />
 
-                        {/* Primary Cover Badge */}
                         {isCover ? (
                           <span className="absolute top-2 left-2 px-2.5 py-0.5 bg-[#0A4DA6] text-white text-[9px] font-black rounded-full shadow-md">
                             ★ Primary Cover
@@ -1094,7 +1066,6 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
                           </span>
                         )}
 
-                        {/* Overlay Actions */}
                         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-1.5 transition-opacity p-2">
                           <button
                             type="button"
@@ -1129,7 +1100,6 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
                         </div>
                       </div>
 
-                      {/* Card Content & Metadata */}
                       <div className="p-2.5 space-y-1.5 bg-white dark:bg-slate-900 border-t border-gray-100 dark:border-slate-800">
                         <div className="flex items-center justify-between text-[10px]">
                           <span
@@ -1143,7 +1113,6 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
                           </span>
                         </div>
 
-                        {/* Card Reorder & Cover Actions */}
                         <div className="flex items-center justify-between pt-1 border-t border-gray-100 dark:border-slate-800 text-[10px]">
                           <div className="flex items-center gap-1">
                             <button
@@ -1188,7 +1157,6 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
             )}
           </div>
 
-          {/* Form Action Controls */}
           <div className="pt-3 border-t border-gray-200 dark:border-slate-800 flex justify-end gap-2">
             <EnterpriseButton
               variant="outline"
@@ -1203,7 +1171,6 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
         </form>
       </EnterpriseModal>
 
-      {/* ── Image Lightbox Preview Modal ── */}
       {previewImageUrl && (
         <div
           className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4"

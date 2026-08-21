@@ -66,8 +66,6 @@ class LeadContactDto {
 
 class LeadMeetingDto {
   @IsOptional() @IsBoolean() requested?: boolean;
-  // Free text rather than a date: the form sends a `datetime-local` value and
-  // an agent may equally note "next Tuesday morning".
   @IsOptional() @IsString() @MaxLength(60) time?: string;
   @IsOptional() @IsIn([...LEAD_MEETING_MODES, ""]) mode?: string;
 }
@@ -84,9 +82,6 @@ export class SaveLeadDto {
   @IsOptional() @IsIn(LEAD_INTERESTS as unknown as string[]) interest?: string;
   @IsOptional() @ValidateNested() @Type(() => LeadMeetingDto)
   meeting?: LeadMeetingDto;
-  // Up to ten Cloudinary image/PDF URLs, or legacy base64 images in demo mode.
-  // Bounded on both axes so one capture cannot fill the 12mb body budget the
-  // module's middleware allows for these routes.
   @IsOptional()
   @IsArray()
   @ArrayMaxSize(10)
@@ -96,10 +91,6 @@ export class SaveLeadDto {
   @IsOptional() @IsString() assignedAgentId?: string;
   @IsOptional() @IsString() @MaxLength(120) assignedAgentName?: string;
   @IsOptional() @IsString() @MaxLength(120) assignedAgentCode?: string;
-  /**
-   * Admin-only. Ignored on the agent routes, where the service always writes
-   * `pending` — an agent must not be able to self-approve a lead.
-   */
   @IsOptional() @IsIn(LEAD_STATUSES as unknown as string[]) status?:
     | "pending"
     | "approved"

@@ -9,12 +9,14 @@ import { CommunityModule } from "../community/community.module";
 import { NotificationOutboxService } from "./notification-outbox.service";
 import { NotificationWorker } from "./notification.worker";
 import { NotificationsGateway } from "./notifications.gateway";
+import { WhatsAppModule } from "../../integrations/whatsapp/whatsapp.module";
 @Module({
   imports: [
     BookingsModule,
     ParkingModule,
     UsersModule,
     CommunityModule,
+    WhatsAppModule,
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({

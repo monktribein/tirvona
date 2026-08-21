@@ -32,10 +32,6 @@ describe("MarketplaceOrderService pricing", () => {
       config(),
     );
 
-  /**
-   * The whole point of server-side pricing: the request carries ids and
-   * quantities only, so a tampered payload cannot set what it pays.
-   */
   it("prices from the catalogue, ignoring anything the client sends", async () => {
     const service = build([PRASAD]);
 
@@ -136,10 +132,6 @@ describe("MarketplaceOrderService order scoping", () => {
     return { service, find, findOne };
   };
 
-  /**
-   * Ownership is part of the query, not a check after loading — so another
-   * customer's order is never read into memory at all.
-   */
   it("confines a pilgrim's order list to their own rows", async () => {
     const { service, find } = buildWithOrders();
 
@@ -195,11 +187,6 @@ describe("MarketplaceOrderService payment verification", () => {
     razorpay_signature: "deadbeef",
   };
 
-  /**
-   * Without a key secret there is no signature to verify. Development may run
-   * against the demo gateway; production must never mark an order paid on an
-   * unverified confirmation.
-   */
   it("refuses unverified confirmations in production", () => {
     expect(build({ nodeEnv: "production" }).signatureValid(dto)).toBe(false);
   });

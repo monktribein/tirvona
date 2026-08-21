@@ -171,37 +171,17 @@ export class BookingPricingService {
     const originalAmount = basePrice + servicesPrice + donationAmount;
     const extraGuestAmount =
       Math.max(0, dto.guestsCount - 2) * 200 * dates.length;
-    // The platform fee is charged on the booking value, so it is derived
-    // before any coupon is applied — a discount reduces what the guest pays,
-    // not the basis on which the fee is assessed.
-    //
-    // Delegated to the shared resolver so the global on/off switch is tested
-    // before the per-ashram policy percentage. The precedence used to run the
-    // other way round, which let a `booking_policies` row keep charging a fee
-    // at checkout while the Super Admin console reported the engine Disabled.
     const platformFee = resolvePlatformFee({
       settings: settings?.platformFee,
       scope: "ashram_booking",
       baseAmount: originalAmount,
       policyPercent: policy?.platformFeePercent,
     });
-    // GST is charged on the platform fee alone. The stay, add-on services,
-    // extra-guest charge and donation are supplied by the ashram and carry no
-    // GST here, so the taxable base is the fee — not the booking value.
     const gstPercent = Number(
       settings?.platformFeeGstRate ?? PLATFORM_FEE_GST_PERCENT,
     );
     const gstAmount = platformFeeGst(platformFee, gstPercent);
 
-    /**
-     * Everything owed before a coupon: stay, services, donation, extra guests,
-     * the platform fee and its GST.
-     *
-     * A discount applies to this whole figure. It used to be calculated on the
-     * ashram's charges alone, so "99% off" still left the platform fee and its
-     * tax payable in full — a ₹370 booking settled at ₹61.82 rather than the
-     * near-zero the guest was shown.
-     */
     const grossPayable = originalAmount + extraGuestAmount + platformFee + gstAmount;
 
     let coupon: any = null;
@@ -213,17 +193,11 @@ export class BookingPricingService {
             ? { _id: dto.appliedOfferId }
             : { promoCode: dto.promoCode!.trim().toUpperCase() }),
           status: "active",
-          // An expiry date stays redeemable through the whole of the day it
-          // names, matching what validation told the guest a moment earlier.
-          // Comparing against the instant instead would reject, at checkout, a
-          // code the page had already shown as applied.
           validTill: { $gte: startOfToday() },
           $or: [{ validFrom: null }, { validFrom: { $lte: new Date() } }],
           remainingRedemptions: { $gt: 0 },
         })
         .lean();
-      // Measured against the same figure the discount comes off, so a coupon
-      // that validated on the booking page cannot be refused at checkout.
       if (!coupon || grossPayable < (coupon.minimumBookingAmount ?? 0))
         throw new BadRequestException(
           "Promo code is invalid or not applicable",
@@ -270,8 +244,6 @@ export class BookingPricingService {
         discountAmount,
         loyaltyDiscount: 0,
         gstAmount,
-        // Stored with the booking so an invoice reprinted after the platform
-        // changes its rate still shows the rate that was actually charged.
         gstPercent,
         gstTaxableAmount: platformFee,
         platformFee,

@@ -1,4 +1,3 @@
-// Tirvona Enterprise Design System 2.0 - zIndex Hierarchy Tokens
 
 export const zIndex = {
   deep: -1,

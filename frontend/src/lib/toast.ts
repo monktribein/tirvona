@@ -25,9 +25,6 @@ const publish = (
 ) => {
   if (typeof window === "undefined" || !message.trim()) return "";
 
-  // API interceptors and page-level handlers can both report the same
-  // completed operation with slightly different wording. Treat emissions of
-  // the same kind in the same event window as one user-facing toast.
   const recent = recentByKind.get(kind);
   const now = Date.now();
   if (recent && now - recent.at < OPERATION_DEDUPE_MS) return recent.id;

@@ -1,10 +1,3 @@
-/**
- * The public Smart Contact API client.
- *
- * Deliberately tiny and dependency-free — no axios, no query library. The page
- * makes exactly one read on load and fire-and-forget writes on taps, and spec
- * §39 budgets the whole page at under two seconds on mobile data.
- */
 
 const API_BASE_URL = (import.meta.env.VITE_API_URL || "api.tirvona.com")
   .trim()
@@ -13,19 +6,12 @@ const API_BASE_URL = (import.meta.env.VITE_API_URL || "api.tirvona.com")
 
 export const API_ROOT = `${API_BASE_URL}/api/v1/smart-contact`;
 
-/**
- * Reads the slug out of the path.
- *
- * `/c/ravindr-bhardwaj` in production; the last non-empty segment is taken so
- * the same code works when the app is served from the Vite dev server root.
- */
 export const slugFromLocation = () => {
   const segments = window.location.pathname.split("/").filter(Boolean);
   const last = segments[segments.length - 1] ?? "";
   return last === "c" ? "" : last;
 };
 
-/** `?src=business-card` — QR placement attribution (spec §28). */
 export const sourceFromLocation = () => {
   const value = new URLSearchParams(window.location.search).get("src") ?? "";
   return value.slice(0, 60);
@@ -34,8 +20,6 @@ export const sourceFromLocation = () => {
 export const fetchProfile = async (slug, { source, scan } = {}) => {
   const params = new URLSearchParams();
   if (source) params.set("src", source);
-  // Tells the server this visit began as a scan rather than a shared link, so
-  // the funnel in spec §51 can separate the two stages.
   if (scan) params.set("scan", "true");
   const query = params.toString();
 
@@ -46,10 +30,6 @@ export const fetchProfile = async (slug, { source, scan } = {}) => {
       { headers: { Accept: "application/json" } },
     );
   } catch {
-    // fetch rejects with an opaque TypeError ("Failed to fetch") for a dead
-    // server, a DNS failure and a CORS rejection alike — the browser will not
-    // say which. Surfacing that string helps nobody, so it becomes a message
-    // that at least names the thing to check.
     const error = new Error(
       "Could not reach the Tirvona contact service. Please check your connection and try again.",
     );
@@ -70,15 +50,6 @@ export const fetchProfile = async (slug, { source, scan } = {}) => {
   return payload.data;
 };
 
-/**
- * Reports a CTA tap.
- *
- * `keepalive` rather than a plain fetch: taps on Call and WhatsApp navigate
- * away immediately, and without it the browser cancels the in-flight request
- * before it leaves — which would systematically undercount exactly the two
- * actions the product most wants to measure. Errors are swallowed; a failed
- * count must never interrupt someone trying to make a phone call.
- */
 export const logEvent = (slug, eventType, source) => {
   if (!slug || !eventType) return;
   try {
@@ -89,22 +60,14 @@ export const logEvent = (slug, eventType, source) => {
       keepalive: true,
     }).catch(() => {});
   } catch {
-    /* analytics is best-effort by design */
   }
 };
 
-/** The dynamic .vcf endpoint (spec §9). */
 export const vcardUrl = (slug, source) => {
   const query = source ? `?src=${encodeURIComponent(source)}` : "";
   return `${API_ROOT}/${encodeURIComponent(slug)}/vcard${query}`;
 };
 
-/**
- * The printable ID card — a CR80 badge (54 × 85.6mm) rendered as vector PDF.
- *
- * Generated per request from live profile data, like the vCard, so a card
- * printed today reflects an edit made this morning.
- */
 export const idCardUrl = (slug, source) => {
   const query = source ? `?src=${encodeURIComponent(source)}` : "";
   return `${API_ROOT}/${encodeURIComponent(slug)}/id-card${query}`;

@@ -72,14 +72,12 @@ export const ProfileMainPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Redirect parking staff / partners directly to their dedicated dashboard
   useEffect(() => {
     if (user && isParkingRole(user.parkingRoles, user.role, user.email)) {
       navigate("/parking/dashboard", { replace: true });
     }
   }, [user, navigate]);
 
-  // Unified Bookings Feed
   const {
     bookings,
     loading: bookingsLoading,
@@ -87,7 +85,6 @@ export const ProfileMainPage: React.FC = () => {
     refresh,
   } = useMyBookings(Boolean(user));
 
-  // Determine active category tab from URL route path
   const getTabFromPath = (
     pathname: string,
   ):
@@ -119,13 +116,11 @@ export const ProfileMainPage: React.FC = () => {
 
   const activeTab = getTabFromPath(location.pathname);
 
-  // Edit Profile Modal state
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editName, setEditName] = useState(user?.name || "");
   const [editPhone, setEditPhone] = useState(user?.phone || "");
   const [saving, setSaving] = useState(false);
 
-  // Bookings sub-tab & filtering state
   const [bookingCategoryTab, setBookingCategoryTab] =
     useState<BookingCategory>("upcoming");
   const [kindFilter, setKindFilter] = useState<"all" | "stay" | "parking">(
@@ -133,13 +128,11 @@ export const ProfileMainPage: React.FC = () => {
   );
   const [cancellingId, setCancellingId] = useState<string | null>(null);
 
-  // Change Password state
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [changingPassword, setChangingPassword] = useState(false);
 
-  // Wishlist local state
   const [wishlistItems, setWishlistItems] = useState([
     {
       id: "ashram-1",
@@ -170,7 +163,6 @@ export const ProfileMainPage: React.FC = () => {
     },
   ]);
 
-  // Payment transactions list
   const transactions = [
     {
       id: "TXN-902181",
@@ -487,7 +479,6 @@ export const ProfileMainPage: React.FC = () => {
   return (
     <div className="min-h-screen pb-24 text-left">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-1 sm:pt-3 space-y-6">
-        {/* User Hero Card */}
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 sm:p-7 shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-5">
           <div className="flex items-center gap-4 sm:gap-5">
             <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-[#0A4DA6] to-[#E58C28] p-0.5 shadow-md shrink-0">
@@ -523,9 +514,7 @@ export const ProfileMainPage: React.FC = () => {
           </button>
         </div>
 
-        {/* ── Main Integrated Sidebar + Content Layout ── */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Left Sidebar Category Navigation (lg:col-span-4) */}
           <div className="lg:col-span-4 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-3 shadow-lg space-y-1 lg:sticky lg:top-24">
             <div className="px-3 py-2 text-[10px] font-black text-gray-400 tracking-wider">
               Profile Categories
@@ -601,12 +590,9 @@ export const ProfileMainPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Right Details Panel (lg:col-span-8) */}
           <div className="lg:col-span-8 min-w-0 space-y-6">
-            {/* TAB 1: OVERVIEW & RECENT ACTIVITY */}
             {activeTab === "overview" && (
               <div className="space-y-6">
-                {/* Quick Stats Grid */}
                 <div>
                   <h3 className="text-sm font-extrabold text-[#0B192C] dark:text-white tracking-wider mb-3">
                     Booking Overview
@@ -635,7 +621,6 @@ export const ProfileMainPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Recent Activity List */}
                 <div className="space-y-3">
                   <h3 className="text-sm font-extrabold text-[#0B192C] dark:text-white tracking-wider">
                     Recent Yatra Activity
@@ -693,7 +678,6 @@ export const ProfileMainPage: React.FC = () => {
               </div>
             )}
 
-            {/* TAB 2: MY BOOKINGS & STAYS */}
             {activeTab === "bookings" && (
               <div className="space-y-5">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
@@ -721,7 +705,6 @@ export const ProfileMainPage: React.FC = () => {
                   </button>
                 </div>
 
-                {/* Sub-tabs & filter */}
                 <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-2 shadow-md flex flex-wrap items-center justify-between gap-3 text-xs font-extrabold">
                   <div className="flex items-center gap-1">
                     {BOOKING_TABS.map((tab) => (
@@ -763,7 +746,6 @@ export const ProfileMainPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Bookings Feed */}
                 {bookingsLoading ? (
                   <div className="space-y-4">
                     {Array.from({ length: 3 }).map((_, i) => (
@@ -885,14 +867,12 @@ export const ProfileMainPage: React.FC = () => {
               </div>
             )}
 
-            {/* TAB: MY ARTICLES & BLOGS */}
             {activeTab === "articles" && <VisitorArticlesTab />}
 
             {activeTab === "volunteer" && <VolunteerApplicationsTab />}
 
             {activeTab === "orders" && <ProfileOrdersPage />}
 
-            {/* TAB 3: WISHLIST & SAVED */}
             {activeTab === "wishlist" && (
               <div className="space-y-5">
                 <div>
@@ -989,7 +969,6 @@ export const ProfileMainPage: React.FC = () => {
               </div>
             )}
 
-            {/* TAB 4: PAYMENT HISTORY & INVOICES */}
             {activeTab === "payments" && (
               <div className="space-y-5">
                 <div>
@@ -1052,7 +1031,6 @@ export const ProfileMainPage: React.FC = () => {
               </div>
             )}
 
-            {/* TAB 5: ACCOUNT SETTINGS */}
             {activeTab === "settings" && (
               <div className="space-y-5">
                 <div>
@@ -1132,7 +1110,6 @@ export const ProfileMainPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Edit Profile Modal */}
       <EnterpriseModal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}

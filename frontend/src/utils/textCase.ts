@@ -25,14 +25,12 @@ const formatTitleWord = (word: string): string => {
   });
 };
 
-/** Formats names, headings, locations and other short labels without changing punctuation. */
 export const toTitleCase = (value: unknown): string => {
   const text = String(value ?? "").trim().replace(/[\t ]+/g, " ");
   if (!text || isLinkLike(text)) return text;
   return text.split(/(\s+)/).map(formatTitleWord).join("");
 };
 
-/** Capitalizes the beginning of every sentence while preserving the author's remaining copy. */
 export const toSentenceCase = (value: unknown): string => {
   const text = String(value ?? "").trim();
   if (!text || isLinkLike(text)) return text;
@@ -61,10 +59,6 @@ const setNativeValue = (
   element.dispatchEvent(new Event("change", { bubbles: true }));
 };
 
-/**
- * Applies consistent casing to user-entered copy at blur time. Fields can opt
- * out or override detection with data-text-case="none|title|sentence".
- */
 export const installAutomaticTextCase = (): (() => void) => {
   const onBlur = (event: FocusEvent) => {
     const element = event.target;

@@ -27,7 +27,6 @@ const FILTERS = [
   { value: "cancelled", label: "Cancelled" },
 ];
 
-/** The visitor's parking booking history. */
 export const ParkingMyBookingsPage: React.FC = () => {
   const [bookings, setBookings] = useState<ParkingBooking[]>([]);
   const [status, setStatus] = useState("");
@@ -69,7 +68,6 @@ export const ParkingMyBookingsPage: React.FC = () => {
           </p>
         </header>
 
-        {/* Status filter */}
         <div className="flex gap-1.5 overflow-x-auto pb-1">
           {FILTERS.map((f) => (
             <button

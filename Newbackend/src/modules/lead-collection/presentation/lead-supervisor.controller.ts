@@ -26,22 +26,6 @@ import { LeadQueryDto, SaveLeadDto } from "./dtos/lead.dto";
 import { LeadAgentGuard } from "./guards/lead-agent.guard";
 import { LeadSupervisorGuard } from "./guards/lead-supervisor.guard";
 
-/**
- * The supervisor dashboard surface for Lead Collection.
- *
- * Every route is scoped to the supervisor's own district. A supervisor from
- * Mathura cannot see agents or leads belonging to Agra — the district check
- * runs server-side on every request, not just in the UI.
- *
- * Stacks two guards:
- *  1. `LeadAgentGuard` — authenticates the lead-scope JWT and attaches
- *     `req.leadUser`.
- *  2. `LeadSupervisorGuard` — rejects anything that is not
- *     `field_supervisor`.
- *
- * `@Public()` at class level takes the platform's global `JwtAuthGuard` out
- * of the way, just like `LeadAgentController` and `LeadAuthController`.
- */
 @ApiTags("Lead Collection")
 @Public()
 @UseGuards(LeadAgentGuard, LeadSupervisorGuard)
@@ -51,8 +35,6 @@ export class LeadSupervisorController {
     private readonly leadUsers: LeadUsersService,
     private readonly leads: LeadsService,
   ) { }
-
-  // ── Dashboard ──────────────────────────────────────────────────────────
 
   @Get("dashboard")
   async dashboard(@CurrentLeadAgent() supervisor: AuthenticatedLeadUser) {
@@ -79,8 +61,6 @@ export class LeadSupervisorController {
     };
   }
 
-  // ── Agents ─────────────────────────────────────────────────────────────
-
   @Get("agents")
   async listAgents(
     @CurrentLeadAgent() supervisor: AuthenticatedLeadUser,
@@ -106,7 +86,6 @@ export class LeadSupervisorController {
       supervisor.state,
       supervisor.district,
     );
-    // Attach lead stats for this specific agent.
     const stats = await this.leads.stats({
       capturedBy: agent._id.toString(),
       state: supervisor.state,
@@ -125,7 +104,6 @@ export class LeadSupervisorController {
     @Param("agentId") agentId: string,
     @Query() query: LeadQueryDto,
   ) {
-    // Verify the agent belongs to the supervisor's district first.
     await this.leadUsers.findOneInDistrict(
       agentId,
       supervisor.state,
@@ -149,7 +127,6 @@ export class LeadSupervisorController {
     @Param("agentId") agentId: string,
     @Param("leadId") leadId: string,
   ) {
-    // District check on the agent.
     await this.leadUsers.findOneInDistrict(
       agentId,
       supervisor.state,
@@ -173,7 +150,6 @@ export class LeadSupervisorController {
     @Param("leadId") leadId: string,
     @Body() dto: SaveLeadDto,
   ) {
-    // District check on the agent.
     await this.leadUsers.findOneInDistrict(
       agentId,
       supervisor.state,
@@ -190,8 +166,6 @@ export class LeadSupervisorController {
       }),
     };
   }
-
-  // ── Agent CRUD ─────────────────────────────────────────────────────────
 
   @Post("agents")
   async createAgent(
@@ -222,7 +196,6 @@ export class LeadSupervisorController {
       supervisor.district,
     );
 
-    // District & role are strictly guarded by supervisor's jurisdiction
     delete dto.state;
     delete dto.district;
     if (dto.role && dto.role !== "field_agent" && dto.role !== "lead_executive") {

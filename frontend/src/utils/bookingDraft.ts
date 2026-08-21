@@ -25,9 +25,6 @@ export interface BookingDraftPayload {
 
 const DRAFT_KEY = "tirvona_booking_draft";
 
-/**
- * Save booking draft to LocalStorage & SessionStorage
- */
 export const saveBookingDraft = (draft: BookingDraftPayload): void => {
   try {
     const json = JSON.stringify(draft);
@@ -38,9 +35,6 @@ export const saveBookingDraft = (draft: BookingDraftPayload): void => {
   }
 };
 
-/**
- * Retrieve active booking draft
- */
 export const getBookingDraft = (): BookingDraftPayload | null => {
   try {
     const raw =
@@ -48,7 +42,6 @@ export const getBookingDraft = (): BookingDraftPayload | null => {
     if (!raw) return null;
     const draft: BookingDraftPayload = JSON.parse(raw);
 
-    // Draft expires after 24 hours
     if (Date.now() - draft.timestamp > 24 * 60 * 60 * 1000) {
       clearBookingDraft();
       return null;
@@ -59,9 +52,6 @@ export const getBookingDraft = (): BookingDraftPayload | null => {
   }
 };
 
-/**
- * Clear booking draft after successful booking
- */
 export const clearBookingDraft = (): void => {
   try {
     localStorage.removeItem(DRAFT_KEY);
@@ -72,9 +62,6 @@ export const clearBookingDraft = (): void => {
   }
 };
 
-/**
- * Check if a valid draft exists
- */
 export const hasBookingDraft = (): boolean => {
   return getBookingDraft() !== null;
 };

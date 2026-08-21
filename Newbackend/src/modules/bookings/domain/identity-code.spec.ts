@@ -122,7 +122,6 @@ describe("full identity codes", () => {
     ));
 
   it("rejects codes that match the shape but name nothing", () => {
-    // Sequence 00000 is no property, and A1000 is below the block start.
     expect(parseIdentityCode("BCAG-00000-A1001")).toBeNull();
     expect(parseIdentityCode("BCAG-00001-A1000")).toBeNull();
     expect(parseIdentityCode("BCXX-00001-A1001")).toBeNull();

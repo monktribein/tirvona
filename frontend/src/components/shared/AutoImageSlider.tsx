@@ -1,18 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-/**
- * Auto-advancing photo slider for an article's gallery.
- *
- * Slides are laid out in a flex track that is translated by whole percentages,
- * so the movement is one CSS transition rather than a per-frame animation —
- * smooth without holding the main thread. A single image renders as a plain
- * photo: no track, no controls, no timer.
- */
 export const AutoImageSlider: React.FC<{
   images: string[];
   alt?: string;
-  /** Milliseconds between slides. */
   interval?: number;
   className?: string;
 }> = ({ images, alt = "", interval = 4000, className = "" }) => {
@@ -26,8 +17,6 @@ export const AutoImageSlider: React.FC<{
     [slides.length],
   );
 
-  // Auto-advance. Pauses on hover/focus and while the tab is hidden, so a
-  // backgrounded article is not silently cycling.
   useEffect(() => {
     if (slides.length < 2 || paused) return;
     const timer = window.setInterval(() => {
@@ -36,8 +25,6 @@ export const AutoImageSlider: React.FC<{
     return () => window.clearInterval(timer);
   }, [slides.length, paused, interval]);
 
-  // A shrinking gallery (a photo removed while open) must not strand the index
-  // past the end, which would show an empty frame.
   useEffect(() => {
     setIndex((i) => (i >= slides.length ? 0 : i));
   }, [slides.length]);
@@ -82,8 +69,6 @@ export const AutoImageSlider: React.FC<{
             key={`${src}-${i}`}
             src={src}
             alt={`${alt} ${i + 1}`}
-            // shrink-0 + w-full makes each slide exactly one frame wide;
-            // without it flex would compress them all into view at once.
             className="w-full h-full shrink-0 object-cover"
             loading={i === 0 ? "eager" : "lazy"}
           />

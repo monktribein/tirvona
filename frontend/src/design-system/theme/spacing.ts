@@ -1,4 +1,3 @@
-// Tirvona Enterprise Design System 2.0 - Spacing Tokens
 
 export const spacing = {
   xs: "0.25rem", // 4px

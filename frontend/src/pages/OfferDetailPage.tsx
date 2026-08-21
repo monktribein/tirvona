@@ -25,7 +25,6 @@ export const OfferDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
 
-  // Countdown timer state
   const [timeLeft, setTimeLeft] = useState<{
     days: number;
     hours: number;
@@ -56,14 +55,6 @@ export const OfferDetailPage: React.FC = () => {
     fetchOfferDetail();
   }, [fetchOfferDetail]);
 
-  /**
-   * Tick the countdown down to the end of the offer's last valid day.
-   *
-   * `timeLeft` was declared and rendered but never computed, so the banner
-   * always read 0 : 0 : 0 : 0 no matter how long the offer had to run. The
-   * expiry is taken as the end of the day it names, matching the rule the
-   * server applies when it decides whether the code still redeems.
-   */
   useEffect(() => {
     if (!offer?.validTill) return;
     const deadline = new Date(offer.validTill);
@@ -156,11 +147,7 @@ export const OfferDetailPage: React.FC = () => {
 
   return (
     <div className="min-h-screen pt-24 pb-28 text-left space-y-8">
-      {/* Header. Card-based on the page background, matching the other detail
-        pages (volunteer, marketplace, blog) rather than the full-bleed dark
-        hero this page used to carry on its own. */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-        {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-xs font-extrabold text-gray-400 overflow-x-auto whitespace-nowrap">
           <Link to="/" className="hover:text-[#0A4DA6] transition-colors">
             Home
@@ -233,9 +220,6 @@ export const OfferDetailPage: React.FC = () => {
               </p>
             )}
 
-            {/* Countdown, shown only while it means something. An offer with
-              no expiry has nothing to count down, and an expired one says so
-              instead of displaying a row of zeros. */}
             {expiresAt && !hasExpired && (
               <div className="bg-gray-50 dark:bg-slate-900/50 border border-gray-100 dark:border-slate-800 rounded-2xl p-4 inline-flex flex-wrap items-center gap-4">
                 <div className="flex items-center gap-2 text-xs font-black text-[#E58C28] sm:border-r sm:border-gray-200 dark:sm:border-slate-700 sm:pr-4">
@@ -277,11 +261,8 @@ export const OfferDetailPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Content Body */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column: Overview, Highlights, Benefits, Terms */}
         <div className="lg:col-span-2 space-y-8">
-          {/* Highlights & Included Benefits */}
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 sm:p-8 space-y-6 shadow-sm">
             <h2 className="text-xl font-black text-[#0B192C] dark:text-white">
               Offer Highlights & Included Perks
@@ -313,7 +294,6 @@ export const OfferDetailPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Applicable Ashrams */}
           {primaryAshram && (
             <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 sm:p-8 space-y-4 shadow-sm">
               <h2 className="text-xl font-black text-[#0B192C] dark:text-white flex items-center gap-2">
@@ -345,7 +325,6 @@ export const OfferDetailPage: React.FC = () => {
             </div>
           )}
 
-          {/* Terms & Conditions */}
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 sm:p-8 space-y-4 shadow-sm">
             <h2 className="text-xl font-black text-[#0B192C] dark:text-white flex items-center gap-2">
               <FileText size={20} className="text-gray-400" /> Terms &
@@ -368,7 +347,6 @@ export const OfferDetailPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Column: Promo Box Sidebar & Booking Card */}
         <div className="space-y-6">
           <div className="bg-white dark:bg-[#0B192C] border border-gray-150 dark:border-slate-800 rounded-[28px] p-6 space-y-6 shadow-sm sticky top-24">
             <div className="space-y-2 border-b border-gray-100 dark:border-slate-800 pb-4">
@@ -413,8 +391,6 @@ export const OfferDetailPage: React.FC = () => {
               </div>
             </div>
 
-            {/* An expired coupon would be rejected the moment the booking page
-              tried to apply it, so the route is closed here instead. */}
             <button
               onClick={handleBookNow}
               disabled={hasExpired}
@@ -432,7 +408,6 @@ export const OfferDetailPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Sticky Bottom Booking Bar */}
       <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/90 dark:bg-[#0B192C]/90 backdrop-blur-md border-t border-gray-200 dark:border-slate-800 p-4 shadow-2xl">
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
           <div>

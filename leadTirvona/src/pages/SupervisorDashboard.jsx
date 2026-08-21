@@ -48,29 +48,24 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
   const [selectedAgentId, setSelectedAgentId] = useState(null);
   const [selectedLead, setSelectedLead] = useState(null);
 
-  // Dashboard Stats State
   const [dashboardData, setDashboardData] = useState(null);
   const [loadingDashboard, setLoadingDashboard] = useState(false);
 
-  // Agents Table State
   const [agents, setAgents] = useState([]);
   const [loadingAgents, setLoadingAgents] = useState(true);
   const [agentSearch, setAgentSearch] = useState('');
   const [page, setPage] = useState(1);
   const limit = 20;
 
-  // District Leads State
   const [districtLeads, setDistrictLeads] = useState([]);
   const [loadingLeads, setLoadingLeads] = useState(false);
   const [leadSearch, setLeadSearch] = useState('');
   const [leadStatusFilter, setLeadStatusFilter] = useState('all');
 
-  // Agent Detail Drilldown State
   const [agentDetail, setAgentDetail] = useState(null);
   const [agentLeads, setAgentLeads] = useState([]);
   const [loadingAgentDetail, setLoadingAgentDetail] = useState(false);
 
-  // Create / Edit Agent Modal State
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingAgent, setEditingAgent] = useState(null);
   const [form, setForm] = useState({
@@ -82,22 +77,18 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
     notes: '',
   });
 
-  // Password Reset State
   const [resettingAgent, setResettingAgent] = useState(null);
   const [newPassword, setNewPassword] = useState('');
 
-  // Delete Confirm State
   const [confirmDeleteAgent, setConfirmDeleteAgent] = useState(null);
 
   const [saving, setSaving] = useState(false);
   const [createError, setCreateError] = useState('');
   const [toastMessage, setToastMessage] = useState(null);
 
-  // Language State
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
   const langRef = useRef(null);
 
-  // Notifications State
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState([
     {
@@ -127,7 +118,6 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
   ]);
   const notifRef = useRef(null);
 
-  // Close dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (langRef.current && !langRef.current.contains(event.target)) {
@@ -152,7 +142,6 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  // Open Edit Agent Modal
   const openEdit = (agent) => {
     setEditingAgent(agent);
     setForm({
@@ -168,7 +157,6 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
     setShowCreateModal(true);
   };
 
-  // Open Create Agent Modal
   const openCreate = () => {
     setEditingAgent(null);
     setForm({
@@ -184,7 +172,6 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
     setShowCreateModal(true);
   };
 
-  // Reset Agent Password
   const handleResetPassword = async (e) => {
     e.preventDefault();
     if (!newPassword || newPassword.length < 8) {
@@ -205,7 +192,6 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
     }
   };
 
-  // Toggle Agent Active / Suspended
   const handleToggleStatus = async (agent) => {
     const nextStatus = agent.status === 'active' ? 'suspended' : 'active';
     setSaving(true);
@@ -220,7 +206,6 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
     }
   };
 
-  // Delete Field Agent
   const handleDeleteAgent = async () => {
     if (!confirmDeleteAgent) return;
     setSaving(true);
@@ -237,7 +222,6 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
     }
   };
 
-  // Load Dashboard Data
   const loadDashboard = useCallback(async () => {
     setLoadingDashboard(true);
     try {
@@ -250,7 +234,6 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
     }
   }, []);
 
-  // Load Field Agents
   const loadAgents = useCallback(async () => {
     setLoadingAgents(true);
     try {
@@ -263,7 +246,6 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
     }
   }, []);
 
-  // Load All District Leads
   const loadDistrictLeads = useCallback(async () => {
     setLoadingLeads(true);
     try {
@@ -289,7 +271,6 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
     if (activeNav === 'leads') loadDistrictLeads();
   };
 
-  // Open specific agent details
   const handleOpenAgent = async (agentId) => {
     setSelectedAgentId(agentId);
     setActiveNav('agent-detail');
@@ -308,7 +289,6 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
     }
   };
 
-  // Handle Save Agent Form Submit (Create or Update)
   const handleSaveAgent = async (e) => {
     e.preventDefault();
     setCreateError('');
@@ -379,7 +359,6 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans text-left">
-      {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 animate-bounce">
           <div
@@ -395,9 +374,7 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
         </div>
       )}
 
-      {/* Top Main Navbar (Matching Super Admin Premium Header Exactly) */}
       <header className="bg-white border-b border-gray-200/80 sticky top-0 z-40 px-4 sm:px-8 py-3 flex items-center justify-between gap-4 shadow-2xs">
-        {/* Left: Branding & Logo */}
         <div className="flex items-center gap-3.5 shrink-0">
           <div className="w-10 h-10 rounded-full border border-blue-100 bg-blue-50/50 flex items-center justify-center p-1 shadow-2xs">
             <img src="/logo.png" alt="Tirvona Logo" className="h-6 w-auto object-contain" />
@@ -410,7 +387,6 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
           </div>
         </div>
 
-        {/* Center: Wide Search Bar with Outline & Shortcut (Super Admin Style) */}
         <div className="hidden md:flex items-center relative flex-1 max-w-xl mx-4 lg:mx-8">
           <div className="relative w-full">
             <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#0A4DA6]" />
@@ -427,10 +403,8 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
           </div>
         </div>
 
-        {/* Right: Language Pill, Notifications, Public Portal & Sign Out */}
         <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
           
-          {/* Language Selector Dropdown */}
           <div className="relative" ref={langRef}>
             <button
               type="button"
@@ -479,7 +453,6 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
             )}
           </div>
 
-          {/* Notifications Dropdown */}
           <div className="relative" ref={notifRef}>
             <button
               type="button"
@@ -579,10 +552,8 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
         </div>
       </header>
 
-      {/* Main Workspace Body with Sidebar */}
       <div className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 grid grid-cols-1 lg:grid-cols-[250px_1fr] gap-5 sm:gap-6 text-left">
         
-        {/* Left Navigation Sidebar */}
         <aside className="space-y-4 sm:space-y-5">
           <div className="bg-white border border-[#E2E8F0] rounded-2xl sm:rounded-3xl p-3.5 sm:p-4 shadow-xs space-y-1.5">
             <div className="px-3 py-1.5 text-xs font-bold text-[#64748B] tracking-wider uppercase">
@@ -631,7 +602,6 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
             </button>
           </div>
 
-          {/* District Quick Info Card */}
           <div className="bg-white border border-[#E2E8F0] rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-xs space-y-3">
             <div className="flex items-center gap-2 text-xs font-extrabold text-[#0F172A] uppercase tracking-wider">
               <ShieldCheck size={16} className="text-[#0A4DA6]" />
@@ -653,7 +623,6 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
             </div>
           </div>
 
-          {/* Logged in supervisor profile card */}
           <div className="bg-white border border-[#E2E8F0] rounded-2xl sm:rounded-3xl p-4 shadow-xs flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-blue-50 text-[#0A4DA6] flex items-center justify-center font-extrabold text-sm shrink-0">
               {supervisor?.name?.slice(0, 2).toUpperCase() || 'SP'}
@@ -665,13 +634,10 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
           </div>
         </aside>
 
-        {/* Main Content Area */}
         <main className="space-y-5">
           
-          {/* VIEW 1: FIELD AGENTS LIST TABLE */}
           {(activeNav === 'agents' || !activeNav) && (
             <div className="space-y-5">
-              {/* Enterprise Page Header Card */}
               <div className="bg-white border border-[#E2E8F0] rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-2xl bg-blue-50 text-[#0A4DA6] flex items-center justify-center shrink-0">
@@ -703,7 +669,6 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
                 </div>
               </div>
 
-              {/* Search Bar Card */}
               <div className="bg-white border border-[#E2E8F0] rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-xs">
                 <div className="relative w-full lg:w-[420px]">
                   <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B]" />
@@ -720,7 +685,6 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
                 </div>
               </div>
 
-              {/* Agents Table Container */}
               <div className="bg-white border border-[#E2E8F0] rounded-2xl sm:rounded-3xl overflow-hidden shadow-xs">
                 {loadingAgents ? (
                   <div className="p-16 flex flex-col items-center gap-3 text-[#64748B]">
@@ -865,7 +829,6 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
                   </div>
                 )}
 
-                {/* Pagination Controls */}
                 {!loadingAgents && filteredAgents.length > 0 && (
                   <div className="flex items-center justify-between px-6 py-4 border-t border-[#E2E8F0] bg-[#F8FAFC]/50">
                     <span className="text-xs sm:text-sm font-medium text-[#64748B]">
@@ -893,7 +856,6 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
             </div>
           )}
 
-          {/* VIEW 2: OVERVIEW DASHBOARD */}
           {activeNav === 'dashboard' && (
             <div className="space-y-5">
               <div className="bg-white border border-[#E2E8F0] rounded-2xl sm:rounded-3xl p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -909,7 +871,6 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
                 </div>
               </div>
 
-              {/* Stats Grid */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <div className="bg-white border border-[#E2E8F0] rounded-2xl sm:rounded-3xl p-5 shadow-xs">
                   <div className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider">{t('Total Field Agents')}</div>
@@ -938,7 +899,6 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
             </div>
           )}
 
-          {/* VIEW 3: AGENT DETAIL VIEW */}
           {activeNav === 'agent-detail' && (
             <div className="space-y-5">
               <button
@@ -956,7 +916,6 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
                 </div>
               ) : (
                 <>
-                  {/* Agent Card */}
                   <div className="bg-white border border-[#E2E8F0] rounded-2xl sm:rounded-3xl p-6 shadow-xs">
                     <div className="flex items-center gap-4 pb-4 border-b border-[#E2E8F0]">
                       <div className="w-12 h-12 rounded-2xl bg-[#0A4DA6] text-white flex items-center justify-center font-extrabold text-base">
@@ -995,7 +954,6 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
                     </div>
                   </div>
 
-                  {/* Leads List */}
                   <div className="bg-white border border-[#E2E8F0] rounded-2xl sm:rounded-3xl p-6 shadow-xs space-y-4">
                     <h3 className="text-sm font-extrabold text-[#0F172A]">{t('Captured Leads')} ({agentLeads.length})</h3>
 
@@ -1052,12 +1010,10 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
         </main>
       </div>
 
-      {/* CREATE / EDIT FIELD AGENT MODAL */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-fadeIn">
           <div className="bg-white border border-[#E2E8F0] w-full max-w-2xl rounded-2xl sm:rounded-3xl p-6 sm:p-8 space-y-5 text-left shadow-2xl animate-scaleUp relative overflow-hidden">
             
-            {/* Header */}
             <div className="flex justify-between items-start border-b border-[#E2E8F0] pb-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-blue-50 text-[#0A4DA6] flex items-center justify-center shrink-0">
@@ -1091,10 +1047,8 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
               </div>
             )}
 
-            {/* Body */}
             <form onSubmit={handleSaveAgent} className="space-y-4 text-xs">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* FULL NAME */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-[#475569] block tracking-wider uppercase">{t('Full Name')} *</label>
                   <input
@@ -1105,7 +1059,6 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
                   />
                 </div>
 
-                {/* MOBILE NUMBER */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-[#475569] block tracking-wider uppercase">{t('Mobile Number')} *</label>
                   <input
@@ -1118,7 +1071,6 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
                   <p className="text-[11px] text-[#64748B] font-medium">Used as the sign-in handle.</p>
                 </div>
 
-                {/* EMAIL */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-[#475569] block tracking-wider uppercase">{t('Email')}</label>
                   <input
@@ -1129,7 +1081,6 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
                   />
                 </div>
 
-                {/* PASSWORD */}
                 {!editingAgent && (
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-[#475569] block tracking-wider uppercase">{t('Password')} *</label>
@@ -1144,7 +1095,6 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
                   </div>
                 )}
 
-                {/* ROLE */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-[#475569] block tracking-wider uppercase">{t('Role')} *</label>
                   <select
@@ -1157,7 +1107,6 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
                   </select>
                 </div>
 
-                {/* REGION */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-[#475569] block tracking-wider uppercase">{t('Region')} *</label>
                   <select
@@ -1169,7 +1118,6 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
                   <p className="text-[11px] text-[#64748B] font-medium">The agent is restricted to this state and district.</p>
                 </div>
 
-                {/* EMPLOYEE CODE */}
                 <div className="space-y-1.5 sm:col-span-2">
                   <label className="text-xs font-bold text-[#475569] block tracking-wider uppercase">{t('Employee Code')}</label>
                   <input
@@ -1179,7 +1127,6 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
                   />
                 </div>
 
-                {/* INTERNAL NOTES */}
                 <div className="space-y-1.5 sm:col-span-2">
                   <label className="text-xs font-bold text-[#475569] block tracking-wider uppercase">INTERNAL NOTES</label>
                   <textarea
@@ -1191,7 +1138,6 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
                 </div>
               </div>
 
-              {/* Footer */}
               <div className="pt-4 border-t border-[#E2E8F0] flex justify-end gap-3">
                 <button
                   type="button"
@@ -1216,7 +1162,6 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
         </div>
       )}
 
-      {/* PASSWORD RESET MODAL */}
       {resettingAgent && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-fadeIn">
           <div className="bg-white border border-[#E2E8F0] w-full max-w-md rounded-2xl sm:rounded-3xl p-6 space-y-4 text-left shadow-2xl animate-scaleUp relative overflow-hidden">
@@ -1273,7 +1218,6 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
         </div>
       )}
 
-      {/* DELETE AGENT CONFIRMATION MODAL */}
       {confirmDeleteAgent && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-fadeIn">
           <div className="bg-white border border-[#E2E8F0] w-full max-w-md rounded-2xl sm:rounded-3xl p-6 space-y-4 text-left shadow-2xl animate-scaleUp relative overflow-hidden">
@@ -1320,7 +1264,6 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
         </div>
       )}
 
-      {/* LEAD DETAILS POPUP */}
       {selectedLead && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F172A]/50 backdrop-blur-xs animate-fadeIn">
           <div className="bg-white border border-[#E2E8F0] rounded-2xl sm:rounded-3xl p-6 sm:p-8 w-full max-w-xl shadow-2xl relative animate-scaleUp text-left max-h-[90vh] overflow-y-auto space-y-4">
@@ -1348,7 +1291,6 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
               </p>
             </div>
 
-            {/* Room Inventory & Pricing */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-4 bg-[#F8FAFC] rounded-2xl text-xs border border-[#E2E8F0]">
               <div>
                 <span className="text-[10px] font-bold text-[#64748B] block uppercase">TOTAL ROOMS</span>
@@ -1368,7 +1310,6 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
               </div>
             </div>
 
-            {/* Contact Person */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 bg-[#F8FAFC] rounded-2xl text-xs border border-[#E2E8F0]">
               <div>
                 <span className="text-[10px] font-bold text-[#64748B] block uppercase">OWNER / MANAGER</span>
@@ -1380,7 +1321,6 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
               </div>
             </div>
 
-            {/* Meeting Details */}
             {selectedLead.meeting?.requested && (
               <div className="p-3.5 bg-blue-50/60 rounded-2xl border border-blue-100 text-xs">
                 <span className="text-[10px] font-bold text-[#0A4DA6] uppercase block">MEETING REQUESTED</span>
@@ -1391,7 +1331,6 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
               </div>
             )}
 
-            {/* Notes */}
             {selectedLead.notes && (
               <div className="space-y-1.5 text-xs">
                 <span className="text-[10px] font-bold text-[#64748B] uppercase">INTERNAL NOTES</span>
@@ -1399,7 +1338,6 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
               </div>
             )}
 
-            {/* Images */}
             {Array.isArray(selectedLead.images) && selectedLead.images.length > 0 && (
               <div className="space-y-1.5 text-xs">
                 <span className="text-[10px] font-bold text-[#64748B] uppercase">ATTACHED PHOTOS ({selectedLead.images.length})</span>
@@ -1416,7 +1354,6 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
               </div>
             )}
 
-            {/* Modal Actions */}
             <div className="flex items-center justify-between pt-4 border-t border-[#E2E8F0]">
               <button
                 onClick={() => setSelectedLead(null)}

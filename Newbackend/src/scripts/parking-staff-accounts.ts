@@ -6,29 +6,12 @@ import { AppModule } from "../app.module";
 import { applyDnsServersFromEnvironment } from "../config/environment";
 import { PARKING_MODEL } from "../modules/parking/domain/parking.constants";
 
-/**
- * Inspect — and optionally reset the password of — the accounts behind parking
- * role grants.
- *
- * Parking roles live in `parking_staff`, not on `User.role`, so these accounts
- * are easy to lose track of: user management does not show their parking role,
- * and the parking console does not show whether they can even sign in.
- *
- *   npx ts-node src/scripts/parking-staff-accounts.ts
- *   npx ts-node src/scripts/parking-staff-accounts.ts --password 'yourpassword'
- *
- * Without --password nothing is written. The password is an argument on purpose
- * so no credential is committed to the repository.
- */
-
 const readPassword = (): string | undefined => {
   const index = process.argv.indexOf("--password");
   if (index === -1) return undefined;
   const value = process.argv[index + 1];
   if (!value || value.startsWith("--"))
     throw new Error("--password needs a value, e.g. --password 'secret123'");
-  // Matches AdminResetPasswordDto, so this script cannot set a password the
-  // API itself would reject.
   if (value.length < 6)
     throw new Error("Password must be at least 6 characters");
   return value;
@@ -36,9 +19,6 @@ const readPassword = (): string | undefined => {
 
 async function main(): Promise<void> {
   const password = readPassword();
-  // Same DNS bootstrap main.ts performs. Without it an Atlas SRV lookup uses
-  // the machine's resolver, which on a host that proxies DNS through localhost
-  // answers ECONNREFUSED and the script never connects.
   applyDnsServersFromEnvironment();
   const app = await NestFactory.createApplicationContext(AppModule, {
     logger: ["error", "warn"],
@@ -58,7 +38,6 @@ async function main(): Promise<void> {
       return;
     }
 
-    // One account can hold several grants, so collapse to unique users.
     const byUser = new Map<string, any[]>();
     for (const grant of grants) {
       const id = String(grant.userId);
@@ -73,7 +52,6 @@ async function main(): Promise<void> {
 
     const blocked: string[] = [];
     for (const [userId, held] of byUser) {
-      // passwordHash is `select: false`, so it has to be asked for explicitly.
       const user = await users.findById(userId).select("+passwordHash");
       if (!user) {
         out(`  ! ${userId} — grant points at a user that no longer exists`);
@@ -82,15 +60,10 @@ async function main(): Promise<void> {
 
       if (password) {
         user.passwordHash = await bcrypt.hash(password, 12);
-        // Same as UsersService.reset: invalidate any live session so the old
-        // credential cannot keep a token alive.
         user.tokenVersion = Number(user.tokenVersion ?? 0) + 1;
         await user.save();
       }
 
-      // Status per grant, not just the roles: a revoked grant still lists a
-      // role, and it is the grant's status that decides whether login treats
-      // the account as staff.
       const roles = held
         .map((g) => `${g.parkingRole} [${g.status ?? "no status field"}]`)
         .join(", ");
@@ -107,11 +80,6 @@ async function main(): Promise<void> {
         }`,
       );
 
-      // Mirrors AuthService.isGuestVisitor(): a `customer` is challenged with
-      // an emailed OTP, unless an ACTIVE parking grant marks them a role
-      // holder. A revoked grant does not count, so an account whose only grant
-      // is inactive falls back to the Visitor flow — and if its mailbox
-      // receives no mail, the password alone will not get it in.
       const active = held.filter((grant) => grant.status === "active");
       out(
         `      sign-in      : ${

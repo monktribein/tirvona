@@ -20,17 +20,11 @@ export const ManageRoomsPage: React.FC = () => {
   const [rooms, setRooms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Create / Edit Modal State. One form serves both, so the two can never
-  // disagree about which fields a room category has.
   const [showCreate, setShowCreate] = useState(false);
   const [editRoomId, setEditRoomId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<any>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  // The modal's ashram is tracked separately from the page filter. Sharing one
-  // state meant the modal's "Select Ashram" silently re-pointed the whole page,
-  // and the filter could hold the "all" sentinel, which is not a valid
-  // `ashramId` to create a room against.
   const [formAshramId, setFormAshramId] = useState("");
   const [name, setName] = useState("");
   const [type, setType] = useState("private_room");
@@ -39,22 +33,11 @@ export const ManageRoomsPage: React.FC = () => {
   const [totalInventory, setTotalInventory] = useState("10");
   const [basePrice, setBasePrice] = useState("800");
   const [amenities, setAmenities] = useState("Attached Bath, WiFi, Cooler");
-  // Edit-only. A new category is always born active, and `CreateRoomDto` has
-  // no `status` field — the server rejects unknown keys, so create must not
-  // send one.
   const [status, setStatus] = useState("active");
 
-  /**
-   * `addNotification` is rebuilt on every render of the notification provider,
-   * so depending on it directly gave the fetchers a new identity each time a
-   * toast appeared — which re-ran their effects and reset the selection. Reading
-   * it through a ref keeps them stable.
-   */
   const notifyRef = useRef(addNotification);
   notifyRef.current = addNotification;
 
-  // Selection, persistence and the "All Ashrams" default all live in the hook,
-  // so this page cannot drift from Add-On Services or the Inventory Calendar.
   const {
     ashrams: myAshrams,
     selectedAshramId,
@@ -72,22 +55,16 @@ export const ManageRoomsPage: React.FC = () => {
       ),
   });
 
-  // Read inside the fetcher so it can fan out without depending on (and being
-  // rebuilt by) the ashram list.
   const targetsRef = useRef<any[]>([]);
   targetsRef.current = targetAshrams;
 
   const fetchRooms = useCallback(async () => {
     setLoading(true);
     try {
-      // "All Ashrams" is a client-side fan-out: there is no server route that
-      // returns every managed property's categories in one call.
       const targets = targetsRef.current;
       const results = await Promise.allSettled(
         targets.map((a: any) => ashramService.getManagedById(a._id)),
       );
-      // One unreachable property must not blank out the rest, so failures are
-      // reported once and the categories that did load are still shown.
       const merged: any[] = [];
       let failures = 0;
       results.forEach((result, index) => {
@@ -124,8 +101,6 @@ export const ManageRoomsPage: React.FC = () => {
     }
   }, []);
 
-  // Rooms follow whichever ashram is selected — an owner with several
-  // properties needs to reach all of them, not just the first.
   useEffect(() => {
     if (!selectedAshramId) {
       setRooms([]);
@@ -135,12 +110,8 @@ export const ManageRoomsPage: React.FC = () => {
     fetchRooms();
   }, [selectedAshramId, fetchRooms]);
 
-  /** Reset the form to defaults for a fresh category. */
   const openCreate = () => {
     setEditRoomId(null);
-    // A new category needs a real ashram. While the page is filtered to "All
-    // Ashrams" there is no single property in view, so the form opens on the
-    // first one and the admin can switch it inside the modal.
     setFormAshramId(
       selectedAshramId && selectedAshramId !== ALL_ASHRAMS
         ? selectedAshramId
@@ -157,12 +128,8 @@ export const ManageRoomsPage: React.FC = () => {
     setShowCreate(true);
   };
 
-  /** Load an existing category into the same form. */
   const openEdit = (room: any) => {
     setEditRoomId(room._id);
-    // The room's own ashram, not the page filter — under "All Ashrams" the two
-    // differ, and the modal must name the property the category actually
-    // belongs to. It stays read-only: rooms cannot be re-parented.
     setFormAshramId(String(room.ashramId || selectedAshramId || ""));
     setName(room.name || "");
     setType(room.type || "private_room");
@@ -171,7 +138,6 @@ export const ManageRoomsPage: React.FC = () => {
     setTotalInventory(String(room.totalInventory ?? 0));
     setBasePrice(String(room.basePrice ?? 0));
     setAmenities((room.amenities || []).join(", "));
-    // An absent status means the schema default, which is active.
     setStatus(room.status === "under_maintenance" ? "under_maintenance" : "active");
     setShowCreate(true);
   };
@@ -190,8 +156,6 @@ export const ManageRoomsPage: React.FC = () => {
     setSubmitting(true);
     try {
       if (editRoomId) {
-        // `ashramId` is omitted deliberately: a room cannot be moved between
-        // ashrams, and the server rejects the field on an update.
         await roomService.update(editRoomId, {
           name: name.trim(),
           type,
@@ -200,8 +164,6 @@ export const ManageRoomsPage: React.FC = () => {
           totalInventory: parseInt(totalInventory),
           basePrice: parseFloat(basePrice),
           amenities: amenityList,
-          // Sent explicitly so the status is only ever whatever the admin
-          // picked here — never a side effect of editing another field.
           status,
         });
         addNotification(
@@ -226,10 +188,6 @@ export const ManageRoomsPage: React.FC = () => {
           "success",
         );
       }
-      // Editing never moves the filter — that was the bug. Creating is the one
-      // exception: a category added to a property the page is not currently
-      // showing would otherwise save into thin air, so the view follows it.
-      // "All Ashrams" already shows it, so that filter is left alone.
       const nextAshramId =
         !editRoomId &&
         selectedAshramId !== ALL_ASHRAMS &&
@@ -242,8 +200,6 @@ export const ManageRoomsPage: React.FC = () => {
       setEditRoomId(null);
       localStorage.setItem("tirvona:rooms-updated", Date.now().toString());
       window.dispatchEvent(new Event("tirvona:rooms-updated"));
-      // Changing the filter re-fetches through the effect; otherwise refresh
-      // the list in place.
       if (nextAshramId !== selectedAshramId) setSelectedAshramId(nextAshramId);
       else fetchRooms();
     } catch (err) {
@@ -262,8 +218,6 @@ export const ManageRoomsPage: React.FC = () => {
     setDeletingId(room._id);
     try {
       const res = await roomService.remove(room._id);
-      // The server refuses while bookings are live, so repeat what it says
-      // rather than claiming a removal that may not have happened.
       addNotification(
         "Room Category Removed",
         res.data?.message || "Room category removed successfully.",
@@ -305,9 +259,6 @@ export const ManageRoomsPage: React.FC = () => {
                 aria-label="Select ashram"
                 className="px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-full text-xs font-bold focus:outline-none cursor-pointer"
               >
-                {/* Every property's categories in one list, so an owner can
-                  review and manage rooms across ashrams without stepping
-                  through them one at a time. */}
                 <option value={ALL_ASHRAMS}>
                   All Ashrams ({myAshrams.length})
                 </option>
@@ -355,9 +306,6 @@ export const ManageRoomsPage: React.FC = () => {
                   <span className="text-[9px] font-bold text-gray-400">
                     {room.type.replace("_", " ")} • {room.acType}
                   </span>
-                  {/* Only under "All Ashrams", where two categories can share
-                    a name across properties and the card is otherwise
-                    ambiguous. */}
                   {selectedAshramId === ALL_ASHRAMS && room.ashramName && (
                     <span className="mt-1 flex items-center gap-1 text-[9px] font-bold text-[#0A4DA6]">
                       <Building2 size={10} /> {room.ashramName}
@@ -393,10 +341,6 @@ export const ManageRoomsPage: React.FC = () => {
                   <span className="text-[9px] text-gray-400 block font-bold">
                     Status
                   </span>
-                  {/* Keyed on the maintenance value, not on "active": a room
-                    whose status the old partial-update bug unset would
-                    otherwise read as maintenance, when an absent status means
-                    the schema default — active. */}
                   <span
                     className={`font-semibold flex items-center justify-center gap-0.5 ${
                       room.status === "under_maintenance"
@@ -412,8 +356,6 @@ export const ManageRoomsPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Edit and remove were absent entirely: a category could be
-                created but never corrected or retired. */}
               <div className="flex items-center justify-end gap-2 pt-1 border-t border-gray-50 dark:border-slate-850">
                 <button
                   type="button"
@@ -442,7 +384,6 @@ export const ManageRoomsPage: React.FC = () => {
         </div>
       )}
 
-      {/* Add Room Modal */}
       {showCreate && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <form
@@ -468,10 +409,6 @@ export const ManageRoomsPage: React.FC = () => {
                 <label className="text-xs font-bold text-gray-400">
                   Select Ashram
                 </label>
-                {/* Bound to the form's own ashram, never the page filter —
-                  changing it here used to drag the whole listing to another
-                  property. Locked while editing, since a room cannot be moved
-                  between ashrams. */}
                 <select
                   value={formAshramId}
                   onChange={(e) => setFormAshramId(e.target.value)}
@@ -536,8 +473,6 @@ export const ManageRoomsPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Two-up on phones so each numeric field keeps a usable tap
-                  target; three across 320px leaves ~57px of content box. */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-gray-400">
@@ -593,9 +528,6 @@ export const ManageRoomsPage: React.FC = () => {
                 />
               </div>
 
-              {/* Edit only. Status is now the admin's explicit choice: before
-                this existed, the server unset the field on every partial
-                update and a price change alone read back as maintenance. */}
               {editRoomId && (
                 <div className="space-y-1">
                   <label
@@ -636,8 +568,6 @@ export const ManageRoomsPage: React.FC = () => {
         </div>
       )}
 
-      {/* Remove confirmation. Names the category and warns that the server
-        refuses while guests are still booked into it. */}
       {confirmDelete && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
           <div

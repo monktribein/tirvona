@@ -6,14 +6,6 @@ import {
 } from "@nestjs/common";
 import type { LeadRequest } from "./lead-agent.guard";
 
-/**
- * Restricts a route to `field_supervisor` accounts.
- *
- * Must be stacked **after** `LeadAgentGuard`, which authenticates the token
- * and attaches `req.leadUser`. This guard only inspects the role — if
- * `leadUser` is missing it means `LeadAgentGuard` was not applied, and the
- * request is rejected with a clear message rather than a cryptic null access.
- */
 @Injectable()
 export class LeadSupervisorGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {

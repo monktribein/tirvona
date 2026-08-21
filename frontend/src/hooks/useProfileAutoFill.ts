@@ -14,11 +14,6 @@ export interface UserAutoFillProfile {
   isLoggedIn: boolean;
 }
 
-/**
- * Smart Auto-Fill Hook
- * Single source of truth to retrieve logged-in user profile details for seamless prefilling across all platform forms.
- * Never stores or returns sensitive financial fields (passwords, CVV, OTP, UPI PIN).
- */
 export const useProfileAutoFill = (): UserAutoFillProfile => {
   const { user } = useAuth();
 

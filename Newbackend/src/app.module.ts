@@ -28,14 +28,16 @@ import { CommunityModule } from "./modules/community/community.module";
 import { GovernanceModule } from "./modules/governance/governance.module";
 import { RefundsModule } from "./modules/refunds/refunds.module";
 import { SearchModule } from "./modules/search/search.module";
-// Self-contained lead-capture product. Owns its own database connection and
-// account table; see lead-collection.module.ts for what it deliberately
-// does not share with the platform.
 import { LeadCollectionModule } from "./modules/lead-collection/lead-collection.module";
-// Smart Contact QR. Same arrangement as Lead Collection: own database
-// connection, own audit and analytics, no exports; see smart-contact.module.ts
-// for the boundary it keeps and what extracting it would take.
 import { SmartContactModule } from "./modules/smart-contact/smart-contact.module";
+import { PayoutsModule } from "./modules/payouts/payouts.module";
+import { AartiModule } from "./modules/aarti/aarti.module";
+import { EventsModule } from "./modules/events/events.module";
+import { PilgrimageModule } from "./modules/pilgrimage/pilgrimage.module";
+import {
+  hybridRateLimitTracker,
+  ipRateLimitTracker,
+} from "./common/throttling/rate-limit-trackers";
 
 @Module({
   imports: [
@@ -87,6 +89,8 @@ import { SmartContactModule } from "./modules/smart-contact/smart-contact.module
                   "req.body.credential",
                   "req.body.govtIdNumber",
                   "req.body.razorpay_signature",
+                  "req.body.accountNumber",
+                  "req.body.confirmAccountNumber",
                   "req.query.token",
                   "res.headers.set-cookie",
                 ],
@@ -102,6 +106,13 @@ import { SmartContactModule } from "./modules/smart-contact/smart-contact.module
           name: "default",
           ttl: config.get<number>("throttleTtlMs") ?? 60_000,
           limit: config.get<number>("throttleLimit") ?? 120,
+          getTracker: hybridRateLimitTracker,
+        },
+        {
+          name: "ipAbuse",
+          ttl: config.get<number>("throttleIpAbuseTtlMs") ?? 60_000,
+          limit: config.get<number>("throttleIpAbuseLimit") ?? 30_000,
+          getTracker: ipRateLimitTracker,
         },
       ],
     }),
@@ -127,6 +138,10 @@ import { SmartContactModule } from "./modules/smart-contact/smart-contact.module
     SearchModule,
     LeadCollectionModule,
     SmartContactModule,
+    PayoutsModule,
+    AartiModule,
+    EventsModule,
+    PilgrimageModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

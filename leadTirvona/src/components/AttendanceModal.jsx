@@ -86,10 +86,8 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F172A]/50 backdrop-blur-xs animate-fadeIn">
       
-      {/* Modal Container */}
       <div className="bg-white border border-[#E2E8F0] rounded-3xl p-6 sm:p-8 w-full max-w-lg shadow-xl relative animate-scaleUp text-left space-y-5">
         
-        {/* Close Button */}
         <button
           onClick={onClose}
           className="absolute top-4 right-4 p-2 text-[#64748B] hover:text-[#0F172A] rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
@@ -98,7 +96,6 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
           <X size={18} />
         </button>
 
-        {/* Modal Header */}
         <div className="text-center space-y-1.5">
           <div className="flex items-center justify-center mb-2">
             <img src="/logo.png" alt="Tirvona Logo" className="h-10 w-auto object-contain" />
@@ -111,7 +108,6 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
           </p>
         </div>
 
-        {/* User Card */}
         <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-[#0A4DA6]/10 text-[#0A4DA6] font-extrabold flex items-center justify-center text-sm">
@@ -131,7 +127,6 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
           </span>
         </div>
 
-        {/* Status Message / GPS Error */}
         {gpsError && (
           <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs font-semibold text-red-600 flex items-center gap-2">
             <AlertCircle size={14} className="shrink-0" />
@@ -146,9 +141,7 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
           </div>
         )}
 
-        {/* Check-In & Check-Out Action Buttons */}
         <div className="grid grid-cols-2 gap-3.5 pt-1">
-          {/* Check-In Button */}
           <button
             type="button"
             onClick={handleCheckIn}
@@ -168,7 +161,6 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
             )}
           </button>
 
-          {/* Check-Out Button */}
           <button
             type="button"
             onClick={handleCheckOut}
@@ -191,13 +183,11 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
           </button>
         </div>
 
-        {/* Live Attendance Geotag Logs */}
         <div className="space-y-2.5 pt-2 border-t border-[#E2E8F0]">
           <h4 className="text-xs font-bold text-[#64748B] tracking-wider uppercase">
             {t('Attendance Log Record')}
           </h4>
 
-          {/* Check-In Log Details */}
           <div className="p-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl space-y-1 text-xs">
             <div className="flex items-center justify-between font-extrabold text-[#0F172A]">
               <span className="flex items-center gap-1 text-[#0A4DA6]">
@@ -220,7 +210,6 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
             )}
           </div>
 
-          {/* Check-Out Log Details */}
           <div className="p-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl space-y-1 text-xs">
             <div className="flex items-center justify-between font-extrabold text-[#0F172A]">
               <span className="flex items-center gap-1 text-[#0B192C]">
@@ -244,7 +233,6 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
           </div>
         </div>
 
-        {/* Modal Done Button */}
         <div className="pt-2">
           <button
             onClick={onClose}

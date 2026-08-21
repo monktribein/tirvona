@@ -55,13 +55,6 @@ const StarRow: React.FC<{
   </div>
 );
 
-/**
- * Review submission for an ashram.
- *
- * Anyone signed in may post. A reviewer whose booking history shows a completed
- * stay here is badged "Verified stay" — a decision the server makes, so the
- * badge cannot be claimed from the client.
- */
 export const WriteReviewCard: React.FC<{
   ashramId: string;
   ashramName?: string;
@@ -128,7 +121,6 @@ export const WriteReviewCard: React.FC<{
 
   if (checking && user) return null;
 
-  // Signed out: invite, and preserve the intent so the visitor lands back here.
   if (!user)
     return (
       <div className="bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 rounded-2xl p-5 text-center space-y-2">

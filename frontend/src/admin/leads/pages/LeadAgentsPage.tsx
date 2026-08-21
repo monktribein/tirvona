@@ -160,7 +160,6 @@ export const LeadAgentsPage: React.FC = () => {
       name: agent.name,
       phone: agent.phone,
       email: agent.email ?? "",
-      // Never prefilled — the hash is not readable and a reset is its own action.
       password: "",
       role: agent.role,
       state: agent.state ?? "",
@@ -196,8 +195,6 @@ export const LeadAgentsPage: React.FC = () => {
         employeeCode: form.employeeCode.trim(),
         notes: form.notes.trim(),
       };
-      // The API validates `email` as an email, so an empty box must be omitted
-      // rather than sent as "".
       if (form.email.trim()) payload.email = form.email.trim();
 
       if (editing) {
@@ -509,7 +506,6 @@ export const LeadAgentsPage: React.FC = () => {
         )}
       </div>
 
-      {/* Create / edit */}
       <EnterpriseModal
         isOpen={creating || Boolean(editing)}
         onClose={closeForm}
@@ -627,7 +623,6 @@ export const LeadAgentsPage: React.FC = () => {
         </div>
       </EnterpriseModal>
 
-      {/* Region catalogue */}
       <EnterpriseModal
         isOpen={managingRegions}
         onClose={() => setManagingRegions(false)}
@@ -718,7 +713,6 @@ export const LeadAgentsPage: React.FC = () => {
         </div>
       </EnterpriseModal>
 
-      {/* Password reset */}
       <EnterpriseModal
         isOpen={Boolean(resetting)}
         onClose={() => setResetting(null)}
@@ -753,7 +747,6 @@ export const LeadAgentsPage: React.FC = () => {
         </Field>
       </EnterpriseModal>
 
-      {/* Delete confirmation */}
       <EnterpriseModal
         isOpen={Boolean(confirmDelete)}
         onClose={() => setConfirmDelete(null)}

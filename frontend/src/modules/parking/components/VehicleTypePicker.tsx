@@ -5,8 +5,6 @@ import type {
   ParkingVehicleTypeCode,
 } from "../types/parking.types";
 
-// Vehicle class selector, used in search filters and in the booking form.
-
 const ICONS: Record<string, React.ReactNode> = {
   bike: <Bike size={16} className="stroke-[2.5]" />,
   car: <Car size={16} className="stroke-[2.5]" />,
@@ -19,7 +17,6 @@ interface VehicleTypePickerProps {
   options: ParkingVehicleType[];
   value: ParkingVehicleTypeCode | "";
   onChange: (code: ParkingVehicleTypeCode) => void;
-  /** Codes the current facility accepts. Others render disabled. */
   supported?: ParkingVehicleTypeCode[];
   compact?: boolean;
 }

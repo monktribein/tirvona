@@ -6,15 +6,6 @@ import {
   LEAD_STATUSES,
 } from "../../domain/lead-collection.constants";
 
-/**
- * `leads` — one field visit to one prospective ashram.
- *
- * The shape mirrors what the leadTirvona capture form already submits, so the
- * field app can post its payload unchanged. Coordinates are kept as the
- * form's `{ lat, lng }` pair *and* mirrored into a GeoJSON `Point`: the pair
- * is what a human reads back in the console, the Point is what a `2dsphere`
- * index can answer "leads near here" against.
- */
 export const LeadSchema = new Schema(
   {
     name: { type: String, required: true, trim: true, index: true },
@@ -30,9 +21,6 @@ export const LeadSchema = new Schema(
       },
     },
 
-    // GeoJSON mirror of `location.coordinates`, maintained by the service on
-    // every write. Absent (rather than null) when the agent captured no fix —
-    // a `2dsphere` index rejects a Point with null coordinates.
     geo: {
       type: {
         type: String,
@@ -67,7 +55,6 @@ export const LeadSchema = new Schema(
       mode: { type: String, enum: [...LEAD_MEETING_MODES, ""], default: "" },
     },
 
-    // Cloudinary image/PDF URLs, or legacy base64 images from demo mode.
     images: { type: [String], default: [] },
 
     status: {
@@ -77,20 +64,15 @@ export const LeadSchema = new Schema(
       index: true,
     },
 
-    // Attribution. `capturedBy` is a lead_users id inside this same database,
-    // so it is a real ref and can be populated.
     capturedBy: {
       type: SchemaTypes.ObjectId,
       ref: "LeadCollectionUser",
       default: null,
       index: true,
     },
-    // Denormalised so the console can show who captured a lead even after the
-    // agent account is deleted.
     capturedByName: { type: String, default: "" },
     capturedAt: { type: Date, default: Date.now },
 
-    // Assignment to Field Agent (when created by Lead Executive or Supervisor)
     assignedAgentId: {
       type: SchemaTypes.ObjectId,
       ref: "LeadCollectionUser",
@@ -100,7 +82,6 @@ export const LeadSchema = new Schema(
     assignedAgentName: { type: String, default: "" },
     assignedAgentCode: { type: String, default: "" },
 
-    // Review trail. Platform-user ids as plain strings — see lead-user.schema.
     reviewedByAdminId: { type: String, default: "" },
     reviewedByAdminName: { type: String, default: "" },
     reviewedAt: { type: Date, default: null },
@@ -116,5 +97,4 @@ export const LeadSchema = new Schema(
 LeadSchema.index({ status: 1, createdAt: -1 });
 LeadSchema.index({ capturedBy: 1, createdAt: -1 });
 LeadSchema.index({ "location.city": 1, status: 1 });
-// Sparse: leads captured without a GPS fix carry no `geo` at all.
 LeadSchema.index({ geo: "2dsphere" }, { sparse: true });

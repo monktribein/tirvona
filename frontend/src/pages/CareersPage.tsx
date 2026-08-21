@@ -83,7 +83,6 @@ const CareersPage: React.FC = () => {
 
   return (
     <div className="pb-20">
-      {/* Hero */}
       <section className="bg-[#0B192C] text-white py-16 px-4 sm:px-6 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-[#0A4DA6]/10 rounded-full blur-[80px] pointer-events-none" />
         <div className="max-w-4xl mx-auto text-center relative z-10 space-y-4">
@@ -105,7 +104,6 @@ const CareersPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Why work with us */}
       <section className="max-w-5xl mx-auto px-4 sm:px-6 py-14 space-y-10">
         <div className="text-center space-y-2">
           <h2
@@ -130,7 +128,6 @@ const CareersPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Job listings */}
       <section className="max-w-4xl mx-auto px-4 sm:px-6 pb-14 space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <h2
@@ -139,7 +136,6 @@ const CareersPage: React.FC = () => {
           >
             Open Positions
           </h2>
-          {/* Dept filter */}
           <div className="flex gap-2 overflow-x-auto scrollbar-none pb-1">
             {depts.map((d) => (
               <button

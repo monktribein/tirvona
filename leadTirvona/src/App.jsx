@@ -1,6 +1,3 @@
-/**
- * App.jsx — Clean Header & Footer Root
- */
 import React, { useState } from 'react';
 import AppNavbar from './components/AppNavbar';
 import ToastNotification from './components/ToastNotification';
@@ -15,8 +12,6 @@ export default function App() {
   const [activePage, setActivePage] = useState('create');
   const [attendanceState, setAttendanceState] = useState(null);
   const { agent, checking, isSignedIn, login, logout } = useLeadAuth();
-  // The session drives the data source: signed in reads the API, signed out
-  // falls back to the local demo set.
   const { leads, approvedAshrams, toast, addLead, approveLead, removeLead } =
     useLeadStorage(isSignedIn);
 
@@ -56,7 +51,6 @@ export default function App() {
       try {
         await leadApi.updateLead(leadId, leadPayload);
         if (toast?.message) {
-          // hook toast
         }
         setSupervisorMode('console');
         setEditingLeadData(null);
@@ -163,7 +157,6 @@ export default function App() {
 
       <ToastNotification toast={toast} />
 
-      {/* Footer — Tirvona Logo + Link */}
       <footer className="mt-auto text-center py-4 px-6 border-t border-[#E2E8F0] bg-white flex items-center justify-center">
         <a
           href="https://tirvona.com"

@@ -18,13 +18,6 @@ import { CurrentLeadAgent } from "./decorators/current-lead-agent.decorator";
 import { LeadQueryDto, SaveLeadDto } from "./dtos/lead.dto";
 import { LeadAgentGuard } from "./guards/lead-agent.guard";
 
-/**
- * What the leadTirvona field app talks to.
- *
- * Every route is scoped to the signed-in agent — the scope is applied inside
- * the service, so no filter in the querystring can widen it to another
- * agent's captures.
- */
 @ApiTags("Lead Collection")
 @Public()
 @UseGuards(LeadAgentGuard)

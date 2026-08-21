@@ -44,7 +44,6 @@ export const OwnerUsersPage: React.FC = () => {
     setTimeout(() => setCopiedUserId(null), 2000);
   };
 
-  // Add User Modal State
   const [showAddModal, setShowAddModal] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -60,7 +59,6 @@ export const OwnerUsersPage: React.FC = () => {
     text: string;
   } | null>(null);
 
-  // Password Reset Modal State
   const [showResetModal, setShowResetModal] = useState(false);
   const [targetUser, setTargetUser] = useState<any>(null);
   const [newPassword, setNewPassword] = useState("");
@@ -227,7 +225,6 @@ export const OwnerUsersPage: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      {/* Header Banner */}
       <div className="bg-gradient-to-r from-[#0B192C] via-[#0A4DA6] to-[#0B192C] rounded-[28px] p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-amber-300 text-xs font-bold backdrop-blur-md">
@@ -251,7 +248,6 @@ export const OwnerUsersPage: React.FC = () => {
         </button>
       </div>
 
-      {/* Stats Overview Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-5 rounded-2xl shadow-sm space-y-2">
           <span className="text-xs font-extrabold tracking-wider text-gray-400">
@@ -290,9 +286,7 @@ export const OwnerUsersPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Filter and Search Bar */}
       <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-4 rounded-2xl shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
-        {/* Search */}
         <div className="relative w-full sm:w-80">
           <Search size={15} className="absolute left-3.5 top-3 text-gray-400" />
           <input
@@ -304,7 +298,6 @@ export const OwnerUsersPage: React.FC = () => {
           />
         </div>
 
-        {/* Role Filter Tabs */}
         <div className="flex items-center gap-1 overflow-x-auto w-full sm:w-auto">
           {[
             { id: "all", label: "All Users" },
@@ -328,7 +321,6 @@ export const OwnerUsersPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Staff Users Table */}
       <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm">
         {loading ? (
           <div className="p-12 text-center text-xs font-bold text-gray-400">
@@ -435,7 +427,6 @@ export const OwnerUsersPage: React.FC = () => {
                     </td>
                     <td className="py-4 px-6 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        {/* Change / Reset Password Button */}
                         <button
                           onClick={() => {
                             setTargetUser(u);
@@ -448,7 +439,6 @@ export const OwnerUsersPage: React.FC = () => {
                           <span>Reset Password</span>
                         </button>
 
-                        {/* Toggle Status Button */}
                         <button
                           onClick={() => handleToggleStatus(u._id, u.status)}
                           className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
@@ -469,7 +459,6 @@ export const OwnerUsersPage: React.FC = () => {
         )}
       </div>
 
-      {/* ══════════════════════ MODAL 1: ADD NEW STAFF / ADMIN ══════════════════════ */}
       <AnimatePresence>
         {showAddModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -486,7 +475,6 @@ export const OwnerUsersPage: React.FC = () => {
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
               className="relative w-full max-w-lg bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl z-10 space-y-6"
             >
-              {/* Modal Header */}
               <div className="flex items-center justify-between border-b border-gray-100 dark:border-slate-800 pb-4">
                 <div className="flex items-center gap-2.5">
                   <div className="w-9 h-9 rounded-full bg-[#0A4DA6]/10 text-[#0A4DA6] flex items-center justify-center font-bold">
@@ -509,7 +497,6 @@ export const OwnerUsersPage: React.FC = () => {
                 </button>
               </div>
 
-              {/* Message Banner */}
               {createMsg && (
                 <div
                   className={`p-3 rounded-2xl text-xs font-bold flex items-center gap-2 ${
@@ -527,7 +514,6 @@ export const OwnerUsersPage: React.FC = () => {
                 </div>
               )}
 
-              {/* Form */}
               <form onSubmit={handleCreateStaff} className="space-y-4">
                 <div>
                   <label className="block text-[10px] font-black text-gray-400 mb-1">
@@ -661,7 +647,6 @@ export const OwnerUsersPage: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* ══════════════════════ MODAL 2: RESET PASSWORD ══════════════════════ */}
       <AnimatePresence>
         {showResetModal && targetUser && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -678,7 +663,6 @@ export const OwnerUsersPage: React.FC = () => {
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
               className="relative w-full max-w-md bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl z-10 space-y-5"
             >
-              {/* Header */}
               <div className="flex items-center justify-between border-b border-gray-100 dark:border-slate-800 pb-4">
                 <div className="flex items-center gap-2.5">
                   <div className="w-9 h-9 rounded-full bg-amber-500/10 text-amber-600 flex items-center justify-center font-bold">
@@ -701,7 +685,6 @@ export const OwnerUsersPage: React.FC = () => {
                 </button>
               </div>
 
-              {/* Message */}
               {resetMsg && (
                 <div
                   className={`p-3 rounded-2xl text-xs font-bold flex items-center gap-2 ${
@@ -719,7 +702,6 @@ export const OwnerUsersPage: React.FC = () => {
                 </div>
               )}
 
-              {/* Form */}
               <form onSubmit={handleResetPassword} className="space-y-4">
                 <div>
                   <div className="flex items-center justify-between mb-1">

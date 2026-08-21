@@ -17,22 +17,13 @@ import type {
   MarketplaceOrderQueryDto,
 } from "../presentation/dtos/marketplace-order.dto";
 
-/** GST on sanctified goods, charged on the item subtotal. */
 const GST_PERCENT = 5;
-/** Flat shipping, waived above this order value. */
 const SHIPPING_FEE = 60;
 const FREE_SHIPPING_ABOVE = 999;
 
 const round2 = (value: number): number =>
   Math.round((value + Number.EPSILON) * 100) / 100;
 
-/**
- * Roles allowed to see every order rather than only their own.
- *
- * A pilgrim sees their own orders and nothing else. Nobody else's order is ever
- * reachable — the customer filter is applied in the query, not checked after
- * fetching, so there is no window in which another person's row is loaded.
- */
 const ORDER_OVERSIGHT_ROLES = [
   "super_admin",
   "national_admin",
@@ -49,7 +40,6 @@ export class MarketplaceOrderService {
     private readonly config: ConfigService,
   ) {}
 
-  // ── Address book ─────────────────────────────────────────────────────────
   async listAddresses(user: AuthenticatedUser): Promise<any[]> {
     return this.addresses
       .find({ customerId: user.id, isDeleted: false })
@@ -67,8 +57,6 @@ export class MarketplaceOrderService {
     });
     if (existing >= 20)
       throw new BadRequestException("Address book is full (20 maximum)");
-    // The first address saved is the default whatever the payload says, so a
-    // customer always has one selected at checkout.
     const isDefault = dto.isDefault === true || existing === 0;
     if (isDefault) await this.clearDefault(user.id);
     return this.addresses.create({
@@ -95,8 +83,6 @@ export class MarketplaceOrderService {
   }
 
   async deleteAddress(user: AuthenticatedUser, id: string): Promise<any> {
-    // Soft delete: past orders keep a denormalised copy, but the row itself is
-    // retained so an accidental removal is recoverable.
     const address = await this.addresses.findOneAndUpdate(
       { _id: id, customerId: user.id, isDeleted: false },
       { $set: { isDeleted: true, isDefault: false } },
@@ -126,14 +112,6 @@ export class MarketplaceOrderService {
     );
   }
 
-  // ── Pricing ──────────────────────────────────────────────────────────────
-  /**
-   * Price a basket from the catalogue.
-   *
-   * Every figure here comes from the database. The request supplies product ids
-   * and quantities and nothing else, so there is no path by which a client can
-   * influence what it is charged.
-   */
   async quote(items: { productId: string; quantity: number }[]): Promise<any> {
     const ids = [...new Set(items.map((item) => item.productId))];
     const rows = await this.products
@@ -187,7 +165,6 @@ export class MarketplaceOrderService {
     };
   }
 
-  // ── Orders ───────────────────────────────────────────────────────────────
   private async resolveAddress(
     user: AuthenticatedUser,
     dto: CreateMarketplaceOrderDto,
@@ -250,7 +227,6 @@ export class MarketplaceOrderService {
     return order;
   }
 
-  /** Scope every order query to what the caller may see. */
   private scopeFor(user: AuthenticatedUser): Record<string, any> {
     return ORDER_OVERSIGHT_ROLES.includes(user.role)
       ? {}
@@ -306,7 +282,6 @@ export class MarketplaceOrderService {
     return order;
   }
 
-  /** Fulfilment transitions, for staff only. */
   async updateStatus(
     user: AuthenticatedUser,
     id: string,
@@ -325,7 +300,6 @@ export class MarketplaceOrderService {
     return order;
   }
 
-  // ── Payment ──────────────────────────────────────────────────────────────
   async paymentOrder(user: AuthenticatedUser, id: string): Promise<any> {
     const order = await this.orders.findOne({ _id: id, customerId: user.id });
     if (!order) throw new NotFoundException("Order not found");
@@ -367,11 +341,6 @@ export class MarketplaceOrderService {
     };
   }
 
-  /**
-   * Same contract as the booking gateway: without a key secret this is a local
-   * demo gateway with no signature to check, and production refuses that path
-   * outright rather than marking an order paid for nothing.
-   */
   private signatureValid(dto: ConfirmMarketplacePaymentDto): boolean {
     const keySecret = this.config.get<string>("razorpayKeySecret");
     if (!keySecret) return this.config.get<string>("nodeEnv") !== "production";
@@ -421,8 +390,6 @@ export class MarketplaceOrderService {
       throw new BadRequestException("Payment verification failed");
     }
 
-    // The unique eventId is what makes a repeated confirmation harmless: the
-    // second attempt collides instead of recording a second capture.
     const eventId = `captured:${dto.razorpay_payment_id}`;
     const already = await this.payments.exists({ eventId });
     if (!already)
@@ -447,8 +414,6 @@ export class MarketplaceOrderService {
     };
     await order.save();
 
-    // Decrement stock only once payment is real, so an abandoned checkout never
-    // holds inventory away from someone who will actually pay.
     for (const line of order.items)
       await this.products.updateOne(
         { _id: line.productId, stock: { $gte: line.quantity } },

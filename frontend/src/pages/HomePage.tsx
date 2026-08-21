@@ -15,6 +15,7 @@ import {
 } from "../contexts/BookingSearchContext";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useAutoScroll } from "../hooks/useAutoScroll";
+import HomeAartiSections from "../modules/aarti/components/HomeAartiSections";
 import {
   Search,
   MapPin,
@@ -190,7 +191,6 @@ export const HomePage: React.FC = () => {
     return base;
   };
 
-  // Reusable 60FPS GPU-Accelerated translate3d Marquee Slider Component
   interface MarqueeSliderProps<T> {
     items: T[];
     renderItem: (item: T, index: number) => React.ReactNode;
@@ -291,7 +291,6 @@ export const HomePage: React.FC = () => {
 
         if (halfWidthRef.current <= 0 || isDraggingRef.current) return;
 
-        // Apply smooth cursor drag momentum decay
         if (Math.abs(momentumVelRef.current) > 1) {
           posRef.current += momentumVelRef.current * dt;
           momentumVelRef.current *= Math.pow(0.92, dt * 60);
@@ -446,7 +445,6 @@ export const HomePage: React.FC = () => {
     );
   }
 
-  // Products when they exist, category tiles as the stand-in until they do.
   const prasadItems =
     marketplaceProducts.length > 0 ? marketplaceProducts : marketplaceCategories;
 
@@ -541,7 +539,6 @@ export const HomePage: React.FC = () => {
         setMarketplaceCategories(res.data.data);
       }
     } catch {
-      // Silently ignore if marketplace categories endpoint is not active
     }
   };
 
@@ -683,7 +680,6 @@ export const HomePage: React.FC = () => {
     }
   };
 
-  // Dynamically group database ashrams by destination city/location
   const sacredDestinations = useMemo(() => {
     if (!ashrams || ashrams.length === 0) return [];
 
@@ -751,8 +747,6 @@ export const HomePage: React.FC = () => {
     }));
   }, [ashrams]);
 
-  // Real reviews only. The section is hidden entirely when there are none
-  // rather than filled with sample testimonials.
   const customerFeedbacks = feedbacks.map((r, i) => ({
     name: r.ashramId?.name || "Ashram stay",
     location: r.ashramId?.address
@@ -768,7 +762,6 @@ export const HomePage: React.FC = () => {
     img: r.ashramId?.images?.[0] || "",
   }));
 
-  // Service icons strip aligned with Tirvona Theme & Routing with Parking in the center & highlighted
   const serviceIcons = [
     {
       id: "circuits",
@@ -808,7 +801,7 @@ export const HomePage: React.FC = () => {
       icon: CircleParking,
       category: "parking",
       target: "/parking",
-      isHighlight: true,
+      isHighlight: false,
     },
     {
       id: "shops",
@@ -823,7 +816,7 @@ export const HomePage: React.FC = () => {
       label: "Live Pooja",
       icon: Flame,
       category: "pooja",
-      target: "/temples",
+      target: "/live-pooja",
       isHighlight: false,
     },
     {
@@ -831,7 +824,7 @@ export const HomePage: React.FC = () => {
       label: "Arati Booking",
       icon: Heart,
       category: "aarti",
-      target: "/temples",
+      target: "/aarti",
       isHighlight: false,
     },
     {
@@ -844,22 +837,9 @@ export const HomePage: React.FC = () => {
     },
   ];
 
-  // Extract Dynamic Approved Published CMS Sections (Strictly Section-Mapped)
   const publishedHero = publishedCms.hero_banner || {};
   const publishedOffer = publishedCms.offer_banner || {};
-  /**
-   * Published banner values, with the bundled defaults as fallbacks.
-   *
-   * `activeHeroBg` used to be assigned `heroBg` outright, so an approved hero
-   * image never reached the page: the CMS published it, /cms/published served
-   * it, and the homepage rendered the bundled asset regardless. The heading,
-   * CTA and announcement were computed here and then never referenced in the
-   * JSX at all — which is why editing a banner in the admin panel appeared to
-   * do nothing.
-   */
   const activeHeroBg = publishedHero.bannerImage || "";
-  // Split on the comma so an edited heading keeps the two-line treatment, with
-  // the second line in saffron, exactly as the static copy had it.
   const activeHeading =
     publishedHero.heading ||
     publishedHero.title ||
@@ -877,9 +857,7 @@ export const HomePage: React.FC = () => {
 
   return (
     <div className="pb-16 lg:pb-24 overflow-x-hidden">
-      {/* ══════════════════════ HERO SECTION (Full Width with Rounded Bottom Corners) ══════════════════════ */}
       <section className="relative pt-28 sm:pt-36 lg:pt-40 pb-40 sm:pb-52 lg:pb-60 min-h-[580px] sm:min-h-[640px] lg:min-h-[720px] flex items-center overflow-hidden rounded-b-[36px] sm:rounded-b-[48px] shadow-xl bg-gradient-to-br from-[#0B192C] via-[#0D233E] to-[#0B192C]">
-        {/* Background Image Container */}
         <div className="absolute inset-0 z-0">
           {activeHeroBg ? (
             <img
@@ -889,17 +867,11 @@ export const HomePage: React.FC = () => {
               loading="eager"
             />
           ) : null}
-          {/* Subtle gradient overlay to enhance temple colors while ensuring sharp text contrast */}
           <div className="absolute inset-0 bg-gradient-to-r from-[#0B192C]/85 via-[#0B192C]/40 to-black/15 dark:from-[#070F1B]/95 dark:via-[#070F1B]/60 dark:to-transparent" />
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full flex justify-center">
-          {/* w-full + min-w-0: this is a flex COLUMN, so its width is driven by
-              its widest child. Without these, any child that refuses to shrink
-              (an unbreakable heading, a long word) stretches this box past the
-              viewport and every centered child inside it spills off both edges. */}
           <div className="w-full min-w-0 max-w-4xl lg:max-w-5xl mx-auto space-y-6 text-center flex flex-col items-center">
-            {/* Main Display Heading */}
             <motion.h1
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
@@ -921,7 +893,6 @@ export const HomePage: React.FC = () => {
               )}
             </motion.h1>
 
-            {/* Body paragraph per requested specs: Satoshi 500 #6B6B6B / text-slate-200 */}
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -936,9 +907,6 @@ export const HomePage: React.FC = () => {
               {activeSubtitle}
             </motion.p>
 
-            {/* Both of these render only when the CMS supplies them, so an
-                unpublished banner adds nothing to the hero rather than showing
-                an empty button or an blank strip. */}
             {activeAnnouncement && (
               <motion.div
                 initial={{ opacity: 0 }}
@@ -974,14 +942,7 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* ══════════════════════ FLOATING BOOKING & SEARCH CARD (Overlapping Hero 50%) ══════════════════════ */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 -mt-20 sm:-mt-24 lg:-mt-24 z-30 relative mb-12 sm:mb-16 lg:mb-20">
-        {/* Category Tabs Floating Bar (Centered Pill Container) */}
-        {/* max-w-full + overflow-x-auto: the three labels plus icons measure
-            ~364px, which is wider than a 390px phone once page padding is
-            taken off — and this app is translated, so labels get longer in
-            other locales. The pill now scrolls itself instead of overflowing
-            the page. */}
         <div className="flex justify-center mb-4 sm:mb-5">
           <div
             className="inline-flex max-w-full overflow-x-auto scrollbar-none items-center gap-1.5 p-1.5 rounded-full bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 shadow-lg shadow-[#0B192C]/10"
@@ -1034,13 +995,11 @@ export const HomePage: React.FC = () => {
           </div>
         </div>
 
-        {/* Main Search Card */}
         <div className="relative isolate overflow-visible bg-white dark:bg-[#0B192C] rounded-[28px] lg:rounded-full shadow-2xl shadow-[#0B192C]/10 border border-gray-200 dark:border-slate-800/80 p-1.5 sm:p-2">
           <form
             onSubmit={handleSearch}
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.55fr_1.35fr_1.15fr_auto] gap-1 lg:gap-0 items-center"
           >
-            {/* Field 1: DESTINATION (30% / 2fr ratio) */}
             <div
               className="group cursor-pointer rounded-2xl lg:rounded-full px-5 py-3 bg-white dark:bg-[#0B192C] hover:bg-gray-50/80 dark:hover:bg-slate-800/50 hover:shadow-lg transition-all flex flex-col justify-center min-h-[64px] lg:border-r border-gray-200/80 dark:border-slate-800/80 relative min-w-0 z-10 focus-within:z-[90]"
               ref={autocompleteRef}
@@ -1084,7 +1043,6 @@ export const HomePage: React.FC = () => {
               </AnimatePresence>
             </div>
 
-            {/* Date range: one cohesive interaction for arrival and departure. */}
             <div className="group rounded-2xl lg:rounded-full px-5 py-3 bg-white dark:bg-[#0B192C] hover:bg-gray-50/80 dark:hover:bg-slate-800/50 hover:shadow-lg transition-all flex items-center min-h-[64px] lg:border-r border-gray-200/80 dark:border-slate-800/80 relative min-w-0 z-10 focus-within:z-[90]">
               <DateRangePicker
                 checkIn={checkIn}
@@ -1098,12 +1056,10 @@ export const HomePage: React.FC = () => {
               />
             </div>
 
-            {/* Field 3: GUESTS */}
             <div className="group cursor-pointer rounded-2xl lg:rounded-full px-5 py-3 bg-white dark:bg-[#0B192C] hover:bg-gray-50/80 dark:hover:bg-slate-800/50 hover:shadow-lg transition-all flex flex-col justify-center min-h-[64px] relative min-w-0 z-10 focus-within:z-[90]">
               <GuestRoomSelector pill />
             </div>
 
-            {/* Field 5: SEARCH BUTTON (16% / auto ratio) */}
             <div className="flex items-center justify-center p-1 col-span-1 sm:col-span-2 lg:col-span-1 min-h-[64px]">
               <button
                 type="submit"
@@ -1117,13 +1073,10 @@ export const HomePage: React.FC = () => {
           </form>
         </div>
 
-        {/* Service icons strip placed directly below booking system (Single Row Flex Container) */}
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800/80 rounded-[24px] mt-4 sm:mt-5 p-2 sm:p-2.5 shadow-lg shadow-[#0B192C]/5 overflow-hidden">
           <div
             ref={setServiceStrip}
             className="flex flex-nowrap items-center justify-between gap-1 sm:gap-1.5 overflow-x-auto scrollbar-none py-0.5 w-full"
-            // (useAutoScroll forces scroll-behavior:auto while it runs — see the
-            // note in that hook about the global `*` smooth-scroll rule.)
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
           >
             {serviceIcons.map((item, i) => {
@@ -1169,14 +1122,11 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* ══════════════════════ EVERYTHING YOU NEED ══════════════════════ */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 space-y-8 mb-10 lg:mb-20 mt-6 lg:mt-0">
-        {/* Clean Text Header (No Background Wallpaper) */}
         <div className="text-center space-y-2 max-w-3xl mx-auto py-2">
           <p className="font-['Kalam'] text-base sm:text-4xl font-bold text-[#E58C28]">
             Explore Tirvona
           </p>
-          {/* Decorative Saffron Underline Divider */}
           <div className="flex items-center justify-center gap-2.5 my-1.5">
             <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
             <Sparkles
@@ -1237,14 +1187,11 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* ══════════════════════ POPULAR SACRED DESTINATIONS (Matching Reference Image 2) ══════════════════════ */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 space-y-8 mb-12 lg:mb-20">
-        {/* Clean Text Header (No Background Wallpaper) */}
         <div className="text-center space-y-2 max-w-3xl mx-auto py-2">
           <p className="font-['Kalam'] text-base sm:text-4xl font-bold text-[#E58C28]">
             Sacred Destinations
           </p>
-          {/* Decorative Saffron Underline Divider */}
           <div className="flex items-center justify-center gap-2.5 my-1.5">
             <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
             <Sparkles
@@ -1266,7 +1213,6 @@ export const HomePage: React.FC = () => {
           </button>
         </div>
 
-        {/* Modern Rounded Rectangle Cards Grid/Carousel */}
         <div className="pt-2 pb-6">
           <MarqueeSlider
             items={sacredDestinations}
@@ -1281,9 +1227,7 @@ export const HomePage: React.FC = () => {
                 className="flex-shrink-0 relative group cursor-pointer"
                 style={{ width: "clamp(200px, 48vw, 220px)" }}
               >
-                {/* Modern Rounded Rectangle Card */}
                 <div className="w-full bg-white dark:bg-[#0B192C] rounded-3xl overflow-hidden border border-gray-100 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col hover:-translate-y-1">
-                  {/* Image Container */}
                   <div
                     className="relative overflow-hidden bg-gray-100 dark:bg-slate-900"
                     style={{ height: "clamp(170px, 40vw, 190px)" }}
@@ -1298,7 +1242,6 @@ export const HomePage: React.FC = () => {
                     ) : null}
                   </div>
 
-                  {/* Centered Bottom Info Area */}
                   <div className="p-4 text-center flex flex-col items-center justify-center min-h-[72px]">
                     <h4 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight line-clamp-1 text-center">
                       {item.name}
@@ -1314,12 +1257,13 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* ══════════════════════ UPCOMING ARDH KUMBH FESTIVAL BANNER (100% Full Width Edge-to-Edge Hero Banner) ══════════════════════ */}
+      <div className="flex flex-col">
+      <HomeAartiSections />
+
       <section
         onClick={() => publishedFeatured._id && navigate(`/featured-banner/${publishedFeatured._id}`)}
-        className={`relative w-full aspect-[16/7] sm:aspect-[21/9] lg:aspect-[1920/540] min-h-[280px] sm:min-h-[360px] lg:min-h-[440px] flex items-center justify-center overflow-hidden rounded-none shadow-2xl mb-14 lg:mb-24 ${publishedFeatured._id ? "cursor-pointer" : ""}`}
+        className={`order-5 relative w-full aspect-[16/7] sm:aspect-[21/9] lg:aspect-[1920/540] min-h-[280px] sm:min-h-[360px] lg:min-h-[440px] flex items-center justify-center overflow-hidden rounded-none shadow-2xl mb-14 lg:mb-24 ${publishedFeatured._id ? "cursor-pointer" : ""}`}
       >
-        {/* Published festival banner */}
         {publishedFeatured.bannerImage || publishedFeatured.imageUrl || publishedFeatured.image ? (
           <img
             src={publishedFeatured.bannerImage || publishedFeatured.imageUrl || publishedFeatured.image}
@@ -1328,10 +1272,8 @@ export const HomePage: React.FC = () => {
             loading="lazy"
           />
         ) : null}
-        {/* Subtle gradient overlay for high contrast text readability */}
         <div className="absolute inset-0 bg-gradient-to-r from-[#0B192C]/80 via-[#0B192C]/50 to-black/30 dark:from-[#070F1B]/90 dark:via-[#070F1B]/60 dark:to-transparent" />
 
-        {/* Centered Hero Frame Banner Content Details */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full text-center flex flex-col items-center">
           <div className="max-w-3xl space-y-5 text-center flex flex-col items-center">
             <motion.div
@@ -1349,7 +1291,6 @@ export const HomePage: React.FC = () => {
               >
                 Featured Sacred Event
               </span>
-              {/* Decorative Saffron Underline Divider */}
               <div className="flex items-center justify-center gap-2.5 my-1.5">
                 <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
                 <Sparkles
@@ -1411,17 +1352,14 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* ══════════════════════ POPULAR PRASHAD FROM ASHRAMS ══════════════════════ */}
       <section
         id="prashad"
-        className="max-w-7xl mx-auto px-4 sm:px-6 space-y-8 mb-12 lg:mb-20"
+        className="order-2 w-full max-w-7xl mx-auto px-4 sm:px-6 space-y-8 mb-12 lg:mb-20"
       >
-        {/* Clean Text Header (No Background Wallpaper) */}
         <div className="text-center space-y-2 max-w-3xl mx-auto py-2">
           <p className="font-['Kalam'] text-base sm:text-4xl font-bold text-[#E58C28]">
             Sacred Prasad
           </p>
-          {/* Decorative Saffron Underline Divider */}
           <div className="flex items-center justify-center gap-2.5 my-1.5">
             <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
             <Sparkles
@@ -1442,7 +1380,6 @@ export const HomePage: React.FC = () => {
           </button>
         </div>
 
-        {/* Dynamic Database-Driven Marketplace Product Cards Carousel */}
         <div className="pt-2 pb-6">
           <MarqueeSlider
             items={
@@ -1598,14 +1535,11 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* ══════════════════════ FEATURED RETREATS (Matching Codebase Design) ══════════════════════ */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 space-y-8 mb-12 lg:mb-20">
-        {/* Clean Text Header (No Background Wallpaper) */}
+      <section className="order-1 w-full max-w-7xl mx-auto px-4 sm:px-6 space-y-8 mb-12 lg:mb-20">
         <div className="text-center space-y-2 max-w-4xl mx-auto py-2">
           <p className="font-['Kalam'] text-base sm:text-4xl font-bold text-[#E58C28]">
             Stay Near Sacred Places
           </p>
-          {/* Decorative Saffron Underline Divider */}
           <div className="flex items-center justify-center gap-2.5 my-1.5">
             <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
             <Sparkles
@@ -1654,7 +1588,6 @@ export const HomePage: React.FC = () => {
           </div>
         </div>
 
-        {/* Modern Rounded Rectangle Cards Carousel */}
         {loading ? (
           <div className="flex gap-4 sm:gap-6 overflow-x-auto pb-6">
             {[1, 2, 3, 4, 5].map((n) => (
@@ -1680,9 +1613,7 @@ export const HomePage: React.FC = () => {
                   className="flex-shrink-0 relative group cursor-pointer"
                   style={{ width: "clamp(200px, 48vw, 220px)" }}
                 >
-                  {/* Modern Rounded Rectangle Card */}
                   <div className="w-full bg-white dark:bg-[#0B192C] rounded-3xl overflow-hidden border border-gray-100 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col hover:-translate-y-1">
-                    {/* Image Container */}
                     <div
                       className="relative overflow-hidden bg-gray-100 dark:bg-slate-900"
                       style={{ height: "clamp(170px, 40vw, 190px)" }}
@@ -1701,11 +1632,9 @@ export const HomePage: React.FC = () => {
                             "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E";
                         }}
                       />
-                      {/* Royal Navy Blue Price Badge */}
                       <span className="absolute top-3 left-3 bg-[#0A4DA6] text-white text-[10px] sm:text-[11px] font-extrabold px-3 py-1 rounded-full shadow-sm">
                         {formatCurrency(ashram.lowestNightPrice ?? 150)} / night
                       </span>
-                      {/* Rating Badge — only when the ashram has real reviews */}
                       {ashram.rating?.count > 0 && (
                         <span className="absolute top-3 right-3 bg-white/95 dark:bg-[#0B192C]/90 text-[#0B192C] dark:text-white text-[10px] font-extrabold px-2 py-1 rounded-full shadow-sm flex items-center gap-1 backdrop-blur-sm">
                           <Star
@@ -1717,7 +1646,6 @@ export const HomePage: React.FC = () => {
                       )}
                     </div>
 
-                    {/* Centered Bottom Title Area */}
                     <div className="p-4 text-center flex flex-col items-center justify-center min-h-[72px]">
                       <h4 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight line-clamp-1 text-center">
                         {ashram.name}
@@ -1751,21 +1679,14 @@ export const HomePage: React.FC = () => {
           </div>
         )}
       </section>
+      </div>
 
-      {/* ══════════════════════ FEATURED OFFERS & FESTIVAL SPECIALS BANNER ══════════════════════ */}
-      {/* Rendered only when real offers exist. This block used to fall back to
-        four invented campaigns — Mahakumbh/KUMBH2026, Vrindavan/VRINDAVAN25 and
-        two more — none of which were in the database. Visitors were shown promo
-        codes that could never be redeemed, and the section kept advertising
-        them after every offer had been deleted. */}
       {offers.length > 0 && (
       <section className="max-w-7xl mx-auto px-4 sm:px-6 space-y-8 mb-12 lg:mb-20 mt-6">
-        {/* Clean Text Header (No Background Wallpaper) */}
         <div className="text-center space-y-2 max-w-3xl mx-auto py-2">
           <p className="font-['Kalam'] text-base sm:text-4xl font-bold text-[#E58C28]">
             {publishedOffer.heading || publishedOffer.title || "Exclusive Offers"}
           </p>
-          {/* Decorative Saffron Underline Divider */}
           <div className="flex items-center justify-center gap-2.5 my-1.5">
             <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
             <Sparkles
@@ -1805,9 +1726,6 @@ export const HomePage: React.FC = () => {
               const city =
                 offer.ashramId?.address?.city || targetAshram?.address?.city;
 
-              // A coupon bound to an ashram goes straight to that ashram's
-              // booking page with the code pre-applied. Anything unbound falls
-              // back to the offer's own page.
               const handleCardClick = () => {
                 const boundAshramId = String(
                   offer.ashramId?._id ??
@@ -1831,8 +1749,6 @@ export const HomePage: React.FC = () => {
                   offer={{
                     ...offer,
                     image: cardImg,
-                    // Only pass an ashram through when the offer names one;
-                    // an empty object would print a card with a blank pin.
                     ashramId:
                       city || targetAshram?.name
                         ? { address: { city }, name: targetAshram?.name }
@@ -1848,14 +1764,11 @@ export const HomePage: React.FC = () => {
       </section>
       )}
 
-      {/* ══════════════════════ SPIRITUAL MEDIA & KNOWLEDGE HUB SECTION ══════════════════════ */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 space-y-8 mb-12 lg:mb-20">
-        {/* Clean Text Header (No Background Wallpaper) */}
         <div className="text-center space-y-2 max-w-3xl mx-auto py-2">
           <p className="font-['Kalam'] text-base sm:text-4xl font-bold text-[#E58C28]">
             Journey Through Spirituality
           </p>
-          {/* Decorative Saffron Underline Divider */}
           <div className="flex items-center justify-center gap-2.5 my-1.5">
             <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
             <Sparkles
@@ -1964,15 +1877,12 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* ══════════════════════ CUSTOMER FEEDBACK & EXPERIENCES SLIDER ══════════════════════ */}
       {customerFeedbacks.length > 0 && (
         <section className="max-w-7xl mx-auto px-4 sm:px-6 mb-12 lg:mb-20 space-y-8">
-          {/* Clean Text Header (No Background Wallpaper) */}
           <div className="text-center space-y-2 max-w-3xl mx-auto py-2">
             <p className="font-['Kalam'] text-base sm:text-4xl font-bold text-[#E58C28]">
               Sacred Experiences
             </p>
-            {/* Decorative Saffron Underline Divider */}
             <div className="flex items-center justify-center gap-2.5 my-1.5">
               <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
               <Sparkles
@@ -1987,7 +1897,6 @@ export const HomePage: React.FC = () => {
             </p>
           </div>
 
-          {/* Smooth 60FPS Sliding Gallery Carousel (Matching Reference Screenshot) */}
           <div className="pt-2 pb-6">
             <MarqueeSlider
               items={customerFeedbacks}
@@ -1997,9 +1906,7 @@ export const HomePage: React.FC = () => {
                   className="flex-shrink-0 relative group cursor-pointer"
                   style={{ width: "clamp(240px, 50vw, 280px)" }}
                 >
-                  {/* Rounded Image Card Container (Matching Reference Screenshot Aspect & Border Radius) */}
                   <div className="w-full bg-white dark:bg-[#0B192C] rounded-[28px] overflow-hidden border border-gray-100 dark:border-slate-800 shadow-md hover:shadow-2xl transition-all duration-500 flex flex-col hover:-translate-y-1.5 h-[340px] sm:h-[380px] relative">
-                    {/* Full Height Background Image */}
                     {fb.img ? (
                       <img
                         src={fb.img}
@@ -2009,12 +1916,9 @@ export const HomePage: React.FC = () => {
                       />
                     ) : null}
 
-                    {/* Dark Gradient Overlay for Text Readability */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
 
-                    {/* Overlay Card Content — fixed layout: rating top, review middle, user bottom */}
                     <div className="absolute inset-0 p-5 flex flex-col justify-between text-white z-10">
-                      {/* Top: Star Rating Badge (Centered at Top) */}
                       <div className="flex items-center gap-1 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full w-fit mx-auto text-[#FFD700] text-xs font-bold border border-white/20 shadow-xs">
                         {[...Array(fb.rating)].map((_, i) => (
                           <Star
@@ -2028,7 +1932,6 @@ export const HomePage: React.FC = () => {
                         </span>
                       </div>
 
-                      {/* Bottom: review text (fixed height) + user info */}
                       <div className="space-y-3">
                         <p className="text-xs text-gray-100 font-medium leading-relaxed italic line-clamp-4 min-h-[4.5rem] drop-shadow-xs">
                           "{fb.comment}"

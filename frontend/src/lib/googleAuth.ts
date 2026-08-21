@@ -1,11 +1,6 @@
-// Google Identity Services (GIS) loader + sign-in trigger.
-//
-// The GIS script is loaded on demand rather than in index.html, so pages that
-// never show a Google button pay nothing for it.
 
 export const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 
-/** Feature flag for the UI: no client ID means the buttons stay disabled. */
 export const isGoogleConfigured = () => Boolean(GOOGLE_CLIENT_ID);
 
 const GIS_SRC = "https://accounts.google.com/gsi/client";
@@ -44,14 +39,6 @@ const loadGis = (): Promise<void> => {
   return loaderPromise;
 };
 
-/**
- * Open Google's account chooser and resolve with the ID token (`credential`).
- *
- * GIS renders its own trusted popup — the page never sees the user's Google
- * password, and the credential it returns is a signed JWT the backend verifies
- * independently. Uses a hidden container so the existing buttons keep their
- * own styling instead of Google's.
- */
 export const signInWithGoogle = (): Promise<string> =>
   new Promise((resolve, reject) => {
     if (!GOOGLE_CLIENT_ID) {
@@ -77,9 +64,6 @@ export const signInWithGoogle = (): Promise<string> =>
           use_fedcm_for_prompt: true,
         });
 
-        // A hidden host for the real Google button. Programmatically clicking it
-        // opens the account chooser reliably across browsers, including where
-        // third-party-cookie restrictions make `prompt()` a no-op.
         let host = document.getElementById("tv-google-host");
         if (!host) {
           host = document.createElement("div");
@@ -103,8 +87,6 @@ export const signInWithGoogle = (): Promise<string> =>
           google.accounts.id.prompt();
         }
 
-        // Nothing arrived — the user closed the chooser. Clear the pending
-        // promise so a later click starts fresh instead of hanging forever.
         setTimeout(() => {
           if (!settled) {
             settled = true;

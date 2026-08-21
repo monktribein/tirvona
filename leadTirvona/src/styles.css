@@ -1,6 +1,3 @@
-/* ==========================================================================
-   STRICT TIRVONA DESIGN REPLICATION SYSTEM (INTER FONT FAMILY)
-   ========================================================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
@@ -10,7 +7,6 @@
   padding: 0;
 }
 
-/* Global Inter Typography & Background */
 html {
   font-family: 'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   background-color: #F8FAFC;
@@ -26,7 +22,6 @@ body {
   flex-direction: column;
 }
 
-/* Lenis Smooth Scroll Overrides */
 html.lenis, html.lenis body {
   height: auto;
 }
@@ -47,7 +42,6 @@ html.lenis, html.lenis body {
   pointer-events: none;
 }
 
-/* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -65,7 +59,6 @@ html.lenis, html.lenis body {
   background: #0A4DA6;
 }
 
-/* Transitions */
 a, button, input, select, textarea, [role="button"] {
   font-family: 'Inter', sans-serif;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);

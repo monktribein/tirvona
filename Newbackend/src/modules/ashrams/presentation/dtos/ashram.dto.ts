@@ -32,6 +32,12 @@ export class AshramQueryDto {
   @IsOptional() @IsString() amenities?: string;
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) @Max(5) rating?: number;
   @IsOptional() @IsString() verified?: string;
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(-90) @Max(90)
+  latitude?: number;
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(-180) @Max(180)
+  longitude?: number;
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(1) @Max(500)
+  radiusKm = 100;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) page = 1;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100) limit = 20;
 }
@@ -65,11 +71,6 @@ export class SaveAshramDto {
   @IsOptional() @IsObject() documents?: Record<string, any>;
 }
 
-/**
- * Owner edit screens (the wizard's edit mode, the manage-ashram inline editor)
- * each submit a different subset of the profile, so an update accepts any
- * subset of the create payload.
- */
 export class UpdateAshramDto extends PartialType(SaveAshramDto) {}
 
 export class SaveAddOnDto {
@@ -106,19 +107,7 @@ export class CreateRoomDto {
   @IsOptional() @IsArray() images?: string[];
 }
 
-/**
- * Editing a room is a partial write.
- *
- * `CreateRoomDto` demands every field because a room without a capacity or a
- * rate is meaningless. Reusing it for PUT forced the console to resend the
- * whole record — including `ashramId` — to change a single price.
- */
 export class UpdateRoomDto extends PartialType(CreateRoomDto) {
-  /**
-   * Rooms cannot be moved between ashrams. Availability, bookings, inventory
-   * and pricing rules are all keyed to the original ashram, so re-parenting a
-   * room would orphan every one of them.
-   */
   ashramId?: never;
   @IsOptional()
   @IsIn(["active", "under_maintenance"])

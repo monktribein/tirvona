@@ -63,7 +63,6 @@ const MONTHS: Record<string, string> = {
 };
 
 const translateDynamicHindi = (text: string): string => {
-  // 1. Direct compound "City, State" resolution
   let match = text.match(/^([A-Za-z\s]+),\s*([A-Za-z\s]+)$/);
   if (match) {
     const city = match[1].trim();
@@ -75,7 +74,6 @@ const translateDynamicHindi = (text: string): string => {
     }
   }
 
-  // 2. Trailing arrow symbols: "Explore All Destinations →", "View All Directory →", etc.
   match = text.match(/^(.+?)\s*(→|->|›|>|»|←|<-)$/);
   if (match) {
     const base = match[1].trim();
@@ -85,7 +83,6 @@ const translateDynamicHindi = (text: string): string => {
     }
   }
 
-  // 3. Parenthesized counts or suffixes: "Fresh Temple Products (12)", "Available Room Categories (4)"
   match = text.match(/^(.+?)\s*\((\d+)\)$/);
   if (match) {
     const base = match[1].trim();
@@ -93,7 +90,6 @@ const translateDynamicHindi = (text: string): string => {
     return `${transBase} (${hindiNumber(match[2])})`;
   }
 
-  // 4. Booking guest / room summary patterns
   match = text.match(/^(\d+)\s*Guests?\s*·\s*(\d+)\s*Rooms?$/i);
   if (match) {
     return `${hindiNumber(match[1])} अतिथि · ${hindiNumber(match[2])} ${Number(match[2]) === 1 ? "कमरा" : "कमरे"}`;
@@ -113,7 +109,6 @@ const translateDynamicHindi = (text: string): string => {
     return `${hindiNumber(match[1])} कमरे, ${hindiNumber(match[2])} अतिथि`;
   }
 
-  // 5. Units and prices: "/ night", "/ bed per night", "/ 5.0"
   match = text.match(/^(.+?)\s*\/\s*(night|bed per night|bed rate|day|meal|person|transfer|month|year|box)$/i);
   if (match) {
     const base = match[1].trim();
@@ -129,7 +124,6 @@ const translateDynamicHindi = (text: string): string => {
     return `${transBase} / ५.०`;
   }
 
-  // 6. Counts and metrics
   match = text.match(/^(\d+)\+?\s*reviews?$/i);
   if (match) return `${hindiNumber(match[1])}+ समीक्षाएँ`;
   match = text.match(/^\((\d+)\s*reviews?\)$/i);
@@ -175,7 +169,6 @@ const translateDynamicHindi = (text: string): string => {
   match = text.match(/^Page (\d+) of (\d+)$/i);
   if (match) return `पृष्ठ ${hindiNumber(match[1])}, कुल ${hindiNumber(match[2])}`;
 
-  // 7. Dynamic Prasad, Offerings & Sacred Products
   match = text.match(/^(.+?)\s+(prasad|mahaprasad)$/i);
   if (match) {
     const base = match[1].trim();
@@ -211,7 +204,6 @@ const translateDynamicHindi = (text: string): string => {
     return `प्रवास के बाद ${hindiNumber(match[1])} रिवॉर्ड पॉइंट प्राप्त करें`;
   }
 
-  // 8. Search status dynamic matches
   match = text.match(/^Found\s+(\d+)\s+verified\s+Ashrams\s+matching\s+(.+)$/i);
   if (match) {
     const rawDest = match[2].trim().replace(/^"|"$/g, "");
@@ -231,13 +223,11 @@ const translateDynamicHindi = (text: string): string => {
     return `"${transDest}" के अनुसार कोई सत्यापित आश्रम नहीं मिला`;
   }
 
-  // 8. Range filters: "Under ₹350", "Over ₹600"
   match = text.match(/^Under\s+(.+)$/i);
   if (match) return `${hiUi[match[1]] || match[1]} से कम`;
   match = text.match(/^Over\s+(.+)$/i);
   if (match) return `${hiUi[match[1]] || match[1]} से अधिक`;
 
-  // 9. Trailing punctuation & requirements
   match = text.match(/^(.+?)(\s*\*)$/);
   if (match) {
     const base = match[1].trim();
@@ -259,7 +249,6 @@ const translateDynamicHindi = (text: string): string => {
     if (field) return `${field} आवश्यक है।`;
   }
 
-  // 10. Dates with English months and numerals
   const monthPattern = new RegExp(
     `\\b(${Object.keys(MONTHS).join("|")})\\b`,
     "g",
@@ -278,19 +267,15 @@ export const tUi = (text: string, forceLang?: AppLanguage): string => {
   const activeLang = forceLang || currentActiveLanguage || getActiveLanguage();
   if (activeLang !== "hi") return text;
 
-  // 1. Direct dictionary lookup
   if (hiUi[text]) return hiUi[text];
 
-  // 2. Whitespace-normalized lookup (handles multiline JSX strings with spaces/newlines)
   const normalized = text.replace(/\s+/g, " ").trim();
   if (!normalized) return text;
   if (hiUi[normalized]) return hiUi[normalized];
 
-  // 3. i18n fallback lookup
   const translated = String(i18n.t(normalized, { defaultValue: "" }));
   if (translated && translated !== normalized) return translated;
 
-  // 4. Dynamic pattern matching
   const dynamic = translateDynamicHindi(normalized);
   if (dynamic !== normalized) return dynamic;
 

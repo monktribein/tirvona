@@ -2,17 +2,13 @@ import { ForbiddenException, Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import type { Model } from "mongoose";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
-import { canManageAllAshrams, isAshramOwner } from "../../../common/auth/ashram-access";
+import {
+  canManageAllAshrams,
+  isAshramOwner,
+} from "../../../common/auth/ashram-access";
 import { PARKING_MODEL } from "../../parking/domain/parking.constants";
 import type { AnalyticsRange } from "../presentation/dtos/analytics.dto";
 
-/**
- * Bucket unit and window length per dashboard tab.
- *
- * `unit` is passed straight to `$dateTrunc`, so the JS bucket generator below
- * has to agree with it exactly — a mismatch produces buckets that never join
- * against the aggregation result and a chart that silently reads all zeros.
- */
 const RANGE_WINDOW: Record<
   AnalyticsRange,
   { unit: "day" | "week" | "month" | "year"; buckets: number }
@@ -23,12 +19,9 @@ const RANGE_WINDOW: Record<
   yearly: { unit: "year", buckets: 5 },
 };
 
-/** Truncate to the start of the bucket, matching `$dateTrunc`'s UTC semantics. */
 const truncate = (date: Date, unit: string): Date => {
   const d = new Date(date);
   d.setUTCHours(0, 0, 0, 0);
-  // $dateTrunc's default startOfWeek is Sunday, which is what getUTCDay() === 0
-  // reports, so subtracting the weekday index lands on the same instant.
   if (unit === "week") d.setUTCDate(d.getUTCDate() - d.getUTCDay());
   if (unit === "month") d.setUTCDate(1);
   if (unit === "year") {
@@ -86,15 +79,6 @@ export class AnalyticsService {
     private readonly parkingBookings: Model<any>,
   ) {}
 
-  /**
-   * Whether parking belongs in this caller's figures.
-   *
-   * A parking booking references a partner and a location, never an ashram, so
-   * there is no honest way to attribute it to a state or district. Only
-   * national-scope callers — whose ashram filter is empty — see it; a district
-   * officer's numbers stay ashram-only rather than being inflated with revenue
-   * from a car park that may sit outside their jurisdiction.
-   */
   private includesParking(ashramFilter: Record<string, any>): boolean {
     return Object.keys(ashramFilter).length === 0;
   }
@@ -102,19 +86,17 @@ export class AnalyticsService {
     user: AuthenticatedUser,
     requested?: string,
   ): Promise<any> {
-    if (canManageAllAshrams(user))
-      return requested ? requested : undefined;
-    const ids =
-      isAshramOwner(user)
-        ? (
-            await this.ashrams.find({ ownerId: user.id }).select("_id").lean()
-          ).map((a: any) => String(a._id))
-        : [
-            ...new Set([
-              ...(user.scopedAshramIds ?? []),
-              ...(user.employerAshramId ? [user.employerAshramId] : []),
-            ]),
-          ];
+    if (canManageAllAshrams(user)) return requested ? requested : undefined;
+    const ids = isAshramOwner(user)
+      ? (
+          await this.ashrams.find({ ownerId: user.id }).select("_id").lean()
+        ).map((a: any) => String(a._id))
+      : [
+          ...new Set([
+            ...(user.scopedAshramIds ?? []),
+            ...(user.employerAshramId ? [user.employerAshramId] : []),
+          ]),
+        ];
     if (requested && !ids.includes(requested))
       throw new ForbiddenException("Not authorized for this ashram");
     return requested ?? { $in: ids };
@@ -220,14 +202,6 @@ export class AnalyticsService {
     return { "address.state": user.state };
   }
 
-  /**
-   * Translate an ashram-level jurisdiction filter into a booking-level one.
-   *
-   * A national role has no filter, and materialising every ashram `_id` just to
-   * write `{ $in: [...every id...] }` is both slower and larger than the empty
-   * match it is equivalent to — so that case short-circuits. Scoped roles are
-   * bounded by their state or district, which keeps the id list small.
-   */
   private async bookingScope(
     ashramFilter: Record<string, any>,
   ): Promise<Record<string, any>> {
@@ -287,17 +261,15 @@ export class AnalyticsService {
                   _id: null,
                   totalBookings: { $sum: 1 },
                   revenue: { $sum: { $ifNull: ["$pricing.amountPaid", 0] } },
-                  grossValue: { $sum: { $ifNull: ["$pricing.totalAmount", 0] } },
+                  grossValue: {
+                    $sum: { $ifNull: ["$pricing.totalAmount", 0] },
+                  },
                   cancellations: {
                     $sum: { $cond: [{ $eq: ["$status", "cancelled"] }, 1, 0] },
                   },
                 },
               },
             ],
-            // The pilgrim count is distinct customers with a booking. This used
-            // to read `booking.userId`, a field the booking schema does not
-            // have, so every document contributed the same `undefined` and the
-            // dashboard reported exactly one pilgrim forever.
             pilgrims: [
               { $match: { customerId: { $ne: null } } },
               { $group: { _id: "$customerId" } },
@@ -338,8 +310,6 @@ export class AnalyticsService {
 
     const totals = bookingFacet[0]?.totals?.[0] ?? {};
     const parking = (parkingFacet as any[])[0] ?? {};
-    // Platform financials, not stay financials. Parking revenue is real money
-    // the platform collected and belongs in the same totals.
     const totalBookings =
       Number(totals.totalBookings ?? 0) + Number(parking.totalBookings ?? 0);
     const cancellations =
@@ -374,14 +344,6 @@ export class AnalyticsService {
     };
   }
 
-  /**
-   * Everything the admin dashboard charts need, in one round trip.
-   *
-   * The channel split is a real field — `paymentMode` — not an invented ratio:
-   * `online` means the pilgrim paid through the gateway, anything else was
-   * settled at the counter. That is exactly the "Online vs Direct Desk"
-   * distinction the dashboard has always claimed to draw.
-   */
   async overview(user: AuthenticatedUser, range: AnalyticsRange): Promise<any> {
     const ashramFilter = this.jurisdictionFilter(user);
     const bookingFilter = await this.bookingScope(ashramFilter);
@@ -397,134 +359,144 @@ export class AnalyticsService {
 
     const [seriesRows, facet, topAshrams, parkingSeries, parkingTotals] =
       await Promise.all([
-      this.bookings.aggregate([
-        { $match: { ...bookingFilter, createdAt: { $gte: windowStart } } },
-        {
-          $group: {
-            _id: {
-              bucket: { $dateTrunc: { date: "$createdAt", unit } },
-              channel: channelBranch,
-            },
-            bookings: { $sum: 1 },
-            revenue: { $sum: { $ifNull: ["$pricing.amountPaid", 0] } },
-            gross: { $sum: { $ifNull: ["$pricing.totalAmount", 0] } },
-          },
-        },
-      ]),
-      this.bookings.aggregate([
-        { $match: bookingFilter },
-        {
-          $facet: {
-            channels: [
-              {
-                $group: {
-                  _id: channelBranch,
-                  count: { $sum: 1 },
-                  revenue: { $sum: { $ifNull: ["$pricing.amountPaid", 0] } },
-                },
+        this.bookings.aggregate([
+          { $match: { ...bookingFilter, createdAt: { $gte: windowStart } } },
+          {
+            $group: {
+              _id: {
+                bucket: { $dateTrunc: { date: "$createdAt", unit } },
+                channel: channelBranch,
               },
-            ],
-            statuses: [{ $group: { _id: "$status", count: { $sum: 1 } } }],
-            window: [
+              bookings: { $sum: 1 },
+              revenue: { $sum: { $ifNull: ["$pricing.amountPaid", 0] } },
+              gross: { $sum: { $ifNull: ["$pricing.totalAmount", 0] } },
+            },
+          },
+        ]),
+        this.bookings.aggregate([
+          { $match: bookingFilter },
+          {
+            $facet: {
+              channels: [
+                { $match: { createdAt: { $gte: windowStart } } },
+                {
+                  $group: {
+                    _id: channelBranch,
+                    count: { $sum: 1 },
+                    revenue: { $sum: { $ifNull: ["$pricing.amountPaid", 0] } },
+                  },
+                },
+              ],
+              statuses: [
+                { $match: { createdAt: { $gte: windowStart } } },
+                { $group: { _id: "$status", count: { $sum: 1 } } },
+              ],
+              window: [
+                { $match: { createdAt: { $gte: windowStart } } },
+                {
+                  $group: {
+                    _id: null,
+                    bookings: { $sum: 1 },
+                    revenue: { $sum: { $ifNull: ["$pricing.amountPaid", 0] } },
+                    guests: { $sum: { $ifNull: ["$guestsCount", 0] } },
+                    nightsValue: {
+                      $sum: { $ifNull: ["$pricing.totalAmount", 0] },
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        ]),
+        this.bookings.aggregate([
+          { $match: bookingFilter },
+          {
+            $group: {
+              _id: "$ashramId",
+              revenue: { $sum: { $ifNull: ["$pricing.amountPaid", 0] } },
+              gross: { $sum: { $ifNull: ["$pricing.totalAmount", 0] } },
+              bookings: { $sum: 1 },
+            },
+          },
+          { $sort: { gross: -1, bookings: -1 } },
+          { $limit: 5 },
+          {
+            $lookup: {
+              from: "ashrams",
+              localField: "_id",
+              foreignField: "_id",
+              as: "ashram",
+            },
+          },
+          { $unwind: { path: "$ashram", preserveNullAndEmptyArrays: true } },
+          {
+            $project: {
+              _id: 0,
+              ashramId: "$_id",
+              revenue: 1,
+              gross: 1,
+              bookings: 1,
+              name: { $ifNull: ["$ashram.name", "Unknown ashram"] },
+              city: { $ifNull: ["$ashram.address.city", ""] },
+            },
+          },
+        ]),
+        withParking
+          ? this.parkingBookings.aggregate([
               { $match: { createdAt: { $gte: windowStart } } },
               {
                 $group: {
-                  _id: null,
+                  _id: { $dateTrunc: { date: "$createdAt", unit } },
                   bookings: { $sum: 1 },
                   revenue: { $sum: { $ifNull: ["$pricing.amountPaid", 0] } },
-                  guests: { $sum: { $ifNull: ["$guestsCount", 0] } },
-                  nightsValue: {
-                    $sum: { $ifNull: ["$pricing.totalAmount", 0] },
-                  },
+                  gross: { $sum: { $ifNull: ["$pricing.totalAmount", 0] } },
                 },
               },
-            ],
-          },
-        },
-      ]),
-      this.bookings.aggregate([
-        { $match: bookingFilter },
-        {
-          $group: {
-            _id: "$ashramId",
-            revenue: { $sum: { $ifNull: ["$pricing.amountPaid", 0] } },
-            gross: { $sum: { $ifNull: ["$pricing.totalAmount", 0] } },
-            bookings: { $sum: 1 },
-          },
-        },
-        // Ranked on booked value, not cash collected: a counter-settled ashram
-        // would otherwise rank last regardless of how much it actually sold.
-        { $sort: { gross: -1, bookings: -1 } },
-        { $limit: 5 },
-        {
-          $lookup: {
-            from: "ashrams",
-            localField: "_id",
-            foreignField: "_id",
-            as: "ashram",
-          },
-        },
-        { $unwind: { path: "$ashram", preserveNullAndEmptyArrays: true } },
-        {
-          $project: {
-            _id: 0,
-            ashramId: "$_id",
-            revenue: 1,
-            gross: 1,
-            bookings: 1,
-            name: { $ifNull: ["$ashram.name", "Unknown ashram"] },
-            city: { $ifNull: ["$ashram.address.city", ""] },
-          },
-        },
-      ]),
-      // Parking settles in its own collection, so it is aggregated separately
-      // and merged below rather than joined — the two domains share no key.
-      withParking
-        ? this.parkingBookings.aggregate([
-            { $match: { createdAt: { $gte: windowStart } } },
-            {
-              $group: {
-                _id: { $dateTrunc: { date: "$createdAt", unit } },
-                bookings: { $sum: 1 },
-                revenue: { $sum: { $ifNull: ["$pricing.amountPaid", 0] } },
-                gross: { $sum: { $ifNull: ["$pricing.totalAmount", 0] } },
-              },
-            },
-          ])
-        : Promise.resolve([]),
-      withParking
-        ? this.parkingBookings.aggregate([
-            {
-              $facet: {
-                window: [
-                  { $match: { createdAt: { $gte: windowStart } } },
-                  {
-                    $group: {
-                      _id: null,
-                      bookings: { $sum: 1 },
-                      revenue: { $sum: { $ifNull: ["$pricing.amountPaid", 0] } },
-                      gross: { $sum: { $ifNull: ["$pricing.totalAmount", 0] } },
+            ])
+          : Promise.resolve([]),
+        withParking
+          ? this.parkingBookings.aggregate([
+              {
+                $facet: {
+                  window: [
+                    { $match: { createdAt: { $gte: windowStart } } },
+                    {
+                      $group: {
+                        _id: null,
+                        bookings: { $sum: 1 },
+                        revenue: {
+                          $sum: { $ifNull: ["$pricing.amountPaid", 0] },
+                        },
+                        gross: {
+                          $sum: { $ifNull: ["$pricing.totalAmount", 0] },
+                        },
+                      },
                     },
-                  },
-                ],
-                allTime: [
-                  {
-                    $group: {
-                      _id: null,
-                      bookings: { $sum: 1 },
-                      revenue: { $sum: { $ifNull: ["$pricing.amountPaid", 0] } },
-                      gross: { $sum: { $ifNull: ["$pricing.totalAmount", 0] } },
+                  ],
+                  allTime: [
+                    {
+                      $group: {
+                        _id: null,
+                        bookings: { $sum: 1 },
+                        revenue: {
+                          $sum: { $ifNull: ["$pricing.amountPaid", 0] },
+                        },
+                        gross: {
+                          $sum: { $ifNull: ["$pricing.totalAmount", 0] },
+                        },
+                      },
                     },
-                  },
-                ],
+                  ],
+                  statuses: [
+                    { $match: { createdAt: { $gte: windowStart } } },
+                    { $group: { _id: "$status", count: { $sum: 1 } } },
+                  ],
+                },
               },
-            },
-          ])
-        : Promise.resolve([]),
-    ]);
+            ])
+          : Promise.resolve([]),
+      ]);
 
-    // Parking contributions indexed by bucket, so the series below can add them
-    // to the matching night without a second pass over the data.
     const parkingByBucket = new Map<string, any>(
       (parkingSeries as any[]).map((row) => [
         new Date(row._id).toISOString(),
@@ -532,8 +504,6 @@ export class AnalyticsService {
       ]),
     );
 
-    // Index the sparse aggregation result so empty buckets render as real
-    // zeroes rather than collapsing the x-axis onto whichever days had traffic.
     const emptyChannel = () => ({ bookings: 0, revenue: 0, gross: 0 });
     const byBucket = new Map<string, { online: any; desk: any }>();
     for (const row of seriesRows) {
@@ -555,8 +525,6 @@ export class AnalyticsService {
       const entry = byBucket.get(bucket.toISOString());
       const online = entry?.online ?? emptyChannel();
       const desk = entry?.desk ?? emptyChannel();
-      // Parking is a gateway-settled stream, so it joins the "online" series;
-      // the module split below is what keeps the two distinguishable.
       const parking = parkingByBucket.get(bucket.toISOString()) ?? {
         bookings: 0,
         revenue: 0,
@@ -584,33 +552,55 @@ export class AnalyticsService {
     });
 
     const channelRows = facet[0]?.channels ?? [];
-    const channelTotal = channelRows.reduce(
-      (sum: number, row: any) => sum + Number(row.count ?? 0),
-      0,
+    const parkingFacet = (parkingTotals as any[])[0] ?? {};
+    const parkingWindowForBreakdowns = parkingFacet.window?.[0] ?? {};
+    const parkingChannelCount = Number(
+      parkingWindowForBreakdowns.bookings ?? 0,
     );
+    const parkingChannelRevenue = Number(
+      parkingWindowForBreakdowns.revenue ?? 0,
+    );
+    const channelTotal =
+      parkingChannelCount +
+      channelRows.reduce(
+        (sum: number, row: any) => sum + Number(row.count ?? 0),
+        0,
+      );
     const channels = ["online", "desk"].map((key) => {
       const row = channelRows.find((r: any) => r._id === key);
-      const count = Number(row?.count ?? 0);
+      const isOnline = key === "online";
+      const count =
+        Number(row?.count ?? 0) + (isOnline ? parkingChannelCount : 0);
       return {
         channel: key,
         label: key === "online" ? "Online Gateway" : "Direct Desk",
         count,
-        revenue: round2(Number(row?.revenue ?? 0)),
+        revenue: round2(
+          Number(row?.revenue ?? 0) + (isOnline ? parkingChannelRevenue : 0),
+        ),
         share: percent(count, channelTotal),
       };
     });
 
-    const statusRows = facet[0]?.statuses ?? [];
-    const statusTotal = statusRows.reduce(
-      (sum: number, row: any) => sum + Number(row.count ?? 0),
+    const statusCounts = new Map<string, number>();
+    for (const row of [
+      ...(facet[0]?.statuses ?? []),
+      ...(parkingFacet.statuses ?? []),
+    ]) {
+      const status = String(row._id ?? "unknown");
+      statusCounts.set(
+        status,
+        (statusCounts.get(status) ?? 0) + Number(row.count ?? 0),
+      );
+    }
+    const statusTotal = [...statusCounts.values()].reduce(
+      (sum, count) => sum + count,
       0,
     );
-    // Lifecycle order, so the breakdown reads as a pipeline rather than as an
-    // arbitrary list. Statuses with no documents are dropped, not zero-filled —
-    // an empty row carries no information in a ranked bar list.
     const STATUS_ORDER = [
       "pending",
       "confirmed",
+      "upcoming",
       "checked_in",
       "checked_out",
       "completed",
@@ -619,41 +609,32 @@ export class AnalyticsService {
       "no_show",
       "expired",
     ];
-    const statuses = statusRows
-      .map((row: any) => ({
-        status: String(row._id ?? "unknown"),
-        count: Number(row.count ?? 0),
-        share: percent(Number(row.count ?? 0), statusTotal),
+    const statusRank = (status: string): number => {
+      const rank = STATUS_ORDER.indexOf(status);
+      return rank === -1 ? STATUS_ORDER.length : rank;
+    };
+    const statuses = [...statusCounts.entries()]
+      .map(([status, count]) => ({
+        status,
+        count,
+        share: percent(count, statusTotal),
       }))
-      .sort(
-        (a: any, b: any) =>
-          STATUS_ORDER.indexOf(a.status) - STATUS_ORDER.indexOf(b.status),
-      );
+      .sort((a, b) => statusRank(a.status) - statusRank(b.status));
 
     const windowTotals = facet[0]?.window?.[0] ?? {};
     const parkingWindow = (parkingTotals as any[])[0]?.window?.[0] ?? {};
     const parkingAllTime = (parkingTotals as any[])[0]?.allTime?.[0] ?? {};
 
-    // Platform totals span every revenue stream. Parking used to be omitted
-    // entirely, so a platform that had collected real money through car parks
-    // reported zero.
     const stayBookings = Number(windowTotals.bookings ?? 0);
     const stayRevenue = round2(Number(windowTotals.revenue ?? 0));
     const parkingBookingCount = Number(parkingWindow.bookings ?? 0);
     const parkingRevenue = round2(Number(parkingWindow.revenue ?? 0));
     const windowBookings = stayBookings + parkingBookingCount;
     const windowRevenue = round2(stayRevenue + parkingRevenue);
-    // Booked value and collected cash are different numbers, and on a platform
-    // where stays are paid at the counter they can differ by everything. The
-    // dashboard needs both or a fully unpaid ledger reads as "no activity".
     const windowGrossValue = round2(
       Number(windowTotals.nightsValue ?? 0) + Number(parkingWindow.gross ?? 0),
     );
 
-    // Compare the latest bucket against the one before it. When the prior
-    // bucket is empty there is no baseline, so the change is reported as
-    // unknown rather than as a percentage of nothing — dividing 6 new bookings
-    // by a floor of 1 would otherwise claim a 600% rise.
     const last = series[series.length - 1];
     const previous = series[series.length - 2];
     const comparable = Boolean(
@@ -685,8 +666,6 @@ export class AnalyticsService {
         revenue: round2(Number(row.revenue ?? 0)),
         gross: round2(Number(row.gross ?? 0)),
       })),
-      // Which stream the money came from. The headline figures are the
-      // platform total; this is what keeps stays and parking legible.
       modules: [
         {
           module: "ashram_booking",
@@ -708,8 +687,6 @@ export class AnalyticsService {
         windowRevenue,
         windowGrossValue,
         windowGuests: Number(windowTotals.guests ?? 0),
-        // Booked value per booking, not collected — an average that divides
-        // unpaid cash by real bookings would report zero on a healthy pipeline.
         averageBookingValue: windowBookings
           ? round2(windowGrossValue / windowBookings)
           : 0,
@@ -719,17 +696,7 @@ export class AnalyticsService {
     };
   }
 
-  /**
-   * The most recent bookings in the caller's jurisdiction.
-   *
-   * The dashboard table used to call `/bookings/history`, which is
-   * `@Roles("customer")` and returns only the caller's own stays — so an admin
-   * got a 403 and the page fell back to hardcoded sample rows.
-   */
-  async recentBookings(
-    user: AuthenticatedUser,
-    limit: number,
-  ): Promise<any[]> {
+  async recentBookings(user: AuthenticatedUser, limit: number): Promise<any[]> {
     const bookingFilter = await this.bookingScope(
       this.jurisdictionFilter(user),
     );
@@ -786,13 +753,7 @@ export class AnalyticsService {
       .slice(0, 100)
       .map((entry: any) => ({
         ...entry,
-        // `timestamp` is what every consumer renders, but only the booking
-        // audit schema also carries `occurredAt`; normalising here keeps the
-        // activity feed from printing "Invalid Date" for those rows.
         timestamp: entry.timestamp ?? entry.occurredAt ?? entry.createdAt,
-        // `details` is a Mixed column: a string on some writers, an object on
-        // others. A feed that interpolates it directly renders "[object
-        // Object]", so the readable form is resolved once, here.
         summary: this.describe(entry),
       }));
   }

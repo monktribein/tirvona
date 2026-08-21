@@ -30,27 +30,26 @@ html[lang="hi"] .tracking-widest {
   --color-ring: var(--ring);
 
   --font-sans: "Plus Jakarta Sans", "Inter", system-ui, -apple-system, sans-serif;
-  --radius-xl: 1.5rem; /* 24px */
-  --radius-lg: 1.25rem; /* 20px */
-  --radius-md: 0.75rem; /* 12px */
-  --radius-sm: 0.5rem; /* 8px */
+  --radius-xl: 1.5rem;
+  --radius-lg: 1.25rem;
+  --radius-md: 0.75rem;
+  --radius-sm: 0.5rem;
 }
 
 :root {
-  /* Premium Design System Mode (Tirvona Logo Colors: Royal Navy Blue #0A4DA6, Saffron Gold #E58C28, Deep Navy #0B192C) */
   --background: #FFFFFF;
   --foreground: #0B192C;
   
   --card: #FFFFFF;
   --card-foreground: #0B192C;
   
-  --primary: #0A4DA6; /* Tirvona Logo Royal Navy Blue */
+  --primary: #0A4DA6;
   --primary-foreground: #FFFFFF;
   
-  --secondary: #0B192C; /* Tirvona Deep Navy */
+  --secondary: #0B192C;
   --secondary-foreground: #FFFFFF;
   
-  --accent: #E58C28; /* Tirvona Saffron Gold */
+  --accent: #E58C28;
   --accent-foreground: #FFFFFF;
   
   --success: #10B981;
@@ -63,7 +62,6 @@ html[lang="hi"] .tracking-widest {
 }
 
 .dark {
-  /* Maintain dark theme options styled around Tirvona Logo Palette */
   --background: #070F1B;
   --foreground: #F8FAFC;
   
@@ -88,7 +86,6 @@ html[lang="hi"] .tracking-widest {
   --ring: rgba(10, 77, 166, 0.3);
 }
 
-/* Custom Base Styles */
 html {
   scroll-padding-top: 5.5rem;
   text-rendering: optimizeLegibility;
@@ -105,19 +102,82 @@ body {
   overscroll-behavior-y: auto;
 }
 
-/* Anchor targets scroll offset */
+.dashboard-shell,
+.dashboard-shell h1,
+.dashboard-shell h2,
+.dashboard-shell h3,
+.dashboard-shell h4,
+.dashboard-shell h5,
+.dashboard-shell h6,
+.dashboard-shell input,
+.dashboard-shell select,
+.dashboard-shell textarea,
+.dashboard-shell button {
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.dashboard-shell .material-symbols-rounded.sidebar-material-icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  overflow: hidden;
+  font-family: "Material Symbols Rounded";
+  font-size: 19px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  font-feature-settings: "liga";
+  -webkit-font-feature-settings: "liga";
+  -webkit-font-smoothing: antialiased;
+  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 20;
+}
+
+.material-symbols-rounded.google-material-icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 1em;
+  height: 1em;
+  overflow: hidden;
+  font-family: "Material Symbols Rounded";
+  font-size: 1em;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  font-feature-settings: "liga";
+  -webkit-font-feature-settings: "liga";
+  -webkit-font-smoothing: antialiased;
+  vertical-align: middle;
+}
+
+.material-symbols-rounded.google-material-icon[class*="fill-"] {
+  font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24 !important;
+}
+
 [id] {
   scroll-margin-top: 5.5rem;
 }
 
-/* Sideways-scroll safety net */
 html,
 body {
   max-width: 100%;
   overflow-x: clip;
 }
 
-/* Long unbreakable strings break safely */
 body {
   overflow-wrap: break-word;
 }
@@ -128,14 +188,10 @@ h1, h2, h3, h4, h5, h6 {
   text-transform: capitalize;
 }
 
-/* Existing long-form records keep their original wording, with a correctly
-   capitalized opening character. Input values are normalized before save by
-   the shared text-case handler. */
 p::first-letter {
   text-transform: uppercase;
 }
 
-/* Smooth, GPU-friendly default transitions for interactive elements */
 a,
 button,
 [role="button"] {
@@ -145,7 +201,6 @@ button,
     transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Brand-colour native form controls */
 select,
 input[type="checkbox"],
 input[type="radio"],
@@ -158,14 +213,12 @@ option:hover {
   color: #ffffff;
 }
 
-/* Hint the compositor for elements that animate transform/opacity */
 .gpu {
   will-change: transform, opacity;
   transform: translate3d(0, 0, 0);
   backface-visibility: hidden;
 }
 
-/* Lightweight Scroll-Reveal Animations (GPU accelerated, 0 layout shift) */
 @keyframes fadeInUpSmooth {
   from {
     opacity: 0;
@@ -182,7 +235,6 @@ option:hover {
   will-change: transform, opacity;
 }
 
-/* Respect users who prefer reduced motion (accessibility) */
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto !important;
@@ -195,7 +247,6 @@ option:hover {
   }
 }
 
-/* Premium, subtle custom scrollbars */
 ::-webkit-scrollbar {
   width: 7px;
   height: 7px;
@@ -218,7 +269,6 @@ option:hover {
   background: rgba(229, 140, 40, 0.5);
 }
 
-/* Elegant glassmorphism class for premium styling */
 .glass {
   background: rgba(255, 255, 255, 0.75);
   backdrop-filter: blur(12px);
@@ -233,7 +283,6 @@ option:hover {
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-/* Standard Premium Shadow */
 .premium-shadow {
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.02), 0 1px 3px rgba(0, 0, 0, 0.02);
 }
@@ -246,11 +295,9 @@ option:hover {
   box-shadow: 0 12px 30px rgba(11, 25, 44, 0.06);
 }
 
-/* Hide scrollbars on horizontal carousels */
 .scrollbar-none::-webkit-scrollbar { display: none; }
 .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* Loading skeleton shimmer */
 .skeleton {
   position: relative;
   overflow: hidden;
@@ -286,10 +333,6 @@ option:hover {
   }
 }
 
-/* ── OTP challenge animations ───────────────────────────────────────────── */
-/* Used by components/OtpChallengeForm when a 6-digit code auto-submits. */
-
-/* Wrong code: a short horizontal shake on the input. */
 .otp-shake {
   animation: otp-shake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97);
 }
@@ -300,7 +343,6 @@ option:hover {
   40%, 60% { transform: translateX(7px); }
 }
 
-/* Correct code: the field settles, then the success badge pops in. */
 .otp-success-pop {
   animation: otp-success-pop 0.42s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
@@ -309,7 +351,6 @@ option:hover {
   100% { transform: scale(1); opacity: 1; }
 }
 
-/* Draws the checkmark stroke once the badge has popped. */
 .otp-check-draw {
   stroke-dasharray: 28;
   stroke-dashoffset: 28;
@@ -319,7 +360,6 @@ option:hover {
   100% { stroke-dashoffset: 0; }
 }
 
-/* Indeterminate bar shown while the code is being checked. */
 .otp-progress::after {
   content: "";
   position: absolute;
@@ -344,17 +384,25 @@ option:hover {
   .otp-check-draw { stroke-dashoffset: 0; }
 }
 
-/* Global Shadow Removal Rule */
 *, ::before, ::after {
   box-shadow: none !important;
 }
 
-/* Global Thin Golden Border Rule for Cards & Containers */
 [class*="border-gray-"],
 [class*="border-slate-"],
 [class*="border-zinc-"],
 [class*="border-neutral-"],
 [class*="border-white/"] {
   border-color: rgba(229, 140, 40, 0.35) !important;
+}
+
+/* Keep dashboard content dense and consistent across every role without
+   affecting the public portal's more spacious marketing layouts. */
+.dashboard-shell main .gap-6 {
+  gap: 1rem;
+}
+
+.dashboard-shell main .space-y-6 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 1rem;
 }
 

@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useSearchParams, Link, useNavigate } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ashramService } from "../services";
 import { formatCurrency } from "../utils/format";
 import { SearchResultStatus } from "../components/shared/SearchResultStatus";
 import { GuestRoomSelector } from "../components/shared/GuestRoomSelector";
-import { VerifiedBadge } from "../components/shared/VerifiedBadge";
 import { DateRangePicker } from "../components/DateRangePicker";
 import {
   useBookingSearch,
@@ -13,6 +12,7 @@ import {
 } from "../contexts/BookingSearchContext";
 import { useLanguage } from "../contexts/LanguageContext";
 import { hiUi } from "../i18n/resources";
+import { useNearbyAshramDiscovery } from "../hooks/useNearbyAshramDiscovery";
 import {
   Filter,
   MapPin,
@@ -26,6 +26,10 @@ import {
   Building2,
   Landmark,
   Home,
+  Navigation,
+  Clock,
+  BedDouble,
+  CheckCircle2,
 } from "lucide-react";
 
 export const SearchPage: React.FC = () => {
@@ -50,7 +54,6 @@ export const SearchPage: React.FC = () => {
   const childrenQuery = searchParams.get("children");
   const guestsQuery = searchParams.get("guests");
 
-  const navigate = useNavigate();
   const { searchState, updateBookingSearch, totalGuests } = useBookingSearch();
 
   const [destination, setDestination] = useState(activeKeyword);
@@ -63,8 +66,15 @@ export const SearchPage: React.FC = () => {
   const [checkOut, setCheckOut] = useState(initialDates.checkOut);
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [discovery, setDiscovery] = useState<any>(null);
+  const {
+    status: locationStatus,
+    coordinates,
+    error: locationError,
+    requestLocation,
+    clearLocation,
+  } = useNearbyAshramDiscovery();
 
-  // Filters State
   const [ashramFilter, setAshramFilter] = useState(false);
   const [dharamshalaFilter, setDharamshalaFilter] = useState(false);
   const [homestayFilter, setHomestayFilter] = useState(false);
@@ -72,18 +82,15 @@ export const SearchPage: React.FC = () => {
   const [foodFilter, setFoodFilter] = useState(false);
   const [parkingFilter, setParkingFilter] = useState(false);
 
-  // Spatial Map State
   const [showMapGrid, setShowMapGrid] = useState(false);
   const [selectedMapAshram, setSelectedMapAshram] = useState<any>(null);
 
-  // Autocomplete Suggestions
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [allAshrams, setAllAshrams] = useState<any[]>([]);
   const autocompleteRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Load all ashrams once for autocomplete matching
     const loadAll = async () => {
       try {
         const res = await ashramService.search({ verified: "true" });
@@ -96,7 +103,6 @@ export const SearchPage: React.FC = () => {
     };
     loadAll();
 
-    // Close autocomplete on click outside
     const handleClickOutside = (event: MouseEvent) => {
       if (
         autocompleteRef.current &&
@@ -164,14 +170,22 @@ export const SearchPage: React.FC = () => {
     acFilter,
     foodFilter,
     parkingFilter,
+    coordinates?.latitude,
+    coordinates?.longitude,
   ]);
 
   const fetchAshrams = async () => {
     setLoading(true);
     try {
       const params: Record<string, string> = { verified: "true" };
+      params.limit = "100";
       const searchKey = destination.trim() || activeKeyword.trim();
       if (searchKey) params.destination = searchKey;
+      if (coordinates && !searchKey) {
+        params.latitude = String(coordinates.latitude);
+        params.longitude = String(coordinates.longitude);
+        params.radiusKm = "100";
+      }
       if (checkInQuery) params.checkIn = checkInQuery;
       if (checkOutQuery) params.checkOut = checkOutQuery;
       if (guestsQuery) params.guests = guestsQuery;
@@ -181,8 +195,6 @@ export const SearchPage: React.FC = () => {
       if (dharamshalaFilter) selectedTypes.push("dharamshala");
       if (homestayFilter) selectedTypes.push("homestay");
 
-      // Only pass params.type if a specific subset (1 or 2) is checked.
-      // If all 3 are checked or 0 checked, do not restrict params.type so all properties show.
       if (selectedTypes.length > 0 && selectedTypes.length < 3) {
         params.type = selectedTypes.join(",");
       } else if (selectedTypes.length === 0 && typeQuery) {
@@ -214,10 +226,12 @@ export const SearchPage: React.FC = () => {
         }
 
         setResults(fetchedData);
+        setDiscovery(res.data.discovery ?? null);
       }
     } catch (err) {
       console.error("Search API error:", err);
       setResults([]);
+      setDiscovery(null);
     } finally {
       setLoading(false);
     }
@@ -243,8 +257,14 @@ export const SearchPage: React.FC = () => {
     fetchAshrams();
   };
 
-  // Landmark distance calculation for Spatial Map Grid
   const getCentralLandmark = () => {
+    if (coordinates) {
+      return {
+        name: discovery?.detectedArea?.city || "Your location",
+        lat: coordinates.latitude,
+        lon: coordinates.longitude,
+      };
+    }
     const dest = activeKeyword.toLowerCase();
     if (dest.includes("vrindavan")) {
       return { name: "Sri Banke Bihari Mandir", lat: 27.5795, lon: 77.698 };
@@ -297,9 +317,43 @@ export const SearchPage: React.FC = () => {
     return parseFloat((R * c).toFixed(2));
   };
 
+  const getMapItems = () => {
+    const central = getCentralLandmark();
+    return results
+      .flatMap((ashram) => {
+        const coords = ashram.address?.coordinates?.coordinates;
+        if (
+          !Array.isArray(coords) ||
+          coords.length !== 2 ||
+          !Number.isFinite(Number(coords[0])) ||
+          !Number.isFinite(Number(coords[1]))
+        )
+          return [];
+        const lon = Number(coords[0]);
+        const lat = Number(coords[1]);
+        const isPlaceholder =
+          lon === 77.209 &&
+          lat === 28.613 &&
+          !/^(new\s+)?delhi$/i.test(String(ashram.address?.city ?? ""));
+        if (isPlaceholder) return [];
+        return [
+          {
+            ...ashram,
+            lat,
+            lon,
+            distance:
+              ashram.discovery?.distanceKm ??
+              getDistanceInKm(central.lat, central.lon, lat, lon),
+          },
+        ];
+      })
+      .sort((a, b) => a.distance - b.distance);
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setDestination(val);
+    if (val.trim() && coordinates) clearLocation();
 
     if (!val.trim()) {
       setSuggestions([]);
@@ -337,6 +391,7 @@ export const SearchPage: React.FC = () => {
   };
 
   const selectSuggestion = (sug: string) => {
+    clearLocation();
     setDestination(sug);
     setShowSuggestions(false);
     const params: Record<string, string> = { destination: sug };
@@ -362,13 +417,11 @@ export const SearchPage: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-1 pb-12 space-y-4 lg:pb-12 lg:h-[calc(100vh-5.5rem)] lg:flex lg:flex-col lg:overflow-hidden">
-      {/* Search Filter Panel — stays fixed below the navbar */}
       <div className="relative z-[100] isolate overflow-visible bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 p-1.5 sm:p-2 rounded-[28px] lg:rounded-full shadow-lg shadow-[#0B192C]/8 shrink-0">
         <form
           onSubmit={handleSearchSubmit}
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.45fr_1.35fr_1.15fr_auto] gap-1 lg:gap-0 items-center"
         >
-          {/* Destination */}
           <div
             className="flex flex-col justify-center text-left relative min-h-[62px] px-5 py-2 rounded-2xl lg:rounded-full lg:border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0B192C] hover:bg-slate-50 dark:hover:bg-slate-900/60 hover:shadow-lg z-10 focus-within:z-[90]"
             ref={autocompleteRef}
@@ -425,12 +478,10 @@ export const SearchPage: React.FC = () => {
             />
           </div>
 
-          {/* Guest & Room Count */}
           <div className="relative rounded-2xl lg:rounded-full px-5 py-2 min-h-[62px] flex items-center bg-white dark:bg-[#0B192C] hover:bg-slate-50 dark:hover:bg-slate-900/60 hover:shadow-lg z-10 focus-within:z-[90]">
             <GuestRoomSelector compact pill />
           </div>
 
-          {/* Search Action */}
           <button
             type="submit"
             className="w-full lg:w-auto h-12 lg:h-14 px-6 bg-[#0A4DA6] hover:bg-opacity-95 text-white font-extrabold rounded-full text-xs flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-[#0A4DA6]/10"
@@ -440,15 +491,60 @@ export const SearchPage: React.FC = () => {
         </form>
       </div>
 
+      <div
+        className={`shrink-0 rounded-[24px] border px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+          coordinates && discovery?.locationApplied
+            ? "border-emerald-200 bg-emerald-50/80 dark:border-emerald-900 dark:bg-emerald-950/30"
+            : "border-blue-100 bg-blue-50/70 dark:border-blue-900 dark:bg-blue-950/30"
+        }`}
+      >
+        <div className="flex items-start gap-3">
+          <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-[#0A4DA6] shadow-sm dark:bg-slate-900">
+            <Navigation size={18} />
+          </span>
+          <div>
+            <p className="text-sm font-extrabold text-[#0B192C] dark:text-white">
+              {coordinates && discovery?.locationApplied
+                ? `${discovery.nearbyCount} nearby Ashram${discovery.nearbyCount === 1 ? "" : "s"} found first`
+                : locationStatus === "requesting"
+                  ? "Detecting your area…"
+                  : "Find Ashrams near your current area"}
+            </p>
+            <p className="mt-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-300">
+              {coordinates && discovery?.locationApplied
+                ? `Near ${
+                    [
+                      discovery.detectedArea?.city,
+                      discovery.detectedArea?.district,
+                      discovery.detectedArea?.state,
+                    ]
+                      .filter(Boolean)
+                      .join(", ") || "your current area"
+                  } within ${discovery.radiusKm} km. Nearby stays are ranked by distance; the full catalogue follows.`
+                : locationError ||
+                  "Allow location for distance-ranked results, or use the city/area search above. Your precise location is not saved."}
+            </p>
+          </div>
+        </div>
+        {!coordinates && (
+          <button
+            type="button"
+            onClick={requestLocation}
+            disabled={locationStatus === "requesting"}
+            className="shrink-0 rounded-full bg-[#0A4DA6] px-5 py-2.5 text-xs font-bold text-white disabled:cursor-wait disabled:opacity-60"
+          >
+            {locationStatus === "requesting" ? "Locating…" : "Use my location"}
+          </button>
+        )}
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 lg:flex-1 lg:min-h-0">
-        {/* Sidebar Filter and Map Toggle — static */}
         <aside className="space-y-6 lg:overflow-y-auto lg:pr-1 scrollbar-none">
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[28px] shadow-sm space-y-6">
             <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white flex items-center gap-2 border-b border-gray-50 dark:border-slate-850 pb-3">
               <Filter size={16} className="text-[#0A4DA6]" /> Filters
             </h3>
 
-            {/* Stay Type Section */}
             <div className="space-y-4">
               <h4 className="text-[10px] uppercase font-extrabold text-gray-400 tracking-wider">
                 Stay Type
@@ -494,7 +590,6 @@ export const SearchPage: React.FC = () => {
 
             <div className="border-t border-gray-100 dark:border-slate-800" />
 
-            {/* Common Facilities Section */}
             <div className="space-y-4">
               <h4 className="text-[10px] font-extrabold text-gray-400 tracking-wider">
                 Common Facilities
@@ -540,17 +635,12 @@ export const SearchPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Spatial Map Activation Box */}
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[28px] shadow-sm flex flex-col items-center justify-center text-center space-y-4 relative overflow-hidden">
             <div className="absolute inset-0 bg-[#0A4DA6]/5 opacity-40 pointer-events-none" />
             <MapPin className="text-[#0A4DA6]" size={28} />
             <h4 className="text-xs font-extrabold text-[#0B192C] dark:text-white">
               How far is each stay?
             </h4>
-            {/* Named the landmark outright. "Spatial Map Grid View — view
-                coordinates of all retreats relative to holy temples" described
-                the implementation rather than the answer a pilgrim wants,
-                which is simply how close the bed is to the temple. */}
             <p className="text-[10px] text-gray-400 max-w-[200px] leading-relaxed">
               See every ashram on a map, sorted by distance from{" "}
               <strong className="text-[#0A4DA6] font-bold">
@@ -562,21 +652,7 @@ export const SearchPage: React.FC = () => {
               type="button"
               onClick={() => {
                 if (results.length > 0) {
-                  const central = getCentralLandmark();
-                  const mapItems = results
-                    .map((ashram) => {
-                      const coords = ashram.address?.coordinates?.coordinates;
-                      const lon = coords?.[0] || central.lon;
-                      const lat = coords?.[1] || central.lat;
-                      const dist = getDistanceInKm(
-                        central.lat,
-                        central.lon,
-                        lat,
-                        lon,
-                      );
-                      return { ...ashram, lat, lon, distance: dist };
-                    })
-                    .sort((a, b) => a.distance - b.distance);
+                  const mapItems = getMapItems();
                   setSelectedMapAshram(mapItems[0]);
                 }
                 setShowMapGrid(true);
@@ -588,11 +664,12 @@ export const SearchPage: React.FC = () => {
           </div>
         </aside>
 
-        {/* Results Feed — only this scrolls */}
         <section className="lg:col-span-3 space-y-6 lg:overflow-y-auto lg:pr-2 lg:pb-6 scrollbar-none">
           <SearchResultStatus
             loading={loading}
-            destination={activeKeyword}
+            destination={
+              activeKeyword || discovery?.detectedArea?.city || "All locations"
+            }
             count={results.length}
           />
 
@@ -618,12 +695,26 @@ export const SearchPage: React.FC = () => {
             </div>
           ) : (
             <div className="space-y-5">
-              {results.map((ashram) => (
+              {results.map((ashram, index) => (
+                <React.Fragment key={ashram._id}>
+                  {coordinates && ashram.discovery?.isNearby && index === 0 && (
+                    <div className="flex items-center gap-2 px-1 pt-1 text-sm font-extrabold text-[#0B192C] dark:text-white">
+                      <Navigation size={17} className="text-[#0A4DA6]" />
+                      Nearby Ashrams, ranked by distance
+                    </div>
+                  )}
+                  {coordinates &&
+                    !ashram.discovery?.isNearby &&
+                    index > 0 &&
+                    results[index - 1]?.discovery?.isNearby && (
+                      <div className="flex items-center gap-2 border-t border-slate-200 px-1 pt-5 text-sm font-extrabold text-[#0B192C] dark:border-slate-700 dark:text-white">
+                        <Compass size={17} className="text-[#0A4DA6]" />
+                        More verified Ashrams
+                      </div>
+                    )}
                 <div
-                  key={ashram._id}
                   className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-5 shadow-sm premium-card-hover flex flex-col md:flex-row gap-6"
                 >
-                  {/* Ashram Thumbnail Image */}
                   <div className="w-full md:w-60 h-40 rounded-[20px] bg-gray-50 dark:bg-slate-900 relative overflow-hidden shrink-0">
                     <img
                       src={
@@ -638,9 +729,18 @@ export const SearchPage: React.FC = () => {
                           "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E";
                       }}
                     />
+                    {ashram.discovery?.distanceKm != null && (
+                      <span className="absolute left-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-extrabold text-[#0A4DA6] shadow-sm">
+                        {ashram.discovery.distanceKm} km away
+                      </span>
+                    )}
+                    {(ashram.images?.length ?? 0) > 1 && (
+                      <span className="absolute bottom-3 right-3 rounded-full bg-slate-950/75 px-2 py-1 text-[9px] font-bold text-white">
+                        {ashram.images.length} images
+                      </span>
+                    )}
                   </div>
 
-                  {/* Info details */}
                   <div className="flex-grow flex flex-col justify-between space-y-4">
                     <div className="space-y-2">
                       <div className="flex justify-between items-start gap-2">
@@ -659,9 +759,13 @@ export const SearchPage: React.FC = () => {
                             className="text-[#D4AF37] fill-[#D4AF37]"
                             size={13}
                           />
-                          <span>{ashram.rating?.average || 4.5}</span>
+                          <span>
+                            {Number(ashram.rating?.average) > 0
+                              ? Number(ashram.rating.average).toFixed(1)
+                              : "New"}
+                          </span>
                           <span className="text-[10px] text-gray-400 font-medium">
-                            ({ashram.rating?.count || 10})
+                            ({Number(ashram.rating?.count ?? 0)})
                           </span>
                         </div>
                       </div>
@@ -674,6 +778,49 @@ export const SearchPage: React.FC = () => {
                           "Spiritual lodging offering simple bedding, prayers, and vegetarian boarding."}
                       </p>
                     </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-[10px] font-semibold text-slate-600 dark:text-slate-300 sm:grid-cols-4">
+                      <span className="flex items-center gap-1.5 rounded-xl bg-slate-50 px-2.5 py-2 dark:bg-slate-900">
+                        <BedDouble size={13} className="text-[#0A4DA6]" />
+                        {ashram.discovery?.rooms?.totalInventory ?? 0} rooms
+                      </span>
+                      <span className="flex items-center gap-1.5 rounded-xl bg-slate-50 px-2.5 py-2 dark:bg-slate-900">
+                        <Car size={13} className="text-[#0A4DA6]" />
+                        {ashram.discovery?.parking?.available
+                          ? "Parking"
+                          : "No parking listed"}
+                      </span>
+                      <span className="flex items-center gap-1.5 rounded-xl bg-slate-50 px-2.5 py-2 dark:bg-slate-900">
+                        <UtensilsCrossed size={13} className="text-[#0A4DA6]" />
+                        {ashram.discovery?.food?.available
+                          ? ashram.discovery.food.type || "Food available"
+                          : "No food listed"}
+                      </span>
+                      <span className="flex items-center gap-1.5 rounded-xl bg-slate-50 px-2.5 py-2 dark:bg-slate-900">
+                        <CheckCircle2 size={13} className="text-emerald-600" />
+                        {ashram.discovery?.bookingAvailability?.checkedForDates
+                          ? ashram.discovery.bookingAvailability.available
+                            ? `${ashram.discovery.bookingAvailability.availableRooms} available`
+                            : "Unavailable"
+                          : ashram.discovery?.rooms?.totalInventory
+                            ? `${ashram.discovery.rooms.totalInventory} rooms`
+                            : "Check availability"}
+                      </span>
+                    </div>
+
+                    {(ashram.discovery?.spiritualSchedule?.dailySchedule ||
+                      ashram.discovery?.spiritualSchedule?.activities?.length >
+                        0) && (
+                      <p className="flex items-start gap-1.5 text-[10px] leading-relaxed text-slate-500 dark:text-slate-300">
+                        <Clock size={13} className="mt-0.5 shrink-0 text-[#0A4DA6]" />
+                        <span className="line-clamp-2">
+                          {ashram.discovery.spiritualSchedule.dailySchedule ||
+                            ashram.discovery.spiritualSchedule.activities.join(
+                              " · ",
+                            )}
+                        </span>
+                      </p>
+                    )}
 
                     <div className="flex flex-wrap gap-1">
                       {ashram.amenities
@@ -689,18 +836,25 @@ export const SearchPage: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Pricing info & Action button */}
                   <div className="w-full md:w-40 md:border-l border-gray-100 dark:border-slate-800 pl-0 md:pl-6 flex md:flex-col justify-between md:justify-center items-center md:items-end gap-4 shrink-0">
                     <div className="flex flex-col md:text-right">
                       <span className="text-[9px] text-gray-400 font-bold tracking-wider">
                         Starts From
                       </span>
-                      <span className="text-base font-extrabold text-[#0B192C] dark:text-white">
-                        {formatCurrency(ashram.lowestNightPrice ?? 150)}
-                      </span>
-                      <span className="text-[9px] text-gray-400 font-bold">
-                        per night / bed
-                      </span>
+                      {ashram.lowestNightPrice != null ? (
+                        <>
+                          <span className="text-base font-extrabold text-[#0B192C] dark:text-white">
+                            {formatCurrency(ashram.lowestNightPrice)}
+                          </span>
+                          <span className="text-[9px] text-gray-400 font-bold">
+                            per night / bed
+                          </span>
+                        </>
+                      ) : (
+                        <span className="text-xs font-extrabold text-[#0B192C] dark:text-white">
+                          Contact for price
+                        </span>
+                      )}
                     </div>
                     <Link
                       to={buildDetailLink(ashram._id)}
@@ -710,31 +864,18 @@ export const SearchPage: React.FC = () => {
                     </Link>
                   </div>
                 </div>
+                </React.Fragment>
               ))}
             </div>
           )}
         </section>
       </div>
 
-      {/* Spatial Map Grid Modal */}
       <AnimatePresence>
         {showMapGrid &&
           (() => {
             const central = getCentralLandmark();
-            const mapItems = results
-              .map((ashram) => {
-                const coords = ashram.address?.coordinates?.coordinates;
-                const lon = coords?.[0] || central.lon;
-                const lat = coords?.[1] || central.lat;
-                const dist = getDistanceInKm(
-                  central.lat,
-                  central.lon,
-                  lat,
-                  lon,
-                );
-                return { ...ashram, lat, lon, distance: dist };
-              })
-              .sort((a, b) => a.distance - b.distance);
+            const mapItems = getMapItems();
 
             let lats = mapItems.map((item) => item.lat).concat([central.lat]);
             let lons = mapItems.map((item) => item.lon).concat([central.lon]);
@@ -770,12 +911,8 @@ export const SearchPage: React.FC = () => {
                   exit={{ scale: 0.95, y: 30 }}
                   className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 w-full max-w-5xl rounded-[32px] shadow-2xl overflow-hidden flex flex-col md:flex-row h-[90vh] md:h-[600px] relative text-left"
                 >
-                  {/* Map Grid Plot - Left */}
                   <div className="flex-grow bg-slate-950 text-slate-200 relative p-6 flex flex-col items-center justify-center border-r border-slate-900 h-[40vh] md:h-full overflow-hidden select-none">
                     <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(10,77,166,0.06),transparent_70%)]" />
-                    {/* The modal opened straight onto an unlabelled plot, so it
-                        was not obvious the gold pin is the temple and the
-                        distances are measured from it. */}
                     <div className="absolute top-4 left-5 right-5 z-10 pointer-events-none">
                       <p className="text-[11px] font-black text-white">
                         Distance from {central.name}
@@ -792,7 +929,6 @@ export const SearchPage: React.FC = () => {
                     </div>
 
                     <div className="w-full h-full relative border border-slate-800/80 rounded-2xl p-4">
-                      {/* Central Temple/Landmark */}
                       {(() => {
                         const pct = getPercentCoords(central.lat, central.lon);
                         return (
@@ -811,7 +947,6 @@ export const SearchPage: React.FC = () => {
                         );
                       })()}
 
-                      {/* Stays Nodes */}
                       {mapItems.map((item) => {
                         const pct = getPercentCoords(item.lat, item.lon);
                         const isSelected = selectedMapAshram?._id === item._id;
@@ -857,7 +992,6 @@ export const SearchPage: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Stays Listing details - Right */}
                   <div className="w-full md:w-[360px] flex flex-col h-[50vh] md:h-full bg-white dark:bg-[#0B192C]">
                     <div className="p-4 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center bg-gray-50 dark:bg-slate-900">
                       <div>
@@ -877,7 +1011,6 @@ export const SearchPage: React.FC = () => {
                       </button>
                     </div>
 
-                    {/* List */}
                     <div className="flex-grow overflow-y-auto p-4 space-y-3">
                       {mapItems.length === 0 ? (
                         <div className="text-center py-10 text-gray-400 text-xs">
@@ -912,7 +1045,9 @@ export const SearchPage: React.FC = () => {
                               {isSelected && (
                                 <div className="mt-3 pt-3 border-t border-dashed border-gray-150 flex justify-between items-center">
                                   <span className="text-[9px] font-bold text-gray-500">
-                                    From: {formatCurrency(item.lowestNightPrice ?? 150)}/night
+                                    {item.lowestNightPrice != null
+                                      ? `From: ${formatCurrency(item.lowestNightPrice)}/night`
+                                      : "Contact for price"}
                                   </span>
                                   <Link
                                     to={buildDetailLink(item._id)}

@@ -37,18 +37,15 @@ export const OwnerOffersPage: React.FC = () => {
   });
   const [loading, setLoading] = useState(true);
 
-  // Filters & Search
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("All");
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState("All");
 
-  // Wizard Modal State
   const [showWizard, setShowWizard] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [editOfferId, setEditOfferId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // 8-Step Wizard Form Data
   const [formData, setFormData] = useState<any>({
     offerTitle: "",
     shortTitle: "",
@@ -108,14 +105,12 @@ export const OwnerOffersPage: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Fetch offers
       const res = await api.get("/offers/my-offers");
       if (res.data.success) {
         setOffers(res.data.data);
         setStats(res.data.stats);
       }
 
-      // Fetch ashrams owned
       const ashramRes = await api.get("/ashrams/my-listings/all");
       if (ashramRes.data.success) {
         setAshrams(ashramRes.data.data);
@@ -305,7 +300,6 @@ export const OwnerOffersPage: React.FC = () => {
 
   return (
     <div className="space-y-8 text-left w-full pb-12">
-      {/* Header Banner */}
       <div className="bg-gradient-to-r from-[#0B192C] via-[#0A4DA6] to-[#0B192C] rounded-[28px] p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-2">
           <div className="inline-flex items-center px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-black border border-amber-500/30 backdrop-blur-md">
@@ -328,7 +322,6 @@ export const OwnerOffersPage: React.FC = () => {
         </button>
       </div>
 
-      {/* Statistics Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-4 shadow-sm space-y-1">
           <div className="text-[10px] font-black text-gray-400 tracking-wider">
@@ -385,9 +378,7 @@ export const OwnerOffersPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Filter Bar */}
       <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
-        {/* Status Pills */}
         <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
           {["All", "Active", "Scheduled", "Draft", "Expired"].map((st) => (
             <button
@@ -404,7 +395,6 @@ export const OwnerOffersPage: React.FC = () => {
           ))}
         </div>
 
-        {/* Search */}
         <div className="relative w-full sm:w-72">
           <Search
             size={14}
@@ -420,7 +410,6 @@ export const OwnerOffersPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Offers Cards */}
       {loading ? (
         <div className="h-64 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-3xl animate-pulse" />
       ) : filteredOffers.length === 0 ? (
@@ -517,7 +506,6 @@ export const OwnerOffersPage: React.FC = () => {
         </div>
       )}
 
-      {/* ════════════ 8-STEP CREATE OFFER WIZARD MODAL ════════════ */}
       {showWizard && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
@@ -525,7 +513,6 @@ export const OwnerOffersPage: React.FC = () => {
             onClick={() => setShowWizard(false)}
           />
           <div className="relative w-full max-w-4xl bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl z-10 space-y-6 max-h-[90vh] overflow-y-auto">
-            {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-gray-100 dark:border-slate-800 pb-4">
               <div>
                 <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white">
@@ -546,7 +533,6 @@ export const OwnerOffersPage: React.FC = () => {
               </button>
             </div>
 
-            {/* Step Stepper Header */}
             <div className="flex items-center justify-between gap-1 overflow-x-auto pb-2 border-b border-gray-100 dark:border-slate-800">
               {[
                 "1. Basic Info",
@@ -577,9 +563,7 @@ export const OwnerOffersPage: React.FC = () => {
               })}
             </div>
 
-            {/* Form Steps */}
             <form onSubmit={handleSaveOffer} className="space-y-6">
-              {/* STEP 1: Basic Information */}
               {currentStep === 1 && (
                 <div className="space-y-4">
                   <div>
@@ -639,7 +623,6 @@ export const OwnerOffersPage: React.FC = () => {
                 </div>
               )}
 
-              {/* STEP 2: Ashram Selection */}
               {currentStep === 2 && (
                 <div className="space-y-4">
                   <label className="block text-[10px] font-black text-gray-400 mb-1">
@@ -662,7 +645,6 @@ export const OwnerOffersPage: React.FC = () => {
                 </div>
               )}
 
-              {/* STEP 3: Details & Highlights */}
               {currentStep === 3 && (
                 <div className="space-y-4">
                   <div>
@@ -699,7 +681,6 @@ export const OwnerOffersPage: React.FC = () => {
                 </div>
               )}
 
-              {/* STEP 4: Discount Config */}
               {currentStep === 4 && (
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -800,7 +781,6 @@ export const OwnerOffersPage: React.FC = () => {
                 </div>
               )}
 
-              {/* STEP 5: Banner Images */}
               {currentStep === 5 && (
                 <div className="space-y-4">
                   <label className="block text-[10px] font-black text-gray-400 mb-1">
@@ -822,7 +802,6 @@ export const OwnerOffersPage: React.FC = () => {
                 </div>
               )}
 
-              {/* STEP 6: Validity */}
               {currentStep === 6 && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
@@ -857,7 +836,6 @@ export const OwnerOffersPage: React.FC = () => {
                 </div>
               )}
 
-              {/* STEP 7: Terms */}
               {currentStep === 7 && (
                 <div>
                   <label className="block text-[10px] font-black text-gray-400 mb-1">
@@ -877,7 +855,6 @@ export const OwnerOffersPage: React.FC = () => {
                 </div>
               )}
 
-              {/* STEP 8: Live Interactive Preview */}
               {currentStep === 8 && (
                 <div className="bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-3xl p-6 space-y-4">
                   <span className="text-[10px] font-black text-amber-500 tracking-widest">
@@ -897,7 +874,6 @@ export const OwnerOffersPage: React.FC = () => {
                 </div>
               )}
 
-              {/* Wizard Footer Navigation */}
               <div className="pt-4 border-t border-gray-100 dark:border-slate-800 flex items-center justify-between gap-3">
                 {currentStep > 1 ? (
                   <button

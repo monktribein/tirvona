@@ -88,13 +88,11 @@ export const TemplesPage: React.FC = () => {
 
   return (
     <div className="min-h-screen pb-16">
-      {/* Clean Text Header (Matching all other section headers on the site) */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6">
         <div className="text-center space-y-2.5 max-w-3xl mx-auto py-2">
           <p className="font-['Kalam'] text-2xl sm:text-4xl lg:text-5xl font-bold text-[#E58C28]">
             {headerInfo.title}
           </p>
-          {/* Decorative Saffron Underline Divider */}
           <div className="flex items-center justify-center gap-2.5 my-1.5">
             <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
             <Sparkles
@@ -106,7 +104,6 @@ export const TemplesPage: React.FC = () => {
           <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-xl mx-auto leading-relaxed">
             {headerInfo.subtitle}
           </p>
-          {/* Centered Search Bar */}
           <form
             onSubmit={handleSearch}
             className="w-full max-w-xl mx-auto pt-3 relative z-10"
@@ -131,7 +128,6 @@ export const TemplesPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Temple Cards Grid or Coming Soon Image for Categories */}
       {categoryParam ? (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 my-6 flex flex-col items-center justify-center">
           <img
@@ -269,7 +265,6 @@ export const TemplesPage: React.FC = () => {
                       className="bg-white dark:bg-[#0B192C] rounded-[28px] border border-gray-100 dark:border-slate-800 overflow-hidden shadow-md hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between cursor-pointer group"
                     >
                       <div>
-                        {/* Image Header with location & rating badges */}
                         <div className="relative h-60 overflow-hidden bg-slate-900">
                           {validImg ? (
                             <img
@@ -291,19 +286,15 @@ export const TemplesPage: React.FC = () => {
                           </span>
                         </div>
 
-                        {/* Card Content Details */}
                         <div className="p-6 space-y-3.5">
-                          {/* Title */}
                           <h3 className="font-black text-xl text-[#0B192C] dark:text-white leading-snug group-hover:text-[#0A4DA6] transition-colors">
                             {item.name}
                           </h3>
 
-                          {/* Description */}
                           <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 line-clamp-2 leading-relaxed font-medium">
                             {item.history}
                           </p>
 
-                          {/* Darshan Timings Pill Container */}
                           <div className="pt-1">
                             <div className="flex items-center gap-2.5 bg-[#F0F5FC] dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/40 p-3 rounded-2xl text-xs font-bold text-[#0B192C] dark:text-blue-200">
                               <Clock
@@ -318,7 +309,6 @@ export const TemplesPage: React.FC = () => {
                         </div>
                       </div>
 
-                      {/* Card Footer Toolbar */}
                       <div className="px-6 py-4 bg-gray-50/80 dark:bg-slate-900/60 border-t border-gray-100 dark:border-slate-800/60 flex items-center justify-between mt-auto">
                         <span className="text-[11px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-3 py-1 rounded-full border border-emerald-200/60 dark:border-emerald-900/40 flex items-center gap-1">
                           <ShieldCheck size={13} /> Official Info

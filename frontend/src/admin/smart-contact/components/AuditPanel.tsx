@@ -34,7 +34,6 @@ const formatDate = (value?: string): string =>
       })
     : "—";
 
-/** The per-profile audit trail (spec §37). */
 export const AuditPanel: React.FC<{ profileId: string }> = ({ profileId }) => {
   const [entries, setEntries] = useState<SmartContactAuditEntry[]>([]);
   const [loading, setLoading] = useState(true);

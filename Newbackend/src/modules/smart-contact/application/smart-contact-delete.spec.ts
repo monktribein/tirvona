@@ -3,12 +3,6 @@ import { Types } from "mongoose";
 import { SmartContactProfilesService } from "./smart-contact-profiles.service";
 import type { SmartContactAuditService } from "./smart-contact-audit.service";
 
-/**
- * Permanent deletion is the one destructive route in a module built around
- * archive-instead-of-delete (spec §22), so the parts that make it safe are
- * pinned here: it never touches ids it did not resolve, it clears the rows
- * that would otherwise be orphaned, and it cannot erase its own audit trail.
- */
 describe("SmartContactProfilesService.deleteMany", () => {
   const idA = new Types.ObjectId();
   const idB = new Types.ObjectId();
@@ -67,8 +61,6 @@ describe("SmartContactProfilesService.deleteMany", () => {
 
     await service.deleteMany([idA.toHexString()], actor);
 
-    // A log the logged action can erase is not an audit trail: nothing here
-    // may delete from the audit collection.
     expect(audit.recordMany).toHaveBeenCalledWith([
       expect.objectContaining({
         profileId: idA,

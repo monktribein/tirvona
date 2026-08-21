@@ -89,8 +89,6 @@ describe("legacy frontend DTO contracts", () => {
     ).toHaveLength(0);
   });
   it("accepts the partial ashram edit sent by ManageAshramsPage", async () => {
-    // That screen edits only the profile fields it shows; address, contact,
-    // and trust stay untouched and are not resubmitted.
     const dto = plainToInstance(UpdateAshramDto, {
       name: "Shanti Ashram",
       description: "A calm riverside ashram",
@@ -104,8 +102,6 @@ describe("legacy frontend DTO contracts", () => {
     ).toHaveLength(0);
   });
   it("strips the server fields the add-on editor round-trips", async () => {
-    // OwnerAddOnsPage seeds its form with the loaded record, so the save still
-    // carries _id/ashramId/timestamps.
     const dto = plainToInstance(UpdateAddOnDto, {
       _id: "507f1f77bcf86cd799439011",
       ashramId: "507f1f77bcf86cd799439012",

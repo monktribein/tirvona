@@ -16,17 +16,6 @@ export const BookingSchema = new Schema(
   {
     bookingId: { type: String, required: true, unique: true },
     reservationNumber: { type: String, unique: true, sparse: true },
-    /**
-     * Ashram Booking Unique Identity Code — `CCPT-PPPPP-VXXXX`.
-     *
-     * `immutable`, so Mongoose strips it from any later update: a code handed
-     * to a guest is never rewritten. `sparse`, because bookings created before
-     * this field existed carry no code and a plain unique index over their
-     * missing values would admit exactly one such row platform-wide.
-     *
-     * Not `required` for the same reason — the existing corpus stays valid and
-     * every existing read path keeps working untouched.
-     */
     identityCode: {
       type: String,
       unique: true,
@@ -88,8 +77,6 @@ export const BookingSchema = new Schema(
       discountAmount: { type: Number, default: 0 },
       loyaltyDiscount: { type: Number, default: 0 },
       gstAmount: { type: Number, default: 0 },
-      // GST is levied on the platform fee only, never on the stay, so the
-      // taxable base is recorded alongside the rate that produced the amount.
       gstPercent: { type: Number, default: 18 },
       gstTaxableAmount: { type: Number, default: 0 },
       platformFee: { type: Number, default: 0 },
@@ -133,6 +120,8 @@ export const BookingSchema = new Schema(
       refundAmount: Number,
       refundTransactionId: String,
     },
+    deletedAt: { type: Date, default: null, index: true },
+    deletedBy: id("User"),
     version: { type: Number, default: 1 },
   },
   opts("booking_bookings"),

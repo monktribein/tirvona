@@ -1,11 +1,3 @@
-/**
- * useLeadAuth.js
- *
- * Field-agent session for the lead app. Restores whatever is in localStorage
- * on mount and re-validates it against `/auth/me`, so an account suspended or
- * password-reset from the admin console is signed out here on next load
- * rather than appearing to still work.
- */
 import { useCallback, useEffect, useState } from 'react';
 import { leadApi, leadSession } from '../services/leadApi';
 
@@ -26,7 +18,6 @@ export function useLeadAuth() {
         setAgent(fresh);
       })
       .catch(() => {
-        // `request()` already cleared the token on a 401.
         if (!cancelled) setAgent(null);
       })
       .finally(() => {

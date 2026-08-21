@@ -1,15 +1,6 @@
 import { tUi } from "../../../contexts/LanguageContext";
 import { getFormattingLocale } from "../../../utils/format";
 
-/**
- * Formatting helpers for record values coming back from the API.
- *
- * Admin records hold nested objects (address, contact, rating), arrays, ISO
- * dates and booleans. Printing those with JSON.stringify or String() shows the
- * reader raw JSON or "[object Object]", so detail views, table cells and
- * exports all format through here.
- */
-
 const ACRONYMS: Record<string, string> = {
   id: "ID",
   ids: "IDs",
@@ -30,7 +21,6 @@ const ACRONYMS: Record<string, string> = {
   pin: "PIN",
 };
 
-/** "ownerId" / "owner_id" / "address.city" -> "Owner ID" / "Address › City" */
 export const humanizeKey = (key: string): string =>
   tUi(key
     .replace(/\./g, " › ")
@@ -54,7 +44,6 @@ export const isEmptyValue = (value: unknown): boolean =>
   value === undefined ||
   (typeof value === "string" && value.trim() === "");
 
-/** Single-line text for one scalar. */
 export const formatScalar = (value: unknown): string => {
   if (isEmptyValue(value)) return "—";
   if (typeof value === "boolean") return tUi(value ? "Yes" : "No");
@@ -68,10 +57,6 @@ export const formatScalar = (value: unknown): string => {
   return String(value);
 };
 
-/**
- * Compact one-line summary — for table cells and CSV export, where a nested
- * block would break the row. Objects collapse to their most name-like field.
- */
 export const formatInline = (value: unknown): string => {
   if (typeof value === "string" && URL_LIKE.test(value)) {
     if (/\.(jpe?g|png|webp|gif|svg|avif|heic)($|\?)/i.test(value))
@@ -88,7 +73,18 @@ export const formatInline = (value: unknown): string => {
   }
   if (typeof value === "object" && !(value instanceof Date)) {
     const record = value as Record<string, unknown>;
-    for (const key of ["name", "title", "label", "city", "average", "url"])
+    for (const key of [
+      "name",
+      "title",
+      "label",
+      "bookingReference",
+      "bookingId",
+      "reservationNumber",
+      "reference",
+      "city",
+      "average",
+      "url",
+    ])
       if (!isEmptyValue(record[key])) return formatInline(record[key]);
     const entries = Object.entries(record).filter(
       ([, item]) => !isEmptyValue(item),

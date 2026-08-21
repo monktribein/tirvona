@@ -35,6 +35,8 @@ import {
   ArrowRight,
   Landmark,
   Car,
+  Flame,
+  PartyPopper,
   Undo2,
   ContactRound,
   Sparkles,
@@ -46,6 +48,96 @@ interface NavGroup {
   icon: React.ReactNode;
   links: { label: string; path: string }[];
 }
+
+const SIDEBAR_SEQUENCE = [
+  "user & access",
+  "institution",
+  "ashram",
+  "room",
+  "platform fee",
+  "booking",
+  "aarti",
+  "parking",
+  "payout",
+  "refund",
+  "offers",
+  "marketplace",
+  "local services",
+  "content",
+  "homepage",
+  "featured",
+  "pilgrimage",
+  "staff",
+  "volunteer",
+  "lead",
+  "smart contact",
+  "verification",
+  "reports",
+  "system",
+  "notification",
+] as const;
+
+const MATERIAL_ICON_BY_SECTION: Array<[string, string]> = [
+  ["dashboard", "dashboard"],
+  ["user & access", "manage_accounts"],
+  ["institution", "account_balance"],
+  ["ashram", "temple_hindu"],
+  ["room", "bed"],
+  ["platform fee", "payments"],
+  ["booking", "event_note"],
+  ["aarti", "local_fire_department"],
+  ["parking", "local_parking"],
+  ["payout", "account_balance_wallet"],
+  ["refund", "currency_exchange"],
+  ["offers", "sell"],
+  ["marketplace", "storefront"],
+  ["local services", "home_repair_service"],
+  ["content", "campaign"],
+  ["homepage", "image"],
+  ["featured", "auto_awesome"],
+  ["pilgrimage", "explore"],
+  ["staff", "groups"],
+  ["volunteer", "volunteer_activism"],
+  ["lead", "assignment_ind"],
+  ["smart contact", "contacts"],
+  ["verification", "verified_user"],
+  ["reports", "analytics"],
+  ["system", "admin_panel_settings"],
+  ["notification", "notifications"],
+];
+
+const materialIconFor = (label: string): string => {
+  const normalized = label.toLowerCase();
+  return (
+    MATERIAL_ICON_BY_SECTION.find(([section]) =>
+      normalized.includes(section),
+    )?.[1] ?? "apps"
+  );
+};
+
+const MaterialSidebarIcon: React.FC<{ label: string }> = ({ label }) => (
+  <span className="material-symbols-rounded sidebar-material-icon" aria-hidden="true">
+    {materialIconFor(label)}
+  </span>
+);
+
+const orderSidebarGroups = (groups: NavGroup[]): NavGroup[] =>
+  groups
+    .map((group, originalIndex) => ({ group, originalIndex }))
+    .sort((left, right) => {
+      const rank = (name: string) => {
+        const normalized = name.toLowerCase();
+        const index = SIDEBAR_SEQUENCE.findIndex((section) =>
+          normalized.includes(section),
+        );
+        return index === -1 ? SIDEBAR_SEQUENCE.length : index;
+      };
+      return (
+        rank(left.group.groupName) - rank(right.group.groupName) ||
+        left.originalIndex - right.originalIndex
+      );
+    })
+    .map(({ group }) => group);
 
 const getFormattedRole = (role?: string): string => {
   if (!role) return "User";
@@ -100,7 +192,6 @@ export const DashboardLayout: React.FC = () => {
   const [languageOpen, setLanguageOpen] = useState(false);
   const { language, setLanguage, t } = useLanguage();
 
-  // Auto-expand ONLY the single parent group that contains the current active route
   React.useEffect(() => {
     const activeGroup = superAdminGroups.find((group) =>
       group.links.some(
@@ -124,7 +215,6 @@ export const DashboardLayout: React.FC = () => {
     }
   }, [location.pathname]);
 
-  // Single Accordion Expansion: Clicking a group expands ONLY that group and collapses all others
   const toggleGroup = (groupName: string) => {
     setOpenGroups((prev) => {
       const isCurrentlyOpen = !!prev[groupName];
@@ -144,25 +234,10 @@ export const DashboardLayout: React.FC = () => {
     navigate("/");
   };
 
-  // Redirect unauthenticated visitors from an effect, not during render.
-  //
-  // This used to be `if (!user) { navigate('/login'); return null; }` right
-  // here, which had two defects:
-  //   1. navigate() during render updates the router while React is rendering
-  //      this component.
-  //   2. The early return sat ABOVE the useEffect declared further down, so
-  //      that hook was skipped whenever `user` was null. React requires the
-  //      same hooks in the same order on every render, so the moment `user`
-  //      flipped truthy -> null (i.e. on logout) the component rendered fewer
-  //      hooks than the previous pass and React threw "Rendered fewer hooks
-  //      than expected".
-  // The bail-out now lives below every hook; see the `if (!user) return null`
-  // after the last useEffect.
   React.useEffect(() => {
     if (!user) navigate("/login");
   }, [user, navigate]);
 
-  // Super Admin Categorized Navigation Groups
   const superAdminGroups: NavGroup[] = [
     {
       groupName: "User & Access Management",
@@ -216,10 +291,6 @@ export const DashboardLayout: React.FC = () => {
       ],
     },
     {
-      // Its own section rather than a link under Room & Inventory: this is the
-      // platform's own fee, charged on top of whatever a property prices its
-      // rooms at, and it reaches systems beyond stays. Filed under rooms it
-      // read as a per-room setting, which is the opposite of what it is.
       groupName: "Platform Fee & Pricing",
       icon: <DollarSign size={15} />,
       links: [
@@ -246,9 +317,89 @@ export const DashboardLayout: React.FC = () => {
       ],
     },
     {
-      // Parking keeps one module key per collection rather than
-      // parking/<section>: the console resolves a sub-key against a shared
-      // alias table, where "bookings" already means ashram bookings.
+      groupName: "Events & Festivals",
+      icon: <PartyPopper size={15} />,
+      links: [
+        { label: "Events Control Center", path: "/admin/events/control" },
+        { label: "Event Approvals", path: "/admin/events/approvals" },
+        { label: "Event Registrations", path: "/admin/events/registrations" },
+        { label: "All Events", path: "/admin/manage/event_festivals/all" },
+        { label: "Pending Events", path: "/admin/manage/event_festivals/pending" },
+        {
+          label: "Event Day Capacity",
+          path: "/admin/manage/event_availability/all",
+        },
+        {
+          label: "Registrations (all data)",
+          path: "/admin/manage/event_registrations/all",
+        },
+        { label: "Event Passes", path: "/admin/manage/event_qr_codes/all" },
+        { label: "Event Scan Logs", path: "/admin/manage/event_scan_logs/all" },
+        { label: "Event Gate Staff", path: "/admin/manage/event_staff/all" },
+        {
+          label: "Event Notifications",
+          path: "/admin/manage/event_notifications/all",
+        },
+        { label: "Event Settings", path: "/admin/manage/event_settings/all" },
+      ],
+    },
+    {
+      groupName: "Pilgrimage & Planner",
+      icon: <Compass size={15} />,
+      links: [
+        { label: "Pilgrimage Control Center", path: "/admin/circuits/control" },
+        { label: "Circuit Approvals", path: "/admin/circuits/approvals" },
+        { label: "All Circuits", path: "/admin/manage/pilgrimage_circuits/all" },
+        {
+          label: "Pending Circuits",
+          path: "/admin/manage/pilgrimage_circuits/pending",
+        },
+        { label: "Circuit Stops", path: "/admin/manage/pilgrimage_stops/all" },
+        {
+          label: "Saved Itineraries",
+          path: "/admin/manage/pilgrimage_itineraries/all",
+        },
+        {
+          label: "Pilgrimage Settings",
+          path: "/admin/manage/pilgrimage_settings/all",
+        },
+      ],
+    },
+    {
+      groupName: "Aarti & Live Pooja",
+      icon: <Flame size={15} />,
+      links: [
+        { label: "Aarti Control Center", path: "/admin/aarti/control" },
+        { label: "Aarti Approvals", path: "/admin/aarti/approvals" },
+        { label: "Aarti Bookings", path: "/admin/aarti/bookings" },
+        { label: "Live Pooja Streams", path: "/admin/live-pooja" },
+        { label: "All Aartis", path: "/admin/manage/aarti_sessions/all" },
+        { label: "Pending Aartis", path: "/admin/manage/aarti_sessions/pending" },
+        { label: "Aarti Passes", path: "/admin/manage/aarti_pass_types/all" },
+        { label: "Aarti Pricing Rules", path: "/admin/manage/aarti_pricing/all" },
+        { label: "Aarti Availability", path: "/admin/manage/aarti_availability/all" },
+        { label: "Festival Rules", path: "/admin/manage/aarti_holidays/all" },
+        { label: "Aarti Gate Staff", path: "/admin/manage/aarti_staff/all" },
+        {
+          label: "Aarti Bookings (all data)",
+          path: "/admin/manage/aarti_bookings/all",
+        },
+        { label: "Aarti Payments", path: "/admin/manage/aarti_payments/all" },
+        {
+          label: "Aarti Transactions",
+          path: "/admin/manage/aarti_transactions/all",
+        },
+        {
+          label: "Pending Aarti Commissions",
+          path: "/admin/manage/aarti_commissions/pending",
+        },
+        { label: "Aarti Scan Logs", path: "/admin/manage/aarti_scan_logs/all" },
+        { label: "Aarti Reviews", path: "/admin/manage/aarti_reviews/all" },
+        { label: "Live Pooja Records", path: "/admin/manage/aarti_streams/all" },
+        { label: "Aarti Settings", path: "/admin/manage/aarti_settings/all" },
+      ],
+    },
+    {
       groupName: "Parking Management",
       icon: <Car size={15} />,
       links: [
@@ -288,8 +439,6 @@ export const DashboardLayout: React.FC = () => {
         { label: "All Offers", path: "/admin/manage/offers/all" },
         { label: "Featured Offers", path: "/admin/manage/offers/featured" },
         { label: "All Blogs", path: "/admin/manage/blogs/all" },
-        // Pilgrim-written stay stories. A separate collection from All Blogs,
-        // and the one the public blog feed is actually full of.
         { label: "Visitor Articles", path: "/admin/articles" },
         { label: "Blog Categories", path: "/admin/manage/blogs/categories" },
         { label: "Author Approvals", path: "/admin/manage/blogs/authors" },
@@ -355,9 +504,6 @@ export const DashboardLayout: React.FC = () => {
       ],
     },
     {
-      // Smart Contact QR — permanent QR profiles for representatives.
-      // The status filters are query strings on one page rather than separate
-      // routes, so the list keeps a single source of truth for its data.
       groupName: "Smart Contact Profiles",
       icon: <ContactRound size={15} />,
       links: [
@@ -377,13 +523,16 @@ export const DashboardLayout: React.FC = () => {
       ],
     },
     {
-      // The platform manages every ashram's openings and applications from
-      // here; the same page scoped to one owner lives at /owner/volunteer.
       groupName: "Volunteer Management",
       icon: <Heart size={15} />,
       links: [
         { label: "Openings & Applications", path: "/admin/volunteer" },
       ],
+    },
+    {
+      groupName: "Payout Management",
+      icon: <DollarSign size={15} />,
+      links: [{ label: "Payout Dashboard", path: "/admin/payouts" }],
     },
     {
       groupName: "Refund Management",
@@ -403,17 +552,10 @@ export const DashboardLayout: React.FC = () => {
       ],
     },
     {
-      // No dropdown: every section (all notifications, system activities,
-      // auth logs, bookings telemetry, payment audit, CMS queue, timeline)
-      // is a tab on the one dashboard page, so a second copy of that list in
-      // the sidebar only duplicated navigation the page already provides.
-      // Matching `label` to `groupName` renders this as a flat link.
       groupName: "Notification Center",
       icon: <Bell size={15} />,
       links: [
         {
-          // The base path (subSection is optional and defaults to the
-          // dashboard) so the link stays highlighted whichever tab is open.
           label: "Notification Center",
           path: "/admin/enterprise-notifications",
         },
@@ -467,7 +609,38 @@ export const DashboardLayout: React.FC = () => {
       icon: <Calendar size={15} />,
       links: [
         { label: "All Bookings", path: `${ownerBase}/bookings` },
-        { label: "Payments & Payouts", path: `${ownerBase}/payments` },
+        { label: "Payments", path: `${ownerBase}/payments` },
+        { label: "Payout Management", path: `${ownerBase}/payouts` },
+      ],
+    },
+    {
+      groupName: "Events & Festivals",
+      icon: <PartyPopper size={15} />,
+      links: [
+        { label: "Manage Events", path: `${ownerBase}/events` },
+        {
+          label: "Event Registrations",
+          path: `${ownerBase}/events/registrations`,
+        },
+        { label: "Event Gate Scanner", path: "/events/gate" },
+      ],
+    },
+    {
+      groupName: "Pilgrimage Circuits",
+      icon: <Compass size={15} />,
+      links: [
+        { label: "Manage Circuits", path: `${ownerBase}/circuits` },
+        { label: "Itinerary Planner", path: "/destinations/planner" },
+      ],
+    },
+    {
+      groupName: "Aarti & Live Pooja",
+      icon: <Flame size={15} />,
+      links: [
+        { label: "Manage Aartis", path: `${ownerBase}/aarti` },
+        { label: "Aarti Bookings", path: `${ownerBase}/aarti/bookings` },
+        { label: "Live Pooja Streams", path: `${ownerBase}/live-pooja` },
+        { label: "Aarti Gate Scanner", path: "/aarti/gate" },
       ],
     },
     {
@@ -513,10 +686,6 @@ export const DashboardLayout: React.FC = () => {
     },
   ];
 
-  // Helper to resolve active role's navigation structure
-  // Parking staff are identified by their grants, not by `user.role` — a guard
-  // and a pilgrim both read `customer`. Checked before the role switch so a
-  // grant holder lands on the parking dashboard instead of the pilgrim profile.
   const userHasParkingRole = isParkingRole(user?.parkingRoles, user?.role, user?.email);
   const parkingGroups: NavGroup[] = [
     {
@@ -732,10 +901,12 @@ export const DashboardLayout: React.FC = () => {
     };
   };
 
-  const navData = getRoleNavData();
+  const roleNavData = getRoleNavData();
+  const navData = {
+    ...roleNavData,
+    groups: orderSidebarGroups(roleNavData.groups),
+  };
 
-  // Flatten the same tree the sidebar renders, so global search can only ever
-  // offer pages this role actually has — no second list to keep in sync.
   const searchableLinks: SearchableLink[] = [
     { label: t(navData.topLink.label), path: navData.topLink.path, group: t("Overview") },
     ...navData.groups.flatMap((group) =>
@@ -747,7 +918,6 @@ export const DashboardLayout: React.FC = () => {
     ),
   ];
 
-  // Auto-expand ONLY the single parent group that contains the current active route
   React.useEffect(() => {
     const activeGroup = navData.groups.find((group) =>
       group.links.some(
@@ -771,14 +941,10 @@ export const DashboardLayout: React.FC = () => {
     }
   }, [location.pathname, user?.role]);
 
-  // Safe to bail out only here: every hook above has now run unconditionally,
-  // so the hook count is identical on every render. The effect further up
-  // performs the actual redirect to /login.
   if (!user) return null;
 
   const renderSidebarContent = (isMobile = false) => (
     <>
-      {/* Mobile Drawer Brand Header */}
       {isMobile && (
         <div className="p-4 border-b border-blue-100 dark:border-slate-800 flex items-center gap-3 bg-[#F8FAFC] dark:bg-[#0B192C]">
           <div className="p-2 bg-white rounded-xl border border-blue-100 shadow-sm">
@@ -799,25 +965,22 @@ export const DashboardLayout: React.FC = () => {
         </div>
       )}
 
-      {/* Links Navigation */}
-      <nav className="flex-grow p-4 space-y-3 overflow-y-auto overscroll-contain scrollbar-thin">
-        <div className="space-y-3">
-          {/* Main Role Overview Link */}
+      <nav className="flex-grow overflow-y-auto overscroll-contain p-3 scrollbar-thin">
+        <div className="space-y-1.5">
           {navData.topLink && (
             <Link
               to={navData.topLink.path}
               onClick={isMobile ? () => setSidebarOpen(false) : undefined}
-              className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-black transition-all ${location.pathname === navData.topLink.path
-                ? "bg-[#0A4DA6] text-white shadow-md shadow-[#0A4DA6]/20 border-l-4 border-[#0A4DA6]"
-                : "text-slate-600 dark:text-gray-300 hover:bg-[#EBF2FA] dark:hover:bg-slate-800 hover:text-[#0A4DA6]"
+              className={`flex items-center gap-3 rounded-xl px-3.5 py-3 text-xs font-bold transition-all ${location.pathname === navData.topLink.path
+                ? "bg-[#0A4DA6] text-white shadow-sm shadow-[#0A4DA6]/20"
+                : "text-slate-600 hover:bg-[#EBF2FA] hover:text-[#0A4DA6] dark:text-gray-300 dark:hover:bg-slate-800"
                 }`}
             >
-              {navData.topLink.icon}
+              <MaterialSidebarIcon label={navData.topLink.label} />
               <span>{t(navData.topLink.label)}</span>
             </Link>
           )}
 
-          {/* Categorized Dropdown Groups (All Collapsed By Default) */}
           {navData.groups.map((group) => {
             if (
               group.links.length === 1 &&
@@ -835,12 +998,12 @@ export const DashboardLayout: React.FC = () => {
                   key={group.groupName}
                   to={singleLink.path}
                   onClick={isMobile ? () => setSidebarOpen(false) : undefined}
-                  className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-black transition-all ${isActive
-                    ? "bg-[#0A4DA6] text-white shadow-md shadow-[#0A4DA6]/20 border-l-4 border-[#0A4DA6]"
-                    : "text-slate-600 dark:text-gray-300 hover:bg-[#EBF2FA] dark:hover:bg-slate-800 hover:text-[#0A4DA6]"
+                  className={`flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-bold transition-all ${isActive
+                    ? "bg-[#0A4DA6] text-white shadow-sm shadow-[#0A4DA6]/20"
+                    : "text-slate-600 hover:bg-[#EBF2FA] hover:text-[#0A4DA6] dark:text-gray-300 dark:hover:bg-slate-800"
                     }`}
                 >
-                  {group.icon}
+                  <MaterialSidebarIcon label={group.groupName} />
                   <span>{t(group.groupName)}</span>
                 </Link>
               );
@@ -855,13 +1018,13 @@ export const DashboardLayout: React.FC = () => {
               <div key={group.groupName} className="space-y-1">
                 <button
                   onClick={() => toggleGroup(group.groupName)}
-                  className={`w-full flex items-center justify-between px-3.5 py-2 text-[10px] font-black tracking-wider transition-colors text-left rounded-xl ${hasActiveLink
-                    ? "text-[#0A4DA6] bg-[#EBF2FA] dark:bg-white/5"
-                    : "text-slate-500 dark:text-gray-400 hover:text-[#0A4DA6] hover:bg-[#F0F5FA]"
+                  className={`flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-left text-xs font-semibold transition-colors ${hasActiveLink
+                    ? "bg-[#EBF2FA] text-[#0A4DA6] dark:bg-white/5"
+                    : "text-slate-600 hover:bg-[#F0F5FA] hover:text-[#0A4DA6] dark:text-gray-400"
                     }`}
                 >
                   <div className="flex items-center gap-2">
-                    {group.icon}
+                    <MaterialSidebarIcon label={group.groupName} />
                     <span>{t(group.groupName)}</span>
                   </div>
                   {isOpen ? (
@@ -872,7 +1035,7 @@ export const DashboardLayout: React.FC = () => {
                 </button>
 
                 {isOpen && (
-                  <div className="pl-4 space-y-1 border-l border-blue-100 dark:border-slate-800 ml-3">
+                  <div className="ml-5 space-y-1 border-l border-blue-100 pl-3 dark:border-slate-800">
                     {group.links.map((link) => {
                       const isActive = location.pathname === link.path;
                       return (
@@ -882,9 +1045,9 @@ export const DashboardLayout: React.FC = () => {
                           onClick={
                             isMobile ? () => setSidebarOpen(false) : undefined
                           }
-                          className={`flex items-center justify-between px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all ${isActive
-                            ? "bg-[#E2EDF8] dark:bg-[#0A4DA6] text-[#0A4DA6] dark:text-white shadow-sm border-l-2 border-[#0A4DA6]"
-                            : "text-slate-600 dark:text-gray-400 hover:text-[#0A4DA6] hover:bg-[#F0F5FA]"
+                          className={`flex items-center justify-between rounded-lg px-3 py-2 text-xs font-medium transition-all ${isActive
+                            ? "bg-[#E2EDF8] font-semibold text-[#0A4DA6] shadow-sm dark:bg-[#0A4DA6] dark:text-white"
+                            : "text-slate-600 hover:bg-[#F0F5FA] hover:text-[#0A4DA6] dark:text-gray-400"
                             }`}
                         >
                           <span className="truncate">{t(link.label)}</span>
@@ -899,37 +1062,12 @@ export const DashboardLayout: React.FC = () => {
         </div>
       </nav>
 
-      {/* User Profile Bottom Bar */}
-      <div className="p-4 border-t border-blue-100 dark:border-slate-800 space-y-3 shrink-0 bg-[#F8FAFC] dark:bg-[#0B192C]">
-        <div className="flex items-center gap-3 px-2">
-          <div className="w-9 h-9 rounded-full bg-[#0A4DA6]/10 border border-[#0A4DA6]/30 flex items-center justify-center font-black text-[#0A4DA6] text-xs">
-            {(user.name || user.email || "U").charAt(0).toUpperCase()}
-          </div>
-          <div className="flex flex-col">
-            <span className="text-xs font-extrabold truncate max-w-[140px] text-[#0B192C] dark:text-white">
-              {user.name}
-            </span>
-            <span className="text-[10px] text-[#0A4DA6] font-black tracking-wider">
-              {t(getFormattedRole(user.role))}
-            </span>
-          </div>
-        </div>
-        <button
-          onClick={handleLogout}
-          className="w-full flex items-center justify-center gap-2 py-2.5 bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100 transition-all rounded-full text-xs font-black cursor-pointer"
-        >
-          <LogOut size={14} />
-          <span>{t("Sign Out")}</span>
-        </button>
-      </div>
     </>
   );
 
   return (
-    <div className="min-h-screen bg-[#F0F4F9] dark:bg-[#070F1B] flex flex-col font-sans text-left">
-      {/* ── Unified Top Navigation Bar (Attaches Sidebar Brand & Dashboard Navbar into One Header) ── */}
-      <header className="w-full bg-white dark:bg-[#0B192C] text-[#0B192C] dark:text-white border-b border-blue-100 dark:border-slate-800 shadow-sm sticky top-0 z-30 px-4 lg:px-6 py-3 flex items-center justify-between gap-4 lg:gap-8">
-        {/* Left: Brand Logo + Mobile Menu */}
+    <div className="dashboard-shell flex min-h-screen flex-col bg-[#F0F4F9] text-left text-[#0B192C] dark:bg-[#070F1B] dark:text-white">
+      <header className="sticky top-0 z-30 flex h-[72px] w-full items-center justify-between gap-3 border-b border-blue-100 bg-white px-3 shadow-sm sm:px-5 lg:gap-6 lg:px-7 dark:border-slate-800 dark:bg-[#0B192C]">
         <div className="flex items-center gap-3 shrink-0">
           <button
             onClick={() => setSidebarOpen(true)}
@@ -939,41 +1077,35 @@ export const DashboardLayout: React.FC = () => {
             <Menu size={20} />
           </button>
 
-          {/* Desktop Attached Brand Logo & Title */}
-          <Link
-            to="/"
-            className="hidden lg:flex items-center gap-3 group cursor-pointer shrink-0"
-          >
-            <div className="flex items-center justify-center p-2 bg-white rounded-xl border border-blue-100 shadow-sm group-hover:border-[#0A4DA6]/60 transition-all">
+          <Link to="/" className="group flex shrink-0 cursor-pointer items-center gap-3">
+            <div className="flex items-center justify-center rounded-xl border border-blue-100 bg-white p-1.5 shadow-sm transition-all group-hover:border-[#0A4DA6]/60">
               <img
                 src="/logo/logo.png"
                 alt="Tirvona"
-                className="w-8 h-8 object-contain group-hover:scale-105 transition-transform"
+                className="h-8 w-8 object-contain transition-transform group-hover:scale-105"
               />
             </div>
-            <div className="flex flex-col">
-              <span className="font-black text-lg leading-tight tracking-tight text-[#0B192C] dark:text-white group-hover:text-[#0A4DA6] transition-colors">
+            <div className="hidden flex-col sm:flex">
+              <span className="text-lg font-extrabold leading-tight tracking-tight text-[#0B192C] transition-colors group-hover:text-[#0A4DA6] dark:text-white">
                 Tirvona
               </span>
-              <span className="text-[10px] font-extrabold text-[#0A4DA6] tracking-wider leading-none">
+              <span className="text-[10px] font-semibold leading-none text-[#0A4DA6]">
                 {t(getFormattedRole(user?.role))}
               </span>
             </div>
           </Link>
         </div>
 
-        {/* Middle: Global search across console pages and records */}
-        <div className="flex-1 max-w-2xl mx-auto hidden md:block">
+        <div className="mx-auto hidden max-w-2xl flex-1 md:block">
           <GlobalSearch links={searchableLinks} />
         </div>
 
-        {/* Right: Notifications + Public Portal Action Button */}
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           <div className="relative">
             <button
               type="button"
               onClick={() => setLanguageOpen((open) => !open)}
-              className="h-9 px-3 rounded-full border border-blue-100 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-black text-[#0A4DA6] dark:text-blue-300 flex items-center gap-1.5 hover:bg-blue-50 dark:hover:bg-slate-800"
+              className="flex h-10 items-center gap-1.5 rounded-full border border-blue-100 bg-white px-3 text-xs font-semibold text-[#0A4DA6] hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-900 dark:text-blue-300 dark:hover:bg-slate-800"
               aria-label={t("Language")}
             >
               <Globe size={14} /> {language === "hi" ? "हिंदी" : "EN"}
@@ -1005,28 +1137,48 @@ export const DashboardLayout: React.FC = () => {
             )}
           </div>
 
-          {/* Notifications Dropdown */}
           <NotificationDropdown />
 
-          {/* Public Portal Action Button */}
           <Link
             to="/public"
-            className="text-xs font-extrabold px-4 py-2 rounded-full bg-[#0A4DA6] hover:bg-[#083b80] text-white transition-all flex items-center gap-1.5 shadow-md shadow-[#0A4DA6]/20 cursor-pointer shrink-0"
+            className="hidden shrink-0 cursor-pointer items-center gap-1.5 rounded-full bg-[#0A4DA6] px-4 py-2.5 text-xs font-bold text-white shadow-sm shadow-[#0A4DA6]/20 transition-all hover:bg-[#083b80] xl:flex"
           >
             <Globe size={14} className="text-[#E58C28]" /> {t("Public Portal")}{" "}
             <ArrowRight size={12} />
           </Link>
+
+          <div className="flex items-center gap-2 rounded-2xl border border-blue-100 bg-[#F8FAFC] p-1.5 pl-2 dark:border-slate-700 dark:bg-slate-900">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#0A4DA6] text-xs font-bold text-white shadow-sm">
+              {(user.name || user.email || "U").charAt(0).toUpperCase()}
+            </div>
+            <div className="hidden min-w-0 flex-col xl:flex">
+              <span className="max-w-32 truncate text-xs font-semibold text-[#0B192C] dark:text-white">
+                {user.name || user.email || t("User")}
+              </span>
+              <span className="text-[10px] font-medium text-[#0A4DA6]">
+                {t(getFormattedRole(user.role))}
+              </span>
+            </div>
+            <span className="hidden h-6 w-px bg-blue-100 xl:block dark:bg-slate-700" />
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl px-2.5 py-2 text-xs font-semibold text-rose-600 transition-colors hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40"
+              aria-label={t("Sign Out")}
+              title={t("Sign Out")}
+            >
+              <LogOut size={15} />
+              <span className="hidden 2xl:inline">{t("Sign Out")}</span>
+            </button>
+          </div>
         </div>
       </header>
 
-      {/* ── Main Layout Body (Sidebar + Content Workspace Attached Below Header) ── */}
       <div className="flex flex-row flex-grow min-h-0">
-        {/* ── Desktop Left Sidebar ── */}
-        <aside className="hidden lg:flex flex-col w-64 bg-white dark:bg-[#0B192C] text-[#0B192C] dark:text-white border-r border-blue-100 dark:border-slate-800 shadow-sm shrink-0 h-[calc(100vh-61px)] sticky top-[61px]">
+        <aside className="sticky top-[72px] hidden h-[calc(100vh-72px)] w-[272px] shrink-0 flex-col border-r border-blue-100 bg-white text-[#0B192C] shadow-sm lg:flex dark:border-slate-800 dark:bg-[#0B192C] dark:text-white">
           {renderSidebarContent(false)}
         </aside>
 
-        {/* ── Mobile & Tablet Drawer ── */}
         {sidebarOpen && (
           <div className="fixed inset-0 z-50 lg:hidden flex">
             <div
@@ -1046,7 +1198,6 @@ export const DashboardLayout: React.FC = () => {
           </div>
         )}
 
-        {/* ── Main Workspace Area ── */}
         <main className="flex-grow p-4 lg:p-6 pb-12 lg:pb-16 overflow-y-auto min-w-0 bg-[#F0F4F9] dark:bg-[#070F1B]">
           <Outlet />
         </main>

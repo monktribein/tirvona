@@ -64,7 +64,6 @@ export const TempleDetailPage: React.FC = () => {
   return (
     <div className="min-h-screen pt-24 sm:pt-28 pb-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-8">
-        {/* Top Back Link */}
         <button
           onClick={() => navigate("/temples")}
           className="inline-flex items-center gap-2 text-xs font-bold text-[#0A4DA6] hover:text-amber-600 transition-colors"
@@ -72,7 +71,6 @@ export const TempleDetailPage: React.FC = () => {
           <ArrowLeft size={16} /> Back to All Temples
         </button>
 
-        {/* Hero Section */}
         <div className="relative rounded-3xl overflow-hidden shadow-2xl min-h-[320px] sm:min-h-[400px] flex items-end p-6 sm:p-10 border border-gray-100 dark:border-slate-800">
           <img
             src={temple.coverImage}
@@ -94,9 +92,7 @@ export const TempleDetailPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column: History & Schedule */}
           <div className="lg:col-span-2 space-y-8">
             <div className="bg-white dark:bg-[#0B192C] rounded-3xl p-6 sm:p-8 border border-gray-100 dark:border-slate-800 space-y-4">
               <h3 className="font-black text-xl text-[#0B192C] dark:text-white">
@@ -113,7 +109,6 @@ export const TempleDetailPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Timings & Dress Code */}
             <div className="bg-white dark:bg-[#0B192C] rounded-3xl p-6 sm:p-8 border border-gray-100 dark:border-slate-800 space-y-6">
               <h3 className="font-black text-xl text-[#0B192C] dark:text-white">
                 Darshan & Aarti Schedule
@@ -156,7 +151,6 @@ export const TempleDetailPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Right Sidebar */}
           <div className="space-y-6">
             <div className="bg-white dark:bg-[#0B192C] rounded-3xl p-6 border border-gray-100 dark:border-slate-800 space-y-4 shadow-sm">
               <h4 className="font-black text-base text-[#0B192C] dark:text-white">
@@ -193,7 +187,6 @@ export const TempleDetailPage: React.FC = () => {
               </button>
             </div>
 
-            {/* In Future Badges */}
             <div className="bg-slate-900 text-white rounded-3xl p-6 space-y-3 border border-slate-800">
               <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-[10px] font-black">
                 In Future Integrations

@@ -141,6 +141,7 @@ export const BookingCommissionSchema = new Schema(
       index: true,
     },
     settlementId: id("BookingSettlement"),
+    payoutId: id("PayoutRequest"),
     reversedAt: Date,
     reversalReason: String,
   },
@@ -151,6 +152,7 @@ BookingCommissionSchema.index({
   settlementStatus: 1,
   createdAt: 1,
 });
+BookingCommissionSchema.index({ payoutId: 1, settlementStatus: 1 });
 
 export const BookingSettlementSchema = new Schema(
   {

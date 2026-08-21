@@ -118,7 +118,6 @@ export const AshramDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [detailError, setDetailError] = useState("");
 
-  // Booking Flow parameters
   const [checkIn, setCheckIn] = useState(validInitialCheckIn);
   const [checkOut, setCheckOut] = useState(validInitialCheckOut);
   const [selectedRoom, setSelectedRoom] = useState<any>(null);
@@ -145,31 +144,18 @@ export const AshramDetailPage: React.FC = () => {
   }, [searchParams]);
 
   const [appliedOfferData, setAppliedOfferData] = useState<any>(null);
-  /** The code currently applied, so the saving can be recomputed on change. */
   const [appliedPromo, setAppliedPromo] = useState<string | null>(null);
-  /** A code that arrived before the rooms did, applied once a total exists. */
   const [pendingPromo, setPendingPromo] = useState<string | null>(null);
-  /** Latest full payable amount, readable from callbacks declared above it. */
   const subtotalRef = useRef(0);
-  /** Whether a priced stay exists yet, so a coupon has something real to cut. */
   const stayReadyRef = useRef(false);
-  /** The server's authoritative pricing for the current selection. */
   const [serverQuote, setServerQuote] = useState<any>(null);
   const [quoting, setQuoting] = useState(false);
 
   const handleValidatePromo = async (codeToTest?: string) => {
     const code = (codeToTest || couponCode).trim().toUpperCase();
     if (!code) return;
-    // The full payable figure — stay, add-ons, donation, extra guests, the
-    // platform fee and its GST — which is exactly what the server discounts.
-    // This used to send only the room rate, falling back to a literal 350 when
-    // no room was selected yet, so the saving was calculated against a number
-    // the guest was never charged. The ref carries the current render's figure
-    // without depending on where this function sits in the file.
     const bookingAmount = subtotalRef.current;
     if (!stayReadyRef.current) {
-      // Rooms have not loaded yet. Remember the code; the effect below applies
-      // it as soon as there is a real total to discount.
       setPendingPromo(code);
       return;
     }
@@ -179,13 +165,8 @@ export const AshramDetailPage: React.FC = () => {
         bookingAmount,
         ashramId: id,
       });
-      // `valid` sits inside the envelope's `data`, alongside the offer and the
-      // computed discount. Reading it from the top level made every code —
-      // including a valid one arriving via ?promoCode= — report as invalid.
       const offerData = res.data?.data;
       if (res.data?.success && offerData?.valid) {
-        // Flattened to the shape this page renders and submits: the API nests
-        // the coupon under `offer` and returns the computed saving alongside.
         const offer = offerData.offer ?? {};
         setAppliedOfferData({
           offerId: offer._id,
@@ -222,14 +203,12 @@ export const AshramDetailPage: React.FC = () => {
     }
   };
 
-  // Optional Services
   const [prasad, setPrasad] = useState(false);
   const [meals, setMeals] = useState(false);
   const [parking, setParking] = useState(false);
   const [locker, setLocker] = useState(false);
   const [donation, setDonation] = useState("");
 
-  // Extended Booking Fields
   const [adults, setAdults] = useState(initialAdults);
   const [children, setChildren] = useState(initialChildren);
   const guestsCount = adults + children;
@@ -257,14 +236,11 @@ export const AshramDetailPage: React.FC = () => {
   const [specialRequests, setSpecialRequests] = useState("");
   const [restoredNotice, setRestoredNotice] = useState(false);
 
-  // Live Availability Calendar
   const [availabilityCalendar, setAvailabilityCalendar] = useState<any[]>([]);
   const [loadingCalendar, setLoadingCalendar] = useState(false);
 
-  // Reviews
   const [reviews, setReviews] = useState<any[]>([]);
 
-  // Related stays
   const [relatedStays, setRelatedStays] = useState<any[]>([]);
 
   const setRelatedRow = useAutoScroll<HTMLDivElement>({ speed: 30 });
@@ -450,8 +426,6 @@ export const AshramDetailPage: React.FC = () => {
   const handleRemoveCoupon = () => {
     setAppliedOfferData(null);
     setAppliedDiscount(0);
-    // Clear both tracked codes, otherwise the re-validation effect would
-    // re-apply the coupon the moment anything changed the total.
     setAppliedPromo(null);
     setPendingPromo(null);
     setCouponCode("");
@@ -488,7 +462,6 @@ export const AshramDetailPage: React.FC = () => {
     }
   };
 
-  // Keyboard navigation while the lightbox is open.
   useEffect(() => {
     if (!lightboxOpen) return;
     const onKey = (e: KeyboardEvent) => {
@@ -504,7 +477,6 @@ export const AshramDetailPage: React.FC = () => {
     };
   }, [lightboxOpen, ashram]);
 
-  // Add-On Services Dynamic Pricing State
   const [addOnQuantities, setAddOnQuantities] = useState<
     Record<string, number>
   >({});
@@ -532,7 +504,6 @@ export const AshramDetailPage: React.FC = () => {
   const daysCount = calculateDays();
   const basePriceCalc = (selectedRoom?.basePrice || 0) * roomsCount * daysCount;
 
-  // Dynamic Database-Driven Add-On Services Calculation
   let dynamicAddOnsCalc = 0;
   const activeAddOnsList: any[] = [];
   const availableAddOns = ashram?.addOnServices || [];
@@ -569,7 +540,6 @@ export const AshramDetailPage: React.FC = () => {
   const donationCalc = parseFloat(donation) || 0;
   const subtotalCalc = basePriceCalc + servicesCalc + donationCalc;
 
-  // Reservation Timer (10 Minutes) & Loyalty Rewards State
   const [reservationSeconds, setReservationSeconds] = useState<number>(600);
   const [timerActive, setTimerActive] = useState<boolean>(false);
   const [useLoyalty, setUseLoyalty] = useState<boolean>(false);
@@ -609,7 +579,6 @@ export const AshramDetailPage: React.FC = () => {
     return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   };
 
-  // Platform Fee Settings State
   const [platformSettings, setPlatformSettings] = useState<{
     enabled: boolean;
     type: "flat" | "percentage";
@@ -624,8 +593,6 @@ export const AshramDetailPage: React.FC = () => {
     appliesTo: DEFAULT_PLATFORM_FEE_SCOPES,
   });
 
-  // GST rate applied to the platform fee. Defaults to the same 18% the server
-  // falls back to, so a failed settings fetch cannot quietly change the price.
   const [platformGstRate, setPlatformGstRate] = useState(18);
 
   useEffect(() => {
@@ -644,9 +611,6 @@ export const AshramDetailPage: React.FC = () => {
 
   const extraGuestCalc = adults > 2 ? (adults - 2) * 200 * daysCount : 0;
   const loyaltyCalc = useLoyalty ? 100 : 0;
-  // Gated on the same switch and scope list the server quote uses. Testing
-  // `enabled` alone was not enough: a stay could still be quoted a fee here
-  // that checkout would not charge once Ashram Bookings was deselected.
   const platformFeeCalc = !platformFeeAppliesTo(
     platformSettings,
     "ashram_booking",
@@ -656,52 +620,20 @@ export const AshramDetailPage: React.FC = () => {
       ? Math.round((subtotalCalc * platformSettings.value) / 100)
       : Math.round(platformSettings.value || 49);
 
-  // GST is charged on the platform fee alone — the stay, add-ons, extra-guest
-  // charge and donation are supplied by the ashram and are not taxed here.
-  // Mirrors BookingPricingService.quote exactly; if the two ever disagree the
-  // price shown is not the price charged.
   const gstRateCalc = platformGstRate;
   const gstCalc = roundMoney((platformFeeCalc * gstRateCalc) / 100);
 
-  /**
-   * Everything owed before a coupon, and the figure a discount comes off.
-   *
-   * Includes the platform fee and its GST: a coupon reduces the whole bill,
-   * not just the ashram's share. It also includes the extra-guest charge,
-   * which the server has always billed but this page used to leave out of the
-   * payable total — quoting less than checkout would take.
-   */
   const grossPayableCalc = roundMoney(
     subtotalCalc + extraGuestCalc + platformFeeCalc + gstCalc,
   );
   subtotalRef.current = grossPayableCalc;
-  // The platform fee applies from the first render, so `grossPayable` is
-  // non-zero even before a room exists. Readiness is judged on the stay itself,
-  // otherwise a coupon would be validated against the bare fee.
   stayReadyRef.current = subtotalCalc > 0;
 
-  /**
-   * `appliedDiscount` is a rupee amount, always.
-   *
-   * It used to be reinterpreted by size — treated as a percentage when it was
-   * 100 or less and as rupees above that — so a ₹50 flat coupon silently took
-   * 50% off. The server returns the saving already computed against the amount
-   * we sent, so it is used verbatim and only capped at what is actually owed.
-   */
   const localDiscountCalc = Math.min(
     Math.max(0, appliedDiscount),
     grossPayableCalc,
   );
 
-  /**
-   * Prefer the server's quote for every figure it supplies.
-   *
-   * The local arithmetic above is a first-paint estimate only. Peak-season
-   * multipliers, per-ashram platform-fee policies and coupon rounding all live
-   * on the server, so a total computed here can differ from the one the
-   * payment order is built from — which is how the summary came to read ₹2.82
-   * while the gateway asked for ₹59.82. Whenever a quote has arrived it wins.
-   */
   const q = serverQuote?.pricing;
   const stayCostCalc = q ? q.basePrice : basePriceCalc;
   const servicesShownCalc = q ? q.servicesPrice : servicesCalc;
@@ -717,14 +649,6 @@ export const AshramDetailPage: React.FC = () => {
     ),
   );
 
-  /**
-   * Recompute the saving whenever the payable total moves.
-   *
-   * A percentage coupon is worth more once a guest adds meals, nights or
-   * guests, so a figure calculated at apply-time goes stale the moment
-   * anything changes. Re-validating also re-checks expiry and remaining
-   * redemptions, so the quote on screen keeps matching what checkout charges.
-   */
   useEffect(() => {
     const code = appliedPromo || pendingPromo;
     if (!code || subtotalCalc <= 0) return;
@@ -733,14 +657,6 @@ export const AshramDetailPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [grossPayableCalc, appliedPromo, pendingPromo]);
 
-  /**
-   * Re-price against the server whenever the selection changes.
-   *
-   * Debounced so dragging a quantity stepper issues one request, and guarded
-   * on having a room and dates because the endpoint needs both. A failure
-   * leaves the previous quote in place rather than flashing a wrong total; the
-   * server re-prices authoritatively at booking regardless.
-   */
   useEffect(() => {
     if (!id || !selectedRoom?._id || !checkIn || !checkOut) {
       setServerQuote(null);
@@ -769,7 +685,6 @@ export const AshramDetailPage: React.FC = () => {
         });
         setServerQuote(res.data?.data ?? null);
       } catch {
-        // Keep the last good quote; the estimate below it stays visible.
       } finally {
         setQuoting(false);
       }
@@ -1084,24 +999,20 @@ export const AshramDetailPage: React.FC = () => {
     setBookingError("");
     setPaying(true);
     try {
-      // 1. Ask the backend to create a payment order (or signal demo mode).
       const orderRes = await bookingService.createPaymentOrder(
         bookingSuccess._id,
       );
 
       if (orderRes.data.demo) {
         throw new Error("Razorpay is not configured. Real payment is required.");
-        // No gateway configured → demo confirmation path.
       }
 
-      // 2. Open Razorpay checkout with the real order.
       const result = await openRazorpayCheckout(orderRes.data.data, {
         name: user?.name,
         email: user?.email,
         contact: user?.phone,
       });
 
-      // 3. Verify the signature server-side and confirm the booking.
       await bookingService.pay(bookingSuccess._id, result);
       navigate("/dashboard");
     } catch (err) {
@@ -1202,10 +1113,8 @@ export const AshramDetailPage: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-6 pt-2 pb-16 space-y-10">
-      {/* Title Header — Equalized Visual Width Container */}
       <div className="border-b border-gray-100 dark:border-slate-800 pb-5">
         <div className="max-w-3xl md:max-w-4xl mx-auto flex flex-col items-center text-center space-y-3.5 px-2">
-          {/* Badge & City/State */}
           <div className="flex items-center justify-center gap-2">
             <VerifiedBadge
               isVerified={ashram.isVerified ?? ashram.status === "approved"}
@@ -1219,13 +1128,10 @@ export const AshramDetailPage: React.FC = () => {
             </span>
           </div>
 
-          {/* Row 1: Ashram Name */}
           <h2 className="text-3xl md:text-5xl font-extrabold text-[#0B192C] dark:text-white leading-tight">
             {ashram.name}
           </h2>
           <div className="text-xs font-bold text-gray-600 dark:text-gray-300 flex flex-col sm:flex-row sm:flex-wrap items-center justify-center gap-y-2 sm:gap-x-2.5 leading-relaxed">
-            {/* items-start + a nudge, so the pin sits on the FIRST line of a
-                wrapped address rather than centred against the whole block. */}
             <span className="flex items-start gap-1.5">
               <MapPin size={14} className="text-[#0A4DA6] shrink-0 mt-[3px]" />
               <span>
@@ -1309,9 +1215,7 @@ export const AshramDetailPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Premium Hero + Thumbnail Gallery */}
       <div className="space-y-3 -mt-4">
-        {/* Hero image (16:9) — click to open lightbox, swipe to change on mobile */}
         <div
           className="relative w-full aspect-video rounded-[24px] overflow-hidden shadow-sm cursor-zoom-in group bg-gray-100 dark:bg-slate-900"
           onClick={() => galleryImages.length > 0 && setLightboxOpen(true)}
@@ -1348,7 +1252,6 @@ export const AshramDetailPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Thumbnail carousel — swipeable, hover zoom, active highlight */}
         {galleryImages.length > 1 && (
           <div
             className="flex gap-3 overflow-x-auto pb-1 scrollbar-none snap-x"
@@ -1381,7 +1284,6 @@ export const AshramDetailPage: React.FC = () => {
         )}
       </div>
 
-      {/* Lightbox */}
       {lightboxOpen && galleryImages.length > 0 && (
         <div
           className="fixed inset-0 z-[70] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
@@ -1440,11 +1342,8 @@ export const AshramDetailPage: React.FC = () => {
         </div>
       )}
 
-      {/* Main Layout Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column: Ashram Details */}
         <div className="lg:col-span-2 space-y-8">
-          {/* About description & History */}
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-5 shadow-sm">
             <div className="flex items-center justify-between gap-3 border-b border-gray-50 dark:border-slate-850 pb-3">
               <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white border-b border-gray-50 dark:border-slate-850 pb-3">
@@ -1473,7 +1372,6 @@ export const AshramDetailPage: React.FC = () => {
             )}
           </div>
 
-          {/* Amenities & Facilities */}
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-5 shadow-sm">
             <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white border-b border-gray-50 dark:border-slate-850 pb-3">
               Facilities & Spiritual Activities
@@ -1487,7 +1385,6 @@ export const AshramDetailPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Rooms Categories List */}
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-5 shadow-sm">
             <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white border-b border-gray-50 dark:border-slate-850 pb-3">
               Available Room Categories
@@ -1525,7 +1422,6 @@ export const AshramDetailPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Room Availability Calendar — weekday-aligned month view */}
           {false && (
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-4 sm:p-6 space-y-4 sm:space-y-5 shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-50 dark:border-slate-850 pb-3">
@@ -1548,8 +1444,6 @@ export const AshramDetailPage: React.FC = () => {
               <div className="h-64 bg-gray-50 dark:bg-slate-900 rounded-2xl animate-pulse" />
             ) : (
               (() => {
-                // Bucket a day by remaining inventory. Thresholds are unchanged
-                // from the previous flat grid, so booking guidance stays the same.
                 const statusOf = (available: number) =>
                   available <= 0
                     ? "sold_out"
@@ -1580,9 +1474,6 @@ export const AshramDetailPage: React.FC = () => {
                 const firstDate = new Date(days[0].date);
                 const lastDate = new Date(days[days.length - 1].date);
 
-                // The weekday of the first day decides how many blank cells the
-                // grid needs before it, so every date lands under its real
-                // weekday column instead of just flowing left-to-right.
                 const leadingBlanks = firstDate.getDay();
                 const trailingBlanks =
                   (7 - ((leadingBlanks + days.length) % 7)) % 7;
@@ -1606,7 +1497,6 @@ export const AshramDetailPage: React.FC = () => {
 
                 return (
                   <div className="space-y-4">
-                    {/* Legend first, so the colours are decoded before they are read */}
                     <div className="grid grid-cols-3 gap-2 text-[9px] sm:text-[10px] font-bold">
                       {[
                         {
@@ -1650,7 +1540,6 @@ export const AshramDetailPage: React.FC = () => {
                       {monthLabel}
                     </p>
 
-                    {/* Weekday header */}
                     <div className="grid grid-cols-7 gap-1 sm:gap-1.5 text-center text-[9px] sm:text-[10px] font-extrabold text-gray-400 tracking-wider">
                       {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(
                         (d) => (
@@ -1714,7 +1603,6 @@ export const AshramDetailPage: React.FC = () => {
                       ))}
                     </div>
 
-                    {/* Availability overview */}
                     <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 p-3">
                       <div className="min-w-0">
                         <p className="text-xs font-extrabold text-[#0B192C] dark:text-white">
@@ -1743,7 +1631,6 @@ export const AshramDetailPage: React.FC = () => {
           </div>
           )}
 
-          {/* Rules & Policies */}
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-5 shadow-sm">
             <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white border-b border-gray-50 dark:border-slate-850 pb-3">
               Rules & Policies
@@ -1779,7 +1666,6 @@ export const AshramDetailPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Current Opportunities / Volunteer Seva Section */}
           {volunteerJobs.length > 0 && (
             <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-4 shadow-sm">
               <div className="flex items-center justify-between border-b border-gray-50 dark:border-slate-850 pb-3">
@@ -1851,7 +1737,6 @@ export const AshramDetailPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Column: Booking Sidecard & Contact Trust */}
         <div className="space-y-6">
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 shadow-sm space-y-6 relative overflow-visible z-40">
             <div className="absolute top-0 inset-x-0 h-1 bg-[#0A4DA6]" />
@@ -1934,8 +1819,6 @@ export const AshramDetailPage: React.FC = () => {
                   <GuestRoomSelector compact />
                 </div>
 
-                {/* Add ons - 4 distinct options */}
-                {/* Dynamic Database-Driven Add-on Services */}
                 <div className="pt-3 border-t border-gray-100 dark:border-slate-800 space-y-3">
                   <span className="text-[10px] font-extrabold tracking-wider text-gray-400 block">
                     Add-on Services (Dynamic Pricing)
@@ -1979,7 +1862,6 @@ export const AshramDetailPage: React.FC = () => {
                                 </span>
                               </div>
 
-                              {/* Quantity Stepper */}
                               <div className="flex items-center gap-1.5 shrink-0 select-none">
                                 <button
                                   type="button"
@@ -2028,7 +1910,6 @@ export const AshramDetailPage: React.FC = () => {
                   )}
                 </div>
 
-                {/* Donation */}
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-gray-400 flex items-center gap-1">
                     Ashram Donation (₹){" "}
@@ -2043,9 +1924,6 @@ export const AshramDetailPage: React.FC = () => {
                   />
                 </div>
 
-                {/* Live offers applicable to this ashram. The Apply action
-                  still goes through validate-promo, so eligibility and the
-                  final saving always come from the server. */}
                 {(offersLoading || availableOffers.length > 0) && (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between gap-2">
@@ -2121,7 +1999,6 @@ export const AshramDetailPage: React.FC = () => {
                   </div>
                 )}
 
-                {/* SECTION 1: Premium Savings Card (Framer Motion) */}
                 {appliedOfferData && (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
@@ -2154,13 +2031,10 @@ export const AshramDetailPage: React.FC = () => {
                         {appliedOfferData.offerCategory || "Festival Special"}
                       </span>
                       <span className="font-extrabold text-sm text-emerald-600 dark:text-emerald-400">
-                        {/* The quoted saving, so this panel cannot disagree
-                          with the breakdown directly beneath it. */}
                         You Saved {formatCurrency(discountCalc)}
                       </span>
                     </div>
 
-                    {/* Action Triggers: [ Change Coupon ] [ Remove Coupon ] */}
                     <div className="flex items-center gap-2 pt-1">
                       <button
                         type="button"
@@ -2180,7 +2054,6 @@ export const AshramDetailPage: React.FC = () => {
                   </motion.div>
                 )}
 
-                {/* SECTION 4: 10-Minute Reservation Timer */}
                 {timerActive && (
                   <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 rounded-2xl flex items-center justify-between text-xs font-bold text-amber-800 dark:text-amber-300 animate-pulse">
                     <div className="flex items-center gap-2">
@@ -2195,7 +2068,6 @@ export const AshramDetailPage: React.FC = () => {
                   </div>
                 )}
 
-                {/* Promo Coupon Code Entry */}
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-gray-400">
                     Promo / Coupon Code
@@ -2225,7 +2097,6 @@ export const AshramDetailPage: React.FC = () => {
                   )}
                 </div>
 
-                {/* SECTION 5: Loyalty Rewards System */}
                 <div className="p-3.5 bg-blue-50/70 dark:bg-slate-900/80 border border-blue-100 dark:border-slate-800 rounded-2xl flex items-center justify-between text-xs">
                   <div className="flex items-center gap-2">
                     <Award size={16} className="text-[#E58C28]" />
@@ -2248,10 +2119,6 @@ export const AshramDetailPage: React.FC = () => {
                   />
                 </div>
 
-                {/* SECTION 7: Offer Information & Scarcity.
-                  The remaining count is printed only when the coupon actually
-                  reports one — it used to fall back to a literal 12, which
-                  told every visitor a scarcity figure that was made up. */}
                 {appliedOfferData && (
                   <div className="p-3 bg-gray-50 dark:bg-slate-900/60 rounded-2xl border border-gray-150 dark:border-slate-800 text-[10px] space-y-1 text-gray-500">
                     {Number.isFinite(
@@ -2271,7 +2138,6 @@ export const AshramDetailPage: React.FC = () => {
                   </div>
                 )}
 
-                {/* Special Requests / Notes */}
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-gray-400">
                     Special Requests / Notes
@@ -2285,9 +2151,7 @@ export const AshramDetailPage: React.FC = () => {
                   />
                 </div>
 
-                {/* SECTION 2: Detailed Enterprise Savings Breakdown */}
                 <div className="p-4 bg-gray-50 dark:bg-slate-900/90 border border-gray-200 dark:border-slate-800 rounded-[24px] space-y-2.5 text-xs font-semibold shadow-inner">
-                  {/* 1. Original Stay Cost */}
                   <div className="flex justify-between text-gray-600 dark:text-gray-300">
                     <span>
                       Original Stay Cost ({daysCount} night
@@ -2317,7 +2181,6 @@ export const AshramDetailPage: React.FC = () => {
                     </div>
                   )}
 
-                  {/* 2. Tirvona Platform Fee (the only taxed line) */}
                   {platformSettings.enabled && (
                     <div className="flex justify-between text-[#0A4DA6] font-extrabold text-[11px]">
                       <span>
@@ -2334,7 +2197,6 @@ export const AshramDetailPage: React.FC = () => {
                     </div>
                   )}
 
-                  {/* 3. GST — on the platform fee only, never on the stay */}
                   {gstShownCalc > 0 && (
                     <div className="flex justify-between text-gray-500 text-[11px]">
                       <span>
@@ -2344,7 +2206,6 @@ export const AshramDetailPage: React.FC = () => {
                     </div>
                   )}
 
-                  {/* 4. Coupon Discount (if applicable) */}
                   {discountCalc > 0 && (
                     <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-extrabold">
                       <span>Coupon Discount ({couponCode}):</span>
@@ -2352,7 +2213,6 @@ export const AshramDetailPage: React.FC = () => {
                     </div>
                   )}
 
-                  {/* 5. Loyalty Discount (if applicable) */}
                   {useLoyalty && (
                     <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-extrabold">
                       <span>Loyalty Discount:</span>
@@ -2360,7 +2220,6 @@ export const AshramDetailPage: React.FC = () => {
                     </div>
                   )}
 
-                  {/* 6. Final Payable Amount */}
                   <div className="pt-2 border-t border-gray-200 dark:border-slate-800 flex justify-between text-base font-black text-[#0B192C] dark:text-white">
                     <span>Final Payable Amount:</span>
                     <span className="text-[#0A4DA6] dark:text-blue-400">
@@ -2369,7 +2228,6 @@ export const AshramDetailPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* SECTION 3 & 6: Savings Highlight & Circular Badge */}
                 {totalSavingsCalc > 0 && (
                   <motion.div
                     initial={{ scale: 0.95, opacity: 0 }}
@@ -2385,7 +2243,6 @@ export const AshramDetailPage: React.FC = () => {
                         </p>
                       </div>
                     </div>
-                    {/* SECTION 6: Circular Savings Badge */}
                     <div className="w-11 h-11 rounded-full bg-emerald-500 text-white flex flex-col items-center justify-center font-black text-[9px] shadow-md shrink-0">
                       <span>SAVED</span>
                       <span className="text-[10px]">{formatCurrency(totalSavingsCalc)}</span>
@@ -2393,7 +2250,6 @@ export const AshramDetailPage: React.FC = () => {
                   </motion.div>
                 )}
 
-                {/* SECTION 8: Payment Confidence Badges */}
                 <div className="grid grid-cols-2 gap-2 text-[10px] font-bold text-gray-500 dark:text-gray-400 pt-1">
                   <span className="flex items-center gap-1">
                     <ShieldCheck size={12} className="text-emerald-500" /> Tirvona
@@ -2412,8 +2268,6 @@ export const AshramDetailPage: React.FC = () => {
                   </span>
                 </div>
 
-                {/* Held while a fresh quote is in flight, so nobody can commit
-                  against a total that is about to change. */}
                 <button
                   type="submit"
                   disabled={paying || quoting}
@@ -2428,7 +2282,6 @@ export const AshramDetailPage: React.FC = () => {
                 </button>
               </form>
             ) : (
-              /* Instant Reservation Confirmed Card */
               <div className="space-y-5 animate-in fade-in duration-200 text-left">
                 <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl text-emerald-800 dark:text-emerald-300 space-y-1">
                   <div className="flex items-center gap-2 font-black text-sm text-emerald-700 dark:text-emerald-400">
@@ -2503,11 +2356,6 @@ export const AshramDetailPage: React.FC = () => {
             )}
           </div>
 
-          {/* Location map.
-              Previously this panel printed the raw "Lat: … , Lon: …" pair as
-              text. It now renders the position on an OpenStreetMap/Leaflet map;
-              the Google Maps link is kept because it is what hands a phone over
-              to turn-by-turn navigation. */}
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[28px] shadow-sm space-y-4">
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <h4 className="inline-flex items-center gap-2 text-xs font-extrabold text-[#0B192C] dark:text-white">
@@ -2557,12 +2405,7 @@ export const AshramDetailPage: React.FC = () => {
           </div>
         </div>
       </div>
-      {/* The full-width reviews block that used to sit here was disabled with
-        `{false && …}`. Reviews render in the left column above, so this was a
-        dead duplicate — and being unreachable, TypeScript stopped narrowing
-        `id` inside it and failed the build. */}
 
-      {/* Related stays */}
       {relatedStays.length > 0 && (
         <div className="space-y-6 pt-10 border-t border-gray-100 dark:border-slate-800">
           <div className="space-y-1">
@@ -2573,9 +2416,6 @@ export const AshramDetailPage: React.FC = () => {
               Related Stays in {ashram.address?.city}
             </h3>
           </div>
-          {/* Horizontal auto-scrolling row. The negative margin + padding lets
-              cards bleed to the screen edge on phones while staying aligned
-              with the page gutter from sm up. */}
           <div
             ref={setRelatedRow}
             className="flex gap-4 sm:gap-6 overflow-x-auto pb-2 scrollbar-none -mx-6 px-6 sm:mx-0 sm:px-0 justify-start"

@@ -118,8 +118,6 @@ const toForm = (lead: Lead): LeadForm => ({
   notes: lead.notes ?? "",
 });
 
-/** Empty strings become `undefined`, so a blank field is omitted rather than
- *  sent as NaN — the API validates numbers strictly. */
 const num = (value: string): number | undefined => {
   const trimmed = value.trim();
   if (!trimmed) return undefined;
@@ -714,7 +712,6 @@ export const LeadCollectionPage: React.FC = () => {
         )}
       </div>
 
-      {/* Create / edit */}
       <EnterpriseModal
         isOpen={creating || Boolean(editing)}
         onClose={closeForm}
@@ -740,7 +737,6 @@ export const LeadCollectionPage: React.FC = () => {
         {formBody}
       </EnterpriseModal>
 
-      {/* Detail */}
       <EnterpriseModal
         isOpen={Boolean(viewing)}
         onClose={() => setViewing(null)}
@@ -865,7 +861,6 @@ export const LeadCollectionPage: React.FC = () => {
         )}
       </EnterpriseModal>
 
-      {/* Delete confirmation */}
       <EnterpriseModal
         isOpen={Boolean(confirmDelete)}
         onClose={() => setConfirmDelete(null)}

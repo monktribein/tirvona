@@ -1,13 +1,3 @@
-/**
- * leadApi.js — the only place this app talks to a server.
- *
- * Points at the Lead Collection module in the Tirvona API
- * (`/api/lead-collection/...`). That module runs on its own database and its
- * own token scope, so nothing here can reach platform data even by accident.
- *
- * The token is a field-agent token, kept under its own localStorage key so it
- * can never be confused with the main site's `ab_token`.
- */
 
 const RAW_BASE = (import.meta.env.VITE_LEAD_API_URL || 'http://localhost:5000')
   .trim()
@@ -51,11 +41,6 @@ export const leadSession = {
   }
 };
 
-/**
- * Thin fetch wrapper. Throws an Error carrying the server's own message so
- * callers can surface it verbatim — "Invalid phone or password" is more use to
- * an agent than "Request failed".
- */
 async function request(path, { method = 'GET', body, auth = true } = {}) {
   const headers = { Accept: 'application/json' };
   const isFormData = body instanceof FormData;
@@ -74,12 +59,9 @@ async function request(path, { method = 'GET', body, auth = true } = {}) {
   try {
     payload = await response.json();
   } catch {
-    // A 204 or an HTML error page — fall through to the status-based message.
   }
 
   if (!response.ok) {
-    // The session died server-side (suspended agent, password reset, expiry).
-    // Clear it locally so the UI drops back to the sign-in state.
     if (response.status === 401) leadSession.clear();
     const message =
       payload?.message ||
@@ -102,7 +84,6 @@ export const leadApi = {
 
   me: () => request('/auth/me'),
 
-  /** Leads captured by the signed-in agent, newest first. */
   listMyLeads: (params = {}) => {
     const query = new URLSearchParams(
       Object.entries(params).filter(([, value]) => value !== '' && value != null)

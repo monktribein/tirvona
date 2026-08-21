@@ -56,7 +56,6 @@ export const OwnerDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // ── Approval Workflow State ──
   const [categoryRequests, setCategoryRequests] = useState<any[]>([]);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [submittingCategory, setSubmittingCategory] = useState(false);
@@ -160,9 +159,6 @@ export const OwnerDashboard: React.FC = () => {
         setRecentBookings(bookingsResult.value.data.data.slice(0, 8));
       else setRecentBookings([]);
 
-      // Structural totals come from the management estate itself. This keeps
-      // the dashboard accurate against older analytics deployments that do
-      // not yet return the newer totalAshrams/totalInventory fields.
       const ashramsResult = await ashramService.myListings();
       const ashrams = ashramsResult.data?.success
         ? ashramsResult.data.data || []
@@ -282,7 +278,6 @@ export const OwnerDashboard: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      {/* Enterprise Page Header */}
       <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[28px] shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="flex items-center gap-3.5">
           <div className="w-12 h-12 rounded-2xl bg-[#0A4DA6]/10 text-[#0A4DA6] flex items-center justify-center shrink-0 border border-[#0A4DA6]/15">
@@ -365,7 +360,6 @@ export const OwnerDashboard: React.FC = () => {
         </div>
       </section>
 
-      {/* ── Pending Content Approvals (CMS Workflow Console) ── */}
       <div className="bg-white dark:bg-[#0B192C] border border-amber-200 dark:border-amber-900/50 p-6 rounded-[24px] shadow-sm space-y-4">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-4">
           <div>
@@ -420,9 +414,7 @@ export const OwnerDashboard: React.FC = () => {
                   </span>
                 </div>
 
-                {/* Old vs New Side-by-Side Diff Preview */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                  {/* Old Value */}
                   <div className="p-3 bg-white dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl space-y-1">
                     <span className="text-[10px] font-extrabold text-gray-400 tracking-wider block">
                       Current Live Version (Old)
@@ -434,7 +426,6 @@ export const OwnerDashboard: React.FC = () => {
                     />
                   </div>
 
-                  {/* New Proposed Value */}
                   <div className="p-3 bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 rounded-xl space-y-2">
                     <div className="flex justify-between items-center">
                       <span className="text-[10px] font-extrabold text-emerald-700 dark:text-emerald-300 tracking-wider block">
@@ -467,7 +458,6 @@ export const OwnerDashboard: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Owner Actions */}
                 <div className="flex justify-end items-center gap-3 pt-2">
                   <button
                     onClick={() => {
@@ -492,7 +482,6 @@ export const OwnerDashboard: React.FC = () => {
         )}
       </div>
 
-      {/* Rejection Modal */}
       {rejectionModalId && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <form
@@ -534,7 +523,6 @@ export const OwnerDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Room Category Approval Request Workflow (Accommodation Console) */}
       <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[24px] shadow-sm space-y-4">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-gray-100 dark:border-slate-800 pb-4">
           <div className="flex items-center gap-3">
@@ -560,7 +548,6 @@ export const OwnerDashboard: React.FC = () => {
           </button>
         </div>
 
-        {/* Requests History List */}
         {categoryRequests.length === 0 ? (
           <div className="p-6 text-center text-xs text-gray-400 font-semibold bg-gray-50/50 dark:bg-slate-900/40 rounded-2xl border border-dashed border-gray-200 dark:border-slate-800">
             No room category requests submitted yet. Click "+ Request New Room
@@ -623,7 +610,6 @@ export const OwnerDashboard: React.FC = () => {
         )}
       </div>
 
-      {/* ── Request New Room Category Modal ── */}
       {isCategoryModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 max-w-lg w-full space-y-4 shadow-2xl animate-in fade-in zoom-in duration-200">
@@ -758,7 +744,6 @@ export const OwnerDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Recent Bookings Table */}
       <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[24px] shadow-sm space-y-4">
         <div className="flex justify-between items-center">
           <div className="space-y-0.5">
@@ -771,7 +756,6 @@ export const OwnerDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Desktop Table View */}
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
@@ -852,7 +836,6 @@ export const OwnerDashboard: React.FC = () => {
           </table>
         </div>
 
-        {/* Mobile Cards View */}
         <div className="block md:hidden divide-y divide-gray-100 dark:divide-slate-800">
           {recentBookings.length === 0 ? (
             <div className="text-center py-6 text-xs text-gray-400">

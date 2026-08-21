@@ -16,20 +16,6 @@ import api, { getErrorMessage } from "../../../lib/api";
 import { parkingAdminService } from "../../../modules/parking/services/parking.service";
 import { humanizeLabel } from "../../../utils/labels";
 
-/**
- * Parking Staff & Roles.
- *
- * Parking authorisation does not live on `User.role`. A grant row in
- * `parking_staff` binds a user to a partner, optionally to specific locations,
- * and carries one of three roles whose capability sets the parking API checks on
- * every request. That is why these accounts are invisible to user management,
- * and why this screen exists.
- *
- * An empty location selection means partner-wide, which is what the API records
- * when `locationIds` is omitted — stated explicitly here so it is not mistaken
- * for "no access".
- */
-
 const ROLE_BLURB: Record<string, string> = {
   parking_partner:
     "Full control of their own parking: locations, pricing, slots, staff, reports and refund requests.",
@@ -39,13 +25,6 @@ const ROLE_BLURB: Record<string, string> = {
     "Gate duty only: scan a QR, view the booking, check vehicles in and out.",
 };
 
-/**
- * The three roles the parking API recognises. /parking/admin/staff/roles returns
- * these with their capability counts, but assigning a role must not depend on a
- * constants-only endpoint being reachable — so the picker and the cards fall
- * back to this list and simply omit the count, rather than inventing one that
- * could drift from PARKING_ROLE_CAPABILITIES on the server.
- */
 const FALLBACK_ROLES = [
   "parking_partner",
   "parking_manager",
@@ -104,9 +83,6 @@ export const ParkingStaffRolesPage: React.FC = () => {
           parkingAdminService.listLocations({ limit: 100 }),
           parkingAdminService.listRoles(),
         ]);
-      // Clear a section that failed rather than leaving the previous response
-      // on screen next to an error — stale rows beside a red banner read as
-      // live data and hide which call actually broke.
       setGrants(
         staffRes.status === "fulfilled" ? (staffRes.value.data?.data ?? []) : [],
       );
@@ -120,7 +96,6 @@ export const ParkingStaffRolesPage: React.FC = () => {
           ? (locationsRes.value.data?.data ?? [])
           : [],
       );
-      // Roles are a fixed set, so falling back keeps the picker usable.
       setRoles(
         rolesRes.status === "fulfilled" && rolesRes.value.data?.data?.length
           ? rolesRes.value.data.data
@@ -148,8 +123,6 @@ export const ParkingStaffRolesPage: React.FC = () => {
     load();
   }, [load]);
 
-  // A grant needs a real user account, and the console's user directory is the
-  // only searchable source of one. Super Admin already has read access to it.
   const searchUsers = async (term: string) => {
     setUserQuery(term);
     if (term.trim().length < 2) {
@@ -497,8 +470,6 @@ export const ParkingStaffRolesPage: React.FC = () => {
                     required
                     value={form.partnerId}
                     onChange={(e) =>
-                      // Locations belong to a partner, so switching partner
-                      // invalidates any location already ticked.
                       setForm({
                         ...form,
                         partnerId: e.target.value,

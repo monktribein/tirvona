@@ -100,7 +100,6 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
 
   return (
     <div className="space-y-6 text-left w-full">
-      {/* Header */}
       <EnterprisePageHeader
         title="Room Category Approval Engine"
         subtitle="Review and validate structural room category additions requested by Ashram Owners across ashrams."
@@ -108,9 +107,7 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
         badgeText="Super Admin Console"
       />
 
-      {/* Filters Bar */}
       <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white dark:bg-[#0B192C] p-4 rounded-[20px] border border-gray-100 dark:border-slate-800 shadow-sm">
-        {/* Status Tabs */}
         <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto">
           {[
             "all",
@@ -134,7 +131,6 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
           ))}
         </div>
 
-        {/* Search */}
         <div className="relative w-full md:w-72">
           <Search
             size={16}
@@ -150,7 +146,6 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Requests Table */}
       <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 shadow-sm">
         {loading ? (
           <div className="p-8 text-center text-xs text-gray-400 font-semibold animate-pulse">
@@ -246,7 +241,6 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
         )}
       </div>
 
-      {/* ── Review Details Modal ── */}
       {selectedRequest && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 max-w-2xl w-full space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in duration-200">
@@ -268,7 +262,6 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
               </button>
             </div>
 
-            {/* Request Summary Info */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-gray-50 dark:bg-slate-900/60 p-4 rounded-2xl text-xs">
               <div>
                 <span className="text-gray-400 block text-[10px] font-bold">
@@ -320,7 +313,6 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Description & Amenities */}
             <div className="space-y-2 text-xs">
               <h4 className="font-extrabold text-gray-700 dark:text-gray-200 tracking-wider text-[11px]">
                 Reason for Request & Details
@@ -352,7 +344,6 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
                 )}
             </div>
 
-            {/* Review Comment Box */}
             <div className="space-y-1.5">
               <label className="block text-[11px] font-bold text-gray-600 dark:text-gray-300 tracking-wider">
                 Reviewer Notes / Feedback Comment
@@ -366,7 +357,6 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
               />
             </div>
 
-            {/* Action Buttons */}
             <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-gray-100 dark:border-slate-800">
               <button
                 type="button"

@@ -24,7 +24,6 @@ const POLICY: RefundPolicyInput = {
   refundGst: false,
 };
 
-/** A ₹5,000 stay: ₹49 platform fee, ₹8.82 GST, ₹300 add-ons, ₹200 donation. */
 const SOURCE: RefundSourceInput = {
   amountPaid: 5557.82,
   baseAmount: 5000,
@@ -61,7 +60,6 @@ describe("calculateRefund", () => {
     const result = calculateRefund(POLICY, SOURCE, NOW);
 
     expect(result.refundPercent).toBe(100);
-    // base 5000 + add-ons 300; donation, fee and GST retained by this policy.
     expect(result.refundableComponents).toEqual({
       base: 5000,
       addOns: 300,
@@ -89,11 +87,6 @@ describe("calculateRefund", () => {
     expect(result.nonRefundableAmount).toBe(5557.82);
   });
 
-  /**
-   * GST on the platform fee is remitted onward, so it can only return with the
-   * fee it was charged on — otherwise the platform refunds tax it cannot
-   * reclaim.
-   */
   it("will not refund GST while the platform fee is retained", () => {
     const result = calculateRefund(
       { ...POLICY, refundGst: true, refundPlatformFee: false },
@@ -159,7 +152,6 @@ describe("calculateRefund", () => {
     expect(capped.netRefundable).toBe(5150);
   });
 
-  /** A fee larger than the refund must not produce a negative payout. */
   it("never lets the processing fee exceed the refund", () => {
     const result = calculateRefund(
       { ...POLICY, processingFee: { type: "flat", value: 99_999 } },
@@ -171,10 +163,6 @@ describe("calculateRefund", () => {
     expect(result.netRefundable).toBe(0);
   });
 
-  /**
-   * The platform must never return more than it took — the usual cause is a
-   * partly paid booking.
-   */
   it("caps the refund at the amount actually collected", () => {
     const result = calculateRefund(POLICY, { ...SOURCE, amountPaid: 1000 }, NOW);
 
@@ -194,7 +182,6 @@ describe("calculateRefund", () => {
     expect(result.notes.join(" ")).toContain("Claim window");
   });
 
-  /** Goods have no service date, so window rules cannot gate them. */
   it("treats a source with no service date as fully inside every window", () => {
     const result = calculateRefund(
       POLICY,

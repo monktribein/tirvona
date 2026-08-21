@@ -4,13 +4,6 @@ import {
   ADMIN_REFS,
 } from "../infrastructure/persistence/governance.schemas";
 
-/**
- * Every admin console entry in the frontend sidebar
- * (frontend/src/admin/shared/layouts/DashboardLayout.tsx) reaches the backend
- * as GET /admin/crud/:moduleKey?subKey=:subKey. A module/sub-key pair that
- * cannot be resolved answers 400 and the screen renders empty, so the mapping
- * is pinned here.
- */
 const SIDEBAR: [string, string | undefined][] = [
   ["ashrams", "all"],
   ["ashrams", "amenities"],
@@ -63,10 +56,6 @@ const SIDEBAR: [string, string | undefined][] = [
   ["marketplace", "waitlist"],
   ["offers", "all"],
   ["offers", "featured"],
-  // Parking uses one module key per collection rather than parking/<section>,
-  // because a shared sub-key would be resolved against the global alias table
-  // and land on the wrong collection — "bookings" is already the ashram
-  // booking collection, and "pricing" is a neutral sub-key.
   ["parking_bookings", "all"],
   ["parking_bookings", "cancelled"],
   ["parking_bookings", "checked_in"],
@@ -134,9 +123,6 @@ describe("admin console module resolution", () => {
   });
 
   it("selects every field it populates", () => {
-    // Mongoose drops a populate whose path is not in the projection, and does
-    // it silently — the column just renders empty. Any ref on a model that
-    // also has a projection has to appear in that projection.
     const projections: Record<string, string> = (GovernanceService as any)
       .ADMIN_LIST_PROJECTIONS;
     const gaps: string[] = [];
@@ -168,8 +154,6 @@ describe("admin console module resolution", () => {
   });
 
   it("keeps a parking sub-key on the parking collection", () => {
-    // Regression guard: "bookings" and "pricing" both mean something else in
-    // the shared alias table, so parking must never route through them.
     expect(model("parking_bookings", "checked_in")).toBe(
       "Admin_parking_bookings",
     );
@@ -184,8 +168,6 @@ describe("admin console module resolution", () => {
     service.applyAdminSubKeyFilter("parking_bookings", "checked_in", booking);
     expect(booking).toEqual({ status: "checked_in" });
 
-    // A commission settles on `settlementStatus`, not `status` — "pending"
-    // exists in the shared status map and must not leak onto the wrong field.
     const commission: Record<string, any> = {};
     service.applyAdminSubKeyFilter("parking_commissions", "pending", commission);
     expect(commission).toEqual({ settlementStatus: "pending" });

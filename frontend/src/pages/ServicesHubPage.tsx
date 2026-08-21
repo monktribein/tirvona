@@ -62,7 +62,6 @@ export const ServicesHubPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState(activeCategoryParam);
   const [sortBy, setSortBy] = useState(searchParams.get("sort") || "rating");
 
-  // Filters
   const [pureVegOnly, setPureVegOnly] = useState(
     searchParams.get("pureVeg") === "true",
   );
@@ -70,7 +69,6 @@ export const ServicesHubPage: React.FC = () => {
     searchParams.get("govtVerified") === "true",
   );
 
-  // Booking Modal State
   const [selectedService, setSelectedService] =
     useState<ServiceProviderItem | null>(null);
   const [bookingDate, setBookingDate] = useState("");
@@ -144,7 +142,6 @@ export const ServicesHubPage: React.FC = () => {
   const fetchServices = async () => {
     setLoading(true);
     try {
-      // Sync URL Search Parameters
       const paramsObj: Record<string, string> = {};
       if (selectedCategory !== "all") paramsObj.category = selectedCategory;
       if (selectedCity !== "all") paramsObj.city = selectedCity;
@@ -154,7 +151,6 @@ export const ServicesHubPage: React.FC = () => {
       if (govtVerifiedOnly) paramsObj.govtVerified = "true";
       setSearchParams(paramsObj);
 
-      // Memory engine auto-save
       updateMemoryCategory("filters", {
         serviceCategory: selectedCategory,
         serviceCity: selectedCity,
@@ -263,8 +259,6 @@ export const ServicesHubPage: React.FC = () => {
 
   return (
     <div className="min-h-screen pb-20 text-left">
-      {/* ── 1. Page Header Banner ── */}
-      {/* Clean Text Header (Matching all other section headers on the site) */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6">
         <div className="text-center space-y-2.5 max-w-3xl mx-auto py-2">
           <p className="font-['Kalam'] text-2xl sm:text-4xl lg:text-5xl font-bold text-[#E58C28]">
@@ -278,15 +272,12 @@ export const ServicesHubPage: React.FC = () => {
         </div>
       </div>
 
-      {/* ── 2. Search & Category Bar ── */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 relative z-20 space-y-6">
-        {/* Search Bar Container */}
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-4 sm:p-5 shadow-xl space-y-4">
           <form
             onSubmit={handleSearchSubmit}
             className="grid grid-cols-1 sm:grid-cols-12 gap-3"
           >
-            {/* Search input */}
             <div className="sm:col-span-6 relative">
               <Search
                 className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
@@ -301,7 +292,6 @@ export const ServicesHubPage: React.FC = () => {
               />
             </div>
 
-            {/* City Selector */}
             <div className="sm:col-span-4 relative">
               <MapPin
                 className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#0A4DA6]"
@@ -323,7 +313,6 @@ export const ServicesHubPage: React.FC = () => {
               </select>
             </div>
 
-            {/* Submit Button */}
             <div className="sm:col-span-2">
               <EnterpriseButton
                 type="submit"
@@ -335,7 +324,6 @@ export const ServicesHubPage: React.FC = () => {
             </div>
           </form>
 
-          {/* Category Chips Bar */}
           <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none pt-1">
             {categories.map((cat) => {
               const isActive = selectedCategory === cat.id;
@@ -356,7 +344,6 @@ export const ServicesHubPage: React.FC = () => {
             })}
           </div>
 
-          {/* Additional Filter Switches & Sort Toolbar */}
           <div className="flex flex-wrap items-center justify-between gap-4 text-xs pt-2 border-t border-gray-100 dark:border-slate-800 font-bold text-gray-500">
             <div className="flex items-center gap-4 flex-wrap">
               <label className="flex items-center gap-2 cursor-pointer">
@@ -390,7 +377,6 @@ export const ServicesHubPage: React.FC = () => {
           </div>
         </div>
 
-        {/* ── 3. Services Grid ── */}
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
             {[1, 2, 3, 4, 5, 6].map((n) => (
@@ -428,7 +414,6 @@ export const ServicesHubPage: React.FC = () => {
                 key={item._id}
                 className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] overflow-hidden shadow-lg shadow-gray-200/40 dark:shadow-none hover:shadow-2xl transition-all duration-300 flex flex-col justify-between"
               >
-                {/* Top Image Banner */}
                 <div className="relative h-44 w-full bg-slate-900 overflow-hidden">
                   <img
                     src={
@@ -440,18 +425,15 @@ export const ServicesHubPage: React.FC = () => {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
 
-                  {/* Category Pill Tag */}
                   <span className="absolute top-3 left-3 px-3 py-1 bg-[#0A4DA6] text-white rounded-full text-[10px] font-black tracking-wider shadow-md">
                     {item.subcategory}
                   </span>
 
-                  {/* Rating Chip */}
                   <div className="absolute top-3 right-3 px-2.5 py-1 bg-white/90 dark:bg-[#0B192C]/90 text-[#0B192C] dark:text-white rounded-full text-xs font-black flex items-center gap-1 shadow-sm">
                     <Star size={12} className="text-amber-400 fill-amber-400" />
                     <span>{item.rating.toFixed(1)}</span>
                   </div>
 
-                  {/* Location Label */}
                   <div className="absolute bottom-3 left-3 text-white text-xs font-extrabold flex items-center gap-1">
                     <MapPin size={12} className="text-[#E58C28]" />
                     <span>
@@ -460,7 +442,6 @@ export const ServicesHubPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Content Details */}
                 <div className="p-5 space-y-4 flex-grow flex flex-col justify-between">
                   <div className="space-y-2">
                     <h3 className="font-black text-base text-[#0B192C] dark:text-white leading-tight">
@@ -471,7 +452,6 @@ export const ServicesHubPage: React.FC = () => {
                     </p>
                   </div>
 
-                  {/* Badges / Specs list */}
                   <div className="flex flex-wrap gap-1.5 text-[10px] font-extrabold pt-1">
                     {item.specifications?.pureVeg && (
                       <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-full">
@@ -490,7 +470,6 @@ export const ServicesHubPage: React.FC = () => {
                     )}
                   </div>
 
-                  {/* Pricing & CTA */}
                   <div className="pt-3 border-t border-gray-100 dark:border-slate-800 flex justify-between items-center">
                     <div>
                       <span className="text-[10px] text-gray-400 block font-bold">
@@ -528,7 +507,6 @@ export const ServicesHubPage: React.FC = () => {
         )}
       </section>
 
-      {/* ── 4. Booking Modal ── */}
       <EnterpriseModal
         isOpen={Boolean(selectedService)}
         onClose={() => setSelectedService(null)}

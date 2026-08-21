@@ -21,11 +21,6 @@ export const OffersPage: React.FC = () => {
   const selectedCity = urlCity || "All";
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
-  // This page used to substitute five invented campaigns whenever the API
-  // returned nothing — or failed. Visitors were offered promo codes
-  // (KUMBH2026, VRINDAVAN25, YOGA2026 …) that no coupon backed, so every one
-  // of them was rejected at checkout. An empty catalogue now shows the empty
-  // state, and a failed request says so instead of quietly inventing stock.
   const [loadFailed, setLoadFailed] = useState(false);
 
   const fetchOffers = useCallback(async () => {
@@ -68,11 +63,6 @@ export const OffersPage: React.FC = () => {
     setTimeout(() => setCopiedCode(null), 2500);
   };
 
-  /**
-   * A coupon bound to one ashram opens that ashram's booking page with the
-   * code already in the query, where the detail page validates and applies it.
-   * Only an unbound, platform-wide coupon falls back to search.
-   */
   const handleBookWithOffer = (offer: any) => {
     const ashramId = String(
       offer.ashramId?._id ??
@@ -118,13 +108,11 @@ export const OffersPage: React.FC = () => {
 
   return (
     <div className="min-h-screen pb-20 space-y-10">
-      {/* Clean Text Header (Matching all other section headers on the site) */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6">
         <div className="text-center space-y-2.5 max-w-3xl mx-auto py-2">
           <p className="font-['Kalam'] text-2xl sm:text-4xl lg:text-5xl font-bold text-[#E58C28]">
             Exclusive Offers &amp; Deals
           </p>
-          {/* Decorative Saffron Underline Divider */}
           <div className="flex items-center justify-center gap-2.5 my-1.5">
             <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
             <Sparkles
@@ -137,7 +125,6 @@ export const OffersPage: React.FC = () => {
             Unlock instant room rate discounts, complimentary Satvik meals, and
             festival packages across verified ashrams.
           </p>
-          {/* Centered Search Bar */}
           <div className="w-full max-w-xl mx-auto pt-3 relative z-10">
             <div className="bg-white dark:bg-[#0B192C] rounded-full p-2 shadow-lg border border-gray-200 dark:border-slate-800 flex items-center">
               <Search size={18} className="text-gray-400 ml-4 shrink-0" />
@@ -159,9 +146,7 @@ export const OffersPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Container */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-        {/* Offers Cards Grid */}
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3].map((n) => (
