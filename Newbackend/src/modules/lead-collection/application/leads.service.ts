@@ -41,8 +41,10 @@ export interface LeadStats {
   capturedLast7Days: number;
 }
 
-interface AgentLeadScope {
+export interface AgentLeadScope {
   capturedBy: string;
+  role?: string;
+  employeeCode?: string;
   state?: string;
   district?: string;
 }
@@ -63,46 +65,109 @@ export class LeadsService {
   private toDocument(
     dto: SaveLeadDto,
     jurisdiction?: { state: string; district: string },
+    existing?: LeadRecord,
   ): Record<string, unknown> {
-    const lat = dto.location?.coordinates?.lat ?? null;
-    const lng = dto.location?.coordinates?.lng ?? null;
+    const lat =
+      dto.location?.coordinates?.lat !== undefined
+        ? dto.location.coordinates.lat
+        : (existing?.location?.coordinates?.lat ?? null);
+    const lng =
+      dto.location?.coordinates?.lng !== undefined
+        ? dto.location.coordinates.lng
+        : (existing?.location?.coordinates?.lng ?? null);
     const hasFix = typeof lat === "number" && typeof lng === "number";
 
     return {
-      name: dto.name.trim(),
+      name: (dto.name ?? existing?.name ?? "").trim(),
       location: {
-        address: dto.location?.address?.trim() ?? "",
-        city: dto.location?.city?.trim() ?? "",
+        address:
+          dto.location?.address !== undefined
+            ? dto.location.address.trim()
+            : (existing?.location?.address ?? ""),
+        googleMapsUrl:
+          dto.location?.googleMapsUrl !== undefined
+            ? dto.location.googleMapsUrl.trim()
+            : (existing?.location?.googleMapsUrl ?? ""),
+        city:
+          dto.location?.city !== undefined
+            ? dto.location.city.trim()
+            : (existing?.location?.city ?? ""),
         district:
-          jurisdiction?.district ?? dto.location?.district?.trim() ?? "",
-        state: jurisdiction?.state ?? dto.location?.state?.trim() ?? "",
+          jurisdiction?.district ??
+          (dto.location?.district !== undefined
+            ? dto.location.district.trim()
+            : (existing?.location?.district ?? "")),
+        state:
+          jurisdiction?.state ??
+          (dto.location?.state !== undefined
+            ? dto.location.state.trim()
+            : (existing?.location?.state ?? "")),
         coordinates: { lat, lng },
       },
       geo: hasFix ? { type: "Point", coordinates: [lng, lat] } : undefined,
       roomInventory: {
-        totalRooms: dto.roomInventory?.totalRooms ?? null,
-        roomPrice: dto.roomInventory?.roomPrice ?? null,
-        onlineRooms: dto.roomInventory?.onlineRooms ?? null,
-        offlineRooms: dto.roomInventory?.offlineRooms ?? null,
+        totalRooms:
+          dto.roomInventory?.totalRooms !== undefined
+            ? dto.roomInventory.totalRooms
+            : (existing?.roomInventory?.totalRooms ?? null),
+        roomPrice:
+          dto.roomInventory?.roomPrice !== undefined
+            ? dto.roomInventory.roomPrice
+            : (existing?.roomInventory?.roomPrice ?? null),
+        onlineRooms:
+          dto.roomInventory?.onlineRooms !== undefined
+            ? dto.roomInventory.onlineRooms
+            : (existing?.roomInventory?.onlineRooms ?? null),
+        offlineRooms:
+          dto.roomInventory?.offlineRooms !== undefined
+            ? dto.roomInventory.offlineRooms
+            : (existing?.roomInventory?.offlineRooms ?? null),
       },
       contact: {
-        ownerName: dto.contact?.ownerName?.trim() ?? "",
-        phone: dto.contact?.phone?.trim() ?? "",
+        ownerName:
+          dto.contact?.ownerName !== undefined
+            ? dto.contact.ownerName.trim()
+            : (existing?.contact?.ownerName ?? ""),
+        phone:
+          dto.contact?.phone !== undefined
+            ? dto.contact.phone.trim()
+            : (existing?.contact?.phone ?? ""),
       },
-      notes: dto.notes?.trim() ?? "",
-      interest: dto.interest ?? "Interested",
+      notes: dto.notes !== undefined ? dto.notes.trim() : (existing?.notes ?? ""),
+      agentNotes:
+        dto.agentNotes !== undefined
+          ? dto.agentNotes.trim()
+          : (existing?.agentNotes ?? ""),
+      interest: dto.interest ?? existing?.interest ?? "Interested",
       meeting: {
-        requested: dto.meeting?.requested ?? false,
-        time: dto.meeting?.requested ? (dto.meeting.time ?? "") : "",
-        mode: dto.meeting?.requested ? (dto.meeting.mode ?? "") : "",
+        requested:
+          dto.meeting?.requested !== undefined
+            ? dto.meeting.requested
+            : (existing?.meeting?.requested ?? false),
+        time:
+          dto.meeting?.time !== undefined
+            ? dto.meeting.time.trim()
+            : (existing?.meeting?.time ?? ""),
+        mode:
+          dto.meeting?.mode !== undefined
+            ? dto.meeting.mode
+            : (existing?.meeting?.mode ?? ""),
       },
-      images: dto.images ?? [],
+      images: dto.images ?? existing?.images ?? [],
       assignedAgentId:
-        dto.assignedAgentId && Types.ObjectId.isValid(dto.assignedAgentId)
-          ? new Types.ObjectId(dto.assignedAgentId)
-          : null,
-      assignedAgentName: dto.assignedAgentName?.trim() ?? "",
-      assignedAgentCode: dto.assignedAgentCode?.trim() ?? "",
+        dto.assignedAgentId !== undefined
+          ? dto.assignedAgentId && Types.ObjectId.isValid(dto.assignedAgentId)
+            ? new Types.ObjectId(dto.assignedAgentId)
+            : null
+          : (existing?.assignedAgentId ?? null),
+      assignedAgentName:
+        dto.assignedAgentName !== undefined
+          ? dto.assignedAgentName.trim()
+          : (existing?.assignedAgentName ?? ""),
+      assignedAgentCode:
+        dto.assignedAgentCode !== undefined
+          ? dto.assignedAgentCode.trim()
+          : (existing?.assignedAgentCode ?? ""),
     };
   }
 
@@ -136,7 +201,32 @@ export class LeadsService {
   ): Promise<LeadListResult> {
     const filter = this.buildFilter(query);
     if (scope) {
-      filter.capturedBy = this.objectId(scope.capturedBy);
+      const agentObjId = Types.ObjectId.isValid(scope.capturedBy)
+        ? this.objectId(scope.capturedBy)
+        : null;
+
+      if (scope.role === "field_agent") {
+        // Field agent sees leads captured by them OR assigned to them
+        const accessOr: Record<string, unknown>[] = [];
+        if (agentObjId) {
+          accessOr.push({ capturedBy: agentObjId });
+          accessOr.push({ assignedAgentId: agentObjId });
+        }
+        if (scope.employeeCode?.trim()) {
+          accessOr.push({ assignedAgentCode: scope.employeeCode.trim() });
+        }
+        if (accessOr.length > 0) {
+          if (filter.$or) {
+            filter.$and = [{ $or: filter.$or }, { $or: accessOr }];
+            delete filter.$or;
+          } else {
+            filter.$or = accessOr;
+          }
+        }
+      } else if (agentObjId) {
+        filter.capturedBy = agentObjId;
+      }
+
       if (scope.state) filter["location.state"] = scope.state;
       if (scope.district) filter["location.district"] = scope.district;
     }
@@ -158,8 +248,20 @@ export class LeadsService {
   async findOne(id: string, scope?: AgentLeadScope): Promise<LeadRecord> {
     const row = await this.leads.findById(this.objectId(id)).lean<LeadRecord>();
     if (!row) throw new NotFoundException("Lead not found");
-    if (scope && String(row.capturedBy ?? "") !== scope.capturedBy)
-      throw new ForbiddenException("This lead belongs to another agent");
+    if (scope) {
+      const isOwner = String(row.capturedBy ?? "") === scope.capturedBy;
+      const isAssigned =
+        (row.assignedAgentId && String(row.assignedAgentId) === scope.capturedBy) ||
+        (scope.employeeCode && row.assignedAgentCode === scope.employeeCode);
+
+      if (scope.role === "field_agent") {
+        if (!isOwner && !isAssigned) {
+          throw new ForbiddenException("This lead is not assigned to you");
+        }
+      } else if (!isOwner) {
+        throw new ForbiddenException("This lead belongs to another agent");
+      }
+    }
     if (
       scope?.state &&
       scope?.district &&
@@ -174,6 +276,9 @@ export class LeadsService {
     dto: SaveLeadDto,
     agent: AuthenticatedLeadUser,
   ): Promise<LeadRecord> {
+    if (!dto.name || !dto.name.trim()) {
+      throw new BadRequestException("Stay name is required");
+    }
     const created = await this.leads.create({
       ...this.toDocument(dto, {
         state: agent.state,
@@ -188,6 +293,9 @@ export class LeadsService {
   }
 
   async createAsAdmin(dto: SaveLeadDto): Promise<LeadRecord> {
+    if (!dto.name || !dto.name.trim()) {
+      throw new BadRequestException("Stay name is required");
+    }
     const created = await this.leads.create({
       ...this.toDocument(dto),
       status: dto.status ?? "pending",
@@ -201,6 +309,7 @@ export class LeadsService {
     id: string,
     dto: SaveLeadDto,
     scope?: AgentLeadScope,
+    actor?: AuthenticatedLeadUser,
   ): Promise<LeadRecord> {
     const existing = await this.findOne(id, scope);
     if (scope && existing.status !== "pending")
@@ -213,10 +322,27 @@ export class LeadsService {
       scope?.state && scope?.district
         ? { state: scope.state, district: scope.district }
         : undefined,
+      existing,
     );
     const unset = update.geo === undefined ? { geo: "" } : undefined;
     if (unset) delete update.geo;
     if (!scope && dto.status) update.status = dto.status;
+
+    // Track field agent update / verification
+    if (actor?.role === "field_agent" || scope?.role === "field_agent") {
+      (update as any).fieldVerified = true;
+      (update as any).fieldVerifiedAt = new Date();
+      (update as any).fieldVerifiedByName =
+        actor?.name || existing.assignedAgentName || "";
+      if (actor?.id && Types.ObjectId.isValid(actor.id)) {
+        (update as any).fieldVerifiedById = new Types.ObjectId(actor.id);
+      }
+      (update as any).lastUpdatedByName = actor?.name || "";
+      (update as any).lastUpdatedByRole = actor?.role || "field_agent";
+    } else if (actor) {
+      (update as any).lastUpdatedByName = actor.name;
+      (update as any).lastUpdatedByRole = actor.role;
+    }
 
     const row = await this.leads
       .findByIdAndUpdate(
@@ -264,11 +390,28 @@ export class LeadsService {
   }
 
   async stats(scope?: AgentLeadScope): Promise<LeadStats> {
-    const match: Record<string, unknown> = scope
-      ? { capturedBy: this.objectId(scope.capturedBy) }
-      : {};
-    if (scope?.state) match["location.state"] = scope.state;
-    if (scope?.district) match["location.district"] = scope.district;
+    const match: Record<string, unknown> = {};
+    if (scope) {
+      const agentObjId = Types.ObjectId.isValid(scope.capturedBy)
+        ? this.objectId(scope.capturedBy)
+        : null;
+
+      if (scope.role === "field_agent") {
+        const accessOr: Record<string, unknown>[] = [];
+        if (agentObjId) {
+          accessOr.push({ capturedBy: agentObjId });
+          accessOr.push({ assignedAgentId: agentObjId });
+        }
+        if (scope.employeeCode?.trim()) {
+          accessOr.push({ assignedAgentCode: scope.employeeCode.trim() });
+        }
+        if (accessOr.length > 0) match.$or = accessOr;
+      } else if (agentObjId) {
+        match.capturedBy = agentObjId;
+      }
+      if (scope.state) match["location.state"] = scope.state;
+      if (scope.district) match["location.district"] = scope.district;
+    }
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
     const [row] = await this.leads.aggregate<LeadStats>([

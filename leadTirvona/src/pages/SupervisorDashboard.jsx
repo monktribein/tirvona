@@ -523,7 +523,7 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
 
                 <div className="pt-2 border-t border-gray-100 text-center">
                   <span className="text-[10px] font-bold text-gray-400">
-                    {t('Jurisdiction')}: {supervisor?.district || 'Ayodhya'}, {supervisor?.state || 'Uttar Pradesh'}
+                    {t('Jurisdiction')}: {supervisor?.district || 'Mathura'}, {supervisor?.state || 'Uttar Pradesh'}
                   </span>
                 </div>
               </div>
@@ -1113,7 +1113,7 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
                     className="w-full min-h-[44px] px-4 py-2.5 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] text-xs sm:text-sm font-medium text-[#0F172A] focus:outline-none focus:border-[#0A4DA6] transition-all cursor-not-allowed"
                     disabled
                   >
-                    <option>{supervisor?.state || 'Uttar Pradesh'} — {supervisor?.district || 'Ayodhya'}</option>
+                    <option>{supervisor?.state || 'Uttar Pradesh'} — {supervisor?.district || 'Mathura'}</option>
                   </select>
                   <p className="text-[11px] text-[#64748B] font-medium">The agent is restricted to this state and district.</p>
                 </div>

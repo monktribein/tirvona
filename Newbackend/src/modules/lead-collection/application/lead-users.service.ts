@@ -11,6 +11,7 @@ import { Types, type Model } from "mongoose";
 import { escapeRegex } from "../../../common/utils/escape-regex";
 import { leadCollectionConfig } from "../config/lead-collection.config";
 import {
+  DEFAULT_LEAD_REGIONS,
   LEAD_CONNECTION,
   LEAD_MODEL,
   LEAD_REGION_MODEL,
@@ -83,6 +84,13 @@ export class LeadUsersService {
       string,
       { state: string; district: string; source: "tirvona" | "custom" }
     >();
+    for (const def of DEFAULT_LEAD_REGIONS) {
+      merged.set(`${def.state}|${def.district}`.toLowerCase(), {
+        state: def.state,
+        district: def.district,
+        source: "tirvona",
+      });
+    }
     for (const row of ashramRows)
       merged.set(`${row.state}|${row.district}`.toLowerCase(), {
         ...row,
@@ -104,6 +112,13 @@ export class LeadUsersService {
   }
 
   private async assertRegion(state: string, district: string): Promise<void> {
+    const isDefault = DEFAULT_LEAD_REGIONS.some(
+      (r) =>
+        r.state.toLowerCase() === state.trim().toLowerCase() &&
+        r.district.toLowerCase() === district.trim().toLowerCase(),
+    );
+    if (isDefault) return;
+
     const stateMatch = new RegExp(`^${escapeRegex(state.trim())}$`, "i");
     const districtMatch = new RegExp(`^${escapeRegex(district.trim())}$`, "i");
     const [custom, tirvona] = await Promise.all([

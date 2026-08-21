@@ -86,6 +86,34 @@ export function useLeadStorage(isSignedIn = false) {
     }
   };
 
+  const updateAppointment = async (leadId, payload) => {
+    if (!isSignedIn) {
+      showToast('Sign in with an authorised account first.', 'error');
+      return false;
+    }
+
+    try {
+      const existingLead = leads.find((l) => (l.id || l._id) === leadId);
+      const mergedLead = {
+        ...(existingLead || {}),
+        ...(payload || {}),
+        meeting: payload?.meeting || payload || existingLead?.meeting
+      };
+      const apiPayload = toApiLead(mergedLead);
+      await leadApi.updateLead(leadId, apiPayload);
+      await refreshAll();
+      showToast(
+        apiPayload.meeting?.requested && apiPayload.meeting?.time
+          ? 'Appointment scheduled successfully!'
+          : 'Appointment updated.'
+      );
+      return true;
+    } catch (error) {
+      showToast(error.message || 'Failed to update appointment', 'error');
+      return false;
+    }
+  };
+
   return {
     leads,
     approvedAshrams,
@@ -95,6 +123,7 @@ export function useLeadStorage(isSignedIn = false) {
     addLead,
     approveLead,
     removeLead,
+    updateAppointment,
     refreshAll
   };
 }

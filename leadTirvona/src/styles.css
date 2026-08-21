@@ -1,5 +1,5 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 *, *::before, *::after {
   box-sizing: border-box;
@@ -7,19 +7,84 @@
   padding: 0;
 }
 
+:root {
+  /* Tirvona Royal Palette */
+  --primary: #0A4DA6;
+  --primary-hover: #083D85;
+  --secondary: #0B192C;
+  --accent: #E58C28;
+  --accent-hover: #D07B1E;
+  --success: #10B981;
+  --warning: #E58C28;
+  --danger: #EF4444;
+
+  --background: #F8FAFC;
+  --surface: #FFFFFF;
+  --foreground: #0B192C;
+  --text-muted: #64748B;
+  --border: #E2E8F0;
+  --ring: rgba(10, 77, 166, 0.2);
+}
+
+/* Global Typography & Background */
 html {
-  font-family: 'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  background-color: #F8FAFC;
-  color: #0F172A;
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: var(--background);
+  color: var(--foreground);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+  touch-action: manipulation;
 }
 
 body {
-  font-family: 'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  background-color: var(--background);
+  color: var(--foreground);
+  overflow-x: hidden;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleUp {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-scaleUp {
+  animation: scaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slideDown {
+  animation: slideDown 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 html.lenis, html.lenis body {
@@ -43,8 +108,8 @@ html.lenis, html.lenis body {
 }
 
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
   background: #F8FAFC;
@@ -52,14 +117,23 @@ html.lenis, html.lenis body {
 ::-webkit-scrollbar-thumb {
   background: #CBD5E1;
   border-radius: 999px;
-  border: 2px solid #F8FAFC;
-  transition: background-color 0.3s ease;
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #0A4DA6;
 }
 
+/* Responsive Touch Target and Interactive Elements */
 a, button, input, select, textarea, [role="button"] {
-  font-family: 'Inter', sans-serif;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: inherit;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+input, select, textarea {
+  font-size: 16px; /* Prevents auto-zoom on iOS mobile */
+}
+
+@media (min-width: 640px) {
+  input, select, textarea {
+    font-size: 0.875rem; /* 14px for desktop/tablets */
+  }
 }

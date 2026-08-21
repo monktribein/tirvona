@@ -11,6 +11,7 @@ export interface AuthenticatedLeadUser {
   region: string;
   state: string;
   district: string;
+  employeeCode?: string;
 }
 
 export interface LeadTokenPayload {
@@ -53,6 +54,7 @@ export interface LeadRecord {
   name: string;
   location: {
     address: string;
+    googleMapsUrl?: string;
     city: string;
     district: string;
     state: string;
@@ -67,6 +69,7 @@ export interface LeadRecord {
   };
   contact: { ownerName: string; phone: string };
   notes: string;
+  agentNotes?: string;
   interest: string;
   meeting: { requested: boolean; time: string; mode: string };
   images: string[];
@@ -77,6 +80,12 @@ export interface LeadRecord {
   assignedAgentId?: Types.ObjectId | null;
   assignedAgentName?: string;
   assignedAgentCode?: string;
+  fieldVerified?: boolean;
+  fieldVerifiedAt?: Date | null;
+  fieldVerifiedByName?: string;
+  fieldVerifiedById?: Types.ObjectId | null;
+  lastUpdatedByName?: string;
+  lastUpdatedByRole?: string;
   reviewedByAdminId: string;
   reviewedByAdminName: string;
   reviewedAt: Date | null;

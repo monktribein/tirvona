@@ -84,6 +84,13 @@ const formatDate = (value?: string | null): string =>
       })
     : "Never";
 
+const DEFAULT_REGIONS: LeadRegion[] = [
+  { state: "Uttar Pradesh", district: "Mathura", source: "tirvona" },
+  { state: "Uttar Pradesh", district: "Vrindavan", source: "tirvona" },
+  { state: "Uttarakhand", district: "Dehradun", source: "tirvona" },
+  { state: "Uttarakhand", district: "Haridwar", source: "tirvona" },
+];
+
 export const LeadAgentsPage: React.FC = () => {
   const [agents, setAgents] = useState<LeadUser[]>([]);
   const [total, setTotal] = useState(0);
@@ -93,7 +100,7 @@ export const LeadAgentsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
-  const [regions, setRegions] = useState<LeadRegion[]>([]);
+  const [regions, setRegions] = useState<LeadRegion[]>(DEFAULT_REGIONS);
   const [managingRegions, setManagingRegions] = useState(false);
   const [newRegionState, setNewRegionState] = useState("");
   const [newRegionDistrict, setNewRegionDistrict] = useState("");
@@ -136,9 +143,24 @@ export const LeadAgentsPage: React.FC = () => {
   const loadRegions = useCallback(async () => {
     try {
       const res = await leadCollectionService.listRegions();
-      setRegions(res.data.data ?? []);
+      const loaded = res.data.data ?? [];
+      const map = new Map<string, LeadRegion>();
+      for (const r of DEFAULT_REGIONS) {
+        map.set(`${r.state}|${r.district}`.toLowerCase(), r);
+      }
+      for (const r of loaded) {
+        map.set(`${r.state}|${r.district}`.toLowerCase(), r);
+      }
+      setRegions(
+        [...map.values()].sort(
+          (a, b) =>
+            a.state.localeCompare(b.state) ||
+            a.district.localeCompare(b.district),
+        ),
+      );
     } catch (err) {
       toast.error(getErrorMessage(err, "Could not load regions."));
+      setRegions(DEFAULT_REGIONS);
     }
   }, []);
 

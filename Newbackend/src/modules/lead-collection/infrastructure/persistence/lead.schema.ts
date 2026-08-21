@@ -12,6 +12,7 @@ export const LeadSchema = new Schema(
 
     location: {
       address: { type: String, trim: true, default: "" },
+      googleMapsUrl: { type: String, trim: true, default: "" },
       city: { type: String, trim: true, default: "", index: true },
       district: { type: String, trim: true, default: "", index: true },
       state: { type: String, trim: true, default: "" },
@@ -42,6 +43,7 @@ export const LeadSchema = new Schema(
     },
 
     notes: { type: String, trim: true, default: "" },
+    agentNotes: { type: String, trim: true, default: "" },
     interest: {
       type: String,
       enum: LEAD_INTERESTS,
@@ -81,7 +83,19 @@ export const LeadSchema = new Schema(
     },
     assignedAgentName: { type: String, default: "" },
     assignedAgentCode: { type: String, default: "" },
+    // Field Agent Verification & Updates
+    fieldVerified: { type: Boolean, default: false, index: true },
+    fieldVerifiedAt: { type: Date, default: null },
+    fieldVerifiedByName: { type: String, default: "" },
+    fieldVerifiedById: {
+      type: SchemaTypes.ObjectId,
+      ref: "LeadCollectionUser",
+      default: null,
+    },
+    lastUpdatedByName: { type: String, default: "" },
+    lastUpdatedByRole: { type: String, default: "" },
 
+    // Review trail. Platform-user ids as plain strings — see lead-user.schema.
     reviewedByAdminId: { type: String, default: "" },
     reviewedByAdminName: { type: String, default: "" },
     reviewedAt: { type: Date, default: null },
@@ -96,5 +110,8 @@ export const LeadSchema = new Schema(
 
 LeadSchema.index({ status: 1, createdAt: -1 });
 LeadSchema.index({ capturedBy: 1, createdAt: -1 });
+LeadSchema.index({ "meeting.requested": 1, createdAt: -1 });
 LeadSchema.index({ "location.city": 1, status: 1 });
+LeadSchema.index({ "location.district": 1, status: 1 });
+// Sparse: leads captured without a GPS fix carry no `geo` at all.
 LeadSchema.index({ geo: "2dsphere" }, { sparse: true });

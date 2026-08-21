@@ -44,6 +44,7 @@ export class LeadAuthService {
       region: user.region ?? "",
       state: (user as any).state ?? "",
       district: (user as any).district ?? "",
+      employeeCode: user.employeeCode ?? "",
     };
   }
 

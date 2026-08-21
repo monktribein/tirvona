@@ -31,6 +31,8 @@ export class LeadAgentController {
   private scope(agent: AuthenticatedLeadUser) {
     return {
       capturedBy: agent.id,
+      role: agent.role,
+      employeeCode: agent.employeeCode,
       state: agent.state,
       district: agent.district,
     };
@@ -103,7 +105,7 @@ export class LeadAgentController {
     return {
       success: true,
       message: "Lead updated",
-      data: await this.leads.update(id, dto, this.scope(agent)),
+      data: await this.leads.update(id, dto, this.scope(agent), agent),
     };
   }
 
