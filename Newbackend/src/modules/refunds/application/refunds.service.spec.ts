@@ -25,7 +25,12 @@ const build = () => {
   const find = jest.fn((_f: any) => chain());
   const requests = { find, countDocuments: jest.fn().mockResolvedValue(0) };
   const ashrams = { find: jest.fn(() => chain()) };
-  ashrams.find = jest.fn(() => ({ distinct: jest.fn().mockResolvedValue(["ashram-1"]) })) as never;
+  ashrams.find = jest.fn(() => ({
+    select: jest.fn(() => ({
+      lean: jest.fn().mockResolvedValue([{ _id: "ashram-1" }]),
+    })),
+    distinct: jest.fn().mockResolvedValue(["ashram-1"]),
+  })) as never;
   const service = new RefundsService(
     requests as never,
     {} as never,

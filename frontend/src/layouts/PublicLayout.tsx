@@ -270,7 +270,7 @@ export const PublicLayout: React.FC = () => {
   };
 
   const navLinks: { label: string; to: string; isHighlighted?: boolean }[] = [
-    { label: "Destinations", to: "/pilgrimage-circuits" },
+    { label: "Destinations", to: "/search" },
     { label: "Parking", to: "/parking" },
     { label: "Marketplace", to: "/marketplace" },
     { label: "Aarti Booking", to: "/aarti" },

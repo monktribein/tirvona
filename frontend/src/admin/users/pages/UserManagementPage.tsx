@@ -22,6 +22,7 @@ import {
   ArrowRight,
   ShieldCheck,
   Tag,
+  Building2,
 } from "lucide-react";
 import { userService } from "../../../services";
 import { getErrorMessage } from "../../../lib/api";
@@ -44,7 +45,12 @@ interface ManagedUser {
   aadhaarId?: string;
   gender?: string;
   dob?: string;
-  assignedAshram?: any;
+  assignedAshram?: {
+    _id: string;
+    name: string;
+    city?: string;
+    state?: string;
+  } | null;
   joiningDate?: string;
   permissions?: string[];
   remarks?: string;
@@ -62,6 +68,14 @@ interface ManagedUser {
   hasAadhaarCard?: boolean;
   hasPanCard?: boolean;
 }
+
+interface AssignableAshram {
+  _id: string;
+  name: string;
+  address?: { city?: string; state?: string };
+}
+
+const ASSIGNED_OWNER_ROLE = "ashram_owner";
 
 const ALL_ROLES = [
   { id: "super_admin", label: "Super Admin" },
@@ -129,7 +143,12 @@ export const UserManagementPage: React.FC = () => {
     gender: "Male",
     aadhaarCardUrl: "",
     panCardUrl: "",
+    assignedAshramId: "",
   });
+
+  const [ashramSearch, setAshramSearch] = useState("");
+  const [ashramOptions, setAshramOptions] = useState<AssignableAshram[]>([]);
+  const [loadingAshrams, setLoadingAshrams] = useState(false);
 
   const [suspendTarget, setSuspendTarget] = useState<ManagedUser | null>(null);
   const [roleTarget, setRoleTarget] = useState<ManagedUser | null>(null);
@@ -178,6 +197,36 @@ export const UserManagementPage: React.FC = () => {
     fetchUsers();
   }, []);
 
+  const needsAssignedAshram = newAccountData.role === ASSIGNED_OWNER_ROLE;
+
+  useEffect(() => {
+    if (!isCreateOpen || !needsAssignedAshram) return;
+    let cancelled = false;
+    setLoadingAshrams(true);
+    const timer = window.setTimeout(async () => {
+      try {
+        const res = await userService.assignableAshrams(ashramSearch.trim());
+        if (!cancelled && res.data?.success) setAshramOptions(res.data.data);
+      } catch {
+        if (!cancelled) setAshramOptions([]);
+      } finally {
+        if (!cancelled) setLoadingAshrams(false);
+      }
+    }, 300);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [isCreateOpen, needsAssignedAshram, ashramSearch]);
+
+  useEffect(() => {
+    if (!needsAssignedAshram && newAccountData.assignedAshramId)
+      setNewAccountData((current: Record<string, any>) => ({
+        ...current,
+        assignedAshramId: "",
+      }));
+  }, [needsAssignedAshram, newAccountData.assignedAshramId]);
+
   const fetchUsers = async () => {
     setLoading(true);
     setError("");
@@ -210,6 +259,17 @@ export const UserManagementPage: React.FC = () => {
       );
       return;
     }
+    if (
+      newAccountData.role === ASSIGNED_OWNER_ROLE &&
+      !newAccountData.assignedAshramId
+    ) {
+      addNotification(
+        "Ashram Required",
+        "Select the ashram this owner will be assigned to.",
+        "error",
+      );
+      return;
+    }
     setCreatingAccount(true);
     try {
       const res = await userService.createAccount(newAccountData);
@@ -228,7 +288,10 @@ export const UserManagementPage: React.FC = () => {
           gender: "Male",
           aadhaarCardUrl: "",
           panCardUrl: "",
+          assignedAshramId: "",
         });
+        setAshramSearch("");
+        setAshramOptions([]);
         fetchUsers();
       }
     } catch (err) {
@@ -713,7 +776,6 @@ export const UserManagementPage: React.FC = () => {
               <option value="permanent_suspended">Permanently Suspended</option>
               <option value="disabled">Disabled Accounts</option>
               <option value="deleted">Deleted Accounts</option>
-              <option value="archived">Archived Accounts</option>
             </select>
           </label>
           <button
@@ -830,6 +892,17 @@ export const UserManagementPage: React.FC = () => {
                           <span className="px-2.5 py-0.5 bg-[#0A4DA6]/10 text-[#0A4DA6] rounded-full text-[9px] font-extrabold">
                             {u.role.replace("_", " ")}
                           </span>
+                          {u.assignedAshram && (
+                            <span
+                              className="mt-1 flex items-center gap-1 text-[10px] font-bold text-gray-500"
+                              title={`Scoped to ${u.assignedAshram.name}`}
+                            >
+                              <Building2 size={11} className="shrink-0" />
+                              <span className="truncate">
+                                {u.assignedAshram.name}
+                              </span>
+                            </span>
+                          )}
                         </td>
                         <td className="py-4 px-6">
                           <span
@@ -925,6 +998,48 @@ export const UserManagementPage: React.FC = () => {
               <label className="space-y-1 font-bold text-gray-700 dark:text-gray-300 md:col-span-2">Role *
                 <select required value={newAccountData.role} onChange={(e) => setNewAccountData({ ...newAccountData, role: e.target.value })} className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 font-bold text-[#0A4DA6] focus:border-[#0A4DA6] focus:outline-none dark:border-slate-800 dark:bg-slate-900">{ALL_ROLES.map((role) => <option key={role.id} value={role.id}>{role.label}</option>)}</select>
               </label>
+              {needsAssignedAshram && (
+                <div className="space-y-1 md:col-span-2">
+                  <p className="font-bold text-gray-700 dark:text-gray-300">Assign Ashram *</p>
+                  <p className="text-[11px] font-normal text-gray-500">This owner will be permanently scoped to the ashram you select and will only ever see its data.</p>
+                  <div className="relative">
+                    <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <input
+                      type="search"
+                      value={ashramSearch}
+                      onChange={(e) => setAshramSearch(e.target.value)}
+                      placeholder="Search approved ashrams by name, city or state"
+                      className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 pl-9 font-normal focus:border-[#0A4DA6] focus:outline-none dark:border-slate-800 dark:bg-slate-900"
+                    />
+                  </div>
+                  <div className="mt-2 max-h-56 overflow-y-auto rounded-xl border border-gray-200 dark:border-slate-800">
+                    {loadingAshrams ? (
+                      <p className="p-3 text-xs text-gray-500">Loading ashrams…</p>
+                    ) : ashramOptions.length === 0 ? (
+                      <p className="p-3 text-xs text-gray-500">{ashramSearch.trim() ? "No approved ashram matches that search." : "No approved ashrams are available to assign."}</p>
+                    ) : (
+                      ashramOptions.map((ashram) => {
+                        const selected = newAccountData.assignedAshramId === ashram._id;
+                        return (
+                          <button
+                            key={ashram._id}
+                            type="button"
+                            onClick={() => setNewAccountData((current: Record<string, any>) => ({ ...current, assignedAshramId: ashram._id }))}
+                            className={`flex w-full items-center justify-between gap-3 border-b border-gray-100 p-3 text-left last:border-b-0 dark:border-slate-800 ${selected ? "bg-[#0A4DA6]/10" : "hover:bg-gray-50 dark:hover:bg-slate-900"}`}
+                          >
+                            <span>
+                              <span className="block text-sm font-bold text-[#0B192C] dark:text-white">{ashram.name}</span>
+                              <span className="block text-[11px] font-normal text-gray-500">{[ashram.address?.city, ashram.address?.state].filter(Boolean).join(", ") || "Location not set"}</span>
+                            </span>
+                            {selected && <CheckCircle size={16} className="shrink-0 text-[#0A4DA6]" />}
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                  {!newAccountData.assignedAshramId && <p className="text-[11px] font-normal text-red-500">Select the ashram this owner will manage before creating the account.</p>}
+                </div>
+              )}
             </div>
 
             <section className="rounded-2xl border border-gray-200 bg-gray-50/70 p-4 dark:border-slate-800 dark:bg-slate-900/60">
@@ -1416,7 +1531,6 @@ export const UserManagementPage: React.FC = () => {
                 <option value="pending_approval">Pending Approval</option>
                 <option value="suspended">Suspended</option>
                 <option value="disabled">Disabled</option>
-                <option value="archived">Archived</option>
               </select>
               <p className="text-[10px] font-medium text-gray-500">
                 Only Active accounts can sign in. Changing status invalidates existing sessions.

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { useNotifications } from "../../../contexts/NotificationContext";
 import {
   CalendarDays,
   Check,
@@ -23,6 +24,7 @@ const CARD =
   "bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] shadow-sm";
 
 export const CircuitApprovalsPage: React.FC = () => {
+  const { promptAction } = useNotifications();
   const [circuits, setCircuits] = useState<PilgrimageCircuit[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState("");
@@ -51,7 +53,14 @@ export const CircuitApprovalsPage: React.FC = () => {
   ) => {
     const reason =
       decision === "reject"
-        ? window.prompt(`Why is "${circuit.name}" being rejected?`)
+        ? await promptAction({
+            title: "Reject Pilgrimage Circuit",
+            message: `Explain why "${circuit.name}" is being rejected.`,
+            placeholder: "Reason for rejection",
+            confirmLabel: "Reject",
+            required: true,
+            tone: "danger",
+          })
         : undefined;
     if (decision === "reject" && reason === null) return;
     setBusyId(circuit._id);

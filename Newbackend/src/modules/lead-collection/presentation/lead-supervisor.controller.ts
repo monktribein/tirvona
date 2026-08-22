@@ -11,6 +11,7 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
+import { SkipThrottle } from "@nestjs/throttler";
 import { Public } from "../../../common/decorators/public.decorator";
 import { LeadUsersService } from "../application/lead-users.service";
 import { LeadsService } from "../application/leads.service";
@@ -29,6 +30,7 @@ import { LeadSupervisorGuard } from "./guards/lead-supervisor.guard";
 @ApiTags("Lead Collection")
 @Public()
 @UseGuards(LeadAgentGuard, LeadSupervisorGuard)
+@SkipThrottle({ default: true, ipAbuse: true })
 @Controller("lead-collection/supervisor")
 export class LeadSupervisorController {
   constructor(

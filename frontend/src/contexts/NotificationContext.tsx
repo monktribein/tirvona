@@ -8,7 +8,6 @@ import React, {
 import { io, type Socket } from "socket.io-client";
 import { useAuth } from "./AuthContext";
 import { API_BASE_URL, TOKEN_KEY } from "../lib/api";
-import { humanizeLabel } from "../utils/labels";
 import { toast } from "../lib/toast";
 import {
   loadNotificationSound,
@@ -140,20 +139,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   useEffect(() => {
-    if (user) {
-      setNotifications([
-        {
-          id: "init-1",
-          title: "Welcome to Tirvona",
-          message: `Namaste ${user.name}, your account is active as an official ${user.role === "customer" ? "Pilgrim" : humanizeLabel(user.role)}.`,
-          type: "success",
-          timestamp: new Date(),
-          read: false,
-        },
-      ]);
-    } else {
-      setNotifications([]);
-    }
+    if (!user) setNotifications([]);
   }, [user]);
 
   useEffect(() => {
@@ -319,8 +305,12 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     >
       {children}
       {dialog && (
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-[#07111f]/60 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-[24px] border border-[#E58C28]/35 bg-white p-6 text-left shadow-2xl dark:bg-[#0B192C]">
+        <div className="pointer-events-none fixed inset-x-0 top-4 z-[10000] flex justify-center px-3 sm:top-6">
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="pointer-events-auto w-fit min-w-[300px] max-w-[calc(100vw-1.5rem)] rounded-[24px] border border-slate-200 bg-white/98 p-5 text-left shadow-[0_10px_30px_rgba(11,25,44,0.15)] backdrop-blur-xl sm:min-w-[380px] sm:max-w-md dark:border-slate-700 dark:bg-[#0B192C]/98"
+          >
             <h3 className="text-base font-black text-[#0B192C] dark:text-white">
               {dialog.title}
             </h3>

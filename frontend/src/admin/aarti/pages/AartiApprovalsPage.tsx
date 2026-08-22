@@ -1,4 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import { useNotifications } from "../../../contexts/NotificationContext";
 import {
   AlertCircle,
   Check,
@@ -25,6 +27,8 @@ import {
 } from "../../../modules/aarti/utils/aartiFormat";
 
 export const AartiApprovalsPage: React.FC = () => {
+  const { approvalType } = useParams<{ approvalType?: string }>();
+  const { promptAction } = useNotifications();
   const [sessions, setSessions] = useState<AartiSession[]>([]);
   const [streams, setStreams] = useState<AartiStream[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,7 +59,14 @@ export const AartiApprovalsPage: React.FC = () => {
   ) => {
     const reason =
       decision === "reject"
-        ? window.prompt(`Why is "${session.name}" being rejected?`)
+        ? await promptAction({
+            title: "Reject Aarti",
+            message: `Explain why "${session.name}" is being rejected.`,
+            placeholder: "Reason for rejection",
+            confirmLabel: "Reject",
+            required: true,
+            tone: "danger",
+          })
         : undefined;
     if (decision === "reject" && reason === null) return;
     setBusyId(session._id);
@@ -72,7 +83,14 @@ export const AartiApprovalsPage: React.FC = () => {
   ) => {
     const reason =
       decision === "reject"
-        ? window.prompt(`Why is "${stream.title}" being rejected?`)
+        ? await promptAction({
+            title: "Reject Live Pooja",
+            message: `Explain why "${stream.title}" is being rejected.`,
+            placeholder: "Reason for rejection",
+            confirmLabel: "Reject",
+            required: true,
+            tone: "danger",
+          })
         : undefined;
     if (decision === "reject" && reason === null) return;
     setBusyId(stream._id);
@@ -83,12 +101,22 @@ export const AartiApprovalsPage: React.FC = () => {
     await load();
   };
 
-  const pending = sessions.length + streams.length;
+  const showAartis = approvalType !== "live-pooja";
+  const showLivePoojas = approvalType !== "aarti";
+  const visibleSessions = showAartis ? sessions : [];
+  const visibleStreams = showLivePoojas ? streams : [];
+  const pending = visibleSessions.length + visibleStreams.length;
+  const pageTitle =
+    showLivePoojas && !showAartis ? "Live Pooja Approvals" : "Aarti Approvals";
+  const emptyDescription =
+    showLivePoojas && !showAartis
+      ? "New live pooja submissions will appear here."
+      : "New aarti submissions will appear here.";
 
   return (
     <div className="space-y-6">
       <EnterprisePageHeader
-        title="Aarti Approvals"
+        title={pageTitle}
         subtitle={`${pending} item${pending === 1 ? "" : "s"} waiting for review. Nothing reaches the public site until it is approved here.`}
         icon={<FileCheck size={22} />}
         badgeText="Super Admin"
@@ -110,18 +138,18 @@ export const AartiApprovalsPage: React.FC = () => {
             The queue is clear
           </h3>
           <p className="mt-1 text-xs text-gray-400 font-semibold leading-relaxed">
-            New aarti and live pooja submissions will appear here.
+            {emptyDescription}
           </p>
         </div>
       ) : (
         <>
-          {sessions.length ? (
+          {visibleSessions.length ? (
             <section>
               <h2 className="mb-3 inline-flex items-center gap-2 text-base font-black text-[#0B192C] dark:text-white">
-                <Flame size={18} className="text-[#0A4DA6] stroke-[2.5]" /> Aartis ({sessions.length})
+                <Flame size={18} className="text-[#0A4DA6] stroke-[2.5]" /> Aartis ({visibleSessions.length})
               </h2>
               <div className="space-y-3">
-                {sessions.map((session) => {
+                {visibleSessions.map((session) => {
                   const ashram =
                     typeof session.ashramId === "object" ? session.ashramId : null;
                   return (
@@ -185,13 +213,13 @@ export const AartiApprovalsPage: React.FC = () => {
             </section>
           ) : null}
 
-          {streams.length ? (
+          {visibleStreams.length ? (
             <section>
               <h2 className="mb-3 inline-flex items-center gap-2 text-base font-black text-[#0B192C] dark:text-white">
-                <Radio size={18} className="text-[#0A4DA6] stroke-[2.5]" /> Live poojas ({streams.length})
+                <Radio size={18} className="text-[#0A4DA6] stroke-[2.5]" /> Live poojas ({visibleStreams.length})
               </h2>
               <div className="space-y-3">
-                {streams.map((stream) => {
+                {visibleStreams.map((stream) => {
                   const ashram =
                     typeof stream.ashramId === "object" ? stream.ashramId : null;
                   return (

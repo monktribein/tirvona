@@ -137,11 +137,11 @@ export class EventOwnerController {
 
   @Delete("events/:id")
   @EventCapabilities(C.MANAGE_EVENT)
-  async archive(@Req() request: EventRequest, @Param("id") id: string) {
+  async remove(@Req() request: EventRequest, @Param("id") id: string) {
     return {
       success: true,
-      message: "Event archived.",
-      data: await this.management.archiveEvent(request.events, id),
+      message: "Event deleted.",
+      data: await this.management.deleteEvent(request.events, id),
     };
   }
 

@@ -10,6 +10,7 @@ import {
   Query,
 } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
+import { SkipThrottle } from "@nestjs/throttler";
 import {
   CurrentUser,
   type AuthenticatedUser,
@@ -32,6 +33,7 @@ import { LeadDecisionDto, LeadQueryDto, SaveLeadDto } from "./dtos/lead.dto";
 @ApiTags("Lead Collection")
 @ApiBearerAuth()
 @Roles("super_admin")
+@SkipThrottle({ default: true, ipAbuse: true })
 @Controller("lead-collection/admin")
 export class LeadAdminController {
   constructor(

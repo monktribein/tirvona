@@ -36,6 +36,10 @@ export const ParkingCard: React.FC<ParkingCardProps> = ({
   const available = parking.availability?.availableCount ?? 0;
   const total =
     parking.availability?.totalCapacity ?? parking.totalCapacity ?? 0;
+  const declaredCapacity =
+    parking.availability?.declaredCapacity ?? parking.totalCapacity ?? 0;
+  const awaitingSetup =
+    parking.availability?.isConfigured === false && declaredCapacity > 0;
   const nearest = parking.nearbyDestinations?.[0];
 
   return (
@@ -111,12 +115,14 @@ export const ParkingCard: React.FC<ParkingCardProps> = ({
         <div className="space-y-3 pt-1">
           <div className="flex items-center justify-between gap-2 text-[10px] font-bold">
             <span
-              className={`inline-flex items-center gap-1 ${availabilityTone(available, total)}`}
+              className={`inline-flex items-center gap-1 ${awaitingSetup ? "text-amber-600 dark:text-amber-400" : availabilityTone(available, total)}`}
             >
               <CircleParking size={12} className="stroke-[2.5]" />
               {available > 0
                 ? `${available} of ${total} free`
-                : "Currently full"}
+                : awaitingSetup
+                  ? `${declaredCapacity} bays · opening soon`
+                  : "Currently full"}
             </span>
             <span className="inline-flex items-center gap-1 text-gray-500 dark:text-gray-400">
               <Clock size={11} className="stroke-[2.5]" />

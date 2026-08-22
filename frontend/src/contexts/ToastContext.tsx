@@ -39,28 +39,24 @@ type ToastContextValue = {
 
 const ToastContext = createContext<ToastContextValue | null>(null);
 
-const styles: Record<ToastKind, { icon: typeof Info; accent: string; iconBox: string; label: string }> = {
+const styles: Record<ToastKind, { icon: typeof Info; iconBox: string; label: string }> = {
   success: {
     icon: CheckCircle2,
-    accent: "bg-emerald-500",
     iconBox: "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400",
     label: "Success",
   },
   error: {
     icon: AlertCircle,
-    accent: "bg-red-500",
     iconBox: "bg-red-50 text-red-600 dark:bg-red-950/60 dark:text-red-400",
     label: "Something went wrong",
   },
   warning: {
     icon: TriangleAlert,
-    accent: "bg-[#E58C28]",
     iconBox: "bg-orange-50 text-[#D97706] dark:bg-orange-950/60 dark:text-orange-400",
     label: "Please note",
   },
   info: {
     icon: Info,
-    accent: "bg-[#0A4DA6]",
     iconBox: "bg-blue-50 text-[#0A4DA6] dark:bg-blue-950/60 dark:text-blue-400",
     label: "Tirvona",
   },
@@ -131,7 +127,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {typeof document !== "undefined" &&
         createPortal(
           <div
-            className="pointer-events-none fixed inset-x-0 top-3 z-[9999] flex flex-col items-center gap-2.5 px-3 sm:top-5"
+            className="pointer-events-none fixed inset-x-0 top-3 z-[9999] flex flex-col items-center gap-2 px-3 sm:top-5"
             aria-live="polite"
             aria-atomic="false"
           >
@@ -148,12 +144,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                     exit={{ opacity: 0, y: -18, scale: 0.97 }}
                     transition={{ type: "spring", stiffness: 430, damping: 32 }}
                     role={item.kind === "error" ? "alert" : "status"}
-                    className="pointer-events-auto relative w-full max-w-[430px] overflow-hidden rounded-2xl border border-slate-200/80 bg-white/95 shadow-[0_16px_45px_rgba(11,25,44,0.18)] backdrop-blur-xl dark:border-slate-700 dark:bg-[#0B192C]/95"
+                    className="pointer-events-auto relative w-fit min-w-[280px] max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-[24px] border border-slate-200 bg-white/95 shadow-[0_8px_24px_rgba(11,25,44,0.12)] backdrop-blur-xl sm:min-w-[320px] sm:max-w-[430px] dark:border-slate-700 dark:bg-[#0B192C]/95"
                   >
-                    <span className={`absolute inset-y-0 left-0 w-1 ${style.accent}`} />
-                    <div className="flex items-start gap-3 px-4 py-3.5 pl-5">
-                      <span className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${style.iconBox}`}>
-                        <Icon size={19} strokeWidth={2.3} />
+                    <div className="flex items-center gap-2.5 px-4 py-2.5">
+                      <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${style.iconBox}`}>
+                        <Icon size={17} strokeWidth={2.3} />
                       </span>
                       <div className="min-w-0 flex-1 pt-0.5">
                         <p className="text-[13px] font-extrabold leading-5 text-[#0B192C] dark:text-white">
@@ -172,12 +167,6 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                         <X size={15} />
                       </button>
                     </div>
-                    <motion.span
-                      className={`absolute bottom-0 left-0 h-0.5 ${style.accent}`}
-                      initial={{ width: "100%" }}
-                      animate={{ width: 0 }}
-                      transition={{ duration: Math.max(2, (item.duration ?? (item.kind === "error" ? 6000 : 4200)) / 1000), ease: "linear" }}
-                    />
                   </motion.div>
                 );
               })}
@@ -194,4 +183,3 @@ export const useToast = () => {
   if (!context) throw new Error("useToast must be used inside ToastProvider");
   return context;
 };
-

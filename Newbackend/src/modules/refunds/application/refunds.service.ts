@@ -11,7 +11,8 @@ import { Types, type Model } from "mongoose";
 import { createHash, randomUUID } from "node:crypto";
 import Razorpay from "razorpay";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
-import { canManageAllAshrams, isAshramOwner } from "../../../common/auth/ashram-access";
+import { canManageAllAshrams } from "../../../common/auth/ashram-access";
+import { resolveAshramScope } from "../../../common/auth/ashram-scope";
 import { calculateRefund } from "../domain/refund-calculator";
 import {
   REFUND_TRANSITIONS,
@@ -49,17 +50,7 @@ export class RefundsService {
       return { isDeleted: false };
 
     if (ASHRAM_ROLES.includes(user.role)) {
-      const ids =
-        isAshramOwner(user)
-          ? (await this.ashrams.find({ ownerId: user.id }).distinct("_id"))
-          : [
-            ...new Set(
-              [
-                ...(user.scopedAshramIds ?? []),
-                ...(user.employerAshramId ? [user.employerAshramId] : []),
-              ].filter(Boolean),
-            ),
-          ];
+      const ids = (await resolveAshramScope(user, this.ashrams)) ?? [];
       return { isDeleted: false, ashramId: { $in: ids } };
     }
 

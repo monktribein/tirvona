@@ -1224,7 +1224,7 @@ const AddAshramWizardPage: React.FC = () => {
                       set("galleryUrls", [...formData.galleryUrls, url])
                     }
                   />
-                  <div className="flex gap-2">
+                  {import.meta.env.DEV ? <div className="flex gap-2">
                     <Input
                       placeholder="…or paste an image URL and click Add"
                       value={newGalleryUrl}
@@ -1254,7 +1254,7 @@ const AddAshramWizardPage: React.FC = () => {
                     >
                       <Plus size={14} /> Add
                     </button>
-                  </div>
+                  </div> : null}
                 </div>
               )}
             </div>

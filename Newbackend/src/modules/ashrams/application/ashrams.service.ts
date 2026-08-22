@@ -9,7 +9,12 @@ import { randomUUID } from "node:crypto";
 import { InjectModel } from "@nestjs/mongoose";
 import type { Model } from "mongoose";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
-import { canManageAllAshrams, isAshramOwner } from "../../../common/auth/ashram-access";
+import { canManageAllAshrams } from "../../../common/auth/ashram-access";
+import {
+  assignedAshramIds,
+  isUnrestricted,
+  resolveAshramScope,
+} from "../../../common/auth/ashram-scope";
 import { PARKING_MODEL } from "../../parking/domain/parking.constants";
 import { parkingPartnerCode } from "../../parking/domain/parking.utils";
 import type {
@@ -104,6 +109,20 @@ export class AshramsService {
     @InjectModel(PARKING_MODEL.Staff) readonly parkingStaff: Model<any>,
   ) { }
 
+  private async parkingEligibleAshrams(
+    user: AuthenticatedUser,
+  ): Promise<any[]> {
+    const scope = await resolveAshramScope(user, this.ashrams);
+    return this.ashrams
+      .find({
+        ...(isUnrestricted(scope) ? {} : { _id: { $in: scope } }),
+        deletedAt: null,
+      })
+      .select("_id name address")
+      .sort({ name: 1 })
+      .lean();
+  }
+
   async ownerParking(user: AuthenticatedUser): Promise<any> {
     const partner = await this.parkingPartners
       .findOne({ userId: user.id })
@@ -118,7 +137,11 @@ export class AshramsService {
           })
           .lean()
       : null;
-    return { partner, grant };
+    return {
+      partner,
+      grant,
+      ashrams: await this.parkingEligibleAshrams(user),
+    };
   }
 
   async onboardOwnerParking(
@@ -129,10 +152,7 @@ export class AshramsService {
     if (!businessName)
       throw new BadRequestException("A parking business name is required");
 
-    const ownedAshrams = await this.ashrams
-      .find({ ownerId: user.id, deletedAt: null })
-      .select("_id name address")
-      .lean();
+    const ownedAshrams = await this.parkingEligibleAshrams(user);
     if (!ownedAshrams.length)
       throw new ForbiddenException(
         "Create an ashram listing before adding its parking facility",
@@ -671,34 +691,20 @@ export class AshramsService {
   }
 
   async listForUser(user: AuthenticatedUser): Promise<any[]> {
-    if (canManageAllAshrams(user))
+    const scope = await resolveAshramScope(user, this.ashrams);
+    if (isUnrestricted(scope))
       return this.ashrams.find({ deletedAt: null }).sort({ createdAt: -1 });
-    if (isAshramOwner(user))
-      return this.ashrams
-        .find({ ownerId: user.id, deletedAt: null })
-        .sort({ createdAt: -1 });
-    const ids = [
-      ...new Set([
-        ...(user.scopedAshramIds ?? []),
-        ...(user.employerAshramId ? [user.employerAshramId] : []),
-      ]),
-    ];
-    if (!ids.length) return [];
+    if (!scope.length) return [];
     return this.ashrams
-      .find({ _id: { $in: ids }, deletedAt: null })
+      .find({ _id: { $in: scope }, deletedAt: null })
       .sort({ createdAt: -1 });
   }
 
   assertScope(user: AuthenticatedUser, ashram: any): void {
     if (!ashram) throw new NotFoundException("Ashram not found");
-    if (canManageAllAshrams(user))
-      return;
+    if (canManageAllAshrams(user)) return;
     if (String(ashram.ownerId) === user.id) return;
-    if (
-      user.employerAshramId === String(ashram._id) ||
-      user.scopedAshramIds.includes(String(ashram._id))
-    )
-      return;
+    if (assignedAshramIds(user).includes(String(ashram._id))) return;
     throw new ForbiddenException("You do not have access to this ashram.");
   }
 

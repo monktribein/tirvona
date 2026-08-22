@@ -242,8 +242,7 @@ export class AartiStreamService {
 
   async remove(access: AartiAccess, id: string): Promise<any> {
     const stream = await this.assertOwned(access, id);
-    stream.status = "archived";
-    await stream.save();
-    return { archived: true, _id: id };
+    await this.streams.deleteOne({ _id: stream._id });
+    return { deleted: true, _id: id };
   }
 }

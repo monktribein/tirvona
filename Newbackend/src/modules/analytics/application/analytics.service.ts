@@ -2,10 +2,8 @@ import { ForbiddenException, Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import type { Model } from "mongoose";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
-import {
-  canManageAllAshrams,
-  isAshramOwner,
-} from "../../../common/auth/ashram-access";
+import { canManageAllAshrams } from "../../../common/auth/ashram-access";
+import { resolveAshramScope } from "../../../common/auth/ashram-scope";
 import { PARKING_MODEL } from "../../parking/domain/parking.constants";
 import type { AnalyticsRange } from "../presentation/dtos/analytics.dto";
 
@@ -87,16 +85,7 @@ export class AnalyticsService {
     requested?: string,
   ): Promise<any> {
     if (canManageAllAshrams(user)) return requested ? requested : undefined;
-    const ids = isAshramOwner(user)
-      ? (
-          await this.ashrams.find({ ownerId: user.id }).select("_id").lean()
-        ).map((a: any) => String(a._id))
-      : [
-          ...new Set([
-            ...(user.scopedAshramIds ?? []),
-            ...(user.employerAshramId ? [user.employerAshramId] : []),
-          ]),
-        ];
+    const ids = (await resolveAshramScope(user, this.ashrams)) ?? [];
     if (requested && !ids.includes(requested))
       throw new ForbiddenException("Not authorized for this ashram");
     return requested ?? { $in: ids };

@@ -872,7 +872,7 @@ const AppContent: React.FC = () => {
               element={<AartiControlCenterPage />}
             />
             <Route
-              path="/admin/aarti/approvals"
+              path="/admin/aarti/approvals/:approvalType?"
               element={<AartiApprovalsPage />}
             />
             <Route
@@ -918,6 +918,14 @@ const AppContent: React.FC = () => {
             <Route
               path="/admin/manage/ashrams/edit/:id"
               element={<AddAshramWizardPage />}
+            />
+            <Route
+              path="/admin/manage/aarti_sessions/:subKey?"
+              element={<OwnerAartiSessionsPage />}
+            />
+            <Route
+              path="/admin/manage/aarti_streams/:subKey?"
+              element={<OwnerLivePoojaPage />}
             />
             <Route path="/admin/manage/users/pilgrims" element={<Navigate to="/admin/users" replace />} />
             <Route path="/admin/manage/users/owners" element={<Navigate to="/admin/users" replace />} />

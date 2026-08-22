@@ -84,12 +84,14 @@ export class ParkingManagementService {
     access: ParkingAccess,
     body: Record<string, any>,
   ): Promise<any> {
-    const partnerId = body.partnerId || access.partnerIds[0];
-    if (!partnerId)
+    const ashramId = this.deriveAshramId(access, body);
+    const partnerId = body.partnerId || access.partnerIds[0] || null;
+    if (!partnerId && !ashramId)
       throw new ForbiddenException(
         "No parking partner account is linked to you.",
       );
     if (
+      partnerId &&
       !access.isPlatformAdmin &&
       !access.partnerIds.includes(String(partnerId))
     )
@@ -137,10 +139,26 @@ export class ParkingManagementService {
     return this.locations.create({
       ...payload,
       partnerId,
+      ashramId,
       slug: parkingLocationSlug(payload.name, payload.address?.city),
       status: "pending",
       createdBy: user.id,
     });
+  }
+
+  private deriveAshramId(
+    access: ParkingAccess,
+    body: Record<string, any>,
+  ): string | null {
+    if (access.isPlatformAdmin)
+      return body.ashramId ? String(body.ashramId) : null;
+    if (!access.ashramIds.length) return null;
+    const requested = body.ashramId ? String(body.ashramId) : null;
+    if (requested && !access.ashramIds.includes(requested))
+      throw new ForbiddenException(
+        "You cannot create a parking location for another ashram.",
+      );
+    return requested ?? access.ashramIds[0];
   }
 
   async updateLocation(

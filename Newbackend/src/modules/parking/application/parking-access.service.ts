@@ -2,10 +2,13 @@ import { ForbiddenException, Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import type { Model } from "mongoose";
 import {
+  PARKING_ASHRAM_OWNER_ROLE,
   PARKING_CAPABILITIES,
   PARKING_MODEL,
   PARKING_ROLE_CAPABILITIES,
 } from "../domain/parking.constants";
+import { isAshramOwner } from "../../../common/auth/ashram-access";
+import { resolveAshramScope } from "../../../common/auth/ashram-scope";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 
 export interface ParkingAccess {
@@ -15,6 +18,7 @@ export interface ParkingAccess {
   partnerIds: string[];
   locationIds: string[];
   staffIds: string[];
+  ashramIds: string[];
 }
 
 @Injectable()
@@ -22,6 +26,7 @@ export class ParkingAccessService {
   constructor(
     @InjectModel(PARKING_MODEL.Staff) private readonly staff: Model<any>,
     @InjectModel(PARKING_MODEL.Location) private readonly locations: Model<any>,
+    @InjectModel("Ashram") private readonly ashrams: Model<any>,
   ) {}
 
   async resolve(user: AuthenticatedUser): Promise<ParkingAccess> {
@@ -33,6 +38,7 @@ export class ParkingAccessService {
         partnerIds: [],
         locationIds: [],
         staffIds: [],
+        ashramIds: [],
       };
     }
     const grants = await this.staff
@@ -65,6 +71,22 @@ export class ParkingAccessService {
         .lean();
       owned.forEach((location) => locationIds.add(String(location._id)));
     }
+
+    const ashramIds = isAshramOwner(user)
+      ? ((await resolveAshramScope(user, this.ashrams)) ?? [])
+      : [];
+    if (ashramIds.length) {
+      roles.push(PARKING_ASHRAM_OWNER_ROLE);
+      (PARKING_ROLE_CAPABILITIES[PARKING_ASHRAM_OWNER_ROLE] ?? []).forEach(
+        (capability) => capabilities.add(capability),
+      );
+      const atAshram = await this.locations
+        .find({ ashramId: { $in: ashramIds } })
+        .select("_id")
+        .lean();
+      atAshram.forEach((location) => locationIds.add(String(location._id)));
+    }
+
     return {
       isPlatformAdmin: false,
       roles,
@@ -72,6 +94,7 @@ export class ParkingAccessService {
       capabilities: [...capabilities],
       locationIds: [...locationIds],
       staffIds: grants.map((grant) => String(grant._id)),
+      ashramIds,
     };
   }
 
