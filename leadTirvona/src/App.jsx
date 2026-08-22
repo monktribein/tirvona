@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AppNavbar from './components/AppNavbar';
 import ToastNotification from './components/ToastNotification';
 import CreateLeadPage from './pages/CreateLeadPage';
@@ -18,8 +18,6 @@ export default function App() {
   const [editingLeadData, setEditingLeadData] = useState(null);
 
   const { agent, checking, isSignedIn, login, logout } = useLeadAuth();
-  const { leads, approvedAshrams, toast, addLead, approveLead, removeLead } =
-    useLeadStorage(isSignedIn);
   const {
     leads,
     approvedAshrams,
@@ -31,6 +29,7 @@ export default function App() {
     updateAppointment,
     refreshAll
   } = useLeadStorage(isSignedIn);
+
   const handlePageChange = (page) => {
     if (page !== 'create') {
       setEditingLeadData(null);
@@ -79,10 +78,6 @@ export default function App() {
   const handleSaveLead = async (leadPayload, leadId = null) => {
     if (leadId) {
       try {
-        await leadApi.updateLead(leadId, leadPayload);
-        if (toast?.message) {
-        }
-=======
         const apiPayload = toApiLead(leadPayload);
         await leadApi.updateLead(leadId, apiPayload);
         await refreshAll();
