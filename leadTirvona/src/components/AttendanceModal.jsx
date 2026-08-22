@@ -15,6 +15,7 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
     checkOutTime: null,
     checkOutCoords: null,
   });
+  const [statusMsg, setStatusMsg] = useState('');
   // Lock background body scroll and pause Lenis smooth scroll while modal is open
   React.useEffect(() => {
     if (isOpen) {
