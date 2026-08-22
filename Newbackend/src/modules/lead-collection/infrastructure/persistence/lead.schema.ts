@@ -114,6 +114,20 @@ export const LeadSchema = new Schema(
     lastUpdatedByName: { type: String, default: "" },
     lastUpdatedByRole: { type: String, default: "" },
 
+    // Document Checklist & Verification
+    documentChecklist: { type: SchemaTypes.Mixed, default: null },
+    documentCategory: { type: String, default: "" },
+    docVerificationStatus: { type: String, default: "pending" },
+    documentVerified: { type: Boolean, default: false },
+    docVerifiedAt: { type: Date, default: null },
+    docVerifiedByName: { type: String, default: "" },
+    docVerifiedById: {
+      type: SchemaTypes.ObjectId,
+      ref: "LeadCollectionUser",
+      default: null,
+    },
+    docVerificationNotes: { type: String, default: "" },
+
     // Review trail. Platform-user ids as plain strings — see lead-user.schema.
     reviewedByAdminId: { type: String, default: "" },
     reviewedByAdminName: { type: String, default: "" },

@@ -103,14 +103,14 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
     {
       id: 1,
       title: 'Lead Verification Pending',
-      desc: 'Field agent Sachin submitted 1 ashram lead in Ayodhya for review.',
-      time: '10 min ago',
+      desc: 'Field executive Sachin submitted 1 ashram lead in Ayodhya for review.',
+      time: '12m ago',
       unread: true,
       type: 'lead'
     },
     {
       id: 2,
-      title: 'Field Agent Active',
+      title: 'Field Executive Active',
       desc: 'Sachin (S01) logged in to Ayodhya district jurisdiction.',
       time: '1 hr ago',
       unread: true,
@@ -211,7 +211,7 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
     setSaving(true);
     try {
       await supervisorApi.updateAgent(agent._id, { status: nextStatus });
-      showToast(`Agent marked as ${nextStatus}`);
+      showToast(`Field executive marked as ${nextStatus}`);
       loadAgents();
     } catch (err) {
       showToast(err.message || 'Could not update status', 'error');
@@ -220,20 +220,20 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
     }
   };
 
-  // Delete Field Agent
+  // Delete Field Executive
   const handleDeleteAgent = async () => {
     if (!confirmDeleteAgent) return;
-    setSaving(true);
+    setDeleting(true);
     try {
-      await supervisorApi.deleteAgent(confirmDeleteAgent._id);
-      showToast(`Field agent ${confirmDeleteAgent.name} deleted`);
+      await supervisorApi.deleteAgent(confirmDeleteAgent._id || confirmDeleteAgent.id);
+      showToast(`Field executive ${confirmDeleteAgent.name} deleted`);
       setConfirmDeleteAgent(null);
-      loadAgents();
-      loadDashboard();
+      await loadAgents();
+      await loadDashboard();
     } catch (err) {
-      showToast(err.message || 'Could not delete field agent', 'error');
+      showToast(err.message || 'Could not delete field executive', 'error');
     } finally {
-      setSaving(false);
+      setDeleting(false);
     }
   };
 
@@ -250,14 +250,14 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
     }
   }, []);
 
-  // Load Field Agents
+  // Load Field Executives
   const loadAgents = useCallback(async () => {
     setLoadingAgents(true);
     try {
       const res = await supervisorApi.listAgents({ limit: 100 });
       setAgents(res?.items || []);
     } catch (err) {
-      showToast(err.message || 'Could not load field agents', 'error');
+      showToast(err.message || 'Could not load field executives', 'error');
     } finally {
       setLoadingAgents(false);
     }
@@ -313,7 +313,7 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
     e.preventDefault();
     setCreateError('');
 
-    if (!form.name.trim()) return setCreateError('Agent name is required');
+    if (!form.name.trim()) return setCreateError('Field executive name is required');
     const cleanPhone = form.phone.replace(/\D/g, '');
     if (cleanPhone.length !== 10) return setCreateError('Enter a valid 10-digit mobile number');
     if (!editingAgent && (!form.password || form.password.length < 8)) {
@@ -396,15 +396,15 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
       )}
 
       {/* Top Main Navbar (Matching Super Admin Premium Header Exactly) */}
-      <header className="bg-white border-b border-gray-200/80 sticky top-0 z-40 px-4 sm:px-8 py-3 flex items-center justify-between gap-4 shadow-2xs">
+      <header className="bg-white border-b border-gray-200/80 sticky top-0 z-40 px-3 sm:px-8 py-2.5 sm:py-3 flex items-center justify-between gap-2 sm:gap-4 shadow-2xs">
         {/* Left: Branding & Logo */}
-        <div className="flex items-center gap-3.5 shrink-0">
-          <div className="w-10 h-10 rounded-full border border-blue-100 bg-blue-50/50 flex items-center justify-center p-1 shadow-2xs">
-            <img src="/logo.png" alt="Tirvona Logo" className="h-6 w-auto object-contain" />
+        <div className="flex items-center gap-2 sm:gap-3.5 shrink-0">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-blue-100 bg-blue-50/50 flex items-center justify-center p-1 shadow-2xs">
+            <img src="/logo.png" alt="Tirvona Logo" className="h-5 sm:h-6 w-auto object-contain" />
           </div>
           <div>
-            <div className="text-[15px] font-bold text-[#0F172A] leading-tight tracking-tight">{t('Tirvona')}</div>
-            <div className="text-[10px] font-semibold text-[#0A4DA6] uppercase tracking-wider mt-0.5">
+            <div className="text-[13px] sm:text-[15px] font-bold text-[#0F172A] leading-tight tracking-tight">{t('Tirvona')}</div>
+            <div className="text-[9px] sm:text-[10px] font-semibold text-[#0A4DA6] uppercase tracking-wider mt-0.5">
               {t('Field Supervisor')}
             </div>
           </div>
@@ -428,7 +428,7 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
         </div>
 
         {/* Right: Language Pill, Notifications, Public Portal & Sign Out */}
-        <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
           
           {/* Language Selector Dropdown */}
           <div className="relative" ref={langRef}>
@@ -438,12 +438,12 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
                 setLangDropdownOpen(!langDropdownOpen);
                 setNotificationsOpen(false);
               }}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-700 hover:text-[#0A4DA6] bg-gray-50/80 hover:bg-blue-50/50 border border-gray-200 rounded-full transition-colors cursor-pointer"
+              className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 text-[11px] sm:text-xs font-bold text-slate-700 hover:text-[#0A4DA6] bg-gray-50/80 hover:bg-blue-50/50 border border-gray-200 rounded-full transition-colors cursor-pointer"
               title={t('Select Language')}
             >
-              <Globe size={13} className="text-slate-500" />
+              <Globe size={12} className="text-slate-500 sm:w-[13px] sm:h-[13px]" />
               <span>{selectedLanguage}</span>
-              <ChevronDown size={11} className={`text-gray-400 transition-transform duration-200 ${langDropdownOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown size={10} className={`text-gray-400 transition-transform duration-200 ${langDropdownOpen ? 'rotate-180' : ''}`} />
             </button>
 
             {langDropdownOpen && (
@@ -560,20 +560,21 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
           <button
             type="button"
             onClick={() => onOpenFieldPortal && onOpenFieldPortal(null)}
-            className="inline-flex items-center gap-2 px-4 sm:px-5 py-2 bg-[#0A4DA6] hover:bg-[#083D85] text-white rounded-full text-xs font-extrabold transition-all shadow-xs cursor-pointer"
+            className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-1.5 sm:py-2 bg-[#0A4DA6] hover:bg-[#083D85] text-white rounded-full text-[11px] sm:text-xs font-extrabold transition-all shadow-xs cursor-pointer"
             title={t('Lead Portal')}
           >
-            <Globe size={13} />
-            <span>{t('Lead Portal')}</span>
-            <ArrowRight size={13} />
+            <Globe size={12} className="sm:w-[13px] sm:h-[13px]" />
+            <span className="hidden min-[400px]:inline">{t('Lead Portal')}</span>
+            <span className="min-[400px]:hidden">{t('Portal')}</span>
+            <ArrowRight size={11} className="sm:w-[13px] sm:h-[13px]" />
           </button>
 
           <button
             onClick={onLogout}
-            className="px-3.5 py-2 text-xs font-bold text-gray-700 hover:text-rose-600 hover:bg-rose-50 border border-gray-200 hover:border-rose-200 rounded-full flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
+            className="px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-[11px] sm:text-xs font-bold text-gray-700 hover:text-rose-600 hover:bg-rose-50 border border-gray-200 hover:border-rose-200 rounded-full flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
             title={t('Sign Out')}
           >
-            <LogOut size={13} />
+            <LogOut size={12} className="sm:w-[13px] sm:h-[13px]" />
             <span className="hidden sm:inline">{t('Sign Out')}</span>
           </button>
         </div>
@@ -617,7 +618,7 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
             >
               <div className="flex items-center gap-3">
                 <Users size={17} />
-                <span>{t('Field Agents')}</span>
+                <span>{t('Field Executives')}</span>
               </div>
               <span
                 className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
@@ -668,7 +669,7 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
         {/* Main Content Area */}
         <main className="space-y-5">
           
-          {/* VIEW 1: FIELD AGENTS LIST TABLE */}
+          {/* VIEW 1: FIELD EXECUTIVES LIST TABLE */}
           {(activeNav === 'agents' || !activeNav) && (
             <div className="space-y-5">
               {/* Enterprise Page Header Card */}
@@ -680,7 +681,7 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
                   <div>
                     <div className="flex items-center gap-2.5 flex-wrap">
                       <h1 className="text-base sm:text-2xl font-extrabold text-[#0F172A] tracking-tight">
-                        {t('Field Agents')}
+                        {t('Field Executives')}
                       </h1>
                       <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-amber-50 text-amber-800 border border-amber-200/80">
                         {t('LEAD COLLECTION')}
@@ -698,7 +699,7 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
                     className="px-5 py-2.5 sm:px-6 sm:py-3 bg-[#0A4DA6] hover:bg-[#083D85] text-white rounded-full text-xs sm:text-sm font-extrabold flex items-center gap-2 cursor-pointer shadow-xs transition-all"
                   >
                     <Plus size={16} />
-                    <span>{t('Create Field Agent')}</span>
+                    <span>{t('Create Field Executive')}</span>
                   </button>
                 </div>
               </div>
@@ -709,7 +710,7 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
                   <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B]" />
                   <input
                     type="text"
-                    placeholder={t('Search field agents by name, phone, code...')}
+                    placeholder={t('Search field executives by name, phone, code...')}
                     value={agentSearch}
                     onChange={(e) => {
                       setAgentSearch(e.target.value);
@@ -725,21 +726,21 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
                 {loadingAgents ? (
                   <div className="p-16 flex flex-col items-center gap-3 text-[#64748B]">
                     <Loader2 size={26} className="animate-spin text-[#0A4DA6]" />
-                    <span className="text-xs sm:text-sm font-bold">Loading field agents…</span>
+                    <span className="text-xs sm:text-sm font-bold">Loading field executives…</span>
                   </div>
                 ) : filteredAgents.length === 0 ? (
                   <div className="p-16 flex flex-col items-center gap-2 text-[#64748B] text-center">
                     <Users size={32} className="text-slate-300 mb-1" />
-                    <span className="text-base font-extrabold text-[#0F172A]">{t('No field agents found')}</span>
+                    <span className="text-base font-extrabold text-[#0F172A]">{t('No field executives found')}</span>
                     <span className="text-xs sm:text-sm font-medium text-center max-w-sm text-[#64748B]">
-                      Create an account here and share the phone number and password with the agent — they sign in to the lead app with those.
+                      Create an account here and share the phone number and password with the executive — they sign in to the lead app with those.
                     </span>
                     <button
                       onClick={() => setShowCreateModal(true)}
                       className="mt-4 px-6 py-2.5 bg-[#0A4DA6] hover:bg-[#083D85] text-white rounded-full text-xs sm:text-sm font-extrabold flex items-center gap-2 cursor-pointer shadow-xs transition-all"
                     >
                       <Plus size={16} />
-                      <span>{t('Create Field Agent')}</span>
+                      <span>{t('Create Field Executive')}</span>
                     </button>
                   </div>
                 ) : (
@@ -747,7 +748,7 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
                     <table className="w-full text-left">
                       <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
                         <tr className="text-xs font-bold text-[#64748B] tracking-wider uppercase">
-                          <th className="px-6 py-4">{t('Agent')}</th>
+                          <th className="px-6 py-4">{t('Field Executive')}</th>
                           <th className="px-6 py-4">{t('Phone')}</th>
                           <th className="px-6 py-4">{t('Role')}</th>
                           <th className="px-6 py-4">{t('Region')}</th>
@@ -780,7 +781,7 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
                             </td>
 
                             <td className="px-6 py-4 text-xs sm:text-sm font-medium text-[#64748B] capitalize">
-                              {agent.role === 'lead_executive' ? t('Lead Executive') : agent.role ? agent.role.replace(/_/g, ' ') : t('Field Agent')}
+                              {agent.role === 'lead_executive' ? t('Lead Executive') : agent.role === 'document_verifier' ? t('Document Verifier') : agent.role === 'field_agent' ? t('Field Executive') : agent.role ? agent.role.replace(/_/g, ' ') : t('Field Executive')}
                             </td>
 
                             <td className="px-6 py-4 text-xs sm:text-sm font-medium text-[#64748B] capitalize">
@@ -912,7 +913,7 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
               {/* Stats Grid */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <div className="bg-white border border-[#E2E8F0] rounded-2xl sm:rounded-3xl p-5 shadow-xs">
-                  <div className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider">{t('Total Field Agents')}</div>
+                  <div className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider">{t('Total Field Executives')}</div>
                   <div className="text-2xl font-extrabold text-[#0F172A] mt-2">{dashboardData?.totalAgents ?? agents.length}</div>
                   <div className="text-[10px] font-medium text-[#64748B] mt-1">In {supervisor?.district}</div>
                 </div>
@@ -946,7 +947,7 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
                 className="inline-flex items-center gap-2 text-xs font-extrabold text-[#0A4DA6] hover:underline cursor-pointer"
               >
                 <ArrowLeft size={14} />
-                <span>{t('Field Agents')}</span>
+                <span>{t('Field Executives')}</span>
               </button>
 
               {loadingAgentDetail ? (
@@ -1065,7 +1066,7 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
                 </div>
                 <div>
                   <h3 className="font-extrabold text-base sm:text-lg text-[#0F172A] leading-tight">
-                    {editingAgent ? t('Edit') + ' ' + t('Field Agent') : t('Create Field Agent')}
+                    {editingAgent ? t('Edit') + ' ' + t('Field Executive') : t('Create Field Executive')}
                   </h3>
                   <p className="text-xs text-[#64748B] font-medium mt-0.5">
                     Signs in to the lead app with phone number and password.
@@ -1107,15 +1108,24 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
 
                 {/* MOBILE NUMBER */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-[#475569] block tracking-wider uppercase">{t('Mobile Number')} *</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-[#475569] block tracking-wider uppercase">{t('Mobile Number')} *</label>
+                    <span className="text-[10px] font-bold text-[#94A3B8]">
+                      {form.phone ? form.phone.length : 0}/10 digits
+                    </span>
+                  </div>
                   <input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={10}
+                    placeholder="Enter 10-digit mobile number"
                     className="w-full min-h-[44px] px-4 py-2.5 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] text-xs sm:text-sm font-medium text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/20 focus:border-[#0A4DA6] transition-all placeholder:text-[#94A3B8]"
                     value={form.phone}
-                    maxLength={10}
                     onChange={(e) => setForm({ ...form, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
                     required
                   />
-                  <p className="text-[11px] text-[#64748B] font-medium">Used as the sign-in handle.</p>
+                  <p className="text-[11px] text-[#64748B] font-medium">Used as the sign-in handle (10 digits).</p>
                 </div>
 
                 {/* EMAIL */}
@@ -1152,8 +1162,9 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
                     value={form.role || 'field_agent'}
                     onChange={(e) => setForm({ ...form, role: e.target.value })}
                   >
-                    <option value="field_agent">{t('Field Agent')}</option>
+                    <option value="field_agent">{t('Field Executive')}</option>
                     <option value="lead_executive">{t('Lead Executive')}</option>
+                    <option value="document_verifier">{t('Document Verifier')}</option>
                   </select>
                 </div>
 
@@ -1208,7 +1219,7 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
                   disabled={saving}
                   className="rounded-full font-extrabold px-6 py-2.5 text-xs bg-[#0A4DA6] hover:bg-[#083D85] text-white shadow-md shadow-[#0A4DA6]/20 transition-all cursor-pointer disabled:opacity-50"
                 >
-                  {saving ? t('Saving') : editingAgent ? t('Save') : t('Create Field Agent')}
+                  {saving ? t('Saving') : editingAgent ? t('Save') : t('Create Field Executive')}
                 </button>
               </div>
             </form>
@@ -1249,7 +1260,7 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
                   className="w-full min-h-[44px] px-4 py-2.5 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] text-xs sm:text-sm font-medium text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/20 focus:border-[#0A4DA6]"
                   required
                 />
-                <p className="text-[11px] text-[#64748B] font-medium">Share this with the agent directly.</p>
+                <p className="text-[11px] text-[#64748B] font-medium">Share this with the executive directly.</p>
               </div>
 
               <div className="pt-3 border-t border-[#E2E8F0] flex justify-end gap-2">
@@ -1283,7 +1294,7 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
                   <Trash2 size={17} />
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-base text-[#0F172A]">{t('Delete')} {t('Field Agent')}?</h3>
+                  <h3 className="font-extrabold text-base text-[#0F172A]">{t('Delete')} {t('Field Executive')}?</h3>
                   <p className="text-xs text-[#64748B] font-medium">Their captured leads are kept.</p>
                 </div>
               </div>

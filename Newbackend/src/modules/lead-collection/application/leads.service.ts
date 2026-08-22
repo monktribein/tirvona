@@ -184,6 +184,48 @@ export class LeadsService {
         dto.assignedAgentCode !== undefined
           ? dto.assignedAgentCode.trim()
           : (existing?.assignedAgentCode ?? ""),
+      documentChecklist:
+        dto.documentChecklist !== undefined
+          ? dto.documentChecklist
+          : (existing?.documentChecklist ?? null),
+      documentCategory:
+        dto.documentCategory !== undefined
+          ? dto.documentCategory
+          : (existing?.documentCategory ?? ""),
+      docVerificationStatus:
+        dto.docVerificationStatus !== undefined
+          ? dto.docVerificationStatus
+          : (existing?.docVerificationStatus ?? "pending"),
+      documentVerified:
+        dto.documentVerified !== undefined
+          ? dto.documentVerified
+          : (existing?.documentVerified ?? false),
+      docVerifiedAt:
+        dto.docVerifiedAt !== undefined
+          ? dto.docVerifiedAt ? new Date(dto.docVerifiedAt) : null
+          : (existing?.docVerifiedAt ?? null),
+      docVerifiedByName:
+        dto.docVerifiedByName !== undefined
+          ? dto.docVerifiedByName
+          : (existing?.docVerifiedByName ?? ""),
+      docVerifiedById:
+        dto.docVerifiedById !== undefined
+          ? dto.docVerifiedById && Types.ObjectId.isValid(dto.docVerifiedById)
+            ? new Types.ObjectId(dto.docVerifiedById)
+            : null
+          : (existing?.docVerifiedById ?? null),
+      docVerificationNotes:
+        dto.docVerificationNotes !== undefined
+          ? dto.docVerificationNotes
+          : (existing?.docVerificationNotes ?? ""),
+      fieldVerified:
+        dto.fieldVerified !== undefined
+          ? dto.fieldVerified
+          : (existing?.fieldVerified ?? false),
+      fieldVerifiedByName:
+        dto.fieldVerifiedByName !== undefined
+          ? dto.fieldVerifiedByName
+          : (existing?.fieldVerifiedByName ?? ""),
     };
   }
 
@@ -241,12 +283,33 @@ export class LeadsService {
             filter.$or = accessOr;
           }
         }
+      } else if (scope.role === "document_verifier" || scope.role === "field_supervisor") {
+        // Document verifiers and Supervisors see all leads in their region
       } else if (agentObjId) {
+        // Lead executives and standard agents see only their own captured leads
         filter.capturedBy = agentObjId;
       }
 
-      if (scope.state) filter["location.state"] = scope.state;
-      if (scope.district) filter["location.district"] = scope.district;
+      if (scope.district?.trim()) {
+        const dRegex = new RegExp(escapeRegex(scope.district.trim()), "i");
+        const locFilter = {
+          $or: [
+            { "location.district": dRegex },
+            { "location.city": dRegex },
+            { "location.address": dRegex },
+          ],
+        };
+        if (filter.$and) {
+          (filter.$and as Record<string, unknown>[]).push(locFilter);
+        } else if (filter.$or) {
+          filter.$and = [{ $or: filter.$or }, locFilter];
+          delete filter.$or;
+        } else {
+          Object.assign(filter, locFilter);
+        }
+      } else if (scope.state?.trim()) {
+        filter["location.state"] = new RegExp(`^${escapeRegex(scope.state.trim())}$`, "i");
+      }
     }
 
     const page = query.page ?? 1;
@@ -274,19 +337,37 @@ export class LeadsService {
 
       if (scope.role === "field_agent") {
         if (!isOwner && !isAssigned) {
-          throw new ForbiddenException("This lead is not assigned to you");
+          // If unassigned but in same region, allow access
+          if (scope.district?.trim() && row.location) {
+            const d = scope.district.trim().toLowerCase();
+            const match =
+              (row.location.district && row.location.district.toLowerCase().includes(d)) ||
+              (row.location.city && row.location.city.toLowerCase().includes(d)) ||
+              (row.location.address && row.location.address.toLowerCase().includes(d));
+            if (!match) {
+              throw new ForbiddenException("This lead is not assigned to you");
+            }
+          }
         }
-      } else if (!isOwner) {
+      } else if (
+        scope.role === "document_verifier" ||
+        scope.role === "field_supervisor"
+      ) {
+        // Authorized KYC and supervision roles can view leads in their jurisdiction
+      } else if (!isOwner && !isAssigned) {
         throw new ForbiddenException("This lead belongs to another agent");
       }
     }
-    if (
-      scope?.state &&
-      scope?.district &&
-      (row.location.state !== scope.state ||
-        row.location.district !== scope.district)
-    )
-      throw new ForbiddenException("This lead is outside your assigned region");
+    if (scope?.district?.trim() && row.location) {
+      const d = scope.district.trim().toLowerCase();
+      const match =
+        (row.location.district && row.location.district.toLowerCase().includes(d)) ||
+        (row.location.city && row.location.city.toLowerCase().includes(d)) ||
+        (row.location.address && row.location.address.toLowerCase().includes(d));
+      if (!match && scope.role !== "document_verifier" && scope.role !== "field_supervisor") {
+        throw new ForbiddenException("This lead is outside your assigned region");
+      }
+    }
     return row;
   }
 
@@ -333,8 +414,8 @@ export class LeadsService {
   ): Promise<LeadRecord> {
     const existing = await this.findOne(id, scope);
     // An agent can correct a typo before anyone has looked at the lead; once
-    // it is decided, only an admin may touch it.
-    if (scope && existing.status !== "pending")
+    // it is decided, only an admin or document verifier may touch it.
+    if (scope && scope.role !== "document_verifier" && existing.status !== "pending")
       throw new ForbiddenException(
         "This lead has already been reviewed and can no longer be edited",
       );

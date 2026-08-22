@@ -225,7 +225,7 @@ export class LeadSupervisorController {
     // District & role are strictly guarded by supervisor's jurisdiction
     delete dto.state;
     delete dto.district;
-    if (dto.role && dto.role !== "field_agent" && dto.role !== "lead_executive") {
+    if (dto.role && dto.role !== "field_agent" && dto.role !== "lead_executive" && dto.role !== "document_verifier") {
       delete dto.role;
     }
 

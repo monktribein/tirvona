@@ -91,7 +91,7 @@ export class SaveLeadDto {
   // module's middleware allows for these routes.
   @IsOptional()
   @IsArray()
-  @ArrayMaxSize(10)
+  @ArrayMaxSize(50)
   @IsString({ each: true })
   @MaxLength(1_500_000, { each: true })
   images?: string[];
@@ -102,6 +102,14 @@ export class SaveLeadDto {
   @IsOptional() @IsString() @MaxLength(120) fieldVerifiedByName?: string;
   @IsOptional() @IsString() @MaxLength(120) lastUpdatedByName?: string;
   @IsOptional() @IsString() @MaxLength(60) lastUpdatedByRole?: string;
+  @IsOptional() documentChecklist?: any;
+  @IsOptional() @IsString() documentCategory?: string;
+  @IsOptional() @IsString() docVerificationStatus?: string;
+  @IsOptional() @IsBoolean() documentVerified?: boolean;
+  @IsOptional() @IsString() docVerifiedAt?: string;
+  @IsOptional() @IsString() docVerifiedByName?: string;
+  @IsOptional() @IsString() docVerifiedById?: string;
+  @IsOptional() @IsString() docVerificationNotes?: string;
   /**
    * Admin-only. Ignored on the agent routes, where the service always writes
    * `pending` — an agent must not be able to self-approve a lead.

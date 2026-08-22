@@ -17,6 +17,23 @@ export default function AppointmentModal({ isOpen, onClose, lead, onSaveAppointm
     }
   }, [lead]);
 
+  // Lock background body scroll and pause Lenis smooth scroll while modal is open
+  useEffect(() => {
+    if (isOpen) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      if (window.lenisInstance) {
+        window.lenisInstance.stop();
+      }
+      return () => {
+        document.body.style.overflow = originalOverflow || '';
+        if (window.lenisInstance) {
+          window.lenisInstance.start();
+        }
+      };
+    }
+  }, [isOpen]);
+
   if (!isOpen || !lead) return null;
 
   const handleSubmit = async (e) => {
@@ -80,8 +97,14 @@ export default function AppointmentModal({ isOpen, onClose, lead, onSaveAppointm
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F172A]/50 backdrop-blur-xs animate-fadeIn overflow-y-auto">
-      <div className="bg-white border border-[#E2E8F0] rounded-3xl p-6 sm:p-7 w-full max-w-xl shadow-xl relative animate-scaleUp text-left my-8">
+    <div 
+      data-lenis-prevent="true"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F172A]/50 backdrop-blur-xs animate-fadeIn overflow-y-auto overscroll-contain"
+    >
+      <div 
+        data-lenis-prevent="true"
+        className="bg-white border border-[#E2E8F0] rounded-3xl p-6 sm:p-7 w-full max-w-xl shadow-xl relative animate-scaleUp text-left my-8 overscroll-contain"
+      >
         
         {/* Close Button */}
         <button

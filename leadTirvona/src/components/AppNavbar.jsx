@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { PlusCircle, LayoutDashboard, Building2, Menu, X, UserCheck, MapPin, ArrowLeft } from 'lucide-react';
+import { PlusCircle, LayoutDashboard, Building2, Menu, X, UserCheck, MapPin, ArrowLeft, FileCheck } from 'lucide-react';
 import LoginModal from './LoginModal';
 import AttendanceModal from './AttendanceModal';
 import { useLanguage } from '../context/LanguageContext';
@@ -7,6 +7,7 @@ import { useLanguage } from '../context/LanguageContext';
 export default function AppNavbar({
   activePage,
   setActivePage,
+  onNavigateCreate = null,
   leadCount,
   approvedCount,
   agent,
@@ -44,7 +45,11 @@ export default function AppNavbar({
   }, []);
 
   const handleNavClick = (page) => {
-    setActivePage(page);
+    if (page === 'create' && onNavigateCreate) {
+      onNavigateCreate();
+    } else {
+      setActivePage(page);
+    }
     setMobileMenuOpen(false);
   };
 
@@ -75,7 +80,7 @@ export default function AppNavbar({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
           {/* Floating Rounded Navbar Container (Exact Tirvona Reference Replica) */}
-          <div className="bg-white/95 backdrop-blur-md border border-gray-200/80 rounded-full px-5 sm:px-8 py-2.5 flex items-center justify-between gap-6 w-full shadow-[0_2px_20px_-4px_rgba(0,0,0,0.06)]">
+          <div className="bg-white/95 backdrop-blur-md border border-gray-200/80 rounded-full px-3.5 sm:px-8 py-2 sm:py-2.5 flex items-center justify-between gap-2 sm:gap-6 w-full shadow-[0_2px_20px_-4px_rgba(0,0,0,0.06)]">
             
             {/* Left Brand Logo */}
             <div className="flex items-center shrink-0">
@@ -83,66 +88,92 @@ export default function AppNavbar({
                 <img
                   src="/logo.png"
                   alt="Tirvona"
-                  className="h-8 sm:h-9 w-auto object-contain cursor-pointer hover:opacity-90 transition-opacity"
+                  className="h-7 sm:h-9 w-auto object-contain cursor-pointer hover:opacity-90 transition-opacity"
                 />
               </a>
             </div>
 
             {/* Centered Main Navigation Items */}
             <nav className="hidden lg:flex items-center gap-6 xl:gap-8">
-              <button
-                onClick={() => handleNavClick('create')}
-                className={`text-xs sm:text-[13px] font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
-                  activePage === 'create'
-                    ? 'text-[#0A4DA6] font-extrabold'
-                    : 'text-[#0B192C] hover:text-[#0A4DA6]'
-                }`}
-              >
-                <PlusCircle size={15} className={activePage === 'create' ? 'text-[#0A4DA6]' : 'text-gray-400'} />
-                <span>{agent?.role === 'field_agent' ? t('Update Lead') : t('Create Lead')}</span>
-              </button>
+              {agent?.role !== 'field_agent' && agent?.role !== 'document_verifier' && (
+                <button
+                  onClick={() => handleNavClick('create')}
+                  className={`text-xs sm:text-[13px] font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
+                    activePage === 'create'
+                      ? 'text-[#0A4DA6] font-extrabold'
+                      : 'text-[#0B192C] hover:text-[#0A4DA6]'
+                  }`}
+                >
+                  <PlusCircle size={15} className={activePage === 'create' ? 'text-[#0A4DA6]' : 'text-gray-400'} />
+                  <span>{t('Create Lead')}</span>
+                </button>
+              )}
 
-              <button
-                onClick={() => handleNavClick('dashboard')}
-                className={`text-xs sm:text-[13px] font-semibold transition-colors cursor-pointer flex items-center gap-2 ${
-                  activePage === 'dashboard'
-                    ? 'text-[#0A4DA6] font-extrabold'
-                    : 'text-[#0B192C] hover:text-[#0A4DA6]'
-                }`}
-              >
-                <LayoutDashboard size={15} className={activePage === 'dashboard' ? 'text-[#0A4DA6]' : 'text-gray-400'} />
-                <span>{t('Leads Dashboard')}</span>
-                <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full transition-colors ${
-                  activePage === 'dashboard'
-                    ? 'bg-[#0A4DA6] text-white'
-                    : 'bg-blue-50 text-[#0A4DA6] border border-blue-100'
-                }`}>
-                  {leadCount}
-                </span>
-              </button>
+              {agent?.role !== 'document_verifier' && (
+                <button
+                  onClick={() => handleNavClick('dashboard')}
+                  className={`text-xs sm:text-[13px] font-semibold transition-colors cursor-pointer flex items-center gap-2 ${
+                    activePage === 'dashboard'
+                      ? 'text-[#0A4DA6] font-extrabold'
+                      : 'text-[#0B192C] hover:text-[#0A4DA6]'
+                  }`}
+                >
+                  <LayoutDashboard size={15} className={activePage === 'dashboard' ? 'text-[#0A4DA6]' : 'text-gray-400'} />
+                  <span>{t('Leads Dashboard')}</span>
+                  <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full transition-colors ${
+                    activePage === 'dashboard'
+                      ? 'bg-[#0A4DA6] text-white'
+                      : 'bg-blue-50 text-[#0A4DA6] border border-blue-100'
+                  }`}>
+                    {leadCount}
+                  </span>
+                </button>
+              )}
 
-              <button
-                onClick={() => handleNavClick('approved')}
-                className={`text-xs sm:text-[13px] font-semibold transition-colors cursor-pointer flex items-center gap-2 ${
-                  activePage === 'approved'
-                    ? 'text-[#0A4DA6] font-extrabold'
-                    : 'text-[#0B192C] hover:text-[#0A4DA6]'
-                }`}
-              >
-                <Building2 size={15} className={activePage === 'approved' ? 'text-[#0A4DA6]' : 'text-gray-400'} />
-                <span>{t('Approved Ashrams')}</span>
-                <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full transition-colors ${
-                  activePage === 'approved'
-                    ? 'bg-[#0A4DA6] text-white'
-                    : 'bg-blue-50 text-[#0A4DA6] border border-blue-100'
-                }`}>
-                  {approvedCount}
-                </span>
-              </button>
+              {agent?.role !== 'document_verifier' && (
+                <button
+                  onClick={() => handleNavClick('approved')}
+                  className={`text-xs sm:text-[13px] font-semibold transition-colors cursor-pointer flex items-center gap-2 ${
+                    activePage === 'approved'
+                      ? 'text-[#0A4DA6] font-extrabold'
+                      : 'text-[#0B192C] hover:text-[#0A4DA6]'
+                  }`}
+                >
+                  <Building2 size={15} className={activePage === 'approved' ? 'text-[#0A4DA6]' : 'text-gray-400'} />
+                  <span>{t('Approved Ashrams')}</span>
+                  <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full transition-colors ${
+                    activePage === 'approved'
+                      ? 'bg-[#0A4DA6] text-white'
+                      : 'bg-blue-50 text-[#0A4DA6] border border-blue-100'
+                  }`}>
+                    {approvedCount}
+                  </span>
+                </button>
+              )}
+              {agent?.role === 'document_verifier' && (
+                <button
+                  onClick={() => handleNavClick('doc_verifier')}
+                  className={`text-xs sm:text-[13px] font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
+                    activePage === 'doc_verifier'
+                      ? 'text-[#0A4DA6] font-extrabold'
+                      : 'text-[#0B192C] hover:text-[#0A4DA6]'
+                  }`}
+                >
+                  <FileCheck size={15} className={activePage === 'doc_verifier' ? 'text-[#0A4DA6]' : 'text-gray-400'} />
+                  <span>{t('Document Verification')}</span>
+                  <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full transition-colors ${
+                    activePage === 'doc_verifier'
+                      ? 'bg-[#0A4DA6] text-white'
+                      : 'bg-blue-50 text-[#0A4DA6] border border-blue-100'
+                  }`}>
+                    {leadCount}
+                  </span>
+                </button>
+              )}
             </nav>
 
             {/* Right Side Actions: Primary Action, Attendance & Profile */}
-            <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
+            <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
               {user ? (
                 <>
                   {onBackToSupervisorConsole && (
@@ -159,20 +190,20 @@ export default function AppNavbar({
                   {user.role === 'field_agent' && (
                     <button
                       onClick={() => setIsAttendanceModalOpen(true)}
-                      className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 text-xs font-semibold text-[#0B192C] hover:text-[#0A4DA6] hover:bg-slate-50 border border-gray-200 rounded-full transition-colors cursor-pointer shadow-2xs"
+                      className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1 sm:py-1.5 text-[11px] sm:text-xs font-semibold text-[#0B192C] hover:text-[#0A4DA6] hover:bg-slate-50 border border-gray-200 rounded-full transition-colors cursor-pointer shadow-2xs"
                       title={t('Attendance')}
                     >
-                      <MapPin size={13} className="text-[#0A4DA6]" />
+                      <MapPin size={12} className="text-[#0A4DA6] sm:w-[13px] sm:h-[13px]" />
                       <span>{t('Attendance')}</span>
                       {attendanceState?.checkedIn && (
-                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                        <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-500 animate-pulse" />
                       )}
                     </button>
                   )}
 
                   <button
                     onClick={handleLogout}
-                    className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-[#0A4DA6] bg-blue-50/70 hover:bg-blue-100/70 border border-blue-200/80 rounded-full transition-colors cursor-pointer"
+                    className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 sm:py-1.5 text-[11px] sm:text-xs font-bold text-[#0A4DA6] bg-blue-50/70 hover:bg-blue-100/70 border border-blue-200/80 rounded-full transition-colors cursor-pointer"
                     title={t('Sign Out')}
                   >
                     <div className="w-5 h-5 rounded-full bg-[#0A4DA6] text-white flex items-center justify-center text-[10px] font-black shrink-0">
@@ -184,7 +215,7 @@ export default function AppNavbar({
               ) : (
                 <button
                   onClick={() => setIsLoginModalOpen(true)}
-                  className="px-5 py-2 text-xs font-extrabold bg-[#0A4DA6] hover:bg-[#083D85] text-white rounded-full transition-all shadow-xs cursor-pointer"
+                  className="px-4 sm:px-5 py-1.5 sm:py-2 text-xs font-extrabold bg-[#0A4DA6] hover:bg-[#083D85] text-white rounded-full transition-all shadow-xs cursor-pointer"
                 >
                   {t('Sign In')}
                 </button>
@@ -193,10 +224,10 @@ export default function AppNavbar({
               {/* Mobile Hamburger Toggle */}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="lg:hidden p-2 text-slate-700 hover:text-[#0A4DA6] rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
+                className="lg:hidden p-1.5 sm:p-2 text-slate-700 hover:text-[#0A4DA6] rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
                 aria-label="Toggle navigation menu"
               >
-                {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+                {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
               </button>
             </div>
 
@@ -218,51 +249,76 @@ export default function AppNavbar({
                 </button>
               )}
 
-              <button
-                onClick={() => handleNavClick('create')}
-                className={`w-full flex items-center justify-between p-3 rounded-xl font-bold text-xs transition-colors ${
-                  activePage === 'create' ? 'bg-[#0A4DA6] text-white' : 'text-[#0B192C] hover:bg-slate-50'
-                }`}
-              >
-                <span className="flex items-center gap-2">
-                  <PlusCircle size={16} />
-                  <span>{agent?.role === 'field_agent' ? 'Update Lead' : 'Create Lead'}</span>
-                </span>
-              </button>
+              {agent?.role !== 'field_agent' && agent?.role !== 'document_verifier' && (
+                <button
+                  onClick={() => handleNavClick('create')}
+                  className={`w-full flex items-center justify-between p-3 rounded-xl font-bold text-xs transition-colors ${
+                    activePage === 'create' ? 'bg-[#0A4DA6] text-white' : 'text-[#0B192C] hover:bg-slate-50'
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <PlusCircle size={16} />
+                    <span>{t('Create Lead')}</span>
+                  </span>
+                </button>
+              )}
 
-              <button
-                onClick={() => handleNavClick('dashboard')}
-                className={`w-full flex items-center justify-between p-3 rounded-xl font-bold text-xs transition-colors ${
-                  activePage === 'dashboard' ? 'bg-[#0A4DA6] text-white' : 'text-[#0B192C] hover:bg-slate-50'
-                }`}
-              >
-                <span className="flex items-center gap-2">
-                  <LayoutDashboard size={16} />
-                  <span>Leads Dashboard</span>
-                </span>
-                <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
-                  activePage === 'dashboard' ? 'bg-white/20 text-white' : 'bg-blue-50 text-[#0A4DA6]'
-                }`}>
-                  {leadCount}
-                </span>
-              </button>
+              {agent?.role !== 'document_verifier' && (
+                <button
+                  onClick={() => handleNavClick('dashboard')}
+                  className={`w-full flex items-center justify-between p-3 rounded-xl font-bold text-xs transition-colors ${
+                    activePage === 'dashboard' ? 'bg-[#0A4DA6] text-white' : 'text-[#0B192C] hover:bg-slate-50'
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <LayoutDashboard size={16} />
+                    <span>Leads Dashboard</span>
+                  </span>
+                  <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
+                    activePage === 'dashboard' ? 'bg-white/20 text-white' : 'bg-blue-50 text-[#0A4DA6]'
+                  }`}>
+                    {leadCount}
+                  </span>
+                </button>
+              )}
 
-              <button
-                onClick={() => handleNavClick('approved')}
-                className={`w-full flex items-center justify-between p-3 rounded-xl font-bold text-xs transition-colors ${
-                  activePage === 'approved' ? 'bg-[#0A4DA6] text-white' : 'text-[#0B192C] hover:bg-slate-50'
-                }`}
-              >
-                <span className="flex items-center gap-2">
-                  <Building2 size={16} />
-                  <span>Approved Ashrams</span>
-                </span>
-                <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
-                  activePage === 'approved' ? 'bg-white/20 text-white' : 'bg-blue-50 text-[#0A4DA6]'
-                }`}>
-                  {approvedCount}
-                </span>
-              </button>
+              {agent?.role !== 'document_verifier' && (
+                <button
+                  onClick={() => handleNavClick('approved')}
+                  className={`w-full flex items-center justify-between p-3 rounded-xl font-bold text-xs transition-colors ${
+                    activePage === 'approved' ? 'bg-[#0A4DA6] text-white' : 'text-[#0B192C] hover:bg-slate-50'
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <Building2 size={16} />
+                    <span>Approved Ashrams</span>
+                  </span>
+                  <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
+                    activePage === 'approved' ? 'bg-white/20 text-white' : 'bg-blue-50 text-[#0A4DA6]'
+                  }`}>
+                    {approvedCount}
+                  </span>
+                </button>
+              )}
+
+              {agent?.role === 'document_verifier' && (
+                <button
+                  onClick={() => handleNavClick('doc_verifier')}
+                  className={`w-full flex items-center justify-between p-3 rounded-xl font-bold text-xs transition-colors ${
+                    activePage === 'doc_verifier' ? 'bg-[#0A4DA6] text-white' : 'text-[#0B192C] hover:bg-slate-50'
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <FileCheck size={16} />
+                    <span>{t('Document Verification')}</span>
+                  </span>
+                  <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
+                    activePage === 'doc_verifier' ? 'bg-white/20 text-white' : 'bg-blue-50 text-[#0A4DA6]'
+                  }`}>
+                    {leadCount}
+                  </span>
+                </button>
+              )}
 
               <div className="pt-2 border-t border-gray-100 mt-1 space-y-2">
                 {user ? (
@@ -303,6 +359,113 @@ export default function AppNavbar({
 
         </div>
       </header>
+
+      {/* Mobile Fixed Bottom Navigation Bar */}
+      <nav aria-label="Mobile Navigation" className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-gray-200/90 px-2 py-1.5 shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
+        <div className="max-w-md mx-auto flex items-center justify-around">
+          {agent?.role === 'document_verifier' && (
+            <button
+              onClick={() => handleNavClick('doc_verifier')}
+              className={`flex flex-col items-center justify-center gap-0.5 py-1 px-2.5 rounded-xl transition-all cursor-pointer relative ${
+                activePage === 'doc_verifier'
+                  ? 'text-[#0A4DA6] font-extrabold'
+                  : 'text-[#64748B] hover:text-[#0A4DA6] font-semibold'
+              }`}
+            >
+              <div className="relative">
+                <FileCheck size={19} className={activePage === 'doc_verifier' ? 'text-[#0A4DA6]' : 'text-gray-400'} />
+                {leadCount > 0 && (
+                  <span className="absolute -top-1.5 -right-2.5 bg-[#0A4DA6] text-white text-[8px] font-black px-1.5 py-0.2 rounded-full shadow-2xs">
+                    {leadCount}
+                  </span>
+                )}
+              </div>
+              <span className="text-[10px] tracking-tight">{t('Verify Docs')}</span>
+            </button>
+          )}
+
+          {agent?.role !== 'field_agent' && agent?.role !== 'document_verifier' && (
+            <button
+              onClick={() => handleNavClick('create')}
+              className={`flex flex-col items-center justify-center gap-0.5 py-1 px-2.5 rounded-xl transition-all cursor-pointer ${
+                activePage === 'create'
+                  ? 'text-[#0A4DA6] font-extrabold'
+                  : 'text-[#64748B] hover:text-[#0A4DA6] font-semibold'
+              }`}
+            >
+              <PlusCircle size={19} className={activePage === 'create' ? 'text-[#0A4DA6]' : 'text-gray-400'} />
+              <span className="text-[10px] tracking-tight">{t('Create Lead')}</span>
+            </button>
+          )}
+
+          {agent?.role !== 'document_verifier' && (
+            <button
+              onClick={() => handleNavClick('dashboard')}
+              className={`flex flex-col items-center justify-center gap-0.5 py-1 px-2.5 rounded-xl transition-all cursor-pointer relative ${
+                activePage === 'dashboard'
+                  ? 'text-[#0A4DA6] font-extrabold'
+                  : 'text-[#64748B] hover:text-[#0A4DA6] font-semibold'
+              }`}
+            >
+              <div className="relative">
+                <LayoutDashboard size={19} className={activePage === 'dashboard' ? 'text-[#0A4DA6]' : 'text-gray-400'} />
+                {leadCount > 0 && (
+                  <span className="absolute -top-1.5 -right-2.5 bg-[#0A4DA6] text-white text-[8px] font-black px-1.5 py-0.2 rounded-full shadow-2xs">
+                    {leadCount}
+                  </span>
+                )}
+              </div>
+              <span className="text-[10px] tracking-tight">{t('Leads')}</span>
+            </button>
+          )}
+
+          {agent?.role !== 'document_verifier' && (
+            <button
+              onClick={() => handleNavClick('approved')}
+              className={`flex flex-col items-center justify-center gap-0.5 py-1 px-2.5 rounded-xl transition-all cursor-pointer relative ${
+                activePage === 'approved'
+                  ? 'text-[#0A4DA6] font-extrabold'
+                  : 'text-[#64748B] hover:text-[#0A4DA6] font-semibold'
+              }`}
+            >
+              <div className="relative">
+                <Building2 size={19} className={activePage === 'approved' ? 'text-[#0A4DA6]' : 'text-gray-400'} />
+                {approvedCount > 0 && (
+                  <span className="absolute -top-1.5 -right-2.5 bg-emerald-600 text-white text-[8px] font-black px-1.5 py-0.2 rounded-full shadow-2xs">
+                    {approvedCount}
+                  </span>
+                )}
+              </div>
+              <span className="text-[10px] tracking-tight">{t('Approved')}</span>
+            </button>
+          )}
+
+          {user?.role === 'field_agent' && (
+            <button
+              onClick={() => setIsAttendanceModalOpen(true)}
+              className="flex flex-col items-center justify-center gap-0.5 py-1 px-2.5 rounded-xl text-[#64748B] hover:text-[#0A4DA6] font-semibold transition-all cursor-pointer relative"
+            >
+              <div className="relative">
+                <MapPin size={19} className="text-[#0A4DA6]" />
+                {attendanceState?.checkedIn && (
+                  <span className="absolute -top-0.5 -right-1 w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                )}
+              </div>
+              <span className="text-[10px] tracking-tight">{t('Attendance')}</span>
+            </button>
+          )}
+
+          {onBackToSupervisorConsole && (
+            <button
+              onClick={onBackToSupervisorConsole}
+              className="flex flex-col items-center justify-center gap-0.5 py-1 px-2.5 rounded-xl text-[#0A4DA6] font-extrabold transition-all cursor-pointer"
+            >
+              <LayoutDashboard size={19} />
+              <span className="text-[10px] tracking-tight">{t('Console')}</span>
+            </button>
+          )}
+        </div>
+      </nav>
 
       {/* Login Modal */}
       <LoginModal

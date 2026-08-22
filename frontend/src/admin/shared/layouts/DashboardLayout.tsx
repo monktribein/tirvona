@@ -351,7 +351,7 @@ export const DashboardLayout: React.FC = () => {
       icon: <ClipboardList size={15} />,
       links: [
         { label: "All Leads", path: "/admin/lead-collection/leads" },
-        { label: "Field Agents", path: "/admin/lead-collection/agents" },
+        { label: "Field Executives", path: "/admin/lead-collection/agents" },
       ],
     },
     {

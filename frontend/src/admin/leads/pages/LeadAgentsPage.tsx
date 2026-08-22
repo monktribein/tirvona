@@ -54,7 +54,7 @@ interface AgentForm {
   phone: string;
   email: string;
   password: string;
-  role: "field_agent" | "field_supervisor" | "lead_executive";
+  role: "field_agent" | "field_supervisor" | "lead_executive" | "document_verifier";
   state: string;
   district: string;
   employeeCode: string;
@@ -316,7 +316,7 @@ export const LeadAgentsPage: React.FC = () => {
   return (
     <div className="space-y-5">
       <EnterprisePageHeader
-        title="Field Agents"
+        title="Field Executives"
         subtitle="Accounts that sign in to the Tirvona lead app to capture ashram leads."
         icon={<Users size={22} />}
         badgeText="LEAD COLLECTION"
@@ -345,7 +345,7 @@ export const LeadAgentsPage: React.FC = () => {
               Regions
             </EnterpriseButton>
             <EnterpriseButton icon={<Plus size={14} />} onClick={openCreate}>
-              Create Agent
+              Create Executive
             </EnterpriseButton>
           </>
         }
@@ -370,7 +370,7 @@ export const LeadAgentsPage: React.FC = () => {
         {loading ? (
           <div className="p-16 flex flex-col items-center gap-3 text-gray-400">
             <Loader2 size={26} className="animate-spin" />
-            <span className="text-xs font-bold">Loading field agents…</span>
+            <span className="text-xs font-bold">Loading field executives…</span>
           </div>
         ) : error ? (
           <div className="p-16 flex flex-col items-center gap-3 text-rose-500">
@@ -388,11 +388,11 @@ export const LeadAgentsPage: React.FC = () => {
           <div className="p-16 flex flex-col items-center gap-2 text-gray-400">
             <Users size={26} />
             <span className="text-sm font-black text-[#0B192C] dark:text-white">
-              No field agents yet
+              No field executives yet
             </span>
             <span className="text-xs font-semibold text-center max-w-sm">
               Create an account here and share the phone number and password
-              with the agent — they sign in to the lead app with those.
+              with the executive — they sign in to the lead app with those.
             </span>
           </div>
         ) : (
@@ -535,7 +535,7 @@ export const LeadAgentsPage: React.FC = () => {
       <EnterpriseModal
         isOpen={creating || Boolean(editing)}
         onClose={closeForm}
-        title={editing ? "Edit field agent" : "Create field agent"}
+        title={editing ? "Edit field executive" : "Create field executive"}
         subtitle="Signs in to the lead app with phone number and password."
         icon={<Users size={18} className="text-[#0A4DA6]" />}
         maxWidth="2xl"
@@ -545,7 +545,7 @@ export const LeadAgentsPage: React.FC = () => {
               Cancel
             </EnterpriseButton>
             <EnterpriseButton loading={saving} onClick={() => void save()}>
-              {editing ? "Save changes" : "Create agent"}
+              {editing ? "Save changes" : "Create executive"}
             </EnterpriseButton>
           </div>
         }
@@ -593,8 +593,9 @@ export const LeadAgentsPage: React.FC = () => {
                 })
               }
             >
-              <option value="field_agent">Field agent</option>
+              <option value="field_agent">Field executive</option>
               <option value="lead_executive">Lead executive</option>
+              <option value="document_verifier">Document verifier</option>
               <option value="field_supervisor">Field supervisor</option>
             </select>
           </Field>
@@ -779,9 +780,9 @@ export const LeadAgentsPage: React.FC = () => {
       <EnterpriseModal
         isOpen={Boolean(confirmDelete)}
         onClose={() => setConfirmDelete(null)}
-        title="Delete this field agent?"
-        subtitle="Their captured leads are kept."
-        icon={<Trash2 size={18} className="text-rose-600" />}
+        title="Delete this field executive?"
+        subtitle="Captured leads are preserved with this executive's attribution."
+        icon={<AlertTriangle size={18} className="text-rose-600" />}
         footer={
           <div className="flex justify-end gap-2">
             <EnterpriseButton

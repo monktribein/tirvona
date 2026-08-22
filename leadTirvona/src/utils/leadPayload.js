@@ -64,11 +64,21 @@ export const toApiLead = (lead) => {
     };
   }
   if (Array.isArray(lead.images)) {
-    payload.images = lead.images.slice(0, 10);
+    payload.images = lead.images.slice(0, 50);
   }
   if (lead.assignedAgentId !== undefined) payload.assignedAgentId = lead.assignedAgentId;
   if (lead.assignedAgentName !== undefined) payload.assignedAgentName = lead.assignedAgentName;
   if (lead.assignedAgentCode !== undefined) payload.assignedAgentCode = lead.assignedAgentCode;
+  if (lead.documentChecklist !== undefined) payload.documentChecklist = lead.documentChecklist;
+  if (lead.documentCategory !== undefined) payload.documentCategory = lead.documentCategory;
+  if (lead.docVerificationStatus !== undefined) payload.docVerificationStatus = lead.docVerificationStatus;
+  if (lead.documentVerified !== undefined) payload.documentVerified = lead.documentVerified;
+  if (lead.docVerifiedAt !== undefined) payload.docVerifiedAt = lead.docVerifiedAt;
+  if (lead.docVerifiedByName !== undefined) payload.docVerifiedByName = lead.docVerifiedByName;
+  if (lead.docVerifiedById !== undefined) payload.docVerifiedById = lead.docVerifiedById;
+  if (lead.docVerificationNotes !== undefined) payload.docVerificationNotes = lead.docVerificationNotes;
+  if (lead.fieldVerified !== undefined) payload.fieldVerified = lead.fieldVerified;
+  if (lead.fieldVerifiedByName !== undefined) payload.fieldVerifiedByName = lead.fieldVerifiedByName;
   return payload;
 };
 

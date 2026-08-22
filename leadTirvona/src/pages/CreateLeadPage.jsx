@@ -17,6 +17,43 @@ const INITIAL_FORM = {
   coordinates: { lat: '', lng: '' }, images: []
 };
 
+const getFreshFormData = (lead, assignedJurisdiction) => {
+  if (lead) {
+    return {
+      name: lead.name || '',
+      address: lead.location?.address || lead.address || '',
+      googleMapsUrl: lead.location?.googleMapsUrl || lead.googleMapsUrl || '',
+      city: lead.location?.city || lead.city || '',
+      state: lead.location?.state || lead.state || assignedJurisdiction?.state || '',
+      district: lead.location?.district || lead.district || assignedJurisdiction?.district || '',
+      assignedAgentId: lead.assignedAgentId || '',
+      assignedAgentName: lead.assignedAgentName || '',
+      assignedAgentCode: lead.assignedAgentCode || '',
+      totalRooms: lead.roomInventory?.totalRooms ?? lead.totalRooms ?? '',
+      roomPrice: lead.roomInventory?.roomPrice ?? lead.roomPrice ?? '',
+      onlineRooms: lead.roomInventory?.onlineRooms ?? lead.onlineRooms ?? '',
+      offlineRooms: lead.roomInventory?.offlineRooms ?? lead.offlineRooms ?? '',
+      ownerName: lead.contact?.ownerName || lead.ownerName || '',
+      phone: lead.contact?.phone || lead.phone || '',
+      notes: lead.notes || '',
+      agentNotes: lead.agentNotes || '',
+      interest: lead.interest || 'Interested',
+      meetingRequested: lead.meeting?.requested ?? true,
+      meetingTime: lead.meeting?.time || '',
+      meetingMode: lead.meeting?.mode || 'Call',
+      coordinates: lead.location?.coordinates || { lat: '', lng: '' },
+      images: Array.isArray(lead.images) ? lead.images : []
+    };
+  }
+  return {
+    ...INITIAL_FORM,
+    state: assignedJurisdiction?.state || '',
+    district: assignedJurisdiction?.district || '',
+    coordinates: { lat: '', lng: '' },
+    images: []
+  };
+};
+
 export default function CreateLeadPage({
   agentRole = null,
   onSubmitLead,
@@ -41,85 +78,17 @@ export default function CreateLeadPage({
   const videoRef = useRef(null);
   const cameraStreamRef = useRef(null);
 
-  // Restore draft from localStorage if available (not for field agents — they
-  // only ever edit an existing lead via the dashboard, never create from scratch).
+  // Initialize form data (always completely fresh when editingLead is null)
   const [formData, setFormData] = useState(() => {
-    if (editingLead) {
-      return {
-        name: editingLead.name || '',
-        address: editingLead.location?.address || editingLead.address || '',
-        googleMapsUrl: editingLead.location?.googleMapsUrl || editingLead.googleMapsUrl || '',
-        city: editingLead.location?.city || editingLead.city || '',
-        state: editingLead.location?.state || editingLead.state || assignedJurisdiction?.state || '',
-        district: editingLead.location?.district || editingLead.district || assignedJurisdiction?.district || '',
-        assignedAgentId: editingLead.assignedAgentId || '',
-        assignedAgentName: editingLead.assignedAgentName || '',
-        assignedAgentCode: editingLead.assignedAgentCode || '',
-        totalRooms: editingLead.roomInventory?.totalRooms ?? editingLead.totalRooms ?? '',
-        roomPrice: editingLead.roomInventory?.roomPrice ?? editingLead.roomPrice ?? '',
-        onlineRooms: editingLead.roomInventory?.onlineRooms ?? editingLead.onlineRooms ?? '',
-        offlineRooms: editingLead.roomInventory?.offlineRooms ?? editingLead.offlineRooms ?? '',
-        ownerName: editingLead.contact?.ownerName || editingLead.ownerName || '',
-        phone: editingLead.contact?.phone || editingLead.phone || '',
-        notes: editingLead.notes || '',
-        agentNotes: editingLead.agentNotes || '',
-        interest: editingLead.interest || 'Interested',
-        meetingRequested: editingLead.meeting?.requested ?? true,
-        meetingTime: editingLead.meeting?.time || '',
-        meetingMode: editingLead.meeting?.mode || 'Call',
-        coordinates: editingLead.location?.coordinates || { lat: '', lng: '' },
-        images: Array.isArray(editingLead.images) ? editingLead.images : []
-      };
-    }
-    // Field agents should never see a stale draft — skip restoration.
-    if (agentRole === 'field_agent') return INITIAL_FORM;
-    try {
-      const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
-      if (savedDraft) {
-        const draft = JSON.parse(savedDraft);
-        return {
-          ...INITIAL_FORM,
-          ...draft,
-          // GPS never comes from a saved form draft; attendance owns it.
-          coordinates: INITIAL_FORM.coordinates,
-          images: Array.isArray(draft.images) ? draft.images.slice(0, 10) : []
-        };
-      }
-    } catch (e) {
-      console.warn('Failed to parse lead form draft:', e);
-    }
-    return INITIAL_FORM;
+    return getFreshFormData(editingLead, assignedJurisdiction);
   });
 
-  // If editingLead changes, update formData
+  // When editingLead changes (or is cleared to null for new lead entry), reset formData
   useEffect(() => {
-    if (editingLead) {
-      setFormData({
-        name: editingLead.name || '',
-        address: editingLead.location?.address || editingLead.address || '',
-        googleMapsUrl: editingLead.location?.googleMapsUrl || editingLead.googleMapsUrl || '',
-        city: editingLead.location?.city || editingLead.city || '',
-        state: editingLead.location?.state || editingLead.state || assignedJurisdiction?.state || '',
-        district: editingLead.location?.district || editingLead.district || assignedJurisdiction?.district || '',
-        assignedAgentId: editingLead.assignedAgentId || '',
-        assignedAgentName: editingLead.assignedAgentName || '',
-        assignedAgentCode: editingLead.assignedAgentCode || '',
-        totalRooms: editingLead.roomInventory?.totalRooms ?? editingLead.totalRooms ?? '',
-        roomPrice: editingLead.roomInventory?.roomPrice ?? editingLead.roomPrice ?? '',
-        onlineRooms: editingLead.roomInventory?.onlineRooms ?? editingLead.onlineRooms ?? '',
-        offlineRooms: editingLead.roomInventory?.offlineRooms ?? editingLead.offlineRooms ?? '',
-        ownerName: editingLead.contact?.ownerName || editingLead.ownerName || '',
-        phone: editingLead.contact?.phone || editingLead.phone || '',
-        notes: editingLead.notes || '',
-        agentNotes: editingLead.agentNotes || '',
-        interest: editingLead.interest || 'Interested',
-        meetingRequested: editingLead.meeting?.requested ?? true,
-        meetingTime: editingLead.meeting?.time || '',
-        meetingMode: editingLead.meeting?.mode || 'Call',
-        coordinates: editingLead.location?.coordinates || { lat: '', lng: '' },
-        images: Array.isArray(editingLead.images) ? editingLead.images : []
-      });
-    }
+    setFormData(getFreshFormData(editingLead, assignedJurisdiction));
+    try {
+      localStorage.removeItem(DRAFT_STORAGE_KEY);
+    } catch (e) {}
   }, [editingLead, assignedJurisdiction?.state, assignedJurisdiction?.district]);
 
   const hasAttendanceCoordinates =
@@ -177,22 +146,11 @@ export default function CreateLeadPage({
     return () => { isMounted = false; };
   }, [assignedJurisdiction?.state, assignedJurisdiction?.district]);
 
-  // Auto-save form draft to localStorage whenever fields change
-  // (skip for field agents — they only update existing leads, never create)
-  useEffect(() => {
-    if (agentRole === 'field_agent') return;
-    try {
-      localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(formData));
-    } catch (e) {
-      console.warn('Failed to save lead form draft:', e);
-    }
-  }, [formData, agentRole]);
-
   const clearFormDraft = () => {
     try {
       localStorage.removeItem(DRAFT_STORAGE_KEY);
     } catch (e) {}
-    setFormData(INITIAL_FORM);
+    setFormData(getFreshFormData(null, assignedJurisdiction));
   };
 
   useEffect(() => {
@@ -499,6 +457,11 @@ export default function CreateLeadPage({
     if (!formData.name.trim()) return alert('Please enter Stay Name');
     if (!formData.city.trim()) return alert('Please enter City');
 
+    const cleanPhone = formData.phone ? formData.phone.replace(/\D/g, '') : '';
+    if (cleanPhone && cleanPhone.length !== 10) {
+      return alert('Contact number must be exactly 10 digits.');
+    }
+
     // Awaited: when the submit goes to the API it can fail, and clearing the
     // form before knowing that would lose everything the agent just captured
     // on site.
@@ -541,12 +504,23 @@ export default function CreateLeadPage({
 
     if (res === null) return;
 
-    if (!editingLead) clearFormDraft();
+    clearFormDraft();
     onSuccessNavigate();
   };
 
   const inputClass = "w-full min-h-[44px] px-3.5 sm:px-4 py-2.5 sm:py-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/20 focus:border-[#0A4DA6] transition-all placeholder:text-[#94A3B8]";
   const labelClass = "text-xs font-bold text-[#64748B] tracking-wider block mb-1.5";
+
+  const isLeadExecutive = agentRole === 'lead_executive';
+  const isFieldExecutive = agentRole === 'field_agent' || agentRole === 'field_executive';
+
+  // Determine if Field Executive Discussion Notes should be displayed:
+  // - Hidden when a Lead Executive generates a new lead.
+  // - Visible when a Field Executive / Supervisor works on the lead.
+  // - Visible when a Lead Executive opens an existing lead that has already been updated with field notes.
+  const showFieldExecutiveNotes = isFieldExecutive
+    || agentRole === 'field_supervisor'
+    || (editingLead && Boolean(formData.agentNotes || editingLead.agentNotes));
 
   return (
     <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 text-left space-y-4 sm:space-y-6">
@@ -622,7 +596,7 @@ export default function CreateLeadPage({
               </div>
               <div>
                 <label className={labelClass}>
-                  Field Agent {loadingAgents && <span className="text-[10px] text-[#0A4DA6] font-normal">(Loading...)</span>}
+                  Field Executive {loadingAgents && <span className="text-[10px] text-[#0A4DA6] font-normal">(Loading...)</span>}
                 </label>
                 <select
                   className={inputClass}
@@ -635,7 +609,7 @@ export default function CreateLeadPage({
                     handleChange('assignedAgentCode', selected ? (selected.employeeCode || selected.phone || '') : '');
                   }}
                 >
-                  <option value="">Select Field Agent (Optional)</option>
+                  <option value="">Select Field Executive (Optional)</option>
                   {fieldAgents.map((agent) => (
                     <option key={agent._id || agent.id} value={agent._id || agent.id}>
                       {agent.name} {agent.employeeCode ? `(ID: ${agent.employeeCode})` : (agent.phone ? `(${agent.phone})` : '')}
@@ -724,10 +698,22 @@ export default function CreateLeadPage({
                   onChange={(e) => handleChange('ownerName', e.target.value)} />
               </div>
               <div>
-                <label className={labelClass}>Contact Number</label>
-                <input type="text" placeholder="e.g. +91 98765 43210"
-                  className={inputClass} value={formData.phone}
-                  onChange={(e) => handleChange('phone', e.target.value)} />
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-bold text-[#64748B] tracking-wider block">Contact Number</label>
+                  <span className="text-[10px] font-bold text-[#94A3B8]">
+                    {formData.phone ? formData.phone.length : 0}/10 digits
+                  </span>
+                </div>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={10}
+                  placeholder="e.g. 9876543210 (10 digits)"
+                  className={inputClass}
+                  value={formData.phone}
+                  onChange={(e) => handleChange('phone', e.target.value.replace(/\D/g, '').slice(0, 10))}
+                />
               </div>
             </div>
           </div>
@@ -846,52 +832,61 @@ export default function CreateLeadPage({
             )}
           </div>
 
-          {/* SECTION 5: Discussion Notes (For Field Agent) */}
-          <div className="space-y-2 pb-5 border-b border-[#E2E8F0]">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-xs sm:text-sm font-extrabold text-[#0F172A] block">
-                5. Discussion Notes (For Field Agent)
-              </span>
+          {/* SECTION: Discussion Notes (For Field Executive) */}
+          {showFieldExecutiveNotes && (
+            <div className="space-y-2 pb-5 border-b border-[#E2E8F0] animate-fadeIn">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs sm:text-sm font-extrabold text-[#0F172A] block">
+                    5. Discussion Notes (For Field Executive)
+                  </span>
+                  {isLeadExecutive && Boolean(formData.agentNotes) && (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-50 text-[#0A4DA6] border border-blue-200">
+                      Field Notes
+                    </span>
+                  )}
+                </div>
 
-              {/* Speech-to-Text Voice Dictation Mic Button */}
-              <button
-                type="button"
-                onClick={toggleAgentNotesVoiceDictation}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold transition-all cursor-pointer border ${
-                  isListeningAgentNotes
-                    ? 'bg-red-500 text-white border-red-500 animate-pulse'
-                    : 'bg-[#0A4DA6]/10 text-[#0A4DA6] border-[#0A4DA6]/30 hover:bg-[#0A4DA6]/20'
+                {/* Speech-to-Text Voice Dictation Mic Button */}
+                <button
+                  type="button"
+                  onClick={toggleAgentNotesVoiceDictation}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold transition-all cursor-pointer border ${
+                    isListeningAgentNotes
+                      ? 'bg-red-500 text-white border-red-500 animate-pulse'
+                      : 'bg-[#0A4DA6]/10 text-[#0A4DA6] border-[#0A4DA6]/30 hover:bg-[#0A4DA6]/20'
+                  }`}
+                  title={isListeningAgentNotes ? 'Click to stop voice recording' : 'Click to speak and dictate notes'}
+                >
+                  {isListeningAgentNotes ? (
+                    <>
+                      <MicOff size={13} />
+                      <span>Listening...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Mic size={13} />
+                      <span>Speech to Text</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              <textarea rows={3}
+                placeholder={isListeningAgentNotes ? "Listening to your voice... Speak now!" : "Type discussion notes for field executive or click Speech to Text to dictate..."}
+                className={`w-full px-3.5 py-2.5 bg-[#F8FAFC] border rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/20 focus:border-[#0A4DA6] transition-all placeholder:text-[#94A3B8] min-h-[80px] ${
+                  isListeningAgentNotes ? 'border-red-400 bg-red-50/20' : 'border-[#E2E8F0]'
                 }`}
-                title={isListeningAgentNotes ? 'Click to stop voice recording' : 'Click to speak and dictate notes'}
-              >
-                {isListeningAgentNotes ? (
-                  <>
-                    <MicOff size={13} />
-                    <span>Listening...</span>
-                  </>
-                ) : (
-                  <>
-                    <Mic size={13} />
-                    <span>Speech to Text</span>
-                  </>
-                )}
-              </button>
+                value={formData.agentNotes || ''}
+                onChange={(e) => handleChange('agentNotes', e.target.value)}
+              />
             </div>
+          )}
 
-            <textarea rows={3}
-              placeholder={isListeningAgentNotes ? "Listening to your voice... Speak now!" : "Type discussion notes for field agent or click Speech to Text to dictate..."}
-              className={`w-full px-3.5 py-2.5 bg-[#F8FAFC] border rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/20 focus:border-[#0A4DA6] transition-all placeholder:text-[#94A3B8] min-h-[80px] ${
-                isListeningAgentNotes ? 'border-red-400 bg-red-50/20' : 'border-[#E2E8F0]'
-              }`}
-              value={formData.agentNotes || ''}
-              onChange={(e) => handleChange('agentNotes', e.target.value)}
-            />
-          </div>
-
-          {/* SECTION 6: Image Upload (Icon Removed) */}
+          {/* SECTION: Image Upload (Icon Removed) */}
           <div className="space-y-3 pb-2">
             <span className="text-xs sm:text-sm font-extrabold text-[#0F172A] flex items-center justify-between gap-1.5">
-              <span>6. Ashram Attachments</span>
+              <span>{showFieldExecutiveNotes ? '6. Ashram Attachments' : '5. Ashram Attachments'}</span>
               <div className="flex items-center gap-2">
                 {isUploading && (
                   <span className="flex items-center gap-1.5 text-[11px] font-bold text-[#0A4DA6] bg-[#0A4DA6]/10 px-2.5 py-0.5 rounded-full border border-[#0A4DA6]/20">

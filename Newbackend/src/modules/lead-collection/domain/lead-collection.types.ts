@@ -92,6 +92,14 @@ export interface LeadRecord {
   fieldVerifiedById?: Types.ObjectId | null;
   lastUpdatedByName?: string;
   lastUpdatedByRole?: string;
+  documentChecklist?: any;
+  documentCategory?: string;
+  docVerificationStatus?: string;
+  documentVerified?: boolean;
+  docVerifiedAt?: Date | null;
+  docVerifiedByName?: string;
+  docVerifiedById?: Types.ObjectId | null;
+  docVerificationNotes?: string;
   reviewedByAdminId: string;
   reviewedByAdminName: string;
   reviewedAt: Date | null;
