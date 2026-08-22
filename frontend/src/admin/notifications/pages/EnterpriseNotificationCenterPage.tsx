@@ -18,7 +18,6 @@ import { humanizeLabel } from "../../../utils/labels";
 import { EnterprisePageHeader } from "../../shared";
 import { NotificationSoundSettings } from "../components/NotificationSoundSettings";
 
-/** How often the feed re-reads the server while the tab is in the foreground. */
 const REFRESH_INTERVAL_MS = 15_000;
 
 interface FeedRow {
@@ -43,22 +42,17 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
 
-  // Filter States
   const [searchTerm, setSearchTerm] = useState("");
   const [appliedSearch, setAppliedSearch] = useState("");
   const [severityFilter, setSeverityFilter] = useState("all");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<"table" | "timeline">("table");
 
-  // Typing must not fire a request per keystroke, and the background refresh
-  // must not wipe the box out from under the user.
   useEffect(() => {
     const timer = window.setTimeout(() => setAppliedSearch(searchTerm), 400);
     return () => window.clearTimeout(timer);
   }, [searchTerm]);
 
-  // `background` refreshes leave the spinner alone so the polling tick does not
-  // make the whole page flicker every 15 seconds.
   const fetchCenterData = useCallback(
     async (background = false) => {
       if (!background) setLoading(true);
@@ -93,8 +87,6 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
     fetchCenterData();
   }, [fetchCenterData]);
 
-  // Live feed. A hidden tab is not watching, so it does not poll — and it
-  // catches up the moment it comes back to the foreground.
   const refreshRef = useRef(fetchCenterData);
   refreshRef.current = fetchCenterData;
   useEffect(() => {
@@ -144,8 +136,6 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
     return rows.sort((a, b) => b.time - a.time);
   }, [notificationsList, activities]);
 
-  // Only `notifications` rows can be marked read, deleted or bulk-actioned —
-  // telemetry is an append-only audit trail.
   const actionableIds = useMemo(
     () => feed.filter((r) => r.source === "notification").map((r) => r.id),
     [feed],
@@ -312,7 +302,6 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
 
   return (
     <div className="space-y-6 text-left w-full">
-      {/* Header Banner */}
       <EnterprisePageHeader
         title="Notification Center"
         subtitle="Every platform notification, authentication log, payment audit and system event in one live feed."
@@ -332,12 +321,6 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
             >
               <Printer size={14} /> Print
             </button>
-            {/* <button
-              onClick={handleSeed}
-              className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-full text-xs font-extrabold flex items-center gap-1.5 shadow-md cursor-pointer transition-all"
-            >
-              <Sparkles size={14} /> Seed Telemetry
-            </button> */}
             <button
               onClick={() => fetchCenterData()}
               className="p-2.5 bg-gray-50 dark:bg-slate-900 hover:bg-gray-100 dark:hover:bg-slate-800 border border-gray-100 dark:border-slate-800 rounded-full text-gray-500 cursor-pointer transition-colors"
@@ -352,7 +335,6 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
         }
       />
 
-      {/* Real-time Dashboard Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
           <span className="text-[10px] text-gray-400 font-bold block">
@@ -388,7 +370,6 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Filter Bar & Controls */}
       <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-4 rounded-2xl shadow-sm flex flex-col sm:flex-row justify-between items-center gap-3">
         <div className="flex items-center gap-3 w-full sm:w-auto">
           <div className="relative flex-1 sm:w-64">
@@ -461,9 +442,7 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Content Area */}
       {viewMode === "timeline" ? (
-        /* Chronological Timeline View */
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 shadow-sm space-y-6">
           <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white flex items-center gap-2">
             <Clock size={18} className="text-[#0A4DA6]" /> Live Chronological
@@ -517,7 +496,6 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
           )}
         </div>
       ) : (
-        /* Standard Data Table View */
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
@@ -609,8 +587,6 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
                         {getSeverityBadge(item.severity)}
                       </td>
                       <td className="py-4 px-6 text-right whitespace-nowrap">
-                        {/* Telemetry is an append-only audit trail, so only
-                            notification rows get write actions. */}
                         {item.source === "notification" ? (
                           <>
                             {!item.isRead && (

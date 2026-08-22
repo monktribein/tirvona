@@ -108,8 +108,6 @@ export const RefundRequestDetailPage: React.FC = () => {
     setBusy(true);
     try {
       const res = await run();
-      // The endpoints return the refreshed request, so the page reflects the
-      // server's view rather than an assumption about what changed.
       if (res?.data?.data) setRequest(res.data.data);
       else await load();
       addNotification(label, `${request?.refundNumber} updated.`, "success");
@@ -125,13 +123,6 @@ export const RefundRequestDetailPage: React.FC = () => {
     }
   };
 
-  /**
-   * Download the full record as JSON.
-   *
-   * Everything already on screen — calculation, policy snapshot, timeline and
-   * every gateway attempt — so a finance team can attach it to a reconciliation
-   * without a screenshot. Built from the loaded object; no extra endpoint.
-   */
   const download = () => {
     if (!request) return;
     const blob = new Blob([JSON.stringify(request, null, 2)], {
@@ -215,7 +206,6 @@ export const RefundRequestDetailPage: React.FC = () => {
         }
       />
 
-      {/* Decisions available to this role in this state. */}
       {(mayReview || mayApprove) && (
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-4 flex flex-wrap items-center gap-2.5 shadow-sm">
           <span

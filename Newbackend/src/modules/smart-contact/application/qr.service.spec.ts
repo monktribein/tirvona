@@ -5,19 +5,12 @@ const URL = "https://www.tirvona.com/c/ravindr-bhardwaj";
 describe("QrService", () => {
   const service = new QrService();
 
-  /**
-   * PNG rasterisation runs roughly 15× slower under ts-jest than it does in
-   * the app (108ms for 1000px, 290ms for 2000px measured directly), so the
-   * raster tests get their own timeout. Nothing here is slow in production.
-   */
   const RASTER_TIMEOUT = 30_000;
 
   it("renders SVG that encodes the URL and nothing else", () => {
     const svg = service.renderSvg(URL);
     expect(svg.startsWith("<svg")).toBe(true);
     expect(svg).toContain("</svg>");
-    // The payload appears only in the accessible label, never as encoded
-    // contact data — spec §2 and §49.
     expect(svg).toContain(URL);
     expect(svg).not.toContain("8630949349");
   });
@@ -39,21 +32,12 @@ describe("QrService", () => {
 
   it("produces a PNG at the requested width", async () => {
     const png = await service.renderPng(URL, 1000);
-    // PNG signature.
     expect(png.subarray(0, 8)).toEqual(
       Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
     );
-    // IHDR width is a big-endian uint32 at byte 16.
     expect(png.readUInt32BE(16)).toBe(1000);
   }, RASTER_TIMEOUT);
 
-  /**
-   * Checked through `pngOptions` rather than by rasterising: a 2000px symbol
-   * takes 290ms in the app but tens of seconds under ts-jest, which would
-   * dominate the suite. The 1000px case above already proves the bytes come
-   * out right; what matters here is that the requested width and the level-H
-   * error correction reach the encoder unmodified.
-   */
   it("passes brochure dimensions straight through, per spec §14", () => {
     expect(service.pngOptions(2000)).toMatchObject({
       width: 2000,
@@ -76,8 +60,6 @@ describe("QrService", () => {
     expect(text).toContain("/Type /Catalog");
     expect(text).toContain("/Count 1");
 
-    // The startxref offset must point at the literal "xref" table, or readers
-    // reject the file.
     const startxref = Number(/startxref\s+(\d+)/.exec(text)?.[1]);
     expect(Number.isFinite(startxref)).toBe(true);
     expect(text.slice(startxref, startxref + 4)).toBe("xref");
@@ -95,7 +77,6 @@ describe("QrService", () => {
     expect(service.pdfCaptionIsRenderable("स्कैन करें और संपर्क सेव करें")).toBe(
       false,
     );
-    // …and renders the PDF without it rather than emitting broken glyphs.
     const pdf = service.renderPdf(URL, {
       caption: "स्कैन करें और संपर्क सेव करें",
     });

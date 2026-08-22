@@ -27,8 +27,6 @@ import { humanizeLabel } from "../../utils/labels";
 export const OwnerVisitorArticlesPage: React.FC = () => {
   const { addNotification, confirmAction } = useNotifications();
 
-  // Approved first: most visits here are to manage what is already live on the
-  // public blog, not to clear a queue that is usually empty.
   const [activeTab, setActiveTab] = useState<
     "approved" | "pending" | "rejected" | "all"
   >("approved");
@@ -40,7 +38,6 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
   });
   const [loading, setLoading] = useState(true);
 
-  // Selected Article Detail Modal / Review Drawer State
   const [selectedArticle, setSelectedArticle] = useState<VisitorArticle | null>(
     null,
   );
@@ -48,8 +45,6 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
   const [rejectionReason, setRejectionReason] = useState("");
   const [processing, setProcessing] = useState(false);
 
-  // Administrator edit. Holds only the fields the API accepts, so the form
-  // cannot offer a change the server will reject.
   const [editingArticle, setEditingArticle] = useState<VisitorArticle | null>(
     null,
   );
@@ -81,7 +76,6 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
     });
   };
 
-  // Same ceilings the server enforces per file type.
   const MAX_COVER_BYTES = 10 * 1024 * 1024;
   const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
 
@@ -200,8 +194,6 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
   };
 
   const handleDelete = async (article: VisitorArticle) => {
-    // Deleting also clears the article's comments, likes and status history,
-    // so it is worth naming the article in the prompt.
     const confirmed = await confirmAction({
       title: "Delete this article?",
       message: `"${article.title}" and its comments and likes will be permanently removed. This cannot be undone.`,
@@ -272,7 +264,6 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
 
   return (
     <div className="space-y-6 text-left w-full">
-      {/* Page Title */}
       <EnterprisePageHeader
         title="Visitor Articles & Stories"
         subtitle="Review and manage experience articles submitted by verified ashram visitors."
@@ -280,7 +271,6 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
         badgeText="Community Content"
       />
 
-      {/* Tabs Bar */}
       <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-2 shadow-sm flex items-center gap-2 overflow-x-auto text-xs font-extrabold">
         {(["approved", "pending", "rejected", "all"] as const).map((tab) => {
           const isActive = activeTab === tab;
@@ -311,7 +301,6 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
         })}
       </div>
 
-      {/* Content List */}
       {loading ? (
         <div className="space-y-4">
           {Array.from({ length: 3 }).map((_, i) => (
@@ -343,8 +332,6 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
               className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row justify-between items-start md:items-center gap-5"
             >
               <div className="flex items-start gap-4 min-w-0">
-                {/* The cover is optional; a video-only article shows a film
-                    icon rather than a broken image. */}
                 <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 bg-gray-100 dark:bg-slate-800 flex items-center justify-center">
                   {art.featuredImage ? (
                     <img
@@ -454,7 +441,6 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
         </div>
       )}
 
-      {/* Inspect Article Detail Modal */}
       {selectedArticle && !isRejectModalOpen && (
         <EnterpriseModal
           isOpen={Boolean(selectedArticle)}
@@ -462,9 +448,6 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
           title="Review Visitor Experience Article"
           subtitle={`Submitted for ${selectedArticle.ashramId?.name}`}
           maxWidth="5xl"
-          // The action bar lives in the modal's footer slot, which sits
-          // outside the scrolling body — so it stays reachable on a long
-          // article instead of scrolling away with the text.
           footer={
             <div className="flex items-center justify-between gap-3 flex-wrap text-xs font-bold">
               <button
@@ -523,15 +506,9 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
             </div>
           }
         >
-          {/* Two columns on desktop: media and provenance on the left, the
-              article text on the right, so a long body no longer pushes the
-              cover photo and stay record off the top of a narrow scroller. */}
           <div className="text-xs font-bold text-left">
             <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,340px)_minmax(0,1fr)] gap-6">
-              {/* ── Left: media + provenance ──────────────────────────────── */}
               <div className="space-y-4">
-                {/* Photo and video are independent and both optional, so each
-                    is rendered only when the author actually attached it. */}
                 {selectedArticle.featuredImage ? (
                   <div className="aspect-video w-full rounded-2xl overflow-hidden bg-gray-100 dark:bg-slate-800">
                     <img
@@ -546,8 +523,6 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
                   </div>
                 ) : null}
 
-                {/* An uploaded clip is part of what is being reviewed, so it
-                    has to be playable here and not just referenced. */}
                 {selectedArticle.videoUrl && (
                   <div className="space-y-1.5">
                     <span className="text-gray-400 text-[10px]">
@@ -622,7 +597,6 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
                 )}
               </div>
 
-              {/* ── Right: the article itself ─────────────────────────────── */}
               <div className="space-y-4 min-w-0">
                 <h2 className="text-lg font-black text-[#0B192C] dark:text-white leading-tight">
                   {selectedArticle.title}
@@ -652,7 +626,6 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
         </EnterpriseModal>
       )}
 
-      {/* Administrator Edit Modal */}
       {editingArticle && (
         <EnterpriseModal
           isOpen={Boolean(editingArticle)}
@@ -663,8 +636,6 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
         >
           <form
             onSubmit={handleSaveEdit}
-            // EnterpriseModal's body scrolls already; a nested scroller here
-            // produced a second scrollbar.
             className="space-y-4 text-xs font-bold text-left"
           >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -695,7 +666,6 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Cover photo — upload, matching the visitor's own form. */}
             <div className="space-y-1.5">
               <label className="text-gray-700 dark:text-gray-300">
                 Featured Cover Photo
@@ -768,7 +738,6 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
               )}
             </div>
 
-            {/* Experience video */}
             <div className="space-y-1.5">
               <label className="text-gray-700 dark:text-gray-300">
                 Experience Video
@@ -839,7 +808,6 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
               )}
             </div>
 
-            {/* Gallery — the photos that feed the article slider. */}
             <div className="space-y-1.5">
               <label className="text-gray-700 dark:text-gray-300">
                 Photo Gallery
@@ -913,7 +881,6 @@ export const OwnerVisitorArticlesPage: React.FC = () => {
         </EnterpriseModal>
       )}
 
-      {/* Reject Modal */}
       {isRejectModalOpen && selectedArticle && (
         <EnterpriseModal
           isOpen={isRejectModalOpen}

@@ -28,11 +28,6 @@ describe("production environment validation", () => {
     expect(validateEnvironment(input)).toBeDefined();
   });
 
-  /**
-   * Without a key secret both payment services skip signature verification and
-   * confirm bookings for free. That fallback is for local development, so
-   * production must not be able to start without real keys.
-   */
   it.each(["RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET"])(
     "refuses to boot production without %s",
     (name) => {
@@ -48,6 +43,27 @@ describe("production environment validation", () => {
     delete input.RAZORPAY_KEY_SECRET;
     input.NODE_ENV = "development";
     expect(validateEnvironment(input)).toBeDefined();
+  });
+
+  it("requires all payout secrets when RazorpayX payouts are enabled", () => {
+    expect(() =>
+      validateEnvironment({
+        ...productionEnvironment(),
+        RAZORPAYX_PAYOUT_ENABLED: "true",
+      }),
+    ).toThrow("RAZORPAYX_ACCOUNT_NUMBER");
+  });
+
+  it("accepts a 32-byte base64 payout encryption key", () => {
+    expect(
+      validateEnvironment({
+        ...productionEnvironment(),
+        RAZORPAYX_PAYOUT_ENABLED: "true",
+        RAZORPAYX_ACCOUNT_NUMBER: "1234567890",
+        RAZORPAYX_WEBHOOK_SECRET: "separate-webhook-secret",
+        PAYOUT_ENCRYPTION_KEY: Buffer.alloc(32, 1).toString("base64"),
+      }),
+    ).toBeDefined();
   });
 
   it("rejects wildcard production CORS", () => {
@@ -77,13 +93,6 @@ describe("DNS bootstrap", () => {
     expect(applyDnsServersFromEnvironment()).toEqual(["1.1.1.1", "8.8.8.8"]);
   });
 
-  /**
-   * An Atlas URI is an SRV record, so a script that opens a connection without
-   * applying DNS_SERVERS first inherits the machine's resolver — which on a
-   * host that proxies DNS through localhost refuses SRV queries outright. The
-   * failure surfaces only as "Unable to connect to the database", so it is
-   * cheap to reintroduce and expensive to diagnose.
-   */
   it("is applied by every script that opens an app context", () => {
     const directory = join(__dirname, "..", "scripts");
     const offenders = readdirSync(directory)

@@ -47,8 +47,6 @@ interface DatePickerProps {
   align?: "left" | "right";
 }
 
-// Custom, brand-styled calendar that opens as a floating overlay below its
-// trigger (absolute inside a relative parent). Replaces the native date input.
 export const DatePicker: React.FC<DatePickerProps> = ({
   value,
   onChange,
@@ -134,7 +132,6 @@ export const DatePicker: React.FC<DatePickerProps> = ({
             transition={{ duration: 0.15, ease: "easeOut" }}
             className={`absolute ${align === "right" ? "right-0" : "left-0"} top-full mt-3 w-[288px] max-w-[calc(100vw-2rem)] bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl shadow-xl shadow-[#0B192C]/10 z-[60] p-3`}
           >
-            {/* Month header */}
             <div className="flex items-center justify-between mb-2 px-1">
               <span className="text-xs font-extrabold text-[#0B192C] dark:text-white">
                 {MONTHS[month]} {year}
@@ -162,7 +159,6 @@ export const DatePicker: React.FC<DatePickerProps> = ({
               </div>
             </div>
 
-            {/* Weekday labels */}
             <div className="grid grid-cols-7 mb-1">
               {WEEKDAYS.map((w) => (
                 <span
@@ -174,7 +170,6 @@ export const DatePicker: React.FC<DatePickerProps> = ({
               ))}
             </div>
 
-            {/* Day grid */}
             <div className="grid grid-cols-7 gap-0.5">
               {cells.map((c, i) => {
                 const isSel = selected && sameDay(c.date, selected);
@@ -202,7 +197,6 @@ export const DatePicker: React.FC<DatePickerProps> = ({
               })}
             </div>
 
-            {/* Footer */}
             <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100 dark:border-slate-800 px-1">
               <button
                 type="button"

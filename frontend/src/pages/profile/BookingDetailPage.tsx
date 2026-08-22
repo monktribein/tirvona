@@ -223,7 +223,6 @@ export const BookingDetailPage: React.FC = () => {
         }
       };
 
-      // Load Tirvona Logo
       const logoImg = await new Promise<HTMLImageElement | null>((resolve) => {
         const img = new Image();
         img.crossOrigin = "anonymous";
@@ -232,7 +231,6 @@ export const BookingDetailPage: React.FC = () => {
         img.src = "/logo/logo.png";
       });
 
-      // Card Base
       drawRoundedRect(0, 0, width, height, 24);
       ctx.fillStyle = "#FFFFFF";
       ctx.fill();
@@ -240,7 +238,6 @@ export const BookingDetailPage: React.FC = () => {
       ctx.lineWidth = 1.5;
       ctx.stroke();
 
-      // Header Banner
       const headerH = 80;
       ctx.save();
       drawRoundedRect(0, 0, width, headerH, [24, 24, 0, 0]);
@@ -276,7 +273,6 @@ export const BookingDetailPage: React.FC = () => {
       );
       ctx.restore();
 
-      // Ashram Title Block
       const ashramName = booking.ashramId?.name || "Ashram Stay";
       const roomName = booking.roomId?.name || booking.roomId?.type || "Standard Room";
 
@@ -299,7 +295,6 @@ export const BookingDetailPage: React.FC = () => {
         ctx.fillText(addr, 24, 130);
       }
 
-      // Check-in Code Banner Box
       drawRoundedRect(24, 146, width - 48, 56, 14);
       ctx.fillStyle = "#ECFDF5";
       ctx.fill();
@@ -330,7 +325,6 @@ export const BookingDetailPage: React.FC = () => {
       ctx.font = "800 12px sans-serif";
       ctx.fillText(roomName, width - 40, 188);
 
-      // Schedule & Guest Info Grid
       const drawDetailRow = (l1: string, v1: string, l2: string, v2: string, y: number) => {
         ctx.textAlign = "left";
         ctx.fillStyle = "#94A3B8";
@@ -373,7 +367,6 @@ export const BookingDetailPage: React.FC = () => {
         312
       );
 
-      // Divider Line
       ctx.save();
       ctx.strokeStyle = "#E2E8F0";
       ctx.lineWidth = 1;
@@ -384,7 +377,6 @@ export const BookingDetailPage: React.FC = () => {
       ctx.stroke();
       ctx.restore();
 
-      // Tariff Summary Box
       drawRoundedRect(24, 372, width - 48, 170, 16);
       ctx.fillStyle = "#F8FAFC";
       ctx.fill();
@@ -420,7 +412,6 @@ export const BookingDetailPage: React.FC = () => {
       drawItem("Amount Paid", formatCurrency(booking.pricing?.amountPaid || 0), 506);
       drawItem("Payment Status", (booking.paymentStatus || "Pending").toUpperCase(), 526);
 
-      // Support & Helpline Footer Note
       ctx.textAlign = "left";
       ctx.fillStyle = "#475569";
       ctx.font = "600 9.5px sans-serif";
@@ -429,13 +420,11 @@ export const BookingDetailPage: React.FC = () => {
       ctx.font = "500 9px sans-serif";
       ctx.fillText("Valid digital accommodation voucher issued under Government Digital India guidelines.", 24, 592);
 
-      // Watermark Stamp
       ctx.textAlign = "right";
       ctx.fillStyle = "#0A4DA6";
       ctx.font = "900 10px sans-serif";
       ctx.fillText("VERIFIED BY TIRVONA", width - 24, 620);
 
-      // Download standard PNG image
       const dataUrl = canvas.toDataURL("image/png");
       const a = document.createElement("a");
       a.href = dataUrl;
@@ -480,8 +469,6 @@ export const BookingDetailPage: React.FC = () => {
   const pricing = booking.pricing;
   const paymentComplete = isPaymentComplete(booking.paymentStatus);
   const stayConfirmed = isStayConfirmed(booking);
-  // A reservation cannot be presented as confirmed while its payment is
-  // pending. This also protects the page from inconsistent legacy records.
   const effectiveStatus =
     booking.status === "confirmed" && !paymentComplete
       ? "pending"
@@ -537,7 +524,6 @@ export const BookingDetailPage: React.FC = () => {
 
   return (
     <div className="min-h-screen pb-24 text-left">
-      {/* Header Bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-2 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div>
@@ -586,7 +572,6 @@ export const BookingDetailPage: React.FC = () => {
           </div>
         )}
 
-        {/* ── Top Overview Banner: Ashram & Room ── */}
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 shadow-md flex flex-col md:flex-row gap-6 items-start">
           <img
             src={ashramImage}
@@ -662,9 +647,7 @@ export const BookingDetailPage: React.FC = () => {
           </div>
         </div>
 
-        {/* ── Grid: Stay Details & Pricing Breakdown ── */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Left Card: Dates, Guests & Add-Ons */}
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 shadow-sm space-y-5">
             <h3 className="font-black text-sm text-[#0B192C] dark:text-white tracking-wide border-b border-gray-100 dark:border-slate-800 pb-3">
               Stay Schedule & Guests
@@ -729,7 +712,6 @@ export const BookingDetailPage: React.FC = () => {
               )}
             </div>
 
-            {/* Add-on Services */}
             {booking.services?.selectedAddOns &&
               booking.services.selectedAddOns.length > 0 && (
                 <div className="pt-2 space-y-2">
@@ -756,7 +738,6 @@ export const BookingDetailPage: React.FC = () => {
               )}
           </div>
 
-          {/* Right Card: Pricing Breakdown & Payment */}
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 shadow-sm space-y-5 flex flex-col justify-between">
             <div className="space-y-4">
               <h3 className="font-black text-sm text-[#0B192C] dark:text-white tracking-wide border-b border-gray-100 dark:border-slate-800 pb-3">
@@ -816,7 +797,6 @@ export const BookingDetailPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Ashram Contact & Emergency Box */}
             <div className="bg-blue-50/60 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/40 p-4 rounded-2xl space-y-2 text-xs">
               <h4 className="font-extrabold text-[#0B192C] dark:text-white flex items-center gap-1.5">
                 <ShieldCheck size={15} className="text-[#0A4DA6]" /> Ashram
@@ -838,7 +818,6 @@ export const BookingDetailPage: React.FC = () => {
           </div>
         </div>
 
-        {/* ── Booking Lifecycle Timeline ── */}
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 shadow-sm space-y-4">
           <h3 className="font-black text-sm text-[#0B192C] dark:text-white tracking-wide border-b border-gray-100 dark:border-slate-800 pb-3">
             Reservation Timeline & History
@@ -872,7 +851,6 @@ export const BookingDetailPage: React.FC = () => {
         </div>
       </div>
 
-      {/* ── Printable Official Receipt Modal ── */}
       {showReceiptModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
           <style>{`
@@ -906,7 +884,6 @@ export const BookingDetailPage: React.FC = () => {
               ✕
             </button>
 
-            {/* Printable Card Area */}
             <div id="printable-receipt-card" className="space-y-4">
               <div className="bg-gradient-to-r from-[#0B192C] via-[#0A4DA6] to-[#0B192C] text-white p-4 rounded-2xl text-center relative overflow-hidden">
                 <img src="/logo/logo.png" alt="Tirvona Logo" className="h-6 w-auto mx-auto mb-1 object-contain" />
@@ -920,7 +897,6 @@ export const BookingDetailPage: React.FC = () => {
                 </h3>
               </div>
 
-              {/* Ashram & Check-in Info */}
               <div className="border border-gray-100 dark:border-slate-800 p-4 rounded-2xl space-y-3 bg-gray-50/50 dark:bg-slate-900/50">
                 <div>
                   <h4 className="font-black text-base text-[#0B192C] dark:text-white">
@@ -962,7 +938,6 @@ export const BookingDetailPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Booking Metadata Grid */}
               <dl className="grid grid-cols-2 gap-3 text-xs border-b border-gray-100 dark:border-slate-800 pb-3">
                 <div>
                   <dt className="text-gray-400 font-bold text-[10px]">Booking Reference:</dt>
@@ -1004,7 +979,6 @@ export const BookingDetailPage: React.FC = () => {
                 </div>
               </dl>
 
-              {/* Financial Breakdown Table */}
               <div className="space-y-2 text-xs bg-gray-50 dark:bg-slate-900/60 p-3.5 rounded-2xl border border-gray-100 dark:border-slate-800">
                 <span className="text-[10px] font-extrabold tracking-wider text-gray-400 block mb-1">
                   TARIFF & PAYMENT SUMMARY
@@ -1049,7 +1023,6 @@ export const BookingDetailPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Modal Action Footer */}
             <div className="pt-2 flex flex-wrap gap-2.5">
               <button
                 onClick={handleDownloadReceiptCanvas}

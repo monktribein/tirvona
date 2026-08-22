@@ -53,17 +53,7 @@ const badgeStatus = (status: SmartContactStatus): string =>
         ? "suspended"
         : "archived";
 
-/**
- * Smart Contacts → All Profiles (spec §18, §50).
- *
- * The list is the console's home: every profile with its headline engagement
- * numbers, which the API joins in from the event log in one aggregation rather
- * than a request per row.
- */
 export const SmartContactProfilesPage: React.FC = () => {
-  // The sidebar's Active / Disabled / Employees / Partners entries all point at
-  // this page with a query string rather than at separate routes, so the
-  // filters are driven by the URL. That also makes a filtered view linkable.
   const [searchParams, setSearchParams] = useSearchParams();
   const urlStatus = (searchParams.get("status") ?? "") as SmartContactStatus | "";
   const urlCategory = searchParams.get("category") ?? "";
@@ -79,9 +69,6 @@ export const SmartContactProfilesPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [creating, setCreating] = useState(false);
-  // Bulk deletion. Held as a Set of ids rather than a flag on each row so the
-  // selection survives a re-fetch, and pruned against the rows actually on
-  // screen before it is ever sent.
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -89,7 +76,6 @@ export const SmartContactProfilesPage: React.FC = () => {
   const limit = 20;
   const pages = Math.max(1, Math.ceil(total / limit));
 
-  /** Writes a filter into the URL, dropping it entirely when cleared. */
   const setFilter = (key: "status" | "category", value: string) => {
     const next = new URLSearchParams(searchParams);
     if (value) next.set(key, value);
@@ -130,8 +116,6 @@ export const SmartContactProfilesPage: React.FC = () => {
       const res = await smartContactService.stats();
       setStats(res.data.data);
     } catch {
-      // The counts are a convenience on top of the list; a failure here should
-      // not blank the page that already loaded.
       setStats(null);
     }
   }, []);
@@ -144,8 +128,6 @@ export const SmartContactProfilesPage: React.FC = () => {
     void loadStats();
   }, [loadStats]);
 
-  // Only ever act on rows the current filter and page actually show, so a
-  // stale id left over from an earlier view can never be deleted unseen.
   const visibleSelected = profiles.filter((profile) => selected.has(profile.id));
   const allVisibleSelected =
     profiles.length > 0 && visibleSelected.length === profiles.length;
@@ -176,7 +158,6 @@ export const SmartContactProfilesPage: React.FC = () => {
       toast.success(res.data.message || "Profiles deleted.");
       setSelected(new Set());
       setConfirmingDelete(false);
-      // The page may now be past the end of a shorter list.
       setPage((current) => Math.max(1, Math.min(current, pages)));
       void load();
       void loadStats();
@@ -221,7 +202,6 @@ export const SmartContactProfilesPage: React.FC = () => {
         }
       />
 
-      {/* Status tabs, doubling as the spec §18 dashboard counters. */}
       <div className="flex flex-wrap gap-2">
         {STATUS_TABS.map((tab) => {
           const active = status === tab.value;
@@ -282,8 +262,6 @@ export const SmartContactProfilesPage: React.FC = () => {
           </div>
         )}
 
-        {/* Only appears once something is ticked, so the destructive control is
-          never sitting idle next to a list of live profiles. */}
         {visibleSelected.length > 0 && (
           <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-[#0A4DA6]/5 border border-[#0A4DA6]/20">
             <span className="text-xs font-black text-[#0B192C] dark:text-white">
@@ -332,8 +310,6 @@ export const SmartContactProfilesPage: React.FC = () => {
                     <input
                       type="checkbox"
                       checked={allVisibleSelected}
-                      // Some but not all: the box shows neither state honestly,
-                      // so it is dashed rather than silently reading "empty".
                       ref={(node) => {
                         if (node)
                           node.indeterminate =
@@ -499,9 +475,6 @@ export const SmartContactProfilesPage: React.FC = () => {
         />
       )}
 
-      {/* Deletion is permanent and this module is otherwise archive-only, so
-        the dialog names every profile going and says plainly what a freed slug
-        does to a printed card — the one consequence that cannot be undone. */}
       {confirmingDelete && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
           <div

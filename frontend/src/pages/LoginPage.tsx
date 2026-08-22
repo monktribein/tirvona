@@ -23,7 +23,6 @@ import { authService } from "../services";
 import { getErrorMessage } from "../lib/api";
 import { getPostLoginRedirect } from "../utils/roleRedirect";
 
-// Small multicolor Google mark (lucide has no brand logos).
 const GoogleIcon: React.FC = () => (
   <svg className="w-4 h-4" viewBox="0 0 24 24" aria-hidden="true">
     <path
@@ -64,15 +63,11 @@ export const LoginPage: React.FC = () => {
   const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(false);
   const [suspensionInfo, setSuspensionInfo] = useState<any | null>(null);
-  // Set when a Guest Visitor's password is accepted and an OTP is issued.
   const [loginChallenge, setLoginChallenge] = useState<OtpChallenge | null>(
     null,
   );
   const verifiedLoginUser = useRef<any>(null);
 
-  // `parkingRoles` comes from the session: parking staff read `role: customer`,
-  // so the grant list is the only thing that sends them to their own dashboard
-  // rather than the pilgrim profile.
   const goAfterAuthentication = (
     role?: string,
     parkingRoles?: string[],
@@ -110,7 +105,6 @@ export const LoginPage: React.FC = () => {
     const res = await login(email, password);
     setLoading(false);
     if (res.success) {
-      // Guest Visitors: password accepted, now confirm the OTP.
       goAfterAuthentication(
         res.user?.role,
         res.user?.parkingRoles,
@@ -125,8 +119,6 @@ export const LoginPage: React.FC = () => {
     }
   };
 
-  // Emails a reset link to the address already typed in the Email / Phone field.
-  // The reply is deliberately the same whether or not the address is registered.
   const handleForgotPassword = async () => {
     setError("");
     setNotice("");
@@ -188,8 +180,6 @@ export const LoginPage: React.FC = () => {
     const res = await loginOTP(phone, otpCode);
     setLoading(false);
     if (res.success) {
-      // From the response, not context: `setUser` has not committed yet, so
-      // `user` here is still the pre-login value.
       goAfterAuthentication(
         res.user?.role,
         res.user?.parkingRoles,
@@ -233,7 +223,6 @@ export const LoginPage: React.FC = () => {
 
   return (
     <section className="relative w-full min-h-screen bg-[#0B192C] overflow-hidden -mt-24 lg:-mt-28">
-      {/* Full-cover background; section pulled up under the floating navbar so there is no white gap */}
       <img
         src="/auth-page/background.png"
         alt=""
@@ -244,11 +233,8 @@ export const LoginPage: React.FC = () => {
       />
       <div className="absolute inset-0 bg-gradient-to-r from-[#0B192C]/90 via-[#0B192C]/60 to-[#0A4DA6]/25" />
 
-      {/* Content */}
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-screen grid lg:grid-cols-2 gap-10 lg:gap-12 items-center pt-36 lg:pt-40 pb-16">
-        {/* ── Left: Marketing hero ── */}
         <div className="hidden lg:flex flex-col justify-center text-white space-y-6 max-w-xl">
-          {/* Heading */}
           <div className="space-y-3">
             <h1
               className="font-black leading-[1.08] tracking-tight text-white"
@@ -267,7 +253,6 @@ export const LoginPage: React.FC = () => {
             </p>
           </div>
 
-          {/* 2x2 Feature Cards Grid */}
           <div className="grid grid-cols-2 gap-3 pt-1">
             {heroFeatures.map((f) => (
               <div
@@ -284,7 +269,6 @@ export const LoginPage: React.FC = () => {
             ))}
           </div>
 
-          {/* Glass Stats Card */}
           <div className="bg-gradient-to-r from-white/5 to-white/10 backdrop-blur-md border border-white/10 p-4 rounded-2xl flex items-center justify-around shadow-xl">
             {[
               { n: "1,200+", l: "Verified Ashrams" },
@@ -306,10 +290,8 @@ export const LoginPage: React.FC = () => {
           </div>
         </div>
 
-        {/* ── Right: Auth card ── */}
         <div className="w-full max-w-[400px] mx-auto lg:ml-auto lg:mr-0 space-y-3">
           <div className="bg-white/95 dark:bg-[#0B192C]/95 backdrop-blur-xl border border-white/40 dark:border-slate-800 rounded-[24px] shadow-2xl p-5 sm:p-6 space-y-3.5">
-            {/* Brand */}
             <div className="text-center space-y-1">
               <img
                 src="/logo/logo.png"
@@ -325,7 +307,6 @@ export const LoginPage: React.FC = () => {
             </div>
 
             {google.stage === "otp" && google.challenge ? (
-              /* Google sign-up: verify the address before the account exists. */
               <OtpChallengeForm
                 challenge={google.challenge}
                 destination={google.challenge.sentTo || ""}
@@ -333,14 +314,11 @@ export const LoginPage: React.FC = () => {
                 onVerify={(otp) => google.verifyOtp(otp)}
                 onResend={google.resendOtp}
                 onCancel={google.reset}
-                /* Advancing to the profile modal is handled by the hook. */
                 onVerified={() => {}}
               />
             ) : loginChallenge ? (
-              /* OTP step for Guest Visitors — same card, styling untouched. */
               <OtpChallengeForm
                 challenge={loginChallenge}
-                /* The identifier they typed is also where the code was sent. */
                 destination={email}
                 title="Verify OTP"
                 onVerify={async (otp) => {
@@ -368,7 +346,6 @@ export const LoginPage: React.FC = () => {
               />
             ) : (
               <>
-                {/* Tabs */}
                 <div className="flex bg-gray-100 dark:bg-slate-900 p-1 rounded-full">
                   <button
                     onClick={() => switchMode(false)}
@@ -497,7 +474,6 @@ export const LoginPage: React.FC = () => {
                   </>
                 )}
 
-                {/* Password form */}
                 {!useOtp ? (
                   <form onSubmit={handlePasswordSubmit} className="space-y-2.5">
                     <div className="space-y-1">
@@ -588,7 +564,6 @@ export const LoginPage: React.FC = () => {
                     </button>
                   </form>
                 ) : (
-                  /* OTP form */
                   <form onSubmit={handleOtpSubmit} className="space-y-2.5">
                     <div className="space-y-1">
                       <label className="text-[11px] font-extrabold text-[#0B192C] dark:text-gray-200">
@@ -657,7 +632,6 @@ export const LoginPage: React.FC = () => {
                   </form>
                 )}
 
-                {/* Divider */}
                 <div className="flex items-center gap-2.5">
                   <span className="h-px flex-grow bg-gray-200 dark:bg-slate-800" />
                   <span className="text-[10px] font-bold text-gray-400 tracking-wider">
@@ -666,7 +640,6 @@ export const LoginPage: React.FC = () => {
                   <span className="h-px flex-grow bg-gray-200 dark:bg-slate-800" />
                 </div>
 
-                {/* Social / alt login */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <button
                     type="button"
@@ -692,7 +665,6 @@ export const LoginPage: React.FC = () => {
                   </button>
                 </div>
 
-                {/* Register */}
                 <p className="text-center text-xs text-gray-500 dark:text-gray-400 font-semibold pt-0.5">
                   Don't have an account?{" "}
                   <Link
@@ -711,7 +683,6 @@ export const LoginPage: React.FC = () => {
             )}
           </div>
 
-          {/* Trust badges */}
           <div className="grid grid-cols-3 gap-2 text-white">
             {trustBadges.map((b) => (
               <div
@@ -733,8 +704,6 @@ export const LoginPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Google sign-up final step: the account is created only when this
-          modal is submitted. */}
       {google.stage === "profile" && (
         <CompleteProfileModal
           email={google.email}

@@ -2,13 +2,6 @@ import { Injectable, Logger, OnApplicationBootstrap } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import type { Model } from "mongoose";
 
-/**
- * Idempotently splits the ambiguous legacy roles in existing databases.
- *
- * Legacy `stay_admin` was the platform-wide account, while `owner` represented
- * a separately registered property owner. An `owner` carrying the explicit
- * manage-all permission (or the known legacy name) is also kept global.
- */
 @Injectable()
 export class AshramRoleMigrationService implements OnApplicationBootstrap {
   private readonly logger = new Logger(AshramRoleMigrationService.name);

@@ -11,9 +11,6 @@ interface FileUploaderProps {
   currentUrl?: string;
 }
 
-// Reusable Cloudinary uploader: picks a file, uploads via the API, and reports
-// the resulting secure URL to the parent. Falls back to a clear error message
-// when uploads are not configured on the server (503).
 export const FileUploader: React.FC<FileUploaderProps> = ({
   folder,
   onUploaded,

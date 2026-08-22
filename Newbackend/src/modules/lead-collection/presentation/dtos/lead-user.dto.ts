@@ -32,11 +32,6 @@ export class CreateLeadUserDto {
   @IsOptional() @IsString() @MaxLength(500) notes?: string;
 }
 
-/**
- * Everything optional — the console sends only what changed. The password is
- * deliberately absent: it moves through `resetPassword`, which also has to
- * invalidate live sessions.
- */
 export class UpdateLeadUserDto {
   @IsOptional() @IsString() @MinLength(2) @MaxLength(120) name?: string;
   @IsOptional() @IsString() @MinLength(10) @MaxLength(20) phone?: string;

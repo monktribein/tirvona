@@ -275,9 +275,6 @@ export class ParkingBookingService {
 
   private verifyRazorpay(dto: ConfirmParkingPaymentDto): boolean {
     const keySecret = this.config.get<string>("razorpayKeySecret");
-    // Mirrors BookingsService.signatureValid: the unverified demo path is for
-    // local development only and must never confirm a paid parking booking in
-    // production.
     if (!keySecret)
       return this.config.get<string>("nodeEnv") !== "production";
     if (
@@ -524,19 +521,6 @@ export class ParkingBookingService {
     };
   }
 
-  /**
-   * The booking's current pass — the same one every time it is asked for.
-   *
-   * Viewing a pass must never change it. This endpoint used to call
-   * `reissueQr`, which revokes the outstanding pass and mints a replacement, so
-   * the QR changed on every page refresh and the code a visitor was holding at
-   * the gate had already been revoked — the guard's scan failed with "this pass
-   * has been revoked". Reissuing is now an explicit action of its own.
-   *
-   * A pass is minted here only when there is genuinely none to show: a booking
-   * that predates the stored-token column has a hash but no token, and cannot
-   * be re-rendered. That mints once and is then stable.
-   */
   async currentPass(id: string, userId: string, format: string): Promise<any> {
     const booking = await this.assertPassable(id, userId);
     const existing = await this.qrCodes
@@ -573,10 +557,6 @@ export class ParkingBookingService {
     return booking;
   }
 
-  /**
-   * Deliberately invalidates the outstanding pass and issues a replacement —
-   * for a pass that was lost or shared. Never call this to display one.
-   */
   async reissueQr(id: string, userId: string, format: string): Promise<any> {
     const booking = await this.assertPassable(id, userId);
     const pass = await this.transactions.run((session) =>

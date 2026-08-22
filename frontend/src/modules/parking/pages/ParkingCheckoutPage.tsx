@@ -31,13 +31,6 @@ import {
   isValidVehicleNumber,
 } from "../utils/parkingFormat";
 
-/**
- * Parking checkout.
- *
- * Vehicle details → hold the bay → pay → confirmed with a QR pass. The quote
- * shown here is the same server-computed figure that gets charged; nothing
- * about the amount is decided in the browser.
- */
 export const ParkingCheckoutPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -68,7 +61,6 @@ export const ParkingCheckoutPage: React.FC = () => {
   const [error, setError] = useState("");
   const [fieldError, setFieldError] = useState("");
 
-  // Fetch the authoritative quote for this exact selection.
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -122,13 +114,6 @@ export const ParkingCheckoutPage: React.FC = () => {
     return true;
   };
 
-  /**
-   * Create → pay → confirm.
-   *
-   * Creating the booking holds the bay for a short window; the payment step then
-   * confirms it. If payment is abandoned the hold lapses server-side and the bay
-   * returns to inventory, so nothing is stranded.
-   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate() || submitting) return;
@@ -231,7 +216,6 @@ export const ParkingCheckoutPage: React.FC = () => {
         )}
 
         <div className="grid lg:grid-cols-5 gap-5">
-          {/* Vehicle form */}
           <form onSubmit={handleSubmit} className="lg:col-span-3 space-y-4">
             <section className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 space-y-4 shadow-sm">
               <h2 className="inline-flex items-center gap-2 font-extrabold text-sm text-[#0B192C] dark:text-white">
@@ -362,7 +346,6 @@ export const ParkingCheckoutPage: React.FC = () => {
             </p>
           </form>
 
-          {/* Summary */}
           <aside className="lg:col-span-2">
             <motion.section
               initial={{ opacity: 0, y: 10 }}

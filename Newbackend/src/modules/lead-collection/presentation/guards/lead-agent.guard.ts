@@ -12,17 +12,6 @@ export interface LeadRequest extends Request {
   leadUser?: AuthenticatedLeadUser;
 }
 
-/**
- * Authenticates a field agent for the lead-app routes.
- *
- * Agent routes are marked `@Public()` so the platform's global `JwtAuthGuard`
- * steps aside — a field agent has no row in the platform `users` collection
- * and would fail it — and this guard then applies the lead product's own
- * check. Public to the platform, never public in fact.
- *
- * The agent is attached as `req.leadUser`, deliberately not `req.user`, so no
- * platform guard or interceptor downstream can mistake one for the other.
- */
 @Injectable()
 export class LeadAgentGuard implements CanActivate {
   constructor(private readonly auth: LeadAuthService) {}

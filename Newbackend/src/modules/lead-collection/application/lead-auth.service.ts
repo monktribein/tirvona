@@ -23,17 +23,6 @@ export interface LeadLoginResult {
   user: AuthenticatedLeadUser;
 }
 
-/**
- * Sign-in for field agents.
- *
- * Phone plus password against `lead_users` — no signup, OTP, Google, or
- * first-login provisioning. Only accounts created by a platform super admin
- * through the Lead Collection console are accepted.
- *
- * The token it mints is scoped to the lead product via a distinct
- * issuer/audience, so it is rejected by the platform's `JwtStrategy` even when
- * the two share a signing secret.
- */
 @Injectable()
 export class LeadAuthService {
   private readonly config = leadCollectionConfig();
@@ -74,15 +63,10 @@ export class LeadAuthService {
       await hash(dto.password, this.config.bcryptRounds);
       throw invalid;
     } else {
-      // One message for "no such agent" and for "wrong password" — the login
-      // screen is reachable by anyone with the URL, and distinguishing the two
-      // turns it into a directory of who works here.
       if (!user.passwordHash) throw invalid;
       if (!(await compare(dto.password, user.passwordHash))) throw invalid;
     }
 
-    // Only the platform super-admin endpoint writes this immutable provenance
-    // id. Historical self-enrolled or directly inserted accounts stay locked.
     if (!user.createdByAdminId?.trim()) throw invalid;
     if (!user.state?.trim() || !user.district?.trim())
       throw new UnauthorizedException(
@@ -118,13 +102,6 @@ export class LeadAuthService {
     };
   }
 
-  /**
-   * Verify a bearer token and resolve the agent behind it.
-   *
-   * Re-reads the account on every request rather than trusting the claims: a
-   * suspension or a password reset has to take effect immediately, and both
-   * bump `tokenVersion` so any token minted before the change stops matching.
-   */
   async resolveFromToken(token: string): Promise<AuthenticatedLeadUser> {
     let payload: LeadTokenPayload;
     try {

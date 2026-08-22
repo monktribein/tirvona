@@ -24,19 +24,10 @@ import {
   SaveRefundPolicyDto,
 } from "./dtos/refund.dto";
 
-/**
- * Refund requests.
- *
- * No route is `@Public()`. What a caller may see is decided inside the service
- * by scoping the query, so a pilgrim, an ashram owner and a finance admin all
- * hit the same URLs and get different estates back. The role gates below are
- * the coarse filter; the fine one is the scope filter.
- */
 @Controller("refunds")
 export class RefundsController {
   constructor(private readonly service: RefundsService) {}
 
-  /** Anyone signed in may claim against their own purchase. */
   @Post()
   async create(
     @CurrentUser() user: AuthenticatedUser,
@@ -53,7 +44,6 @@ export class RefundsController {
     return { success: true, ...(await this.service.list(user, query)) };
   }
 
-  /** Counts for the console header. Declared before `:id`. */
   @Get("summary")
   async summary(@CurrentUser() user: AuthenticatedUser) {
     return { success: true, data: await this.service.summary(user) };
@@ -106,7 +96,6 @@ export class RefundsController {
     };
   }
 
-  /** The requester may withdraw; staff may cancel on their behalf. */
   @Post(":id/cancel")
   @HttpCode(200)
   async cancel(
@@ -120,7 +109,6 @@ export class RefundsController {
     };
   }
 
-  /** Push the money. Money-moving is finance and platform only. */
   @Post(":id/process")
   @HttpCode(200)
   @Roles("super_admin", "national_admin", "finance_manager")
@@ -132,12 +120,6 @@ export class RefundsController {
   }
 }
 
-/**
- * Refund policy configuration — Super Admin only.
- *
- * Deliberately narrower than the request routes: finance may approve a payout
- * under the rules, but changing the rules themselves is a platform decision.
- */
 @Controller("refund-policies")
 @Roles("super_admin", "national_admin")
 export class RefundPoliciesController {

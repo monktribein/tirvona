@@ -44,7 +44,6 @@ export const MarketplaceCategoriesPage: React.FC = () => {
 
   return (
     <div className="min-h-screen pb-20 space-y-10">
-      {/* Header Banner */}
       <div className="bg-gradient-to-r from-[#0B192C] via-[#0A4DA6] to-[#0B192C] text-white py-14 px-4 sm:px-8 shadow-xl">
         <div className="max-w-6xl mx-auto space-y-4">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/20 text-amber-300 text-xs font-black border border-amber-500/30 backdrop-blur-md">
@@ -74,9 +73,7 @@ export const MarketplaceCategoriesPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Container */}
       <div className="max-w-6xl mx-auto px-4 sm:px-8 space-y-8">
-        {/* Search Bar */}
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-4 shadow-sm flex items-center justify-between gap-4">
           <div className="relative w-full">
             <Search
@@ -93,7 +90,6 @@ export const MarketplaceCategoriesPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Categories Grid */}
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3, 4, 5, 6].map((n) => (
@@ -125,7 +121,6 @@ export const MarketplaceCategoriesPage: React.FC = () => {
                 className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[32px] overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 group cursor-pointer flex flex-col justify-between"
               >
                 <div>
-                  {/* Category Thumbnail */}
                   <div className="relative aspect-video bg-black overflow-hidden">
                     {cat.coverImage || cat.thumbnail ? (
                       <img
@@ -146,7 +141,6 @@ export const MarketplaceCategoriesPage: React.FC = () => {
                     </span>
                   </div>
 
-                  {/* Content */}
                   <div className="p-6 space-y-3">
                     <div className="flex items-center gap-1.5 text-xs font-bold text-[#0A4DA6] dark:text-amber-400">
                       <MapPin size={13} />
@@ -174,7 +168,6 @@ export const MarketplaceCategoriesPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Footer */}
                 <div className="px-6 pb-6 pt-2 border-t border-gray-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold">
                   <span className="text-gray-400 flex items-center gap-1">
                     <Clock size={13} /> {cat.deliveryDays || 2} Days Delivery

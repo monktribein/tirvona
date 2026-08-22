@@ -1,7 +1,6 @@
 import { Schema } from "mongoose";
 import { LEAD_REGION_COLLECTION } from "../../domain/lead-collection.constants";
 
-/** District jurisdictions assignable to lead field agents. */
 export const LeadRegionSchema = new Schema(
   {
     state: { type: String, required: true, trim: true },

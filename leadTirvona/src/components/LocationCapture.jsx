@@ -1,6 +1,3 @@
-/**
- * LocationCapture.jsx — Fully Responsive Mobile & Tablet GPS Capture Component
- */
 import React from 'react';
 import { Navigation, ExternalLink, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useGeolocation } from '../hooks/useGeolocation';
@@ -16,7 +13,6 @@ export default function LocationCapture({ coordinates, onChange }) {
   return (
     <div className="bg-white border border-[#E2E8F0] rounded-2xl p-4 sm:p-6 lg:p-7 shadow-xs">
 
-      {/* Section Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 sm:pb-6 border-b border-[#E2E8F0] mb-4 sm:mb-6">
         <div>
           <h2 className="text-sm sm:text-base font-extrabold text-[#0F172A]">GPS Coordinates Capture</h2>
@@ -33,7 +29,6 @@ export default function LocationCapture({ coordinates, onChange }) {
         </button>
       </div>
 
-      {/* Error State */}
       {gpsError && (
         <div className="flex items-center gap-2 px-3.5 py-2.5 bg-red-50 border border-red-200 rounded-xl text-xs font-medium text-red-700 mb-4">
           <AlertCircle size={14} className="shrink-0 text-red-500" />
@@ -41,7 +36,6 @@ export default function LocationCapture({ coordinates, onChange }) {
         </div>
       )}
 
-      {/* Input Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
         <div className="space-y-1.5">
           <label className="text-xs font-bold text-[#64748B] tracking-wider block">Latitude</label>
@@ -59,7 +53,6 @@ export default function LocationCapture({ coordinates, onChange }) {
         </div>
       </div>
 
-      {/* Captured Location Badge */}
       {coordinates.lat && coordinates.lng && (
         <div className="flex items-center justify-between px-3.5 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-xs">
           <span className="flex items-center gap-1.5 text-[#0A4DA6] font-bold">

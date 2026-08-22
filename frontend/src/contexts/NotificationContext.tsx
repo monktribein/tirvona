@@ -60,10 +60,6 @@ type DialogState =
   | ({ kind: "prompt"; resolve: (value: string | null) => void } & PromptDialogOptions)
   | null;
 
-// Keep one context identity across Vite hot reloads and lazy route chunks.
-// Without this, a refreshed ProfileMainPage chunk can import a newly-created
-// context while the already-mounted App tree still provides the previous one,
-// making the hook incorrectly report that no provider exists.
 const notificationContextStore = globalThis as typeof globalThis & {
   __tirvonaNotificationContext?: React.Context<
     NotificationContextType | undefined
@@ -140,12 +136,9 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     };
     setNotifications((prev) => [newNotif, ...prev]);
     toast[resolvedType](resolvedMessage, { title: resolvedTitle });
-    // Every bell notification is also an audible alert, using the one tone the
-    // Super Admin configured for the whole platform. No-ops when unconfigured.
     playNotificationSound();
   };
 
-  // Seed a welcome notification when a user logs in.
   useEffect(() => {
     if (user) {
       setNotifications([
@@ -163,9 +156,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [user]);
 
-  // The alert tone is one platform-wide setting, so it is read once per app
-  // load rather than per dashboard. Autoplay stays blocked until the user has
-  // interacted with the page, so the first real gesture buys that permission.
   useEffect(() => {
     void loadNotificationSound();
     const prime = () => primeNotificationSound();
@@ -178,20 +168,10 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     };
   }, []);
 
-  // Server-side notifications reach the bell too.
-  //
-  // The bell used to hold only what this provider created locally — the
-  // welcome line and socket booking events — so anything the backend wrote to
-  // the `notifications` collection (approvals, volunteer applications, refund
-  // updates) never appeared and never toasted. This polls the same endpoint
-  // the Notification Center reads, which is scoped server-side to the caller's
-  // id and role, so it is correct for every role on every dashboard.
   const addNotificationRef = useRef(addNotification);
   addNotificationRef.current = addNotification;
   useEffect(() => {
     if (!user) return;
-    // Ids already surfaced. Seeded from the first response so signing in does
-    // not fire a toast for every unread notification in the backlog.
     const seen = new Set<string>();
     let primed = false;
     let cancelled = false;
@@ -220,7 +200,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         });
         if (cancelled || !res.data?.success) return;
         const rows: any[] = res.data.data || [];
-        // Oldest first, so a burst arrives in the order it happened.
         for (const row of [...rows].reverse()) {
           const id = String(row._id ?? "");
           if (!id || seen.has(id)) continue;
@@ -234,7 +213,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         }
         primed = true;
       } catch {
-        // A dashboard must not break because the feed is briefly unreachable.
       }
     };
 
@@ -249,18 +227,11 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     };
   }, [user]);
 
-  // Establish a real-time Socket.io connection scoped to the logged-in user.
   useEffect(() => {
     if (!user) return;
 
-    // M3: authenticate the socket so the server scopes the private room to this
-    // verified user (the server ignores any client-sent id).
     const token = localStorage.getItem(TOKEN_KEY);
     const socket = io(`${API_BASE_URL}/notifications`, {
-      // Polling-first gives Socket.IO a stable handshake before upgrading to
-      // WebSocket. `autoConnect: false` also prevents React Strict Mode's
-      // discarded development mount from opening and immediately closing a
-      // half-established WebSocket.
       transports: ["polling", "websocket"],
       autoConnect: false,
       auth: { token },
@@ -268,8 +239,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     socketRef.current = socket;
     const connectTimer = window.setTimeout(() => socket.connect(), 50);
 
-    // The NestJS gateway authenticates the handshake and joins the user's
-    // private room; the browser cannot select another user's room.
     const lifecycleEvents = [
       "booking_confirmed",
       "checked_in",

@@ -1,6 +1,3 @@
-/* ==========================================================================
-   STRICT TIRVONA DESIGN REPLICATION SYSTEM (PLUS JAKARTA SANS & INTER)
-   ========================================================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
@@ -89,7 +86,6 @@ body {
   animation: slideDown 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Lenis Smooth Scroll Overrides */
 html.lenis, html.lenis body {
   height: auto;
 }
@@ -110,7 +106,6 @@ html.lenis, html.lenis body {
   pointer-events: none;
 }
 
-/* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;

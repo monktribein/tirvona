@@ -124,7 +124,6 @@ export const SacredDirectoryModulePage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Extract moduleType from pathname (e.g., /travel-guides -> travel-guides)
   const pathnameModule = location.pathname.replace("/", "") || "travel-guides";
   const config =
     moduleConfigs[pathnameModule] || moduleConfigs["travel-guides"];
@@ -185,13 +184,11 @@ export const SacredDirectoryModulePage: React.FC = () => {
     const isFood = pathnameModule === "restaurants";
     return (
       <div className="min-h-screen pb-16">
-        {/* Clean Text Header */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8">
           <div className="text-center space-y-2.5 max-w-3xl mx-auto py-2">
             <p className="font-['Kalam'] text-3xl sm:text-5xl font-bold text-[#E58C28]">
               {isFood ? "Food & Satvik Dining" : "Shops & Sacred Services"}
             </p>
-            {/* Decorative Saffron Underline Divider */}
             <div className="flex items-center justify-center gap-2.5 my-1.5">
               <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
               <Sparkles
@@ -208,7 +205,6 @@ export const SacredDirectoryModulePage: React.FC = () => {
           </div>
         </div>
 
-        {/* Feature Showcase Banner */}
         <div className="max-w-4xl mx-auto px-4 sm:px-6 mt-4 flex flex-col items-center justify-center">
           <img
             src="/banner/coming%20soon/marketplace.png"
@@ -217,7 +213,6 @@ export const SacredDirectoryModulePage: React.FC = () => {
           />
         </div>
 
-          {/* Action Buttons */}
           <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
             <button
               onClick={() => navigate("/")}
@@ -239,13 +234,11 @@ export const SacredDirectoryModulePage: React.FC = () => {
 
   return (
     <div className="min-h-screen pb-16">
-      {/* Clean Text Header */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6">
         <div className="text-center space-y-2.5 max-w-3xl mx-auto py-2">
           <p className="font-['Kalam'] text-2xl sm:text-4xl lg:text-5xl font-bold text-[#E58C28]">
             {config.title}
           </p>
-          {/* Decorative Saffron Underline Divider */}
           <div className="flex items-center justify-center gap-2.5 my-1.5">
             <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
             <Sparkles
@@ -257,7 +250,6 @@ export const SacredDirectoryModulePage: React.FC = () => {
           <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-xl mx-auto leading-relaxed">
             {config.subtitle}
           </p>
-          {/* Centered Search Bar */}
           <form
             onSubmit={handleSearch}
             className="w-full max-w-xl mx-auto pt-3 relative z-10"
@@ -282,7 +274,6 @@ export const SacredDirectoryModulePage: React.FC = () => {
         </div>
       </div>
 
-      {/* Directory Items Cards Grid */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-10">
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -368,7 +359,6 @@ export const SacredDirectoryModulePage: React.FC = () => {
           </div>
         )}
 
-        {/* Future Integration Banner */}
         <div className="mt-12 bg-gradient-to-r from-blue-950 via-slate-900 to-indigo-950 text-white rounded-3xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4 border border-blue-500/20 shadow-xl">
           <div className="space-y-1 text-center sm:text-left">
             <span className="px-3 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-[10px] font-black">

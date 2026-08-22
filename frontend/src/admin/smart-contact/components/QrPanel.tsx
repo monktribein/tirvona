@@ -28,13 +28,6 @@ const CAPTIONS = [
   { value: "स्कैन करें और संपर्क सेव करें", label: "स्कैन करें और संपर्क सेव करें" },
 ];
 
-/**
- * QR generation and download (spec §12–§17, §20).
- *
- * The preview is fetched as markup rather than pointed at with an <img src>,
- * because the render routes sit behind the admin bearer token and a browser
- * sends no Authorization header on an image request.
- */
 export const QrPanel: React.FC<{
   profile: SmartContactProfile;
   qrCodes: SmartContactQr[];
@@ -155,14 +148,11 @@ export const QrPanel: React.FC<{
 
   return (
     <div className="grid lg:grid-cols-2 gap-4">
-      {/* Preview + styling controls */}
       <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-5 shadow-sm space-y-4">
         <h4 className="text-[11px] font-black uppercase tracking-wider text-[#0A4DA6]">
           Preview & download
         </h4>
 
-        {/* What the download actually contains. Defaults to the finished card
-            — a bare symbol is only useful if you already have a card design. */}
         <div className="flex gap-2">
           {(
             [
@@ -194,9 +184,6 @@ export const QrPanel: React.FC<{
           {previewLoading ? (
             <Loader2 size={24} className="animate-spin text-gray-300" />
           ) : previewSvg ? (
-            // The SVG comes from our own authenticated API, and the only
-            // caller-supplied text in it (the caption) is XML-escaped
-            // server-side before it is ever written into the markup.
             <div
               className="w-full max-w-[240px] [&>svg]:w-full [&>svg]:h-auto"
               dangerouslySetInnerHTML={{ __html: previewSvg }}
@@ -266,7 +253,6 @@ export const QrPanel: React.FC<{
           >
             <Download size={14} /> SVG
           </EnterpriseButton>
-          {/* PNG only for the bare symbol — the card layout is vector-only. */}
           {layout === "qr" && (
             <>
               <EnterpriseButton
@@ -321,7 +307,6 @@ export const QrPanel: React.FC<{
         </p>
       </div>
 
-      {/* Registered assets */}
       <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-5 shadow-sm space-y-4">
         <h4 className="text-[11px] font-black uppercase tracking-wider text-[#0A4DA6]">
           Tracked QR assets
@@ -398,8 +383,6 @@ export const QrPanel: React.FC<{
                   </p>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  {/* Formats follow the layout selected on the left, so a
-                      tracked asset downloads as whatever the preview shows. */}
                   {(layout === "card"
                     ? (["svg", "pdf"] as SmartContactQrFormat[])
                     : (["svg", "png", "pdf"] as SmartContactQrFormat[])

@@ -19,7 +19,6 @@ export const SupportTicketsPage: React.FC = () => {
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
 
-  // New ticket modal state
   const [showCreate, setShowCreate] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -84,7 +83,6 @@ export const SupportTicketsPage: React.FC = () => {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 min-h-[calc(100vh-12rem)] text-left">
-      {/* Left List Pane */}
       <aside className="lg:col-span-1 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 flex flex-col justify-between">
         <div className="space-y-4">
           <div className="flex justify-between items-center">
@@ -141,11 +139,9 @@ export const SupportTicketsPage: React.FC = () => {
         </div>
       </aside>
 
-      {/* Right Message Chat Stream */}
       <section className="lg:col-span-2 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] flex flex-col justify-between overflow-hidden min-h-[400px]">
         {activeTicket ? (
           <>
-            {/* Header info */}
             <div className="p-4 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/10 flex justify-between items-center">
               <div>
                 <h4 className="font-extrabold text-sm text-[#0B192C] dark:text-white">
@@ -168,7 +164,6 @@ export const SupportTicketsPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Chat Board */}
             <div className="flex-grow p-5 space-y-3 overflow-y-auto max-h-[300px]">
               {activeTicket.messages?.map((msg: any, i: number) => {
                 const isMe = msg.senderId === user?.id || !msg.senderId;
@@ -191,7 +186,6 @@ export const SupportTicketsPage: React.FC = () => {
               })}
             </div>
 
-            {/* Message Bar */}
             {activeTicket.status !== "resolved" && (
               <form
                 onSubmit={handleSendMessage}
@@ -227,7 +221,6 @@ export const SupportTicketsPage: React.FC = () => {
         )}
       </section>
 
-      {/* Create Ticket Modal Overlay */}
       {showCreate && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <form

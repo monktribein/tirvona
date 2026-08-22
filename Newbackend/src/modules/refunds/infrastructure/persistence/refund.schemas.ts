@@ -13,13 +13,6 @@ const opts = (collection: string) => ({
   optimisticConcurrency: true,
 });
 
-/**
- * The revenue streams a refund can apply to.
- *
- * Each one settles through a different domain, so the policy, the source
- * record and the gateway reference are all resolved per module rather than
- * assumed to be a booking.
- */
 export const REFUND_MODULES = [
   "ashram_booking",
   "parking_booking",
@@ -28,15 +21,6 @@ export const REFUND_MODULES = [
   "service_booking",
 ] as const;
 
-/**
- * The refund lifecycle.
- *
- * `processing` is distinct from `approved` on purpose: approval is a human
- * decision, processing means money is moving at the gateway. A request that
- * fails at the gateway returns to `failed` and stays retryable rather than
- * collapsing back to approved, so an operator can always tell "nobody has
- * pressed the button yet" apart from "the bank rejected it".
- */
 export const REFUND_STATUSES = [
   "pending",
   "under_review",
@@ -50,28 +34,17 @@ export const REFUND_STATUSES = [
 
 export type RefundStatus = (typeof REFUND_STATUSES)[number];
 
-/** Transitions the state machine permits. Anything else is rejected. */
 export const REFUND_TRANSITIONS: Record<RefundStatus, RefundStatus[]> = {
   pending: ["under_review", "approved", "rejected", "cancelled"],
   under_review: ["approved", "rejected", "cancelled"],
   approved: ["processing", "cancelled", "failed"],
   processing: ["refunded", "failed"],
-  // A failed gateway attempt is retryable, so it may go back to processing.
   failed: ["processing", "rejected", "cancelled"],
   refunded: [],
   rejected: [],
   cancelled: [],
 };
 
-// ── Policies ────────────────────────────────────────────────────────────────
-/**
- * A refund policy.
- *
- * Resolution is most-specific-first: an ashram-scoped policy beats a
- * module-wide one, which beats the global default. Exactly one policy applies
- * to any given refund, and the one that was used is snapshotted onto the
- * calculation so a later policy edit never rewrites a settled refund.
- */
 export const RefundPolicySchema = new Schema(
   {
     name: { type: String, required: true, trim: true },
@@ -82,17 +55,10 @@ export const RefundPolicySchema = new Schema(
       required: true,
       index: true,
     },
-    /** Narrower scope than `module`; null means the whole module. */
     ashramId: id("Ashram"),
     isActive: { type: Boolean, default: true, index: true },
-    /** Higher wins when two policies match at the same scope. */
     priority: { type: Number, default: 0 },
 
-    /**
-     * Refund percentage by how long before the service date the request is
-     * made. Evaluated most-generous-window-first; the first window whose
-     * `hoursBefore` threshold is met applies.
-     */
     cancellationWindows: [
       {
         label: { type: String, default: "" },
@@ -100,34 +66,21 @@ export const RefundPolicySchema = new Schema(
         refundPercent: { type: Number, required: true, min: 0, max: 100 },
       },
     ],
-    /** Applied when the request falls outside every window above. */
     defaultRefundPercent: { type: Number, default: 0, min: 0, max: 100 },
 
     processingFee: {
       type: { type: String, enum: ["none", "flat", "percent"], default: "none" },
       value: { type: Number, default: 0, min: 0 },
-      /** Never take more than this in fees, whatever the percentage yields. */
       maxAmount: { type: Number, default: 0, min: 0 },
     },
 
-    /**
-     * Whether the platform fee and the GST charged on it come back.
-     *
-     * GST on the platform fee is remitted to the government, so returning it
-     * is a real cost to the business — it is opt-in, and defaults to keeping
-     * the fee while refunding the tax only when the fee itself is refunded.
-     */
     refundPlatformFee: { type: Boolean, default: false },
     refundGst: { type: Boolean, default: false },
-    /** Add-ons and donations are frequently non-refundable; both are explicit. */
     refundAddOns: { type: Boolean, default: true },
     refundDonation: { type: Boolean, default: false },
 
-    /** Auto-approve at or below this amount. 0 disables auto-approval. */
     autoApproveBelow: { type: Number, default: 0, min: 0 },
-    /** Requests at or above this need a second approver. */
     requiresSecondApprovalAbove: { type: Number, default: 0, min: 0 },
-    /** Hours after the service date beyond which no refund is possible. */
     claimWindowHours: { type: Number, default: 0, min: 0 },
 
     createdBy: id("User"),
@@ -140,16 +93,13 @@ export const RefundPolicySchema = new Schema(
 RefundPolicySchema.index({ module: 1, ashramId: 1, isActive: 1, isDeleted: 1 });
 RefundPolicySchema.index({ module: 1, priority: -1 });
 
-// ── Requests ────────────────────────────────────────────────────────────────
 export const RefundRequestSchema = new Schema(
   {
     refundNumber: { type: String, required: true, unique: true },
     module: { type: String, enum: REFUND_MODULES, required: true, index: true },
-    /** The booking / order / donation this refund is against. */
     sourceId: { type: SchemaTypes.ObjectId, required: true, index: true },
     sourceReference: { type: String, default: "" },
     customerId: id("User", true),
-    /** Set for ashram-scoped modules so owner queues can be filtered. */
     ashramId: id("Ashram"),
 
     reason: { type: String, required: true },
@@ -174,7 +124,6 @@ export const RefundRequestSchema = new Schema(
     rejectedBy: id("User"),
     rejectedAt: Date,
     rejectionReason: { type: String, default: "" },
-    /** True when a policy rule approved it rather than a person. */
     autoApproved: { type: Boolean, default: false },
 
     settledAt: Date,
@@ -187,8 +136,6 @@ RefundRequestSchema.index({ status: 1, createdAt: -1 });
 RefundRequestSchema.index({ customerId: 1, createdAt: -1 });
 RefundRequestSchema.index({ ashramId: 1, status: 1, createdAt: -1 });
 RefundRequestSchema.index({ module: 1, status: 1, createdAt: -1 });
-// One open request per source: a second claim on the same booking while one is
-// still in flight would let the same money be refunded twice.
 RefundRequestSchema.index(
   { module: 1, sourceId: 1 },
   {
@@ -199,14 +146,6 @@ RefundRequestSchema.index(
   },
 );
 
-// ── Calculations ────────────────────────────────────────────────────────────
-/**
- * The full financial breakdown behind one refund, with the policy snapshotted.
- *
- * Stored rather than recomputed so the figure a customer was told, the figure
- * an approver saw and the figure actually sent to the gateway are provably the
- * same number — even after the policy changes.
- */
 export const RefundCalculationSchema = new Schema(
   {
     requestId: id("RefundRequest", true),
@@ -244,27 +183,17 @@ export const RefundCalculationSchema = new Schema(
     netRefundable: { type: Number, default: 0, min: 0 },
     nonRefundableAmount: { type: Number, default: 0, min: 0 },
     currency: { type: String, default: "INR" },
-    /** Human-readable trace of how the number was reached. */
     notes: [{ type: String }],
   },
   opts("refund_calculations"),
 );
 RefundCalculationSchema.index({ requestId: 1 }, { unique: true });
 
-// ── Transactions ────────────────────────────────────────────────────────────
-/**
- * One row per gateway attempt.
- *
- * `idempotencyKey` is unique, which is what makes a retried approval or a
- * replayed webhook harmless: the second attempt collides instead of issuing a
- * second refund.
- */
 export const RefundTransactionSchema = new Schema(
   {
     requestId: id("RefundRequest", true),
     idempotencyKey: { type: String, required: true, unique: true },
     provider: { type: String, default: "razorpay" },
-    /** How the customer originally paid, so the money returns the same way. */
     method: { type: String, default: "razorpay" },
     gatewayPaymentId: String,
     gatewayRefundId: { type: String, index: true, sparse: true },
@@ -286,7 +215,6 @@ export const RefundTransactionSchema = new Schema(
 );
 RefundTransactionSchema.index({ requestId: 1, createdAt: -1 });
 
-// ── Status history ──────────────────────────────────────────────────────────
 export const RefundStatusHistorySchema = new Schema(
   {
     requestId: id("RefundRequest", true),
@@ -301,7 +229,6 @@ export const RefundStatusHistorySchema = new Schema(
 );
 RefundStatusHistorySchema.index({ requestId: 1, occurredAt: 1 });
 
-// ── Audit log ───────────────────────────────────────────────────────────────
 export const RefundAuditLogSchema = new Schema(
   {
     requestId: id("RefundRequest"),
@@ -321,7 +248,6 @@ export const RefundAuditLogSchema = new Schema(
 RefundAuditLogSchema.index({ requestId: 1, occurredAt: -1 });
 RefundAuditLogSchema.index({ action: 1, occurredAt: -1 });
 
-// ── Documents ───────────────────────────────────────────────────────────────
 export const RefundDocumentSchema = new Schema(
   {
     requestId: id("RefundRequest", true),
@@ -336,13 +262,6 @@ export const RefundDocumentSchema = new Schema(
 );
 RefundDocumentSchema.index({ requestId: 1, isDeleted: 1 });
 
-// ── Webhooks ────────────────────────────────────────────────────────────────
-/**
- * Raw gateway callbacks, stored before they are acted on.
- *
- * `eventId` is unique so a provider replaying the same event — which Razorpay
- * does on delivery failure — cannot apply it twice.
- */
 export const RefundWebhookSchema = new Schema(
   {
     provider: { type: String, default: "razorpay" },

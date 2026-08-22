@@ -39,7 +39,6 @@ export interface VisitorArticle {
   shortDescription: string;
   content: string;
   featuredImage: string;
-  /** Optional uploaded clip, shown above the article body. */
   videoUrl?: string;
   galleryImages: string[];
   tags: string[];
@@ -57,7 +56,6 @@ export interface VisitorArticle {
 }
 
 export const visitorArticleService = {
-  // Visitor APIs
   getEligibleBookings: () =>
     api.get<{ success: boolean; count: number; data: EligibleBooking[] }>(
       "/visitor-articles/visitor/eligible-bookings",
@@ -83,7 +81,6 @@ export const visitorArticleService = {
       data,
     ),
 
-  // Owner APIs
   getOwnerArticles: (status?: string) =>
     api.get<{
       success: boolean;
@@ -99,10 +96,6 @@ export const visitorArticleService = {
       `/visitor-articles/${id}/review`,
       { action, rejectionReason },
     ),
-  /**
-   * Administrator copy-edit. Narrower than the visitor's own edit: the booking
-   * that proves the stay and the review status are not editable here.
-   */
   adminUpdateArticle: (
     id: string,
     payload: {
@@ -125,7 +118,6 @@ export const visitorArticleService = {
       `/visitor-articles/${id}`,
     ),
 
-  // Public APIs
   getPublicArticles: (params?: {
     category?: string;
     ashramId?: string;
@@ -153,7 +145,6 @@ export const visitorArticleService = {
     api.post<{ success: boolean; liked: boolean; likesCount: number }>(
       `/visitor-articles/${id}/like`,
     ),
-  /** `parentId` turns the comment into a reply. Threads are one level deep. */
   addComment: (id: string, comment: string, parentId?: string) =>
     api.post<{ success: boolean; message: string; data: any }>(
       `/visitor-articles/${id}/comments`,

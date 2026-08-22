@@ -34,12 +34,6 @@ import {
 import ParkingQrTicket from "../components/ParkingQrTicket";
 import ParkingStatusBadge from "../components/ParkingStatusBadge";
 
-/**
- * Booking detail, QR pass and post-booking actions.
- *
- * Doubles as the confirmation screen: arriving with `?justBooked=1` shows the
- * success banner, so the payment flow does not need a separate page.
- */
 export const ParkingBookingDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
@@ -58,7 +52,6 @@ export const ParkingBookingDetailPage: React.FC = () => {
   const [notice, setNotice] = useState("");
   const [showCancel, setShowCancel] = useState(false);
 
-  // Review form
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const [reviewSaved, setReviewSaved] = useState(false);
@@ -83,13 +76,6 @@ export const ParkingBookingDetailPage: React.FC = () => {
     load();
   }, [load]);
 
-  /**
-   * Fetch the renderable pass.
-   *
-   * The QR image is not part of the booking payload because the token is
-   * reissued on demand — the server stores only its hash, so the image has to
-   * be requested explicitly rather than read back.
-   */
   const loadQr = useCallback(async () => {
     if (!id || !booking) return;
     if (booking.paymentStatus !== "paid") return;
@@ -105,7 +91,6 @@ export const ParkingBookingDetailPage: React.FC = () => {
         }));
       }
     } catch {
-      // Non-fatal: the booking still displays without the rendered image.
     } finally {
       setQrLoading(false);
     }
@@ -240,7 +225,6 @@ export const ParkingBookingDetailPage: React.FC = () => {
         )}
 
         <div className="grid lg:grid-cols-5 gap-5">
-          {/* Pass */}
           <div className="lg:col-span-2 order-1">
             {booking.paymentStatus === "paid" &&
             !["cancelled", "expired", "no_show"].includes(booking.status) ? (
@@ -268,7 +252,6 @@ export const ParkingBookingDetailPage: React.FC = () => {
             )}
           </div>
 
-          {/* Details */}
           <div className="lg:col-span-3 order-2 space-y-4">
             <section className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 space-y-4 shadow-sm">
               <div className="flex items-start justify-between gap-3">
@@ -327,7 +310,6 @@ export const ParkingBookingDetailPage: React.FC = () => {
               </dl>
             </section>
 
-            {/* Payment */}
             <section className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 space-y-2.5 shadow-sm">
               <h2 className="font-extrabold text-sm text-[#0B192C] dark:text-white">
                 Payment
@@ -388,7 +370,6 @@ export const ParkingBookingDetailPage: React.FC = () => {
               </div>
             </section>
 
-            {/* Actions */}
             <div className="flex flex-wrap gap-2.5">
               {location?.googleMapsUrl && (
                 <a
@@ -422,7 +403,6 @@ export const ParkingBookingDetailPage: React.FC = () => {
               )}
             </div>
 
-            {/* Cancellation confirm */}
             {showCancel && (
               <motion.section
                 initial={{ opacity: 0, height: 0 }}
@@ -477,7 +457,6 @@ export const ParkingBookingDetailPage: React.FC = () => {
               </motion.section>
             )}
 
-            {/* Review */}
             {canReview && (
               <form
                 onSubmit={handleReview}

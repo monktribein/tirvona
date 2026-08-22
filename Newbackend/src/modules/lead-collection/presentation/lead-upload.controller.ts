@@ -7,13 +7,12 @@ import {
   UseInterceptors,
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
-import { Throttle } from "@nestjs/throttler";
 import { memoryStorage } from "multer";
 import { Public } from "../../../common/decorators/public.decorator";
+import { AuthenticatedUploadThrottle } from "../../../common/throttling/rate-limit.decorators";
 import { UploadsService } from "../../uploads/application/uploads.service";
 import { LeadAgentGuard } from "./guards/lead-agent.guard";
 
-/** Cloudinary uploads authenticated with the field-agent token scope. */
 @Public()
 @UseGuards(LeadAgentGuard)
 @Controller("lead-collection/agent/uploads")
@@ -21,7 +20,7 @@ export class LeadUploadController {
   constructor(private readonly uploads: UploadsService) {}
 
   @Post()
-  @Throttle({ default: { limit: 20, ttl: 900_000 } })
+  @AuthenticatedUploadThrottle(20, 900_000)
   @UseInterceptors(
     FileInterceptor("file", {
       storage: memoryStorage(),

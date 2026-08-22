@@ -31,11 +31,6 @@ export class ReviewsController {
     };
   }
 
-  /**
-   * Whether the signed-in caller may review this ashram, and the verified-stay
-   * status the badge would carry. Declared before `ashram/:ashramId` so the
-   * static segment is not captured by that parameter.
-   */
   @Get("eligibility/:ashramId") async eligibility(
     @CurrentUser() user: AuthenticatedUser,
     @Param("ashramId") ashramId: string,

@@ -23,13 +23,6 @@ interface ParkingFilterPanelProps {
   onReset: () => void;
 }
 
-/**
- * Search filter rail.
- *
- * The distance control only renders when the visitor has actually shared a
- * location — a radius slider that silently does nothing is worse than no
- * slider at all.
- */
 export const ParkingFilterPanel: React.FC<ParkingFilterPanelProps> = ({
   amenityOptions,
   selectedAmenities,
@@ -83,7 +76,6 @@ export const ParkingFilterPanel: React.FC<ParkingFilterPanelProps> = ({
         )}
       </header>
 
-      {/* Sort */}
       <div className="space-y-2">
         <label
           htmlFor="parking-sort"
@@ -105,7 +97,6 @@ export const ParkingFilterPanel: React.FC<ParkingFilterPanelProps> = ({
         </select>
       </div>
 
-      {/* Distance — only meaningful once we have coordinates */}
       {hasCoordinates && (
         <div className="space-y-2">
           <label
@@ -133,7 +124,6 @@ export const ParkingFilterPanel: React.FC<ParkingFilterPanelProps> = ({
         </div>
       )}
 
-      {/* Quick toggles */}
       <div className="space-y-2">
         <span className="block text-[10px] tracking-wider font-bold text-gray-400">
           Quick Filters
@@ -166,7 +156,6 @@ export const ParkingFilterPanel: React.FC<ParkingFilterPanelProps> = ({
         </div>
       </div>
 
-      {/* Rating */}
       <div className="space-y-2">
         <span className="block text-[10px] tracking-wider font-bold text-gray-400">
           Minimum Rating
@@ -203,7 +192,6 @@ export const ParkingFilterPanel: React.FC<ParkingFilterPanelProps> = ({
         </div>
       </div>
 
-      {/* Amenities */}
       <div className="space-y-2">
         <span className="block text-[10px] tracking-wider font-bold text-gray-400">
           Amenities

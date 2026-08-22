@@ -162,7 +162,6 @@ export const CentralApprovalCenterPage: React.FC = () => {
           "info",
         );
         setCommentText("");
-        // Refresh single request
         const single = await approvalService.getRequestById(
           selectedRequest._id,
         );
@@ -188,7 +187,6 @@ export const CentralApprovalCenterPage: React.FC = () => {
 
   return (
     <div className="space-y-6 text-left w-full">
-      {/* Header Banner */}
       <EnterprisePageHeader
         title="Central Approval Center"
         subtitle="Master control panel for reviewing, validating, and approving every structural platform modification request."
@@ -196,7 +194,6 @@ export const CentralApprovalCenterPage: React.FC = () => {
         badgeText="Master Approval Queue"
       />
 
-      {/* KPI Dashboard Widgets */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-4 rounded-[22px] shadow-sm space-y-1">
           <span className="text-[10px] text-gray-400 font-extrabold tracking-wider block">
@@ -269,9 +266,7 @@ export const CentralApprovalCenterPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Module Selector & Filter Toolbar */}
       <div className="bg-white dark:bg-[#0B192C] p-4 rounded-[24px] border border-gray-100 dark:border-slate-800 shadow-sm space-y-3.5">
-        {/* Module Sub-tabs */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
           {[
             { id: "all", label: "📥 All Requests" },
@@ -305,7 +300,6 @@ export const CentralApprovalCenterPage: React.FC = () => {
           ))}
         </div>
 
-        {/* Status, Priority & Search Bar */}
         <div className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-2 border-t border-gray-100 dark:border-slate-800">
           <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
             <select
@@ -350,7 +344,6 @@ export const CentralApprovalCenterPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Central Requests Table */}
       <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 shadow-sm">
         {loading ? (
           <div className="p-10 text-center text-xs text-gray-400 font-semibold animate-pulse">
@@ -461,7 +454,6 @@ export const CentralApprovalCenterPage: React.FC = () => {
         )}
       </div>
 
-      {/* ── Comprehensive Review Modal ── */}
       {selectedRequest && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 max-w-3xl w-full space-y-5 shadow-2xl max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in duration-200">
@@ -484,7 +476,6 @@ export const CentralApprovalCenterPage: React.FC = () => {
               </button>
             </div>
 
-            {/* Request Summary Info */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-gray-50 dark:bg-slate-900/60 p-4 rounded-2xl text-xs">
               <div>
                 <span className="text-gray-400 block text-[10px] font-bold">
@@ -520,7 +511,6 @@ export const CentralApprovalCenterPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Payload Inspector */}
             <div className="space-y-2 text-xs">
               <h4 className="font-extrabold text-gray-700 dark:text-gray-200 tracking-wider text-[11px]">
                 Requested Data Payload
@@ -534,7 +524,6 @@ export const CentralApprovalCenterPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Comment Thread */}
             {selectedRequest.comments &&
               selectedRequest.comments.length > 0 && (
                 <div className="space-y-2 text-xs border-t border-gray-100 dark:border-slate-800 pt-3">
@@ -560,7 +549,6 @@ export const CentralApprovalCenterPage: React.FC = () => {
                 </div>
               )}
 
-            {/* Post Comment Form */}
             <form onSubmit={handleAddComment} className="flex gap-2">
               <input
                 type="text"
@@ -577,7 +565,6 @@ export const CentralApprovalCenterPage: React.FC = () => {
               </button>
             </form>
 
-            {/* Review Comment Box */}
             <div className="space-y-1.5 border-t border-gray-100 dark:border-slate-800 pt-3">
               <label className="block text-[11px] font-bold text-gray-600 dark:text-gray-300 tracking-wider">
                 Review Decision Note
@@ -591,7 +578,6 @@ export const CentralApprovalCenterPage: React.FC = () => {
               />
             </div>
 
-            {/* Action Buttons */}
             <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-gray-100 dark:border-slate-800">
               <button
                 type="button"

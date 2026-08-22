@@ -40,17 +40,12 @@ export const OwnerVolunteerPage: React.FC = () => {
     "openings",
   );
 
-  // A single form handles create and edit so every role sees the same fields.
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingJob, setEditingJob] = useState<VolunteerJobItem | null>(null);
   const [viewingJob, setViewingJob] = useState<VolunteerJobItem | null>(null);
   const [title, setTitle] = useState("");
   const [department, setDepartment] = useState("Event Management");
   const [type, setType] = useState("volunteer");
-  // City is chosen first, then the ashram within it — the opening belongs to a
-  // specific ashram, and `ashramId` is required by the API. The form used to
-  // send no id at all and pass the signed-in user's *name* as the ashram name,
-  // falling back to a hardcoded "Parmarth Niketan Ashram" when that was blank.
   const [city, setCity] = useState("");
   const [ashramId, setAshramId] = useState("");
   const [cityAshrams, setCityAshrams] = useState<any[]>([]);
@@ -69,11 +64,8 @@ export const OwnerVolunteerPage: React.FC = () => {
   const [jobStatus, setJobStatus] = useState<VolunteerJobItem["status"]>("open");
   const [isSaving, setIsSaving] = useState(false);
 
-  // Applications Drawer State
   const [applications, setApplications] = useState<any[]>([]);
   const [updatingApplicationId, setUpdatingApplicationId] = useState<string | null>(null);
-  // Scope differs by role and nothing else: the platform sees every ashram,
-  // an owner only their own. Mirrors the offers console exactly.
   const isPlatformAdmin =
     ["super_admin", "ashram_admin", "stay_admin"].includes(user?.role || "") ||
     user?.permissions?.includes("ashrams.manage_all") ||
@@ -111,7 +103,6 @@ export const OwnerVolunteerPage: React.FC = () => {
     load.catch(() => setDestinations([]));
   }, [isPlatformAdmin]);
 
-  /** Load the ashrams inside a city, and clear any stale selection. */
   const handleCityChange = async (nextCity: string) => {
     setCity(nextCity);
     setAshramId("");
@@ -250,8 +241,6 @@ export const OwnerVolunteerPage: React.FC = () => {
     setIsSaving(true);
     try {
       const payload = {
-        // Both taken from the selected ashram, so the public listing names the
-        // place a volunteer would actually report to.
         ashramId: ashram._id,
         ashramName: ashram.name,
         state: ashram.address?.state,
@@ -284,8 +273,6 @@ export const OwnerVolunteerPage: React.FC = () => {
         fetchOwnerJobs();
       }
     } catch (err) {
-      // Surface what the API rejected — a blanket "failed to publish" left an
-      // owner with no idea which field was wrong.
       addNotification(
         "Error",
         getErrorMessage(err, "Failed to publish opening."),
@@ -347,7 +334,6 @@ export const OwnerVolunteerPage: React.FC = () => {
 
   return (
     <div className="space-y-6 text-left">
-      {/* Page Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
@@ -374,7 +360,6 @@ export const OwnerVolunteerPage: React.FC = () => {
         </EnterpriseButton>
       </div>
 
-      {/* Top Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <EnterpriseStatsCard
           title="Active Openings"
@@ -398,7 +383,6 @@ export const OwnerVolunteerPage: React.FC = () => {
         />
       </div>
 
-      {/* Tab Controls */}
       <div className="flex items-center gap-3 border-b border-gray-200 dark:border-slate-800">
         <button
           onClick={() => setActiveTab("openings")}
@@ -423,7 +407,6 @@ export const OwnerVolunteerPage: React.FC = () => {
         </button>
       </div>
 
-      {/* Content Area */}
       {activeTab === "openings" ? (
         loading ? (
           <div className="py-20 text-center text-xs font-black text-gray-400">
@@ -523,7 +506,6 @@ export const OwnerVolunteerPage: React.FC = () => {
           </div>
         )
       ) : (
-        /* Applications Table */
         <div className="bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 rounded-3xl p-5 shadow-xl overflow-x-auto">
           <table className="w-full text-left text-xs font-bold">
             <thead>
@@ -599,7 +581,6 @@ export const OwnerVolunteerPage: React.FC = () => {
         </div>
       )}
 
-      {/* View / Edit management modal */}
       {viewingJob && (
         <EnterpriseModal
           isOpen={Boolean(viewingJob)}
@@ -653,7 +634,6 @@ export const OwnerVolunteerPage: React.FC = () => {
         </EnterpriseModal>
       )}
 
-      {/* Create / Edit Opening Modal */}
       {isCreateOpen && (
         <EnterpriseModal
           isOpen={isCreateOpen}
@@ -692,10 +672,6 @@ export const OwnerVolunteerPage: React.FC = () => {
                 />
               </div>
 
-              {/* City, then the ashram inside it. The list was a fixed five
-                cities regardless of where anything is actually published; it
-                is now derived from real ashrams, so a city can never be offered
-                with nothing in it. */}
               <div>
                 <label className="block text-xs font-extrabold text-gray-700 dark:text-gray-300 mb-1">
                   City <span className="text-rose-500">*</span>

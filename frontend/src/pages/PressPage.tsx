@@ -67,7 +67,6 @@ const tagColors: Record<string, string> = {
 
 const PressPage: React.FC = () => (
   <div className="pb-20">
-    {/* Hero */}
     <section className="bg-[#0B192C] text-white py-16 px-4 sm:px-6 relative overflow-hidden">
       <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-[#0A4DA6]/10 rounded-full blur-[80px] pointer-events-none" />
       <div className="max-w-4xl mx-auto text-center relative z-10 space-y-4">
@@ -100,7 +99,6 @@ const PressPage: React.FC = () => (
       </div>
     </section>
 
-    {/* Media Coverage */}
     <section className="max-w-5xl mx-auto px-4 sm:px-6 py-14 space-y-8">
       <h2
         className="font-extrabold text-[#0B192C] dark:text-white"
@@ -128,7 +126,6 @@ const PressPage: React.FC = () => (
       </div>
     </section>
 
-    {/* Press Releases */}
     <section className="max-w-4xl mx-auto px-4 sm:px-6 pb-14 space-y-6">
       <h2
         className="font-extrabold text-[#0B192C] dark:text-white"
@@ -166,7 +163,6 @@ const PressPage: React.FC = () => (
       </div>
     </section>
 
-    {/* Press Contact */}
     <section className="max-w-3xl mx-auto px-4 sm:px-6 pb-14">
       <div className="bg-[#0B192C] text-white rounded-3xl p-8 text-center space-y-4 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-[200px] h-[200px] bg-[#0A4DA6]/15 rounded-full blur-[60px] pointer-events-none" />

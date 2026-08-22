@@ -1,7 +1,3 @@
-// Parking System — shared types.
-//
-// Mirrors the API contract exposed by Newbackend/src/modules/parking. Kept in the
-// module so no existing type file has to change.
 
 export type ParkingVehicleTypeCode =
   | "bike"

@@ -1,15 +1,3 @@
-/**
- * useGeolocation.js
- *
- * Responsibility: Encapsulates browser Geolocation API interactions.
- * Returns a `captureCurrentLocation()` function that field agents trigger
- * to capture live GPS coordinates during an ashram site visit.
- *
- * Exposes:
- *  - isCapturing  → boolean loading state while GPS resolves
- *  - gpsError     → human-readable error message if capture fails
- *  - captureCurrentLocation(onSuccess) → triggers browser geolocation
- */
 import { useState } from 'react';
 
 export function useGeolocation() {

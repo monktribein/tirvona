@@ -3,18 +3,6 @@ import { useAuth, type GoogleChallenge } from "../contexts/AuthContext";
 
 type Stage = "idle" | "otp" | "profile";
 
-/**
- * Drives the three-step Google sign-up shared by the login and register pages:
- *
- *   1. `start()`      → Google chooser. Existing users are logged straight in
- *                       (Google has already proven the address). New users move
- *                       to step 2.
- *   2. stage 'otp'    → email OTP, verified against a pre-account record.
- *   3. stage 'profile'→ name + mobile collected, then the account is created.
- *
- * Nothing is written to the database until step 3 succeeds, so an abandoned
- * sign-up leaves no partial user behind.
- */
 export const useGoogleAuth = (onAuthenticated: (user?: any) => void) => {
   const {
     loginWithGoogle,
@@ -36,7 +24,6 @@ export const useGoogleAuth = (onAuthenticated: (user?: any) => void) => {
     setSuggestedName("");
   };
 
-  /** Returns an error message to display, or null when handled. */
   const start = async (): Promise<string | null> => {
     setBusy(true);
     const res = await loginWithGoogle();
@@ -65,7 +52,6 @@ export const useGoogleAuth = (onAuthenticated: (user?: any) => void) => {
     if (res.success && res.needsProfile && res.googleChallenge) {
       setChallenge(res.googleChallenge);
       setSuggestedName(res.suggestedName || "");
-      // The verify response carries the real (unmasked) address for the modal.
       setEmail(res.email || challenge.sentTo || "");
       setStage("profile");
     }

@@ -77,7 +77,6 @@ export default function LeadsDashboardPage({
   return (
     <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6 text-left">
 
-      {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
           <h1 className="text-lg sm:text-2xl font-extrabold text-[#0F172A] tracking-tight">
@@ -98,6 +97,7 @@ export default function LeadsDashboardPage({
         )}
       </div>
 
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
       {/* Stats Summary Cards */}
       <div className={`grid gap-3 sm:gap-4 ${onUpdateAppointment ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-1 sm:grid-cols-3'}`}>
         {[
@@ -115,7 +115,6 @@ export default function LeadsDashboardPage({
         ))}
       </div>
 
-      {/* Search & Filter Bar */}
       <div className="bg-white border border-[#E2E8F0] rounded-2xl p-3.5 sm:p-5 shadow-xs space-y-3">
         <div className="relative">
           <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8]" />
@@ -160,12 +159,18 @@ export default function LeadsDashboardPage({
         </div>
       </div>
 
+      {filtered.length > 0 && (
+        <div className="flex items-center justify-between pt-2 px-1">
+          <span className="text-xs font-extrabold text-[#64748B] uppercase tracking-wider">
+            Showing {filtered.length} Lead Record(s)
+          </span>
+        </div>
+      )}
       {/* Record Counter Banner */}
       <div className="text-[11px] font-extrabold uppercase tracking-wider text-[#64748B] px-1">
         Showing {filtered.length} Lead Record(s)
       </div>
 
-      {/* Lead Cards — Vertical List */}
       {filtered.length > 0 ? (
         <div className="space-y-2">
           {filtered.map((lead) => (

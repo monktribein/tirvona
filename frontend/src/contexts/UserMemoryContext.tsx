@@ -59,7 +59,6 @@ export const UserMemoryProvider: React.FC<{ children: React.ReactNode }> = ({
   const [loading, setLoading] = useState(false);
   const syncTimerRef = useRef<any>(null);
 
-  // Load memory from MongoDB backend
   useEffect(() => {
     fetchRemoteMemory();
   }, [user]);
@@ -89,7 +88,6 @@ export const UserMemoryProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  // Schedule debounced auto-save sync to MongoDB
   const scheduleSync = (updatedMemory: UserMemoryProfile) => {
     localStorage.setItem("tirvona_user_memory", JSON.stringify(updatedMemory));
 

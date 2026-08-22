@@ -4,7 +4,6 @@ import { SearchService } from "./search.service";
 const asUser = (partial: Partial<AuthenticatedUser>): AuthenticatedUser =>
   ({ id: "u1", role: "customer", ...partial }) as AuthenticatedUser;
 
-/** A find(...).select(...).limit(...).populate(...).lean() chain. */
 const findChain = (rows: unknown[]) => {
   const lean = jest.fn().mockResolvedValue(rows);
   const chain: any = {
@@ -23,7 +22,6 @@ const createService = (rows: {
   bookings?: unknown[];
   parking?: unknown[];
 }) => {
-  // Typed parameter so `mock.calls[0][0]` is the filter, not an empty tuple.
   const ashramFind = jest.fn((_filter: any) => findChain(rows.ashrams ?? []));
   const userFind = jest.fn((_filter: any) => findChain(rows.users ?? []));
   const bookingFind = jest.fn((_filter: any) => findChain(rows.bookings ?? []));
@@ -52,10 +50,6 @@ describe("SearchService scoping", () => {
     expect(ashramFind).not.toHaveBeenCalled();
   });
 
-  /**
-   * A regex built from raw input turns a term like "a+(" into a pattern that
-   * either throws or backtracks catastrophically.
-   */
   it("matches regex metacharacters literally", async () => {
     const { service, ashramFind } = createService({});
 
@@ -96,11 +90,6 @@ describe("SearchService scoping", () => {
     });
   });
 
-  /**
-   * An unscoped operator must see nothing, not everything. `null` scope and an
-   * empty `{}` filter are different states and collapsing them would hand the
-   * whole estate to an account with no jurisdiction assigned.
-   */
   it("returns no ashrams for a district officer with no district assigned", async () => {
     const { service, ashramFind } = createService({
       ashrams: [{ _id: "a1", name: "Leaked Ashram" }],

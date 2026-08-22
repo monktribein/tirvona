@@ -22,10 +22,8 @@ export default function AppNavbar({
   const [showHeader, setShowHeader] = useState(true);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isAttendanceModalOpen, setIsAttendanceModalOpen] = useState(false);
-  // The session itself lives in App via useLeadAuth; the navbar only renders it.
   const user = agent;
 
-  // Exact Tirvona scroll listener logic
   useEffect(() => {
     let lastScrollY = window.scrollY;
     const handleScroll = () => {
@@ -52,9 +50,6 @@ export default function AppNavbar({
     }
     setMobileMenuOpen(false);
   };
-
-  // Authenticate, then immediately open the Attendance geotag popup only for field agents.
-  // Errors are thrown back to the modal, which is where they are shown.
   const handleLoginSuccess = async (phone, password, remember) => {
     const signedIn = await onLogin(phone, password, remember);
     if (signedIn && signedIn.role === 'field_agent') {
@@ -79,10 +74,8 @@ export default function AppNavbar({
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
-          {/* Floating Rounded Navbar Container (Exact Tirvona Reference Replica) */}
-          <div className="bg-white/95 backdrop-blur-md border border-gray-200/80 rounded-full px-3.5 sm:px-8 py-2 sm:py-2.5 flex items-center justify-between gap-2 sm:gap-6 w-full shadow-[0_2px_20px_-4px_rgba(0,0,0,0.06)]">
+          <div className="bg-white/95 backdrop-blur-md border border-gray-200/80 rounded-full px-5 sm:px-8 py-2.5 flex items-center justify-between gap-6 w-full shadow-[0_2px_20px_-4px_rgba(0,0,0,0.06)]">
             
-            {/* Left Brand Logo */}
             <div className="flex items-center shrink-0">
               <a href="https://tirvona.com" target="_blank" rel="noopener noreferrer" className="flex items-center">
                 <img
@@ -93,7 +86,6 @@ export default function AppNavbar({
               </a>
             </div>
 
-            {/* Centered Main Navigation Items */}
             <nav className="hidden lg:flex items-center gap-6 xl:gap-8">
               {agent?.role !== 'field_agent' && agent?.role !== 'document_verifier' && (
                 <button
@@ -172,8 +164,7 @@ export default function AppNavbar({
               )}
             </nav>
 
-            {/* Right Side Actions: Primary Action, Attendance & Profile */}
-            <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+            <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
               {user ? (
                 <>
                   {onBackToSupervisorConsole && (
@@ -221,7 +212,6 @@ export default function AppNavbar({
                 </button>
               )}
 
-              {/* Mobile Hamburger Toggle */}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 className="lg:hidden p-1.5 sm:p-2 text-slate-700 hover:text-[#0A4DA6] rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
@@ -233,7 +223,6 @@ export default function AppNavbar({
 
           </div>
 
-          {/* Mobile Dropdown Drawer */}
           {mobileMenuOpen && (
             <div className="lg:hidden mt-2 bg-white border border-gray-200 rounded-2xl p-4 shadow-xl flex flex-col gap-2 transition-all">
               {onBackToSupervisorConsole && (
@@ -360,121 +349,12 @@ export default function AppNavbar({
         </div>
       </header>
 
-      {/* Mobile Fixed Bottom Navigation Bar */}
-      <nav aria-label="Mobile Navigation" className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-gray-200/90 px-2 py-1.5 shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
-        <div className="max-w-md mx-auto flex items-center justify-around">
-          {agent?.role === 'document_verifier' && (
-            <button
-              onClick={() => handleNavClick('doc_verifier')}
-              className={`flex flex-col items-center justify-center gap-0.5 py-1 px-2.5 rounded-xl transition-all cursor-pointer relative ${
-                activePage === 'doc_verifier'
-                  ? 'text-[#0A4DA6] font-extrabold'
-                  : 'text-[#64748B] hover:text-[#0A4DA6] font-semibold'
-              }`}
-            >
-              <div className="relative">
-                <FileCheck size={19} className={activePage === 'doc_verifier' ? 'text-[#0A4DA6]' : 'text-gray-400'} />
-                {leadCount > 0 && (
-                  <span className="absolute -top-1.5 -right-2.5 bg-[#0A4DA6] text-white text-[8px] font-black px-1.5 py-0.2 rounded-full shadow-2xs">
-                    {leadCount}
-                  </span>
-                )}
-              </div>
-              <span className="text-[10px] tracking-tight">{t('Verify Docs')}</span>
-            </button>
-          )}
-
-          {agent?.role !== 'field_agent' && agent?.role !== 'document_verifier' && (
-            <button
-              onClick={() => handleNavClick('create')}
-              className={`flex flex-col items-center justify-center gap-0.5 py-1 px-2.5 rounded-xl transition-all cursor-pointer ${
-                activePage === 'create'
-                  ? 'text-[#0A4DA6] font-extrabold'
-                  : 'text-[#64748B] hover:text-[#0A4DA6] font-semibold'
-              }`}
-            >
-              <PlusCircle size={19} className={activePage === 'create' ? 'text-[#0A4DA6]' : 'text-gray-400'} />
-              <span className="text-[10px] tracking-tight">{t('Create Lead')}</span>
-            </button>
-          )}
-
-          {agent?.role !== 'document_verifier' && (
-            <button
-              onClick={() => handleNavClick('dashboard')}
-              className={`flex flex-col items-center justify-center gap-0.5 py-1 px-2.5 rounded-xl transition-all cursor-pointer relative ${
-                activePage === 'dashboard'
-                  ? 'text-[#0A4DA6] font-extrabold'
-                  : 'text-[#64748B] hover:text-[#0A4DA6] font-semibold'
-              }`}
-            >
-              <div className="relative">
-                <LayoutDashboard size={19} className={activePage === 'dashboard' ? 'text-[#0A4DA6]' : 'text-gray-400'} />
-                {leadCount > 0 && (
-                  <span className="absolute -top-1.5 -right-2.5 bg-[#0A4DA6] text-white text-[8px] font-black px-1.5 py-0.2 rounded-full shadow-2xs">
-                    {leadCount}
-                  </span>
-                )}
-              </div>
-              <span className="text-[10px] tracking-tight">{t('Leads')}</span>
-            </button>
-          )}
-
-          {agent?.role !== 'document_verifier' && (
-            <button
-              onClick={() => handleNavClick('approved')}
-              className={`flex flex-col items-center justify-center gap-0.5 py-1 px-2.5 rounded-xl transition-all cursor-pointer relative ${
-                activePage === 'approved'
-                  ? 'text-[#0A4DA6] font-extrabold'
-                  : 'text-[#64748B] hover:text-[#0A4DA6] font-semibold'
-              }`}
-            >
-              <div className="relative">
-                <Building2 size={19} className={activePage === 'approved' ? 'text-[#0A4DA6]' : 'text-gray-400'} />
-                {approvedCount > 0 && (
-                  <span className="absolute -top-1.5 -right-2.5 bg-emerald-600 text-white text-[8px] font-black px-1.5 py-0.2 rounded-full shadow-2xs">
-                    {approvedCount}
-                  </span>
-                )}
-              </div>
-              <span className="text-[10px] tracking-tight">{t('Approved')}</span>
-            </button>
-          )}
-
-          {user?.role === 'field_agent' && (
-            <button
-              onClick={() => setIsAttendanceModalOpen(true)}
-              className="flex flex-col items-center justify-center gap-0.5 py-1 px-2.5 rounded-xl text-[#64748B] hover:text-[#0A4DA6] font-semibold transition-all cursor-pointer relative"
-            >
-              <div className="relative">
-                <MapPin size={19} className="text-[#0A4DA6]" />
-                {attendanceState?.checkedIn && (
-                  <span className="absolute -top-0.5 -right-1 w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                )}
-              </div>
-              <span className="text-[10px] tracking-tight">{t('Attendance')}</span>
-            </button>
-          )}
-
-          {onBackToSupervisorConsole && (
-            <button
-              onClick={onBackToSupervisorConsole}
-              className="flex flex-col items-center justify-center gap-0.5 py-1 px-2.5 rounded-xl text-[#0A4DA6] font-extrabold transition-all cursor-pointer"
-            >
-              <LayoutDashboard size={19} />
-              <span className="text-[10px] tracking-tight">{t('Console')}</span>
-            </button>
-          )}
-        </div>
-      </nav>
-
-      {/* Login Modal */}
       <LoginModal
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
         onLoginSuccess={handleLoginSuccess}
       />
 
-      {/* Attendance Check-In / Check-Out Geotag Modal */}
       <AttendanceModal
         isOpen={isAttendanceModalOpen}
         onClose={() => setIsAttendanceModalOpen(false)}

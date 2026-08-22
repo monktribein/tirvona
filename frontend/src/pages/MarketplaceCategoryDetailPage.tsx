@@ -33,7 +33,6 @@ export const MarketplaceCategoryDetailPage: React.FC = () => {
   const [categoryData, setCategoryData] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Filters state
   const [selectedPrice, setSelectedPrice] = useState("All");
   const [filterOrganic, setFilterOrganic] = useState(false);
 
@@ -122,7 +121,6 @@ export const MarketplaceCategoryDetailPage: React.FC = () => {
 
   return (
     <div className="min-h-screen pb-28 space-y-10">
-      {/* Hero Banner Section */}
       <div className="relative bg-black text-white min-h-[460px] flex items-center overflow-hidden">
         {category.bannerImage || category.coverImage ? (
           <img
@@ -134,7 +132,6 @@ export const MarketplaceCategoryDetailPage: React.FC = () => {
         <div className="absolute inset-0 bg-gradient-to-t from-[#0B192C] via-[#0B192C]/65 to-transparent" />
 
         <div className="relative max-w-6xl mx-auto px-4 sm:px-8 py-12 space-y-6 z-10 w-full">
-          {/* Breadcrumb */}
           <div className="flex items-center gap-2 text-xs font-semibold text-gray-300">
             <Link to="/" className="hover:text-white">
               Home
@@ -147,7 +144,6 @@ export const MarketplaceCategoryDetailPage: React.FC = () => {
             <span className="text-amber-400 font-bold">{category.name}</span>
           </div>
 
-          {/* Badges */}
           <div className="flex flex-wrap items-center gap-3">
             <span className="px-4 py-1.5 rounded-full bg-amber-500 text-white text-xs font-black tracking-wider shadow-lg flex items-center gap-1">
               <Flame size={14} />{" "}
@@ -166,7 +162,6 @@ export const MarketplaceCategoryDetailPage: React.FC = () => {
             {category.description}
           </p>
 
-          {/* Key Stats Bar */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 text-white max-w-3xl">
             <div className="space-y-0.5">
               <div className="text-[10px] font-bold text-gray-300">
@@ -210,9 +205,7 @@ export const MarketplaceCategoryDetailPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Content Body */}
       <div className="max-w-6xl mx-auto px-4 sm:px-8 space-y-12">
-        {/* About & Spiritual Significance Section */}
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-sm">
           <h2 className="text-xl font-black text-[#0B192C] dark:text-white">
             Sacred History & Religious Significance
@@ -244,7 +237,6 @@ export const MarketplaceCategoryDetailPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Filterable Products Section */}
         <div className="space-y-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div>
@@ -257,7 +249,6 @@ export const MarketplaceCategoryDetailPage: React.FC = () => {
               </p>
             </div>
 
-            {/* Filter Pills */}
             <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
               {[
                 { value: "All", label: "All" },
@@ -289,7 +280,6 @@ export const MarketplaceCategoryDetailPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Products Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredProducts.map((prod: any) => (
               <div
@@ -377,7 +367,6 @@ export const MarketplaceCategoryDetailPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Trusted Sellers Section */}
         {trustedSellers && trustedSellers.length > 0 && (
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-sm">
             <h2 className="text-xl font-black text-[#0B192C] dark:text-white flex items-center gap-2">
@@ -416,7 +405,6 @@ export const MarketplaceCategoryDetailPage: React.FC = () => {
           </div>
         )}
 
-        {/* FAQ Accordion */}
         {faqs && faqs.length > 0 && (
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 sm:p-8 space-y-4 shadow-sm">
             <h2 className="text-xl font-black text-[#0B192C] dark:text-white flex items-center gap-2">

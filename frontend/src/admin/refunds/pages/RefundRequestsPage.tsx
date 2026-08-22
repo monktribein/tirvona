@@ -44,7 +44,6 @@ import {
 
 const PAGE_SIZE = 20;
 
-/** Amount bands, kept coarse so the filter stays useful without a numeric form. */
 const AMOUNT_BANDS = [
   { value: "", label: "Any amount" },
   { value: "0-1000", label: "Under ₹1,000" },
@@ -74,14 +73,10 @@ export const RefundRequestsPage: React.FC = () => {
   const [error, setError] = useState("");
   const [busyId, setBusyId] = useState("");
 
-  // Server-side filters live in the URL so a queue view is shareable.
   const status = params.get("status") ?? "";
   const module = params.get("module") ?? "";
   const page = Math.max(1, Number(params.get("page") ?? 1));
 
-  // Client-side refinements over the loaded page. The list endpoint understands
-  // status/module/page/limit only, and the brief was to add no backend
-  // contract changes — so these narrow what is already loaded and say so.
   const [term, setTerm] = useState("");
   const [ashram, setAshram] = useState("");
   const [band, setBand] = useState("");
@@ -136,13 +131,6 @@ export const RefundRequestsPage: React.FC = () => {
     load(true);
   }, [load]);
 
-  /**
-   * Apply an action with an optimistic status change.
-   *
-   * The row flips immediately so the queue feels responsive, then the server
-   * response replaces it. On failure the previous row is restored rather than
-   * left showing a state the server never accepted.
-   */
   const act = async (
     request: RefundRequest,
     next: RefundStatus,
@@ -164,7 +152,6 @@ export const RefundRequestsPage: React.FC = () => {
           current.map((row) => (row._id === request._id ? { ...row, ...updated } : row)),
         );
       addNotification(successLabel, `${request.refundNumber} updated.`, "success");
-      // Counts shift with every decision, so the header is refetched.
       refundService
         .summary()
         .then((r) => setSummary(r.data?.data ?? null))
@@ -270,8 +257,6 @@ export const RefundRequestsPage: React.FC = () => {
         }
       />
 
-      {/* Analytics. Every figure comes from /refunds/summary — nothing here is
-          derived or estimated. */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <EnterpriseStatsCard
           title="Awaiting action"
@@ -299,7 +284,6 @@ export const RefundRequestsPage: React.FC = () => {
         />
       </div>
 
-      {/* Status rail — doubles as the primary filter. */}
       <div className="flex flex-wrap gap-2">
         <button
           onClick={() => setParam("status", "")}
@@ -327,7 +311,6 @@ export const RefundRequestsPage: React.FC = () => {
         ))}
       </div>
 
-      {/* Filter row above everything it scopes. */}
       <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-4 sm:p-5 space-y-3 shadow-sm">
         <div className="flex flex-col lg:flex-row lg:items-center gap-3">
           <div className="relative flex-1">
@@ -531,8 +514,6 @@ export const RefundRequestsPage: React.FC = () => {
                       )}
                     </div>
 
-                    {/* Only actions the server would accept from this role in
-                        this state are offered. */}
                     <div className="flex items-center gap-1.5">
                       {busy && (
                         <Loader2 size={14} className="animate-spin text-[#0A4DA6]" />

@@ -25,11 +25,8 @@ import type {
 const escapeRegex = (value: string): string =>
   value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-/**
- * Inline base64 media belongs to no listing. One such image makes its ashram
- * roughly twenty times larger than the rest and pushes a listing query past
- * the client's request timeout, so media references must be links.
- */
+const round2 = (value: number): number => Math.round(value * 100) / 100;
+
 const assertNoInlineMedia = (dto: {
   images?: string[];
   documents?: Record<string, any>;
@@ -100,7 +97,6 @@ export class AshramsService {
   constructor(
     @InjectModel("Ashram") readonly ashrams: Model<any>,
     @InjectModel("Room") readonly rooms: Model<any>,
-    /** Read-only: guards a room category against removal while it is in use. */
     @InjectModel("Booking") readonly bookings: Model<any>,
     @InjectModel("BookingInventory") readonly inventory: Model<any>,
     @InjectModel("BookingAddon") readonly addons: Model<any>,
@@ -199,6 +195,145 @@ export class AshramsService {
     return { partner, grant, ashrams: ownedAshrams };
   }
 
+  private discoveryDates(query: AshramQueryDto): Date[] {
+    if (!query.checkIn || !query.checkOut) return [];
+    const start = new Date(`${query.checkIn}T00:00:00.000Z`);
+    const end = new Date(`${query.checkOut}T00:00:00.000Z`);
+    if (
+      Number.isNaN(start.getTime()) ||
+      Number.isNaN(end.getTime()) ||
+      start >= end
+    )
+      return [];
+    const dates: Date[] = [];
+    for (
+      let cursor = start;
+      cursor < end;
+      cursor = new Date(cursor.getTime() + 86_400_000)
+    )
+      dates.push(cursor);
+    return dates;
+  }
+
+  private async enrichDiscoveryRows(
+    rows: any[],
+    query: AshramQueryDto,
+  ): Promise<any[]> {
+    if (!rows.length) return [];
+    const dates = this.discoveryDates(query);
+    const rooms = await this.rooms
+      .find({
+        ashramId: { $in: rows.map((row) => row._id) },
+        status: "active",
+        deletedAt: null,
+        ...(query.guests ? { capacity: { $gte: query.guests } } : {}),
+      })
+      .select(
+        "ashramId name type acType capacity totalInventory basePrice amenities",
+      )
+      .lean();
+    const inventoryRows = dates.length
+      ? await this.inventory
+          .find({
+            roomId: { $in: rooms.map((room: any) => room._id) },
+            date: { $in: dates },
+          })
+          .lean()
+      : [];
+    const inventoryByRoomAndDate = new Map(
+      inventoryRows.map((entry: any) => [
+        `${entry.roomId}|${new Date(entry.date).toISOString().slice(0, 10)}`,
+        entry,
+      ]),
+    );
+    const roomsByAshram = new Map<string, any[]>();
+    for (const room of rooms as any[]) {
+      const key = String(room.ashramId);
+      roomsByAshram.set(key, [...(roomsByAshram.get(key) ?? []), room]);
+    }
+
+    return rows.map((row) => {
+      const ashramRooms = roomsByAshram.get(String(row._id)) ?? [];
+      const availableRooms = ashramRooms.reduce((sum, room) => {
+        if (!dates.length) return sum + Number(room.totalInventory ?? 0);
+        const minimum = Math.min(
+          ...dates.map((date) => {
+            const inventory: any = inventoryByRoomAndDate.get(
+              `${room._id}|${date.toISOString().slice(0, 10)}`,
+            );
+            if (inventory?.isClosed) return 0;
+            return Math.max(
+              0,
+              Number(room.totalInventory ?? 0) -
+                Number(inventory?.bookedCount ?? 0) -
+                Number(inventory?.heldCount ?? 0) -
+                Number(inventory?.maintenanceCount ?? 0),
+            );
+          }),
+        );
+        return sum + (Number.isFinite(minimum) ? minimum : 0);
+      }, 0);
+      const roomTypes = [...new Set(ashramRooms.map((room) => room.type))];
+      const roomAmenities = [
+        ...new Set(ashramRooms.flatMap((room) => room.amenities ?? [])),
+      ];
+      const spiritualActivities = (row.activities ?? []).filter((activity: any) =>
+        /aarti|arati|darshan|pooja|puja|prayer/i.test(String(activity)),
+      );
+      const foodAvailable = Boolean(
+        row.food?.foodType ||
+          row.food?.prasadDetails ||
+          row.food?.mealTimings?.breakfast ||
+          (row.amenities ?? []).some((amenity: any) =>
+            /food|meal|prasad|kitchen/i.test(String(amenity)),
+          ),
+      );
+      const parkingAvailable = Boolean(
+        row.transport?.parkingAvailable ||
+          (row.amenities ?? []).some((amenity: any) =>
+            /parking/i.test(String(amenity)),
+          ),
+      );
+
+      return {
+        ...row,
+        discovery: {
+          distanceKm:
+            row.distanceKm == null ? null : round2(Number(row.distanceKm)),
+          isNearby: Boolean(row.isNearby),
+          bookingAvailability: {
+            checkedForDates: dates.length > 0,
+            available: availableRooms > 0,
+            availableRooms,
+            checkIn: query.checkIn ?? null,
+            checkOut: query.checkOut ?? null,
+          },
+          rooms: {
+            categories: ashramRooms.length,
+            totalInventory: ashramRooms.reduce(
+              (sum, room) => sum + Number(room.totalInventory ?? 0),
+              0,
+            ),
+            types: roomTypes,
+            hasAc: ashramRooms.some((room) => room.acType === "AC"),
+            amenities: roomAmenities.slice(0, 8),
+          },
+          parking: { available: parkingAvailable },
+          food: {
+            available: foodAvailable,
+            type: row.food?.foodType ?? "",
+            mealTimings: row.food?.mealTimings ?? {},
+            prasadDetails: row.food?.prasadDetails ?? "",
+          },
+          spiritualSchedule: {
+            dailySchedule: row.dailySchedule ?? "",
+            activities: spiritualActivities.slice(0, 6),
+          },
+        },
+      };
+    });
+  }
+
   async publicList(query: AshramQueryDto): Promise<any> {
     const filter: Record<string, any> = { status: "approved", deletedAt: null };
     if (query.city)
@@ -266,10 +401,79 @@ export class AshramsService {
           .filter(Boolean),
       };
     if (query.rating != null) filter["rating.average"] = { $gte: query.rating };
-    let candidates = await this.ashrams
-      .find(filter)
-      .sort({ "rating.average": -1 })
-      .lean();
+    const hasLatitude = query.latitude != null;
+    const hasLongitude = query.longitude != null;
+    if (hasLatitude !== hasLongitude)
+      throw new BadRequestException(
+        "Latitude and longitude must be provided together",
+      );
+
+    let nearbyCount = 0;
+    let detectedArea: Record<string, string> | null = null;
+    let candidates: any[];
+    if (hasLatitude && hasLongitude) {
+      const radiusKm = query.radiusKm ?? 100;
+      const sentinel = [77.209, 28.613];
+      const geocodedFilter = {
+        $and: [
+          filter,
+          {
+            $or: [
+              { "address.coordinates.coordinates": { $ne: sentinel } },
+              { "address.city": { $regex: /^(new\s+)?delhi$/i } },
+            ],
+          },
+        ],
+      };
+      const nearby = await this.ashrams.aggregate([
+        {
+          $geoNear: {
+            near: {
+              type: "Point",
+              coordinates: [Number(query.longitude), Number(query.latitude)],
+            },
+            key: "address.coordinates",
+            distanceField: "distanceMeters",
+            maxDistance: radiusKm * 1000,
+            spherical: true,
+            query: geocodedFilter,
+          },
+        },
+        { $sort: { distanceMeters: 1, "rating.average": -1 } },
+        { $limit: 500 },
+      ]);
+      const nearbyIds = new Set(nearby.map((row: any) => String(row._id)));
+      const remaining = await this.ashrams
+        .find({ ...filter, _id: { $nin: [...nearbyIds] } })
+        .sort({ "rating.average": -1, "rating.count": -1, name: 1 })
+        .lean();
+      const rankedNearby = nearby.map((row: any) => ({
+        ...row,
+        distanceKm: Number(row.distanceMeters ?? 0) / 1000,
+        isNearby: true,
+      }));
+      nearbyCount = rankedNearby.length;
+      const closest = rankedNearby[0];
+      if (closest?.address)
+        detectedArea = {
+          city: String(closest.address.city ?? ""),
+          district: String(closest.address.district ?? ""),
+          state: String(closest.address.state ?? ""),
+        };
+      candidates = [
+        ...rankedNearby,
+        ...remaining.map((row: any) => ({
+          ...row,
+          distanceKm: null,
+          isNearby: false,
+        })),
+      ];
+    } else {
+      candidates = await this.ashrams
+        .find(filter)
+        .sort({ "rating.average": -1, "rating.count": -1, name: 1 })
+        .lean();
+    }
     if (query.checkIn && query.checkOut) {
       const start = new Date(query.checkIn);
       const end = new Date(query.checkOut);
@@ -344,9 +548,6 @@ export class AshramsService {
         }
       }
     }
-    // For candidates without a date-derived price (the common browse case),
-    // attach the lowest active-room basePrice so listings show a real
-    // per-night price instead of the default pricing.lowestNightPrice (often 0).
     const missingPrice = candidates.filter(
       (a: any) => a.lowestNightPrice == null,
     );
@@ -374,17 +575,26 @@ export class AshramsService {
         }
       }
     }
+    nearbyCount = candidates.filter((row: any) => row.isNearby).length;
     const total = candidates.length;
-    const data = candidates.slice(
+    const pageRows = candidates.slice(
       (query.page - 1) * query.limit,
       query.page * query.limit,
     );
+    const data = await this.enrichDiscoveryRows(pageRows, query);
     return {
       success: true,
       count: data.length,
       total,
       page: query.page,
       totalPages: Math.ceil(total / query.limit),
+      discovery: {
+        locationApplied: hasLatitude && hasLongitude,
+        nearbyCount,
+        radiusKm:
+          hasLatitude && hasLongitude ? (query.radiusKm ?? 100) : null,
+        detectedArea,
+      },
       data,
     };
   }
@@ -403,8 +613,6 @@ export class AshramsService {
     return {
       ashram: {
         ...ashram,
-        // New owner-managed records are authoritative. Embedded records remain
-        // available for ashrams created before the catalog was introduced.
         addOnServices: managedAddOns.length
           ? managedAddOns
           : (ashram.addOnServices ?? []),
@@ -423,14 +631,6 @@ export class AshramsService {
     return { ashram: ashram.toObject(), rooms };
   }
 
-  /**
-   * The distinct destinations that currently hold at least one live ashram.
-   *
-   * Aggregated from `address.city` instead of a hard-coded list so the picker
-   * can never offer a destination with nothing bookable in it. Grouped
-   * case-insensitively — "haridwar" and "Haridwar" are one destination — while
-   * the label keeps the spelling the listings actually use.
-   */
   async destinations(): Promise<
     { city: string; state: string; count: number }[]
   > {
@@ -454,12 +654,6 @@ export class AshramsService {
     ]);
   }
 
-  /**
-   * The ashrams in one destination, projected to what a picker needs.
-   *
-   * Matched case-insensitively and anchored, so "Haridwar" cannot also pull in
-   * a differently-cased or partially-matching city.
-   */
   async byDestination(city: string): Promise<any[]> {
     const name = String(city ?? "").trim();
     if (!name) return [];
@@ -476,11 +670,6 @@ export class AshramsService {
       .lean();
   }
 
-  /**
-   * Every ashram the caller may operate on. Staff reach ashrams through either
-   * `scopedAshramIds` or the single `employerAshramId`, so both are honoured —
-   * the same pair `assertScope` accepts on a write.
-   */
   async listForUser(user: AuthenticatedUser): Promise<any[]> {
     if (canManageAllAshrams(user))
       return this.ashrams.find({ deletedAt: null }).sort({ createdAt: -1 });
@@ -611,11 +800,6 @@ export class AshramsService {
     return ashram;
   }
 
-  /**
-   * Storing KYC documents also re-opens a rejected application: the government
-   * queue only lists `pending_docs` / `pending_inspection`, so without this a
-   * rejected ashram could never be reviewed again.
-   */
   async saveDocuments(
     user: AuthenticatedUser,
     id: string,
@@ -707,19 +891,9 @@ export class AshramsService {
     if (!room) throw new NotFoundException("Room not found");
     const ashram = await this.ashrams.findById(room.ashramId);
     this.assertScope(user, ashram);
-    // `ashramId` is never taken from the payload: a room's availability,
-    // bookings and inventory are all keyed to its ashram, so re-parenting it
-    // would orphan them. Everything else is applied as sent.
     const { ashramId: _ignored, ...received } = dto;
     void _ignored;
 
-    // Only fields the client actually sent are applied. `UpdateRoomDto`
-    // declares `status` in its own body, so with ES2022 class-field semantics
-    // every validated instance carries `status: undefined` as an own key even
-    // when the request never mentioned it. `Object.assign` then handed that
-    // `undefined` to Mongoose, which unsets the path — and schema defaults do
-    // not re-apply on update, so a room lost its status entirely. Editing only
-    // the base price silently dropped a room out of "active".
     const patch = Object.fromEntries(
       Object.entries(received).filter(([, value]) => value !== undefined),
     ) as Partial<CreateRoomDto>;
@@ -746,8 +920,6 @@ export class AshramsService {
     }
     Object.assign(room, patch);
     await room.save();
-    // Existing calendar rows snapshot capacity for atomic booking holds. Keep
-    // every snapshot aligned with the edited room category immediately.
     if (patch.totalInventory !== undefined)
       await this.inventory.updateMany(
         { roomId: room._id },
@@ -756,16 +928,6 @@ export class AshramsService {
     return room;
   }
 
-  /**
-   * Retire a room category.
-   *
-   * Soft delete, because bookings, inventory rows and availability records
-   * carry a required reference to the room and a printed invoice must still
-   * resolve what was booked. The room leaves every listing either way.
-   *
-   * Refused while a stay is still live against it — a guest holding a
-   * confirmed reservation would otherwise find their room category gone.
-   */
   async deleteRoom(user: AuthenticatedUser, id: string): Promise<any> {
     const room = await this.rooms.findOne({ _id: id, deletedAt: null });
     if (!room) throw new NotFoundException("Room not found");
@@ -824,16 +986,6 @@ export class AshramsService {
     );
   }
 
-  /**
-   * The same calendar a visitor may see, without the operational breakdown.
-   *
-   * A pilgrim needs the nightly price and whether a room is free; how that
-   * splits between held, booked and maintenance is the owner's business. This
-   * exists because the detail page has no other readable source — the
-   * owner-only `calendar()` 403s for a visitor — and without it the page fell
-   * back to a calendar generated with Math.random(), which showed genuinely
-   * free nights as "Sold Out".
-   */
   async publicCalendar(
     roomId: string,
     startDate?: string,

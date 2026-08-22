@@ -13,27 +13,17 @@ interface User {
   district?: string;
   state?: string;
   permissions?: string[];
-  /**
-   * Active parking grants from `parking_staff`. Parking authorisation is not a
-   * value of `role` — a guard or partner reads `customer` like any pilgrim — so
-   * this is the only signal that an account is parking staff.
-   */
   parkingRoles?: string[];
 }
 
-// Returned when the backend answers a password login / registration with an OTP
-// challenge instead of a session. `otpToken` is a short-lived pending token that
-// identifies the challenge — it is NOT a session token and is never persisted.
 export interface OtpChallenge {
   otpToken: string;
   type: "PHONE_REGISTER" | "EMAIL_REGISTER" | "EMAIL_LOGIN" | "MOBILE_LOGIN";
   channel: "sms" | "email";
-  /** Already masked by the server, e.g. "s***7@gmail.com" or "98****3210". */
   sentTo?: string;
   expiresAt: string;
 }
 
-/** Google sign-up state carried between the OTP step and the profile step. */
 export interface GoogleChallenge {
   googleToken: string;
   channel: "email";
@@ -49,14 +39,10 @@ interface AuthResult {
   suspensionData?: any;
   otpRequired?: boolean;
   challenge?: OtpChallenge;
-  /** Google sign-up needs an email OTP before the account is created. */
   googleChallenge?: GoogleChallenge;
-  /** OTP passed; still needs a name + mobile number to create the account. */
   needsProfile?: boolean;
   suggestedName?: string;
-  /** Verified Google address, returned once the OTP step passes. */
   email?: string;
-  /** The signed-in user, so callers can route by role without re-reading context. */
   user?: User;
 }
 
@@ -74,7 +60,6 @@ interface AuthContextType {
     challenge?: OtpChallenge;
   }>;
   registerUser: (userData: any) => Promise<AuthResult>;
-  // ── Google Sign-In ──
   loginWithGoogle: () => Promise<AuthResult>;
   verifyGoogleOtp: (googleToken: string, otp: string) => Promise<AuthResult>;
   resendGoogleOtp: (googleToken: string) => Promise<{
@@ -87,7 +72,6 @@ interface AuthContextType {
     name: string,
     phone: string,
   ) => Promise<AuthResult>;
-  /** Re-fetch the signed-in user, e.g. after they edit their own profile. */
   refreshUser: () => Promise<void>;
   logout: () => void;
 }
@@ -112,8 +96,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       window.removeEventListener("tirvona:unauthorized", clearExpiredSession);
   }, []);
 
-  // Recover from legacy login responses that contained an OTP challenge but
-  // were mistakenly persisted as if they were a complete user session.
   useEffect(() => {
     if (user && (!token || (!user.id && !(user as any)._id))) {
       localStorage.removeItem(TOKEN_KEY);
@@ -123,7 +105,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [token, user]);
 
-  // Restore session from stored token on mount.
   useEffect(() => {
     const savedToken = localStorage.getItem(TOKEN_KEY);
     if (savedToken && savedToken !== "undefined" && savedToken !== "null") {
@@ -166,8 +147,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   ): Promise<AuthResult> => {
     try {
       const res = await authService.login(email, password);
-      // Guest Visitors get an OTP challenge instead of a session. No token is
-      // stored here — the session only exists after the code is verified.
       if (res.data.success) {
         if (!persistSession(res.data.data)) {
           return {
@@ -200,9 +179,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  // Returns the signed-in user alongside the result. Callers that navigate by
-  // role cannot read it from context here — `setUser` has not flushed yet, so
-  // the value in their closure is still the previous one (usually null).
   const loginOTP = async (phone: string, otp: string): Promise<AuthResult> => {
     try {
       const res = await authService.verifyOtp(phone, otp);
@@ -222,8 +198,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const registerUser = async (userData: any): Promise<AuthResult> => {
     try {
       const res = await authService.register(userData);
-      // Guest Visitor registrations return an OTP challenge; Ashram Owner
-      // registrations still return a session immediately, unchanged.
       if (res.data.success && res.data.otpRequired) {
         return {
           success: true,
@@ -248,9 +222,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  // ── OTP challenge completion ───────────────────────────────────────────────
-  // Both verifiers return a full session on success and persist it, so the
-  // caller only has to navigate.
   const completeChallenge = async (
     request: Promise<{ data: any }>,
     fallback: string,
@@ -259,8 +230,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       const res = await request;
       if (res.data.success) {
         persistSession(res.data.data);
-        // Carried back for the same reason as loginOTP: context state is not
-        // readable by the caller until after this render commits.
         return { success: true, user: res.data.data };
       }
       return { success: false, message: res.data.message || fallback };
@@ -278,13 +247,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       "Invalid OTP",
     );
 
-  // ── Google Sign-In ─────────────────────────────────────────────────────────
-
-  /**
-   * Opens Google's chooser and exchanges the ID token with our API.
-   * Returning users get a session immediately; new users get an email OTP
-   * challenge, and no account exists until the profile step completes.
-   */
   const loginWithGoogle = async (): Promise<AuthResult> => {
     let credential: string;
     try {
@@ -341,7 +303,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       const res = await authService.googleVerifyOtp(googleToken, otp);
       if (res.data.success) {
-        // Verified, but the account is not created until name + phone arrive.
         return {
           success: true,
           needsProfile: true,

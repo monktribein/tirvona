@@ -57,14 +57,6 @@ const SECTION_ORDER: Row["kind"][] = [
 
 const MIN_QUERY = 2;
 
-/**
- * Global search for the admin console.
- *
- * Two sources, deliberately: console pages are matched locally from the same
- * nav tree the sidebar renders, so navigation is instant and works offline,
- * while records come from `/search`, which decides per entity what this caller
- * may see. Both land in one keyboard-navigable list.
- */
 export const GlobalSearch: React.FC<{ links: SearchableLink[] }> = ({
   links,
 }) => {
@@ -82,7 +74,6 @@ export const GlobalSearch: React.FC<{ links: SearchableLink[] }> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  // Debounce so a typed word costs one request, not one per keystroke.
   useEffect(() => {
     const id = window.setTimeout(() => setDebounced(term.trim()), 250);
     return () => window.clearTimeout(id);
@@ -105,8 +96,6 @@ export const GlobalSearch: React.FC<{ links: SearchableLink[] }> = ({
         setFailed(false);
       })
       .catch((error) => {
-        // An aborted request is the previous keystroke being superseded, not a
-        // failure — surfacing it would flash an error on every character.
         if (axios.isCancel(error) || controller.signal.aborted) return;
         setRemote([]);
         setFailed(true);
@@ -146,8 +135,6 @@ export const GlobalSearch: React.FC<{ links: SearchableLink[] }> = ({
       url: hit.url,
     }));
     const all = [...pageRows, ...remoteRows];
-    // Grouped for display but kept as one flat list, so arrow keys move through
-    // sections without the caller tracking two indexes.
     return SECTION_ORDER.flatMap((kind) =>
       all.filter((row) => row.kind === kind),
     );
@@ -169,7 +156,6 @@ export const GlobalSearch: React.FC<{ links: SearchableLink[] }> = ({
     [close, navigate],
   );
 
-  // Ctrl/Cmd+K focuses the bar from anywhere in the console.
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
@@ -190,7 +176,6 @@ export const GlobalSearch: React.FC<{ links: SearchableLink[] }> = ({
     return () => document.removeEventListener("mousedown", onClick);
   }, [close]);
 
-  // Keep the highlighted row inside the scroll viewport.
   useEffect(() => {
     if (!open) return;
     listRef.current
@@ -271,10 +256,6 @@ export const GlobalSearch: React.FC<{ links: SearchableLink[] }> = ({
         )}
       </div>
 
-      {/* `overscroll-contain` on the panel stops scroll chaining: without it,
-          reaching the end of the results hands the remaining wheel delta to the
-          dashboard behind, so the page lurches while the reader is still inside
-          the list. It also suppresses pull-to-refresh on touch. */}
       {showPanel && (
         <div
           id="global-search-results"

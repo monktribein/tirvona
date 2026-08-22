@@ -66,7 +66,6 @@ export const VisitorArticlesTab: React.FC = () => {
   });
   const [loading, setLoading] = useState(true);
 
-  // Article Creation Wizard State
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [step, setStep] = useState<1 | 2>(1);
   const [eligibleBookings, setEligibleBookings] = useState<EligibleBooking[]>(
@@ -76,14 +75,10 @@ export const VisitorArticlesTab: React.FC = () => {
   const [selectedBooking, setSelectedBooking] =
     useState<EligibleBooking | null>(null);
 
-  // Form Fields
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("Experience");
   const [shortDescription, setShortDescription] = useState("");
   const [content, setContent] = useState("");
-  // Empty until the visitor uploads one. It used to be seeded with an inline
-  // placeholder SVG, which meant every article that skipped the field shipped
-  // a grey icon as its cover photo.
   const [featuredImage, setFeaturedImage] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
   const [uploadingCover, setUploadingCover] = useState(false);
@@ -91,7 +86,6 @@ export const VisitorArticlesTab: React.FC = () => {
   const coverInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
-  // Set while editing an existing article; null means "creating a new one".
   const [editingId, setEditingId] = useState<string | null>(null);
   const [tagsStr, setTagsStr] = useState("Rishikesh, AshramStay, SatvikLiving");
   const [language, setLanguage] = useState("English");
@@ -140,8 +134,6 @@ export const VisitorArticlesTab: React.FC = () => {
     }
   };
 
-  // Limits mirror the server's per-type ceilings, so an oversized file is
-  // refused before it is pushed over a slow mobile connection.
   const MAX_COVER_BYTES = 10 * 1024 * 1024;
   const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
 
@@ -218,8 +210,6 @@ export const VisitorArticlesTab: React.FC = () => {
       );
       return;
     }
-    // Photo and video are both optional and independent — an article may have
-    // one, the other, both, or neither.
     if (uploadingCover || uploadingVideo) {
       addNotification(
         "Upload In Progress",
@@ -249,8 +239,6 @@ export const VisitorArticlesTab: React.FC = () => {
         status: (asDraft ? "draft" : "pending") as "draft" | "pending",
       };
 
-      // Editing keeps the article on its original booking — that link is the
-      // proof of stay and is not something an edit may move.
       const res = editingId
         ? await visitorArticleService.updateArticle(editingId, payload)
         : await visitorArticleService.createArticle({
@@ -280,8 +268,6 @@ export const VisitorArticlesTab: React.FC = () => {
     setCategory("Experience");
     setShortDescription("");
     setContent("");
-    // Uploaded media has to clear too, or the next article starts with the
-    // previous one's cover photo and video already attached.
     setFeaturedImage("");
     setVideoUrl("");
     setGalleryImages([]);
@@ -290,10 +276,6 @@ export const VisitorArticlesTab: React.FC = () => {
     setStep(1);
   };
 
-  /**
-   * Loads an existing article into the wizard and jumps straight to step 2 —
-   * the stay is already chosen and must not change.
-   */
   const openEditor = (article: VisitorArticle) => {
     setEditingId(article._id);
     setTitle(article.title || "");
@@ -305,8 +287,6 @@ export const VisitorArticlesTab: React.FC = () => {
     setGalleryImages(article.galleryImages || []);
     setTagsStr((article.tags || []).join(", "));
     setLanguage(article.language || "English");
-    // The step-2 banner reads `booking.ashram`, but a populated bookingId
-    // nests the ashram under `ashramId` — reshape so the name still shows.
     setSelectedBooking({
       ...(article.bookingId as any),
       ashram: (article.bookingId as any)?.ashram ?? article.ashramId,
@@ -317,7 +297,6 @@ export const VisitorArticlesTab: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header Banner */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-xl font-black text-[#0B192C] dark:text-white flex items-center gap-2">
@@ -339,7 +318,6 @@ export const VisitorArticlesTab: React.FC = () => {
         </button>
       </div>
 
-      {/* Filter Tabs */}
       <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-2 shadow-md flex items-center gap-1.5 overflow-x-auto text-xs font-extrabold scrollbar-none">
         {(["all", "draft", "pending", "approved", "rejected"] as const).map(
           (st) => {
@@ -367,7 +345,6 @@ export const VisitorArticlesTab: React.FC = () => {
         )}
       </div>
 
-      {/* Articles Grid / List */}
       {loading ? (
         <div className="space-y-4">
           {Array.from({ length: 3 }).map((_, i) => (
@@ -405,7 +382,6 @@ export const VisitorArticlesTab: React.FC = () => {
               className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-5 shadow-md flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center"
             >
               <div className="flex items-start gap-4 min-w-0">
-                {/* Cover photo is optional — a video-only article has none. */}
                 <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 bg-gray-100 dark:bg-slate-800 flex items-center justify-center">
                   {art.featuredImage ? (
                     <img
@@ -519,7 +495,6 @@ export const VisitorArticlesTab: React.FC = () => {
         </div>
       )}
 
-      {/* 2-Step Article Creation Modal */}
       <EnterpriseModal
         isOpen={isWizardOpen}
         onClose={() => setIsWizardOpen(false)}
@@ -535,8 +510,6 @@ export const VisitorArticlesTab: React.FC = () => {
             ? "Choose from your completed stay bookings to link your article"
             : `Writing article for ${selectedBooking?.ashram?.name || "Ashram Stay"}`
         }
-        // The default `md` was too narrow for a stay row (name + verified badge
-        // + booking line + action), and too cramped for the step-2 article form.
         maxWidth="2xl"
       >
         {step === 1 ? (
@@ -575,8 +548,6 @@ export const VisitorArticlesTab: React.FC = () => {
                         : "bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-800 hover:border-[#0A4DA6] hover:shadow-md cursor-pointer"
                     }`}
                   >
-                    {/* min-w-0 lets a long ashram name truncate instead of
-                        squeezing the action out of the row. */}
                     <div className="space-y-1 text-xs min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-black text-[#0B192C] dark:text-white text-sm truncate">
@@ -592,9 +563,6 @@ export const VisitorArticlesTab: React.FC = () => {
                       </p>
                     </div>
 
-                    {/* shrink-0 keeps the pill at its natural width; without it
-                        flex compressed the label and pushed the arrow outside
-                        the button. */}
                     <div className="shrink-0">
                       {b.hasSubmittedArticle ? (
                         <span className="inline-block px-3 py-1 bg-gray-200 dark:bg-slate-800 text-gray-600 dark:text-gray-300 text-[10px] font-extrabold rounded-full whitespace-nowrap capitalize">
@@ -617,11 +585,8 @@ export const VisitorArticlesTab: React.FC = () => {
               e.preventDefault();
               handleSubmitArticle(false);
             }}
-            // No max-height/overflow here: EnterpriseModal's body already
-            // scrolls, and a second scroller inside it rendered two bars.
             className="space-y-4 text-xs font-bold"
           >
-            {/* Auto-filled Verified Stay Banner */}
             <div className="p-3 bg-blue-50/80 dark:bg-blue-950/30 rounded-xl border border-blue-100 dark:border-slate-800 flex items-center justify-between text-xs">
               <div className="flex items-center gap-2">
                 <ShieldCheck size={16} className="text-[#0A4DA6]" />
@@ -648,7 +613,6 @@ export const VisitorArticlesTab: React.FC = () => {
               </button>
             </div>
 
-            {/* Article Title */}
             <div className="space-y-1">
               <label className="text-gray-700 dark:text-gray-300">
                 Article Title *
@@ -663,7 +627,6 @@ export const VisitorArticlesTab: React.FC = () => {
               />
             </div>
 
-            {/* Category & Language Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1">
                 <label className="text-gray-700 dark:text-gray-300">
@@ -700,7 +663,6 @@ export const VisitorArticlesTab: React.FC = () => {
               </div>
             </div>
 
-            {/* Short Description */}
             <div className="space-y-1">
               <label className="text-gray-700 dark:text-gray-300">
                 Short Summary / Description *
@@ -715,7 +677,6 @@ export const VisitorArticlesTab: React.FC = () => {
               />
             </div>
 
-            {/* Featured Cover Photo — upload only, no URL field */}
             <div className="space-y-1.5">
               <label className="text-gray-700 dark:text-gray-300">
                 Featured Cover Photo (optional)
@@ -779,7 +740,6 @@ export const VisitorArticlesTab: React.FC = () => {
               )}
             </div>
 
-            {/* Optional Video */}
             <div className="space-y-1.5">
               <label className="text-gray-700 dark:text-gray-300">
                 Experience Video (optional)
@@ -844,7 +804,6 @@ export const VisitorArticlesTab: React.FC = () => {
               )}
             </div>
 
-            {/* Rich Text / Article Content */}
             <div className="space-y-1">
               <label className="text-gray-700 dark:text-gray-300">
                 Article Content (Rich Text / Markdown Supported) *
@@ -859,7 +818,6 @@ export const VisitorArticlesTab: React.FC = () => {
               />
             </div>
 
-            {/* Gallery Images & Tags */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1">
                 <label className="text-gray-700 dark:text-gray-300">
@@ -888,7 +846,6 @@ export const VisitorArticlesTab: React.FC = () => {
               </div>
             </div>
 
-            {/* Action Buttons */}
             <div className="pt-3 border-t border-gray-100 dark:border-slate-800 flex items-center justify-between">
               <button
                 type="button"

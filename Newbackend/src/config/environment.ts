@@ -26,6 +26,8 @@ export interface Environment {
   dnsServers: string[];
   throttleTtlMs: number;
   throttleLimit: number;
+  throttleIpAbuseTtlMs: number;
+  throttleIpAbuseLimit: number;
   mongoUri: string;
   mongoDbName: string;
   mongoUsername: string;
@@ -42,9 +44,15 @@ export interface Environment {
   jwtAudience: string;
   encryptionKey: string;
   parkingQrSecret: string;
+  aartiQrSecret: string;
+  eventQrSecret: string;
   razorpayKeyId: string;
   razorpayKeySecret: string;
   razorpayWebhookSecret: string;
+  razorpayXPayoutEnabled: boolean;
+  razorpayXAccountNumber: string;
+  razorpayXWebhookSecret: string;
+  payoutEncryptionKey: string;
   cloudinaryCloudName: string;
   cloudinaryApiKey: string;
   cloudinaryApiSecret: string;
@@ -67,30 +75,12 @@ export interface Environment {
   googleClientSecret: string;
 }
 
-/**
- * Point Node's resolver at DNS_SERVERS before anything opens a connection.
- *
- * An Atlas URI is an SRV record, so a resolver that cannot answer SRV queries
- * fails the connection outright — a machine whose resolver is a local proxy
- * answers ECONNREFUSED and Mongoose only reports "Unable to connect". Every
- * entry point that reaches the database has to apply this, not just main.ts:
- * a standalone script gets the same resolver and the same failure.
- *
- * Safe to call more than once, and a no-op when DNS_SERVERS is unset.
- */
 export const applyDnsServersFromEnvironment = (): string[] => {
   const servers = csv(process.env.DNS_SERVERS, "");
   if (servers.length > 0) setServers(servers);
   return servers;
 };
 
-/**
- * The dev fallback covers all three local apps — the main site on 5173, the
- * leadTirvona field app on 5174, and the SmarID Smart Contact page on 5175 —
- * so a fresh checkout does not fail CORS on the lead login or on a scanned
- * contact page. Production ignores this entirely: CORS_ORIGINS is required
- * there and validated against wildcards.
- */
 export const corsOriginsFromEnvironment = (): string[] =>
   csv(
     process.env.CORS_ORIGINS,
@@ -104,6 +94,20 @@ export const parkingQrSecretFromEnvironment = (): string =>
   process.env.ENCRYPTION_KEY ||
   process.env.JWT_SECRET ||
   "development-only-parking-qr-secret";
+
+export const aartiQrSecretFromEnvironment = (): string =>
+  process.env.AARTI_QR_SECRET ||
+  process.env.PARKING_QR_SECRET ||
+  process.env.ENCRYPTION_KEY ||
+  process.env.JWT_SECRET ||
+  "development-only-aarti-qr-secret";
+
+export const eventQrSecretFromEnvironment = (): string =>
+  process.env.EVENT_QR_SECRET ||
+  process.env.PARKING_QR_SECRET ||
+  process.env.ENCRYPTION_KEY ||
+  process.env.JWT_SECRET ||
+  "development-only-event-qr-secret";
 
 export const environment = (): Environment => ({
   nodeEnv: process.env.NODE_ENV ?? "development",
@@ -123,6 +127,14 @@ export const environment = (): Environment => ({
   dnsServers: csv(process.env.DNS_SERVERS, ""),
   throttleTtlMs: integer(process.env.THROTTLE_TTL_MS, 60_000),
   throttleLimit: integer(process.env.THROTTLE_LIMIT, 120),
+  throttleIpAbuseTtlMs: integer(
+    process.env.THROTTLE_IP_ABUSE_TTL_MS,
+    60_000,
+  ),
+  throttleIpAbuseLimit: integer(
+    process.env.THROTTLE_IP_ABUSE_LIMIT,
+    30_000,
+  ),
   mongoUri: process.env.MONGODB_URI ?? "mongodb://127.0.0.1:27017/tirvona",
   mongoDbName: process.env.MONGODB_DB_NAME ?? "",
   mongoUsername: process.env.MONGODB_USERNAME ?? "",
@@ -142,9 +154,15 @@ export const environment = (): Environment => ({
   jwtAudience: process.env.JWT_AUDIENCE ?? "tirvona-clients",
   encryptionKey: process.env.ENCRYPTION_KEY ?? "",
   parkingQrSecret: parkingQrSecretFromEnvironment(),
+  aartiQrSecret: aartiQrSecretFromEnvironment(),
+  eventQrSecret: eventQrSecretFromEnvironment(),
   razorpayKeyId: process.env.RAZORPAY_KEY_ID ?? "",
   razorpayKeySecret: process.env.RAZORPAY_KEY_SECRET ?? "",
   razorpayWebhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET ?? "",
+  razorpayXPayoutEnabled: boolean(process.env.RAZORPAYX_PAYOUT_ENABLED, false),
+  razorpayXAccountNumber: process.env.RAZORPAYX_ACCOUNT_NUMBER ?? "",
+  razorpayXWebhookSecret: process.env.RAZORPAYX_WEBHOOK_SECRET ?? "",
+  payoutEncryptionKey: process.env.PAYOUT_ENCRYPTION_KEY ?? "",
   cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME ?? "",
   cloudinaryApiKey: process.env.CLOUDINARY_API_KEY ?? "",
   cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET ?? "",
@@ -196,6 +214,8 @@ export function validateEnvironment(
     "MONGODB_SOCKET_TIMEOUT_MS",
     "THROTTLE_TTL_MS",
     "THROTTLE_LIMIT",
+    "THROTTLE_IP_ABUSE_TTL_MS",
+    "THROTTLE_IP_ABUSE_LIMIT",
     "OTP_LENGTH",
     "OTP_EXPIRY_MINUTES",
     "OTP_MAX_ATTEMPTS",
@@ -237,6 +257,26 @@ export function validateEnvironment(
   }
 
   requireTogether(input, ["RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET"]);
+  if (String(input.RAZORPAYX_PAYOUT_ENABLED ?? "false").toLowerCase() === "true") {
+    for (const name of [
+      "RAZORPAY_KEY_ID",
+      "RAZORPAY_KEY_SECRET",
+      "RAZORPAYX_ACCOUNT_NUMBER",
+      "RAZORPAYX_WEBHOOK_SECRET",
+      "PAYOUT_ENCRYPTION_KEY",
+    ]) {
+      if (!String(input[name] ?? "").trim())
+        throw new Error(`${name} is required when RazorpayX payouts are enabled`);
+    }
+    let key: Buffer;
+    try {
+      key = Buffer.from(String(input.PAYOUT_ENCRYPTION_KEY), "base64");
+    } catch {
+      key = Buffer.alloc(0);
+    }
+    if (key.length !== 32)
+      throw new Error("PAYOUT_ENCRYPTION_KEY must be a base64-encoded 32-byte key");
+  }
   requireTogether(input, ["MONGODB_USERNAME", "MONGODB_PASSWORD"]);
   requireTogether(input, [
     "CLOUDINARY_CLOUD_NAME",
@@ -262,6 +302,20 @@ export function validateEnvironment(
     if (String(input.PARKING_QR_SECRET ?? "").length < 32)
       throw new Error(
         "PARKING_QR_SECRET must contain at least 32 characters in production",
+      );
+    if (
+      String(input.AARTI_QR_SECRET ?? "").trim() &&
+      String(input.AARTI_QR_SECRET).length < 32
+    )
+      throw new Error(
+        "AARTI_QR_SECRET must contain at least 32 characters in production",
+      );
+    if (
+      String(input.EVENT_QR_SECRET ?? "").trim() &&
+      String(input.EVENT_QR_SECRET).length < 32
+    )
+      throw new Error(
+        "EVENT_QR_SECRET must contain at least 32 characters in production",
       );
     for (const name of ["RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET"]) {
       if (!String(input[name] ?? "").trim())

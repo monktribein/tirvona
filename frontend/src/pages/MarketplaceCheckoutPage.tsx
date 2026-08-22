@@ -86,8 +86,6 @@ export const MarketplaceCheckoutPage: React.FC = () => {
   }));
   const cartKey = JSON.stringify(cartPayload);
 
-  // Re-price whenever the basket changes. This is the authoritative total: the
-  // cart's own subtotal is indicative only.
   useEffect(() => {
     if (!user) return;
     if (!cartPayload.length) {
@@ -194,8 +192,6 @@ export const MarketplaceCheckoutPage: React.FC = () => {
         throw new Error("Razorpay is not configured. Real payment is required.");
       }
 
-      // openRazorpayCheckout loads the script itself and takes the prefill
-      // object directly as its second argument.
       const result = await openRazorpayCheckout(payRes.data.data, {
         name: user?.name ?? "",
         email: user?.email ?? "",
@@ -295,27 +291,15 @@ export const MarketplaceCheckoutPage: React.FC = () => {
   return (
     <div className="min-h-screen pb-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 space-y-6">
-        {/* Top Header matching Global Layout */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-gray-100 dark:border-slate-800">
           <div className="space-y-1">
-            {/* <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#0A4DA6]/10 text-[#0A4DA6] dark:text-blue-400 text-[10px] font-black uppercase tracking-wider">
-              <ShieldCheck size={12} className="text-emerald-500" />
-              Sacred Marketplace • Express Checkout
-            </span> */}
             <h1 className="text-3xl sm:text-4xl font-extrabold text-[#0B192C] dark:text-white tracking-tight">
               Checkout
             </h1>
           </div>
-          {/* <button
-            onClick={() => navigate("/marketplace")}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-gray-200 dark:border-slate-800 bg-white dark:bg-[#0B192C] text-xs font-extrabold text-[#0B192C] dark:text-white hover:border-[#0A4DA6] hover:text-[#0A4DA6] dark:hover:text-blue-400 transition-all cursor-pointer self-start sm:self-auto shadow-xs"
-          >
-            <ArrowLeft size={14} /> Back to marketplace
-          </button> */}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Delivery address */}
           <div className="lg:col-span-2 space-y-4">
             <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-5 shadow-sm">
               <div className="flex items-center justify-between border-b border-gray-100 dark:border-slate-800/80 pb-3">
@@ -433,7 +417,6 @@ export const MarketplaceCheckoutPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Order summary */}
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-5 h-fit shadow-sm">
             <h2 className="text-base font-extrabold text-[#0B192C] dark:text-white border-b border-gray-100 dark:border-slate-800/80 pb-3">
               Order summary

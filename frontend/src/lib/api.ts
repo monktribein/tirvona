@@ -4,21 +4,10 @@ import { tUi } from "../contexts/LanguageContext";
 
 declare module "axios" {
   export interface AxiosRequestConfig {
-    /**
-     * Suppress the automatic success/error toast for this request.
-     *
-     * A request-config flag rather than an HTTP header: whether the UI shows a
-     * toast is no business of the server's, and sending it as `X-Skip-Toast`
-     * meant every such call had to be named in the API's CORS
-     * `Access-Control-Allow-Headers` or the browser rejected the preflight.
-     * Use it for background polling and live re-pricing, where a transient
-     * failure is not something to interrupt anyone over.
-     */
     skipToast?: boolean;
   }
 }
 
-// Single source of truth for the API base URL.
 export const API_BASE_URL = (
   import.meta.env.VITE_API_URL || "http://localhost:5000"
 )
@@ -28,15 +17,12 @@ export const API_BASE_URL = (
 
 export const TOKEN_KEY = "ab_token";
 
-// Shared axios instance. All app requests go through this so auth headers,
-// base URL, and error handling live in one place.
 const api = axios.create({
   baseURL: `${API_BASE_URL}/api`,
   timeout: 20_000,
   headers: { Accept: "application/json" },
 });
 
-// Attach the bearer token (if present) to every request.
 api.interceptors.request.use((config) => {
   const sessionKey = "tirvona_session_id";
   let sessionId = localStorage.getItem(sessionKey);
@@ -53,7 +39,6 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// On 401 (expired/invalid token) clear the session so the app can redirect to login.
 api.interceptors.response.use(
   (response) => {
     const method = response.config.method?.toLowerCase();
@@ -69,8 +54,6 @@ api.interceptors.response.use(
           normalizedMessage,
         );
 
-      // A reservation hold or gateway order is not a confirmed booking. Never
-      // present either intermediate step as a completed or successful payment.
       if (!isPaymentSetup && typeof message === "string" && message.trim()) {
         if (isPendingPayment) {
           toast.info(message, { title: "Payment required" });
@@ -102,7 +85,6 @@ api.interceptors.response.use(
   },
 );
 
-// Normalise an axios error into a human-readable message.
 export const getErrorMessage = (
   err: unknown,
   fallback = "Something went wrong. Please try again.",

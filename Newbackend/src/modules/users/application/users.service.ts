@@ -57,7 +57,6 @@ export class UsersService {
       .lean();
     return rows.map((row: any) => {
       const { aadhaarCardUrl, panCardUrl, ...safe } = row;
-      // Never leaves the service, even if a projection lets it through.
       delete safe.passwordHash;
       return {
         ...safe,
@@ -157,8 +156,6 @@ export class UsersService {
       dto.password || `Tirvona#${randomBytes(8).toString("base64url")}9!`;
     const accountData: Record<string, unknown> = { ...dto };
     delete accountData.password;
-    // Old frontend bundles used to submit a profile photo during IAM
-    // onboarding. Never persist that legacy field through this endpoint.
     delete accountData.avatarUrl;
     const user = await this.users.create({
       ...accountData,

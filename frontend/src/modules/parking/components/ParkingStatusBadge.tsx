@@ -11,13 +11,6 @@ import {
 import type { ParkingBookingStatus } from "../types/parking.types";
 import { STATUS_STYLES, statusLabel } from "../utils/parkingFormat";
 
-// Status pill for parking bookings.
-//
-// Follows the shape and weight of the platform's EnterpriseStatusBadge, but
-// carries its own palette because parking adds `upcoming`, `expired` and
-// `no_show` — statuses that shared component does not know. Extending it here
-// rather than editing it keeps every existing badge on the site unchanged.
-
 const ICONS: Record<ParkingBookingStatus, React.ReactNode> = {
   pending: <Clock size={12} className="shrink-0 animate-pulse" />,
   upcoming: <ShieldCheck size={12} className="shrink-0" />,

@@ -14,24 +14,6 @@ import {
   parkingPartnerCode,
 } from "../modules/parking/domain/parking.utils";
 
-/**
- * Seed one sign-in account per parking role, each with an ACTIVE grant.
- *
- *   npx ts-node src/scripts/seed-parking-roles.ts --password 'secret123'
- *
- * Idempotent: re-running updates the existing rows rather than duplicating
- * them, so it is safe to use to reset the password later.
- *
- * The accounts are created with `role: "customer"` on purpose — that is what a
- * real parking staff account looks like, because parking authorisation is a
- * grant in `parking_staff` and `USER_ROLES` has no parking entries. What makes
- * them staff is the grant, and `AuthService` reads it to skip the Guest Visitor
- * OTP and to route them to the parking dashboard.
- *
- * Grants are deliberately partner-wide (`locationIds: []`), which covers every
- * location the partner owns now or adds later.
- */
-
 const SEED_ACCOUNTS = [
   {
     parkingRole: "parking_partner",
@@ -84,9 +66,6 @@ async function main(): Promise<void> {
     );
     const staff = app.get<Model<any>>(getModelToken(PARKING_MODEL.Staff));
 
-    // Prefer a partner that already owns locations — the dashboards are empty
-    // without any, and reusing real data makes the seeded logins immediately
-    // useful. Only fall back to creating one on an otherwise empty database.
     const withLocations = await locations.distinct("partnerId");
     let partner =
       (await partners.findOne({
@@ -128,7 +107,6 @@ async function main(): Promise<void> {
     const passwordHash = await bcrypt.hash(password, 12);
 
     for (const account of SEED_ACCOUNTS) {
-      // Phone is unique platform-wide; refuse rather than hijack someone else's.
       const phoneOwner = await users.findOne({ phone: account.phone });
       if (phoneOwner && phoneOwner.email !== account.email) {
         out(

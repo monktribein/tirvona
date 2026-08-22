@@ -10,17 +10,9 @@ import {
 import { authService } from "../services";
 import { getErrorMessage } from "../lib/api";
 
-/**
- * Landing page for the emailed password-reset link (/reset-password?token=…).
- * Uses the same card, background and control styling as the login page so the
- * flow looks continuous.
- */
 export const ResetPasswordPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  // The query string is the current link format. The path param covers links
-  // mailed by the older `/reset-password/<token>` builder, which are still
-  // valid for 30 minutes after a deploy.
   const params = useParams<{ token?: string }>();
   const token = searchParams.get("token") || params.token || "";
 
@@ -32,8 +24,6 @@ export const ResetPasswordPage: React.FC = () => {
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
   const [loading, setLoading] = useState(false);
-  // Self-service recovery from a dead link (expired, or superseded by a newer
-  // request — only one reset link is valid per account at a time).
   const [resendEmail, setResendEmail] = useState("");
   const [resendNotice, setResendNotice] = useState("");
   const [resending, setResending] = useState(false);
@@ -58,8 +48,6 @@ export const ResetPasswordPage: React.FC = () => {
     }
   };
 
-  // Validate the link before showing the form, so an expired link says so
-  // immediately instead of after the user has typed a new password.
   useEffect(() => {
     if (!token) {
       setChecking(false);
@@ -93,7 +81,6 @@ export const ResetPasswordPage: React.FC = () => {
     try {
       await authService.resetPassword(token, password);
       setDone(true);
-      // Every existing session was revoked server-side, so send them to login.
       setTimeout(() => navigate("/login"), 2500);
     } catch (err) {
       setError(

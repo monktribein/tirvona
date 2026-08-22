@@ -28,11 +28,6 @@ export interface VolunteerJobItem {
   isGovtVerified: boolean;
 }
 
-/**
- * Fields accepted by the backend VolunteerJobDto when publishing an opening.
- * Keep this separate from VolunteerJobItem because the latter also contains
- * server-generated/display-only fields such as `_id` and `isGovtVerified`.
- */
 export type VolunteerJobPayload = Pick<
   VolunteerJobItem,
   "ashramId" | "ashramName" | "city" | "title" | "department"

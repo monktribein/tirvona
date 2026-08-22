@@ -1,7 +1,6 @@
 import React from "react";
 import { formatCurrency } from "../utils/format";
 
-// Shared component for static legal/info pages
 const StaticSection: React.FC<{ title: string; children: React.ReactNode }> = ({
   title,
   children,
@@ -35,7 +34,6 @@ export const CancellationPolicyPage: React.FC = () => (
       </div>
     </section>
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-12 space-y-8">
-      {/* Summary table */}
       <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm">
         <div className="bg-gray-50 dark:bg-slate-900 px-5 py-3 border-b border-gray-100 dark:border-slate-800">
           <h2 className="font-extrabold text-sm text-[#0B192C] dark:text-white">

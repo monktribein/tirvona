@@ -3,17 +3,11 @@ import { ImagePlus, Loader2, X } from "lucide-react";
 import { uploadService } from "../../services";
 import { getErrorMessage } from "../../lib/api";
 
-/**
- * Multi-image picker used by both the visitor article form and the Super Admin
- * edit modal, so the two stay in step. Holds no state of its own beyond the
- * in-flight upload — the URL list belongs to the parent form.
- */
 export const ImageUploadGrid: React.FC<{
   value: string[];
   onChange: (next: string[]) => void;
   folder?: string;
   max?: number;
-  /** Bytes. Mirrors the server's per-type ceiling for images. */
   maxBytes?: number;
   onError?: (title: string, message: string) => void;
 }> = ({
@@ -36,8 +30,6 @@ export const ImageUploadGrid: React.FC<{
       report("Gallery Full", `You can add up to ${max} photos.`);
       return;
     }
-    // Anything past the limit is dropped rather than silently replacing an
-    // earlier pick, and the user is told which files did not make it.
     const picked = Array.from(files).slice(0, room);
     if (files.length > room)
       report(
@@ -56,7 +48,6 @@ export const ImageUploadGrid: React.FC<{
 
     setUploading(true);
     try {
-      // Settled, not all: one bad file must not discard the ones that worked.
       const results = await Promise.allSettled(
         valid.map((file) => uploadService.file(file, folder)),
       );

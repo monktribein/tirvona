@@ -1,4 +1,3 @@
-// Tirvona Enterprise Design System 2.0 - Transition Easing Tokens
 
 export const transitions = {
   fast: "all 150ms cubic-bezier(0.4, 0, 0.2, 1)",

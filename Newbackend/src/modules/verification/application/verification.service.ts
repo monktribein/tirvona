@@ -122,8 +122,6 @@ export class VerificationService {
       throw new BadRequestException(
         `Complete the ashram address before verification. Missing: ${missingAddressFields.join(", ")}`,
       );
-    // Repair legacy records that stored street/PIN under top-level or alias
-    // names. This ensures the subsequent lifecycle save passes schema checks.
     ashram.set("address", address);
     if (
       ["district_officer", "inspector"].includes(user.role) &&

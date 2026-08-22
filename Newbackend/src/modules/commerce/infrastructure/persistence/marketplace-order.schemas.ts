@@ -30,13 +30,6 @@ export const MARKETPLACE_PAYMENT_STATUSES = [
   "refunded",
 ] as const;
 
-/**
- * A saved delivery address, reusable across orders.
- *
- * Kept in its own collection rather than embedded on the user so the address
- * book can grow, be soft-deleted, and be indexed independently — and so the
- * marketplace domain owns its own data rather than writing into `users`.
- */
 export const MarketplaceAddressSchema = new Schema(
   {
     customerId: id("User", true),
@@ -57,14 +50,6 @@ export const MarketplaceAddressSchema = new Schema(
 );
 MarketplaceAddressSchema.index({ customerId: 1, isDeleted: 1, isDefault: -1 });
 
-/**
- * A marketplace order.
- *
- * Line prices are a SERVER-SIDE snapshot taken from the product catalogue at
- * checkout — never a figure supplied by the client — so a tampered request
- * cannot buy a ₹899 box for ₹1. The snapshot is stored rather than referenced
- * so a later price change never rewrites the customer's history.
- */
 export const MarketplaceOrderSchema = new Schema(
   {
     orderNumber: { type: String, required: true, unique: true },
@@ -80,8 +65,6 @@ export const MarketplaceOrderSchema = new Schema(
         lineTotal: { type: Number, required: true, min: 0 },
       },
     ],
-    // Denormalised copy, not a reference: editing a saved address later must
-    // never silently change where a past order was shipped.
     shippingAddress: {
       fullName: String,
       phone: String,
@@ -134,10 +117,6 @@ export const MarketplaceOrderSchema = new Schema(
 MarketplaceOrderSchema.index({ customerId: 1, createdAt: -1 });
 MarketplaceOrderSchema.index({ orderStatus: 1, createdAt: -1 });
 
-/**
- * One row per gateway event, so a retried webhook or a double-submitted
- * checkout cannot be applied twice. `eventId` is unique for exactly that.
- */
 export const MarketplacePaymentSchema = new Schema(
   {
     orderId: id("MarketplaceOrder", true),

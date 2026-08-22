@@ -120,10 +120,6 @@ export const LocalHubEnterpriseDrawer: React.FC<
     e.preventDefault();
     setIsSaving(true);
     try {
-      // Annotated rather than inferred: spreading a Record<string, any> into an
-      // object literal no longer carries the index signature through, so the
-      // inferred type collapses to just the explicitly-listed keys and any
-      // other access (payload.title) fails to compile.
       const payload: Record<string, any> = {
         ...formData,
         image:
@@ -162,7 +158,6 @@ export const LocalHubEnterpriseDrawer: React.FC<
   return (
     <div className="fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex justify-end transition-opacity duration-300">
       <div className="bg-white dark:bg-[#0B192C] w-full max-w-4xl h-full flex flex-col shadow-2xl border-l border-gray-100 dark:border-slate-800 text-left animate-in slide-in-from-right duration-300">
-        {/* Drawer Header */}
         <div className="p-6 bg-gray-50/80 dark:bg-slate-900/80 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center shrink-0">
           <div className="flex items-center gap-3">
             <div className="p-3 bg-[#0A4DA6]/10 text-[#0A4DA6] rounded-2xl">
@@ -207,7 +202,6 @@ export const LocalHubEnterpriseDrawer: React.FC<
           </div>
         </div>
 
-        {/* Section Tabs Navigation Bar */}
         <div className="flex items-center gap-1 px-6 bg-white dark:bg-[#0B192C] border-b border-gray-100 dark:border-slate-800 overflow-x-auto scrollbar-none shrink-0">
           {sections.map((sec) => {
             const IconComp = sec.icon;
@@ -230,9 +224,7 @@ export const LocalHubEnterpriseDrawer: React.FC<
           })}
         </div>
 
-        {/* Section Contents Body (Scrollable) */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6 text-xs">
-          {/* SECTION 1: BASIC DETAILS */}
           {activeSection === "basic" && (
             <div className="space-y-4 animate-in fade-in duration-200">
               <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-2">
@@ -373,7 +365,6 @@ export const LocalHubEnterpriseDrawer: React.FC<
             </div>
           )}
 
-          {/* SECTION 2: IMAGE MANAGEMENT */}
           {activeSection === "images" && (
             <div className="space-y-4 animate-in fade-in duration-200">
               <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-2">
@@ -401,7 +392,6 @@ export const LocalHubEnterpriseDrawer: React.FC<
             </div>
           )}
 
-          {/* SECTION 3: PRICING */}
           {activeSection === "pricing" && (
             <div className="space-y-4 animate-in fade-in duration-200">
               <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-2">
@@ -467,7 +457,6 @@ export const LocalHubEnterpriseDrawer: React.FC<
             </div>
           )}
 
-          {/* SECTION 4: CONTACT */}
           {activeSection === "contact" && (
             <div className="space-y-4 animate-in fade-in duration-200">
               <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-2">
@@ -524,7 +513,6 @@ export const LocalHubEnterpriseDrawer: React.FC<
             </div>
           )}
 
-          {/* SECTION 5: AVAILABILITY */}
           {activeSection === "availability" && (
             <div className="space-y-4 animate-in fade-in duration-200">
               <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-2">
@@ -588,7 +576,6 @@ export const LocalHubEnterpriseDrawer: React.FC<
             </div>
           )}
 
-          {/* SECTION 6: VERIFICATION */}
           {activeSection === "verification" && (
             <div className="space-y-4 animate-in fade-in duration-200">
               <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-2">
@@ -675,7 +662,6 @@ export const LocalHubEnterpriseDrawer: React.FC<
             </div>
           )}
 
-          {/* SECTION 7: SEO */}
           {activeSection === "seo" && (
             <div className="space-y-4 animate-in fade-in duration-200">
               <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-2">
@@ -736,7 +722,6 @@ export const LocalHubEnterpriseDrawer: React.FC<
           )}
         </div>
 
-        {/* Drawer Footer */}
         <div className="p-4 bg-gray-50/80 dark:bg-slate-900/80 border-t border-gray-100 dark:border-slate-800 flex justify-between items-center shrink-0">
           <p className="text-[11px] font-bold text-gray-400">
             Changes will update MongoDB Atlas immediately.

@@ -30,8 +30,6 @@ const build = (overrides: {
       overrides.hasCompletedStay ? { _id: "stay" } : null,
     ),
   };
-  // `create()` calls bookings.findOne(...) directly (no chain) when a
-  // bookingId is supplied, so that overload is installed separately.
   if (overrides.booking !== undefined)
     bookings.findOne = jest.fn().mockResolvedValue(overrides.booking) as never;
 
@@ -68,10 +66,6 @@ describe("ReviewsService.create", () => {
     expect(created[0]).toMatchObject({ bookingId: null, verifiedStay: false });
   });
 
-  /**
-   * The badge is derived from the reviewer's own booking history, never from
-   * anything they send — otherwise "verified" would mean nothing.
-   */
   it("ignores a client-supplied verifiedStay flag", async () => {
     const { service, created } = build({ hasCompletedStay: false });
 

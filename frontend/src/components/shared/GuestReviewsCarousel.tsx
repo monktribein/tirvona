@@ -56,7 +56,6 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
   );
   const touchStartX = useRef<number>(0);
 
-  // Responsive cards per view: 1 mobile, 2 tablet, 3 desktop
   const [itemsPerPage, setItemsPerPage] = useState(3);
 
   const handleDeleteReview = async (reviewId: string) => {
@@ -109,7 +108,6 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
     return () => window.removeEventListener("resize", updateItemsPerPage);
   }, [compact]);
 
-  // Calculate Average Rating
   const averageRating =
     reviews.length > 0
       ? (
@@ -118,7 +116,6 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
         ).toFixed(1)
       : "4.8";
 
-  // Auto-slide every 5 seconds (pauses on hover)
   useEffect(() => {
     if (reviews.length <= itemsPerPage || isHovered) return;
     const interval = setInterval(() => {
@@ -154,7 +151,6 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
     }));
   };
 
-  // Helper for formatted date
   const formatReviewDate = (dateStr?: string) => {
     if (!dateStr) return "Stayed in July 2026";
     const date = new Date(dateStr);
@@ -162,7 +158,6 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
     return `Stayed in ${date.toLocaleString("en-IN", { month: "long", year: "numeric" })}`;
   };
 
-  // Compute slice of reviews to display in current window (prevent duplicate looping when <= itemsPerPage)
   const getVisibleReviews = () => {
     if (reviews.length === 0) return [];
     if (reviews.length <= itemsPerPage) return reviews;
@@ -197,7 +192,6 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 dark:border-slate-800 pb-4">
         <div>
           <div className="flex items-center gap-2">
@@ -217,7 +211,6 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
           </p>
         </div>
 
-        {/* Rating Summary Badge */}
         <div className="flex items-center gap-3 shrink-0 bg-gray-50 dark:bg-slate-900 px-4 py-2 rounded-2xl border border-gray-150 dark:border-slate-800">
           <div className="flex items-center gap-1">
             {[1, 2, 3, 4, 5].map((star) => (
@@ -235,7 +228,6 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
         </div>
       </div>
 
-      {/* Carousel Container */}
       <div
         className="relative"
         onTouchStart={handleTouchStart}
@@ -264,7 +256,6 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
                   transition={{ duration: 0.3 }}
                   className="bg-gray-50/70 dark:bg-slate-900/60 border border-gray-150 dark:border-slate-800 p-5 rounded-[22px] flex flex-col justify-between space-y-4 hover:shadow-md hover:border-[#0A4DA6]/30 transition-all group"
                 >
-                  {/* Card Header */}
                   <div className="space-y-3">
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-3">
@@ -287,7 +278,6 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
                         </div>
                       </div>
 
-                      {/* Rating Stars & Delete Option */}
                       <div className="flex items-center gap-1.5 shrink-0">
                         <div className="flex items-center gap-0.5 bg-white dark:bg-slate-850 px-2 py-1 rounded-full border border-gray-150 dark:border-slate-800 shadow-2xs">
                           <Star
@@ -314,13 +304,11 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
                       </div>
                     </div>
 
-                    {/* Review Text */}
                     <p className="text-xs text-gray-600 dark:text-gray-300 font-medium leading-relaxed italic line-clamp-4">
                       "{rev.comment}"
                     </p>
                   </div>
 
-                  {/* Card Footer: Date & Helpful Button */}
                   <div className="pt-3 border-t border-gray-200/60 dark:border-slate-800/60 flex items-center justify-between text-[10px] text-gray-400 font-semibold">
                     <span>{formatReviewDate(rev.createdAt)}</span>
                     <button
@@ -340,7 +328,6 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
           </AnimatePresence>
         </div>
 
-        {/* Left / Right Navigation Arrows */}
         {reviews.length > itemsPerPage && (
           <>
             <button
@@ -364,9 +351,7 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
         )}
       </div>
 
-      {/* Footer Navigation: Pagination Dots & View All Reviews Button */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2 border-t border-gray-100 dark:border-slate-800">
-        {/* Pagination Dots */}
         <div className="flex items-center gap-1.5 select-none">
           {Array.from({ length: Math.min(8, reviews.length) }).map((_, i) => (
             <button
@@ -383,7 +368,6 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
           ))}
         </div>
 
-        {/* View All Reviews Button */}
         <button
           type="button"
           onClick={() => setModalOpen(true)}
@@ -393,7 +377,6 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
         </button>
       </div>
 
-      {/* View All Reviews Modal */}
       {modalOpen && (
         <div className="fixed inset-0 z-[80] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
           <motion.div
@@ -402,7 +385,6 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
             exit={{ opacity: 0, scale: 0.95 }}
             className="bg-white dark:bg-[#0B192C] w-full max-w-4xl max-h-[85vh] rounded-[28px] border border-gray-100 dark:border-slate-800 shadow-2xl flex flex-col overflow-hidden text-left"
           >
-            {/* Modal Header */}
             <div className="p-6 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-black text-[#0B192C] dark:text-white flex items-center gap-2">
@@ -424,7 +406,6 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
               </button>
             </div>
 
-            {/* Modal Body Scroll */}
             <div className="p-6 overflow-y-auto space-y-4 flex-1">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {reviews.map((rev, i) => {
@@ -498,7 +479,6 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
               </div>
             </div>
 
-            {/* Modal Footer */}
             <div className="p-4 bg-gray-50 dark:bg-slate-900 border-t border-gray-100 dark:border-slate-800 flex justify-end">
               <button
                 type="button"

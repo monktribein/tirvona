@@ -1,15 +1,7 @@
 import { SmartContactProfilesService } from "./smart-contact-profiles.service";
 import type { SmartContactAuditService } from "./smart-contact-audit.service";
 
-/**
- * Covers the pure logic — slug derivation, phone normalisation and the public
- * projection — without a database. The projection test is the important one:
- * it is what enforces spec §22 and §38, and a regression there leaks a
- * suspended representative's phone number.
- */
 describe("SmartContactProfilesService", () => {
-  // The QR-code and event models are only reached by `deleteMany`, which
-  // these tests never call — the pure logic below touches none of them.
   const service = new SmartContactProfilesService(
     {} as never,
     {} as never,
@@ -94,7 +86,6 @@ describe("SmartContactProfilesService", () => {
       expect(view.website).toBe("");
       expect(view.photoUrl).toBe("");
       expect(view.designation).toBe("");
-      // The name stays, so the visitor knows what they scanned.
       expect(view.displayName).toBe("Ravindr Bhardwaj");
       expect(view.inactiveNotice?.message).toBe(
         "This Tirvona representative profile is no longer active.",

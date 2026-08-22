@@ -35,10 +35,6 @@ export const marketplaceService = {
     return api.get(`/marketplace/products/${idOrSlug}`);
   },
 
-  // The legacy `POST /marketplace/order` helper was removed: it had no callers
-  // and posted client-supplied prices. `createOrder` below replaces it against
-  // the server-priced endpoint.
-
   createProduct: async (data: Record<string, any>) => {
     return api.post("/marketplace/products", data);
   },
@@ -51,12 +47,6 @@ export const marketplaceService = {
     return api.delete(`/marketplace/products/${id}`);
   },
 
-  // ── Cart / checkout ──────────────────────────────────────────────────────
-  /**
-   * Price a basket server-side. Only ids and quantities are sent; every rupee
-   * comes back from the catalogue, so the cart total and the amount charged
-   * are produced by the same code path.
-   */
   quote: async (items: { productId: string; quantity: number }[]) =>
     api.post("/marketplace/cart/quote", { items }),
 
@@ -83,7 +73,6 @@ export const marketplaceService = {
   confirmPayment: async (id: string, payload: Record<string, string>) =>
     api.post(`/marketplace/orders/${id}/payment`, payload),
 
-  // ── Saved addresses ──────────────────────────────────────────────────────
   addresses: async () => api.get("/marketplace/addresses"),
   addAddress: async (data: Record<string, unknown>) =>
     api.post("/marketplace/addresses", data),

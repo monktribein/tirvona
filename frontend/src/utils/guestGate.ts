@@ -1,10 +1,3 @@
-/**
- * Session-scoped authentication return intent.
- *
- * It preserves the route, scroll position, domain-specific draft data and safe
- * form controls while a guest signs in. Passwords, OTPs, payment data, tokens,
- * files and government identifiers are deliberately never persisted.
- */
 
 export type GuestIntentType =
   | "ashram_booking"
@@ -116,10 +109,6 @@ export const setGuestPendingIntent = (intent: GuestPendingIntent): void => {
   try {
     const returnUrl = safeLocalReturnUrl(intent.returnUrl);
     if (!returnUrl) return;
-    // A snapshot only belongs to the page it was captured from. Some actions
-    // intentionally return to the next step (for example parking detail ->
-    // checkout); restoring controls from the previous page there can populate
-    // unrelated inputs that happen to share a DOM index.
     const page =
       intent.page ??
       (safeLocalReturnUrl(currentReturnUrl()) === returnUrl
@@ -182,7 +171,6 @@ const setNativeValue = (
   field.dispatchEvent(new Event("change", { bubbles: true }));
 };
 
-/** Restores safe mounted controls. Returns false while async page controls are absent. */
 export const restorePendingPageSnapshot = (): boolean => {
   const intent = getGuestPendingIntent();
   if (!intent?.page) return true;

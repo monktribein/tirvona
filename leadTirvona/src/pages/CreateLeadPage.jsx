@@ -1,6 +1,3 @@
-/**
- * CreateLeadPage.jsx — Clean Clean Design without Decorative Icons on Section Headers & Labels
- */
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, Calendar, Camera, CheckCircle2, Upload, X, Mic, MicOff, Loader2, FileText } from 'lucide-react';
 import { leadApi } from '../services/leadApi';
@@ -80,10 +77,52 @@ export default function CreateLeadPage({
 
   // Initialize form data (always completely fresh when editingLead is null)
   const [formData, setFormData] = useState(() => {
-    return getFreshFormData(editingLead, assignedJurisdiction);
+    if (editingLead) {
+      return {
+        name: editingLead.name || '',
+        address: editingLead.location?.address || editingLead.address || '',
+        googleMapsUrl: editingLead.location?.googleMapsUrl || editingLead.googleMapsUrl || '',
+        city: editingLead.location?.city || editingLead.city || '',
+        state: editingLead.location?.state || editingLead.state || assignedJurisdiction?.state || '',
+        district: editingLead.location?.district || editingLead.district || assignedJurisdiction?.district || '',
+        assignedAgentId: editingLead.assignedAgentId || '',
+        assignedAgentName: editingLead.assignedAgentName || '',
+        assignedAgentCode: editingLead.assignedAgentCode || '',
+        totalRooms: editingLead.roomInventory?.totalRooms ?? editingLead.totalRooms ?? '',
+        roomPrice: editingLead.roomInventory?.roomPrice ?? editingLead.roomPrice ?? '',
+        onlineRooms: editingLead.roomInventory?.onlineRooms ?? editingLead.onlineRooms ?? '',
+        offlineRooms: editingLead.roomInventory?.offlineRooms ?? editingLead.offlineRooms ?? '',
+        ownerName: editingLead.contact?.ownerName || editingLead.ownerName || '',
+        phone: editingLead.contact?.phone || editingLead.phone || '',
+        notes: editingLead.notes || '',
+        agentNotes: editingLead.agentNotes || '',
+        interest: editingLead.interest || 'Interested',
+        meetingRequested: editingLead.meeting?.requested ?? true,
+        meetingTime: editingLead.meeting?.time || '',
+        meetingMode: editingLead.meeting?.mode || 'Call',
+        coordinates: editingLead.location?.coordinates || { lat: '', lng: '' },
+        images: Array.isArray(editingLead.images) ? editingLead.images : []
+      };
+    }
+    // Field agents should never see a stale draft — skip restoration.
+    if (agentRole === 'field_agent') return INITIAL_FORM;
+    try {
+      const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
+      if (savedDraft) {
+        const draft = JSON.parse(savedDraft);
+        return {
+          ...INITIAL_FORM,
+          ...draft,
+          coordinates: INITIAL_FORM.coordinates,
+          images: Array.isArray(draft.images) ? draft.images.slice(0, 10) : []
+        };
+      }
+    } catch (e) {
+      console.warn('Failed to parse lead form draft:', e);
+    }
+    return INITIAL_FORM;
   });
 
-  // When editingLead changes (or is cleared to null for new lead entry), reset formData
   useEffect(() => {
     setFormData(getFreshFormData(editingLead, assignedJurisdiction));
     try {
@@ -97,8 +136,6 @@ export default function CreateLeadPage({
     attendanceCoordinates?.lng !== undefined &&
     attendanceCoordinates?.lng !== null;
 
-  // Attendance already captured the agent's current geotag. Reuse it for the
-  // lead silently. GPS is shown and captured only in the login attendance UI.
   useEffect(() => {
     if (!hasAttendanceCoordinates) return;
     setFormData(prev => ({
@@ -119,7 +156,6 @@ export default function CreateLeadPage({
     }));
   }, [assignedJurisdiction?.state, assignedJurisdiction?.district]);
 
-  // Load field agents in the assigned district for assignment dropdown
   const [fieldAgents, setFieldAgents] = useState([]);
   const [loadingAgents, setLoadingAgents] = useState(false);
 
@@ -184,7 +220,6 @@ export default function CreateLeadPage({
     }));
   };
 
-  // Speech-to-Text Voice Dictation Handler using Web Speech API
   const toggleVoiceDictation = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -457,14 +492,6 @@ export default function CreateLeadPage({
     if (!formData.name.trim()) return alert('Please enter Stay Name');
     if (!formData.city.trim()) return alert('Please enter City');
 
-    const cleanPhone = formData.phone ? formData.phone.replace(/\D/g, '') : '';
-    if (cleanPhone && cleanPhone.length !== 10) {
-      return alert('Contact number must be exactly 10 digits.');
-    }
-
-    // Awaited: when the submit goes to the API it can fail, and clearing the
-    // form before knowing that would lose everything the agent just captured
-    // on site.
     const payload = {
       name: formData.name.trim(),
       location: {
@@ -525,10 +552,8 @@ export default function CreateLeadPage({
   return (
     <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 text-left space-y-4 sm:space-y-6">
       
-      {/* Form Container */}
       <div className="bg-white border border-[#E2E8F0] rounded-2xl sm:rounded-3xl p-4 sm:p-7 shadow-xs">
         
-        {/* Header Title */}
         <div className="flex flex-row items-start sm:items-center justify-between gap-2 sm:gap-3 pb-4 sm:pb-6 border-b border-[#E2E8F0] mb-5 sm:mb-6">
           <div className="min-w-0 flex-1">
             <h1 className="text-base sm:text-2xl font-extrabold text-[#0F172A] tracking-tight">
@@ -549,14 +574,11 @@ export default function CreateLeadPage({
 
         <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
           
-          {/* GPS is captured only by the attendance modal after login. */}
-          {/* SECTION 1: Ashram Details */}
           <div className="space-y-3.5 pb-5 border-b border-[#E2E8F0]">
             <span className="text-xs sm:text-sm font-extrabold text-[#0F172A] block">
               1. Ashram Details &amp; Room Inventory
             </span>
 
-            {/* Basic Property Info */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className={labelClass}>Stay Name <span className="text-[#EF4444]">*</span></label>
@@ -619,7 +641,6 @@ export default function CreateLeadPage({
               </div>
             </div>
 
-            {/* Room Capacity & Pricing Sub-Block (Icons Removed) */}
             <div className="pt-2">
               <span className="text-[11px] font-extrabold text-[#64748B] uppercase tracking-wider block mb-2.5">
                 Room Capacity, Pricing &amp; Allotment
@@ -685,7 +706,6 @@ export default function CreateLeadPage({
             </div>
           </div>
 
-          {/* SECTION 3: Contact Person Details (Icon Removed) */}
           <div className="space-y-3 pb-5 border-b border-[#E2E8F0]">
             <span className="text-xs sm:text-sm font-extrabold text-[#0F172A] block">
               2. Contact Person
@@ -718,14 +738,12 @@ export default function CreateLeadPage({
             </div>
           </div>
 
-          {/* SECTION 4: Discussion Notes (Icon Removed) */}
           <div className="space-y-2 pb-5 border-b border-[#E2E8F0]">
             <div className="flex items-center justify-between gap-2">
               <span className="text-xs sm:text-sm font-extrabold text-[#0F172A] block">
                 3. Discussion Notes
               </span>
 
-              {/* Speech-to-Text Voice Dictation Mic Button */}
               <button
                 type="button"
                 onClick={toggleVoiceDictation}
@@ -760,7 +778,6 @@ export default function CreateLeadPage({
             />
           </div>
 
-          {/* SECTION 5: Interest Level (Icon Removed) */}
           <div className="space-y-3 pb-5 border-b border-[#E2E8F0]">
             <span className="text-xs sm:text-sm font-extrabold text-[#0F172A] block">
               4. Owner Interest Level
@@ -792,7 +809,6 @@ export default function CreateLeadPage({
             </div>
           </div>
 
-          {/* SECTION 6: Meeting Request (Icon Removed) */}
           <div className="space-y-3 pb-5 border-b border-[#E2E8F0]">
             <label className="flex items-center gap-3 cursor-pointer select-none">
               <div
@@ -976,7 +992,6 @@ export default function CreateLeadPage({
             )}
           </div>
 
-          {/* Submit Button */}
           <div className="pt-2">
             <button type="submit" disabled={isUploading}
               className="w-full flex items-center justify-center gap-2 px-8 min-h-[46px] bg-[#0A4DA6] hover:bg-[#083D85] text-white font-extrabold rounded-full text-xs sm:text-sm shadow-sm transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">

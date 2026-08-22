@@ -27,13 +27,6 @@ import {
   SMART_CONTACT_STATUSES,
 } from "../../domain/smart-contact.constants";
 
-/**
- * The global `ValidationPipe` runs with `whitelist` and `forbidNonWhitelisted`,
- * so any property not declared here is rejected outright rather than silently
- * dropped. That is the module's main input-validation guarantee (spec §35):
- * an unexpected key never reaches a Mongoose `$set`.
- */
-
 const trim = () =>
   Transform(({ value }: { value: unknown }) =>
     typeof value === "string" ? value.trim() : value,
@@ -80,7 +73,6 @@ export class CreateSmartContactProfileDto {
   @IsOptional() @IsString() @MaxLength(120) @trim() department?: string;
   @IsOptional() @IsString() @MaxLength(160) @trim() roleLine?: string;
 
-  // Phones accept the shapes a human types; the service normalises to E.164.
   @IsOptional()
   @IsString()
   @Matches(/^\+?[\d\s\-()]{6,20}$/, { message: "primaryPhone is not a valid number" })
@@ -111,10 +103,6 @@ export class CreateSmartContactProfileDto {
   @IsOptional() @IsString() @MaxLength(16) @trim() postalCode?: string;
   @IsOptional() @IsString() @MaxLength(80) @trim() country?: string;
 
-  // A URL produced by the platform's own upload endpoint. Accepting a URL
-  // rather than raw bytes keeps this module off the file-handling path
-  // entirely — the existing Cloudinary pipeline already does the scanning and
-  // transformation that spec §35's "secure asset upload" asks for.
   @IsOptional() @IsString() @MaxLength(500) @trim() photoUrl?: string;
   @IsOptional() @IsString() @MaxLength(200) @trim() photoAssetId?: string;
 
@@ -124,11 +112,6 @@ export class CreateSmartContactProfileDto {
   category?: string;
 }
 
-/**
- * Every field optional — the console patches one section at a time. `status`
- * is absent on purpose: it moves through the lifecycle endpoints, which write
- * their own audit entries.
- */
 export class UpdateSmartContactProfileDto extends CreateSmartContactProfileDto {
   @IsOptional() @IsString() @MinLength(1) @MaxLength(80) @trim() declare firstName: string;
 
@@ -207,13 +190,6 @@ export class QrRenderQueryDto {
   logo?: boolean;
 }
 
-/**
- * The selection for a permanent bulk deletion.
- *
- * Capped because this is the module's only destructive route and the console
- * sends the ids it has on screen; an unbounded list would let one request
- * clear the whole table.
- */
 export class DeleteSmartContactProfilesDto {
   @ApiPropertyOptional({
     description: "Profile ids to permanently remove.",

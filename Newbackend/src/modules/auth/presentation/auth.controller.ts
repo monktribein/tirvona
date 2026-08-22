@@ -1,5 +1,5 @@
-import { Body, Controller, Get, Param, Post, Put } from "@nestjs/common";
-import { Throttle } from "@nestjs/throttler";
+import { Body, Controller, Get, Param, Post, Put, Req } from "@nestjs/common";
+import type { Request } from "express";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import {
   CurrentUser,
@@ -7,6 +7,10 @@ import {
 } from "../../../common/decorators/current-user.decorator";
 import { Public } from "../../../common/decorators/public.decorator";
 import { Roles } from "../../../common/decorators/roles.decorator";
+import {
+  DefaultSensitiveThrottle,
+  SensitiveThrottle,
+} from "../../../common/throttling/rate-limit.decorators";
 import {
   USER_REPOSITORY,
   UserRepository,
@@ -43,12 +47,14 @@ export class AuthController {
 
   @Public()
   @Post("login")
+  @DefaultSensitiveThrottle("email")
   async login(@Body() dto: LoginDto) {
     return { success: true, data: await this.auth.login(dto) };
   }
 
   @Public()
   @Post("register")
+  @DefaultSensitiveThrottle("email", "phone")
   async register(@Body() dto: RegisterDto) {
     const result = await this.auth.register(dto);
     return result.otpRequired
@@ -63,7 +69,7 @@ export class AuthController {
 
   @Public()
   @Post("register/verify-otp")
-  @Throttle({ default: { limit: 30, ttl: 900_000 } })
+  @SensitiveThrottle(30, 900_000, "otpToken")
   async registerOtp(@Body() dto: VerifyChallengeDto) {
     return {
       success: true,
@@ -72,7 +78,7 @@ export class AuthController {
   }
   @Public()
   @Post("login/verify-otp")
-  @Throttle({ default: { limit: 30, ttl: 900_000 } })
+  @SensitiveThrottle(30, 900_000, "otpToken")
   async loginOtp(@Body() dto: VerifyChallengeDto) {
     return {
       success: true,
@@ -81,7 +87,7 @@ export class AuthController {
   }
   @Public()
   @Post("resend-otp")
-  @Throttle({ default: { limit: 10, ttl: 900_000 } })
+  @SensitiveThrottle(10, 900_000, "otpToken")
   async resend(@Body() dto: ResendOtpDto) {
     return {
       success: true,
@@ -91,24 +97,30 @@ export class AuthController {
   }
   @Public()
   @Post("otp/send")
-  @Throttle({ default: { limit: 10, ttl: 900_000 } })
-  async sendPhone(@Body() dto: SendPhoneOtpDto) {
+  @SensitiveThrottle(10, 900_000, "phone")
+  async sendPhone(
+    @Body() dto: SendPhoneOtpDto,
+    @Req() request: Request & { id?: string },
+  ) {
     return {
       success: true,
       message: "OTP sent.",
-      data: await this.auth.sendPhoneOtp(dto.phone),
+      data: await this.auth.sendPhoneOtp(dto.phone, request.id),
     };
   }
   @Public()
   @Post("otp/verify")
-  @Throttle({ default: { limit: 30, ttl: 900_000 } })
+  @SensitiveThrottle(30, 900_000, "phone")
   async verifyPhone(@Body() dto: VerifyPhoneOtpDto) {
     return {
       success: true,
       data: await this.auth.verifyPhoneOtp(dto.phone, dto.otp),
     };
   }
-  @Public() @Post("forgot-password") async forgot(
+  @Public()
+  @Post("forgot-password")
+  @DefaultSensitiveThrottle("email")
+  async forgot(
     @Body() dto: ForgotPasswordDto,
   ) {
     await this.auth.forgotPassword(dto.email);
@@ -117,17 +129,26 @@ export class AuthController {
       message: "If that account exists, a reset link has been sent.",
     };
   }
-  @Public() @Get("reset-password/:token") async verifyReset(
+  @Public()
+  @Get("reset-password/:token")
+  @DefaultSensitiveThrottle("token")
+  async verifyReset(
     @Param("token") token: string,
   ) {
     await this.auth.resetUser(token);
     return { success: true, message: "Reset token is valid." };
   }
-  @Public() @Post("reset-password") async reset(@Body() dto: ResetPasswordDto) {
+  @Public()
+  @Post("reset-password")
+  @DefaultSensitiveThrottle("token")
+  async reset(@Body() dto: ResetPasswordDto) {
     await this.auth.resetUser(dto.token, dto.newPassword);
     return { success: true, message: "Password reset successfully." };
   }
-  @Public() @Post("google") async google(@Body() dto: GoogleCredentialDto) {
+  @Public()
+  @Post("google")
+  @DefaultSensitiveThrottle("credential")
+  async google(@Body() dto: GoogleCredentialDto) {
     const result = await this.auth.google(dto.credential);
     return result.otpRequired
       ? {
@@ -138,7 +159,10 @@ export class AuthController {
         }
       : { success: true, data: result.session };
   }
-  @Public() @Post("google/verify-otp") async googleVerify(
+  @Public()
+  @Post("google/verify-otp")
+  @SensitiveThrottle(30, 900_000, "googleToken")
+  async googleVerify(
     @Body() dto: VerifyGoogleDto,
   ) {
     return {
@@ -147,7 +171,10 @@ export class AuthController {
       data: await this.auth.verifyGoogle(dto.googleToken, dto.otp),
     };
   }
-  @Public() @Post("google/resend-otp") async googleResend(
+  @Public()
+  @Post("google/resend-otp")
+  @SensitiveThrottle(10, 900_000, "googleToken")
+  async googleResend(
     @Body() dto: ResendGoogleDto,
   ) {
     return {
@@ -156,7 +183,10 @@ export class AuthController {
       data: await this.auth.resend(dto.googleToken),
     };
   }
-  @Public() @Post("google/complete") async googleComplete(
+  @Public()
+  @Post("google/complete")
+  @DefaultSensitiveThrottle("googleToken", "phone")
+  async googleComplete(
     @Body() dto: CompleteGoogleDto,
   ) {
     return {

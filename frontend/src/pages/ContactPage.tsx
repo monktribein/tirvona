@@ -60,7 +60,6 @@ const ContactPage: React.FC = () => {
 
   return (
     <div className="pb-20">
-      {/* Hero */}
       <section className="bg-[#0B192C] text-white py-14 px-4 sm:px-6 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-[#0A4DA6]/10 rounded-full blur-[80px] pointer-events-none" />
         <div className="max-w-3xl mx-auto text-center relative z-10 space-y-4">
@@ -81,7 +80,6 @@ const ContactPage: React.FC = () => {
       </section>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-14 grid grid-cols-1 lg:grid-cols-2 gap-10">
-        {/* Contact Form */}
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
           <div>
             <h2 className="font-extrabold text-[#0B192C] dark:text-white text-lg">
@@ -175,9 +173,7 @@ const ContactPage: React.FC = () => {
           )}
         </div>
 
-        {/* Contact Info */}
         <div className="space-y-6">
-          {/* Quick contact */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
               {
@@ -223,7 +219,6 @@ const ContactPage: React.FC = () => {
             ))}
           </div>
 
-          {/* Office locations */}
           <div className="space-y-3">
             <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white">
               Our Offices

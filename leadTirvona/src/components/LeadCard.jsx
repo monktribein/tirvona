@@ -1,7 +1,3 @@
-/**
- * LeadCard.jsx — Compact Horizontal Row Layout
- * Three sections: Name | Date | Action Icons (Call, WhatsApp, Edit, Delete)
- */
 import React from 'react';
 import {
   Phone, Trash2, Pencil, MapPin, MessageCircle, Calendar, FileCheck
@@ -10,7 +6,6 @@ import { formatDate } from '../utils/formatDate';
 
 export default function LeadCard({ lead, onApprove, onDelete, onEdit, onBookAppointment, onOpenDocuments }) {
   const phone = lead.contact?.phone || '';
-  // Clean phone number for tel: and wa.me links
   const cleanPhone = phone.replace(/[^0-9+]/g, '');
   const waPhone = cleanPhone.startsWith('+') ? cleanPhone.slice(1) : cleanPhone;
   // Document checklist calculation
@@ -27,7 +22,8 @@ export default function LeadCard({ lead, onApprove, onDelete, onEdit, onBookAppo
 
   return (
     <div className="bg-white border border-[#E2E8F0] rounded-2xl p-3.5 sm:px-4 sm:py-3.5 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3">
-
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
       {/* Section 1 — Name, Location & Status */}
       <div className="flex-1 min-w-0 w-full sm:w-auto">
         <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
@@ -86,7 +82,7 @@ export default function LeadCard({ lead, onApprove, onDelete, onEdit, onBookAppo
           </p>
         )}
       </div>
-
+      <div className="shrink-0 text-right hidden sm:block">
       {/* Section 2 & 3 — Date & Action Icons */}
       <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto shrink-0 pt-1 sm:pt-0 border-t border-slate-100 sm:border-0">
         {lead.createdAt && (
@@ -95,6 +91,48 @@ export default function LeadCard({ lead, onApprove, onDelete, onEdit, onBookAppo
           </span>
         )}
 
+      <div className="flex items-center gap-1 shrink-0">
+        {cleanPhone && (
+          <a
+            href={`tel:${cleanPhone}`}
+            className="p-2 rounded-full text-[#0A4DA6] hover:bg-[#0A4DA6]/10 transition-colors"
+            title={`Call ${phone}`}
+          >
+            <Phone size={16} />
+          </a>
+        )}
+
+        {cleanPhone && (
+          <a
+            href={`https://wa.me/${waPhone}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-2 rounded-full text-emerald-600 hover:bg-emerald-50 transition-colors"
+            title={`WhatsApp ${phone}`}
+          >
+            <MessageCircle size={16} />
+          </a>
+        )}
+
+        {onEdit && (
+          <button
+            onClick={() => onEdit(lead)}
+            className="p-2 rounded-full text-slate-400 hover:text-[#0A4DA6] hover:bg-[#0A4DA6]/10 transition-colors cursor-pointer"
+            title="Edit lead"
+          >
+            <Pencil size={16} />
+          </button>
+        )}
+
+        <button
+          onClick={() => {
+            if (confirm(`Delete lead "${lead.name}"?`)) onDelete(lead.id);
+          }}
+          className="p-2 rounded-full text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+          title="Delete lead"
+        >
+          <Trash2 size={16} />
+        </button>
         {lead.createdAt && (
           <span className="text-[11px] font-semibold text-[#64748B] whitespace-nowrap hidden sm:block mr-2">
             {formatDate(lead.createdAt)}

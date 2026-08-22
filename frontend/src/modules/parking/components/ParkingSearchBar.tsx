@@ -26,13 +26,6 @@ interface ParkingSearchBarProps {
   onSubmit: () => void;
 }
 
-/**
- * The parking search panel.
- *
- * Deliberately mirrors the home page's stay-search widget — same rounded white
- * card, same field dividers, same gold-on-navy submit pill — so the module
- * reads as part of the site rather than a bolt-on.
- */
 export const ParkingSearchBar: React.FC<ParkingSearchBarProps> = ({
   destination,
   entryAt,
@@ -57,7 +50,6 @@ export const ParkingSearchBar: React.FC<ParkingSearchBarProps> = ({
       className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800/80 rounded-[24px] p-3 sm:p-4 shadow-lg shadow-[#0B192C]/5 space-y-3"
     >
       <div className="flex flex-col lg:flex-row lg:items-end gap-3">
-        {/* Destination */}
         <div className="flex-1 min-w-0">
           <label
             htmlFor="parking-destination"
@@ -81,7 +73,6 @@ export const ParkingSearchBar: React.FC<ParkingSearchBarProps> = ({
           </div>
         </div>
 
-        {/* Entry */}
         <div className="flex-1 min-w-0">
           <label
             htmlFor="parking-entry"
@@ -114,7 +105,6 @@ export const ParkingSearchBar: React.FC<ParkingSearchBarProps> = ({
           </div>
         </div>
 
-        {/* Exit */}
         <div className="flex-1 min-w-0">
           <label
             htmlFor="parking-exit"
@@ -152,7 +142,6 @@ export const ParkingSearchBar: React.FC<ParkingSearchBarProps> = ({
         </button>
       </div>
 
-      {/* Vehicle class */}
       <div className="pt-1">
         <span className="block text-[10px] tracking-wider font-bold text-gray-400 mb-2 px-1">
           Vehicle Type

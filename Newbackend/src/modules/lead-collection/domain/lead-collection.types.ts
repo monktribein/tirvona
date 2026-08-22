@@ -1,7 +1,6 @@
 import type { Document, Types } from "mongoose";
 import type { LeadStatus, LeadUserRole } from "./lead-collection.constants";
 
-/** A signed-in field agent, as the lead guard attaches it to the request. */
 export interface AuthenticatedLeadUser {
   id: string;
   name: string;
@@ -15,7 +14,6 @@ export interface AuthenticatedLeadUser {
   employeeCode?: string;
 }
 
-/** Payload carried by a lead-scope JWT. */
 export interface LeadTokenPayload {
   sub: string;
   scope: "lead";
@@ -23,7 +21,6 @@ export interface LeadTokenPayload {
   tv: number;
 }
 
-/** A `lead_users` row as stored, without Mongoose document machinery. */
 export interface LeadUserRecord {
   _id: Types.ObjectId;
   name: string;
@@ -43,10 +40,8 @@ export interface LeadUserRecord {
   createdByAdminName: string;
 }
 
-/** The same row hydrated by Mongoose (what `Model<T>` is parameterised on). */
 export type LeadUserDocument = LeadUserRecord & Document<Types.ObjectId>;
 
-/** A lead user row as the admin console consumes it. */
 export type LeadUserListRow = LeadUserRecord & { leadCount: number };
 
 export interface LeadCoordinates {
@@ -54,7 +49,6 @@ export interface LeadCoordinates {
   lng: number | null;
 }
 
-/** A `leads` row as stored. */
 export interface LeadRecord {
   _id: Types.ObjectId;
   name: string;

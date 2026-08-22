@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 const HI_TRANSLATIONS = {
-  // Navigation & Branding
   "Tirvona": "तिरवोना",
   "Field Supervisor": "फील्ड सुपरवाइज़र",
   "Super Admin": "सुपर एडमिन",
@@ -48,7 +47,6 @@ const HI_TRANSLATIONS = {
   "Continue to Dashboard": "डैशबोर्ड पर जारी रखें",
   "Continue to Field Dashboard": "फील्ड डैशबोर्ड पर जारी रखें",
 
-  // Search & Actions
   "Search": "खोजें",
   "Search in": "यहाँ खोजें",
   "Search pages, agents, ashrams, leads in": "पेज, एग्जीक्यूटिव, आश्रम, लीड खोजें",
@@ -75,7 +73,6 @@ const HI_TRANSLATIONS = {
   "Activate Agent": "एग्जीक्यूटिव सक्रिय करें",
   "Delete Agent": "एग्जीक्यूटिव हटाएँ",
 
-  // Notifications & Modals
   "Notifications": "सूचनाएँ",
   "Select Language": "भाषा चुनें",
   "English": "English",

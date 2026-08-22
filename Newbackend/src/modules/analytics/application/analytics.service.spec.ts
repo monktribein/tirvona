@@ -17,8 +17,6 @@ const createService = (models: {
     {} as never,
     (models.audits ?? {}) as never,
     (models.platformAudits ?? {}) as never,
-    // Parking contributes to the platform totals; specs that do not care about
-    // it pass an aggregate returning nothing.
     (models.parking ?? { aggregate: jest.fn().mockResolvedValue([]) }) as never,
   );
 
@@ -27,12 +25,6 @@ const emptyAshramFacet = [
 ];
 
 describe("AnalyticsService.system", () => {
-  /**
-   * The booking schema keys its customer as `customerId`. Reading `userId`
-   * instead made every document contribute the same `undefined`, so the set of
-   * "distinct pilgrims" always had exactly one member and the admin dashboard
-   * reported "1 Pilgrim" no matter how many people had booked.
-   */
   it("counts distinct pilgrims from the customerId field", async () => {
     const service = createService({
       ashrams: {
@@ -126,11 +118,6 @@ describe("AnalyticsService.overview", () => {
     },
   });
 
-  /**
-   * A sparse aggregation result must not collapse the x-axis onto the days that
-   * happened to have traffic — a 14-day chart is 14 points whether or not
-   * anyone booked.
-   */
   it("zero-fills buckets with no bookings", async () => {
     const service = createService(
       overviewModels([], { channels: [], statuses: [], window: [] }),
@@ -139,7 +126,9 @@ describe("AnalyticsService.overview", () => {
     const result = await service.overview(superAdmin, "daily");
 
     expect(result.series).toHaveLength(14);
-    expect(result.series.every((point: any) => point.bookings === 0)).toBe(true);
+    expect(result.series.every((point: any) => point.bookings === 0)).toBe(
+      true,
+    );
     expect(result.series.every((point: any) => point.label)).toBe(true);
   });
 
@@ -186,10 +175,6 @@ describe("AnalyticsService.overview", () => {
     ]);
   });
 
-  /**
-   * Dividing a fresh bucket by an empty one used to report a 600% rise off a
-   * baseline of zero. An unknown change is reported as unknown.
-   */
   it("reports no change when the prior bucket has no history", async () => {
     const service = createService(
       overviewModels(
@@ -214,10 +199,6 @@ describe("AnalyticsService.overview", () => {
     });
   });
 
-  /**
-   * Booked value and collected cash are different numbers: a stay settled at
-   * the counter has a real `totalAmount` and an `amountPaid` of zero.
-   */
   it("reports booked value separately from collected cash", async () => {
     const service = createService(
       overviewModels([], {
@@ -302,10 +283,6 @@ describe("AnalyticsService.logs", () => {
     });
   });
 
-  /**
-   * `details` is a Mixed column, so a feed that interpolates it straight into a
-   * template string prints "[object Object]".
-   */
   it("renders an object detail payload as readable text", async () => {
     const service = createService({
       platformAudits: chain([
@@ -332,10 +309,6 @@ describe("AnalyticsService parking inclusion", () => {
     aggregate: jest.fn().mockResolvedValue(rows),
   });
 
-  /**
-   * Parking settles in its own collection. Omitting it made a platform that had
-   * genuinely collected money through car parks report zero revenue.
-   */
   it("adds parking revenue to the platform financials", async () => {
     const service = createService({
       ashrams: { aggregate: jest.fn().mockResolvedValue(emptyAshramFacet) },
@@ -355,7 +328,12 @@ describe("AnalyticsService parking inclusion", () => {
         ]),
       },
       parking: parkingModel([
-        { totalBookings: 18, revenue: 2284, grossValue: 7677, cancellations: 1 },
+        {
+          totalBookings: 18,
+          revenue: 2284,
+          grossValue: 7677,
+          cancellations: 1,
+        },
       ]),
     });
 
@@ -366,10 +344,6 @@ describe("AnalyticsService parking inclusion", () => {
     expect(result.financials.grossValue).toBe(47683.02);
   });
 
-  /**
-   * A parking booking references a partner and a location, never an ashram, so
-   * it cannot honestly be attributed to a state or district.
-   */
   it("excludes parking from a jurisdiction-scoped caller", async () => {
     const parking = parkingModel([
       { totalBookings: 18, revenue: 2284, grossValue: 7677, cancellations: 0 },
@@ -444,5 +418,79 @@ describe("AnalyticsService parking inclusion", () => {
     ]);
     expect(result.totals.windowBookings).toBe(20);
     expect(result.totals.windowRevenue).toBe(30);
+  });
+
+  it("reconciles channel and status breakdowns with combined window totals", async () => {
+    const bookingAggregate = jest
+      .fn()
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        {
+          channels: [
+            { _id: "online", count: 3, revenue: 300 },
+            { _id: "desk", count: 1, revenue: 50 },
+          ],
+          statuses: [
+            { _id: "confirmed", count: 3 },
+            { _id: "expired", count: 1 },
+          ],
+          window: [{ bookings: 4, revenue: 350 }],
+        },
+      ])
+      .mockResolvedValueOnce([]);
+    const parkingAggregate = jest
+      .fn()
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        {
+          window: [{ bookings: 2, revenue: 40, gross: 40 }],
+          allTime: [{ bookings: 9, revenue: 180, gross: 180 }],
+          statuses: [{ _id: "upcoming", count: 2 }],
+        },
+      ]);
+    const service = createService({
+      bookings: { aggregate: bookingAggregate },
+      parking: { aggregate: parkingAggregate },
+    });
+
+    const result = await service.overview(superAdmin, "daily");
+
+    expect(result.totals.windowBookings).toBe(6);
+    expect(result.channels).toEqual([
+      {
+        channel: "online",
+        label: "Online Gateway",
+        count: 5,
+        revenue: 340,
+        share: 83.33,
+      },
+      {
+        channel: "desk",
+        label: "Direct Desk",
+        count: 1,
+        revenue: 50,
+        share: 16.67,
+      },
+    ]);
+    expect(result.statuses).toEqual([
+      { status: "confirmed", count: 3, share: 50 },
+      { status: "upcoming", count: 2, share: 33.33 },
+      { status: "expired", count: 1, share: 16.67 },
+    ]);
+    expect(
+      result.channels.reduce((sum: number, row: any) => sum + row.count, 0),
+    ).toBe(result.totals.windowBookings);
+    expect(
+      result.statuses.reduce((sum: number, row: any) => sum + row.count, 0),
+    ).toBe(result.totals.windowBookings);
+    expect(
+      bookingAggregate.mock.calls[1][0][1].$facet.channels[0].$match,
+    ).toEqual({ createdAt: { $gte: expect.any(Date) } });
+    expect(
+      bookingAggregate.mock.calls[1][0][1].$facet.statuses[0].$match,
+    ).toEqual({ createdAt: { $gte: expect.any(Date) } });
+    expect(
+      parkingAggregate.mock.calls[1][0][0].$facet.statuses[0].$match,
+    ).toEqual({ createdAt: { $gte: expect.any(Date) } });
   });
 });

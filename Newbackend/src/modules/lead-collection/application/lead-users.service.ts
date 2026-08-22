@@ -31,18 +31,11 @@ import type {
   UpdateLeadUserDto,
 } from "../presentation/dtos/lead-user.dto";
 
-/** Who performed an admin action, for the audit fields on the record. */
 export interface LeadAdminActor {
   id: string;
   name: string;
 }
 
-/**
- * CRUD over `lead_users` — the account table for the lead product.
- *
- * Accounts are only ever created by a platform super admin from the console;
- * there is no public signup path into this collection.
- */
 @Injectable()
 export class LeadUsersService {
   private readonly config = leadCollectionConfig();
@@ -175,7 +168,6 @@ export class LeadUsersService {
     return { deleted: result.deletedCount === 1 };
   }
 
-  /** Digits only, so `+91 98765 43210` and `9876543210` are one account. */
   static normalisePhone(phone: string): string {
     const digits = phone.replace(/\D/g, "");
     return digits.length > 10 ? digits.slice(-10) : digits;
@@ -220,8 +212,6 @@ export class LeadUsersService {
       this.leadUsers.countDocuments(filter),
     ]);
 
-    // Lead counts per agent, so the console can show productivity without an
-    // N+1 of one count query per row.
     const counts = await this.leads.aggregate<{
       _id: Types.ObjectId;
       total: number;
@@ -322,8 +312,6 @@ export class LeadUsersService {
       invalidateSessions = true;
     }
 
-    // Suspension has to invalidate whatever the agent is already carrying, so
-    // it bumps `tokenVersion` rather than only flipping the flag.
     const inc: Record<string, number> = invalidateSessions
       ? { tokenVersion: 1 }
       : {};
@@ -340,9 +328,6 @@ export class LeadUsersService {
       )
       .lean<LeadUserRecord>();
     if (!row) throw new NotFoundException("Lead user not found");
-    // Backfill the agent's existing captures when a legacy account receives
-    // its first structured jurisdiction, so those records remain visible
-    // under the same server-enforced state/district scope.
     if (jurisdiction)
       await this.leads.updateMany(
         { capturedBy: row._id },
@@ -372,10 +357,6 @@ export class LeadUsersService {
     return { id: row._id.toString() };
   }
 
-  /**
-   * Hard delete. The captured leads survive — `capturedByName` is denormalised
-   * onto each one precisely so the trail does not vanish with the account.
-   */
   async remove(id: string): Promise<{ id: string; leadsRetained: number }> {
     const objectId = this.objectId(id);
     const row = await this.leadUsers.findByIdAndDelete(objectId);
@@ -386,12 +367,6 @@ export class LeadUsersService {
     return { id, leadsRetained };
   }
 
-  // ── Supervisor-scoped queries ───────────────────────────────────────────
-
-  /**
-   * Field agents belonging to a specific district. Used by the supervisor
-   * dashboard to show only their own team.
-   */
   async listByDistrict(
     state: string,
     district: string,
@@ -472,10 +447,6 @@ export class LeadUsersService {
     };
   }
 
-  /**
-   * Find a single agent, but verify they belong to the given district and have valid role.
-   * Returns the agent record or throws ForbiddenException on mismatch.
-   */
   async findOneInDistrict(
     id: string,
     state: string,
@@ -501,15 +472,10 @@ export class LeadUsersService {
     return row;
   }
 
-  /**
-   * Create a field agent, lead executive, or document verifier on behalf of a supervisor.
-   * Forces the new account into the supervisor's own district.
-   */
   async createForSupervisor(
     dto: CreateLeadUserDto,
     supervisor: { id: string; name: string; state: string; district: string },
   ): Promise<LeadUserRecord> {
-    // Force supervisor's district — never trust what the client sends.
     dto.state = supervisor.state;
     dto.district = supervisor.district;
     dto.role =

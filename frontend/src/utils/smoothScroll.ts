@@ -1,8 +1,3 @@
-/**
- * Luxury Inertial Smooth Scroll Engine for Tirvona
- * Delivers ultra-buttery, 60/120fps fluid momentum physics,
- * exponential lerp damping, keyboard navigation, and seamless touch pass-through.
- */
 
 class SmoothScrollEngine {
   private isEnabled = false;
@@ -88,7 +83,6 @@ class SmoothScrollEngine {
   private handleWheel = (e: WheelEvent) => {
     if (!this.isEnabled || this.isTouching) return;
 
-    // Allow inner scrollable elements (e.g. modals, horizontal sliders) to handle themselves
     if (this.isScrollableElement(e.target as HTMLElement)) {
       this.targetY = window.scrollY;
       this.currentY = window.scrollY;
@@ -98,11 +92,9 @@ class SmoothScrollEngine {
     if (e.ctrlKey) return;
 
     let deltaY = e.deltaY;
-    // Normalize deltaMode (0 = pixels, 1 = lines, 2 = pages)
     if (e.deltaMode === 1) deltaY *= 38;
     else if (e.deltaMode === 2) deltaY *= window.innerHeight;
 
-    // Prevent default harsh stepped browser scroll
     e.preventDefault();
 
     const maxScroll = this.getMaxScroll();
@@ -198,7 +190,6 @@ class SmoothScrollEngine {
     const dt = Math.min((now - (this.lastTime || now)) / 1000, 0.05);
     this.lastTime = now;
 
-    // Time-normalized exponential lerp damping for consistent 60/120/144/240Hz glide
     const factor = 1 - Math.pow(1 - this.ease, Math.max(1, dt * 60));
     this.currentY += diff * factor;
 

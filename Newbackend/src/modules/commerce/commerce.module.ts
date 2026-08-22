@@ -21,9 +21,6 @@ import { MarketplaceOrderController } from "./presentation/marketplace-order.con
     ]),
   ],
   controllers: [
-    // Declared before MarketplaceController so `marketplace/orders` and
-    // `marketplace/addresses` are matched before that controller's
-    // `products/:idOrSlug`-style dynamic segments can shadow them.
     MarketplaceOrderController,
     MarketplaceController,
     MarketplaceHubController,

@@ -41,8 +41,6 @@ import {
   Zap,
 } from "lucide-react";
 
-// ─── Types ───────────────────────────────────────────────────────────────────
-
 interface RoomCategory {
   id: string;
   name: string;
@@ -63,21 +61,18 @@ interface NearbyAttraction {
 }
 
 interface FormData {
-  // Step 1 – Basic Info
   name: string;
   tagline: string;
   ashramType: string;
   establishedYear: string;
   languages: string;
 
-  // Step 2 – Trust & Registration
   trustName: string;
   trustRegNo: string;
   panNo: string;
   trustType: string;
   registeredBy: string;
 
-  // Step 3 – Address & GPS
   street: string;
   city: string;
   district: string;
@@ -87,7 +82,6 @@ interface FormData {
   lng: string;
   googleMapsUrl: string;
 
-  // Step 4 – Contact
   phone: string;
   altPhone: string;
   email: string;
@@ -96,37 +90,29 @@ interface FormData {
   instagram: string;
   youtube: string;
 
-  // Step 5 – Images
   coverImageUrl: string;
   galleryUrls: string[];
 
-  // Step 6 – About
   description: string;
 
-  // Step 7 – History
   history: string;
   foundedBy: string;
   yearFounded: string;
 
-  // Step 8 – Spiritual Activities
   activities: string[];
   dailySchedule: string;
   specialEvents: string;
 
-  // Step 9 – Amenities
   amenities: string[];
   customAmenity: string;
 
-  // Step 10 – Room Categories
   rooms: RoomCategory[];
 
-  // Step 11 – Pricing & Capacity
   totalCapacity: string;
   lowestNightPrice: string;
   peakSeasonMultiplier: string;
   donationInfo: string;
 
-  // Step 12 – Rules & Policies
   rules: string[];
   customRule: string;
   checkInTime: string;
@@ -135,7 +121,6 @@ interface FormData {
   maxStay: string;
   cancellationPolicy: string;
 
-  // Step 13 – Food & Prasad
   foodType: string;
   breakfastTime: string;
   lunchTime: string;
@@ -143,17 +128,14 @@ interface FormData {
   prasadDetails: string;
   specialDiet: string;
 
-  // Step 14 – Nearby Attractions
   nearbyAttractions: NearbyAttraction[];
 
-  // Step 15 – Medical & Emergency
   nearestHospital: string;
   hospitalDistance: string;
   emergencyPhone: string;
   firstAidAvailable: boolean;
   ambulanceAccess: boolean;
 
-  // Step 16 – Transport
   nearestRailway: string;
   railwayDistance: string;
   nearestAirport: string;
@@ -164,17 +146,13 @@ interface FormData {
   taxiAvailable: boolean;
   parkingAvailable: boolean;
 
-  // Step 17 – Verification Docs
   trustDeedUrl: string;
   fireSafetyCertUrl: string;
   landOwnershipUrl: string;
   uploadNotes: string;
 
-  // Step 18 – Google Maps (derived from lat/lng)
   mapEmbedUrl: string;
 }
-
-// ─── Constants ────────────────────────────────────────────────────────────────
 
 const DRAFT_KEY = "tirvona_add_ashram_draft";
 
@@ -265,8 +243,6 @@ const TRUST_TYPES = [
   "Private Trust",
 ];
 
-// ─── Default Form Data ────────────────────────────────────────────────────────
-
 const defaultFormData: FormData = {
   name: "",
   tagline: "",
@@ -344,11 +320,7 @@ const defaultFormData: FormData = {
   mapEmbedUrl: "",
 };
 
-// ─── Utility ──────────────────────────────────────────────────────────────────
-
 const uid = () => Math.random().toString(36).slice(2, 9);
-
-// ─── Field Components ─────────────────────────────────────────────────────────
 
 const Field: React.FC<{
   label: string;
@@ -412,8 +384,6 @@ const Toggle: React.FC<{
   </label>
 );
 
-// ─── Section Header ────────────────────────────────────────────────────────────
-
 const SectionHeader: React.FC<{
   icon: React.ReactNode;
   title: string;
@@ -431,8 +401,6 @@ const SectionHeader: React.FC<{
     </div>
   </div>
 );
-
-// ─── Main Component ───────────────────────────────────────────────────────────
 
 const AddAshramWizardPage: React.FC = () => {
   const navigate = useNavigate();
@@ -461,7 +429,6 @@ const AddAshramWizardPage: React.FC = () => {
       if (saved && !isEditing)
         return { ...defaultFormData, ...JSON.parse(saved) };
     } catch {
-      /* ignore */
     }
     return defaultFormData;
   });
@@ -473,7 +440,6 @@ const AddAshramWizardPage: React.FC = () => {
   const [newRule, setNewRule] = useState("");
   const [newGalleryUrl, setNewGalleryUrl] = useState("");
 
-  // Fetch ashram for editing
   useEffect(() => {
     if (editId) {
       const fetchAshram = async () => {
@@ -562,13 +528,11 @@ const AddAshramWizardPage: React.FC = () => {
     }
   }, [editId]);
 
-  // Autosave draft
   useEffect(() => {
     if (editId) return;
     try {
       localStorage.setItem(DRAFT_KEY, JSON.stringify(formData));
     } catch {
-      /* ignore */
     }
   }, [formData, editId]);
 
@@ -580,8 +544,6 @@ const AddAshramWizardPage: React.FC = () => {
       return e;
     });
   }, []);
-
-  // ─── Validation ──────────────────────────────────────────────────────────────
 
   const validateStep = (): boolean => {
     const e: Record<string, string> = {};
@@ -622,8 +584,6 @@ const AddAshramWizardPage: React.FC = () => {
     setStep((s) => Math.max(s - 1, 0));
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
-
-  // ─── Submit ───────────────────────────────────────────────────────────────────
 
   const handleSubmit = async () => {
     setSubmitting(true);
@@ -801,8 +761,6 @@ const AddAshramWizardPage: React.FC = () => {
     }
   };
 
-  // ─── Room Helpers ────────────────────────────────────────────────────────────
-
   const addRoom = () => {
     const newRoom: RoomCategory = {
       id: uid(),
@@ -832,8 +790,6 @@ const AddAshramWizardPage: React.FC = () => {
     );
   };
 
-  // ─── Attraction Helpers ───────────────────────────────────────────────────────
-
   const addAttraction = () => {
     set("nearbyAttractions", [
       ...formData.nearbyAttractions,
@@ -861,8 +817,6 @@ const AddAshramWizardPage: React.FC = () => {
     );
   };
 
-  // ─── Activity Helpers ─────────────────────────────────────────────────────────
-
   const addActivity = (val: string) => {
     const v = val.trim();
     if (v && !formData.activities.includes(v)) {
@@ -877,8 +831,6 @@ const AddAshramWizardPage: React.FC = () => {
       formData.activities.filter((x) => x !== a),
     );
 
-  // ─── Rule Helpers ─────────────────────────────────────────────────────────────
-
   const addRule = (val: string) => {
     const v = val.trim();
     if (v && !formData.rules.includes(v)) {
@@ -892,8 +844,6 @@ const AddAshramWizardPage: React.FC = () => {
       "rules",
       formData.rules.filter((x) => x !== r),
     );
-
-  // ─── Amenity Helpers ──────────────────────────────────────────────────────────
 
   const toggleAmenity = (am: string) => {
     if (formData.amenities.includes(am)) {
@@ -914,11 +864,6 @@ const AddAshramWizardPage: React.FC = () => {
     }
   };
 
-  // The Google Maps embed URL that used to back the read-only iframe on the map
-  // step is gone — that step now renders an interactive OpenStreetMap picker.
-
-  // ─── Error Badge ──────────────────────────────────────────────────────────────
-
   const ErrMsg: React.FC<{ field: string }> = ({ field }) =>
     errors[field] ? (
       <p className="flex items-center gap-1 text-[10px] text-danger font-bold mt-1">
@@ -926,12 +871,9 @@ const AddAshramWizardPage: React.FC = () => {
       </p>
     ) : null;
 
-  // ─── Step Renderers ───────────────────────────────────────────────────────────
-
   const renderStep = () => {
     const stepValue = STEPS[step].value;
     switch (stepValue) {
-      // ── Step 1: Basic Information ──────────────────────────────────────────
       case 0:
         return (
           <div className="space-y-5">
@@ -997,7 +939,6 @@ const AddAshramWizardPage: React.FC = () => {
           </div>
         );
 
-      // ── Step 2: Trust & Registration ───────────────────────────────────────
       case 1:
         return (
           <div className="space-y-5">
@@ -1055,7 +996,6 @@ const AddAshramWizardPage: React.FC = () => {
           </div>
         );
 
-      // ── Step 3: Address & GPS ───────────────────────────────────────────────
       case 2:
         return (
           <div className="space-y-5">
@@ -1145,7 +1085,6 @@ const AddAshramWizardPage: React.FC = () => {
           </div>
         );
 
-      // ── Step 4: Contact Information ─────────────────────────────────────────
       case 3:
         return (
           <div className="space-y-5">
@@ -1222,7 +1161,6 @@ const AddAshramWizardPage: React.FC = () => {
           </div>
         );
 
-      // ── Step 5: Images ──────────────────────────────────────────────────────
       case 4:
         return (
           <div className="space-y-5">
@@ -1323,7 +1261,6 @@ const AddAshramWizardPage: React.FC = () => {
           </div>
         );
 
-      // ── Step 6: About ───────────────────────────────────────────────────────
       case 5:
         return (
           <div className="space-y-5">
@@ -1353,7 +1290,6 @@ const AddAshramWizardPage: React.FC = () => {
           </div>
         );
 
-      // ── Step 7: Historical Significance ────────────────────────────────────
       case 6:
         return (
           <div className="space-y-5">
@@ -1399,7 +1335,6 @@ const AddAshramWizardPage: React.FC = () => {
           </div>
         );
 
-      // ── Step 8: Spiritual Activities ────────────────────────────────────────
       case 7:
         return (
           <div className="space-y-5">
@@ -1504,7 +1439,6 @@ const AddAshramWizardPage: React.FC = () => {
           </div>
         );
 
-      // ── Step 9: Amenities ───────────────────────────────────────────────────
       case 8:
         return (
           <div className="space-y-5">
@@ -1576,7 +1510,6 @@ const AddAshramWizardPage: React.FC = () => {
           </div>
         );
 
-      // ── Step 10: Room Categories ────────────────────────────────────────────
       case 9:
         return (
           <div className="space-y-5">
@@ -1731,7 +1664,6 @@ const AddAshramWizardPage: React.FC = () => {
           </div>
         );
 
-      // ── Step 11: Pricing & Capacity ─────────────────────────────────────────
       case 10:
         return (
           <div className="space-y-5">
@@ -1790,7 +1722,6 @@ const AddAshramWizardPage: React.FC = () => {
           </div>
         );
 
-      // ── Step 12: Rules & Policies ───────────────────────────────────────────
       case 11:
         return (
           <div className="space-y-5">
@@ -1903,7 +1834,6 @@ const AddAshramWizardPage: React.FC = () => {
           </div>
         );
 
-      // ── Step 13: Food & Prasad ──────────────────────────────────────────────
       case 12:
         return (
           <div className="space-y-5">
@@ -1938,9 +1868,6 @@ const AddAshramWizardPage: React.FC = () => {
                 />
               </Field>
             </div>
-            {/* Stacked on phones: a native <input type="time"> has a browser-
-                enforced minimum width (~110px) that will not shrink, so three
-                across a 320px viewport overflows and clips the AM/PM control. */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
               <Field label="Breakfast Time">
                 <Input
@@ -1978,7 +1905,6 @@ const AddAshramWizardPage: React.FC = () => {
           </div>
         );
 
-      // ── Step 14: Nearby Attractions ─────────────────────────────────────────
       case 13:
         return (
           <div className="space-y-5">
@@ -2046,7 +1972,6 @@ const AddAshramWizardPage: React.FC = () => {
           </div>
         );
 
-      // ── Step 15: Medical & Emergency ────────────────────────────────────────
       case 14:
         return (
           <div className="space-y-5">
@@ -2101,7 +2026,6 @@ const AddAshramWizardPage: React.FC = () => {
           </div>
         );
 
-      // ── Step 16: Transport Information ──────────────────────────────────────
       case 15:
         return (
           <div className="space-y-5">
@@ -2176,7 +2100,6 @@ const AddAshramWizardPage: React.FC = () => {
           </div>
         );
 
-      // ── Step 17: Verification Documents ────────────────────────────────────
       case 16:
         return (
           <div className="space-y-5">
@@ -2225,7 +2148,6 @@ const AddAshramWizardPage: React.FC = () => {
           </div>
         );
 
-      // ── Step 18: Google Maps ────────────────────────────────────────────────
       case 17:
         return (
           <div className="space-y-5">
@@ -2235,12 +2157,6 @@ const AddAshramWizardPage: React.FC = () => {
               subtitle="Click the map or drag the pin to set the exact entrance. Coordinates update automatically."
             />
 
-            {/* Interactive OpenStreetMap picker.
-                Replaces the previous Google Maps `output=embed` iframe, which
-                was read-only — an owner could preview a position but not set
-                one, and had to type coordinates by hand in Step 3. This is
-                editable, needs no API key, and writes straight back into the
-                same `lat`/`lng` form fields, so the submit payload is unchanged. */}
             <div className="space-y-4">
               <TirvonaMap
                 height="384px"
@@ -2312,7 +2228,6 @@ const AddAshramWizardPage: React.FC = () => {
           </div>
         );
 
-      // ── Step 19: Final Preview ──────────────────────────────────────────────
       case 18:
         return (
           <div className="space-y-5">
@@ -2328,7 +2243,6 @@ const AddAshramWizardPage: React.FC = () => {
               </p>
             </div>
 
-            {/* ── Preview: Title Header ── */}
             <div className="flex flex-col md:flex-row justify-between items-start gap-4 border-b border-gray-100 dark:border-slate-800 pb-6">
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
@@ -2368,7 +2282,6 @@ const AddAshramWizardPage: React.FC = () => {
               </div>
             </div>
 
-            {/* ── Preview: Gallery ── */}
             {(formData.coverImageUrl || formData.galleryUrls.some(Boolean)) && (
               <div className="grid grid-cols-3 md:grid-cols-4 gap-3 h-56">
                 <div className="col-span-2 rounded-[20px] overflow-hidden">
@@ -2405,7 +2318,6 @@ const AddAshramWizardPage: React.FC = () => {
               </div>
             )}
 
-            {/* ── Preview: About & History ── */}
             {(formData.description || formData.history) && (
               <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-5 shadow-sm">
                 <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white border-b border-gray-50 dark:border-slate-850 pb-3">
@@ -2427,7 +2339,6 @@ const AddAshramWizardPage: React.FC = () => {
               </div>
             )}
 
-            {/* ── Preview: Amenities ── */}
             {formData.amenities.length > 0 && (
               <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-5 shadow-sm">
                 <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white border-b border-gray-50 dark:border-slate-850 pb-3">
@@ -2446,7 +2357,6 @@ const AddAshramWizardPage: React.FC = () => {
               </div>
             )}
 
-            {/* ── Preview: Rooms ── */}
             {formData.rooms.length > 0 && (
               <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-5 shadow-sm">
                 <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white border-b border-gray-50 dark:border-slate-850 pb-3">
@@ -2487,7 +2397,6 @@ const AddAshramWizardPage: React.FC = () => {
               </div>
             )}
 
-            {/* ── Preview: Rules ── */}
             {formData.rules.length > 0 && (
               <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-5 shadow-sm">
                 <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white flex items-center gap-1.5 border-b border-gray-50 dark:border-slate-850 pb-3">
@@ -2533,7 +2442,6 @@ const AddAshramWizardPage: React.FC = () => {
               </div>
             )}
 
-            {/* ── Preview: Contact ── */}
             <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 shadow-sm space-y-4">
               <h4 className="font-extrabold text-xs text-[#0B192C] dark:text-white tracking-wider">
                 Contact Ashram Trust
@@ -2560,9 +2468,6 @@ const AddAshramWizardPage: React.FC = () => {
               </div>
             </div>
 
-            {/* ── Preview: Map ──
-                Read-only here (interactive={false}), so the reviewer can see the
-                pin without being able to nudge it on the final confirmation step. */}
             {formData.lat && formData.lng && (
               <TirvonaMap
                 height="256px"
@@ -2586,7 +2491,6 @@ const AddAshramWizardPage: React.FC = () => {
           </div>
         );
 
-      // ── Step 20: Submit for Approval ────────────────────────────────────────
       case 19:
         if (submitSuccess) {
           return (
@@ -2662,7 +2566,6 @@ const AddAshramWizardPage: React.FC = () => {
               subtitle="Final check before submitting this ashram to the Tirvona District Officer verification queue."
             />
 
-            {/* Completion summary */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {completedSteps.map((s, i) => (
                 <div
@@ -2730,7 +2633,6 @@ const AddAshramWizardPage: React.FC = () => {
           </div>
         );
 
-      // ── Step 21: Save Changes (Edit Mode only) ──────────────────────────────────
       case 20:
         if (submitSuccess) {
           return (
@@ -2812,15 +2714,10 @@ const AddAshramWizardPage: React.FC = () => {
     }
   };
 
-  // ─── Progress Indicator ────────────────────────────────────────────────────
-
   const progressPercent = ((step + 1) / STEPS.length) * 100;
-
-  // ─── Render ────────────────────────────────────────────────────────────────
 
   return (
     <div className="space-y-6 text-left max-w-7xl mx-auto pb-12">
-      {/* ── Page Module Banner Header ── */}
       <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[28px] shadow-sm mb-6">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
@@ -2850,7 +2747,6 @@ const AddAshramWizardPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Progress bar */}
         <div className="h-1.5 bg-gray-100 dark:bg-slate-800 rounded-full overflow-hidden mt-4">
           <div
             className="h-full bg-gradient-to-r from-[#0A4DA6] to-[#1D6AE5] transition-all duration-500 rounded-full"
@@ -2860,7 +2756,6 @@ const AddAshramWizardPage: React.FC = () => {
       </div>
 
       <div className="flex gap-8">
-        {/* ── Sidebar Step Navigator ── */}
         <aside className="hidden xl:block w-56 flex-shrink-0">
           <div className="sticky top-28 space-y-1 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-3 shadow-sm">
             {STEPS.map((s, i) => {
@@ -2892,13 +2787,11 @@ const AddAshramWizardPage: React.FC = () => {
           </div>
         </aside>
 
-        {/* ── Main Content ── */}
         <main className="flex-grow min-w-0">
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-6 md:p-8 shadow-sm">
             {renderStep()}
           </div>
 
-          {/* ── Navigation Controls ── */}
           <div className="flex justify-between items-center mt-6 pt-4">
             <button
               onClick={handleBack}
@@ -2912,7 +2805,6 @@ const AddAshramWizardPage: React.FC = () => {
               <ChevronLeft size={16} /> Previous
             </button>
 
-            {/* Mobile step indicator */}
             <span className="xl:hidden text-xs font-bold text-gray-400">
               {step + 1} / {STEPS.length}
             </span>
@@ -2951,7 +2843,6 @@ const AddAshramWizardPage: React.FC = () => {
         </main>
       </div>
 
-      {/* ── Mobile Bottom Step Scroller ── */}
       <div className="xl:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-[#0B192C] border-t border-gray-100 dark:border-slate-800 px-4 py-2 z-20 overflow-x-auto">
         <div className="flex gap-1.5 min-w-max mx-auto">
           {STEPS.map((s, i) => {
@@ -2977,7 +2868,6 @@ const AddAshramWizardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Bottom padding for mobile sticky bar */}
       <div className="xl:hidden h-16" />
     </div>
   );

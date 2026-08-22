@@ -10,7 +10,6 @@ import {
   RecentBookingsQueryDto,
 } from "./dtos/analytics.dto";
 
-/** The roles allowed to read platform-wide, jurisdiction-scoped telemetry. */
 const OVERSIGHT_ROLES = [
   "inspector",
   "district_officer",

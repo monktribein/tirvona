@@ -2,11 +2,6 @@ import { ConflictException, NotFoundException } from "@nestjs/common";
 import { BookingIdentityService } from "./booking-identity.service";
 import { MAX_PROPERTY_SEQUENCE } from "../domain/identity-code";
 
-/**
- * An in-memory stand-in for the counter collection whose `$inc` is genuinely
- * atomic in the sense that matters here: every call returns a distinct,
- * strictly increasing value per key, even when many callers are in flight.
- */
 const counterModel = (seed: Record<string, number> = {}) => {
   const state = new Map<string, number>(Object.entries(seed));
   return {
@@ -19,7 +14,6 @@ const counterModel = (seed: Record<string, number> = {}) => {
   };
 };
 
-/** Stand-in for the property register, enforcing the unique index on ashramId. */
 const propertyModel = () => {
   const rows: any[] = [];
   return {
@@ -121,7 +115,6 @@ describe("BookingIdentityService — property registration", () => {
       service.ensurePropertyIdentity("ashram-1"),
     ]);
 
-    // One row, one code — the loser adopts the winner's registration.
     expect(properties.rows).toHaveLength(1);
     expect(first.propertyCode).toBe(second.propertyCode);
   });
@@ -168,7 +161,6 @@ describe("BookingIdentityService — booking codes", () => {
     await service.issueForBooking("ashram-1");
     await service.issueForBooking("ashram-1");
 
-    // A different property starts its own visitor register at A1001.
     expect(await service.issueForBooking("ashram-2")).toBe("BCAG-00002-A1001");
   });
 
@@ -185,7 +177,6 @@ describe("BookingIdentityService — booking codes", () => {
   it("rolls the visitor letter over at the block boundary", async () => {
     const { service, counters } = build(BRAJ_ASHRAM);
     await service.ensurePropertyIdentity("ashram-1");
-    // Park the register one short of A9999.
     counters.state.set("visitor:BCAG-00001", 8998);
 
     expect(await service.issueForBooking("ashram-1")).toBe("BCAG-00001-A9999");

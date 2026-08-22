@@ -25,7 +25,8 @@
     /* Path Aliases */
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "lucide-react": ["./src/design-system/icons/lucide-material-compat.tsx"]
     },
     "ignoreDeprecations": "6.0"
   },

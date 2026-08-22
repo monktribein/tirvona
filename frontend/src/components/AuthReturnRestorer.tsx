@@ -9,7 +9,6 @@ import {
   setGuestPendingIntent,
 } from "../utils/guestGate";
 
-/** Handles an expired session and restores safe page controls after login. */
 export const AuthReturnRestorer = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -35,7 +34,6 @@ export const AuthReturnRestorer = () => {
     const intent = getGuestPendingIntent();
     if (!intent || intent.returnUrl !== currentReturnUrl()) return;
 
-    // Domain pages with structured data consume and clear their own intent.
     if (intent.data && Object.keys(intent.data).length > 0) return;
 
     let attempts = 0;

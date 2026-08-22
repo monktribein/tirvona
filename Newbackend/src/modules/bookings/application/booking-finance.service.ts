@@ -286,6 +286,7 @@ export class BookingFinanceService {
         .lean();
       filter.bookingId = { $in: bookings.map((x: any) => x.bookingId) };
     } else if (
+      !canManageAllAshrams(user) &&
       !["finance_manager", "super_admin", "support"].includes(user.role)
     )
       throw new ForbiddenException("Not authorized for refunds");

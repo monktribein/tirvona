@@ -42,13 +42,6 @@ export const OFFER_TYPES = [
   "VIP ACCESS",
 ];
 
-/**
- * Discount types the API accepts, verbatim.
- *
- * These strings are an enum on both the DTO and the Mongoose schema. Sending
- * anything else — the old "FixedAmount" — is rejected before the request
- * reaches the service, so the labels and the wire values are kept apart here.
- */
 export const DISCOUNT_TYPES = [
   { value: "Percentage", label: "Percentage (%)" },
   { value: "Flat Amount", label: "Flat Amount (₹)" },
@@ -68,14 +61,10 @@ const EMPTY_FORM = () => ({
   status: "active",
   featured: true,
   maximumRedemptions: 500,
-  // Two-level location binding. `destination` only narrows the ashram list in
-  // the form; `ashramId` is what is persisted and what booking validation
-  // enforces. Empty ashramId means the coupon stays platform-wide.
   destination: "",
   ashramId: "",
 });
 
-/** Resolve an offer's ashram reference to an id, populated or not. */
 const ashramIdOf = (offer: any): string =>
   String(offer?.ashramId?._id ?? offer?.ashramId ?? "");
 
@@ -83,17 +72,6 @@ const isOfferExpired = (offer: any): boolean =>
   offer?.status === "expired" ||
   Boolean(offer?.validTill && new Date(offer.validTill).getTime() < Date.now());
 
-/**
- * Offers & coupons, for the platform and for ashram owners alike.
- *
- * One component serves both consoles deliberately. An owner used to get a
- * separate page with its own wizard, which drifted from this one until the two
- * behaved differently on discounts, expiry, deletion and ashram binding — the
- * class of bug that is invisible until a guest is charged the wrong amount.
- * The only thing that varies by role is scope: the platform may bind a coupon
- * to any ashram or leave it global, an owner may bind only to their own and
- * must pick one.
- */
 export const AdminOffersPage: React.FC = () => {
   const { addNotification } = useNotifications();
   const { user } = useAuth();
@@ -104,45 +82,29 @@ export const AdminOffersPage: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  // Filters
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("All");
   const [selectedRoute, setSelectedRoute] = useState("all");
 
-  // Modal State
   const [showModal, setShowModal] = useState(false);
   const [editOfferId, setEditOfferId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // The row an action is currently running against, so only that card's
-  // buttons spin and a double click cannot fire the same request twice.
   const [pendingAction, setPendingAction] = useState<{
     id: string;
     action: "delete" | "duplicate" | "status" | "view";
   } | null>(null);
 
-  // View (read-only) drawer
   const [viewOffer, setViewOffer] = useState<any>(null);
 
-  // Delete confirmation
   const [confirmDelete, setConfirmDelete] = useState<any>(null);
 
   const [formData, setFormData] = useState<any>(EMPTY_FORM());
 
-  // Location picker. Destinations load once with the page; the ashram list is
-  // fetched per destination so the second dropdown only ever offers ashrams
-  // that actually sit in the chosen one.
   const [destinations, setDestinations] = useState<any[]>([]);
   const [destinationAshrams, setDestinationAshrams] = useState<any[]>([]);
   const [loadingAshrams, setLoadingAshrams] = useState(false);
 
-  /**
-   * The ashrams an owner manages, loaded once and filtered locally.
-   *
-   * An owner's list is small and already scoped by the API, so paging it by
-   * destination would be a round trip for nothing — and would offer ashrams
-   * they do not manage.
-   */
   const [myAshrams, setMyAshrams] = useState<any[]>([]);
 
   const loadDestinationAshrams = useCallback(
@@ -180,17 +142,10 @@ export const AdminOffersPage: React.FC = () => {
   );
 
   const handleDestinationChange = (city: string) => {
-    // The previously chosen ashram belongs to the old destination, so it is
-    // cleared rather than left pointing outside the new list.
     setFormData((prev: any) => ({ ...prev, destination: city, ashramId: "" }));
     loadDestinationAshrams(city);
   };
 
-  /**
-   * @param background true for a post-action refresh, which must not blank the
-   * grid out to skeletons — the administrator is looking at the row they just
-   * changed and needs to see it update in place.
-   */
   const fetchOffers = useCallback(
     async (background = false) => {
       if (background) setRefreshing(true);
@@ -215,9 +170,6 @@ export const AdminOffersPage: React.FC = () => {
     fetchOffers();
   }, [fetchOffers]);
 
-  // Destinations come from every published ashram for the platform, and from
-  // the caller's own listings for an owner — so the first dropdown can never
-  // offer a place they have nothing in.
   useEffect(() => {
     const load = isPlatformAdmin
       ? ashramService.destinations().then((res) => {
@@ -254,8 +206,6 @@ export const AdminOffersPage: React.FC = () => {
     );
   }, [addNotification, isPlatformAdmin]);
 
-  // Derived from the rows on screen, so every action that changes a row moves
-  // these tiles in the same render. No second source of truth to fall behind.
   const stats = {
     totalOffers: offers.length,
     activeOffers: offers.filter((o) => o.status === "active" && !isOfferExpired(o))
@@ -272,9 +222,6 @@ export const AdminOffersPage: React.FC = () => {
   };
 
   const openEditModal = (offer: any) => {
-    // `mine()` resolves the ashram reference, so an existing binding can be
-    // shown at both levels: its city preselects the destination and reloads
-    // that destination's ashrams so the second dropdown has the row to select.
     const boundAshram = offer.ashramId?._id ? offer.ashramId : null;
     const destination = boundAshram?.address?.city || "";
     setDestinationAshrams([]);
@@ -289,8 +236,6 @@ export const AdminOffersPage: React.FC = () => {
       targetRoute: offer.targetRoute || offer.category || "homepage",
       offerType: offer.offerType || "MAHAKUMBH OFFER",
       description: offer.description || "",
-      // Legacy rows carry the retired "FixedAmount" value, which the API no
-      // longer accepts; map it forward so opening one and saving it succeeds.
       discountType:
         offer.discountType === "FixedAmount"
           ? "Flat Amount"
@@ -324,8 +269,6 @@ export const AdminOffersPage: React.FC = () => {
       );
       return;
     }
-    // The API marks description required. Failing here beats a 400 the
-    // administrator has to decode from a toast.
     if (!description) {
       addNotification(
         "Validation Error",
@@ -342,9 +285,6 @@ export const AdminOffersPage: React.FC = () => {
       );
       return;
     }
-    // Only the platform may publish a coupon valid everywhere; an owner's must
-    // name one of their ashrams. The API enforces this too — this check just
-    // says so before the round trip.
     if (!isPlatformAdmin && !formData.ashramId) {
       addNotification(
         "Validation Error",
@@ -353,8 +293,6 @@ export const AdminOffersPage: React.FC = () => {
       );
       return;
     }
-    // Picking a destination and stopping there is almost always an unfinished
-    // selection, not a request for a platform-wide coupon.
     if (formData.destination && !formData.ashramId) {
       addNotification(
         "Validation Error",
@@ -366,9 +304,6 @@ export const AdminOffersPage: React.FC = () => {
 
     setSubmitting(true);
     try {
-      // Only fields the API declares. `whitelist` + `forbidNonWhitelisted` on
-      // the server rejects the whole request over one stray key, which is what
-      // the retired `discountPercentage` / `image` pair used to do.
       const payload = {
         offerTitle: title,
         promoCode: code,
@@ -383,8 +318,6 @@ export const AdminOffersPage: React.FC = () => {
         status: formData.status,
         featured: Boolean(formData.featured),
         maximumRedemptions: Number(formData.maximumRedemptions) || 100,
-        // Explicit null rather than omitted: on an edit that clears the
-        // binding, an absent key would leave the old ashram in place.
         ashramId: formData.ashramId || null,
       };
 
@@ -408,8 +341,6 @@ export const AdminOffersPage: React.FC = () => {
   const handleView = async (offer: any) => {
     setPendingAction({ id: offer._id, action: "view" });
     try {
-      // Re-read rather than reusing the list row: the list is a snapshot and
-      // the detail view resolves the linked ashram, which the listing omits.
       const res = await offerService.manageById(offer._id);
       setViewOffer(res.data?.data ?? offer);
     } catch (err) {
@@ -440,15 +371,12 @@ export const AdminOffersPage: React.FC = () => {
     setPendingAction({ id: offer._id, action: "delete" });
     try {
       const res = await offerService.remove(offer._id);
-      // The server reports whether the row was removed outright or archived
-      // because bookings already reference it. Repeat what it actually did.
       addNotification(
         "Success",
         res.data?.message || "Offer deleted successfully",
         "success",
       );
       setConfirmDelete(null);
-      // Drop the card immediately, then reconcile with the server.
       setOffers((rows) => rows.filter((row) => row._id !== offer._id));
       await fetchOffers(true);
     } catch (err) {
@@ -480,7 +408,6 @@ export const AdminOffersPage: React.FC = () => {
   const isBusy = (id: string, action?: string) =>
     pendingAction?.id === id && (!action || pendingAction.action === action);
 
-  // Filter Logic
   const filteredOffers = offers.filter((offer) => {
     const matchesSearch =
       searchQuery === "" ||
@@ -508,7 +435,6 @@ export const AdminOffersPage: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-16">
-      {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 shadow-sm">
         <div>
           <div className="flex items-center gap-2 mb-1">
@@ -537,7 +463,6 @@ export const AdminOffersPage: React.FC = () => {
         </button>
       </div>
 
-      {/* Stats Overview */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Offers</p>
@@ -557,10 +482,8 @@ export const AdminOffersPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Filters and Controls */}
       <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-5 space-y-4 shadow-sm">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-          {/* Status Tabs */}
           <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
             {["All", "Active", "Featured", "Expired"].map((tab) => (
               <button
@@ -577,7 +500,6 @@ export const AdminOffersPage: React.FC = () => {
             ))}
           </div>
 
-          {/* Search & Route Dropdown */}
           <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
             <div className="relative w-full sm:w-60">
               <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -605,8 +527,6 @@ export const AdminOffersPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Load failure. Distinct from "no offers" — the difference decides
-        whether the administrator should retry or create something. */}
       {loadError && !loading && (
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 rounded-2xl p-4">
           <div className="flex items-start gap-2.5">
@@ -629,7 +549,6 @@ export const AdminOffersPage: React.FC = () => {
         </div>
       )}
 
-      {/* Offers Cards Grid */}
       {loading ? (
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           {[1, 2].map((n) => (
@@ -676,8 +595,6 @@ export const AdminOffersPage: React.FC = () => {
                           {routeObj?.label || "Homepage"}
                         </span>
 
-                        {/* Which ashram the coupon is redeemable at — the
-                          single most consequential setting on the record. */}
                         <span
                           className={`px-2.5 py-0.5 rounded-full text-[10px] font-black inline-flex items-center gap-1 ${
                             offer.ashramId?.name
@@ -788,12 +705,7 @@ export const AdminOffersPage: React.FC = () => {
         </div>
       )}
 
-      {/* Add / Edit Offer Modal */}
       {showModal && (
-        /* Panel height is capped and the fields scroll inside it. Centring a
-          tall panel in a scrolling flex container clips its top out of reach —
-          which is why the dialog's own heading and its Publish button were both
-          cut off. Header and footer stay pinned; only the middle moves. */
         <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
           <div
             role="dialog"
@@ -825,7 +737,6 @@ export const AdminOffersPage: React.FC = () => {
               className="flex flex-col min-h-0 flex-1"
             >
               <div className="flex-1 min-h-0 overflow-y-auto px-5 sm:px-8 py-5 grid grid-cols-1 sm:grid-cols-2 gap-4 content-start">
-                {/* Title */}
                 <div className="sm:col-span-2">
                   <label className="text-[11px] font-extrabold text-gray-700 dark:text-gray-300 block mb-1">
                     Offer Title <span className="text-rose-500">*</span>
@@ -840,7 +751,6 @@ export const AdminOffersPage: React.FC = () => {
                   />
                 </div>
 
-                {/* Promo Code */}
                 <div>
                   <label className="text-[11px] font-extrabold text-gray-700 dark:text-gray-300 block mb-1">
                     Coupon / Promo Code <span className="text-rose-500">*</span>
@@ -855,7 +765,6 @@ export const AdminOffersPage: React.FC = () => {
                   />
                 </div>
 
-                {/* Target Route / Category Dropdown */}
                 <div>
                   <label className="text-[11px] font-extrabold text-gray-700 dark:text-gray-300 block mb-1">
                     Category / Target Route <span className="text-rose-500">*</span>
@@ -873,10 +782,6 @@ export const AdminOffersPage: React.FC = () => {
                   </select>
                 </div>
 
-                {/* ── Location binding (two levels) ──
-                  Destination first, then the ashrams inside it. Only the
-                  ashram is saved; the destination exists to make the second
-                  list short and correct. */}
                 <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-gray-50/70 dark:bg-slate-900/40 border border-gray-100 dark:border-slate-800">
                   <div className="sm:col-span-2 flex items-center gap-2 flex-wrap">
                     <MapPin size={14} className="text-[#0A4DA6]" />
@@ -964,7 +869,6 @@ export const AdminOffersPage: React.FC = () => {
                   )}
                 </div>
 
-                {/* Offer Type Badge */}
                 <div>
                   <label className="text-[11px] font-extrabold text-gray-700 dark:text-gray-300 block mb-1">
                     Badge / Offer Type
@@ -982,7 +886,6 @@ export const AdminOffersPage: React.FC = () => {
                   </select>
                 </div>
 
-                {/* Discount Type */}
                 <div>
                   <label className="text-[11px] font-extrabold text-gray-700 dark:text-gray-300 block mb-1">
                     Discount Type
@@ -1000,7 +903,6 @@ export const AdminOffersPage: React.FC = () => {
                   </select>
                 </div>
 
-                {/* Discount Value */}
                 <div>
                   <label className="text-[11px] font-extrabold text-gray-700 dark:text-gray-300 block mb-1">
                     Discount Amount / Value
@@ -1014,11 +916,6 @@ export const AdminOffersPage: React.FC = () => {
                   />
                 </div>
 
-                {/* Redemption cap. Editable because the server recomputes the
-                  remaining balance from what has already been spent — raising
-                  the cap adds headroom, it does not refund used redemptions.
-                  Sits beside the discount so the two validity dates can share
-                  the row below rather than one of them standing alone. */}
                 <div>
                   <label className="text-[11px] font-extrabold text-gray-700 dark:text-gray-300 block mb-1">
                     Maximum Redemptions
@@ -1037,7 +934,6 @@ export const AdminOffersPage: React.FC = () => {
                   />
                 </div>
 
-                {/* Dates */}
                 <div>
                   <label className="text-[11px] font-extrabold text-gray-700 dark:text-gray-300 block mb-1">
                     Valid From
@@ -1063,7 +959,6 @@ export const AdminOffersPage: React.FC = () => {
                   />
                 </div>
 
-                {/* Image Upload */}
                 <div className="sm:col-span-2 space-y-2">
                   <label className="text-[11px] font-extrabold text-gray-700 dark:text-gray-300 block">
                     Banner / Thumbnail Image
@@ -1085,7 +980,6 @@ export const AdminOffersPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Description */}
                 <div className="sm:col-span-2">
                   <label className="text-[11px] font-extrabold text-gray-700 dark:text-gray-300 block mb-1">
                     Description <span className="text-rose-500">*</span>
@@ -1100,7 +994,6 @@ export const AdminOffersPage: React.FC = () => {
                   />
                 </div>
 
-                {/* Status & Featured */}
                 <div>
                   <label className="text-[11px] font-extrabold text-gray-700 dark:text-gray-300 block mb-1">
                     Status
@@ -1117,8 +1010,6 @@ export const AdminOffersPage: React.FC = () => {
                   </select>
                 </div>
 
-                {/* Pairs with Status on the same row, so no field is left
-                  stranded beside an empty half. */}
                 <div className="flex items-center sm:pt-6">
                   <label className="flex items-start gap-2 text-xs font-extrabold text-[#0B192C] dark:text-white cursor-pointer">
                     <input
@@ -1134,9 +1025,6 @@ export const AdminOffersPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Pinned below the scroll area, so the primary action is
-                reachable without scrolling to the bottom of a long form.
-                Buttons go full-width and stack on a narrow screen. */}
               <div className="shrink-0 flex flex-col-reverse sm:flex-row items-stretch sm:items-center sm:justify-end gap-2 sm:gap-3 px-5 sm:px-8 py-4 border-t border-gray-100 dark:border-slate-800 bg-white dark:bg-[#0B192C]">
                 <button
                   type="button"
@@ -1159,7 +1047,6 @@ export const AdminOffersPage: React.FC = () => {
         </div>
       )}
 
-      {/* Read-only Offer Detail */}
       {viewOffer && (
         <div
           className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm overflow-y-auto"
@@ -1310,8 +1197,6 @@ export const AdminOffersPage: React.FC = () => {
         </div>
       )}
 
-      {/* Delete confirmation. Names the offer and its code, so an administrator
-        working a filtered grid can see exactly which row is about to go. */}
       {confirmDelete && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
           <div
@@ -1328,8 +1213,6 @@ export const AdminOffersPage: React.FC = () => {
                 <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white">
                   Delete this offer?
                 </h3>
-                {/* A malformed row has neither. Identify it by id so the
-                  administrator still knows exactly what they are removing. */}
                 <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mt-1 leading-relaxed break-words">
                   <span className="font-black text-[#0B192C] dark:text-white">
                     {confirmDelete.offerTitle ||

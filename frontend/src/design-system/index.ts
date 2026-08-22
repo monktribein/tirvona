@@ -1,4 +1,3 @@
-// Tirvona Enterprise Design System 2.0 - Central Index Export
 export * from "./theme";
 
 export {

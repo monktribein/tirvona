@@ -126,9 +126,6 @@ export const StaffManagementPage: React.FC = () => {
 
   return (
     <div className="space-y-6 text-left w-full">
-      {/* Wraps on phones: the title block plus the action button cannot share
-          a 320px row, and without flex-wrap the button is squeezed until its
-          label clips. shrink-0 keeps it from being compressed once wrapped. */}
       <div className="flex flex-wrap justify-between items-start sm:items-center gap-3 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-4 sm:p-6 rounded-[24px] shadow-sm">
         <div className="min-w-0">
           <h2 className="text-base font-extrabold text-[#0B192C] dark:text-white flex items-center gap-2">

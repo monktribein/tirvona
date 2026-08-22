@@ -1,4 +1,3 @@
-// Tirvona Enterprise Design System 2.0 - Border Radius Tokens
 
 export const radius = {
   pill: "9999px",

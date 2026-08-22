@@ -155,9 +155,6 @@ export class VisitorArticlesController {
   ) {
     return this.community.updateArticle(user, id, dto);
   }
-  // Administrator copy-edit. Order against the visitor's `@Put(":id")` above
-  // does not matter: `:id` matches a single segment, so it can never swallow
-  // the two-segment `admin/:id`.
   @Put("admin/:id") @Roles("owner", "manager", "super_admin") adminUpdate(
     @CurrentUser() user: AuthenticatedUser,
     @Param("id") id: string,

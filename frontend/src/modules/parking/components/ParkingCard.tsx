@@ -19,17 +19,10 @@ import ParkingAmenityList from "./ParkingAmenityList";
 
 interface ParkingCardProps {
   parking: ParkingLocation;
-  /** Carried into the detail link so the visitor's dates survive navigation. */
   query?: string;
   fromPrice?: number;
 }
 
-/**
- * A parking result card.
- *
- * Matches the premium OTA card language used across the site: 24px radius,
- * white/`#0B192C` surface, hairline border, lift on hover, gold rating chip.
- */
 export const ParkingCard: React.FC<ParkingCardProps> = ({
   parking,
   query = "",
@@ -47,7 +40,6 @@ export const ParkingCard: React.FC<ParkingCardProps> = ({
 
   return (
     <article className="group bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col h-full">
-      {/* Image */}
       <div className="relative h-44 sm:h-40 overflow-hidden shrink-0">
         <img
           src={image}
@@ -79,7 +71,6 @@ export const ParkingCard: React.FC<ParkingCardProps> = ({
         )}
       </div>
 
-      {/* Body */}
       <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
         <div className="space-y-2.5">
           <div className="space-y-1">
@@ -118,7 +109,6 @@ export const ParkingCard: React.FC<ParkingCardProps> = ({
         </div>
 
         <div className="space-y-3 pt-1">
-          {/* Live availability + opening hours */}
           <div className="flex items-center justify-between gap-2 text-[10px] font-bold">
             <span
               className={`inline-flex items-center gap-1 ${availabilityTone(available, total)}`}
@@ -136,7 +126,6 @@ export const ParkingCard: React.FC<ParkingCardProps> = ({
             </span>
           </div>
 
-          {/* Footer */}
           <div className="flex items-end justify-between gap-2 pt-2">
             <div className="pt-2.5">
               {fromPrice !== undefined ? (

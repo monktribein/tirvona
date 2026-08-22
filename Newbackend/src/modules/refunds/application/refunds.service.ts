@@ -19,13 +19,9 @@ import {
 } from "../infrastructure/persistence/refund.schemas";
 import { RefundPolicyService } from "./refund-policy.service";
 
-/** Full visibility and every action. */
 const PLATFORM_ROLES = ["super_admin", "national_admin"];
-/** May approve and push money, but not rewrite policy. */
 const FINANCE_ROLES = ["finance_manager"];
-/** May triage and reject, never approve a payout. */
 const SUPPORT_ROLES = ["support"];
-/** See only refunds against their own ashrams. */
 const ASHRAM_ROLES = ["ashram_owner", "owner", "manager"];
 
 @Injectable()
@@ -42,14 +38,6 @@ export class RefundsService {
     private readonly config: ConfigService,
   ) { }
 
-  // ── Visibility ───────────────────────────────────────────────────────────
-  /**
-   * The refunds this caller may see.
-   *
-   * Applied as a query filter rather than a post-fetch check, so a request
-   * outside the caller's scope is never loaded. A pilgrim sees only their own;
-   * an ashram role sees only refunds against ashrams they hold.
-   */
   private async scopeFor(
     user: AuthenticatedUser,
   ): Promise<Record<string, any>> {
@@ -88,7 +76,6 @@ export class RefundsService {
     return this.canApprove(user) || SUPPORT_ROLES.includes(user.role);
   }
 
-  // ── State machine ────────────────────────────────────────────────────────
   private assertTransition(from: RefundStatus, to: RefundStatus): void {
     if (!REFUND_TRANSITIONS[from]?.includes(to))
       throw new BadRequestException(
@@ -130,14 +117,6 @@ export class RefundsService {
     });
   }
 
-  // ── Source resolution ────────────────────────────────────────────────────
-  /**
-   * Read the money facts from whichever domain the refund is against.
-   *
-   * Only ashram bookings are wired here; the other modules resolve through the
-   * same shape once their adapters are added, which is why the return type is
-   * module-neutral rather than a booking.
-   */
   private async loadSource(module: string, sourceId: string) {
     if (module !== "ashram_booking")
       throw new BadRequestException(
@@ -163,7 +142,6 @@ export class RefundsService {
     };
   }
 
-  // ── Requests ─────────────────────────────────────────────────────────────
   async create(
     user: AuthenticatedUser,
     dto: {
@@ -175,8 +153,6 @@ export class RefundsService {
   ): Promise<any> {
     const loaded = await this.loadSource(dto.module, dto.sourceId);
 
-    // A customer may only claim against their own purchase; staff may raise one
-    // on a customer's behalf.
     const onBehalf = this.canReview(user);
     if (!onBehalf && loaded.customerId !== String(user.id))
       throw new ForbiddenException("This purchase belongs to another account");
@@ -209,7 +185,6 @@ export class RefundsService {
         status: "pending",
       });
     } catch (error: any) {
-      // The partial unique index permits only one open request per source.
       if (error?.code === 11000)
         throw new ConflictException(
           "A refund request for this purchase is already in progress",
@@ -253,8 +228,6 @@ export class RefundsService {
       after: { amount: breakdown.netRefundable, policyId },
     });
 
-    // Auto-approval is a policy decision, not a role one: a small refund inside
-    // the configured threshold skips the queue entirely.
     const threshold = Number((policy as any).autoApproveBelow ?? 0);
     if (threshold > 0 && breakdown.netRefundable <= threshold) {
       await this.recordStatus(
@@ -317,7 +290,6 @@ export class RefundsService {
     return { ...request, history, transactions };
   }
 
-  /** Move a request into review. Triage, available to support as well. */
   async review(user: AuthenticatedUser, id: string, note: string): Promise<any> {
     if (!this.canReview(user))
       throw new ForbiddenException("Not authorized to review refunds");
@@ -341,8 +313,6 @@ export class RefundsService {
     const amount = Number(calculation?.netRefundable ?? 0);
     const policy: any = calculation?.policySnapshot ?? {};
 
-    // A large payout needs a second, different approver. Recording the first
-    // and refusing to let them complete it alone is the whole point.
     const dualThreshold = Number(policy.requiresSecondApprovalAbove ?? 0);
     if (dualThreshold > 0 && amount >= dualThreshold) {
       if (!request.approvedBy) {
@@ -389,7 +359,6 @@ export class RefundsService {
     return this.get(user, id);
   }
 
-  /** A customer may withdraw their own claim while it is still open. */
   async cancel(user: AuthenticatedUser, id: string, note: string): Promise<any> {
     const scope = await this.scopeFor(user);
     const request = await this.requests.findOne({ _id: id, ...scope });
@@ -405,16 +374,6 @@ export class RefundsService {
     return this.get(user, id);
   }
 
-  // ── Gateway execution ────────────────────────────────────────────────────
-  /**
-   * Send an approved refund to the gateway.
-   *
-   * The idempotency key is derived from the request id and attempt number, and
-   * the column is unique — so a double-clicked "process" button or a retried
-   * job collides on insert instead of issuing a second refund. The money always
-   * returns by the route it arrived on: Razorpay refunds settle to the original
-   * instrument, which is why the gateway payment id is required.
-   */
   async process(user: AuthenticatedUser, id: string): Promise<any> {
     if (!this.canApprove(user))
       throw new ForbiddenException("Not authorized to process refunds");
@@ -461,8 +420,6 @@ export class RefundsService {
     const keyId = this.config.get<string>("razorpayKeyId");
     const keySecret = this.config.get<string>("razorpayKeySecret");
 
-    // Without gateway keys this is a local demo environment. Production refuses
-    // rather than marking money returned that never moved.
     if (!keyId || !keySecret) {
       if (this.config.get<string>("nodeEnv") === "production")
         throw new BadRequestException(
@@ -504,8 +461,6 @@ export class RefundsService {
       await this.log("REFUND_GATEWAY_INITIATED", user, request._id, {
         after: { gatewayRefundId: result?.id, amount },
       });
-      // Razorpay settles asynchronously; the webhook moves it to `refunded`.
-      // Anything already reported as processed is settled immediately.
       if (result?.status === "processed")
         return this.settle(request, user, "Gateway reported the refund processed");
       return this.get(user, id);
@@ -524,7 +479,6 @@ export class RefundsService {
     }
   }
 
-  /** Mark the money returned and write it back onto the source record. */
   private async settle(
     request: any,
     user: AuthenticatedUser | null,
@@ -537,8 +491,6 @@ export class RefundsService {
     request.settledAt = new Date();
     await request.save();
 
-    // The booking carries the customer-visible outcome, so it has to agree
-    // with the refund ledger.
     await this.bookings.updateOne(
       { _id: request.sourceId },
       {
@@ -554,7 +506,6 @@ export class RefundsService {
     return this.requests.findById(request._id).lean();
   }
 
-  // ── Reporting ────────────────────────────────────────────────────────────
   async summary(user: AuthenticatedUser): Promise<any> {
     const scope = await this.scopeFor(user);
     const [byStatus, totals] = await Promise.all([

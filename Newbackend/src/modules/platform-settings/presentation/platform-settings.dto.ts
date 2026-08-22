@@ -18,24 +18,11 @@ import {
   type PlatformFeeScope,
 } from "../domain/platform-fee";
 
-/**
- * The fee engine's configuration.
- *
- * Previously a bare `@IsObject()`, which meant none of these fields were
- * validated at all: `type` accepted any string and `value` accepted any type,
- * so a malformed save could silently park a value the pricing path could not
- * interpret. `@ValidateNested` gives the inner fields the same guarantees the
- * rest of the payload already had.
- */
 export class PlatformFeeDto {
   @IsOptional() @IsBoolean() enabled?: boolean;
   @IsOptional() @IsIn(["flat", "percentage"]) type?: "flat" | "percentage";
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) value?: number;
   @IsOptional() @IsString() @MaxLength(120) label?: string;
-  /**
-   * Booking systems the fee is levied on. An empty array is meaningful — it
-   * turns the fee off everywhere without discarding the configured amount.
-   */
   @IsOptional()
   @IsArray()
   @ArrayUnique()
@@ -45,11 +32,6 @@ export class PlatformFeeDto {
 
 export class NotificationSoundDto {
   @IsOptional() @IsBoolean() enabled?: boolean;
-  /**
-   * An https URL only. The value is handed straight to `new Audio(...)` in
-   * every dashboard, so allowing `javascript:` or `data:` here would turn a
-   * settings field into a delivery channel for arbitrary content.
-   */
   @IsOptional()
   @IsString()
   @MaxLength(600)
@@ -67,7 +49,6 @@ export class UpdatePlatformSettingsDto {
   @Type(() => PlatformFeeDto)
   platformFee?: PlatformFeeDto;
   @IsOptional() @Type(() => Number) @IsNumber() @Min(0) gstRate?: number;
-  /** GST on the platform fee. The stay itself is never taxed. */
   @IsOptional()
   @Type(() => Number)
   @IsNumber()

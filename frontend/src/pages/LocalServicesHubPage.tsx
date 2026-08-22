@@ -61,13 +61,11 @@ export const LocalServicesHubPage: React.FC = () => {
 
   return (
     <div className="min-h-screen pb-16 space-y-6">
-      {/* Clean Text Header (Matching all other section headers on the site) */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6">
         <div className="text-center space-y-2.5 max-w-3xl mx-auto py-2">
           <p className="font-['Kalam'] text-2xl sm:text-4xl lg:text-5xl font-bold text-[#E58C28]">
             Local Services, Transport &amp; Guides
           </p>
-          {/* Decorative Saffron Underline Divider */}
           <div className="flex items-center justify-center gap-2.5 my-1.5">
             <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
             <Sparkles
@@ -81,7 +79,6 @@ export const LocalServicesHubPage: React.FC = () => {
             emergency medical care, and sacred stores near you.
           </p>
 
-          {/* Location Selector */}
           <div className="max-w-xs mx-auto pt-2 flex items-center">
             <div className="w-full bg-white dark:bg-[#0B192C] rounded-full px-4 py-2 shadow-md border border-gray-200 dark:border-slate-800 flex items-center">
               <MapPin size={16} className="text-[#0A4DA6] shrink-0" />
@@ -101,7 +98,6 @@ export const LocalServicesHubPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Category Tabs Bar */}
         <div className="mt-6 flex items-center justify-center gap-2 overflow-x-auto pb-2 scrollbar-none">
           {categories.map((cat) => {
             const IconComp = cat.icon;
@@ -144,7 +140,6 @@ export const LocalServicesHubPage: React.FC = () => {
             </p>
           </div>
         ) : (
-          /* Services Cards Grid */
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {items.map((item) => (
               <div
@@ -204,7 +199,6 @@ export const LocalServicesHubPage: React.FC = () => {
           </div>
         )}
 
-        {/* Explore Marketplace Button */}
         <div className="pt-6 flex justify-center">
           <button
             type="button"

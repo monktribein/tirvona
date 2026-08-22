@@ -9,7 +9,6 @@ import { Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
 const FALLBACK_IMAGE =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E";
 
-/** Header cart trigger with a live item-count badge. */
 export const CartButton: React.FC = () => {
   const { count, open } = useCart();
   return (
@@ -29,14 +28,6 @@ export const CartButton: React.FC = () => {
   );
 };
 
-/**
- * Slide-over cart.
- *
- * The subtotal shown here is the last known catalogue price and is labelled as
- * indicative: the binding total is produced by the server at checkout, so a
- * price that moved while the item sat in the cart is corrected there rather
- * than silently honoured.
- */
 export const CartDrawer: React.FC = () => {
   const { lines, count, displaySubtotal, setQuantity, remove, isOpen, close } =
     useCart();
@@ -69,7 +60,6 @@ export const CartDrawer: React.FC = () => {
   const goToCheckout = () => {
     close();
     if (!user) {
-      // Preserve the intent so the basket survives the login round trip.
       setGuestPendingIntent({
         type: "marketplace_cart",
         returnUrl: "/marketplace/checkout",

@@ -54,13 +54,6 @@ export class GovernanceService {
     featured_banners: "featured_banner",
   };
   private readonly adminCollections = new Set(ADMIN_MODULE_KEYS);
-  /**
-   * The console renders a table of scalar columns and edits a handful of
-   * fields, so the listing fetches only those. Everything else stays in the
-   * database — safe, because a save issues a partial $set and leaves untouched
-   * fields alone. Ashram profiles are large enough that sending them whole put
-   * the request past the client's timeout on a slow connection.
-   */
   private static readonly ADMIN_LIST_PROJECTIONS: Record<string, string> = {
     Admin_ashrams:
       "name status isVerified rating slug ashramCode ownerId email phone contact.email contact.phone address.street address.city address.state address.district address.pincode images coverImageUrl gallery galleryUrls documents createdAt updatedAt",
@@ -72,8 +65,6 @@ export class GovernanceService {
       "ashramId roomId name validFrom validUntil daysOfWeek multiplier overridePrice minStay taxPercent platformFeePercent priority isActive createdAt updatedAt",
     Admin_users:
       "name email phone role status isVerified district state employerAshramId createdAt updatedAt",
-    // Parking rows nest pricing, history, and geo objects the table never
-    // renders; a location additionally carries its whole image gallery.
     Admin_parking_partners:
       "partnerCode businessName contactPerson contactEmail contactPhone status isVerified commissionPercent address.city address.state createdAt updatedAt",
     Admin_parking_locations:
@@ -92,6 +83,56 @@ export class GovernanceService {
       "reference type direction amount currency partnerId locationId bookingId description occurredAt createdAt",
     Admin_parking_scan_logs:
       "action result locationId bookingId vehicleNumber assignedSlotNumber scannedByUserId message scannedAt createdAt",
+    Admin_aarti_sessions:
+      "name slug kind deity status isFeatured startTime durationMinutes daysOfWeek totalCapacity ashramId ownerId venue.city venue.state rating.average coverImage images contactPhone approvedAt createdAt updatedAt",
+    Admin_aarti_pass_types:
+      "name code sessionId ashramId basePrice totalCapacity maxPerBooking zoneLabel includesPrasad includesSankalp isActive displayOrder createdAt updatedAt",
+    Admin_aarti_pricing:
+      "name sessionId passTypeId validFrom validUntil daysOfWeek multiplier overridePrice taxPercent priority isActive createdAt updatedAt",
+    Admin_aarti_availability:
+      "sessionId passTypeId date totalCapacity bookedCount blockedCount customPrice isClosed note createdAt updatedAt",
+    Admin_aarti_holidays:
+      "name type sessionId ashramId startDate endDate peakMultiplier isClosed isActive createdAt updatedAt",
+    Admin_aarti_staff:
+      "userId ashramId sessionIds aartiRole employeeCode shift phone status lastActiveAt createdAt updatedAt",
+    Admin_aarti_bookings:
+      "bookingReference status paymentStatus sessionId ashramId passTypeId customerId sessionDate startsAt passCount checkedInCount pricing.totalAmount pricing.donationAmount createdAt updatedAt",
+    Admin_aarti_payments:
+      "bookingId userId ashramId amount currency purpose method status transactionId paidAt createdAt",
+    Admin_aarti_transactions:
+      "reference type direction amount currency ashramId sessionId bookingId description occurredAt createdAt",
+    Admin_aarti_commissions:
+      "bookingId ashramId sessionId grossAmount commissionPercent commissionAmount ashramEarning settlementStatus settledAt payoutBatchId createdAt updatedAt",
+    Admin_aarti_scan_logs:
+      "action result sessionId ashramId bookingId bookingReference passCount scannedByUserId message scannedAt createdAt",
+    Admin_aarti_reviews:
+      "sessionId customerId bookingId rating.overall comment status moderatedBy createdAt updatedAt",
+    Admin_aarti_streams:
+      "title slug provider streamUrl embedUrl thumbnailUrl status isLive isFeatured ashramId ownerId sessionId city state startsAt endsAt viewCount displayOrder approvedAt createdAt updatedAt",
+    Admin_event_festivals:
+      "name slug eventType deity tagline status isFeatured startDate endDate startTime durationMinutes requiresRegistration dailyCapacity maxSeatsPerRegistration ashramId ownerId venue.city venue.state coverImage images contactPhone approvedAt createdAt updatedAt",
+    Admin_event_availability:
+      "eventId ashramId date totalCapacity bookedCount blockedCount isClosed note createdAt updatedAt",
+    Admin_event_registrations:
+      "registrationReference status eventId ashramId customerId attendDate startsAt seats checkedInCount checkedInAt contactName contactPhone createdAt updatedAt",
+    Admin_event_qr_codes:
+      "registrationId eventId customerId displayCode version status validFrom validUntil entryScannedAt scanCount createdAt",
+    Admin_event_scan_logs:
+      "action result eventId ashramId registrationId registrationReference seats scannedByUserId message scannedAt createdAt",
+    Admin_event_notifications:
+      "userId registrationId event title message channel status sentAt readAt createdAt",
+    Admin_event_staff:
+      "userId ashramId eventIds eventRole employeeCode shift phone status lastActiveAt createdAt updatedAt",
+    Admin_event_settings:
+      "scope ashramId eventId gateOpensBeforeMinutes maxSeatsPerRegistration registrationOpensDaysAhead registrationClosesBeforeMinutes allowRegistration allowCancellation requireAttendeeNames updatedBy updatedAt",
+    Admin_pilgrimage_circuits:
+      "name slug circuitType status isFeatured usableAsPlannerTemplate durationDays totalDistanceKm difficulty stopCount startCity endCity state region ashramId ownerId coverImage viewCount approvedAt createdAt updatedAt",
+    Admin_pilgrimage_stops:
+      "circuitId ashramId linkedAshramId dayNumber order name stopType templeSlug city state latitude longitude distanceFromPreviousKm travelMinutes suggestedDurationMinutes isOvernightStop createdAt updatedAt",
+    Admin_pilgrimage_itineraries:
+      "userId circuitId title startDate travellers pace status notes createdAt updatedAt",
+    Admin_pilgrimage_settings:
+      "scope ashramId circuitId maxDurationDays maxStopsPerCircuit defaultPaceStopsPerDay updatedBy updatedAt",
   };
   private readonly adminNeutralSubKeys = new Set([
     "all",
@@ -697,9 +738,6 @@ export class GovernanceService {
         filter.$or = searchFilter;
       }
     }
-    // Foreign keys render as a bare ObjectId unless they are resolved, which
-    // makes a joined table (a parking booking names neither its location nor
-    // its customer) unreadable.
     const refs = ADMIN_REFS[name.replace(/^Admin_/, "")] ?? {};
     const populate = Object.entries(refs).map(([path, { select }]) => ({
       path,
@@ -746,9 +784,6 @@ export class GovernanceService {
             roomId: { _id: room._id, name: room.name },
             name: rule.name || "Seasonal room price",
             priceType: "Seasonal price",
-            // Sent as plain calendar dates: the console edits these in a
-            // `<input type="date">`, which silently renders blank for a full
-            // ISO timestamp and so lost the dates on every save.
             validFrom: GovernanceService.toDateOnly(rule.startDate),
             validUntil: GovernanceService.toDateOnly(rule.endDate),
             multiplier: Number(rule.multiplier ?? 1),
@@ -812,21 +847,12 @@ export class GovernanceService {
         : undefined;
     if (name === "Admin_blogs") payload = this.normalizeBlogPayload(user, payload);
 
-    // The pricing view is assembled, not stored: a room's own `basePrice` and
-    // each entry of its `pricingRules` array are presented as rows alongside
-    // the real `room_pricing` documents. Those synthetic rows carry a composite
-    // id rather than an ObjectId, so the generic branch below would read them
-    // as brand-new records and insert junk. They are written back to the room
-    // they came from instead.
     if (name === "Admin_room_pricing") {
       const target = this.parseRoomPricingRowId(body._id);
       if (target || body.sourceRoomId)
         return this.saveRoomPricingRow(target, body, payload);
     }
 
-    // Booked and held units belong to the booking engine — a hold is written by
-    // the reservation flow and read back to decide whether a night can still be
-    // sold. Letting the console set them directly would oversell a room.
     if (name === "Admin_room_inventory")
       payload = await this.sanitizeRoomInventoryPayload(id, payload);
 
@@ -892,14 +918,6 @@ export class GovernanceService {
     };
   }
 
-  /**
-   * Splits a synthetic pricing row id back into the room it was derived from.
-   *
-   * `base:<roomId>` is a room's own `basePrice`; `embedded:<roomId>:<ruleId>`
-   * is one entry of that room's `pricingRules` array. Anything else — a real
-   * `room_pricing` document id, or nothing at all — returns null and takes the
-   * ordinary path.
-   */
   private parseRoomPricingRowId(
     value: unknown,
   ): { kind: "base" | "embedded"; roomId: string; ruleId?: string } | null {
@@ -918,19 +936,11 @@ export class GovernanceService {
     return Number.isNaN(date.getTime()) ? undefined : date;
   }
 
-  /** `YYYY-MM-DD`, the only shape a date input will pre-fill from. */
   private static toDateOnly(value: unknown): string | undefined {
     const date = GovernanceService.toOptionalDate(value);
     return date ? date.toISOString().slice(0, 10) : undefined;
   }
 
-  /**
-   * Writes a pricing row back to the room that produced it.
-   *
-   * A base row edits `basePrice` on the room itself. An embedded row edits one
-   * seasonal rule in place. With no target at all — but a `sourceRoomId` — a
-   * new seasonal rule is appended, which is how the console creates one.
-   */
   private async saveRoomPricingRow(
     target: { kind: "base" | "embedded"; roomId: string; ruleId?: string } | null,
     body: Record<string, unknown>,
@@ -972,8 +982,6 @@ export class GovernanceService {
       startDate: GovernanceService.toOptionalDate(payload.validFrom),
       endDate: GovernanceService.toOptionalDate(payload.validUntil),
       multiplier: Number.isFinite(multiplier) && multiplier > 0 ? multiplier : 1,
-      // Left unset when blank so the multiplier applies to the base price,
-      // which is what an empty effective price means in the listing.
       overridePrice: Number.isFinite(price) && price > 0 ? price : undefined,
     };
     if (
@@ -1012,13 +1020,6 @@ export class GovernanceService {
     };
   }
 
-  /**
-   * Keeps a console inventory edit inside what the booking engine allows.
-   *
-   * Mirrors the rule the owner's own availability endpoint enforces: blocked
-   * units plus everything already sold or held can never exceed the room's
-   * capacity for that night, or the next booking oversells it.
-   */
   private async sanitizeRoomInventoryPayload(
     id: string | undefined,
     payload: Record<string, unknown>,
@@ -1050,20 +1051,6 @@ export class GovernanceService {
     return cleaned;
   }
 
-  /**
-   * Makes a console-authored blog post publishable.
-   *
-   * The public feed (`/blog/posts`) selects `status: "published"` and every
-   * card reads `title`, `slug`, `excerpt`, `coverImage` and `author`. The
-   * generic admin form speaks a different vocabulary — it writes `name`,
-   * `details` and a status of `active`/`approved` — so a post a Super Admin
-   * created was stored correctly but matched no public query and had no slug
-   * to link to. It simply never appeared on the homepage.
-   *
-   * The author is embedded from the acting admin rather than joined to a
-   * `blogauthors` row on purpose: publishing from the console must not require
-   * a visitor author account to exist first.
-   */
   private normalizeBlogPayload(
     user: AuthenticatedUser,
     input: Record<string, unknown>,
@@ -1087,8 +1074,6 @@ export class GovernanceService {
           .slice(0, 60) || "post"
       }-${randomUUID().replace(/-/g, "").slice(0, 6)}`;
 
-    // The console offers "active"/"approved"; the feed only knows "published".
-    // Anything else keeps its own meaning and stays off the public site.
     const status = text(payload.status).toLowerCase();
     payload.status = ["active", "approved", "publish", "published", "live"]
       .includes(status)
@@ -1113,8 +1098,6 @@ export class GovernanceService {
       payload.contentType = text(payload.videoUrl) ? "video" : "article";
     if (!text(payload.category)) payload.category = "spiritual";
 
-    // `author` is what every card renders; `authorId` stays optional so a
-    // console post does not depend on a visitor author record.
     const existing = (payload.author ?? {}) as Record<string, unknown>;
     if (!text(existing.name))
       payload.author = {
@@ -1129,11 +1112,6 @@ export class GovernanceService {
     return payload;
   }
 
-  /**
-   * Ashrams and rooms carry required identity fields that the generic console
-   * form does not collect. Without them a created row is invisible to the
-   * public listing and unusable by the booking engine.
-   */
   private async withCreationDefaults(
     user: AuthenticatedUser,
     model: string,
@@ -1190,8 +1168,6 @@ export class GovernanceService {
     this.assertAdminModuleAccess(user, moduleKey, subKey, true);
     const name = this.adminModel(moduleKey, subKey);
 
-    // Synthetic pricing rows live inside their room, so they are removed from
-    // it rather than deleted from a collection of their own.
     if (name === "Admin_room_pricing") {
       const target = this.parseRoomPricingRowId(id);
       if (target?.kind === "base")
@@ -1266,10 +1242,6 @@ export class GovernanceService {
         { $set: { "pricing.basePrice": data.basePrice } },
       );
     else if (request.module === "offer") {
-      // Written with the field names and enum values `booking_coupons`
-      // declares. The loose model would happily persist anything, and a row
-      // missing `offerTitle`/`promoCode`/`validTill` renders as a blank card
-      // and cannot be edited or redeemed afterwards.
       const maximumRedemptions = Number(data.maximumRedemptions) || 100;
       const discountType =
         data.discountType === "Flat Amount" || data.discountType === "flat"
@@ -1288,8 +1260,6 @@ export class GovernanceService {
         discountType,
         discountValue: Number(data.discountValue) || 10,
         validFrom: new Date(),
-        // Approvals carry no expiry of their own; default to 90 days so the
-        // offer is time-bounded rather than valid forever by accident.
         validTill: data.validTill
           ? new Date(data.validTill)
           : new Date(Date.now() + 90 * 86_400_000),
@@ -1392,9 +1362,6 @@ export class GovernanceService {
     )
       return moduleLogical;
     const sectionLogical = this.adminAliases[section] ?? section;
-    // A sub-key only redirects to another collection when one actually exists
-    // for it. Anything else (users/roles, offers/featured, reports/revenue …)
-    // is a view of the module itself, narrowed by applyAdminSubKeyFilter.
     return this.adminCollections.has(sectionLogical)
       ? sectionLogical
       : moduleLogical;
@@ -1416,9 +1383,6 @@ export class GovernanceService {
       ];
       return;
     }
-    // When the sub-key selected a collection of its own (blogs/authors,
-    // marketplace/orders, reports/bookings …) the data set is already scoped
-    // and narrowing it by the sub-key again would empty the result.
     if (
       this.adminLogicalKey(moduleKey, subKey) !==
       (this.adminAliases[moduleName] ?? moduleName)
@@ -1440,7 +1404,6 @@ export class GovernanceService {
         };
       else if (section === "content_managers") filter.role = "content_manager";
       else if (section === "roles") filter.role = { $ne: "customer" };
-      // `roles` is the whole directory grouped by role in the UI — no filter.
       return;
     }
 
@@ -1463,7 +1426,6 @@ export class GovernanceService {
     }
 
     if (moduleName === "reports") {
-      // booking_reports rows are typed by what was generated.
       filter.reportType = { $regex: escapeRegex(section), $options: "i" };
       return;
     }
@@ -1495,11 +1457,6 @@ export class GovernanceService {
       return;
     }
 
-    // Parking tables are narrowed by their own lifecycle values, which do not
-    // overlap the shared status sub-keys ("upcoming"/"checked_in"/"no_show" for
-    // a booking, "settled"/"on_hold" for a commission). Handled before the
-    // shared map so a name it happens to share — "pending", "cancelled" — still
-    // lands on the right field.
     if (moduleName.startsWith("parking_")) {
       if (moduleName === "parking_commissions") {
         if (GovernanceService.PARKING_SETTLEMENT_STATUSES.has(section))
@@ -1528,8 +1485,6 @@ export class GovernanceService {
         filter.status = "occupied";
         return;
       }
-      // Partners, locations, bookings, slot types and pricing all key off
-      // `status`, except the two boolean flags a location exposes.
       if (section === "featured") {
         filter.isFeatured = true;
         return;
@@ -1615,20 +1570,17 @@ export class GovernanceService {
         "This role has read-only access to that module",
       );
   }
-  /**
-   * Booking state drives inventory, payments, and refunds, so it may only move
-   * through the booking workflow endpoints.
-   */
   private static readonly ADMIN_STATUS_LOCKED = new Set([
     "Admin_bookings",
-    // Same reasoning for parking: a booking's state drives slot occupancy, QR
-    // validity, and refunds; a partner's drives a cascade that suspends every
-    // location it owns; money rows are written by the settlement run. All of
-    // these move through /parking/admin, which enforces the transition.
     "Admin_parking_bookings",
     "Admin_parking_partners",
     "Admin_parking_commissions",
     "Admin_parking_transactions",
+    "Admin_aarti_bookings",
+    "Admin_aarti_commissions",
+    "Admin_aarti_transactions",
+    "Admin_aarti_payments",
+    "Admin_event_registrations",
   ]);
   private static readonly PARKING_SETTLEMENT_STATUSES = new Set([
     "pending",
@@ -1649,10 +1601,6 @@ export class GovernanceService {
     "parking_manager",
     "security_guard",
   ]);
-  /**
-   * The console's generic active/inactive toggle, mapped onto the ashram
-   * verification lifecycle. Everything else must match the schema enum.
-   */
   private static readonly ASHRAM_STATUS_ALIASES: Record<string, string> = {
     active: "approved",
     inactive: "suspended",
@@ -1686,10 +1634,8 @@ export class GovernanceService {
       "constructor",
       "prototype",
     ]);
-    // Roles and permissions stay a user-module concern regardless of who asks.
     if (!superAdmin || model !== "Admin_users")
       ["role", "permissions"].forEach((key) => blocked.add(key));
-    // Modules with their own state machine never accept status/isVerified here.
     if (GovernanceService.ADMIN_STATUS_LOCKED.has(model))
       ["status", "isVerified"].forEach((key) => blocked.add(key));
 

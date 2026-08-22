@@ -72,11 +72,6 @@ export const GOVERNANCE_MODELS = [
     }),
   },
   { name: "GovernanceRoom", schema: loose("rooms") },
-  // The offers API, the public site and checkout validation all read
-  // `booking_coupons`. This model used to point at a separate `offers`
-  // collection, so an offer created by approving an owner's request was
-  // written somewhere nothing else reads — it never appeared in the Offers
-  // module and its promo code never validated at checkout.
   { name: "GovernanceOffer", schema: loose("booking_coupons") },
 ];
 const ADMIN_COLLECTIONS: Record<string, string> = {
@@ -111,11 +106,6 @@ const ADMIN_COLLECTIONS: Record<string, string> = {
   payments: "booking_payments",
   service_bookings: "servicebookings",
   providers: "serviceproviders",
-  // Parking. The module owns its own typed models and a capability-guarded API;
-  // these entries only expose the same collections to the read/search/edit
-  // console so a Super Admin can see parking data alongside everything else.
-  // Anything that moves money or state (partner approval, commission
-  // settlement, refunds) stays on /parking/admin, which enforces the workflow.
   parking_partners: "parking_partners",
   parking_locations: "parking_locations",
   parking_bookings: "parking_bookings",
@@ -127,16 +117,35 @@ const ADMIN_COLLECTIONS: Record<string, string> = {
   parking_transactions: "parking_transactions",
   parking_scan_logs: "parking_scan_logs",
   parking_reviews: "parking_reviews",
+  aarti_sessions: "aarti_sessions",
+  aarti_pass_types: "aarti_pass_types",
+  aarti_pricing: "aarti_pricing",
+  aarti_availability: "aarti_availability",
+  aarti_holidays: "aarti_holidays",
+  aarti_settings: "aarti_settings",
+  aarti_staff: "aarti_staff",
+  aarti_bookings: "aarti_bookings",
+  aarti_payments: "aarti_payments",
+  aarti_transactions: "aarti_transactions",
+  aarti_commissions: "aarti_commissions",
+  aarti_qr_codes: "aarti_qr_codes",
+  aarti_scan_logs: "aarti_scan_logs",
+  aarti_reviews: "aarti_reviews",
+  aarti_notifications: "aarti_notifications",
+  aarti_streams: "aarti_streams",
+  event_festivals: "event_festivals",
+  event_availability: "event_availability",
+  event_registrations: "event_registrations",
+  event_qr_codes: "event_qr_codes",
+  event_scan_logs: "event_scan_logs",
+  event_notifications: "event_notifications",
+  event_staff: "event_staff",
+  event_settings: "event_settings",
+  pilgrimage_circuits: "pilgrimage_circuits",
+  pilgrimage_stops: "pilgrimage_stops",
+  pilgrimage_itineraries: "pilgrimage_itineraries",
+  pilgrimage_settings: "pilgrimage_settings",
 };
-/**
- * Foreign keys the console resolves to a readable label.
- *
- * The generic `Admin_*` models are schemaless, so an ObjectId field has no ref
- * for Mongoose to follow and the table renders a bare id. Parking rows are
- * almost entirely joins — a booking names neither its location nor its
- * customer — so the handful of columns a human reads are typed here. Targets
- * stay inside the `Admin_*` family to keep this module self-contained.
- */
 const LOCATION = { ref: "Admin_parking_locations", select: "name slug" };
 const PARTNER = {
   ref: "Admin_parking_partners",
@@ -147,9 +156,30 @@ const BOOKING = {
   ref: "Admin_parking_bookings",
   select: "bookingReference status",
 };
-// `Admin_users` is schemaless, so the real User schema's `select: false` on
-// passwordHash does not apply here. redact() strips it on the way out either
-// way, but an explicit projection keeps it out of the query to begin with.
+const AARTI_SESSION = {
+  ref: "Admin_aarti_sessions",
+  select: "name slug kind status",
+};
+const AARTI_PASS_TYPE = {
+  ref: "Admin_aarti_pass_types",
+  select: "name code basePrice",
+};
+const AARTI_BOOKING = {
+  ref: "Admin_aarti_bookings",
+  select: "bookingReference status",
+};
+const EVENT_LISTING = {
+  ref: "Admin_event_festivals",
+  select: "name slug eventType status",
+};
+const EVENT_REGISTRATION = {
+  ref: "Admin_event_registrations",
+  select: "registrationReference status",
+};
+const CIRCUIT = {
+  ref: "Admin_pilgrimage_circuits",
+  select: "name slug circuitType status",
+};
 const ACCOUNT = { ref: "Admin_users", select: "name email phone role" };
 const ASHRAM = { ref: "Admin_ashrams", select: "name ashramCode" };
 const ROOM = { ref: "Admin_rooms", select: "name type acType" };
@@ -189,17 +219,87 @@ export const ADMIN_REFS: Record<
     scannedByUserId: ACCOUNT,
   },
   parking_reviews: { locationId: LOCATION, customerId: ACCOUNT },
+  aarti_sessions: { ashramId: ASHRAM, ownerId: ACCOUNT },
+  aarti_pass_types: { sessionId: AARTI_SESSION, ashramId: ASHRAM },
+  aarti_pricing: { sessionId: AARTI_SESSION, passTypeId: AARTI_PASS_TYPE },
+  aarti_availability: {
+    sessionId: AARTI_SESSION,
+    passTypeId: AARTI_PASS_TYPE,
+  },
+  aarti_holidays: { sessionId: AARTI_SESSION, ashramId: ASHRAM },
+  aarti_settings: { sessionId: AARTI_SESSION, ashramId: ASHRAM },
+  aarti_staff: { userId: ACCOUNT, ashramId: ASHRAM, sessionIds: AARTI_SESSION },
+  aarti_bookings: {
+    sessionId: AARTI_SESSION,
+    ashramId: ASHRAM,
+    passTypeId: AARTI_PASS_TYPE,
+    customerId: ACCOUNT,
+  },
+  aarti_payments: { bookingId: AARTI_BOOKING, userId: ACCOUNT, ashramId: ASHRAM },
+  aarti_transactions: {
+    bookingId: AARTI_BOOKING,
+    sessionId: AARTI_SESSION,
+    ashramId: ASHRAM,
+  },
+  aarti_commissions: {
+    bookingId: AARTI_BOOKING,
+    sessionId: AARTI_SESSION,
+    ashramId: ASHRAM,
+  },
+  aarti_qr_codes: {
+    bookingId: AARTI_BOOKING,
+    sessionId: AARTI_SESSION,
+    customerId: ACCOUNT,
+  },
+  aarti_scan_logs: {
+    bookingId: AARTI_BOOKING,
+    sessionId: AARTI_SESSION,
+    scannedByUserId: ACCOUNT,
+  },
+  aarti_reviews: { sessionId: AARTI_SESSION, customerId: ACCOUNT },
+  aarti_notifications: { bookingId: AARTI_BOOKING, userId: ACCOUNT },
+  aarti_streams: {
+    ashramId: ASHRAM,
+    ownerId: ACCOUNT,
+    sessionId: AARTI_SESSION,
+  },
+  event_festivals: { ashramId: ASHRAM, ownerId: ACCOUNT },
+  event_availability: { eventId: EVENT_LISTING, ashramId: ASHRAM },
+  event_registrations: {
+    eventId: EVENT_LISTING,
+    ashramId: ASHRAM,
+    customerId: ACCOUNT,
+  },
+  event_qr_codes: {
+    registrationId: EVENT_REGISTRATION,
+    eventId: EVENT_LISTING,
+    customerId: ACCOUNT,
+  },
+  event_scan_logs: {
+    registrationId: EVENT_REGISTRATION,
+    eventId: EVENT_LISTING,
+    ashramId: ASHRAM,
+    scannedByUserId: ACCOUNT,
+  },
+  event_notifications: { registrationId: EVENT_REGISTRATION, userId: ACCOUNT },
+  event_staff: { userId: ACCOUNT, ashramId: ASHRAM, eventIds: EVENT_LISTING },
+  event_settings: { ashramId: ASHRAM, eventId: EVENT_LISTING },
+  pilgrimage_circuits: { ashramId: ASHRAM, ownerId: ACCOUNT },
+  pilgrimage_stops: {
+    circuitId: CIRCUIT,
+    ashramId: ASHRAM,
+    linkedAshramId: ASHRAM,
+  },
+  pilgrimage_itineraries: { userId: ACCOUNT, circuitId: CIRCUIT },
+  pilgrimage_settings: { ashramId: ASHRAM, circuitId: CIRCUIT },
 };
 
-/** Logical admin-console module keys that map to a real collection. */
 export const ADMIN_MODULE_KEYS = Object.keys(ADMIN_COLLECTIONS);
 for (const [key, collection] of Object.entries(ADMIN_COLLECTIONS)) {
   const refs = ADMIN_REFS[key] ?? {};
   const fields = Object.fromEntries(
     Object.entries(refs).map(([path, { ref }]) => [
       path,
-      // A plural `…Ids` path holds an array of references (a staff grant is
-      // scoped to several locations); everything else is a single id.
       path.endsWith("Ids")
         ? [{ type: SchemaTypes.ObjectId, ref }]
         : { type: SchemaTypes.ObjectId, ref },

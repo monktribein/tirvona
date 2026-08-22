@@ -12,8 +12,6 @@ import { AnalyticsController } from "./presentation/analytics.controller";
     BookingsModule,
     UsersModule,
     AuditModule,
-    // Parking is a separate revenue stream with its own collections; the
-    // executive dashboard counts it, so its models must be reachable here.
     ParkingModule,
   ],
   controllers: [AnalyticsController],
