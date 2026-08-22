@@ -57,6 +57,8 @@ export interface ParkingOpeningHours {
 export interface ParkingAvailabilitySummary {
   totalCapacity: number;
   availableCount: number;
+  declaredCapacity?: number;
+  isConfigured?: boolean;
   occupancyPercent?: number;
 }
 

@@ -62,26 +62,26 @@ describe("BookingsService Super Admin maintenance", () => {
     );
   });
 
-  it("archives an unpaid expired booking without deleting its audit history", async () => {
+  it("deletes an unpaid expired booking without deleting its audit history", async () => {
     const { service, row } = createService();
 
-    await expect(service.adminArchive("booking-1", admin)).resolves.toEqual({
+    await expect(service.adminDelete("booking-1", admin)).resolves.toEqual({
       id: "booking-1",
-      archived: true,
+      deleted: true,
     });
     expect(row).toMatchObject({ deletedBy: "admin-1" });
     expect(row.deletedAt).toBeInstanceOf(Date);
     expect((service as any).audits.create).toHaveBeenCalledWith(
-      [expect.objectContaining({ action: "SUPER_ADMIN_BOOKING_ARCHIVED" })],
+      [expect.objectContaining({ action: "SUPER_ADMIN_BOOKING_DELETED" })],
       expect.any(Object),
     );
   });
 
-  it("protects a paid booking from archive", async () => {
+  it("protects a paid booking from deletion", async () => {
     const { service, row } = createService();
     row.paymentStatus = "fully_paid";
 
-    await expect(service.adminArchive("booking-1", admin)).rejects.toBeInstanceOf(
+    await expect(service.adminDelete("booking-1", admin)).rejects.toBeInstanceOf(
       BadRequestException,
     );
     expect(row.save).not.toHaveBeenCalled();

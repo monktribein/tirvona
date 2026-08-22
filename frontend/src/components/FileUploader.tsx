@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { UploadCloud, Loader2, CheckCircle, AlertCircle, ExternalLink, FileText } from "lucide-react";
 import { uploadService } from "../services";
 import { getErrorMessage } from "../lib/api";
@@ -23,6 +23,16 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
     currentUrl ? "done" : "idle",
   );
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    setStatus((current) =>
+      current === "uploading"
+        ? current
+        : currentUrl
+          ? "done"
+          : "idle",
+    );
+  }, [currentUrl]);
 
   const handleSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

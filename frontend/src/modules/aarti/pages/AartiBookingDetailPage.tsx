@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { useNotifications } from "../../../contexts/NotificationContext";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   AlertCircle,
@@ -27,6 +28,7 @@ import AartiStatusBadge from "../components/AartiStatusBadge";
 export const AartiBookingDetailPage: React.FC = () => {
   const { id = "" } = useParams();
   const navigate = useNavigate();
+  const { promptAction } = useNotifications();
 
   const [booking, setBooking] = useState<AartiBooking | null>(null);
   const [pass, setPass] = useState<AartiPass | null>(null);
@@ -77,7 +79,14 @@ export const AartiBookingDetailPage: React.FC = () => {
   };
 
   const cancel = async () => {
-    const reason = window.prompt("Why are you cancelling this aarti booking?");
+    const reason = await promptAction({
+      title: "Cancel Aarti Booking",
+      message: "Tell us why you are cancelling this Aarti booking.",
+      placeholder: "Cancellation reason",
+      confirmLabel: "Cancel booking",
+      required: true,
+      tone: "danger",
+    });
     if (reason === null) return;
     setBusy(true);
     try {

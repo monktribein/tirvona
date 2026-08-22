@@ -104,7 +104,7 @@ export const eventOwnerService = {
   updateEvent: (id: string, payload: Record<string, unknown>) =>
     api.put(`/events/owner/events/${id}`, payload),
   submitEvent: (id: string) => api.post(`/events/owner/events/${id}/submit`, {}),
-  archiveEvent: (id: string) => api.delete(`/events/owner/events/${id}`),
+  deleteEvent: (id: string) => api.delete(`/events/owner/events/${id}`),
 
   days: (id: string) => api.get(`/events/owner/events/${id}/days`),
   blockDay: (payload: {

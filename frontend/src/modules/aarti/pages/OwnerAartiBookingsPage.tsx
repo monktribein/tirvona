@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { useNotifications } from "../../../contexts/NotificationContext";
 import { AlertCircle, CalendarDays, Loader2, Search, XCircle } from "lucide-react";
 import { getErrorMessage } from "../../../lib/api";
 import { EnterprisePageHeader } from "../../../admin/shared/components/EnterprisePageHeader";
@@ -11,6 +12,7 @@ import {
 } from "../utils/aartiFormat";
 
 export const OwnerAartiBookingsPage: React.FC = () => {
+  const { promptAction } = useNotifications();
   const [sessions, setSessions] = useState<AartiSession[]>([]);
   const [sessionId, setSessionId] = useState("");
   const [status, setStatus] = useState("");
@@ -54,9 +56,14 @@ export const OwnerAartiBookingsPage: React.FC = () => {
   }, [load]);
 
   const cancel = async (booking: AartiBooking) => {
-    const reason = window.prompt(
-      `Cancel booking ${booking.bookingReference}? Give the devotee a reason:`,
-    );
+    const reason = await promptAction({
+      title: "Cancel Aarti Booking",
+      message: `Cancel booking ${booking.bookingReference}? Give the devotee a reason.`,
+      placeholder: "Cancellation reason",
+      confirmLabel: "Cancel booking",
+      required: true,
+      tone: "danger",
+    });
     if (reason === null) return;
     await aartiOwnerService
       .cancelBooking(booking._id, reason || undefined)

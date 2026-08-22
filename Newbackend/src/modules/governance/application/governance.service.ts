@@ -11,6 +11,10 @@ import type { AuthenticatedUser } from "../../../common/decorators/current-user.
 import { escapeRegex } from "../../../common/utils/escape-regex";
 import { isAshramOwner } from "../../../common/auth/ashram-access";
 import {
+  AARTI_KINDS,
+  AARTI_SESSION_STATUSES,
+} from "../../aarti/domain/aarti.constants";
+import {
   GOVERNANCE_REPOSITORY,
   type GovernanceRepository,
 } from "../domain/governance.repository";
@@ -846,6 +850,8 @@ export class GovernanceService {
         ? body._id
         : undefined;
     if (name === "Admin_blogs") payload = this.normalizeBlogPayload(user, payload);
+    if (name === "Admin_aarti_sessions")
+      payload = await this.normalizeAdminAartiPayload(user, id, payload);
 
     if (name === "Admin_room_pricing") {
       const target = this.parseRoomPricingRowId(body._id);
@@ -1157,6 +1163,119 @@ export class GovernanceService {
         status: payload.status ?? "active",
       };
     }
+    return payload;
+  }
+
+  private async normalizeAdminAartiPayload(
+    user: AuthenticatedUser,
+    id: string | undefined,
+    input: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
+    const text = (value: unknown): string =>
+      typeof value === "string" ? value.trim() : "";
+    const populatedId = (value: unknown): string => {
+      if (typeof value === "string") return value;
+      if (value && typeof value === "object" && "_id" in value)
+        return String((value as { _id: unknown })._id ?? "");
+      return "";
+    };
+
+    const current = id
+      ? await this.repository.one("Admin_aarti_sessions", { _id: id })
+      : null;
+    const ashramId = populatedId(input.ashramId) || populatedId(current?.ashramId);
+    if (!Types.ObjectId.isValid(ashramId))
+      throw new BadRequestException("Select a valid ashram for this Aarti");
+
+    const ashram = await this.repository.one("Admin_ashrams", { _id: ashramId });
+    if (!ashram) throw new BadRequestException("The selected ashram was not found");
+    const ownerId = populatedId(ashram.ownerId);
+    if (!Types.ObjectId.isValid(ownerId))
+      throw new BadRequestException(
+        "The selected ashram must have a valid owner before an Aarti can be added",
+      );
+
+    const existingVenue =
+      input.venue && typeof input.venue === "object"
+        ? (input.venue as Record<string, unknown>)
+        : {};
+    const city = text(input.city) || text(existingVenue.city) || text(current?.venue?.city);
+    const state =
+      text(input.state) || text(existingVenue.state) || text(current?.venue?.state);
+    if (!state || !city)
+      throw new BadRequestException("Select both state and city for this Aarti");
+
+    const name = text(input.name) || text(current?.name);
+    if (!name) throw new BadRequestException("An Aarti name is required");
+    const kind = text(input.kind) || text(input.category) || text(current?.kind) || "other";
+    if (!(AARTI_KINDS as readonly string[]).includes(kind))
+      throw new BadRequestException("Select a valid Aarti category");
+    const status = text(input.status) || text(current?.status) || "draft";
+    if (!(AARTI_SESSION_STATUSES as readonly string[]).includes(status))
+      throw new BadRequestException("Select a valid Aarti status");
+
+    const startTime = text(input.startTime) || text(current?.startTime);
+    if (!/^([01]\d|2[0-3]):([0-5]\d)$/.test(startTime))
+      throw new BadRequestException("Aarti start time must use HH:MM format");
+    const durationMinutes = Number(input.durationMinutes ?? current?.durationMinutes ?? 45);
+    if (!Number.isFinite(durationMinutes) || durationMinutes < 5 || durationMinutes > 720)
+      throw new BadRequestException("Aarti duration must be between 5 and 720 minutes");
+    const totalCapacity = Number(input.totalCapacity ?? current?.totalCapacity ?? 0);
+    if (!Number.isFinite(totalCapacity) || totalCapacity < 0)
+      throw new BadRequestException("Aarti capacity cannot be negative");
+
+    const address =
+      ashram.address && typeof ashram.address === "object" ? ashram.address : {};
+    const payload: Record<string, unknown> = {
+      ...input,
+      ashramId,
+      ownerId,
+      name,
+      kind,
+      status,
+      description: text(input.description) || text(input.details) || text(current?.description),
+      startTime,
+      durationMinutes,
+      totalCapacity,
+      daysOfWeek: Array.isArray(input.daysOfWeek)
+        ? input.daysOfWeek
+        : Array.isArray(current?.daysOfWeek) && current.daysOfWeek.length
+          ? current.daysOfWeek
+          : [0, 1, 2, 3, 4, 5, 6],
+      timezone: text(input.timezone) || text(current?.timezone) || "Asia/Kolkata",
+      venue: {
+        ...address,
+        ...existingVenue,
+        name: text(existingVenue.name) || text(ashram.name),
+        state,
+        city,
+        district: text(existingVenue.district) || city,
+      },
+    };
+
+    if (!id) {
+      const base = `${name}-${city}`
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "") || "aarti";
+      payload.slug = `${base}-${randomUUID().replace(/-/g, "").slice(0, 8)}`;
+      payload.createdBy = user.id;
+    } else {
+      delete payload.slug;
+    }
+
+    [
+      "category",
+      "title",
+      "details",
+      "state",
+      "city",
+      "address",
+      "image",
+      "imageUrl",
+      "gallery",
+      "isVerified",
+    ].forEach((key) => delete payload[key]);
     return payload;
   }
   async adminDelete(

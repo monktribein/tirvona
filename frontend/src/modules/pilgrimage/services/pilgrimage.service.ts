@@ -78,7 +78,7 @@ export const pilgrimageOwnerService = {
     api.put(`/pilgrimage/owner/circuits/${id}`, payload),
   submitCircuit: (id: string) =>
     api.post(`/pilgrimage/owner/circuits/${id}/submit`, {}),
-  archiveCircuit: (id: string) => api.delete(`/pilgrimage/owner/circuits/${id}`),
+  deleteCircuit: (id: string) => api.delete(`/pilgrimage/owner/circuits/${id}`),
 
   addStop: (payload: Record<string, unknown>) =>
     api.post("/pilgrimage/owner/stops", payload),

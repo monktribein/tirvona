@@ -970,13 +970,13 @@ export const AdminOffersPage: React.FC = () => {
                       label="Upload offer image"
                       currentUrl={formData.bannerImage}
                     />
-                    <input
+                    {import.meta.env.DEV ? <input
                       type="text"
                       value={formData.bannerImage}
                       onChange={(e) => setFormData({ ...formData, bannerImage: e.target.value })}
                       placeholder="Or enter image URL directly"
                       className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6]"
-                    />
+                    /> : null}
                   </div>
                 </div>
 
@@ -1235,7 +1235,7 @@ export const AdminOffersPage: React.FC = () => {
                 {Number(confirmDelete.redemptionsCount ?? 0) > 0 && (
                   <p className="text-[11px] font-semibold text-amber-700 dark:text-amber-400 mt-2 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-xl p-2.5 leading-relaxed">
                     This offer was redeemed{" "}
-                    {confirmDelete.redemptionsCount} time(s), so it will be archived
+                    {confirmDelete.redemptionsCount} time(s), so it will be deleted from active offers
                     rather than erased — the bookings that used it keep their records.
                   </p>
                 )}

@@ -41,6 +41,7 @@ export const StaffManagementPage: React.FC = () => {
     password: "",
     role: "reception",
     ashramId: "",
+    parkingRole: "",
   });
 
   useEffect(() => {
@@ -87,6 +88,7 @@ export const StaffManagementPage: React.FC = () => {
           password: "",
           role: "reception",
           ashramId: ashrams[0]?._id || "",
+          parkingRole: "",
         });
         addNotification(
           "Staff Added",
@@ -303,6 +305,20 @@ export const StaffManagementPage: React.FC = () => {
                   ))}
                 </select>
               </div>
+              <label className="block space-y-1">
+                <span className="text-[11px] font-bold text-gray-600 dark:text-gray-300">Parking role (optional)</span>
+                <select
+                  value={form.parkingRole}
+                  onChange={(e) => set("parkingRole", e.target.value)}
+                  className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none"
+                >
+                  <option value="">No parking access</option>
+                  <option value="security_guard">Parking - Security Guard</option>
+                  <option value="parking_manager">Parking - Parking Manager</option>
+                  <option value="parking_partner">Parking - Parking Partner</option>
+                </select>
+                <span className="block text-[10px] text-gray-400">Grants the parking console for this ashram's facilities only. Requires parking management to be activated.</span>
+              </label>
             </div>
 
             <button

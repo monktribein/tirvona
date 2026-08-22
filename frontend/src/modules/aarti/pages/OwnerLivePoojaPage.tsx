@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import {
   AlertCircle,
   Check,
@@ -24,12 +25,20 @@ import {
   sessionStatusStyle,
 } from "../utils/aartiFormat";
 import { EnterprisePageHeader } from "../../../admin/shared/components/EnterprisePageHeader";
+import FileUploader from "../../../components/FileUploader";
+import { getAllStates, getDistricts } from "india-state-district";
+import { useNotifications } from "../../../contexts/NotificationContext";
 
 interface Ashram {
   _id: string;
   name: string;
   address?: { city?: string; state?: string };
 }
+
+const INDIA_STATES = getAllStates();
+const stateForLocation = (stateName?: string, city?: string) =>
+  INDIA_STATES.find((state) => state.name === stateName) ??
+  INDIA_STATES.find((state) => city && getDistricts(state.code).includes(city));
 
 const emptyStream = {
   ashramId: "",
@@ -55,10 +64,14 @@ const toLocalInput = (value?: string | null) => {
 };
 
 export const OwnerLivePoojaPage: React.FC = () => {
+  const { subKey } = useParams<{ subKey?: string }>();
+  const { confirmAction } = useNotifications();
   const [ashrams, setAshrams] = useState<Ashram[]>([]);
   const [sessions, setSessions] = useState<AartiSession[]>([]);
   const [streams, setStreams] = useState<AartiStream[]>([]);
-  const [statusFilter, setStatusFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState(
+    subKey && subKey !== "all" ? subKey : "",
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -66,6 +79,10 @@ export const OwnerLivePoojaPage: React.FC = () => {
   const [editing, setEditing] = useState<AartiStream | null>(null);
   const [form, setForm] = useState({ ...emptyStream });
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setStatusFilter(subKey && subKey !== "all" ? subKey : "");
+  }, [subKey]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -100,12 +117,27 @@ export const OwnerLivePoojaPage: React.FC = () => {
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ ...emptyStream, ashramId: ashrams[0]?._id ?? "" });
+    const ashram = ashrams[0];
+    const state = stateForLocation(
+      ashram?.address?.state,
+      ashram?.address?.city,
+    );
+    const districts = state ? getDistricts(state.code) : [];
+    const city = ashram?.address?.city ?? "";
+    setForm({
+      ...emptyStream,
+      ashramId: ashram?._id ?? "",
+      state: state?.name ?? "",
+      city: districts.includes(city) ? city : districts[0] ?? city,
+    });
     setShowForm(true);
   };
 
   const openEdit = (stream: AartiStream) => {
     setEditing(stream);
+    const state = stateForLocation(stream.state, stream.city);
+    const districts = state ? getDistricts(state.code) : [];
+    const city = stream.city ?? "";
     setForm({
       ashramId:
         typeof stream.ashramId === "object"
@@ -122,8 +154,8 @@ export const OwnerLivePoojaPage: React.FC = () => {
       streamUrl: stream.streamUrl,
       thumbnailUrl: stream.thumbnailUrl ?? "",
       venueName: stream.venueName ?? "",
-      city: stream.city ?? "",
-      state: stream.state ?? "",
+      city: districts.includes(city) ? city : districts[0] ?? city,
+      state: state?.name ?? stream.state ?? "",
       startsAt: toLocalInput(stream.startsAt),
       endsAt: toLocalInput(stream.endsAt),
     });
@@ -167,9 +199,15 @@ export const OwnerLivePoojaPage: React.FC = () => {
     await load();
   };
 
-  const archive = async (stream: AartiStream) => {
-    if (!window.confirm(`Archive "${stream.title}"?`)) return;
-    await aartiOwnerService.archiveStream(stream._id).catch(() => undefined);
+  const remove = async (stream: AartiStream) => {
+    const confirmed = await confirmAction({
+      title: "Delete Live Pooja",
+      message: `Delete "${stream.title}"? This cannot be undone.`,
+      confirmLabel: "Delete",
+      tone: "danger",
+    });
+    if (!confirmed) return;
+    await aartiOwnerService.deleteStream(stream._id).catch(() => undefined);
     await load();
   };
 
@@ -191,7 +229,6 @@ export const OwnerLivePoojaPage: React.FC = () => {
             <option value="pending">In review</option>
             <option value="approved">Live</option>
             <option value="rejected">Rejected</option>
-            <option value="archived">Archived</option>
           </select>
           <button
             type="button"
@@ -305,7 +342,7 @@ export const OwnerLivePoojaPage: React.FC = () => {
                     ) : null}
                     <button
                       type="button"
-                      onClick={() => archive(stream)}
+                      onClick={() => remove(stream)}
                       className="inline-flex items-center gap-1 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-400 text-[10px] font-bold px-2.5 py-1.5 rounded-full transition-all active:scale-95 cursor-pointer"
                     >
                       <Trash2 size={12} />
@@ -335,17 +372,25 @@ export const OwnerLivePoojaPage: React.FC = () => {
             </div>
 
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              {!editing ? (
-                <label className="flex flex-col gap-1 sm:col-span-2">
+              <label className="flex flex-col gap-1 sm:col-span-2">
                   <span className="text-[10px] tracking-wider font-bold text-gray-400 px-1">
                     Ashram
                   </span>
                   <select
+                    disabled={!!editing}
                     value={form.ashramId}
-                    onChange={(event) =>
-                      setForm({ ...form, ashramId: event.target.value })
-                    }
-                    className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all"
+                    onChange={(event) => {
+                      const ashram = ashrams.find(
+                        (item) => item._id === event.target.value,
+                      );
+                      setForm({
+                        ...form,
+                        ashramId: event.target.value,
+                        state: ashram?.address?.state ?? form.state,
+                        city: ashram?.address?.city ?? form.city,
+                      });
+                    }}
+                    className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all disabled:opacity-60"
                   >
                     <option value="">Select an ashram</option>
                     {ashrams.map((ashram) => (
@@ -355,7 +400,6 @@ export const OwnerLivePoojaPage: React.FC = () => {
                     ))}
                   </select>
                 </label>
-              ) : null}
 
               <label className="flex flex-col gap-1 sm:col-span-2">
                 <span className="text-[10px] tracking-wider font-bold text-gray-400 px-1">
@@ -423,9 +467,44 @@ export const OwnerLivePoojaPage: React.FC = () => {
                   className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all"
                 />
                 <span className="text-[10px] font-medium text-gray-400">
-                  The embed and thumbnail are derived automatically for YouTube.
+                  The playable embed is derived automatically for supported providers.
                 </span>
               </label>
+
+              <div className="sm:col-span-2 grid gap-3 sm:grid-cols-2 rounded-2xl border border-gray-100 dark:border-slate-800 p-3">
+                {import.meta.env.DEV ? <label className="flex flex-col gap-1">
+                  <span className="text-[10px] tracking-wider font-bold text-gray-400 px-1">
+                    Thumbnail image URL (development only)
+                  </span>
+                  <input
+                    type="url"
+                    value={form.thumbnailUrl}
+                    onChange={(event) =>
+                      setForm({ ...form, thumbnailUrl: event.target.value })
+                    }
+                    placeholder="https://…"
+                    className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all"
+                  />
+                </label> : null}
+                <div>
+                  <span className="text-[10px] tracking-wider font-bold text-gray-400 px-1 block mb-1">
+                    Or upload an image
+                  </span>
+                  <FileUploader
+                    folder="live-pooja"
+                    label="Upload thumbnail"
+                    currentUrl={form.thumbnailUrl}
+                    onUploaded={(url) =>
+                      setForm({ ...form, thumbnailUrl: url })
+                    }
+                  />
+                </div>
+                {!form.thumbnailUrl.trim() ? (
+                  <p className="sm:col-span-2 text-[10px] font-semibold text-amber-600">
+                    Add one image using either the URL field or upload button.
+                  </p>
+                ) : null}
+              </div>
 
               <label className="flex flex-col gap-1">
                 <span className="text-[10px] tracking-wider font-bold text-gray-400 px-1">
@@ -433,6 +512,7 @@ export const OwnerLivePoojaPage: React.FC = () => {
                 </span>
                 <input
                   type="datetime-local"
+                  required
                   value={form.startsAt}
                   onChange={(event) =>
                     setForm({ ...form, startsAt: event.target.value })
@@ -447,6 +527,7 @@ export const OwnerLivePoojaPage: React.FC = () => {
                 </span>
                 <input
                   type="datetime-local"
+                  min={form.startsAt}
                   value={form.endsAt}
                   onChange={(event) => setForm({ ...form, endsAt: event.target.value })}
                   className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all"
@@ -468,13 +549,56 @@ export const OwnerLivePoojaPage: React.FC = () => {
 
               <label className="flex flex-col gap-1">
                 <span className="text-[10px] tracking-wider font-bold text-gray-400 px-1">
-                  City
+                  State
                 </span>
-                <input
-                  value={form.city}
-                  onChange={(event) => setForm({ ...form, city: event.target.value })}
+                <select
+                  value={form.state}
+                  onChange={(event) => {
+                    const state = INDIA_STATES.find(
+                      (item) => item.name === event.target.value,
+                    );
+                    setForm({
+                      ...form,
+                      state: event.target.value,
+                      city: state ? getDistricts(state.code)[0] ?? "" : "",
+                    });
+                  }}
                   className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all"
-                />
+                >
+                  <option value="">Select state</option>
+                  {INDIA_STATES.map((state) => (
+                    <option key={state.code} value={state.name}>
+                      {state.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="flex flex-col gap-1">
+                <span className="text-[10px] tracking-wider font-bold text-gray-400 px-1">
+                  City / District
+                </span>
+                <select
+                  value={form.city}
+                  onChange={(event) =>
+                    setForm({ ...form, city: event.target.value })
+                  }
+                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all"
+                >
+                  <option value="">Select city / district</option>
+                  {(INDIA_STATES.find((state) => state.name === form.state)
+                    ? getDistricts(
+                        INDIA_STATES.find(
+                          (state) => state.name === form.state,
+                        )!.code,
+                      )
+                    : []
+                  ).map((city) => (
+                    <option key={city} value={city}>
+                      {city}
+                    </option>
+                  ))}
+                </select>
               </label>
 
               <label className="flex flex-col gap-1 sm:col-span-2">
@@ -507,6 +631,9 @@ export const OwnerLivePoojaPage: React.FC = () => {
                   saving ||
                   !form.title.trim() ||
                   !form.streamUrl.trim() ||
+                  !form.thumbnailUrl.trim() ||
+                  !form.startsAt ||
+                  (!!form.endsAt && form.endsAt < form.startsAt) ||
                   (!editing && !form.ashramId)
                 }
                 className="inline-flex items-center gap-1.5 bg-[#0A4DA6] hover:bg-[#083D85] text-white text-xs font-extrabold px-4 py-2.5 rounded-full shadow-md transition-all active:scale-95 cursor-pointer disabled:opacity-50"

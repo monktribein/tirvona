@@ -215,6 +215,10 @@ export const verificationService = {
 export const userService = {
   list: (params: Record<string, string> = {}) => api.get("/users", { params }),
   createAccount: (data: unknown) => api.post("/users/create-account", data),
+  assignableAshrams: (search?: string) =>
+    api.get("/users/assignable-ashrams", {
+      params: search ? { search } : undefined,
+    }),
   updateAccount: (id: string, data: unknown) => api.patch(`/users/${id}`, data),
   updateStatus: (id: string, status: string) =>
     api.patch(`/users/${id}/status`, { status }),

@@ -225,11 +225,19 @@ export class PilgrimageManagementService {
     return circuit;
   }
 
-  async archiveCircuit(access: PilgrimageAccess, id: string): Promise<any> {
+  async deleteCircuit(access: PilgrimageAccess, id: string): Promise<any> {
     const circuit = await this.assertOwned(access, id);
-    circuit.status = "archived";
-    await circuit.save();
-    return { archived: true, _id: circuit._id };
+    if (await this.itineraries.exists({ circuitId: circuit._id }))
+      throw new PilgrimageException(
+        "This circuit is used by an itinerary and cannot be deleted.",
+        409,
+      );
+    await Promise.all([
+      this.stops.deleteMany({ circuitId: circuit._id }),
+      this.settings.deleteMany({ circuitId: circuit._id }),
+    ]);
+    await this.circuits.deleteOne({ _id: circuit._id });
+    return { deleted: true, _id: circuit._id };
   }
 
   async addStop(access: PilgrimageAccess, dto: CreateStopDto): Promise<any> {

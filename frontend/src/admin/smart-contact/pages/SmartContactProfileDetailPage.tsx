@@ -23,7 +23,6 @@ import {
   ContactRound,
   Copy,
   ExternalLink,
-  Archive,
   Loader2,
   Pencil,
 } from "lucide-react";
@@ -183,15 +182,6 @@ export const SmartContactProfileDetailPage: React.FC = () => {
                 onClick={() => void changeStatus("disable")}
               >
                 <Ban size={14} /> Disable
-              </EnterpriseButton>
-            )}
-            {profile.status !== "ARCHIVED" && (
-              <EnterpriseButton
-                variant="danger"
-                disabled={busy}
-                onClick={() => void changeStatus("archive")}
-              >
-                <Archive size={14} /> Archive
               </EnterpriseButton>
             )}
           </div>

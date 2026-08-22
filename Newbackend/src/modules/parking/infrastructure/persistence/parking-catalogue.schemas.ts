@@ -74,7 +74,13 @@ ParkingPartnerSchema.index({ "address.city": 1, status: 1 });
 
 export const ParkingLocationSchema = new Schema(
   {
-    partnerId: id("ParkingPartner", true),
+    partnerId: {
+      ...id("ParkingPartner"),
+      required: function (this: any) {
+        return !this.ashramId;
+      },
+    },
+    ashramId: { ...id("Ashram"), index: true, default: null },
     name: { type: String, required: true, trim: true },
     slug: {
       type: String,
@@ -151,6 +157,7 @@ ParkingLocationSchema.index({
 });
 ParkingLocationSchema.index({ status: 1, supportedVehicleTypes: 1 });
 ParkingLocationSchema.index({ partnerId: 1, status: 1 });
+ParkingLocationSchema.index({ ashramId: 1, status: 1 });
 ParkingLocationSchema.index({ "nearbyDestinations.templeSlug": 1, status: 1 });
 ParkingLocationSchema.pre("save", function () {
   this.set("geo", {

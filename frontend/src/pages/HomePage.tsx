@@ -856,7 +856,7 @@ export const HomePage: React.FC = () => {
     "";
 
   return (
-    <div className="pb-16 lg:pb-24 overflow-x-hidden">
+    <div className="home-page pb-16 lg:pb-24 overflow-x-hidden">
       <section className="relative pt-28 sm:pt-36 lg:pt-40 pb-40 sm:pb-52 lg:pb-60 min-h-[580px] sm:min-h-[640px] lg:min-h-[720px] flex items-center overflow-hidden rounded-b-[36px] sm:rounded-b-[48px] shadow-xl bg-gradient-to-br from-[#0B192C] via-[#0D233E] to-[#0B192C]">
         <div className="absolute inset-0 z-0">
           {activeHeroBg ? (

@@ -18,6 +18,7 @@ import { parkingAdminService } from "../../../modules/parking/services/parking.s
 import { humanizeLabel } from "../../../utils/labels";
 import { formatCurrency, getFormattingLocale } from "../../../utils/format";
 import { formatInline } from "../utils/recordFormat";
+import { getAllStates, getDistricts } from "india-state-district";
 import {
   Image,
   Tag as TagIcon,
@@ -77,6 +78,9 @@ export const EnterpriseModulePage: React.FC<{
   const [featuredAshramSearch, setFeaturedAshramSearch] = useState("");
   const [roomAshramOptions, setRoomAshramOptions] = useState<any[]>([]);
   const [roomCategoryOptions, setRoomCategoryOptions] = useState<any[]>([]);
+  const [aartiSessionOptions, setAartiSessionOptions] = useState<any[]>([]);
+  const [aartiPassOptions, setAartiPassOptions] = useState<any[]>([]);
+  const [aartiUserOptions, setAartiUserOptions] = useState<any[]>([]);
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [managingItem, setManagingItem] = useState<any | null>(null);
@@ -158,6 +162,13 @@ export const EnterpriseModulePage: React.FC<{
     "parking_transactions:all": "Parking Transactions",
     "parking_scan_logs:all": "Parking Scan Logs",
     "parking_reviews:all": "Parking Reviews",
+    "aarti_pass_types:all": "Aarti Passes",
+    "aarti_pricing:all": "Aarti Pricing Rules",
+    "aarti_availability:all": "Aarti Availability",
+    "aarti_staff:all": "Aarti Gate Staff",
+    "aarti_payments:all": "Aarti Payments",
+    "aarti_reviews:all": "Aarti Reviews",
+    "aarti_settings:all": "Aarti Settings",
     "reports:revenue": "Revenue Reports",
     "reports:bookings": "Booking Telemetry",
   };
@@ -199,7 +210,12 @@ export const EnterpriseModulePage: React.FC<{
   }, [activeModule]);
 
   useEffect(() => {
-    if (activeModule !== "rooms") return;
+    if (
+      activeModule !== "rooms" &&
+      activeModule !== "aarti_sessions" &&
+      !activeModule.startsWith("aarti_")
+    )
+      return;
     let cancelled = false;
 
     const fetchAllPages = async (path: string): Promise<any[]> => {
@@ -225,6 +241,30 @@ export const EnterpriseModulePage: React.FC<{
           : [];
       setRoomAshramOptions(value(0));
       setRoomCategoryOptions(value(1));
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeModule]);
+
+  useEffect(() => {
+    if (!activeModule.startsWith("aarti_")) return;
+    let cancelled = false;
+
+    void Promise.allSettled([
+      api.get("/admin/crud/aarti_sessions?subKey=all"),
+      api.get("/admin/crud/aarti_pass_types?subKey=all"),
+      api.get("/admin/crud/users?subKey=staff"),
+    ]).then((results) => {
+      if (cancelled) return;
+      const rows = (index: number) =>
+        results[index].status === "fulfilled"
+          ? (results[index] as PromiseFulfilledResult<any>).value.data?.data || []
+          : [];
+      setAartiSessionOptions(rows(0));
+      setAartiPassOptions(rows(1));
+      setAartiUserOptions(rows(2));
     });
 
     return () => {
@@ -354,6 +394,8 @@ export const EnterpriseModulePage: React.FC<{
     "parking_transactions",
     "parking_scan_logs",
     "parking_staff",
+    "aarti_payments",
+    "aarti_reviews",
   ]);
   const isRoomInventoryView =
     activeModule === "rooms" &&
@@ -362,6 +404,19 @@ export const EnterpriseModulePage: React.FC<{
     activeModule === "rooms" &&
     ["pricing", "season_pricing"].includes(activeSubKey);
   const isRoomCategoryView = activeModule === "rooms" && !isRoomInventoryView && !isRoomPricingView;
+  const supportsBulkLifecycle =
+    activeModule === "ashrams" ||
+    activeModule === "parking_partners" ||
+    activeModule === "parking_locations" ||
+    isRoomCategoryView;
+  const isAartiSessionView = activeModule === "aarti_sessions";
+  const isAartiConfigurationView = [
+    "aarti_pass_types",
+    "aarti_pricing",
+    "aarti_availability",
+    "aarti_staff",
+    "aarti_settings",
+  ].includes(activeModule);
   const isReadOnlyFinance =
     (activeModule === "bookings" && activeSubKey === "refunds") ||
     READ_ONLY_MODULES.has(activeModule);
@@ -373,7 +428,7 @@ export const EnterpriseModulePage: React.FC<{
         key: "name",
         label: "Record Name / Title",
         render: (v: any, item: any) =>
-          v || item.title || item.bookingId || item._id,
+          formatInline(v || item.title || item.bookingId || item._id),
       },
       {
         key: "category",
@@ -400,7 +455,7 @@ export const EnterpriseModulePage: React.FC<{
         name: "status",
         label: "Status",
         type: "select",
-        options: ["active", "pending", "approved", "rejected", "archived"],
+        options: ["active", "pending", "approved", "rejected"],
       },
     ],
   };
@@ -568,7 +623,7 @@ export const EnterpriseModulePage: React.FC<{
               name: "status",
               label: "Status",
               type: "select",
-              options: ["approved", "pending", "rejected", "archived"],
+              options: ["approved", "pending", "rejected"],
             },
           ],
         };
@@ -1195,7 +1250,7 @@ export const EnterpriseModulePage: React.FC<{
               name: "status",
               label: "Publish Status",
               type: "select",
-              options: ["published", "draft", "archived"],
+              options: ["published", "draft"],
             },
           ],
         };
@@ -1601,6 +1656,211 @@ export const EnterpriseModulePage: React.FC<{
           ],
         };
 
+      case "aarti_pass_types":
+        return {
+          icon: <Sparkles size={20} className="text-[#0A4DA6]" />,
+          columns: [
+            { key: "name", label: "Pass Name" },
+            { key: "code", label: "Code" },
+            { key: "sessionId", label: "Aarti", render: (value: any) => value?.name || "—" },
+            { key: "basePrice", label: "Price", render: (value: any) => formatCurrency(Number(value || 0)) },
+            { key: "totalCapacity", label: "Capacity" },
+            { key: "isActive", label: "Status", render: (value: any) => value === false ? "Inactive" : "Active" },
+          ],
+          fields: [
+            { name: "name", label: "Pass Name", type: "text", required: true },
+            { name: "code", label: "Pass Code", type: "text", required: true },
+            { name: "description", label: "Description", type: "textarea" },
+            { name: "basePrice", label: "Base Price", type: "number", required: true },
+            { name: "totalCapacity", label: "Total Capacity", type: "number", required: true },
+            { name: "maxPerBooking", label: "Maximum Per Booking", type: "number", required: true },
+            { name: "zoneLabel", label: "Zone / Seating Label", type: "text" },
+            { name: "includesPrasad", label: "Includes Prasad", type: "select", options: ["false", "true"] },
+            { name: "includesSankalp", label: "Includes Sankalp", type: "select", options: ["false", "true"] },
+            { name: "isActive", label: "Active", type: "select", options: ["true", "false"] },
+            { name: "displayOrder", label: "Display Order", type: "number" },
+          ],
+        };
+
+      case "aarti_pricing":
+        return {
+          icon: <TagIcon size={20} className="text-[#0A4DA6]" />,
+          columns: [
+            { key: "name", label: "Pricing Rule" },
+            { key: "sessionId", label: "Aarti", render: (value: any) => value?.name || "—" },
+            { key: "passTypeId", label: "Pass", render: (value: any) => value?.name || "All passes" },
+            { key: "validFrom", label: "Valid From" },
+            { key: "validUntil", label: "Valid Until" },
+            { key: "overridePrice", label: "Override Price", render: (value: any) => value == null ? "—" : formatCurrency(Number(value)) },
+            { key: "isActive", label: "Status", render: (value: any) => value === false ? "Inactive" : "Active" },
+          ],
+          fields: [
+            { name: "name", label: "Rule Name", type: "text", required: true },
+            { name: "validFrom", label: "Valid From", type: "date" },
+            { name: "validUntil", label: "Valid Until", type: "date" },
+            { name: "daysOfWeek", label: "Days of Week (0–6, comma separated)", type: "text" },
+            { name: "multiplier", label: "Price Multiplier", type: "number" },
+            { name: "overridePrice", label: "Override Price", type: "number" },
+            { name: "taxPercent", label: "Tax Percent", type: "number" },
+            { name: "priority", label: "Priority", type: "number" },
+            { name: "isActive", label: "Active", type: "select", options: ["true", "false"] },
+          ],
+        };
+
+      case "aarti_availability":
+        return {
+          icon: <Calendar size={20} className="text-[#0A4DA6]" />,
+          columns: [
+            { key: "sessionId", label: "Aarti", render: (value: any) => value?.name || "—" },
+            { key: "passTypeId", label: "Pass", render: (value: any) => value?.name || "—" },
+            { key: "date", label: "Date" },
+            { key: "totalCapacity", label: "Capacity" },
+            { key: "bookedCount", label: "Booked" },
+            { key: "blockedCount", label: "Blocked" },
+            { key: "customPrice", label: "Custom Price", render: (value: any) => value == null ? "—" : formatCurrency(Number(value)) },
+            { key: "isClosed", label: "Availability", render: (value: any) => value ? "Closed" : "Open" },
+          ],
+          fields: [
+            { name: "date", label: "Availability Date", type: "date", required: true },
+            { name: "totalCapacity", label: "Total Capacity", type: "number", required: true },
+            { name: "blockedCount", label: "Blocked Seats", type: "number" },
+            { name: "customPrice", label: "Custom Price", type: "number" },
+            { name: "isClosed", label: "Close Bookings", type: "select", options: ["false", "true"] },
+            { name: "note", label: "Internal Note", type: "textarea" },
+          ],
+        };
+
+      case "aarti_staff":
+        return {
+          icon: <Users size={20} className="text-[#0A4DA6]" />,
+          columns: [
+            { key: "userId", label: "Staff Member", render: (value: any) => value?.name || value?.email || "—" },
+            { key: "ashramId", label: "Ashram", render: (value: any) => value?.name || "—" },
+            { key: "aartiRole", label: "Aarti Role", render: (value: any) => humanizeLabel(value || "") },
+            { key: "employeeCode", label: "Employee Code" },
+            { key: "shift", label: "Shift" },
+            { key: "status", label: "Status" },
+          ],
+          fields: [
+            { name: "aartiRole", label: "Aarti Role", type: "select", options: ["aarti_coordinator", "aarti_gate_staff"], required: true },
+            { name: "employeeCode", label: "Employee Code", type: "text" },
+            { name: "phone", label: "Phone", type: "text" },
+            { name: "shift", label: "Shift", type: "text" },
+            { name: "status", label: "Status", type: "select", options: ["active", "suspended", "revoked"] },
+          ],
+        };
+
+      case "aarti_settings":
+        return {
+          icon: <ShieldCheck size={20} className="text-[#0A4DA6]" />,
+          columns: [
+            { key: "scope", label: "Scope" },
+            { key: "ashramId", label: "Ashram", render: (value: any) => value?.name || "Platform-wide" },
+            { key: "sessionId", label: "Aarti", render: (value: any) => value?.name || "All Aartis" },
+            { key: "reservationHoldMinutes", label: "Hold Minutes" },
+            { key: "maxPassesPerBooking", label: "Max Passes" },
+            { key: "allowOnlineBooking", label: "Online Booking", render: (value: any) => value === false ? "Disabled" : "Enabled" },
+          ],
+          fields: [
+            { name: "scope", label: "Setting Scope", type: "select", options: ["platform", "ashram", "session"], required: true },
+            { name: "reservationHoldMinutes", label: "Reservation Hold (minutes)", type: "number" },
+            { name: "gateOpensBeforeMinutes", label: "Gate Opens Before (minutes)", type: "number" },
+            { name: "gateClosesAfterMinutes", label: "Gate Closes After (minutes)", type: "number" },
+            { name: "noShowAfterMinutes", label: "No-show After (minutes)", type: "number" },
+            { name: "commissionPercent", label: "Commission Percent", type: "number" },
+            { name: "taxPercent", label: "Tax Percent", type: "number" },
+            { name: "maxPassesPerBooking", label: "Maximum Passes Per Booking", type: "number" },
+            { name: "bookingOpensDaysAhead", label: "Booking Opens Days Ahead", type: "number" },
+            { name: "freeCancellationHours", label: "Free Cancellation Hours", type: "number" },
+            { name: "allowOnlineBooking", label: "Allow Online Booking", type: "select", options: ["true", "false"] },
+            { name: "allowCancellation", label: "Allow Cancellation", type: "select", options: ["true", "false"] },
+            { name: "requireDevoteeNames", label: "Require Devotee Names", type: "select", options: ["true", "false"] },
+          ],
+        };
+
+      case "aarti_sessions": {
+        const states = getAllStates();
+        const selectedState = states.find(
+          (state) => state.name === (formData.state || formData.venue?.state),
+        );
+        const cities = selectedState ? getDistricts(selectedState.code) : [];
+        return {
+          icon: <Sparkles size={20} className="text-[#0A4DA6]" />,
+          columns: [
+            { key: "name", label: "Aarti Name" },
+            {
+              key: "kind",
+              label: "Category",
+              render: (value: any) => humanizeLabel(value || "other"),
+            },
+            {
+              key: "venue",
+              label: "Location",
+              render: (value: any) =>
+                [value?.city, value?.state].filter(Boolean).join(", ") || "—",
+            },
+            { key: "startTime", label: "Start Time" },
+            { key: "status", label: "Status" },
+          ],
+          fields: [
+            { name: "name", label: "Aarti Name", type: "text", required: true },
+            {
+              name: "kind",
+              label: "Category",
+              type: "select",
+              options: [
+                "ganga_aarti",
+                "mangala_aarti",
+                "bhasma_aarti",
+                "sandhya_aarti",
+                "shayan_aarti",
+                "maha_aarti",
+                "abhishek",
+                "havan",
+                "bhajan_sandhya",
+                "other",
+              ],
+              required: true,
+            },
+            { name: "deity", label: "Deity", type: "text" },
+            {
+              name: "state",
+              label: "State",
+              type: "select",
+              options: states.map((state) => state.name),
+              required: true,
+            },
+            {
+              name: "city",
+              label: "City / District",
+              type: "select",
+              options: cities,
+              required: true,
+            },
+            { name: "startTime", label: "Start Time", type: "time", required: true },
+            {
+              name: "durationMinutes",
+              label: "Duration (minutes)",
+              type: "number",
+              required: true,
+            },
+            {
+              name: "totalCapacity",
+              label: "Total Capacity",
+              type: "number",
+              required: true,
+            },
+            { name: "description", label: "Description", type: "textarea" },
+            {
+              name: "status",
+              label: "Status",
+              type: "select",
+              options: ["draft", "pending", "approved", "rejected", "suspended"],
+            },
+          ],
+        };
+      }
+
       default:
         return genericModuleConfig;
     }
@@ -1656,12 +1916,67 @@ export const EnterpriseModulePage: React.FC<{
       (!formData.relatedDistrict || district === formData.relatedDistrict)
     );
   });
+  const selectedAartiId = String(formData.sessionId || "");
+  const filteredAartiPassOptions = aartiPassOptions.filter(
+    (pass) =>
+      !selectedAartiId ||
+      String(pass.sessionId?._id || pass.sessionId) === selectedAartiId,
+  );
+  const requiresAartiSession = [
+    "aarti_pass_types",
+    "aarti_pricing",
+    "aarti_availability",
+  ].includes(activeModule);
+  const requiresAartiPass = ["aarti_pricing", "aarti_availability"].includes(
+    activeModule,
+  );
+  const showAartiAshram =
+    activeModule === "aarti_staff" ||
+    (activeModule === "aarti_settings" && formData.scope === "ashram");
+  const showAartiSettingSession =
+    activeModule === "aarti_settings" && formData.scope === "session";
+  const formUsesImages = [
+    "ashrams",
+    "banner",
+    "featured_banner",
+    "blogs",
+    "marketplace",
+    "local",
+    "temples",
+    "events",
+    "parking_locations",
+    "aarti_sessions",
+  ].includes(activeModule);
 
   const handleEditOpen = (item: any) => {
     setEditingItem(item);
     const initial = { ...item };
     if (!initial.city && item.address?.city) {
       initial.city = item.address.city;
+    }
+    if (activeModule === "aarti_sessions") {
+      initial.ashramId = item.ashramId?._id || item.ashramId || "";
+      initial.state = item.venue?.state || "";
+      initial.city = item.venue?.city || "";
+    }
+    if (activeModule.startsWith("aarti_")) {
+      ["ashramId", "sessionId", "passTypeId", "userId"].forEach((key) => {
+        initial[key] = item[key]?._id || item[key] || "";
+      });
+      [
+        "includesPrasad",
+        "includesSankalp",
+        "isActive",
+        "isClosed",
+        "allowOnlineBooking",
+        "allowCancellation",
+        "requireDevoteeNames",
+      ].forEach((key) => {
+        if (typeof item[key] === "boolean") initial[key] = String(item[key]);
+      });
+      if (Array.isArray(item.daysOfWeek)) {
+        initial.daysOfWeek = item.daysOfWeek.join(",");
+      }
     }
     setFormData(initial);
     setFeaturedAshramSearch("");
@@ -1694,6 +2009,65 @@ export const EnterpriseModulePage: React.FC<{
     } else if (isRoomPricingView) {
       initialData.sourceRoomId = roomCategoryOptions[0]?._id || "";
       initialData.multiplier = 1;
+    } else if (isAartiSessionView) {
+      const states = getAllStates();
+      const firstAshram = roomAshramOptions[0];
+      const preferredState =
+        firstAshram?.address?.state || "Uttar Pradesh";
+      const firstState =
+        states.find((state) => state.name === preferredState) || states[0];
+      const districts = firstState ? getDistricts(firstState.code) : [];
+      const preferredCity =
+        firstAshram?.address?.district || firstAshram?.address?.city || "";
+      initialData.ashramId = firstAshram?._id || "";
+      initialData.kind = "other";
+      initialData.state = firstState?.name || "";
+      initialData.city = districts.includes(preferredCity)
+        ? preferredCity
+        : districts[0] || "";
+      initialData.startTime = "18:00";
+      initialData.durationMinutes = 45;
+      initialData.totalCapacity = 0;
+      initialData.status = "approved";
+    } else if (activeModule === "aarti_pass_types") {
+      const firstSession = aartiSessionOptions[0];
+      initialData.sessionId = firstSession?._id || "";
+      initialData.ashramId = firstSession?.ashramId?._id || firstSession?.ashramId || "";
+      initialData.basePrice = 0;
+      initialData.totalCapacity = 100;
+      initialData.maxPerBooking = 10;
+      initialData.includesPrasad = "false";
+      initialData.includesSankalp = "false";
+      initialData.isActive = "true";
+      initialData.displayOrder = 0;
+    } else if (activeModule === "aarti_pricing") {
+      initialData.sessionId = aartiSessionOptions[0]?._id || "";
+      initialData.passTypeId = "";
+      initialData.multiplier = 1;
+      initialData.priority = 0;
+      initialData.isActive = "true";
+    } else if (activeModule === "aarti_availability") {
+      const firstSession = aartiSessionOptions[0];
+      const firstPass = aartiPassOptions.find(
+        (pass) =>
+          String(pass.sessionId?._id || pass.sessionId) === String(firstSession?._id),
+      );
+      initialData.sessionId = firstSession?._id || "";
+      initialData.passTypeId = firstPass?._id || "";
+      initialData.date = new Date().toISOString().slice(0, 10);
+      initialData.totalCapacity = firstPass?.totalCapacity || 0;
+      initialData.blockedCount = 0;
+      initialData.isClosed = "false";
+    } else if (activeModule === "aarti_staff") {
+      initialData.userId = aartiUserOptions[0]?._id || "";
+      initialData.ashramId = roomAshramOptions[0]?._id || "";
+      initialData.aartiRole = "aarti_gate_staff";
+      initialData.status = "active";
+    } else if (activeModule === "aarti_settings") {
+      initialData.scope = "platform";
+      initialData.allowOnlineBooking = "true";
+      initialData.allowCancellation = "true";
+      initialData.requireDevoteeNames = "true";
     }
     setFormData(initialData);
     setFeaturedAshramSearch("");
@@ -1770,6 +2144,151 @@ export const EnterpriseModulePage: React.FC<{
         });
         announceRoomsChanged();
         addNotification("Pricing Updated", "The new rate is live for new bookings.", "success");
+        setIsModalOpen(false);
+        fetchModuleData();
+        return;
+      }
+      if (isAartiSessionView) {
+        if (!formData.ashramId || !formData.state || !formData.city) {
+          addNotification(
+            "Aarti Location Required",
+            "Select an ashram, state, and city before saving.",
+            "error",
+          );
+          return;
+        }
+        const images = Array.from(
+          new Set(
+            [
+              formData.coverImage,
+              ...(Array.isArray(formData.images) ? formData.images : []),
+              ...(Array.isArray(formData.gallery) ? formData.gallery : []),
+            ].filter((value): value is string => typeof value === "string" && !!value.trim()),
+          ),
+        );
+        await api.post(`/admin/crud/aarti_sessions${activeSubKey ? `?subKey=${activeSubKey}` : ""}`, {
+          ...(editingItem?._id ? { _id: editingItem._id } : {}),
+          ashramId: formData.ashramId,
+          name: String(formData.name || "").trim(),
+          kind: formData.kind,
+          deity: String(formData.deity || "").trim(),
+          description: String(formData.description || "").trim(),
+          state: formData.state,
+          city: formData.city,
+          startTime: formData.startTime,
+          durationMinutes: Number(formData.durationMinutes),
+          totalCapacity: Number(formData.totalCapacity),
+          status: formData.status,
+          coverImage: formData.coverImage || images[0] || "",
+          images,
+        });
+        addNotification(
+          editingItem ? "Aarti Updated" : "Aarti Created",
+          editingItem
+            ? "The Aarti details were updated successfully."
+            : "The Aarti was created with a unique URL slug.",
+          "success",
+        );
+        setIsModalOpen(false);
+        fetchModuleData();
+        return;
+      }
+      if (isAartiConfigurationView) {
+        const needsSession = [
+          "aarti_pass_types",
+          "aarti_pricing",
+          "aarti_availability",
+        ].includes(activeModule);
+        const needsPass = activeModule === "aarti_availability";
+        const needsStaffIdentity = activeModule === "aarti_staff";
+        if (
+          (needsSession && !formData.sessionId) ||
+          (needsPass && !formData.passTypeId) ||
+          (needsStaffIdentity && (!formData.userId || !formData.ashramId)) ||
+          (activeModule === "aarti_settings" &&
+            formData.scope === "ashram" &&
+            !formData.ashramId) ||
+          (activeModule === "aarti_settings" &&
+            formData.scope === "session" &&
+            !formData.sessionId)
+        ) {
+          addNotification(
+            "Required Selection Missing",
+            "Select the required Aarti, pass, ashram, or staff member before saving.",
+            "error",
+          );
+          return;
+        }
+
+        const booleanFields = [
+          "includesPrasad",
+          "includesSankalp",
+          "isActive",
+          "isClosed",
+          "allowOnlineBooking",
+          "allowCancellation",
+          "requireDevoteeNames",
+        ];
+        const numberFields = [
+          "basePrice",
+          "totalCapacity",
+          "maxPerBooking",
+          "displayOrder",
+          "multiplier",
+          "overridePrice",
+          "taxPercent",
+          "priority",
+          "blockedCount",
+          "customPrice",
+          "reservationHoldMinutes",
+          "gateOpensBeforeMinutes",
+          "gateClosesAfterMinutes",
+          "noShowAfterMinutes",
+          "commissionPercent",
+          "maxPassesPerBooking",
+          "bookingOpensDaysAhead",
+          "freeCancellationHours",
+        ];
+        const payload: Record<string, unknown> = {
+          ...formData,
+          ...(editingItem?._id ? { _id: editingItem._id } : {}),
+        };
+        booleanFields.forEach((key) => {
+          if (payload[key] !== undefined && payload[key] !== "") {
+            payload[key] = String(payload[key]) === "true";
+          }
+        });
+        numberFields.forEach((key) => {
+          if (payload[key] !== undefined && payload[key] !== "") {
+            payload[key] = Number(payload[key]);
+          } else {
+            delete payload[key];
+          }
+        });
+        if (activeModule === "aarti_pricing") {
+          payload.daysOfWeek = String(formData.daysOfWeek || "")
+            .split(",")
+            .map((value) => Number(value.trim()))
+            .filter((value) => Number.isInteger(value) && value >= 0 && value <= 6);
+        }
+        if (activeModule === "aarti_settings") {
+          if (formData.scope === "platform") {
+            delete payload.ashramId;
+            delete payload.sessionId;
+          } else if (formData.scope === "ashram") {
+            delete payload.sessionId;
+          }
+        }
+
+        await api.post(
+          `/admin/crud/${activeModule}${activeSubKey ? `?subKey=${activeSubKey}` : ""}`,
+          payload,
+        );
+        addNotification(
+          editingItem ? "Aarti Configuration Updated" : "Aarti Configuration Created",
+          `${displayTitle} saved successfully.`,
+          "success",
+        );
         setIsModalOpen(false);
         fetchModuleData();
         return;
@@ -1894,7 +2413,7 @@ export const EnterpriseModulePage: React.FC<{
       }
 
       addNotification(
-        isFeaturedBanner ? "Featured Banner Published" : "Saved & Published Live",
+        isFeaturedBanner ? "Featured Banner Published" : "Changes Saved",
         isFeaturedBanner
           ? "The Featured Sacred Event section is now updated on the public homepage."
           : "Banner updated and published live on homepage.",
@@ -1974,6 +2493,48 @@ export const EnterpriseModulePage: React.FC<{
         );
         announceRoomsChanged();
         addNotification("Availability Updated", "The calendar now reflects this change.", "success");
+        fetchModuleData();
+        return;
+      }
+      if (isAartiConfigurationView && savedData._id) {
+        const payload: Record<string, unknown> = { ...savedData };
+        ["ashramId", "sessionId", "passTypeId", "userId"].forEach((key) => {
+          if (savedData[key]) payload[key] = savedData[key]?._id || savedData[key];
+        });
+        [
+          "includesPrasad",
+          "includesSankalp",
+          "isActive",
+          "isClosed",
+          "allowOnlineBooking",
+          "allowCancellation",
+          "requireDevoteeNames",
+        ].forEach((key) => {
+          if (savedData[key] !== undefined && savedData[key] !== "") {
+            payload[key] =
+              savedData[key] === true || String(savedData[key]) === "true";
+          }
+        });
+        if (activeModule === "aarti_pricing") {
+          payload.daysOfWeek = Array.isArray(savedData.daysOfWeek)
+            ? savedData.daysOfWeek
+            : String(savedData.daysOfWeek || "")
+                .split(",")
+                .map((value) => Number(value.trim()))
+                .filter(
+                  (value) =>
+                    Number.isInteger(value) && value >= 0 && value <= 6,
+                );
+        }
+        await api.post(
+          `/admin/crud/${activeModule}${activeSubKey ? `?subKey=${activeSubKey}` : ""}`,
+          payload,
+        );
+        addNotification(
+          "Aarti Configuration Updated",
+          `${displayTitle} saved successfully.`,
+          "success",
+        );
         fetchModuleData();
         return;
       }
@@ -2070,8 +2631,8 @@ export const EnterpriseModulePage: React.FC<{
       if (activeModule === "bookings" && activeSubKey !== "refunds") {
         await api.delete(`/bookings/${id}/admin`);
         addNotification(
-          "Booking Archived",
-          "The unpaid booking was removed from active administration records.",
+          "Booking Deleted",
+          "The eligible unpaid booking was deleted from active administration records.",
           "info",
         );
         setData((current) =>
@@ -2129,10 +2690,16 @@ export const EnterpriseModulePage: React.FC<{
       );
       const removed = results.filter((result) => result.status === "fulfilled").length;
       const protectedCount = results.length - removed;
+      const partialMessage =
+        activeModule === "bookings"
+          ? `${removed} eligible unpaid booking${removed === 1 ? " was" : "s were"} deleted. ${protectedCount} paid or active record${protectedCount === 1 ? " was" : "s were"} protected.`
+          : isRoomPricingView
+            ? `${removed} seasonal pricing rule${removed === 1 ? " was" : "s were"} deleted. ${protectedCount} base price${protectedCount === 1 ? " is" : "s are"} protected and must be edited through the room category.`
+            : `${removed} record${removed === 1 ? " was" : "s were"} deleted. ${protectedCount} record${protectedCount === 1 ? " was" : "s were"} protected or could not be deleted.`;
       addNotification(
-        protectedCount ? "Bulk Archive Partially Completed" : "Bulk Delete Complete",
+        protectedCount ? "Bulk Delete Partially Completed" : "Bulk Delete Complete",
         protectedCount
-          ? `${removed} unpaid booking${removed === 1 ? " was" : "s were"} archived. ${protectedCount} paid or active record${protectedCount === 1 ? " was" : "s were"} protected.`
+          ? partialMessage
           : `${removed} records removed.`,
         protectedCount ? "warning" : "info",
       );
@@ -2237,6 +2804,57 @@ export const EnterpriseModulePage: React.FC<{
         "error",
       );
     }
+  };
+
+  const handleBulkStatus = async (
+    ids: string[],
+    next: "active" | "suspended",
+  ) => {
+    const selected = data.filter((item) =>
+      ids.includes(String(item._id || item.id)),
+    );
+    const results = await Promise.allSettled(
+      selected.map(async (item) => {
+        if (activeModule === "parking_partners") {
+          return parkingAdminService.updatePartnerStatus(item._id || item.id, {
+            status: next,
+            ...(next === "suspended"
+              ? { rejectionReason: "Suspended by Super Admin" }
+              : {}),
+          });
+        }
+        if (activeModule === "rooms") {
+          return roomService.update(item._id || item.id, {
+            status: next === "active" ? "active" : "under_maintenance",
+          });
+        }
+        if (activeModule === "ashrams") {
+          return api.post("/admin/crud/ashrams", {
+            ...item,
+            status: next === "active" ? "approved" : "suspended",
+            isVerified: next === "active",
+          });
+        }
+        return api.post(
+          `/admin/crud/${activeModule}${activeSubKey ? `?subKey=${activeSubKey}` : ""}`,
+          {
+            ...item,
+            status: next === "active" ? "active" : "suspended",
+            ...(Object.prototype.hasOwnProperty.call(item, "isVerified")
+              ? { isVerified: next === "active" }
+              : {}),
+          },
+        );
+      }),
+    );
+    const updated = results.filter((result) => result.status === "fulfilled").length;
+    const failed = results.length - updated;
+    addNotification(
+      failed ? "Bulk Status Partially Updated" : "Bulk Status Updated",
+      `${updated} record${updated === 1 ? "" : "s"} ${next === "active" ? "activated" : "suspended"}.${failed ? ` ${failed} record${failed === 1 ? " was" : "s were"} protected or could not be updated.` : ""}`,
+      failed ? "warning" : "success",
+    );
+    fetchModuleData();
   };
 
   const handleToggleStatus = async (item: any) => {
@@ -2453,10 +3071,10 @@ export const EnterpriseModulePage: React.FC<{
         ].includes(activeModule)}
         detailVariant={activeModule === "bookings" ? "table" : "cards"}
         bulkDeleteLabel={
-          activeModule === "bookings" ? "Archive Unpaid" : "Bulk Delete"
+          activeModule === "bookings" ? "Delete Unpaid" : "Bulk Delete"
         }
         deleteLabel={
-          activeModule === "bookings" ? "Archive Unpaid Booking" : "Delete"
+          activeModule === "bookings" ? "Delete Unpaid Booking" : "Delete"
         }
         statusOptions={
           activeModule === "bookings"
@@ -2484,13 +3102,25 @@ export const EnterpriseModulePage: React.FC<{
         }
         onDelete={isReadOnlyFinance ? undefined : (id) => handleDelete(id)}
         onBulkDelete={
-          isReadOnlyFinance || activeModule === "rooms" ? undefined : (ids) => handleBulkDelete(ids)
+          isReadOnlyFinance || isRoomInventoryView
+            ? undefined
+            : (ids) => handleBulkDelete(ids)
         }
         onBulkApprove={
           isReadOnlyFinance || activeModule === "rooms" || activeModule === "bookings" ? undefined : (ids) => handleBulkApprove(ids)
         }
         onBulkReject={
           isReadOnlyFinance || activeModule === "rooms" || activeModule === "bookings" ? undefined : (ids) => handleBulkReject(ids)
+        }
+        onBulkActivate={
+          isReadOnlyFinance || !supportsBulkLifecycle
+            ? undefined
+            : (ids) => handleBulkStatus(ids, "active")
+        }
+        onBulkSuspend={
+          isReadOnlyFinance || !supportsBulkLifecycle
+            ? undefined
+            : (ids) => handleBulkStatus(ids, "suspended")
         }
         onToggleStatus={
           isReadOnlyFinance || activeModule === "bookings" ? undefined : (item) => handleToggleStatus(item)
@@ -2518,8 +3148,8 @@ export const EnterpriseModulePage: React.FC<{
           const endpoint = `/admin/crud/local${activeSubKey ? `?subKey=${activeSubKey}` : ""}`;
           await api.post(endpoint, updatedData);
           addNotification(
-            "MongoDB Updated Live",
-            `Saved changes for ${updatedData.title || "Local Service"} to database.`,
+            "Changes Saved",
+            `${updatedData.title || "Local service"} was updated successfully.`,
             "success",
           );
           setIsDrawerOpen(false);
@@ -2547,38 +3177,40 @@ export const EnterpriseModulePage: React.FC<{
             </div>
 
             <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1 text-xs">
-              <ImageGalleryManager
-                coverImage={
-                  formData.image ||
-                  formData.coverImage ||
-                  formData.imageUrl ||
-                  ""
-                }
-                onCoverImageChange={(url) => {
-                  setFormData((prev) => ({
-                    ...prev,
-                    image: url,
-                    coverImage: url,
-                    imageUrl: url,
-                  }));
-                }}
-                gallery={
-                  Array.isArray(formData.gallery)
-                    ? formData.gallery
-                    : Array.isArray(formData.images)
-                      ? formData.images
-                      : []
-                }
-                onGalleryChange={(urls) => {
-                  setFormData((prev) => ({
-                    ...prev,
-                    gallery: urls,
-                    images: urls,
-                  }));
-                }}
-                label={`${displayTitle} Image & Gallery Manager`}
-                minimumImages={activeModule === "parking_locations" ? 3 : 0}
-              />
+              {formUsesImages ? (
+                <ImageGalleryManager
+                  coverImage={
+                    formData.image ||
+                    formData.coverImage ||
+                    formData.imageUrl ||
+                    ""
+                  }
+                  onCoverImageChange={(url) => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      image: url,
+                      coverImage: url,
+                      imageUrl: url,
+                    }));
+                  }}
+                  gallery={
+                    Array.isArray(formData.gallery)
+                      ? formData.gallery
+                      : Array.isArray(formData.images)
+                        ? formData.images
+                        : []
+                  }
+                  onGalleryChange={(urls) => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      gallery: urls,
+                      images: urls,
+                    }));
+                  }}
+                  label={`${displayTitle} Image & Gallery Manager`}
+                  minimumImages={activeModule === "parking_locations" ? 3 : 0}
+                />
+              ) : null}
 
               {activeModule === "featured_banner" && (
                 <div className="space-y-4 rounded-2xl border border-blue-100 bg-blue-50/60 p-4 dark:border-slate-800 dark:bg-slate-900/60">
@@ -2736,7 +3368,7 @@ export const EnterpriseModulePage: React.FC<{
                 </div>
               )}
 
-              {isRoomCategoryView && (
+              {(isRoomCategoryView || isAartiSessionView) && (
                 <div className="space-y-1">
                   <label className="font-bold text-gray-700 dark:text-gray-300">
                     Ashram <span className="text-rose-500">*</span>
@@ -2749,9 +3381,31 @@ export const EnterpriseModulePage: React.FC<{
                       editingItem?.ashramId?._id ||
                       ""
                     }
-                    onChange={(e) =>
-                      setFormData({ ...formData, ashramId: e.target.value })
-                    }
+                    onChange={(e) => {
+                      const ashram = roomAshramOptions.find(
+                        (item: any) => String(item._id) === e.target.value,
+                      );
+                      const state = ashram?.address?.state || "";
+                      const preferredCity =
+                        ashram?.address?.city || ashram?.address?.district || "";
+                      const stateEntry = getAllStates().find(
+                        (item) => item.name === state,
+                      );
+                      const districts = stateEntry
+                        ? getDistricts(stateEntry.code)
+                        : [];
+                      const city = districts.includes(preferredCity)
+                        ? preferredCity
+                        : districts.includes(ashram?.address?.district)
+                          ? ashram.address.district
+                          : districts[0] || "";
+                      setFormData({
+                        ...formData,
+                        ashramId: e.target.value,
+                        ...(isAartiSessionView && state ? { state } : {}),
+                        ...(isAartiSessionView && city ? { city } : {}),
+                      });
+                    }}
                     className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold text-[#0A4DA6] disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     <option value="">Select an ashram</option>
@@ -2800,8 +3454,132 @@ export const EnterpriseModulePage: React.FC<{
                 </div>
               )}
 
+              {(requiresAartiSession || showAartiSettingSession) && (
+                <div className="space-y-1">
+                  <label className="font-bold text-gray-700 dark:text-gray-300">
+                    Aarti <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    required
+                    disabled={!!editingItem}
+                    value={formData.sessionId || ""}
+                    onChange={(event) => {
+                      const session = aartiSessionOptions.find(
+                        (item) => String(item._id) === event.target.value,
+                      );
+                      setFormData({
+                        ...formData,
+                        sessionId: event.target.value,
+                        ashramId:
+                          session?.ashramId?._id || session?.ashramId || "",
+                        passTypeId: "",
+                      });
+                    }}
+                    className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 font-bold text-[#0A4DA6] disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-800 dark:bg-slate-900"
+                  >
+                    <option value="">Select an Aarti</option>
+                    {aartiSessionOptions.map((session) => (
+                      <option key={String(session._id)} value={String(session._id)}>
+                        {session.name}
+                        {session.ashramId?.name
+                          ? ` — ${session.ashramId.name}`
+                          : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {requiresAartiPass && (
+                <div className="space-y-1">
+                  <label className="font-bold text-gray-700 dark:text-gray-300">
+                    Pass Type
+                    {activeModule === "aarti_availability" ? (
+                      <span className="text-rose-500"> *</span>
+                    ) : null}
+                  </label>
+                  <select
+                    required={activeModule === "aarti_availability"}
+                    disabled={!!editingItem || !formData.sessionId}
+                    value={formData.passTypeId || ""}
+                    onChange={(event) =>
+                      setFormData({ ...formData, passTypeId: event.target.value })
+                    }
+                    className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 font-bold text-[#0A4DA6] disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-800 dark:bg-slate-900"
+                  >
+                    <option value="">
+                      {activeModule === "aarti_pricing"
+                        ? "All pass types"
+                        : "Select a pass type"}
+                    </option>
+                    {filteredAartiPassOptions.map((pass) => (
+                      <option key={String(pass._id)} value={String(pass._id)}>
+                        {pass.name} ({pass.code})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {activeModule === "aarti_staff" && (
+                <div className="space-y-1">
+                  <label className="font-bold text-gray-700 dark:text-gray-300">
+                    Staff Member <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    required
+                    disabled={!!editingItem}
+                    value={formData.userId || ""}
+                    onChange={(event) =>
+                      setFormData({ ...formData, userId: event.target.value })
+                    }
+                    className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 font-bold text-[#0A4DA6] disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-800 dark:bg-slate-900"
+                  >
+                    <option value="">Select a staff member</option>
+                    {aartiUserOptions.map((member) => (
+                      <option key={String(member._id)} value={String(member._id)}>
+                        {member.name || member.email}
+                        {member.email ? ` — ${member.email}` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {showAartiAshram && (
+                <div className="space-y-1">
+                  <label className="font-bold text-gray-700 dark:text-gray-300">
+                    Ashram <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    required
+                    disabled={!!editingItem}
+                    value={formData.ashramId || ""}
+                    onChange={(event) =>
+                      setFormData({ ...formData, ashramId: event.target.value })
+                    }
+                    className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 font-bold text-[#0A4DA6] disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-800 dark:bg-slate-900"
+                  >
+                    <option value="">Select an ashram</option>
+                    {roomAshramOptions.map((ashram) => (
+                      <option key={String(ashram._id)} value={String(ashram._id)}>
+                        {ashram.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                {moduleConfig.fields.map((f) => (
+                {moduleConfig.fields
+                  .filter(
+                    (field) =>
+                      import.meta.env.DEV ||
+                      !["coverImage", "coverImageUrl", "imageUrl", "bannerImage", "thumbnailUrl"].includes(
+                        field.name,
+                      ),
+                  )
+                  .map((f) => (
                   <div
                     key={f.name}
                     className={`space-y-1 ${f.type === "textarea" ? "md:col-span-2" : ""}`}
@@ -2813,13 +3591,22 @@ export const EnterpriseModulePage: React.FC<{
 
                     {f.type === "select" ? (
                       <select
+                        required={f.required}
                         value={
                           formData[f.name] || (f.options ? f.options[0] : "")
                         }
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          const nextValue = e.target.value;
+                          const nextState =
+                            f.name === "state"
+                              ? getAllStates().find((state) => state.name === nextValue)
+                              : undefined;
                           setFormData({
                             ...formData,
-                            [f.name]: e.target.value,
+                            [f.name]: nextValue,
+                            ...(nextState
+                              ? { city: getDistricts(nextState.code)[0] || "" }
+                              : {}),
                             ...(f.name === "relatedContentType"
                               ? {
                                   linkedEntityId: "",
@@ -2827,8 +3614,11 @@ export const EnterpriseModulePage: React.FC<{
                                   linkedEntityName: "",
                                 }
                               : {}),
-                          })
-                        }
+                            ...(f.name === "scope"
+                              ? { ashramId: "", sessionId: "" }
+                              : {}),
+                          });
+                        }}
                         className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold text-[#0A4DA6]"
                       >
                         {f.options?.map((opt) => (
@@ -2858,7 +3648,7 @@ export const EnterpriseModulePage: React.FC<{
                       />
                     )}
                   </div>
-                ))}
+                  ))}
               </div>
             </div>
 

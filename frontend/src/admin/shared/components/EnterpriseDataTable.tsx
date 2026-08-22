@@ -24,6 +24,7 @@ import { formatInline, humanizeKey, URL_LIKE } from "../utils/recordFormat";
 import { useLanguage } from "../../../contexts/LanguageContext";
 import { getFormattingLocale } from "../../../utils/format";
 import api, { getErrorMessage } from "../../../lib/api";
+import { useNotifications } from "../../../contexts/NotificationContext";
 
 const IMAGE_ASSET = /\.(jpe?g|png|webp|gif|svg|avif|heic)($|\?)/i;
 const DOCUMENT_FIELD = /(document|certificate|deed|ownership|pdf|file).*url$|^(trustDeedUrl|fireSafetyCertificateUrl|landOwnershipUrl)$/i;
@@ -172,6 +173,51 @@ const safeCellContent = (content: React.ReactNode): React.ReactNode => {
   return formatInline(content);
 };
 
+const recordTitle = (item: Record<string, any>): string => {
+  const candidates = [
+    item.name,
+    item.title,
+    item.businessName,
+    item.bookingReference,
+    item.bookingId,
+    item.bookingCode,
+    item.email,
+  ];
+  for (const candidate of candidates) {
+    if (candidate === null || candidate === undefined) continue;
+    const label = formatInline(candidate);
+    if (label && label !== "—") return label;
+  }
+  return "Record Details";
+};
+
+const STATUS_ALIASES: Record<string, string[]> = {
+  active: ["active", "approved", "published", "live", "enabled"],
+  rejected: ["rejected", "suspended", "inactive", "disabled"],
+  cancelled: ["cancelled", "canceled"],
+  checked_in: ["checked_in", "checked-in"],
+  checked_out: ["checked_out", "checked-out"],
+  no_show: ["no_show", "no-show"],
+};
+
+const recordStatuses = (item: Record<string, unknown>): string[] =>
+  [
+    item.status,
+    item.bookingStatus,
+    item.paymentStatus,
+    item.approvalStatus,
+    item.lifecycleStatus,
+  ]
+    .filter((value): value is string | number => value !== undefined && value !== null)
+    .map((value) => String(value).trim().toLowerCase().replace(/\s+/g, "_"));
+
+const matchesStatus = (item: Record<string, unknown>, selected: string): boolean => {
+  if (selected === "all") return true;
+  const normalized = selected.trim().toLowerCase().replace(/\s+/g, "_");
+  const accepted = new Set(STATUS_ALIASES[normalized] || [normalized]);
+  return recordStatuses(item).some((status) => accepted.has(status));
+};
+
 export interface EnterpriseDataTableProps {
   title: string;
   subtitle?: string;
@@ -186,6 +232,8 @@ export interface EnterpriseDataTableProps {
   onBulkDelete?: (ids: string[]) => void;
   onBulkApprove?: (ids: string[]) => void;
   onBulkReject?: (ids: string[]) => void;
+  onBulkSuspend?: (ids: string[]) => void | Promise<void>;
+  onBulkActivate?: (ids: string[]) => void | Promise<void>;
   onToggleStatus?: (item: any) => void;
   onResetOwnerPassword?: (ownerId: string, password: string) => Promise<void>;
   formFields?: Array<{
@@ -215,6 +263,8 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
   onBulkDelete,
   onBulkApprove,
   onBulkReject,
+  onBulkSuspend,
+  onBulkActivate,
   isLoading = false,
   loading = false,
   hideAddButton = false,
@@ -226,12 +276,14 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
   deleteLabel = "Delete",
 }) => {
   const { t } = useLanguage();
+  const { confirmAction } = useNotifications();
   const tableLoading = isLoading || loading;
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [bulkActionLoading, setBulkActionLoading] = useState(false);
 
   const [detailItem, setDetailItem] = useState<any | null>(null);
   const [isDetailEditing, setIsDetailEditing] = useState(false);
@@ -266,10 +318,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
             .toLowerCase()
             .includes(searchTerm.toLowerCase()),
         );
-      const statusMatch =
-        statusFilter === "all" ||
-        (item.status &&
-          String(item.status).toLowerCase() === statusFilter.toLowerCase());
+      const statusMatch = matchesStatus(item, statusFilter);
       return searchMatch && statusMatch;
     });
   }, [data, searchTerm, statusFilter]);
@@ -305,6 +354,31 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
     );
+  };
+
+  const runBulkAction = async (
+    action: ((ids: string[]) => void | Promise<void>) | undefined,
+  ) => {
+    if (!action || bulkActionLoading || selectedIds.length === 0) return;
+    setBulkActionLoading(true);
+    try {
+      await action([...selectedIds]);
+      setSelectedIds([]);
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  const runBulkDelete = async () => {
+    if (!onBulkDelete || selectedIds.length === 0) return;
+    const confirmed = await confirmAction({
+      title: bulkDeleteLabel,
+      message: `Delete ${selectedIds.length} selected item${selectedIds.length === 1 ? "" : "s"}? Protected records will be kept.`,
+      confirmLabel: "Delete",
+      tone: "danger",
+    });
+    if (!confirmed) return;
+    await runBulkAction(onBulkDelete);
   };
 
   const handleExportCSV = () => {
@@ -592,7 +666,11 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
             <span className="text-xs text-gray-400 font-bold">{t("Status")}:</span>
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setCurrentPage(1);
+                setSelectedIds([]);
+              }}
               className="px-3 py-1.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-full text-xs font-bold text-[#0B192C] dark:text-white focus:outline-none"
             >
               <option value="all">{t("All Statuses")}</option>
@@ -638,13 +716,29 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
           <span className="text-xs font-bold text-amber-800 dark:text-amber-300">
             {selectedIds.length} item(s) selected
           </span>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {onBulkActivate && (
+              <button
+                disabled={bulkActionLoading}
+                onClick={() => void runBulkAction(onBulkActivate)}
+                className="px-3 py-1.5 rounded-full border border-emerald-200 bg-white text-emerald-700 text-xs font-bold flex items-center gap-1 cursor-pointer hover:bg-emerald-50 disabled:opacity-50"
+              >
+                <CheckCircle size={14} /> {t("Activate")}
+              </button>
+            )}
+            {onBulkSuspend && (
+              <button
+                disabled={bulkActionLoading}
+                onClick={() => void runBulkAction(onBulkSuspend)}
+                className="px-3 py-1.5 rounded-full border border-amber-200 bg-white text-amber-700 text-xs font-bold flex items-center gap-1 cursor-pointer hover:bg-amber-50 disabled:opacity-50"
+              >
+                <XCircle size={14} /> {t("Suspend")}
+              </button>
+            )}
             {onBulkApprove && (
               <button
-                onClick={() => {
-                  onBulkApprove(selectedIds);
-                  setSelectedIds([]);
-                }}
+                disabled={bulkActionLoading}
+                onClick={() => void runBulkAction(onBulkApprove)}
                 className="px-3 py-1.5 rounded-full bg-emerald-600 text-white text-xs font-bold flex items-center gap-1 cursor-pointer hover:bg-emerald-700"
               >
                 <CheckCircle size={14} /> {t("Bulk Approve")}
@@ -652,10 +746,8 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
             )}
             {onBulkReject && (
               <button
-                onClick={() => {
-                  onBulkReject(selectedIds);
-                  setSelectedIds([]);
-                }}
+                disabled={bulkActionLoading}
+                onClick={() => void runBulkAction(onBulkReject)}
                 className="px-3 py-1.5 rounded-full bg-orange-600 text-white text-xs font-bold flex items-center gap-1 cursor-pointer hover:bg-orange-700"
               >
                 <XCircle size={14} /> {t("Bulk Reject")}
@@ -663,15 +755,21 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
             )}
             {onBulkDelete && (
               <button
-                onClick={() => {
-                  onBulkDelete(selectedIds);
-                  setSelectedIds([]);
-                }}
+                disabled={bulkActionLoading}
+                onClick={() => void runBulkDelete()}
                 className="px-3 py-1.5 rounded-full bg-rose-600 text-white text-xs font-bold flex items-center gap-1 cursor-pointer hover:bg-rose-700"
               >
                 <Trash2 size={14} /> {t(bulkDeleteLabel)}
               </button>
             )}
+            <button
+              type="button"
+              disabled={bulkActionLoading}
+              onClick={() => setSelectedIds([])}
+              className="px-3 py-1.5 rounded-full border border-gray-200 bg-white text-gray-500 text-xs font-bold cursor-pointer hover:bg-gray-50 disabled:opacity-50"
+            >
+              {t("Clear")}
+            </button>
           </div>
         </div>
       )}
@@ -828,17 +926,11 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
               <div className="space-y-1 text-left">
                 <div className="flex items-center gap-2.5 flex-wrap">
                   <h3 className="font-black text-xl text-[#0B192C] dark:text-white tracking-tight">
-                    {detailItem.name ||
-                      detailItem.title ||
-                      detailItem.businessName ||
-                      detailItem.bookingId ||
-                      detailItem.bookingCode ||
-                      detailItem.email ||
-                      "Record Details"}
+                    {recordTitle(detailItem)}
                   </h3>
                   {detailItem.status && (
                     <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400">
-                      {detailItem.status}
+                      {safeCellContent(detailItem.status)}
                     </span>
                   )}
                   {(detailItem.isVerified || detailItem.status === "approved") && (
@@ -1182,7 +1274,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <form
             onSubmit={handleFormSubmit}
-            className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-lg w-full rounded-[28px] p-6 space-y-5 text-left shadow-2xl"
+            className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-3xl w-full rounded-[28px] p-6 space-y-5 text-left shadow-2xl"
           >
             <div className="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-3">
               <h3 className="font-bold text-base text-[#0B192C] dark:text-white">
@@ -1199,107 +1291,8 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
               </button>
             </div>
 
-            <div className="space-y-4 max-h-[360px] overflow-y-auto pr-1">
-              {showImageManager && <ImageGalleryManager
-                coverImage={
-                  formData.coverImage ||
-                  formData.image ||
-                  formData.imageUrl ||
-                  (Array.isArray(formData.images) ? formData.images[0] : "")
-                }
-                onCoverImageChange={(url) =>
-                  setFormData({
-                    ...formData,
-                    coverImage: url,
-                    image: url,
-                    imageUrl: url,
-                    images: [
-                      url,
-                      ...(Array.isArray(formData.images) ? formData.images : []).filter(
-                        (x: string) => x !== url,
-                      ),
-                    ],
-                  })
-                }
-                gallery={
-                  Array.isArray(formData.images)
-                    ? formData.images
-                    : formData.gallery || []
-                }
-                onGalleryChange={(urls) =>
-                  setFormData({ ...formData, images: urls, gallery: urls })
-                }
-              />}
-              {resolvedFormFields.map((field) => (
-                <div key={field.name} className="space-y-1">
-                  <label className="text-xs font-bold text-gray-400">
-                    {t(field.label)}
-                  </label>
-                  {field.type === "select" ? (
-                    <select
-                      value={formData[field.name] ?? field.options?.[0] ?? ""}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          [field.name]: e.target.value,
-                        })
-                      }
-                      className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none text-[#0B192C] dark:text-white font-bold cursor-pointer"
-                    >
-                      {field.options?.map((option) => (
-                        <option key={option} value={option}>{humanizeKey(option)}</option>
-                      ))}
-                    </select>
-                  ) : field.name === "isVerified" ? (
-                    <select
-                      value={formData[field.name] ? "Verified" : "Unverified"}
-                      onChange={(e) => setFormData({ ...formData, [field.name]: e.target.value === "Verified" })}
-                      className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none text-[#0B192C] dark:text-white font-bold cursor-pointer"
-                    >
-                      <option value="Verified">Verified</option>
-                      <option value="Unverified">Unverified</option>
-                    </select>
-                  ) : field.type === "textarea" ? (
-                    <textarea
-                      required={field.required}
-                      rows={4}
-                      value={formData[field.name] ?? ""}
-                      onChange={(e) =>
-                        setFormData({ ...formData, [field.name]: e.target.value })
-                      }
-                      className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none text-[#0B192C] dark:text-white resize-y"
-                    />
-                  ) : (
-                    <input
-                      type={field.type}
-                      required={field.required}
-                      min={field.type === "number" ? 0 : undefined}
-                      value={formData[field.name] ?? ""}
-                      onChange={(e) =>
-                        setFormData({ ...formData, [field.name]: e.target.value })
-                      }
-                      className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none text-[#0B192C] dark:text-white"
-                    />
-                  )}
-                </div>
-              ))}
-              {!formFields && <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-400">
-                  Status
-                </label>
-                <select
-                  value={formData.status || "active"}
-                  onChange={(e) =>
-                    setFormData({ ...formData, status: e.target.value })
-                  }
-                  className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none text-[#0B192C] dark:text-white font-bold"
-                >
-                  <option value="active">Active / Approved</option>
-                  <option value="pending">Pending</option>
-                  <option value="rejected">Rejected / Suspended</option>
-                  <option value="cancelled">Cancelled</option>
-                </select>
-              </div>}
+            <div className="max-h-[60vh] overflow-y-auto pr-1">
+              {renderRecordEditor()}
             </div>
 
             <div className="flex gap-3 pt-3 border-t border-gray-100 dark:border-slate-800">

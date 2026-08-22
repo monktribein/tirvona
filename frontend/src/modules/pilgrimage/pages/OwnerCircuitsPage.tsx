@@ -15,6 +15,8 @@ import {
 import { getErrorMessage } from "../../../lib/api";
 import { EnterprisePageHeader } from "../../../admin/shared/components/EnterprisePageHeader";
 import { pilgrimageOwnerService } from "../services/pilgrimage.service";
+import { useNotifications } from "../../../contexts/NotificationContext";
+import FileUploader from "../../../components/FileUploader";
 import {
   CIRCUIT_DIFFICULTIES,
   CIRCUIT_SEASONS,
@@ -78,6 +80,7 @@ const emptyStop = {
 };
 
 export const OwnerCircuitsPage: React.FC = () => {
+  const { confirmAction } = useNotifications();
   const [ashrams, setAshrams] = useState<Ashram[]>([]);
   const [circuits, setCircuits] = useState<PilgrimageCircuit[]>([]);
   const [statusFilter, setStatusFilter] = useState("");
@@ -176,10 +179,16 @@ export const OwnerCircuitsPage: React.FC = () => {
     await load();
   };
 
-  const archive = async (circuit: PilgrimageCircuit) => {
-    if (!window.confirm(`Archive "${circuit.name}"?`)) return;
+  const remove = async (circuit: PilgrimageCircuit) => {
+    const confirmed = await confirmAction({
+      title: "Delete Pilgrimage Circuit",
+      message: `Delete "${circuit.name}"? Circuits used by itineraries are protected.`,
+      confirmLabel: "Delete",
+      tone: "danger",
+    });
+    if (!confirmed) return;
     await pilgrimageOwnerService
-      .archiveCircuit(circuit._id)
+      .deleteCircuit(circuit._id)
       .catch(() => undefined);
     await load();
   };
@@ -214,7 +223,13 @@ export const OwnerCircuitsPage: React.FC = () => {
 
   const deleteStop = async (stop: CircuitStop) => {
     if (!stopsFor) return;
-    if (!window.confirm(`Remove the "${stop.name}" stop?`)) return;
+    const confirmed = await confirmAction({
+      title: "Remove Circuit Stop",
+      message: `Remove the "${stop.name}" stop?`,
+      confirmLabel: "Remove",
+      tone: "danger",
+    });
+    if (!confirmed) return;
     await pilgrimageOwnerService.deleteStop(stop._id).catch(() => undefined);
     await openStops(stopsFor);
     await load();
@@ -254,7 +269,6 @@ export const OwnerCircuitsPage: React.FC = () => {
               <option value="pending">In review</option>
               <option value="approved">Live</option>
               <option value="rejected">Rejected</option>
-              <option value="archived">Archived</option>
             </select>
             <button
               type="button"
@@ -368,8 +382,8 @@ export const OwnerCircuitsPage: React.FC = () => {
                       ) : null}
                       <button
                         type="button"
-                        title="Archive"
-                        onClick={() => archive(circuit)}
+                        title="Delete"
+                        onClick={() => remove(circuit)}
                         className="p-2 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-400 transition-all active:scale-90 cursor-pointer"
                       >
                         <Trash2 size={14} />
@@ -540,18 +554,28 @@ export const OwnerCircuitsPage: React.FC = () => {
                 />
               </div>
 
-              <div className="sm:col-span-2">
-                <label htmlFor="circuit-cover" className={LABEL}>
-                  Cover image URL
-                </label>
-                <input
-                  id="circuit-cover"
-                  value={form.coverImage}
-                  onChange={(changeEvent) =>
-                    setForm({ ...form, coverImage: changeEvent.target.value })
-                  }
-                  placeholder="https://…"
-                  className={INPUT}
+              <div className="sm:col-span-2 space-y-2">
+                {import.meta.env.DEV ? (
+                  <>
+                    <label htmlFor="circuit-cover" className={LABEL}>
+                      Cover image URL (development only)
+                    </label>
+                    <input
+                      id="circuit-cover"
+                      value={form.coverImage}
+                      onChange={(changeEvent) =>
+                        setForm({ ...form, coverImage: changeEvent.target.value })
+                      }
+                      placeholder="https://…"
+                      className={INPUT}
+                    />
+                  </>
+                ) : null}
+                <FileUploader
+                  folder="pilgrimage-circuits"
+                  label={form.coverImage ? "Replace cover image" : "Upload cover image"}
+                  currentUrl={form.coverImage}
+                  onUploaded={(coverImage) => setForm({ ...form, coverImage })}
                 />
               </div>
 

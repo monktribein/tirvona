@@ -153,10 +153,10 @@ export class AartiOwnerController {
 
   @Delete("sessions/:id")
   @AartiCapabilities(C.MANAGE_SESSION)
-  async archiveSession(@Req() request: AartiRequest, @Param("id") id: string) {
+  async deleteSession(@Req() request: AartiRequest, @Param("id") id: string) {
     return {
       success: true,
-      message: "Aarti archived.",
+      message: "Aarti deleted permanently.",
       data: await this.management.deleteSession(request.aarti, id),
     };
   }
@@ -387,10 +387,10 @@ export class AartiOwnerController {
 
   @Delete("streams/:id")
   @AartiCapabilities(C.MANAGE_STREAM)
-  async archiveStream(@Req() request: AartiRequest, @Param("id") id: string) {
+  async deleteStream(@Req() request: AartiRequest, @Param("id") id: string) {
     return {
       success: true,
-      message: "Live pooja archived.",
+      message: "Live pooja deleted.",
       data: await this.streams.remove(request.aarti, id),
     };
   }

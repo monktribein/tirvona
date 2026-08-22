@@ -7,7 +7,8 @@ import {
 import { InjectModel } from "@nestjs/mongoose";
 import { Types, type Model } from "mongoose";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
-import { canManageAllAshrams, isAshramOwner } from "../../../common/auth/ashram-access";
+import { canManageAllAshrams } from "../../../common/auth/ashram-access";
+import { resolveAshramScope } from "../../../common/auth/ashram-scope";
 import { roundMoney } from "../domain/booking.utils";
 import type {
   SaveOfferDto,
@@ -132,19 +133,7 @@ export class OffersService {
   async ownerAshrams(user: AuthenticatedUser): Promise<string[]> {
     if (canManageAllAshrams(user))
       return (await this.ashrams.distinct("_id", { deletedAt: null })).map(String);
-    if (isAshramOwner(user))
-      return (
-        await this.ashrams
-          .find({ ownerId: user.id, deletedAt: null })
-          .select("_id")
-          .lean()
-      ).map((a: any) => String(a._id));
-    return [
-      ...new Set([
-        ...(user.scopedAshramIds ?? []),
-        ...(user.employerAshramId ? [user.employerAshramId] : []),
-      ]),
-    ];
+    return (await resolveAshramScope(user, this.ashrams)) ?? [];
   }
   private async assertOfferScope(
     user: AuthenticatedUser,

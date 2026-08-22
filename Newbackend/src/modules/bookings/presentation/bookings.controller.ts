@@ -156,14 +156,14 @@ export class BookingsController {
   }
   @Delete(":id/admin")
   @Roles("super_admin")
-  async adminArchive(
+  async adminDelete(
     @Param("id") id: string,
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return {
       success: true,
-      message: "Unpaid booking archived successfully",
-      data: await this.service.adminArchive(id, user),
+      message: "Eligible unpaid booking deleted successfully",
+      data: await this.service.adminDelete(id, user),
     };
   }
   @Post(":id/checkin")

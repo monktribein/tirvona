@@ -18,7 +18,12 @@ import type {
   UpdateAccountDto,
   UserQueryDto,
 } from "../presentation/user.dto";
-import { canManageAllAshrams } from "../../../common/auth/ashram-access";
+import { ASHRAM_OWNER_ROLE } from "../../../common/auth/ashram-access";
+import {
+  isUnrestricted,
+  resolveAshramScope,
+} from "../../../common/auth/ashram-scope";
+import { PARKING_MODEL } from "../../parking/domain/parking.constants";
 const escapeRegex = (value: string): string =>
   value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 @Injectable()
@@ -27,6 +32,11 @@ export class UsersService {
     @InjectModel("User") private readonly users: Model<any>,
     @InjectModel("Ashram") private readonly ashrams: Model<any>,
     @InjectModel("AuditLog") private readonly audits: Model<any>,
+    @InjectModel(PARKING_MODEL.Partner)
+    private readonly parkingPartners: Model<any>,
+    @InjectModel(PARKING_MODEL.Location)
+    private readonly parkingLocations: Model<any>,
+    @InjectModel(PARKING_MODEL.Staff) private readonly parkingStaff: Model<any>,
   ) {}
   private audit(
     actor: AuthenticatedUser,
@@ -51,25 +61,35 @@ export class UsersService {
     const rows = await this.users
       .find(filter)
       .select("+aadhaarCardUrl +panCardUrl")
+      .populate("employerAshramId", "name address.city address.state")
       .sort({ createdAt: -1 })
       .skip((query.page - 1) * query.limit)
       .limit(query.limit)
       .lean();
     return rows.map((row: any) => {
-      const { aadhaarCardUrl, panCardUrl, ...safe } = row;
+      const { aadhaarCardUrl, panCardUrl, employerAshramId, ...safe } = row;
       delete safe.passwordHash;
       return {
         ...safe,
+        employerAshramId: employerAshramId?._id ?? employerAshramId ?? null,
+        assignedAshram: employerAshramId?._id
+          ? {
+              _id: String(employerAshramId._id),
+              name: employerAshramId.name,
+              city: employerAshramId.address?.city ?? "",
+              state: employerAshramId.address?.state ?? "",
+            }
+          : null,
         hasAadhaarCard: Boolean(aadhaarCardUrl?.trim()),
         hasPanCard: Boolean(panCardUrl?.trim()),
       };
     });
   }
   async staff(actor: AuthenticatedUser): Promise<any[]> {
-    const ids =
-      canManageAllAshrams(actor)
-        ? await this.ashrams.distinct("_id")
-        : await this.ashrams.distinct("_id", { ownerId: actor.id });
+    const scope = await resolveAshramScope(actor, this.ashrams);
+    const ids = isUnrestricted(scope)
+      ? await this.ashrams.distinct("_id")
+      : scope;
     return this.users
       .find({
         role: { $in: ["manager", "reception", "housekeeping"] },
@@ -83,13 +103,14 @@ export class UsersService {
     actor: AuthenticatedUser,
     dto: CreateStaffDto,
   ): Promise<any> {
+    const scope = await resolveAshramScope(actor, this.ashrams);
+    if (!isUnrestricted(scope) && !scope.includes(String(dto.ashramId)))
+      throw new ForbiddenException("You do not manage this ashram");
     const ashram = await this.ashrams.findOne({
       _id: dto.ashramId,
-      ...(canManageAllAshrams(actor)
-        ? {}
-        : { ownerId: actor.id }),
+      deletedAt: null,
     });
-    if (!ashram) throw new ForbiddenException("You do not own this ashram");
+    if (!ashram) throw new NotFoundException("Ashram not found");
     if (
       await this.users.exists({
         $or: [{ email: dto.email.toLowerCase() }, { phone: dto.phone }],
@@ -109,23 +130,76 @@ export class UsersService {
       employerAshramId: dto.ashramId,
       scopedAshramIds: [dto.ashramId],
     });
+    const parkingGrant = await this.grantParkingRole(actor, dto, user._id);
     await this.audit(actor, "STAFF_CREATE", {
       staffId: user._id,
       role: dto.role,
       ashramId: dto.ashramId,
+      parkingRole: dto.parkingRole ?? null,
+      parkingLocationIds: parkingGrant?.locationIds ?? [],
     });
     return user;
+  }
+
+  private async grantParkingRole(
+    actor: AuthenticatedUser,
+    dto: CreateStaffDto,
+    staffId: unknown,
+  ): Promise<any> {
+    if (!dto.parkingRole) return null;
+
+    const partner = await this.parkingPartners
+      .findOne({ userId: actor.id })
+      .select("_id")
+      .lean();
+    if (!partner)
+      throw new BadRequestException(
+        "Activate parking management before assigning parking roles",
+      );
+
+    const ashramLocations = await this.parkingLocations
+      .find({ ashramId: dto.ashramId })
+      .select("_id")
+      .lean();
+    const allowed = (ashramLocations as any[]).map((row) => String(row._id));
+
+    const requested = (dto.parkingLocationIds ?? []).map(String);
+    const outside = requested.filter((id) => !allowed.includes(id));
+    if (outside.length)
+      throw new ForbiddenException(
+        "You cannot assign parking roles for another ashram's facility",
+      );
+
+    return this.parkingStaff.findOneAndUpdate(
+      {
+        userId: staffId,
+        partnerId: (partner as any)._id,
+        parkingRole: dto.parkingRole,
+      },
+      {
+        $set: {
+          status: "active",
+          locationIds: requested.length ? requested : allowed,
+          assignedBy: actor.id,
+          phone: dto.phone,
+        },
+        $setOnInsert: {
+          userId: staffId,
+          partnerId: (partner as any)._id,
+          parkingRole: dto.parkingRole,
+        },
+      },
+      { upsert: true, new: true },
+    );
   }
   async removeStaff(actor: AuthenticatedUser, id: string): Promise<void> {
     const user = await this.users.findById(id);
     if (!user || !["manager", "reception", "housekeeping"].includes(user.role))
       throw new NotFoundException("Staff member not found");
+    const scope = await resolveAshramScope(actor, this.ashrams);
     if (
-      !canManageAllAshrams(actor) &&
-      !(await this.ashrams.exists({
-        _id: user.employerAshramId,
-        ownerId: actor.id,
-      }))
+      !isUnrestricted(scope) &&
+      !scope.includes(String(user.employerAshramId))
     )
       throw new ForbiddenException(
         "Not authorized to manage this staff member",
@@ -154,17 +228,21 @@ export class UsersService {
       );
     const tempPassword =
       dto.password || `Tirvona#${randomBytes(8).toString("base64url")}9!`;
-    const accountData: Record<string, unknown> = { ...dto };
-    delete accountData.password;
-    delete accountData.avatarUrl;
+    const assignedAshram = await this.resolveAssignedAshram(dto);
     const user = await this.users.create({
-      ...accountData,
+      name: dto.name,
+      gender: dto.gender,
+      role: dto.role,
+      aadhaarCardUrl: dto.aadhaarCardUrl,
+      panCardUrl: dto.panCardUrl,
       email: dto.email.toLowerCase(),
       phone: dto.phone.trim(),
       passwordHash: await bcrypt.hash(tempPassword, 12),
       status: "active",
       permissions:
         dto.role === "ashram_admin" ? ["ashrams.manage_all"] : [],
+      employerAshramId: assignedAshram?._id ?? null,
+      scopedAshramIds: assignedAshram ? [assignedAshram._id] : [],
       employeeId: `EMP-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
       username: `usr_${dto.name.toLowerCase().replace(/\s+/g, "_")}_${Math.floor(100 + Math.random() * 900)}`,
       joiningDate: new Date(),
@@ -173,6 +251,8 @@ export class UsersService {
     await this.audit(actor, "USER_ACCOUNT_CREATED", {
       targetUserId: user._id,
       role: user.role,
+      assignedAshramId: assignedAshram?._id ?? null,
+      assignedAshramName: assignedAshram?.name ?? null,
     });
     const safeUser = user.toObject();
     delete safeUser.passwordHash;
@@ -180,6 +260,51 @@ export class UsersService {
     delete safeUser.panCardUrl;
     return { user: safeUser, tempPassword };
   }
+  async assignableAshrams(search?: string): Promise<any[]> {
+    const term = search?.trim();
+    const filter: Record<string, unknown> = {
+      status: "approved",
+      deletedAt: null,
+    };
+    if (term) {
+      const safe = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      filter.$or = [
+        { name: { $regex: safe, $options: "i" } },
+        { "address.city": { $regex: safe, $options: "i" } },
+        { "address.state": { $regex: safe, $options: "i" } },
+      ];
+    }
+    return this.ashrams
+      .find(filter)
+      .select("_id name address.city address.state")
+      .sort({ name: 1 })
+      .limit(50)
+      .lean();
+  }
+
+  private async resolveAssignedAshram(
+    dto: Pick<CreateAccountDto, "role" | "assignedAshramId">,
+  ): Promise<{ _id: any; name: string } | null> {
+    if (dto.role !== ASHRAM_OWNER_ROLE) return null;
+    if (!dto.assignedAshramId)
+      throw new BadRequestException(
+        "An assigned ashram is required for an Ashram Owner account",
+      );
+    const ashram = await this.ashrams
+      .findOne({
+        _id: dto.assignedAshramId,
+        status: "approved",
+        deletedAt: null,
+      })
+      .select("_id name")
+      .lean();
+    if (!ashram)
+      throw new BadRequestException(
+        "The selected ashram does not exist or is not approved",
+      );
+    return ashram as { _id: any; name: string };
+  }
+
   private async row(id: string): Promise<any> {
     const row = await this.users.findById(id);
     if (!row) throw new NotFoundException("User not found");

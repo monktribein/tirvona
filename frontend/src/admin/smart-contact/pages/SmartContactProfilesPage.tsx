@@ -34,7 +34,6 @@ const STATUS_TABS: { label: string; value: SmartContactStatus | ""; key: string 
     { label: "Active", value: "ACTIVE", key: "active" },
     { label: "Draft", value: "DRAFT", key: "draft" },
     { label: "Disabled", value: "SUSPENDED", key: "suspended" },
-    { label: "Archived", value: "ARCHIVED", key: "archived" },
   ];
 
 const CATEGORY_FILTERS = [
@@ -500,7 +499,7 @@ export const SmartContactProfilesPage: React.FC = () => {
                   Any printed card carrying one of these URLs will stop working
                   — the address returns nothing rather than the inactive notice.
                   To retire a representative whose cards are still circulating,
-                  archive the profile instead.
+                  disable the profile instead.
                 </p>
               </div>
             </div>

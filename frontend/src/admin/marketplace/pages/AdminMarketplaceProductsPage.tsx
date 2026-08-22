@@ -979,18 +979,18 @@ export const AdminMarketplaceProductsPage: React.FC = () => {
                   />
                 </label>
 
-                <button
+                {import.meta.env.DEV ? <button
                   type="button"
                   onClick={() => setShowUrlInput(!showUrlInput)}
                   className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-800 text-[#0A4DA6] dark:text-blue-300 hover:bg-blue-50 font-extrabold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer transition-colors shrink-0"
                 >
                   <LinkIcon size={13} />
                   <span>Add by URL</span>
-                </button>
+                </button> : null}
               </div>
             </div>
 
-            {showUrlInput && (
+            {import.meta.env.DEV && showUrlInput && (
               <div className="flex gap-2 p-2 bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-800 rounded-xl transition-all">
                 <input
                   type="url"

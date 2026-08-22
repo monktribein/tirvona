@@ -22,6 +22,15 @@ import { formatCurrency } from "../../../utils/format";
 
 type Tab = "overview" | "partners" | "locations" | "commissions";
 
+const LOCATION_STATUS_FILTERS = [
+  "all",
+  "draft",
+  "pending",
+  "active",
+  "inactive",
+  "suspended",
+];
+
 const TABS: { key: Tab; label: string }[] = [
   { key: "overview", label: "Overview" },
   { key: "partners", label: "Partners" },
@@ -67,6 +76,7 @@ const PARTNER_ACTIONS: {
 export const ParkingControlCenterPage: React.FC = () => {
   const { addNotification, confirmAction, promptAction } = useNotifications();
   const [tab, setTab] = useState<Tab>("overview");
+  const [locationStatusFilter, setLocationStatusFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [busyId, setBusyId] = useState("");
@@ -225,6 +235,10 @@ export const ParkingControlCenterPage: React.FC = () => {
   }, [commissions]);
 
   const pendingPartners = partners.filter((p) => p.status === "pending").length;
+  const visibleLocations =
+    locationStatusFilter === "all"
+      ? locations
+      : locations.filter((item) => item.status === locationStatusFilter);
   const totals = analytics?.totals ?? {};
 
   const settle = async (group: { partnerId: string; name: string; earning: number }) => {
@@ -446,6 +460,30 @@ export const ParkingControlCenterPage: React.FC = () => {
 
           {tab === "locations" && (
             <div className={`${card} overflow-hidden`}>
+              <div className="flex flex-wrap items-center gap-2 border-b border-gray-100 dark:border-slate-800 p-4">
+                <span className="text-[11px] font-black uppercase tracking-wider text-gray-400">Status</span>
+                {LOCATION_STATUS_FILTERS.map((option) => {
+                  const count =
+                    option === "all"
+                      ? locations.length
+                      : locations.filter((item) => item.status === option).length;
+                  const active = locationStatusFilter === option;
+                  return (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => setLocationStatusFilter(option)}
+                      className={`px-3 py-1.5 rounded-full text-[11px] font-extrabold capitalize transition-colors ${
+                        active
+                          ? "bg-[#0A4DA6] text-white"
+                          : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200"
+                      }`}
+                    >
+                      {option === "all" ? "All" : option} ({count})
+                    </button>
+                  );
+                })}
+              </div>
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[820px]">
                   <thead className="bg-gray-50 dark:bg-slate-900/60">
@@ -459,7 +497,7 @@ export const ParkingControlCenterPage: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
-                    {locations.map((location) => (
+                    {visibleLocations.map((location) => (
                       <tr key={location._id}>
                         <td className={`${td} font-bold`}>
                           {location.name}
@@ -522,13 +560,15 @@ export const ParkingControlCenterPage: React.FC = () => {
                         </td>
                       </tr>
                     ))}
-                    {!locations.length && (
+                    {!visibleLocations.length && (
                       <tr>
                         <td
                           colSpan={6}
                           className="px-4 py-12 text-center text-sm font-bold text-gray-400"
                         >
-                          No parking locations yet.
+                          {locations.length
+                            ? `No ${locationStatusFilter} parking locations.`
+                            : "No parking locations yet."}
                         </td>
                       </tr>
                     )}

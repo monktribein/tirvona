@@ -110,7 +110,6 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   const pick = (d: Date) => {
     if (isDisabled(d)) return;
     onChange(toYMD(d));
-    setOpen(false);
   };
 
   return (
@@ -202,7 +201,6 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                 type="button"
                 onClick={() => {
                   onChange("");
-                  setOpen(false);
                 }}
                 className="text-[11px] font-bold text-gray-500 hover:text-danger cursor-pointer"
               >
@@ -219,6 +217,13 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                 }`}
               >
                 Today
+              </button>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="rounded-full bg-[#0A4DA6] px-4 py-1.5 text-[11px] font-medium text-white hover:bg-[#083D85]"
+              >
+                Done
               </button>
             </div>
           </motion.div>

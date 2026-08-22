@@ -2,7 +2,8 @@ import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import type { Model } from "mongoose";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
-import { canManageAllAshrams, isAshramOwner } from "../../../common/auth/ashram-access";
+import { canManageAllAshrams } from "../../../common/auth/ashram-access";
+import { resolveAshramScope } from "../../../common/auth/ashram-scope";
 import { escapeRegex } from "../../../common/utils/escape-regex";
 import { PARKING_MODEL } from "../../parking/domain/parking.constants";
 
@@ -35,7 +36,9 @@ export class SearchService {
     private readonly parkingLocations: Model<any>,
   ) {}
 
-  private ashramScope(user: AuthenticatedUser): Record<string, any> | null {
+  private async ashramScope(
+    user: AuthenticatedUser,
+  ): Promise<Record<string, any> | null> {
     if (NATIONAL_ROLES.includes(user.role) || canManageAllAshrams(user))
       return {};
     if (DISTRICT_ROLES.includes(user.role)) {
@@ -46,13 +49,7 @@ export class SearchService {
       if (!user.state) return null;
       return { "address.state": user.state };
     }
-    if (isAshramOwner(user)) return { ownerId: user.id };
-    const scoped = [
-      ...new Set([
-        ...(user.scopedAshramIds ?? []),
-        ...(user.employerAshramId ? [user.employerAshramId] : []),
-      ]),
-    ];
+    const scoped = (await resolveAshramScope(user, this.ashrams)) ?? [];
     return scoped.length ? { _id: { $in: scoped } } : null;
   }
 
@@ -65,7 +62,7 @@ export class SearchService {
     if (term.length < 2) return { query: term, total: 0, results: [] };
 
     const pattern = new RegExp(escapeRegex(term), "i");
-    const scope = this.ashramScope(user);
+    const scope = await this.ashramScope(user);
 
     const [ashrams, users, bookings, parking] = await Promise.all([
       this.findAshrams(scope, pattern, perType),
