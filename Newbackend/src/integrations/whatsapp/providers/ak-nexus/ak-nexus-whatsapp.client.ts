@@ -19,6 +19,14 @@ interface AkNexusSendTextPayload {
   access_token: string;
 }
 
+interface AkNexusSendResponse {
+  status?: unknown;
+  success?: unknown;
+  id?: unknown;
+  message_id?: unknown;
+  data?: { id?: unknown; message_id?: unknown };
+}
+
 @Injectable()
 export class AkNexusWhatsAppClient {
   private readonly logger = new Logger(AkNexusWhatsAppClient.name);
@@ -78,19 +86,34 @@ export class AkNexusWhatsAppClient {
         body: JSON.stringify(payload),
         signal: abort.signal,
       });
-      await response.text();
-      if (!response.ok) {
+      const responseText = await response.text();
+      let providerResponse: AkNexusSendResponse = {};
+      try {
+        providerResponse = JSON.parse(responseText) as AkNexusSendResponse;
+      } catch {
+        providerResponse = {};
+      }
+      const providerStatus = String(providerResponse.status ?? "")
+        .trim()
+        .toLowerCase();
+      const providerRejected =
+        providerResponse.success === false ||
+        ["error", "failed", "failure", "rejected", "invalid"].includes(
+          providerStatus,
+        );
+      if (!response.ok || providerRejected) {
         const retryable =
-          response.status === 408 ||
-          response.status === 425 ||
-          response.status === 429 ||
-          response.status >= 500;
+          !providerRejected &&
+          (response.status === 408 ||
+            response.status === 425 ||
+            response.status === 429 ||
+            response.status >= 500);
         this.logger.warn(
           JSON.stringify({
             event: "whatsapp.provider_response",
             ...diagnostics,
             httpStatus: response.status,
-            providerStatus: retryable ? "transient_error" : "rejected",
+          providerStatus: retryable ? "transient_error" : "rejected",
           }),
         );
         throw new WhatsAppIntegrationError(

@@ -31,7 +31,9 @@ describe("AkNexusWhatsAppClient", () => {
   it("uses only the documented POST /api/send text contract", async () => {
     const fetchMock = jest
       .spyOn(global, "fetch")
-      .mockResolvedValue(new Response("{}", { status: 200 }));
+      .mockResolvedValue(
+        new Response(JSON.stringify({ status: "success" }), { status: 200 }),
+      );
     const log = jest.spyOn(Logger.prototype, "log").mockImplementation();
     const client = new AkNexusWhatsAppClient(config());
 
@@ -84,6 +86,25 @@ describe("AkNexusWhatsAppClient", () => {
       });
     },
   );
+
+  it("rejects an AK NEXUS provider error returned inside HTTP 200", async () => {
+    jest.spyOn(global, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          status: "error",
+          message: "Instance ID Invalidated",
+        }),
+        { status: 200 },
+      ),
+    );
+    const client = new AkNexusWhatsAppClient(config());
+
+    await expect(client.sendMessage(providerRequest)).rejects.toMatchObject({
+      code: "PROVIDER_REJECTED",
+      retryable: false,
+      providerStatus: 200,
+    });
+  });
 
   it("rejects missing credentials before making an HTTP request", async () => {
     const fetchMock = jest.spyOn(global, "fetch");
