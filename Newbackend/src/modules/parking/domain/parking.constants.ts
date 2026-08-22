@@ -42,6 +42,14 @@ export const PARKING_PAYMENT_STATUSES = [
   "refunded",
   "partially_refunded",
 ] as const;
+export const PARKING_LOCATION_STATUSES = [
+  "draft",
+  "pending",
+  "active",
+  "inactive",
+  "suspended",
+] as const;
+
 export const PARKING_ROLES = [
   "parking_partner",
   "parking_manager",
@@ -116,6 +124,11 @@ export const PARKING_ROLE_CAPABILITIES: Record<string, string[]> = {
     C.REQUEST_REFUND,
   ],
 };
+
+export const PARKING_ASHRAM_OWNER_ROLE = "ashram_parking_owner";
+
+PARKING_ROLE_CAPABILITIES[PARKING_ASHRAM_OWNER_ROLE] =
+  PARKING_ROLE_CAPABILITIES.parking_partner;
 
 export const PARKING_DEFAULTS = {
   reservationHoldMinutes: 15,

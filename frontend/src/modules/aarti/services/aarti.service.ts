@@ -178,7 +178,7 @@ export const aartiOwnerService = {
     api.put(`/aarti/owner/sessions/${id}`, payload),
   submitSession: (id: string) =>
     api.post(`/aarti/owner/sessions/${id}/submit`, {}),
-  archiveSession: (id: string) => api.delete(`/aarti/owner/sessions/${id}`),
+  deleteSession: (id: string) => api.delete(`/aarti/owner/sessions/${id}`),
 
   createPassType: (payload: Record<string, unknown>) =>
     api.post("/aarti/owner/pass-types", payload),
@@ -249,7 +249,7 @@ export const aartiOwnerService = {
   submitStream: (id: string) => api.post(`/aarti/owner/streams/${id}/submit`, {}),
   setStreamLive: (id: string, value: boolean) =>
     api.patch(`/aarti/owner/streams/${id}/live`, { value }),
-  archiveStream: (id: string) => api.delete(`/aarti/owner/streams/${id}`),
+  deleteStream: (id: string) => api.delete(`/aarti/owner/streams/${id}`),
 
   listStaff: (ashramId?: string) =>
     api.get("/aarti/owner/staff", { params: clean({ ashramId }) }),

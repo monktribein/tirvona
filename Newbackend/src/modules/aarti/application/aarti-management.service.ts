@@ -34,6 +34,7 @@ export class AartiManagementService {
     @InjectModel(AARTI_MODEL.Setting) private readonly settings: Model<any>,
     @InjectModel(AARTI_MODEL.Staff) private readonly staff: Model<any>,
     @InjectModel(AARTI_MODEL.Booking) private readonly bookings: Model<any>,
+    @InjectModel(AARTI_MODEL.Stream) private readonly streams: Model<any>,
     @InjectModel(AARTI_MODEL.AshramRef) private readonly ashrams: Model<any>,
   ) {}
 
@@ -210,19 +211,30 @@ export class AartiManagementService {
 
   async deleteSession(access: AartiAccess, id: string): Promise<any> {
     const session = await this.assertOwnedSession(access, id);
-    if (
-      await this.bookings.exists({
-        sessionId: session._id,
-        status: { $in: ["upcoming", "checked_in"] },
-      })
-    )
+    if (await this.bookings.exists({ sessionId: session._id }))
       throw new AartiException(
-        "This aarti has active bookings and cannot be deleted. Archive it instead.",
+        "This Aarti has booking history and cannot be deleted.",
         409,
       );
-    session.status = "archived";
-    await session.save();
-    return { archived: true, _id: session._id };
+    if (await this.streams.exists({ sessionId: session._id }))
+      throw new AartiException(
+        "Remove the linked Live Pooja before deleting this Aarti.",
+        409,
+      );
+
+    await Promise.all([
+      this.pricing.deleteMany({ sessionId: session._id }),
+      this.availability.deleteMany({ sessionId: session._id }),
+      this.holidays.deleteMany({ sessionId: session._id }),
+      this.settings.deleteMany({ sessionId: session._id }),
+      this.staff.updateMany(
+        { sessionIds: session._id },
+        { $pull: { sessionIds: session._id } },
+      ),
+      this.passTypes.deleteMany({ sessionId: session._id }),
+    ]);
+    await this.sessions.deleteOne({ _id: session._id });
+    return { deleted: true, _id: session._id };
   }
 
   async createPassType(

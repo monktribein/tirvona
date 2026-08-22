@@ -14,6 +14,8 @@ import {
 import { getErrorMessage } from "../../../lib/api";
 import { EnterprisePageHeader } from "../../../admin/shared/components/EnterprisePageHeader";
 import { eventOwnerService } from "../services/event.service";
+import { useNotifications } from "../../../contexts/NotificationContext";
+import FileUploader from "../../../components/FileUploader";
 import {
   EVENT_FACILITIES,
   EVENT_TYPES,
@@ -74,6 +76,7 @@ const emptyEvent = {
 };
 
 export const OwnerEventsPage: React.FC = () => {
+  const { confirmAction } = useNotifications();
   const [ashrams, setAshrams] = useState<Ashram[]>([]);
   const [events, setEvents] = useState<EventFestival[]>([]);
   const [statusFilter, setStatusFilter] = useState("");
@@ -179,9 +182,15 @@ export const OwnerEventsPage: React.FC = () => {
     await load();
   };
 
-  const archive = async (item: EventFestival) => {
-    if (!window.confirm(`Archive "${item.name}"?`)) return;
-    await eventOwnerService.archiveEvent(item._id).catch(() => undefined);
+  const remove = async (item: EventFestival) => {
+    const confirmed = await confirmAction({
+      title: "Delete Event",
+      message: `Delete "${item.name}"? Events with registration history are protected.`,
+      confirmLabel: "Delete",
+      tone: "danger",
+    });
+    if (!confirmed) return;
+    await eventOwnerService.deleteEvent(item._id).catch(() => undefined);
     await load();
   };
 
@@ -243,7 +252,6 @@ export const OwnerEventsPage: React.FC = () => {
               <option value="pending">In review</option>
               <option value="approved">Live</option>
               <option value="rejected">Rejected</option>
-              <option value="archived">Archived</option>
             </select>
             <button
               type="button"
@@ -353,8 +361,8 @@ export const OwnerEventsPage: React.FC = () => {
                       ) : null}
                       <button
                         type="button"
-                        title="Archive"
-                        onClick={() => archive(item)}
+                        title="Delete"
+                        onClick={() => remove(item)}
                         className="p-2 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-400 transition-all active:scale-90 cursor-pointer"
                       >
                         <Trash2 size={14} />
@@ -597,18 +605,28 @@ export const OwnerEventsPage: React.FC = () => {
                 />
               </div>
 
-              <div className="sm:col-span-2">
-                <label htmlFor="event-cover" className={LABEL}>
-                  Cover image URL
-                </label>
-                <input
-                  id="event-cover"
-                  value={form.coverImage}
-                  onChange={(changeEvent) =>
-                    setForm({ ...form, coverImage: changeEvent.target.value })
-                  }
-                  placeholder="https://…"
-                  className={INPUT}
+              <div className="sm:col-span-2 space-y-2">
+                {import.meta.env.DEV ? (
+                  <>
+                    <label htmlFor="event-cover" className={LABEL}>
+                      Cover image URL (development only)
+                    </label>
+                    <input
+                      id="event-cover"
+                      value={form.coverImage}
+                      onChange={(changeEvent) =>
+                        setForm({ ...form, coverImage: changeEvent.target.value })
+                      }
+                      placeholder="https://…"
+                      className={INPUT}
+                    />
+                  </>
+                ) : null}
+                <FileUploader
+                  folder="events"
+                  label={form.coverImage ? "Replace cover image" : "Upload cover image"}
+                  currentUrl={form.coverImage}
+                  onUploaded={(coverImage) => setForm({ ...form, coverImage })}
                 />
               </div>
 

@@ -203,22 +203,24 @@ export class EventManagementService {
     return event;
   }
 
-  async archiveEvent(access: EventAccess, id: string): Promise<any> {
+  async deleteEvent(access: EventAccess, id: string): Promise<any> {
     const event = await this.assertOwned(access, id);
-    if (
-      await this.registrations.exists({
-        eventId: event._id,
-        status: { $in: ["confirmed", "checked_in"] },
-        attendDate: { $gte: toDateKey(new Date()) },
-      })
-    )
+    if (await this.registrations.exists({ eventId: event._id }))
       throw new EventException(
-        "This event has upcoming registrations and cannot be deleted. Archive it after it ends.",
+        "This event has registration history and cannot be deleted.",
         409,
       );
-    event.status = "archived";
-    await event.save();
-    return { archived: true, _id: event._id };
+    await Promise.all([
+      this.availability.deleteMany({ eventId: event._id }),
+      this.staff.updateMany(
+        { eventIds: event._id },
+        { $pull: { eventIds: event._id } },
+      ),
+      this.settings.deleteMany({ eventId: event._id }),
+      this.scanLogs.deleteMany({ eventId: event._id }),
+    ]);
+    await this.events.deleteOne({ _id: event._id });
+    return { deleted: true, _id: event._id };
   }
 
   async dayCalendar(access: EventAccess, id: string): Promise<any[]> {

@@ -186,7 +186,6 @@ export const CircuitControlCenterPage: React.FC = () => {
           <option value="approved">Live</option>
           <option value="rejected">Rejected</option>
           <option value="suspended">Suspended</option>
-          <option value="archived">Archived</option>
         </select>
       </div>
 

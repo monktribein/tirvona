@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { useNotifications } from "../../../contexts/NotificationContext";
 import { AlertCircle, Loader2, Search, Users, XCircle } from "lucide-react";
 import { getErrorMessage } from "../../../lib/api";
 import { EnterprisePageHeader } from "../../../admin/shared/components/EnterprisePageHeader";
@@ -13,6 +14,7 @@ const INPUT =
   "bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all";
 
 export const OwnerEventRegistrationsPage: React.FC = () => {
+  const { promptAction } = useNotifications();
   const [events, setEvents] = useState<EventFestival[]>([]);
   const [eventId, setEventId] = useState("");
   const [status, setStatus] = useState("");
@@ -56,9 +58,14 @@ export const OwnerEventRegistrationsPage: React.FC = () => {
   }, [load]);
 
   const cancel = async (registration: EventRegistration) => {
-    const reason = window.prompt(
-      `Cancel ${registration.registrationReference}? Give the attendee a reason:`,
-    );
+    const reason = await promptAction({
+      title: "Cancel Registration",
+      message: `Cancel ${registration.registrationReference}? Give the attendee a reason.`,
+      placeholder: "Cancellation reason",
+      confirmLabel: "Cancel registration",
+      required: true,
+      tone: "danger",
+    });
     if (reason === null) return;
     await eventOwnerService
       .cancelRegistration(registration._id, reason || undefined)

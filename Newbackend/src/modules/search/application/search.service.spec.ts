@@ -187,7 +187,9 @@ describe("SearchService scoping", () => {
   });
 
   it("constrains booking lookups to the visible ashrams", async () => {
-    const { service, bookingFind, distinct } = createService({});
+    const { service, bookingFind, distinct } = createService({
+      ashrams: [{ _id: "ashram-1" }],
+    });
 
     await service.search(
       asUser({ role: "owner", id: "owner-9" }),
@@ -195,10 +197,43 @@ describe("SearchService scoping", () => {
       5,
     );
 
-    expect(distinct).toHaveBeenCalledWith("_id", { ownerId: "owner-9" });
+    expect(distinct).toHaveBeenCalledWith("_id", {
+      _id: { $in: ["ashram-1"] },
+    });
     expect(bookingFind.mock.calls[0][0]).toMatchObject({
       ashramId: { $in: ["ashram-1"] },
     });
+  });
+
+  it("gives an owner with no ashram assignment no results at all", async () => {
+    const { service, bookingFind } = createService({});
+
+    const result = await service.search(
+      asUser({ role: "owner", id: "owner-9" }),
+      "TRV-123",
+      5,
+    );
+
+    expect(bookingFind).not.toHaveBeenCalled();
+    expect(result.results).toEqual([]);
+  });
+
+  it("lets an owner assigned to an ashram they do not own still see it", async () => {
+    const { service, bookingFind } = createService({
+      ashrams: [{ _id: "ashram-assigned" }],
+    });
+
+    await service.search(
+      asUser({
+        role: "ashram_owner",
+        id: "owner-9",
+        employerAshramId: "ashram-assigned",
+      }),
+      "TRV-123",
+      5,
+    );
+
+    expect(bookingFind).toHaveBeenCalled();
   });
 
   it("maps hits into the shape the console renders", async () => {

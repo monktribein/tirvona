@@ -117,15 +117,15 @@ export class PilgrimageOwnerController {
     };
   }
 
-  @Delete("circuits/:id") async archive(
+  @Delete("circuits/:id") async remove(
     @CurrentUser() user: AuthenticatedUser,
     @Param("id") id: string,
   ) {
     const access = await this.accessService.resolve(user);
     return {
       success: true,
-      message: "Circuit archived.",
-      data: await this.management.archiveCircuit(access, id),
+      message: "Circuit deleted.",
+      data: await this.management.deleteCircuit(access, id),
     };
   }
 

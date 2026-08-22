@@ -10,6 +10,7 @@ import {
   X,
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
+import { useNotifications } from "../../contexts/NotificationContext";
 import { getErrorMessage } from "../../lib/api";
 import { payoutService } from "../../services";
 
@@ -69,6 +70,7 @@ const label = (value: string) => value.replace(/_/g, " ").replace(/^./, (x) => x
 
 export const PayoutManagementPage: React.FC = () => {
   const { user } = useAuth();
+  const { confirmAction } = useNotifications();
   const isSuperAdmin = user?.role === "super_admin";
   const [ashrams, setAshrams] = useState<Ashram[]>([]);
   const [ashramId, setAshramId] = useState("");
@@ -187,7 +189,13 @@ export const PayoutManagementPage: React.FC = () => {
 
   const requestPayout = async () => {
     if (!ashramId || summary.available <= 0) return;
-    if (!window.confirm(`Request the full available balance of ${money(summary.available)}?`)) return;
+    const confirmed = await confirmAction({
+      title: "Request Payout",
+      message: `Request the full available balance of ${money(summary.available)}?`,
+      confirmLabel: "Request payout",
+      tone: "primary",
+    });
+    if (!confirmed) return;
     setWorking("request");
     setError("");
     try {
@@ -206,7 +214,15 @@ export const PayoutManagementPage: React.FC = () => {
   };
 
   const payoutAction = async (row: Payout, action: "process" | "reconcile") => {
-    if (action === "process" && !window.confirm(`Send ${money(row.amount)} through RazorpayX?`)) return;
+    if (action === "process") {
+      const confirmed = await confirmAction({
+        title: "Process RazorpayX Payout",
+        message: `Send ${money(row.amount)} through RazorpayX?`,
+        confirmLabel: "Send payout",
+        tone: "warning",
+      });
+      if (!confirmed) return;
+    }
     setWorking(row._id);
     setError("");
     try {
@@ -253,7 +269,13 @@ export const PayoutManagementPage: React.FC = () => {
   const recordManualPayment = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!manualRow || !revealedBank || !manualConfirmed) return;
-    if (!window.confirm(`Confirm that ${money(manualRow.amount)} was transferred outside Tirvona? This marks the payout paid.`)) return;
+    const confirmed = await confirmAction({
+      title: "Confirm Manual Transfer",
+      message: `Confirm that ${money(manualRow.amount)} was transferred? This marks the payout as paid.`,
+      confirmLabel: "Mark as paid",
+      tone: "warning",
+    });
+    if (!confirmed) return;
     setWorking(`manual:${manualRow._id}`);
     setError("");
     try {

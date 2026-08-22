@@ -590,7 +590,7 @@ export const ManageAshramsPage: React.FC = () => {
                     onUploaded={(url) => handleAddImage(url)}
                   />
 
-                  <div className="flex items-center gap-2">
+                  {import.meta.env.DEV ? <div className="flex items-center gap-2">
                     <input
                       type="url"
                       placeholder="Or paste image URL (e.g. https://... or /banner/...)"
@@ -605,7 +605,7 @@ export const ManageAshramsPage: React.FC = () => {
                     >
                       <Plus size={14} /> Add URL
                     </button>
-                  </div>
+                  </div> : null}
                 </div>
               </div>
 

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { useNotifications } from "../../../contexts/NotificationContext";
 import {
   CalendarDays,
   Check,
@@ -22,6 +23,7 @@ const CARD =
   "bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] shadow-sm";
 
 export const EventApprovalsPage: React.FC = () => {
+  const { promptAction } = useNotifications();
   const [events, setEvents] = useState<EventFestival[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState("");
@@ -50,7 +52,14 @@ export const EventApprovalsPage: React.FC = () => {
   ) => {
     const reason =
       decision === "reject"
-        ? window.prompt(`Why is "${item.name}" being rejected?`)
+        ? await promptAction({
+            title: "Reject Event",
+            message: `Explain why "${item.name}" is being rejected.`,
+            placeholder: "Reason for rejection",
+            confirmLabel: "Reject",
+            required: true,
+            tone: "danger",
+          })
         : undefined;
     if (decision === "reject" && reason === null) return;
     setBusyId(item._id);

@@ -20,6 +20,7 @@ import { getErrorMessage } from "../../lib/api";
 import { useNotifications } from "../../contexts/NotificationContext";
 
 const emptyLocation = {
+  ashramId: "",
   name: "",
   description: "",
   city: "",
@@ -45,6 +46,17 @@ export const OwnerParkingSetupPage: React.FC = () => {
   const { addNotification } = useNotifications();
   const [partner, setPartner] = useState<any>(null);
   const [locations, setLocations] = useState<any[]>([]);
+  const [ashrams, setAshrams] = useState<any[]>([]);
+  const [baysLocation, setBaysLocation] = useState<any | null>(null);
+  const [slotTypes, setSlotTypes] = useState<any[]>([]);
+  const [loadingBays, setLoadingBays] = useState(false);
+  const [bayForm, setBayForm] = useState({
+    name: "",
+    totalCapacity: "",
+    vehicleTypes: ["car"] as string[],
+    hourlyRate: "",
+    dailyRate: "",
+  });
   const [ownerStaff, setOwnerStaff] = useState<any[]>([]);
   const [parkingStaff, setParkingStaff] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,6 +86,7 @@ export const OwnerParkingSetupPage: React.FC = () => {
       const setup = await ashramService.ownerParking();
       const nextPartner = setup.data?.data?.partner || null;
       setPartner(nextPartner);
+      setAshrams(setup.data?.data?.ashrams ?? []);
       if (nextPartner) {
         const [locationRes, parkingStaffRes, ownerStaffRes] = await Promise.all([
           parkingPartnerService.listLocations(),
@@ -121,6 +134,7 @@ export const OwnerParkingSetupPage: React.FC = () => {
     if (item) {
       setEditingLocationId(getId(item));
       setLocation({
+        ashramId: String(item.ashramId?._id || item.ashramId || ""),
         name: item.name || "",
         description: item.description || "",
         city: item.address?.city || "",
@@ -134,7 +148,10 @@ export const OwnerParkingSetupPage: React.FC = () => {
       });
     } else {
       setEditingLocationId(null);
-      setLocation(emptyLocation);
+      setLocation({
+        ...emptyLocation,
+        ashramId: ashrams.length === 1 ? getId(ashrams[0]) : "",
+      });
     }
     setShowLocation(true);
   };
@@ -159,6 +176,7 @@ export const OwnerParkingSetupPage: React.FC = () => {
           state: location.state,
           pincode: location.pincode,
         },
+        ashramId: location.ashramId || undefined,
         contactPhone: location.contactPhone,
         totalCapacity: Number(location.totalCapacity),
         supportedVehicleTypes: ["bike", "scooter", "car", "suv", "ev", "bus"],
@@ -182,6 +200,75 @@ export const OwnerParkingSetupPage: React.FC = () => {
       await load();
     } catch (error) {
       addNotification("Parking Not Saved", getErrorMessage(error, "Could not save this parking facility."), "error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const openBays = async (item: any) => {
+    setBaysLocation(item);
+    setBayForm({
+      name: "",
+      totalCapacity: "",
+      vehicleTypes: ["car"],
+      hourlyRate: "",
+      dailyRate: "",
+    });
+    setLoadingBays(true);
+    try {
+      const res = await parkingPartnerService.listSlotTypes(getId(item));
+      setSlotTypes(getList(res));
+    } catch (error) {
+      setSlotTypes([]);
+      addNotification("Bays Unavailable", getErrorMessage(error, "Could not load parking bays."), "error");
+    } finally {
+      setLoadingBays(false);
+    }
+  };
+
+  const toggleBayVehicle = (value: string) =>
+    setBayForm((current) => ({
+      ...current,
+      vehicleTypes: current.vehicleTypes.includes(value)
+        ? current.vehicleTypes.filter((item) => item !== value)
+        : [...current.vehicleTypes, value],
+    }));
+
+  const saveBay = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!baysLocation) return;
+    if (!bayForm.vehicleTypes.length) {
+      addNotification("Vehicle Type Required", "Pick at least one vehicle type this bay accepts.", "warning");
+      return;
+    }
+    const locationId = getId(baysLocation);
+    setSaving(true);
+    try {
+      const created = await parkingPartnerService.createSlotType(locationId, {
+        name: bayForm.name,
+        totalCapacity: Number(bayForm.totalCapacity),
+        vehicleTypes: bayForm.vehicleTypes,
+      });
+      const slotTypeId = getId(created?.data?.data);
+      const hourlyRate = Number(bayForm.hourlyRate) || 0;
+      const dailyRate = Number(bayForm.dailyRate) || 0;
+      if (slotTypeId && (hourlyRate || dailyRate))
+        await Promise.all(
+          bayForm.vehicleTypes.map((vehicleType) =>
+            parkingPartnerService.savePricing(locationId, {
+              slotTypeId,
+              vehicleType,
+              mode: "hourly",
+              hourlyRate,
+              dailyRate,
+            }),
+          ),
+        );
+      addNotification("Bay Added", `${bayForm.name} is now bookable.`, "success");
+      await openBays(baysLocation);
+      await load();
+    } catch (error) {
+      addNotification("Bay Not Saved", getErrorMessage(error, "Could not create this parking bay."), "error");
     } finally {
       setSaving(false);
     }
@@ -259,13 +346,57 @@ export const OwnerParkingSetupPage: React.FC = () => {
             {locations.map((item) => <article key={getId(item)} className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[22px] overflow-hidden shadow-sm">
               <div className="h-36 bg-gray-100 dark:bg-slate-800">{item.coverImage && <img src={item.coverImage} alt={item.name} className="w-full h-full object-cover" />}</div>
               <div className="p-4 space-y-3"><div className="flex justify-between gap-2"><h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white">{item.name}</h3><span className="text-[9px] font-bold uppercase text-[#0A4DA6]">{item.status}</span></div><p className="text-xs text-gray-400">{item.address?.city || 'Location pending'} · {item.totalCapacity || 0} bays</p>
-                <div className="border-t border-gray-100 dark:border-slate-800 pt-3"><button onClick={() => setViewLocation(item)} className="w-full rounded-full bg-[#0A4DA6] text-white py-2 text-[11px] font-extrabold inline-flex justify-center items-center gap-1.5"><Eye size={13} /> Edit / View</button></div>
+                <div className="border-t border-gray-100 dark:border-slate-800 pt-3 space-y-2"><button onClick={() => setViewLocation(item)} className="w-full rounded-full bg-[#0A4DA6] text-white py-2 text-[11px] font-extrabold inline-flex justify-center items-center gap-1.5"><Eye size={13} /> Edit / View</button><button onClick={() => openBays(item)} className="w-full rounded-full border border-[#0A4DA6] text-[#0A4DA6] py-2 text-[11px] font-extrabold inline-flex justify-center items-center gap-1.5"><CircleParking size={13} /> Bays & Pricing</button></div>
               </div>
             </article>)}
             {locations.length === 0 && <button onClick={() => openLocationForm()} className="min-h-52 border-2 border-dashed border-[#0A4DA6]/30 rounded-[22px] text-[#0A4DA6] text-xs font-extrabold flex flex-col items-center justify-center gap-2"><Car size={28} /><Plus size={15} /> Add your first parking facility</button>}
           </div>
         </section>
       )}
+
+      {baysLocation && <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center"><div className="w-full max-w-3xl max-h-[90vh] overflow-y-auto bg-white dark:bg-[#0B192C] rounded-[28px] p-5 sm:p-7 space-y-5">
+        <div className="flex justify-between items-start">
+          <div>
+            <h2 className="font-black text-lg text-[#0B192C] dark:text-white flex items-center gap-2"><CircleParking size={19} className="text-[#0A4DA6]" /> Bays & Pricing</h2>
+            <p className="text-xs text-gray-400 mt-1">{baysLocation.name} · a facility becomes bookable once it has at least one bay.</p>
+          </div>
+          <button onClick={() => setBaysLocation(null)} className="p-2 text-gray-400"><X size={18} /></button>
+        </div>
+
+        {loadingBays ? (
+          <div className="py-10 flex justify-center"><Loader2 size={20} className="animate-spin text-[#0A4DA6]" /></div>
+        ) : slotTypes.length === 0 ? (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900 p-4">
+            <p className="text-xs font-extrabold text-amber-700 dark:text-amber-400">This facility shows as “opening soon”.</p>
+            <p className="text-[11px] text-amber-700/80 dark:text-amber-500/80 mt-1">Add at least one bay below so pilgrims can book it. The {baysLocation.totalCapacity || 0} bays you declared are the total — split them into bay types here.</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {slotTypes.map((type) => <div key={getId(type)} className="rounded-2xl border border-gray-100 dark:border-slate-800 p-3.5 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-extrabold text-[#0B192C] dark:text-white">{type.name}</p>
+                <p className="text-[11px] text-gray-400 mt-0.5">{(type.vehicleTypes || []).join(", ") || "any vehicle"}</p>
+              </div>
+              <span className="text-xs font-black text-[#0A4DA6] shrink-0">{type.totalCapacity ?? 0} bays</span>
+            </div>)}
+            <p className="text-[11px] font-bold text-emerald-600">Total bookable: {slotTypes.reduce((sum, type) => sum + Number(type.totalCapacity || 0), 0)} bays</p>
+          </div>
+        )}
+
+        <form onSubmit={saveBay} className="space-y-3 border-t border-gray-100 dark:border-slate-800 pt-4">
+          <p className="text-xs font-extrabold text-[#0B192C] dark:text-white">Add a bay type</p>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <input required value={bayForm.name} onChange={(event) => setBayForm((current) => ({ ...current, name: event.target.value }))} placeholder="Bay name (e.g. Ground Floor Car)" className="px-3.5 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none" />
+            <input required type="number" min={1} value={bayForm.totalCapacity} onChange={(event) => setBayForm((current) => ({ ...current, totalCapacity: event.target.value }))} placeholder="Number of bays" className="px-3.5 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none" />
+            <input type="number" min={0} value={bayForm.hourlyRate} onChange={(event) => setBayForm((current) => ({ ...current, hourlyRate: event.target.value }))} placeholder="Hourly rate (₹)" className="px-3.5 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none" />
+            <input type="number" min={0} value={bayForm.dailyRate} onChange={(event) => setBayForm((current) => ({ ...current, dailyRate: event.target.value }))} placeholder="Full day rate (₹)" className="px-3.5 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none" />
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {["bike", "scooter", "car", "suv", "luxury_car", "tempo", "mini_bus", "bus", "ev"].map((vehicle) => <button key={vehicle} type="button" onClick={() => toggleBayVehicle(vehicle)} className={`px-3 py-1.5 rounded-full text-[11px] font-bold capitalize ${bayForm.vehicleTypes.includes(vehicle) ? "bg-[#0A4DA6] text-white" : "bg-gray-100 dark:bg-slate-800 text-gray-500"}`}>{vehicle.replace("_", " ")}</button>)}
+          </div>
+          <button disabled={saving} className="w-full py-3 rounded-full bg-[#0A4DA6] text-white text-xs font-extrabold disabled:opacity-60">{saving ? <Loader2 size={15} className="animate-spin mx-auto" /> : "Add Bay Type"}</button>
+        </form>
+      </div></div>}
 
       {viewLocation && <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center"><div className="w-full max-w-3xl max-h-[90vh] overflow-y-auto bg-white dark:bg-[#0B192C] rounded-[28px] p-5 sm:p-7 space-y-5">
         <div className="flex justify-between items-start"><div><h2 className="font-black text-xl text-[#0B192C] dark:text-white">{viewLocation.name}</h2><p className="text-xs text-gray-400 mt-1">Complete parking facility details</p></div><button onClick={() => setViewLocation(null)} className="p-2 text-gray-400"><X size={18} /></button></div>
@@ -278,6 +409,23 @@ export const OwnerParkingSetupPage: React.FC = () => {
 
       {showLocation && partner && <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center"><form onSubmit={saveLocation} className="w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-white dark:bg-[#0B192C] rounded-[28px] p-5 sm:p-7 space-y-4">
         <div className="flex justify-between"><div><h2 className="font-black text-lg text-[#0B192C] dark:text-white">{editingLocationId ? 'Edit Parking Facility' : 'Add Parking Facility'}</h2><p className="text-xs text-gray-400">Maintain complete and accurate facility details.</p></div><button type="button" onClick={() => setShowLocation(false)} className="text-gray-400"><X size={19} /></button></div>
+        <label className="block space-y-1">
+          <span className="text-[11px] font-extrabold text-[#0B192C] dark:text-white">Ashram *</span>
+          <select
+            required
+            value={location.ashramId}
+            onChange={(event) => setLocation((current) => ({ ...current, ashramId: event.target.value }))}
+            className="w-full px-3.5 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:border-[#0A4DA6]"
+          >
+            <option value="">Select the ashram this parking belongs to</option>
+            {ashrams.map((item) => (
+              <option key={getId(item)} value={getId(item)}>
+                {item.name}{item.address?.city ? ` — ${item.address.city}` : ''}
+              </option>
+            ))}
+          </select>
+          <span className="block text-[10px] text-gray-400">This parking will belong to the selected ashram and stay visible only to its owner and Super Admin.</span>
+        </label>
         <div className="grid sm:grid-cols-2 gap-3">{([['name','Parking name'],['contactPhone','Contact phone'],['city','City'],['district','District'],['state','State'],['pincode','Pincode'],['totalCapacity','Total parking capacity']] as const).map(([key, placeholder]) => <input key={key} required={['name','city','state','totalCapacity'].includes(key)} type={key === 'totalCapacity' ? 'number' : 'text'} value={location[key]} onChange={(event) => setLocation((current) => ({ ...current, [key]: event.target.value }))} placeholder={placeholder} className="px-3.5 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none" />)}</div>
         <textarea value={location.description} onChange={(event) => setLocation((current) => ({ ...current, description: event.target.value }))} placeholder="Parking description, landmark and entry instructions" rows={3} className="w-full px-3.5 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none" />
         <ImageGalleryManager coverImage={location.coverImage} gallery={location.images} onCoverImageChange={(coverImage) => setLocation((current) => ({ ...current, coverImage }))} onGalleryChange={(images) => setLocation((current) => ({ ...current, images }))} label="Parking Photos" minimumImages={3} />

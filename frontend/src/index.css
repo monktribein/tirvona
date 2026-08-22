@@ -406,3 +406,39 @@ option:hover {
   margin-top: 1rem;
 }
 
+/* Dashboard typography is deliberately restrained across every role. */
+.dashboard-shell .font-bold,
+.dashboard-shell .font-extrabold,
+.dashboard-shell .font-black {
+  font-weight: 500;
+}
+
+.dashboard-shell h1,
+.dashboard-shell h2,
+.dashboard-shell h3,
+.dashboard-shell h4,
+.dashboard-shell h5,
+.dashboard-shell h6 {
+  font-weight: 600;
+}
+
+/* The public home experience uses Roboto while retaining clear emphasis. */
+.home-page,
+.home-page h1,
+.home-page h2,
+.home-page h3,
+.home-page h4,
+.home-page h5,
+.home-page h6,
+.home-page input,
+.home-page select,
+.home-page textarea,
+.home-page button {
+  font-family: "Roboto", "Inter", system-ui, sans-serif;
+}
+
+.dashboard-shell :where(input, select, textarea),
+.dashboard-shell form :where(button, [role="button"]) {
+  font-weight: 400;
+}
+

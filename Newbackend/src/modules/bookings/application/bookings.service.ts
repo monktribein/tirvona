@@ -16,6 +16,7 @@ import Razorpay from "razorpay";
 import { TransactionService } from "../../../common/database/transaction.service";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import { canManageAllAshrams, isAshramOwner } from "../../../common/auth/ashram-access";
+import { resolveAshramScope } from "../../../common/auth/ashram-scope";
 import {
   BOOKING_REPOSITORY,
   type BookingRepository,
@@ -114,19 +115,7 @@ export class BookingsService {
           .lean()
       ).map((a: any) => String(a._id));
     }
-    if (isAshramOwner(user))
-      return (
-        await this.ashrams
-          .find({ ownerId: user.id, deletedAt: null })
-          .select("_id")
-          .lean()
-      ).map((a: any) => String(a._id));
-    return [
-      ...new Set([
-        ...(user.scopedAshramIds ?? []),
-        ...(user.employerAshramId ? [user.employerAshramId] : []),
-      ]),
-    ];
+    return resolveAshramScope(user, this.ashrams);
   }
 
   private async assertCanManage(
@@ -923,9 +912,9 @@ export class BookingsService {
       .lean();
   }
 
-  async adminArchive(id: string, user: AuthenticatedUser): Promise<any> {
+  async adminDelete(id: string, user: AuthenticatedUser): Promise<any> {
     if (user.role !== "super_admin")
-      throw new ForbiddenException("Only Super Admin can archive bookings");
+      throw new ForbiddenException("Only Super Admin can delete bookings");
     return this.transactions.run(async (session) => {
       const row = await this.bookings.findOne({ _id: id, deletedAt: null }).session(session);
       if (!row) throw new NotFoundException("Booking not found");
@@ -955,7 +944,7 @@ export class BookingsService {
         });
         activeHold.state = "released";
         activeHold.releasedAt = new Date();
-        activeHold.releaseReason = "Archived by Super Admin";
+        activeHold.releaseReason = "Deleted by Super Admin";
         await activeHold.save({ session });
       }
       row.deletedAt = new Date();
@@ -965,7 +954,7 @@ export class BookingsService {
         [
           {
             userId: user.id,
-            action: "SUPER_ADMIN_BOOKING_ARCHIVED",
+            action: "SUPER_ADMIN_BOOKING_DELETED",
             bookingId: row._id,
             ashramId: row.ashramId,
             details: { previousStatus: row.status },
@@ -973,7 +962,7 @@ export class BookingsService {
         ],
         { session },
       );
-      return { id: String(row._id), archived: true };
+      return { id: String(row._id), deleted: true };
     });
   }
 

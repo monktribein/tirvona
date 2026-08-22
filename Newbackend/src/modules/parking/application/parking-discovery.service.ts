@@ -31,6 +31,7 @@ export class ParkingDiscoveryService {
     locationId: string,
     entryAt?: string,
     exitAt?: string,
+    declaredCapacity = 0,
   ): Promise<any> {
     const types = await this.slotTypes
       .find({ locationId, isActive: true })
@@ -68,6 +69,8 @@ export class ParkingDiscoveryService {
     return {
       totalCapacity,
       availableCount,
+      declaredCapacity: Number(declaredCapacity) || 0,
+      isConfigured: types.length > 0,
       occupancyPercent: totalCapacity
         ? Number(
             (((totalCapacity - availableCount) / totalCapacity) * 100).toFixed(
@@ -161,6 +164,7 @@ export class ParkingDiscoveryService {
           String(item._id),
           query.entryAt,
           query.exitAt,
+          Number((item as any).totalCapacity ?? 0),
         ),
       })),
     );

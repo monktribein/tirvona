@@ -21,6 +21,7 @@ import { ParkingBookingService } from "../../application/parking-booking.service
 import { ParkingManagementService } from "../../application/parking-management.service";
 import {
   PARKING_CAPABILITIES,
+  PARKING_LOCATION_STATUSES,
   PARKING_ROLE_CAPABILITIES,
   PARKING_ROLES,
 } from "../../domain/parking.constants";
@@ -138,8 +139,14 @@ export class ParkingAdminController {
   ) {
     const location = await this.service.locations.findById(id);
     if (!location) return { success: false, message: "Parking not found." };
-    ["status", "isVerified", "isFeatured"].forEach((key) => {
-      if (body[key] !== undefined) location[key] = body[key];
+    if (
+      body.status !== undefined &&
+      !PARKING_LOCATION_STATUSES.includes(body.status)
+    )
+      return { success: false, message: "Invalid parking status." };
+    if (body.status !== undefined) location.status = body.status;
+    ["isVerified", "isFeatured"].forEach((key) => {
+      if (body[key] !== undefined) location[key] = Boolean(body[key]);
     });
     await location.save();
     return { success: true, message: "Parking updated.", data: location };

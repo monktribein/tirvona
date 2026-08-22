@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { useNotifications } from "../../../contexts/NotificationContext";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -26,6 +27,7 @@ import EventStatusBadge from "../components/EventStatusBadge";
 export const EventPassPage: React.FC = () => {
   const { id = "" } = useParams();
   const navigate = useNavigate();
+  const { promptAction } = useNotifications();
 
   const [registration, setRegistration] = useState<EventRegistration | null>(
     null,
@@ -72,7 +74,14 @@ export const EventPassPage: React.FC = () => {
   };
 
   const cancel = async () => {
-    const reason = window.prompt("Why are you cancelling this registration?");
+    const reason = await promptAction({
+      title: "Cancel Registration",
+      message: "Tell us why you are cancelling this registration.",
+      placeholder: "Cancellation reason",
+      confirmLabel: "Cancel registration",
+      required: true,
+      tone: "danger",
+    });
     if (reason === null) return;
     setBusy(true);
     try {

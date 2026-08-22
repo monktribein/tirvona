@@ -16,6 +16,8 @@ import api, { getErrorMessage } from "../../../lib/api";
 import { parkingAdminService } from "../../../modules/parking/services/parking.service";
 import { humanizeLabel } from "../../../utils/labels";
 
+const GRANT_STATUS_FILTERS = ["all", "active", "inactive", "suspended"];
+
 const ROLE_BLURB: Record<string, string> = {
   parking_partner:
     "Full control of their own parking: locations, pricing, slots, staff, reports and refund requests.",
@@ -43,6 +45,7 @@ export const ParkingStaffRolesPage: React.FC = () => {
   const [error, setError] = useState("");
   const [busyId, setBusyId] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -122,6 +125,11 @@ export const ParkingStaffRolesPage: React.FC = () => {
   useEffect(() => {
     load();
   }, [load]);
+
+  const visibleGrants =
+    statusFilter === "all"
+      ? grants
+      : grants.filter((item) => item.status === statusFilter);
 
   const searchUsers = async (term: string) => {
     setUserQuery(term);
@@ -261,6 +269,30 @@ export const ParkingStaffRolesPage: React.FC = () => {
         </div>
       )}
 
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-[11px] font-black uppercase tracking-wider text-gray-400">Status</span>
+        {GRANT_STATUS_FILTERS.map((option) => {
+          const count =
+            option === "all"
+              ? grants.length
+              : grants.filter((item) => item.status === option).length;
+          return (
+            <button
+              key={option}
+              type="button"
+              onClick={() => setStatusFilter(option)}
+              className={`px-3 py-1.5 rounded-full text-[11px] font-extrabold capitalize transition-colors ${
+                statusFilter === option
+                  ? "bg-[#0A4DA6] text-white"
+                  : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200"
+              }`}
+            >
+              {option === "all" ? "All" : option} ({count})
+            </button>
+          );
+        })}
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {roles.map((role) => (
           <button
@@ -319,7 +351,7 @@ export const ParkingStaffRolesPage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
-              {grants.map((grant) => (
+              {visibleGrants.map((grant) => (
                 <tr key={grant._id}>
                   <td className={`${td} font-bold`}>
                     {grant.userId?.name || "—"}
@@ -365,7 +397,7 @@ export const ParkingStaffRolesPage: React.FC = () => {
                   </td>
                 </tr>
               ))}
-              {!grants.length && !loading && (
+              {!visibleGrants.length && !loading && (
                 <tr>
                   <td
                     colSpan={7}

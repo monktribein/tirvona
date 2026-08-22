@@ -1,11 +1,15 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useParams } from "react-router-dom";
+import { getAllStates, getDistricts } from "india-state-district";
 import {
   AlertCircle,
+  Ban,
   Check,
   Flame,
   Loader2,
   Pencil,
   Plus,
+  RotateCcw,
   Send,
   Ticket,
   Trash2,
@@ -13,7 +17,13 @@ import {
 } from "lucide-react";
 import { getErrorMessage } from "../../../lib/api";
 import { EnterprisePageHeader } from "../../../admin/shared/components/EnterprisePageHeader";
-import { aartiOwnerService } from "../services/aarti.service";
+import FileUploader from "../../../components/FileUploader";
+import { useAuth } from "../../../contexts/AuthContext";
+import { useNotifications } from "../../../contexts/NotificationContext";
+import {
+  aartiAdminService,
+  aartiOwnerService,
+} from "../services/aarti.service";
 import {
   AARTI_FACILITIES,
   AARTI_KINDS,
@@ -38,6 +48,15 @@ interface Ashram {
   address?: { city?: string; state?: string };
 }
 
+const today = () => new Date().toISOString().slice(0, 10);
+const INDIA_STATES = getAllStates();
+const DEFAULT_STATE =
+  INDIA_STATES.find((state) => state.name === "Uttar Pradesh") ?? INDIA_STATES[0];
+const stateForLocation = (stateName?: string, city?: string) =>
+  INDIA_STATES.find((state) => state.name === stateName) ??
+  INDIA_STATES.find((state) => city && getDistricts(state.code).includes(city)) ??
+  DEFAULT_STATE;
+
 const emptySession = {
   ashramId: "",
   name: "",
@@ -52,7 +71,15 @@ const emptySession = {
   facilities: [] as string[],
   contactPhone: "",
   coverImage: "",
-  venue: { name: "", line1: "", city: "", state: "", pincode: "" },
+  startDate: today(),
+  endDate: "",
+  venue: {
+    name: "",
+    line1: "",
+    city: DEFAULT_STATE ? getDistricts(DEFAULT_STATE.code)[0] ?? "" : "",
+    state: DEFAULT_STATE?.name ?? "",
+    pincode: "",
+  },
 };
 
 const emptyPass = {
@@ -69,9 +96,15 @@ const emptyPass = {
 };
 
 export const OwnerAartiSessionsPage: React.FC = () => {
+  const { subKey } = useParams<{ subKey?: string }>();
+  const { user } = useAuth();
+  const { confirmAction } = useNotifications();
+  const isSuperAdmin = user?.role === "super_admin";
   const [ashrams, setAshrams] = useState<Ashram[]>([]);
   const [sessions, setSessions] = useState<AartiSession[]>([]);
-  const [statusFilter, setStatusFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState(
+    subKey && subKey !== "all" ? subKey : "",
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -79,6 +112,7 @@ export const OwnerAartiSessionsPage: React.FC = () => {
   const [form, setForm] = useState({ ...emptySession });
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [statusBusyId, setStatusBusyId] = useState("");
 
   const [passesFor, setPassesFor] = useState<AartiSession | null>(null);
   const [passes, setPasses] = useState<AartiPassType[]>([]);
@@ -106,6 +140,10 @@ export const OwnerAartiSessionsPage: React.FC = () => {
   }, [load]);
 
   useEffect(() => {
+    setStatusFilter(subKey && subKey !== "all" ? subKey : "");
+  }, [subKey]);
+
+  useEffect(() => {
     aartiOwnerService
       .ashrams()
       .then((response) => setAshrams(response.data?.data ?? []))
@@ -114,12 +152,32 @@ export const OwnerAartiSessionsPage: React.FC = () => {
 
   const openCreate = () => {
     setEditing(null);
-    setForm({ ...emptySession, ashramId: ashrams[0]?._id ?? "" });
+    const ashram = ashrams[0];
+    const state =
+      INDIA_STATES.find((item) => item.name === ashram?.address?.state) ??
+      DEFAULT_STATE;
+    const districts = state ? getDistricts(state.code) : [];
+    const preferredCity = ashram?.address?.city ?? "";
+    setForm({
+      ...emptySession,
+      ashramId: ashram?._id ?? "",
+      startDate: today(),
+      venue: {
+        ...emptySession.venue,
+        state: state?.name ?? "",
+        city: districts.includes(preferredCity)
+          ? preferredCity
+          : districts[0] ?? "",
+      },
+    });
     setShowForm(true);
   };
 
   const openEdit = (session: AartiSession) => {
     setEditing(session);
+    const state = stateForLocation(session.venue?.state, session.venue?.city);
+    const districts = state ? getDistricts(state.code) : [];
+    const city = session.venue?.city ?? "";
     setForm({
       ashramId:
         typeof session.ashramId === "object"
@@ -131,17 +189,19 @@ export const OwnerAartiSessionsPage: React.FC = () => {
       description: session.description ?? "",
       dressCode: session.dressCode ?? "",
       instructions: session.instructions ?? "",
-      startTime: session.startTime,
+      startTime: session.startTime ?? "18:30",
       durationMinutes: session.durationMinutes ?? 45,
       daysOfWeek: session.daysOfWeek ?? [],
       facilities: session.facilities ?? [],
       contactPhone: session.contactPhone ?? "",
       coverImage: session.coverImage ?? "",
+      startDate: session.startDate?.slice(0, 10) ?? today(),
+      endDate: session.endDate?.slice(0, 10) ?? "",
       venue: {
         name: session.venue?.name ?? "",
         line1: session.venue?.line1 ?? "",
-        city: session.venue?.city ?? "",
-        state: session.venue?.state ?? "",
+        city: districts.includes(city) ? city : districts[0] ?? city,
+        state: state?.name ?? session.venue?.state ?? "",
         pincode: session.venue?.pincode ?? "",
       },
     });
@@ -151,11 +211,15 @@ export const OwnerAartiSessionsPage: React.FC = () => {
   const save = async () => {
     setSaving(true);
     try {
+      const normalizedForm = {
+        ...form,
+        endDate: form.endDate || undefined,
+      };
       if (editing) {
-        const { ashramId: _ignored, ...payload } = form;
+        const { ashramId: _ignored, ...payload } = normalizedForm;
         await aartiOwnerService.updateSession(editing._id, payload);
       } else {
-        await aartiOwnerService.createSession(form);
+        await aartiOwnerService.createSession(normalizedForm);
       }
       setShowForm(false);
       await load();
@@ -171,10 +235,39 @@ export const OwnerAartiSessionsPage: React.FC = () => {
     await load();
   };
 
-  const archive = async (session: AartiSession) => {
-    if (!window.confirm(`Archive "${session.name}"?`)) return;
-    await aartiOwnerService.archiveSession(session._id).catch(() => undefined);
+  const deleteSession = async (session: AartiSession) => {
+    const confirmed = await confirmAction({
+      title: "Delete Aarti",
+      message: `Permanently delete "${session.name}"? This cannot be undone.`,
+      confirmLabel: "Delete",
+      tone: "danger",
+    });
+    if (!confirmed) return;
+    await aartiOwnerService.deleteSession(session._id).catch(() => undefined);
     await load();
+  };
+
+  const toggleSuspension = async (session: AartiSession) => {
+    const isSuspended = session.status === "suspended";
+    const nextStatus = isSuspended ? "approved" : "suspended";
+    const action = isSuspended ? "reactivate" : "suspend";
+    const confirmed = await confirmAction({
+      title: isSuspended ? "Reactivate Aarti" : "Suspend Aarti",
+      message: `${action[0].toUpperCase()}${action.slice(1)} "${session.name}"?`,
+      confirmLabel: isSuspended ? "Reactivate" : "Suspend",
+      tone: isSuspended ? "primary" : "warning",
+    });
+    if (!confirmed) return;
+
+    setStatusBusyId(session._id);
+    try {
+      await aartiAdminService.setSessionStatus(session._id, nextStatus);
+      await load();
+    } catch {
+      // The shared API interceptor displays the server error safely.
+    } finally {
+      setStatusBusyId("");
+    }
   };
 
   const openPasses = async (session: AartiSession) => {
@@ -208,7 +301,13 @@ export const OwnerAartiSessionsPage: React.FC = () => {
 
   const deletePass = async (pass: AartiPassType) => {
     if (!passesFor) return;
-    if (!window.confirm(`Remove the "${pass.name}" pass?`)) return;
+    const confirmed = await confirmAction({
+      title: "Remove Aarti Pass",
+      message: `Remove the "${pass.name}" pass?`,
+      confirmLabel: "Remove",
+      tone: "danger",
+    });
+    if (!confirmed) return;
     await aartiOwnerService.deletePassType(pass._id).catch(() => undefined);
     await openPasses(passesFor);
   };
@@ -230,7 +329,15 @@ export const OwnerAartiSessionsPage: React.FC = () => {
     }));
 
   const canSave = useMemo(
-    () => Boolean(form.name.trim() && form.startTime && (editing || form.ashramId)),
+    () =>
+      Boolean(
+        form.name.trim() &&
+          form.startTime &&
+          form.startDate &&
+          form.coverImage.trim() &&
+          (editing || form.ashramId) &&
+          (!form.endDate || form.endDate >= form.startDate),
+      ),
     [form, editing],
   );
 
@@ -252,7 +359,7 @@ export const OwnerAartiSessionsPage: React.FC = () => {
             <option value="pending">In review</option>
             <option value="approved">Live</option>
             <option value="rejected">Rejected</option>
-            <option value="archived">Archived</option>
+            <option value="suspended">Suspended</option>
           </select>
           <button
             type="button"
@@ -363,10 +470,37 @@ export const OwnerAartiSessionsPage: React.FC = () => {
                             <Send size={14} />
                           </button>
                         ) : null}
+                        {isSuperAdmin &&
+                        ["approved", "suspended"].includes(session.status) ? (
+                          <button
+                            type="button"
+                            disabled={statusBusyId === session._id}
+                            title={
+                              session.status === "suspended"
+                                ? "Reactivate aarti"
+                                : "Suspend aarti"
+                            }
+                            onClick={() => toggleSuspension(session)}
+                            className={`inline-flex items-center gap-1 rounded-full border px-3 py-2 text-[10px] font-extrabold transition-all active:scale-95 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 ${
+                              session.status === "suspended"
+                                ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-400"
+                                : "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-400"
+                            }`}
+                          >
+                            {session.status === "suspended" ? (
+                              <RotateCcw size={13} />
+                            ) : (
+                              <Ban size={13} />
+                            )}
+                            {session.status === "suspended"
+                              ? "Reactivate"
+                              : "Suspend"}
+                          </button>
+                        ) : null}
                         <button
                           type="button"
-                          title="Archive"
-                          onClick={() => archive(session)}
+                          title="Delete"
+                          onClick={() => deleteSession(session)}
                           className="p-2 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-400 transition-all active:scale-90 cursor-pointer"
                         >
                           <Trash2 size={14} />
@@ -398,17 +532,35 @@ export const OwnerAartiSessionsPage: React.FC = () => {
             </div>
 
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              {!editing ? (
-                <label className="flex flex-col gap-1 sm:col-span-2">
+              <label className="flex flex-col gap-1 sm:col-span-2">
                   <span className="text-[10px] tracking-wider font-bold text-gray-400 px-1">
                     Ashram
                   </span>
                   <select
+                    disabled={!!editing}
                     value={form.ashramId}
-                    onChange={(event) =>
-                      setForm({ ...form, ashramId: event.target.value })
-                    }
-                    className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all"
+                    onChange={(event) => {
+                      const ashram = ashrams.find(
+                        (item) => item._id === event.target.value,
+                      );
+                      const state = INDIA_STATES.find(
+                        (item) => item.name === ashram?.address?.state,
+                      );
+                      const districts = state ? getDistricts(state.code) : [];
+                      const preferredCity = ashram?.address?.city ?? "";
+                      setForm({
+                        ...form,
+                        ashramId: event.target.value,
+                        venue: {
+                          ...form.venue,
+                          state: state?.name ?? form.venue.state,
+                          city: districts.includes(preferredCity)
+                            ? preferredCity
+                            : districts[0] ?? form.venue.city,
+                        },
+                      });
+                    }}
+                    className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all disabled:opacity-60"
                   >
                     <option value="">Select an ashram</option>
                     {ashrams.map((ashram) => (
@@ -419,7 +571,6 @@ export const OwnerAartiSessionsPage: React.FC = () => {
                     ))}
                   </select>
                 </label>
-              ) : null}
 
               <label className="flex flex-col gap-1 sm:col-span-2">
                 <span className="text-[10px] tracking-wider font-bold text-gray-400 px-1">
@@ -495,6 +646,35 @@ export const OwnerAartiSessionsPage: React.FC = () => {
                 />
               </label>
 
+              <label className="flex flex-col gap-1">
+                <span className="text-[10px] tracking-wider font-bold text-gray-400 px-1">
+                  Start date
+                </span>
+                <input
+                  type="date"
+                  value={form.startDate}
+                  onChange={(event) =>
+                    setForm({ ...form, startDate: event.target.value })
+                  }
+                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all"
+                />
+              </label>
+
+              <label className="flex flex-col gap-1">
+                <span className="text-[10px] tracking-wider font-bold text-gray-400 px-1">
+                  End date (optional)
+                </span>
+                <input
+                  type="date"
+                  min={form.startDate}
+                  value={form.endDate}
+                  onChange={(event) =>
+                    setForm({ ...form, endDate: event.target.value })
+                  }
+                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all"
+                />
+              </label>
+
               <div className="sm:col-span-2">
                 <span className="text-[10px] tracking-wider font-bold text-gray-400 px-1">
                   Days held (none selected = every day)
@@ -536,9 +716,39 @@ export const OwnerAartiSessionsPage: React.FC = () => {
 
               <label className="flex flex-col gap-1">
                 <span className="text-[10px] tracking-wider font-bold text-gray-400 px-1">
-                  City
+                  State
                 </span>
-                <input
+                <select
+                  value={form.venue.state}
+                  onChange={(event) => {
+                    const state = INDIA_STATES.find(
+                      (item) => item.name === event.target.value,
+                    );
+                    const districts = state ? getDistricts(state.code) : [];
+                    setForm({
+                      ...form,
+                      venue: {
+                        ...form.venue,
+                        state: event.target.value,
+                        city: districts[0] ?? "",
+                      },
+                    });
+                  }}
+                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all"
+                >
+                  {INDIA_STATES.map((state) => (
+                    <option key={state.code} value={state.name}>
+                      {state.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="flex flex-col gap-1">
+                <span className="text-[10px] tracking-wider font-bold text-gray-400 px-1">
+                  City / District
+                </span>
+                <select
                   value={form.venue.city}
                   onChange={(event) =>
                     setForm({
@@ -546,15 +756,32 @@ export const OwnerAartiSessionsPage: React.FC = () => {
                       venue: { ...form.venue, city: event.target.value },
                     })
                   }
-                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all"
-                />
+                  className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all"
+                >
+                  {(INDIA_STATES.find(
+                    (state) => state.name === form.venue.state,
+                  )
+                    ? getDistricts(
+                        INDIA_STATES.find(
+                          (state) => state.name === form.venue.state,
+                        )!.code,
+                      )
+                    : []
+                  ).map((city) => (
+                    <option key={city} value={city}>
+                      {city}
+                    </option>
+                  ))}
+                </select>
               </label>
 
-              <label className="flex flex-col gap-1 sm:col-span-2">
+              <div className="sm:col-span-2 grid gap-3 sm:grid-cols-2 rounded-2xl border border-gray-100 dark:border-slate-800 p-3">
+              {import.meta.env.DEV ? <label className="flex flex-col gap-1">
                 <span className="text-[10px] tracking-wider font-bold text-gray-400 px-1">
-                  Cover image URL
+                  Cover image URL (development only)
                 </span>
                 <input
+                  type="url"
                   value={form.coverImage}
                   onChange={(event) =>
                     setForm({ ...form, coverImage: event.target.value })
@@ -562,7 +789,26 @@ export const OwnerAartiSessionsPage: React.FC = () => {
                   placeholder="https://…"
                   className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all"
                 />
-              </label>
+              </label> : null}
+                <div>
+                  <span className="text-[10px] tracking-wider font-bold text-gray-400 px-1 block mb-1">
+                    Or upload an image
+                  </span>
+                  <FileUploader
+                    folder="aarti"
+                    label="Upload Aarti image"
+                    currentUrl={form.coverImage}
+                    onUploaded={(url) =>
+                      setForm({ ...form, coverImage: url })
+                    }
+                  />
+                </div>
+                {!form.coverImage.trim() ? (
+                  <p className="sm:col-span-2 text-[10px] font-semibold text-amber-600">
+                    Add one image using either the URL field or upload button.
+                  </p>
+                ) : null}
+              </div>
 
               <label className="flex flex-col gap-1 sm:col-span-2">
                 <span className="text-[10px] tracking-wider font-bold text-gray-400 px-1">
