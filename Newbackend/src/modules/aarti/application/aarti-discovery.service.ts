@@ -162,13 +162,21 @@ export class AartiDiscoveryService {
    * never matches (a misconfigured listing) returns null instead of looping.
    */
   nextOccurrence(session: any, from?: string | Date): string | null {
-    let cursor = toDateKey(from ?? new Date());
-    for (let attempt = 0; attempt < 60; attempt += 1) {
-      if (runsOnDate(session, cursor)) {
-        const startsAt = combineDateAndTime(cursor, session.startTime, session.timezone);
-        if (startsAt.getTime() > Date.now()) return startsAt.toISOString();
+    try {
+      let cursor = toDateKey(from ?? new Date());
+      for (let attempt = 0; attempt < 60; attempt += 1) {
+        if (runsOnDate(session, cursor)) {
+          const startsAt = combineDateAndTime(
+            cursor,
+            session.startTime,
+            session.timezone,
+          );
+          if (startsAt.getTime() > Date.now()) return startsAt.toISOString();
+        }
+        cursor = new Date(cursor.getTime() + 86_400_000);
       }
-      cursor = new Date(cursor.getTime() + 86_400_000);
+    } catch {
+      return null;
     }
     return null;
   }
