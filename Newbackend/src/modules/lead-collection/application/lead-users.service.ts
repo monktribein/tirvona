@@ -399,7 +399,7 @@ export class LeadUsersService {
     if (orClauses.length > 0) {
       filter.$or = orClauses;
     }
-    filter.role = query.role ? query.role : { $in: ["field_agent", "lead_executive"] };
+    filter.role = query.role ? query.role : { $in: ["field_agent", "lead_executive", "document_verifier"] };
     if (query.status) filter.status = query.status;
     if (query.search?.trim()) {
       const term = new RegExp(escapeRegex(query.search.trim()), "i");
@@ -462,7 +462,7 @@ export class LeadUsersService {
       rowRegion.includes(districtTerm);
 
     const isAuthorizedRole =
-      row.role === "field_agent" || row.role === "lead_executive";
+      row.role === "field_agent" || row.role === "lead_executive" || row.role === "document_verifier";
 
     if (!matches || !isAuthorizedRole) {
       throw new ForbiddenException(
@@ -479,7 +479,11 @@ export class LeadUsersService {
     dto.state = supervisor.state;
     dto.district = supervisor.district;
     dto.role =
-      dto.role === "lead_executive" ? "lead_executive" : "field_agent";
+      dto.role === "lead_executive"
+        ? "lead_executive"
+        : dto.role === "document_verifier"
+        ? "document_verifier"
+        : "field_agent";
     return this.create(dto, { id: supervisor.id, name: supervisor.name });
   }
 }

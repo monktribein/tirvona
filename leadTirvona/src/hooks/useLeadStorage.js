@@ -2,6 +2,29 @@ import { useState, useEffect, useCallback } from 'react';
 import { leadApi } from '../services/leadApi';
 import { toApiLead, fromApiLead, toApprovedAshram } from '../utils/leadPayload';
 
+// Helper to sort leads: newest changes and uploaded documents on top, older down
+export const sortLeadsByRecencyAndDocs = (list) => {
+  return [...list].sort((a, b) => {
+    const aSaved = a.documentChecklist?.items || {};
+    const aDocsCount = Object.values(aSaved).filter((it) => it.received || it.imageUrl).length + (a.documentChecklist?.otherDocuments?.length || 0);
+    const bSaved = b.documentChecklist?.items || {};
+    const bDocsCount = Object.values(bSaved).filter((it) => it.received || it.imageUrl).length + (b.documentChecklist?.otherDocuments?.length || 0);
+
+    const aHasDocs = aDocsCount > 0;
+    const bHasDocs = bDocsCount > 0;
+
+    // 1. Leads with uploaded documents appear higher
+    if (aHasDocs && !bHasDocs) return -1;
+    if (!aHasDocs && bHasDocs) return 1;
+
+    // 2. Newest document submission / update / creation on top (upper side), older down
+    const aTime = new Date(a.documentChecklist?.submittedAt || a.docUpdatedAt || a.docVerifiedAt || a.updatedAt || a.createdAt || a.capturedAt || 0).getTime();
+    const bTime = new Date(b.documentChecklist?.submittedAt || b.docUpdatedAt || b.docVerifiedAt || b.updatedAt || b.createdAt || b.capturedAt || 0).getTime();
+
+    return bTime - aTime;
+  });
+};
+
 export function useLeadStorage(isSignedIn = false) {
   const [leads, setLeads] = useState([]);
   const [approvedAshrams, setApprovedAshrams] = useState([]);
@@ -24,7 +47,8 @@ export function useLeadStorage(isSignedIn = false) {
     try {
       const page = await leadApi.listMyLeads({ limit: 100 });
       const rows = page.items || [];
-      setLeads(rows.map(fromApiLead));
+      const mapped = rows.map(fromApiLead);
+      setLeads(sortLeadsByRecencyAndDocs(mapped));
       setApprovedAshrams(
         rows
           .filter((row) => row.status === 'approved' || row.status === 'converted')

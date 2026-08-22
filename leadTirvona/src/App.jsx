@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AppNavbar from './components/AppNavbar';
 import ToastNotification from './components/ToastNotification';
 import CreateLeadPage from './pages/CreateLeadPage';
 import LeadsDashboardPage from './pages/LeadsDashboardPage';
 import ApprovedAshramsPage from './pages/ApprovedAshramsPage';
 import SupervisorDashboard from './pages/SupervisorDashboard';
+import DocumentVerifierDashboard from './pages/DocumentVerifierDashboard';
 import { useLeadStorage } from './hooks/useLeadStorage';
 import { useLeadAuth } from './hooks/useLeadAuth';
 import { leadApi } from './services/leadApi';
@@ -13,9 +14,10 @@ import { toApiLead } from './utils/leadPayload';
 export default function App() {
   const [activePage, setActivePage] = useState('create');
   const [attendanceState, setAttendanceState] = useState(null);
+  const [supervisorMode, setSupervisorMode] = useState('console'); // 'console' | 'field_portal'
+  const [editingLeadData, setEditingLeadData] = useState(null);
+
   const { agent, checking, isSignedIn, login, logout } = useLeadAuth();
-  const { leads, approvedAshrams, toast, addLead, approveLead, removeLead } =
-    useLeadStorage(isSignedIn);
   const {
     leads,
     approvedAshrams,
@@ -27,6 +29,7 @@ export default function App() {
     updateAppointment,
     refreshAll
   } = useLeadStorage(isSignedIn);
+
   const handlePageChange = (page) => {
     if (page !== 'create') {
       setEditingLeadData(null);
@@ -39,13 +42,27 @@ export default function App() {
     }
   };
 
+  // Default landing page on initial sign in
+  useEffect(() => {
+    if (isSignedIn) {
+      if (agent?.role === 'document_verifier' && activePage !== 'doc_verifier') {
+        setActivePage('doc_verifier');
+      } else if (agent?.role === 'field_agent' && !editingLeadData) {
+        setActivePage('dashboard');
+      }
+    }
+  }, [isSignedIn, agent?.id, agent?.role]);
+
+  const handleCreateNewLead = () => {
+    setEditingLeadData(null);
+    setSupervisorMode('field_portal');
+    handlePageChange('create', true);
+  };
+
   const handleLogout = () => {
     logout();
     setAttendanceState(null);
   };
-
-  const [supervisorMode, setSupervisorMode] = useState('console'); // 'console' | 'field_portal'
-  const [editingLeadData, setEditingLeadData] = useState(null);
 
   const handleOpenFieldPortal = (lead = null) => {
     setEditingLeadData(lead);
@@ -61,16 +78,14 @@ export default function App() {
   const handleSaveLead = async (leadPayload, leadId = null) => {
     if (leadId) {
       try {
-        await leadApi.updateLead(leadId, leadPayload);
-        if (toast?.message) {
-        }
-=======
         const apiPayload = toApiLead(leadPayload);
         await leadApi.updateLead(leadId, apiPayload);
         await refreshAll();
-        showToast('Lead verification and details updated!');
-        setSupervisorMode('console');
-        setEditingLeadData(null);
+        showToast('Lead documents & details updated successfully!');
+        if (activePage === 'create') {
+          setSupervisorMode('console');
+          setEditingLeadData(null);
+        }
         return true;
       } catch (err) {
         console.error('Failed to update lead:', err);
@@ -78,7 +93,11 @@ export default function App() {
         return null;
       }
     }
-    return addLead(leadPayload);
+    const res = await addLead(leadPayload);
+    if (res) {
+      setEditingLeadData(null);
+    }
+    return res;
   };
 
   if (isSignedIn && agent?.role === 'field_supervisor' && supervisorMode === 'console') {
@@ -108,12 +127,23 @@ export default function App() {
     );
   }
 
+  const currentLeadCount = isSignedIn
+    ? (agent?.role === 'lead_executive' && agent?.id
+        ? leads.filter((l) => {
+            const myId = String(agent.id || agent._id || '').trim();
+            const leadCapturedBy = String(l.capturedBy?._id || l.capturedBy || l.capturedById || '').trim();
+            return !leadCapturedBy || leadCapturedBy === myId;
+          }).length
+        : leads.length)
+    : 0;
+
   return (
     <div className="min-h-screen flex flex-col bg-[#F8FAFC]/70 font-sans antialiased selection:bg-[#0A4DA6]/10 selection:text-[#0A4DA6]">
       <AppNavbar
         activePage={activePage}
         setActivePage={handlePageChange}
-        leadCount={isSignedIn ? leads.length : 0}
+        onNavigateCreate={handleCreateNewLead}
+        leadCount={currentLeadCount}
         approvedCount={isSignedIn ? approvedAshrams.length : 0}
         agent={agent}
         attendanceState={attendanceState}
@@ -135,8 +165,17 @@ export default function App() {
               Sign in with the phone number and password issued by a Tirvona Super Admin.
             </p>
           </div>
+        ) : agent?.role === 'document_verifier' || activePage === 'doc_verifier' ? (
+          <DocumentVerifierDashboard
+            leads={leads}
+            agent={agent}
+            onSaveLead={handleSaveLead}
+            onRefresh={refreshAll}
+            showToast={showToast}
+          />
         ) : activePage === 'create' ? (
           <CreateLeadPage
+            key={editingLeadData ? (editingLeadData._id || editingLeadData.id || 'editing') : 'new-lead'}
             agentRole={agent?.role}
             onSubmitLead={handleSaveLead}
             onSuccessNavigate={() => {
@@ -157,16 +196,19 @@ export default function App() {
           />
         ) : activePage === 'dashboard' ? (
           <LeadsDashboardPage
+            agent={agent}
             agentRole={agent?.role}
             leads={leads}
             onApproveLead={approveLead}
             onDeleteLead={agent?.role === 'field_supervisor' ? removeLead : null}
-            onNavigateCreate={() => handlePageChange('create')}
+            onNavigateCreate={handleCreateNewLead}
             onEditLead={(lead) => {
               setEditingLeadData(lead);
               handlePageChange('create');
             }}
             onUpdateAppointment={agent?.role !== 'field_agent' ? updateAppointment : null}
+            onSaveLead={handleSaveLead}
+            showToast={showToast}
           />
         ) : activePage === 'approved' ? (
           <ApprovedAshramsPage

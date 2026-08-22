@@ -15,7 +15,22 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
     checkOutTime: null,
     checkOutCoords: null,
   });
-  const [statusMsg, setStatusMsg] = useState('');
+  // Lock background body scroll and pause Lenis smooth scroll while modal is open
+  React.useEffect(() => {
+    if (isOpen) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      if (window.lenisInstance) {
+        window.lenisInstance.stop();
+      }
+      return () => {
+        document.body.style.overflow = originalOverflow || '';
+        if (window.lenisInstance) {
+          window.lenisInstance.start();
+        }
+      };
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -25,7 +40,7 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
     ? t('Supervisor Attendance')
     : isLeadExecutive
     ? t('Lead Executive Attendance')
-    : t('Field Agent Attendance');
+    : t('Field Executive Attendance');
   const roleSubtitle = isSupervisor
     ? `${user?.district ? `${user.district} ` : ''}District Geotag & Location Console`
     : isLeadExecutive
@@ -37,7 +52,7 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
     ? 'SP'
     : isLeadExecutive
     ? 'LE'
-    : 'FA';
+    : 'FE';
   const badgeLabel = isSupervisor
     ? t('Supervisor')
     : isLeadExecutive
@@ -84,7 +99,10 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
     : null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F172A]/50 backdrop-blur-xs animate-fadeIn">
+    <div 
+      data-lenis-prevent="true"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F172A]/50 backdrop-blur-xs animate-fadeIn overscroll-contain"
+    >
       
       <div className="bg-white border border-[#E2E8F0] rounded-3xl p-6 sm:p-8 w-full max-w-lg shadow-xl relative animate-scaleUp text-left space-y-5">
         

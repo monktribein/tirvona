@@ -9,6 +9,23 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Lock background body scroll and pause Lenis smooth scroll while modal is open
+  React.useEffect(() => {
+    if (isOpen) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      if (window.lenisInstance) {
+        window.lenisInstance.stop();
+      }
+      return () => {
+        document.body.style.overflow = originalOverflow || '';
+        if (window.lenisInstance) {
+          window.lenisInstance.start();
+        }
+      };
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const handlePhoneChange = (e) => {
@@ -49,7 +66,10 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
   const inputClass = "w-full min-h-[48px] px-4 py-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-sm font-medium text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/20 focus:border-[#0A4DA6] transition-all placeholder:text-[#94A3B8]";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F172A]/50 backdrop-blur-xs animate-fadeIn">
+    <div 
+      data-lenis-prevent="true"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F172A]/50 backdrop-blur-xs animate-fadeIn overscroll-contain"
+    >
       
       <div className="bg-white border border-[#E2E8F0] rounded-3xl p-6 sm:p-8 w-full max-w-md shadow-xl relative animate-scaleUp text-left">
         

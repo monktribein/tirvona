@@ -13,6 +13,7 @@ export const LEAD_USER_ROLES = [
   "field_agent",
   "field_supervisor",
   "lead_executive",
+  "document_verifier",
 ] as const;
 export type LeadUserRole = (typeof LEAD_USER_ROLES)[number];
 

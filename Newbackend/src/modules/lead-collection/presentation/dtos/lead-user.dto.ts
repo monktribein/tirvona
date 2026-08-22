@@ -23,7 +23,8 @@ export class CreateLeadUserDto {
   @IsOptional() @IsIn(LEAD_USER_ROLES as unknown as string[]) role?:
     | "field_agent"
     | "field_supervisor"
-    | "lead_executive";
+    | "lead_executive"
+    | "document_verifier";
   @IsOptional() @IsIn(LEAD_USER_STATUSES as unknown as string[]) status?: string;
   @IsString() @MinLength(2) @MaxLength(120) state!: string;
   @IsString() @MinLength(2) @MaxLength(120) district!: string;
@@ -38,7 +39,8 @@ export class UpdateLeadUserDto {
   @IsOptional() @IsIn(LEAD_USER_ROLES as unknown as string[]) role?:
     | "field_agent"
     | "field_supervisor"
-    | "lead_executive";
+    | "lead_executive"
+    | "document_verifier";
   @IsOptional() @IsIn(LEAD_USER_STATUSES as unknown as string[]) status?: string;
   @IsOptional() @IsString() @MinLength(2) @MaxLength(120) state?: string;
   @IsOptional() @IsString() @MinLength(2) @MaxLength(120) district?: string;
