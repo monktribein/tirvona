@@ -612,6 +612,7 @@ export const DashboardLayout: React.FC = () => {
       icon: <Calendar size={15} />,
       links: [
         { label: "All Bookings", path: `${ownerBase}/bookings` },
+        { label: "Walk-in / Offline Booking", path: `${ownerBase}/walk-in-booking` },
         { label: "Payments", path: `${ownerBase}/payments` },
         { label: "Payout Management", path: `${ownerBase}/payouts` },
       ],
@@ -779,7 +780,15 @@ export const DashboardLayout: React.FC = () => {
           path: "/staff/reception",
           icon: <ClipboardList size={16} className="text-[#E58C28]" />,
         },
-        groups: [],
+        groups: [
+          {
+            groupName: "Front desk",
+            icon: <Calendar size={15} />,
+            links: [
+              { label: "Walk-in / Offline Booking", path: "/staff/walk-in-booking" },
+            ],
+          },
+        ],
       };
     }
     if (user?.role === "housekeeping") {

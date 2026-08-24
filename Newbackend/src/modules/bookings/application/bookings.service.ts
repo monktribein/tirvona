@@ -329,12 +329,19 @@ export class BookingsService {
     return booking;
   }
 
+  private async assertCanPayFor(
+    user: AuthenticatedUser,
+    booking: any,
+  ): Promise<void> {
+    if (String(booking.customerId?._id ?? booking.customerId) === String(user.id))
+      return;
+    await this.assertCanManage(user, booking);
+  }
+
   async paymentOrder(id: string, user: AuthenticatedUser): Promise<any> {
-    const booking = await this.bookings.findOne({
-      _id: id,
-      customerId: user.id,
-    });
+    const booking = await this.bookings.findOne({ _id: id });
     if (!booking) throw new NotFoundException("Booking not found");
+    await this.assertCanPayFor(user, booking);
     if (booking.paymentStatus === "fully_paid")
       throw new BadRequestException("Booking is already paid");
     if (
@@ -442,9 +449,10 @@ export class BookingsService {
           };
       }
       const booking = await this.bookings
-        .findOne({ _id: id, customerId: user.id })
+        .findOne({ _id: id })
         .session(session);
       if (!booking) throw new NotFoundException("Booking not found");
+      await this.assertCanPayFor(user, booking);
       if (booking.paymentStatus === "fully_paid")
         throw new ConflictException("Booking is already paid");
 
@@ -803,6 +811,9 @@ export class BookingsService {
       deletedAt: null,
       ...(query.status ? { status: query.status } : {}),
       ...(query.paymentStatus ? { paymentStatus: query.paymentStatus } : {}),
+      ...(query.source && query.source !== "all"
+        ? { bookingSource: query.source }
+        : {}),
       ...(query.ashramId
         ? { ashramId: query.ashramId }
         : scope === null

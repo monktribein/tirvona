@@ -70,6 +70,23 @@ export const roomService = {
     }),
 };
 
+export const selfBookingService = {
+  ashrams: () => api.get("/bookings/self/ashrams"),
+  availability: (params: {
+    ashramId: string;
+    checkInDate: string;
+    checkOutDate: string;
+  }) => api.get("/bookings/self/availability", { params }),
+  create: (data: unknown) => api.post("/bookings/self", data),
+  receipt: (id: string) => api.get(`/bookings/self/${id}/receipt`),
+  receiptQr: async (id: string): Promise<string> => {
+    const res = await api.get(`/bookings/self/${id}/qr.svg`, {
+      responseType: "text",
+    });
+    return typeof res.data === "string" ? res.data : "";
+  },
+};
+
 export const bookingService = {
   quote: (data: unknown) =>
     api.post("/bookings/quote", data, { skipToast: true }),
