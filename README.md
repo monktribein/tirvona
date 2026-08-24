@@ -1,4 +1,4 @@
-# 🕉️ Tirvona (Ashray Bharat)
+# 🕉️ Tirvona
 ### Sacred Ashram Booking & Management Platform
 
 **Tirvona** is a state-of-the-art, government-compliant digital accommodation booking and counter management platform designed for holy stays and spiritual retreats across the Indian subcontinent (e.g., Rishikesh, Haridwar, Vrindavan, Varanasi). It eliminates manual paper counter logs to provide safe, verified, and transparent accommodation for pilgrims, managed under the Digital India guidelines in partnership with the Ministry of Tourism & IT Division, Government of India.

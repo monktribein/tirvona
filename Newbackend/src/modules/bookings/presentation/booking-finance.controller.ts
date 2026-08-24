@@ -14,7 +14,14 @@ import {
 export class BookingFinanceController {
   constructor(private readonly service: BookingFinanceService) {}
   @Get("summary")
-  @Roles("owner", "finance_manager", "super_admin")
+  @Roles(
+    "owner",
+    "ashram_owner",
+    "ashram_admin",
+    "stay_admin",
+    "finance_manager",
+    "super_admin",
+  )
   async summary(
     @CurrentUser() user: AuthenticatedUser,
     @Query("ownerId") ownerId?: string,
@@ -26,18 +33,52 @@ export class BookingFinanceController {
     };
   }
   @Get("payments")
-  @Roles("owner", "finance_manager", "super_admin")
+  @Roles(
+    "owner",
+    "ashram_owner",
+    "ashram_admin",
+    "stay_admin",
+    "finance_manager",
+    "super_admin",
+  )
   async payments(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query("ashramId") ashramId?: string,
+    @Query("source") source?: string,
+  ) {
+    return {
+      success: true,
+      data: await this.service.paymentList(user, ashramId, source),
+    };
+  }
+
+  @Get("source-breakdown")
+  @Roles(
+    "owner",
+    "ashram_owner",
+    "ashram_admin",
+    "stay_admin",
+    "finance_manager",
+    "super_admin",
+  )
+  async sourceBreakdown(
     @CurrentUser() user: AuthenticatedUser,
     @Query("ashramId") ashramId?: string,
   ) {
     return {
       success: true,
-      data: await this.service.paymentList(user, ashramId),
+      data: await this.service.sourceBreakdown(user, ashramId),
     };
   }
   @Get("settlements")
-  @Roles("owner", "finance_manager", "super_admin")
+  @Roles(
+    "owner",
+    "ashram_owner",
+    "ashram_admin",
+    "stay_admin",
+    "finance_manager",
+    "super_admin",
+  )
   async settlements(
     @CurrentUser() user: AuthenticatedUser,
     @Query("ownerId") ownerId?: string,
@@ -49,7 +90,14 @@ export class BookingFinanceController {
     };
   }
   @Post("settlements")
-  @Roles("owner", "finance_manager", "super_admin")
+  @Roles(
+    "owner",
+    "ashram_owner",
+    "ashram_admin",
+    "stay_admin",
+    "finance_manager",
+    "super_admin",
+  )
   async create(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: CreateSettlementDto,

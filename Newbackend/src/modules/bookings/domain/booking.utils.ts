@@ -42,3 +42,11 @@ export const platformFeeGst = (
   platformFee: number,
   percent: number = PLATFORM_FEE_GST_PERCENT,
 ): number => roundMoney((Math.max(0, platformFee) * percent) / 100);
+
+export const BOOKING_SOURCES = ["tirvona", "self"] as const;
+export type BookingSource = (typeof BOOKING_SOURCES)[number];
+export const SELF_BOOKING_SOURCE: BookingSource = "self";
+export const TIRVONA_BOOKING_SOURCE: BookingSource = "tirvona";
+
+export const OFFLINE_PAYMENT_METHODS = ["cash", "upi", "cards"] as const;
+export type OfflinePaymentMethod = (typeof OFFLINE_PAYMENT_METHODS)[number];

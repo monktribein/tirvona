@@ -1,9 +1,13 @@
 import { Module } from "@nestjs/common";
 import { MongooseModule } from "@nestjs/mongoose";
 import { AshramsModule } from "../ashrams/ashrams.module";
+import { UsersModule } from "../users/users.module";
 import { PlatformSettingsModule } from "../platform-settings/platform-settings.module";
 import { BookingPricingService } from "./application/booking-pricing.service";
 import { BookingsService } from "./application/bookings.service";
+import { SelfBookingService } from "./application/self-booking.service";
+import { SelfBookingController } from "./presentation/self-booking.controller";
+import { QrService } from "../smart-contact/application/qr.service";
 import { OffersService } from "./application/offers.service";
 import { ReviewsService } from "./application/reviews.service";
 import { BookingMaintenanceService } from "./application/booking-maintenance.service";
@@ -85,6 +89,7 @@ const models = [
 @Module({
   imports: [
     AshramsModule,
+    UsersModule,
     PlatformSettingsModule,
     MongooseModule.forFeature(models),
   ],
@@ -94,11 +99,14 @@ const models = [
     ReviewsController,
     BookingFinanceController,
     BookingIdentityController,
+    SelfBookingController,
   ],
   providers: [
     BookingPricingService,
     BookingIdentityService,
     BookingsService,
+    SelfBookingService,
+    QrService,
     OffersService,
     ReviewsService,
     BookingMaintenanceService,
@@ -106,6 +114,6 @@ const models = [
     MongooseBookingRepository,
     { provide: BOOKING_REPOSITORY, useExisting: MongooseBookingRepository },
   ],
-  exports: [BookingsService, BookingPricingService, MongooseModule],
+  exports: [BookingsService, SelfBookingService, BookingPricingService, MongooseModule],
 })
 export class BookingsModule {}
