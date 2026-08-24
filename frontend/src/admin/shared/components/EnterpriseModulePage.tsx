@@ -1397,10 +1397,20 @@ export const EnterpriseModulePage: React.FC<{
           columns: [
             { key: "bookingId", label: "Booking ID" },
             {
+              key: "bookingSource",
+              label: "Source",
+              render: (value: any) =>
+                String(value ?? "tirvona") === "self" ? "Walk-in" : "Tirvona",
+            },
+            {
               key: "customerId",
               label: "Guest",
-              render: (value: any) =>
-                value?.name || value?.email || value?.phone || "Guest unavailable",
+              render: (value: any, item: any) =>
+                item?.walkInGuest?.name ||
+                value?.name ||
+                value?.email ||
+                value?.phone ||
+                "Guest unavailable",
             },
             {
               key: "ashramId",

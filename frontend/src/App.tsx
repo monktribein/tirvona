@@ -66,6 +66,9 @@ const PayoutManagementPage = lazy(
 const OwnerParkingSetupPage = lazy(
   () => import("./pages/owner/OwnerParkingSetupPage"),
 );
+const WalkInBookingPage = lazy(
+  () => import("./pages/owner/WalkInBookingPage"),
+);
 const OffersPage = lazy(() => import("./pages/OffersPage"));
 const OfferDetailPage = lazy(() => import("./pages/OfferDetailPage"));
 const MarketplaceCategoriesPage = lazy(
@@ -680,6 +683,9 @@ const AppContent: React.FC = () => {
             <Route path="/owner/payouts" element={<PayoutManagementPage />} />
             <Route path="/ashram-admin/payouts" element={<PayoutManagementPage />} />
             <Route path="/ashram-owner/payouts" element={<PayoutManagementPage />} />
+            <Route path="/owner/walk-in-booking" element={<WalkInBookingPage />} />
+            <Route path="/ashram-admin/walk-in-booking" element={<WalkInBookingPage />} />
+            <Route path="/ashram-owner/walk-in-booking" element={<WalkInBookingPage />} />
             <Route
               path="/owner/parking"
               element={<OwnerParkingSetupPage />}
@@ -729,6 +735,7 @@ const AppContent: React.FC = () => {
             }
           >
             <Route path="/staff/reception" element={<ReceptionCheckinPage />} />
+            <Route path="/staff/walk-in-booking" element={<WalkInBookingPage />} />
           </Route>
 
           <Route

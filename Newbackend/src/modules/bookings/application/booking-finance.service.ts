@@ -126,10 +126,14 @@ export class BookingFinanceService {
   async paymentList(
     user: AuthenticatedUser,
     ashramId?: string,
+    source?: string,
   ): Promise<any[]> {
     const scope = await this.ashramScope(user, ashramId);
     const rows = await this.payments
-      .find(scope === null ? {} : { ashramId: { $in: scope } })
+      .find({
+        ...(scope === null ? {} : { ashramId: { $in: scope } }),
+        ...(source && source !== "all" ? { bookingSource: source } : {}),
+      })
       .populate({
         path: "bookingId",
         select:
@@ -143,9 +147,54 @@ export class BookingFinanceService {
       .lean();
     return rows.map((payment: any) => ({
       ...payment,
+      bookingSource: payment.bookingSource ?? "tirvona",
       bookedBy: payment.bookingId?.customerId ?? payment.userId ?? null,
       paidBy: payment.userId ?? payment.bookingId?.customerId ?? null,
     }));
+  }
+
+  async sourceBreakdown(
+    user: AuthenticatedUser,
+    ashramId?: string,
+  ): Promise<any> {
+    const scope = await this.ashramScope(user, ashramId);
+    const rows = await this.payments.aggregate([
+      {
+        $match: {
+          status: "success",
+          ...(scope === null
+            ? {}
+            : {
+                ashramId: {
+                  $in: scope.map((id) =>
+                    this.payments.db.base.Types.ObjectId.createFromHexString(
+                      id,
+                    ),
+                  ),
+                },
+              }),
+        },
+      },
+      {
+        $group: {
+          _id: { $ifNull: ["$bookingSource", "tirvona"] },
+          collected: { $sum: "$amount" },
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+    const find = (key: string) =>
+      rows.find((row: any) => row._id === key) ?? { collected: 0, count: 0 };
+    const tirvona = find("tirvona");
+    const self = find("self");
+    return {
+      tirvona: { collected: tirvona.collected, bookings: tirvona.count },
+      self: { collected: self.collected, bookings: self.count },
+      total: {
+        collected: tirvona.collected + self.collected,
+        bookings: tirvona.count + self.count,
+      },
+    };
   }
   async list(
     user: AuthenticatedUser,

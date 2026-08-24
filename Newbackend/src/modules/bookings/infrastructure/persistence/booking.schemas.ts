@@ -27,6 +27,21 @@ export const BookingSchema = new Schema(
     },
     customerId: id("User", true),
     ashramId: id("Ashram", true),
+    bookingSource: {
+      type: String,
+      enum: ["tirvona", "self"],
+      default: "tirvona",
+      index: true,
+    },
+    walkInGuest: {
+      name: String,
+      phone: String,
+      email: String,
+      idType: String,
+      idNumber: String,
+      address: String,
+    },
+    bookedBy: id("User"),
     roomId: id("Room", true),
     checkInDate: { type: Date, required: true },
     checkOutDate: { type: Date, required: true },
@@ -128,6 +143,7 @@ export const BookingSchema = new Schema(
 );
 BookingSchema.index({ customerId: 1, createdAt: -1 });
 BookingSchema.index({ ashramId: 1, status: 1, createdAt: -1 });
+BookingSchema.index({ ashramId: 1, bookingSource: 1, createdAt: -1 });
 BookingSchema.index({ ashramId: 1, checkInDate: 1 });
 BookingSchema.index({ status: 1, reservationExpiresAt: 1 });
 

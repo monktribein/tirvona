@@ -49,13 +49,37 @@ export class BookingsController {
       data: await this.service.create(user, dto),
     };
   }
-  @Post(":id/payment/order") @Roles("customer") @HttpCode(200) async order(
+  @Post(":id/payment/order")
+  @Roles(
+    "customer",
+    "owner",
+    "ashram_owner",
+    "ashram_admin",
+    "stay_admin",
+    "manager",
+    "reception",
+    "super_admin",
+  )
+  @HttpCode(200)
+  async order(
     @Param("id") id: string,
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return { success: true, ...(await this.service.paymentOrder(id, user)) };
   }
-  @Post(":id/payment") @Roles("customer") @HttpCode(200) async payment(
+  @Post(":id/payment")
+  @Roles(
+    "customer",
+    "owner",
+    "ashram_owner",
+    "ashram_admin",
+    "stay_admin",
+    "manager",
+    "reception",
+    "super_admin",
+  )
+  @HttpCode(200)
+  async payment(
     @Param("id") id: string,
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: ConfirmBookingPaymentDto,
@@ -77,6 +101,8 @@ export class BookingsController {
   @Get("dashboard")
   @Roles(
     "owner",
+    "ashram_owner",
+    "ashram_admin",
     "stay_admin",
     "manager",
     "reception",
@@ -101,6 +127,9 @@ export class BookingsController {
   @Roles(
     "customer",
     "owner",
+    "ashram_owner",
+    "ashram_admin",
+    "stay_admin",
     "manager",
     "reception",
     "housekeeping",
@@ -118,7 +147,15 @@ export class BookingsController {
     return { success: true, data: await this.service.get(id, user) };
   }
   @Put(":id/room-number")
-  @Roles("owner", "manager", "reception", "super_admin")
+  @Roles(
+    "owner",
+    "ashram_owner",
+    "ashram_admin",
+    "stay_admin",
+    "manager",
+    "reception",
+    "super_admin",
+  )
   async room(
     @Param("id") id: string,
     @CurrentUser() user: AuthenticatedUser,
@@ -130,7 +167,15 @@ export class BookingsController {
     };
   }
   @Put(":id/status")
-  @Roles("owner", "manager", "reception", "super_admin")
+  @Roles(
+    "owner",
+    "ashram_owner",
+    "ashram_admin",
+    "stay_admin",
+    "manager",
+    "reception",
+    "super_admin",
+  )
   async status(
     @Param("id") id: string,
     @CurrentUser() user: AuthenticatedUser,
@@ -167,7 +212,14 @@ export class BookingsController {
     };
   }
   @Post(":id/checkin")
-  @Roles("owner", "manager", "reception")
+  @Roles(
+    "owner",
+    "ashram_owner",
+    "ashram_admin",
+    "stay_admin",
+    "manager",
+    "reception",
+  )
   @Throttle({ default: { limit: 100, ttl: 900_000 } })
   @HttpCode(200)
   async checkin(
@@ -182,7 +234,14 @@ export class BookingsController {
     };
   }
   @Post(":id/checkout")
-  @Roles("owner", "manager", "reception")
+  @Roles(
+    "owner",
+    "ashram_owner",
+    "ashram_admin",
+    "stay_admin",
+    "manager",
+    "reception",
+  )
   @HttpCode(200)
   async checkout(
     @Param("id") id: string,
@@ -196,7 +255,17 @@ export class BookingsController {
     };
   }
   @Post(":id/cancel")
-  @Roles("customer", "owner", "manager", "reception", "support", "super_admin")
+  @Roles(
+    "customer",
+    "owner",
+    "ashram_owner",
+    "ashram_admin",
+    "stay_admin",
+    "manager",
+    "reception",
+    "support",
+    "super_admin",
+  )
   @HttpCode(200)
   async cancel(
     @Param("id") id: string,

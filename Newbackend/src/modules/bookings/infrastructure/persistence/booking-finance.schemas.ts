@@ -16,6 +16,13 @@ export const BookingPaymentSchema = new Schema(
     bookingId: id("Booking", true),
     userId: id("User", true),
     ashramId: id("Ashram", true),
+    bookingSource: {
+      type: String,
+      enum: ["tirvona", "self"],
+      default: "tirvona",
+      index: true,
+    },
+    collectedBy: id("User"),
     amount: { type: Number, required: true, min: 0 },
     currency: { type: String, default: "INR" },
     purpose: {
@@ -77,6 +84,12 @@ export const BookingTransactionSchema = new Schema(
     paymentId: id("BookingPayment"),
     ashramId: id("Ashram"),
     ownerId: id("User"),
+    bookingSource: {
+      type: String,
+      enum: ["tirvona", "self"],
+      default: "tirvona",
+      index: true,
+    },
     type: {
       type: String,
       enum: [

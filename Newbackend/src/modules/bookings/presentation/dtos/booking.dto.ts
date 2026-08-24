@@ -45,6 +45,7 @@ export class BookingDashboardQueryDto {
   @IsOptional() @IsString() status?: string;
   @IsOptional() @IsString() paymentStatus?: string;
   @IsOptional() @IsMongoId() ashramId?: string;
+  @IsOptional() @IsIn(["tirvona", "self", "all"]) source?: string;
   @IsOptional() @IsString() search?: string;
   @IsOptional() @IsString() date?: string;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) page = 1;

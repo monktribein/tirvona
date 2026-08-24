@@ -214,6 +214,8 @@ export const BookingInventorySchema = new Schema(
     totalInventory: { type: Number, required: true, min: 0 },
     heldCount: { type: Number, default: 0, min: 0 },
     bookedCount: { type: Number, default: 0, min: 0 },
+    onlineBookedCount: { type: Number, default: 0, min: 0 },
+    offlineBookedCount: { type: Number, default: 0, min: 0 },
     maintenanceCount: { type: Number, default: 0, min: 0 },
     customPrice: Number,
     isClosed: { type: Boolean, default: false },

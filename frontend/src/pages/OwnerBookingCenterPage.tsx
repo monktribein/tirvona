@@ -43,6 +43,7 @@ export const OwnerBookingCenterPage: React.FC<OwnerBookingCenterPageProps> = ({
   const [activeView, setActiveView] = useState<View>(initialView);
   const [ashrams, setAshrams] = useState<any[]>([]);
   const [ashramId, setAshramId] = useState("");
+  const [sourceFilter, setSourceFilter] = useState("all");
   const [bookings, setBookings] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
   const [settlements, setSettlements] = useState<any[]>([]);
@@ -157,15 +158,19 @@ export const OwnerBookingCenterPage: React.FC<OwnerBookingCenterPageProps> = ({
         : record?.ashramId || "",
     );
 
-  const scopedBookings = useMemo(
-    () =>
-      ashramId
-        ? bookings.filter(
-            (booking) => recordAshramId(booking) === String(ashramId),
-          )
-        : bookings,
-    [ashramId, bookings],
-  );
+  const scopedBookings = useMemo(() => {
+    const byAshram = ashramId
+      ? bookings.filter(
+          (booking) => recordAshramId(booking) === String(ashramId),
+        )
+      : bookings;
+    return sourceFilter === "all"
+      ? byAshram
+      : byAshram.filter(
+          (booking) =>
+            String(booking.bookingSource ?? "tirvona") === sourceFilter,
+        );
+  }, [ashramId, bookings, sourceFilter]);
 
   const scopedPayments = useMemo(
     () =>
@@ -299,6 +304,15 @@ export const OwnerBookingCenterPage: React.FC<OwnerBookingCenterPageProps> = ({
               {ashrams.map((ashram) => (
                 <option key={ashram._id} value={ashram._id}>{ashram.name}</option>
               ))}
+            </select>
+            <select
+              value={sourceFilter}
+              onChange={(event) => setSourceFilter(event.target.value)}
+              className="px-3 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:outline-none"
+            >
+              <option value="all">Tirvona + Walk-in</option>
+              <option value="tirvona">Tirvona online only</option>
+              <option value="self">Walk-in / offline only</option>
             </select>
             <button
               type="button"
