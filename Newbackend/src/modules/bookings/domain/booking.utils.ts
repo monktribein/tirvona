@@ -17,7 +17,7 @@ export const bookingReference = (): string =>
 export const reservationReference = (): string =>
   `RES-${randomInt(10_000_000, 99_999_999)}`;
 export const checkinCode = (): string =>
-  randomInt(100_000, 1_000_000).toString();
+  randomInt(1_000, 10_000).toString();
 export const financialReference = (prefix: string): string =>
   `${prefix}-${Date.now().toString(36).toUpperCase()}-${randomUUID().slice(0, 8).toUpperCase()}`;
 

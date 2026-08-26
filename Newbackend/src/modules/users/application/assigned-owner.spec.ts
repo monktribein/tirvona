@@ -26,9 +26,6 @@ const build = (ashram: unknown = APPROVED) => {
     users as never,
     ashrams as never,
     audits as never,
-    { findOne: jest.fn() } as never,
-    { find: jest.fn() } as never,
-    { findOneAndUpdate: jest.fn() } as never,
   );
   return { service, users, ashrams, audits, created };
 };
@@ -87,6 +84,16 @@ describe("creating an assigned Ashram Owner", () => {
     expect(created[0].employerAshramId).toBeNull();
     expect(created[0].scopedAshramIds).toEqual([]);
   });
+
+  it.each(["manager", "reception", "housekeeping"])(
+    "scopes the %s role to its assigned ashram",
+    async (role) => {
+      const { service, created } = build();
+      await service.createAccount(actor, dto({ role }));
+      expect(created[0].employerAshramId).toBe("ashram-a");
+      expect(created[0].scopedAshramIds).toEqual(["ashram-a"]);
+    },
+  );
 
   it("ignores caller-supplied privilege fields", async () => {
     const { service, created } = build();

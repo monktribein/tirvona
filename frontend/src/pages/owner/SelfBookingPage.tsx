@@ -12,6 +12,7 @@ import { bookingService, selfBookingService } from "../../services";
 import { openRazorpayCheckout } from "../../lib/razorpay";
 import { getErrorMessage } from "../../lib/api";
 import { useNotifications } from "../../contexts/NotificationContext";
+import { EnterprisePageHeader } from "../../admin/shared/components/EnterprisePageHeader";
 
 const BOOKING_TYPES = [
   {
@@ -267,8 +268,13 @@ export const SelfBookingPage: React.FC = () => {
 
   if (confirmation)
     return (
-      <div className="p-4 sm:p-6 max-w-3xl mx-auto space-y-5">
-        <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-6 space-y-5 text-center">
+      <div className="p-4 sm:p-6 space-y-5">
+        <EnterprisePageHeader
+          title="Booking Confirmed"
+          subtitle="The stay is confirmed and ready for guest check-in."
+          icon={<CheckCircle2 size={22} />}
+        />
+        <div className="max-w-3xl mx-auto bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-6 space-y-5 text-center">
           <CheckCircle2 size={44} className="mx-auto text-emerald-500" />
           <div>
             <h2 className="font-black text-xl text-[#0B192C] dark:text-white">
@@ -343,21 +349,15 @@ export const SelfBookingPage: React.FC = () => {
     );
 
   return (
-    <div className="p-4 sm:p-6 max-w-5xl mx-auto space-y-5">
-      <div>
-        <h1 className="font-black text-xl text-[#0B192C] dark:text-white flex items-center gap-2">
-          <BedDouble size={22} className="text-[#0A4DA6]" /> Self &amp; Online Booking
-        </h1>
-        <p className="text-xs text-gray-400 mt-1">
-          Book a guest at the counter — collect payment directly (Self) or take it
-          online through Razorpay (Online). Both stay clearly separated in every
-          report.
-        </p>
-      </div>
-
+    <div className="p-4 sm:p-6 space-y-5">
+      <EnterprisePageHeader
+        title="Self & Online Booking"
+        subtitle="Book a guest at the counter or take payment online through Razorpay."
+        icon={<BedDouble size={22} />}
+      />
       <form
         onSubmit={submit}
-        className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 sm:p-6 space-y-5"
+        className="max-w-5xl w-full mx-auto bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 sm:p-6 space-y-5"
       >
         <section className="space-y-3">
           <p className="text-xs font-extrabold text-[#0B192C] dark:text-white">

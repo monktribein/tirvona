@@ -401,6 +401,9 @@ const AppContent: React.FC = () => {
             <Route path="/featured-banner/:bannerSlug" element={<BannerDetailPage />} />
             <Route path="/search" element={<SearchPage />} />
             {/* canonical, id-free */}
+            {/* city listing: /ashrams/haridwar */}
+            <Route path="/ashrams" element={<SearchPage />} />
+            <Route path="/ashrams/:city" element={<SearchPage />} />
             <Route path="/ashrams/:city/:ashramSlug" element={<AshramDetailPage />} />
             <Route path="/ashrams/:city/:ashramSlug/book" element={<AshramDetailPage />} />
             {/* legacy: nginx 301s these in production; kept so dev and any
@@ -654,6 +657,9 @@ const AppContent: React.FC = () => {
             <Route path="/owner/calendar" element={<InventoryCalendarPage />} />
             <Route path="/ashram-admin/calendar" element={<InventoryCalendarPage />} />
             <Route path="/ashram-owner/calendar" element={<InventoryCalendarPage />} />
+            <Route path="/owner/check-in-out" element={<ReceptionCheckinPage />} />
+            <Route path="/ashram-admin/check-in-out" element={<ReceptionCheckinPage />} />
+            <Route path="/ashram-owner/check-in-out" element={<ReceptionCheckinPage />} />
             <Route path="/owner/volunteer" element={<OwnerVolunteerPage />} />
             <Route path="/ashram-admin/volunteer" element={<OwnerVolunteerPage />} />
             <Route path="/ashram-owner/volunteer" element={<OwnerVolunteerPage />} />
@@ -975,6 +981,10 @@ const AppContent: React.FC = () => {
             <Route
               path="/admin/manage/aarti_streams/:subKey?"
               element={<OwnerLivePoojaPage />}
+            />
+            <Route
+              path="/admin/bookings/front-desk"
+              element={<ReceptionCheckinPage />}
             />
             <Route path="/admin/manage/users/pilgrims" element={<Navigate to="/admin/users" replace />} />
             <Route path="/admin/manage/users/owners" element={<Navigate to="/admin/users" replace />} />

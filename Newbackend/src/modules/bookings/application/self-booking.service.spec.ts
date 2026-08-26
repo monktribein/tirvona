@@ -65,7 +65,12 @@ const build = (opts: { ownedAshrams?: string[] } = {}) => {
     transactions as never,
     pricing as never,
     qr as never,
-    { ...collect("bookings"), findById: jest.fn() } as never,
+    {
+      ...collect("bookings"),
+      findById: jest.fn(),
+      // the service re-rolls the check-in code until it finds a free one
+      exists: jest.fn().mockResolvedValue(null),
+    } as never,
     collect("history") as never,
     { ...collect("payments"), findOne: jest.fn(() => leanOf(null)) } as never,
     { ...collect("receipts"), findOne: jest.fn(() => leanOf(null)) } as never,
