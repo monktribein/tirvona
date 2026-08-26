@@ -306,18 +306,14 @@ export const DashboardLayout: React.FC = () => {
       icon: <Calendar size={15} />,
       links: [
         { label: "All Bookings", path: "/admin/manage/bookings/all" },
+        { label: "Check-in / Check-out Desk", path: "/admin/bookings/front-desk" },
         { label: "Pending Bookings", path: "/admin/manage/bookings/pending" },
         {
           label: "Confirmed Bookings",
           path: "/admin/manage/bookings/confirmed",
         },
-        { label: "Checked-in Stays", path: "/admin/manage/bookings/checked_in" },
-        { label: "Checked-out Stays", path: "/admin/manage/bookings/checked_out" },
-        { label: "Completed Stays", path: "/admin/manage/bookings/completed" },
         { label: "Cancelled Bookings", path: "/admin/manage/bookings/cancelled" },
         { label: "Expired Bookings", path: "/admin/manage/bookings/expired" },
-        { label: "No-show Bookings", path: "/admin/manage/bookings/no_show" },
-        { label: "Refunded Bookings", path: "/admin/manage/bookings/refunded" },
       ],
     },
     {
@@ -614,6 +610,7 @@ export const DashboardLayout: React.FC = () => {
       icon: <Calendar size={15} />,
       links: [
         { label: "All Bookings", path: `${ownerBase}/bookings` },
+        { label: "Check-in & Check-out", path: `${ownerBase}/check-in-out` },
         { label: "Self & Online Booking", path: `${ownerBase}/self-booking` },
         { label: "Payments", path: `${ownerBase}/payments` },
         { label: "Payout Management", path: `${ownerBase}/payouts` },

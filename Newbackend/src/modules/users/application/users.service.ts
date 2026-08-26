@@ -23,7 +23,6 @@ import {
   isUnrestricted,
   resolveAshramScope,
 } from "../../../common/auth/ashram-scope";
-import { PARKING_MODEL } from "../../parking/domain/parking.constants";
 const escapeRegex = (value: string): string =>
   value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 @Injectable()
@@ -32,11 +31,6 @@ export class UsersService {
     @InjectModel("User") private readonly users: Model<any>,
     @InjectModel("Ashram") private readonly ashrams: Model<any>,
     @InjectModel("AuditLog") private readonly audits: Model<any>,
-    @InjectModel(PARKING_MODEL.Partner)
-    private readonly parkingPartners: Model<any>,
-    @InjectModel(PARKING_MODEL.Location)
-    private readonly parkingLocations: Model<any>,
-    @InjectModel(PARKING_MODEL.Staff) private readonly parkingStaff: Model<any>,
   ) {}
   private audit(
     actor: AuthenticatedUser,
@@ -130,67 +124,12 @@ export class UsersService {
       employerAshramId: dto.ashramId,
       scopedAshramIds: [dto.ashramId],
     });
-    const parkingGrant = await this.grantParkingRole(actor, dto, user._id);
     await this.audit(actor, "STAFF_CREATE", {
       staffId: user._id,
       role: dto.role,
       ashramId: dto.ashramId,
-      parkingRole: dto.parkingRole ?? null,
-      parkingLocationIds: parkingGrant?.locationIds ?? [],
     });
     return user;
-  }
-
-  private async grantParkingRole(
-    actor: AuthenticatedUser,
-    dto: CreateStaffDto,
-    staffId: unknown,
-  ): Promise<any> {
-    if (!dto.parkingRole) return null;
-
-    const partner = await this.parkingPartners
-      .findOne({ userId: actor.id })
-      .select("_id")
-      .lean();
-    if (!partner)
-      throw new BadRequestException(
-        "Activate parking management before assigning parking roles",
-      );
-
-    const ashramLocations = await this.parkingLocations
-      .find({ ashramId: dto.ashramId })
-      .select("_id")
-      .lean();
-    const allowed = (ashramLocations as any[]).map((row) => String(row._id));
-
-    const requested = (dto.parkingLocationIds ?? []).map(String);
-    const outside = requested.filter((id) => !allowed.includes(id));
-    if (outside.length)
-      throw new ForbiddenException(
-        "You cannot assign parking roles for another ashram's facility",
-      );
-
-    return this.parkingStaff.findOneAndUpdate(
-      {
-        userId: staffId,
-        partnerId: (partner as any)._id,
-        parkingRole: dto.parkingRole,
-      },
-      {
-        $set: {
-          status: "active",
-          locationIds: requested.length ? requested : allowed,
-          assignedBy: actor.id,
-          phone: dto.phone,
-        },
-        $setOnInsert: {
-          userId: staffId,
-          partnerId: (partner as any)._id,
-          parkingRole: dto.parkingRole,
-        },
-      },
-      { upsert: true, new: true },
-    );
   }
   async removeStaff(actor: AuthenticatedUser, id: string): Promise<void> {
     const user = await this.users.findById(id);
@@ -285,10 +224,16 @@ export class UsersService {
   private async resolveAssignedAshram(
     dto: Pick<CreateAccountDto, "role" | "assignedAshramId">,
   ): Promise<{ _id: any; name: string } | null> {
-    if (dto.role !== ASHRAM_OWNER_ROLE) return null;
+    const ashramScopedRoles = [
+      ASHRAM_OWNER_ROLE,
+      "manager",
+      "reception",
+      "housekeeping",
+    ];
+    if (!ashramScopedRoles.includes(dto.role)) return null;
     if (!dto.assignedAshramId)
       throw new BadRequestException(
-        "An assigned ashram is required for an Ashram Owner account",
+        "An assigned ashram is required for this ashram role",
       );
     const ashram = await this.ashrams
       .findOne({

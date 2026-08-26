@@ -11,6 +11,7 @@ import {
   IsString,
   Max,
   MaxLength,
+  Matches,
   Min,
   MinLength,
   ValidateNested,
@@ -53,7 +54,11 @@ export class BookingDashboardQueryDto {
 }
 
 export class CheckinDto {
-  @IsString() @MinLength(6) checkInCode: string;
+  @IsString()
+  @Matches(/^(\d{4}|\d{6})$/, {
+    message: "Check-in code must be 4 digits (or a legacy 6-digit code)",
+  })
+  checkInCode: string;
   @IsOptional() @IsString() roomNumber?: string;
   @IsOptional() @IsString() notes?: string;
 }

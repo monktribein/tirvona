@@ -129,6 +129,10 @@ export const BookingSchema = new Schema(
       index: true,
     },
     checkInCode: { type: String, required: true },
+    checkedInAt: Date,
+    checkedInBy: id("User"),
+    checkedOutAt: Date,
+    checkedOutBy: id("User"),
     cancellation: {
       reason: String,
       date: Date,

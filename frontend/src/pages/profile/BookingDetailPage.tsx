@@ -39,6 +39,8 @@ interface BookingDetailsData {
   roomsBookedCount: number;
   assignedRoomNumber?: string;
   checkInCode?: string;
+  checkedInAt?: string;
+  checkedOutAt?: string;
   specialRequests?: string;
   ashramId?: {
     _id: string;
@@ -501,14 +503,18 @@ export const BookingDetailPage: React.FC = () => {
       case "checked_in":
         return {
           title: "Guest Checked In",
-          detail: "The stay is currently in progress.",
+          detail: booking.checkedInAt
+            ? `Checked in on ${formatDateTimeIN(booking.checkedInAt)}.`
+            : "The stay is currently in progress.",
           dot: "bg-blue-500",
         };
       case "checked_out":
       case "completed":
         return {
           title: effectiveStatus === "completed" ? "Stay Completed" : "Guest Checked Out",
-          detail: "The guest has completed the stay.",
+          detail: booking.checkedOutAt
+            ? `Checked out on ${formatDateTimeIN(booking.checkedOutAt)}.`
+            : "The guest has completed the stay.",
           dot: "bg-blue-500",
         };
       default:

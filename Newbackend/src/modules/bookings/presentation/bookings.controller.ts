@@ -219,6 +219,7 @@ export class BookingsController {
     "stay_admin",
     "manager",
     "reception",
+    "super_admin",
   )
   @Throttle({ default: { limit: 100, ttl: 900_000 } })
   @HttpCode(200)
@@ -241,6 +242,7 @@ export class BookingsController {
     "stay_admin",
     "manager",
     "reception",
+    "super_admin",
   )
   @HttpCode(200)
   async checkout(

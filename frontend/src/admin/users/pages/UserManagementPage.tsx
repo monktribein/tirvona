@@ -76,6 +76,12 @@ interface AssignableAshram {
 }
 
 const ASSIGNED_OWNER_ROLE = "ashram_owner";
+const ASHRAM_SCOPED_ROLES = new Set([
+  ASSIGNED_OWNER_ROLE,
+  "manager",
+  "reception",
+  "housekeeping",
+]);
 
 const ALL_ROLES = [
   { id: "super_admin", label: "Super Admin" },
@@ -86,8 +92,8 @@ const ALL_ROLES = [
   { id: "ashram_admin", label: "Ashram Admin (All Ashrams)" },
   { id: "ashram_owner", label: "Ashram Owner (Assigned Ashrams Only)" },
   { id: "manager", label: "Ashram Manager" },
-  { id: "reception", label: "Receptionist" },
-  { id: "housekeeping", label: "Housekeeping" },
+  { id: "reception", label: "Ashram Reception" },
+  { id: "housekeeping", label: "Ashram Housekeeping" },
   { id: "offer_manager", label: "Offer Manager" },
   { id: "blog_manager", label: "Blog Manager" },
   { id: "local_manager", label: "Local Hub Manager" },
@@ -197,7 +203,7 @@ export const UserManagementPage: React.FC = () => {
     fetchUsers();
   }, []);
 
-  const needsAssignedAshram = newAccountData.role === ASSIGNED_OWNER_ROLE;
+  const needsAssignedAshram = ASHRAM_SCOPED_ROLES.has(newAccountData.role);
 
   useEffect(() => {
     if (!isCreateOpen || !needsAssignedAshram) return;
@@ -260,12 +266,12 @@ export const UserManagementPage: React.FC = () => {
       return;
     }
     if (
-      newAccountData.role === ASSIGNED_OWNER_ROLE &&
+      needsAssignedAshram &&
       !newAccountData.assignedAshramId
     ) {
       addNotification(
         "Ashram Required",
-        "Select the ashram this owner will be assigned to.",
+        "Select the ashram this account will be assigned to.",
         "error",
       );
       return;
@@ -1001,7 +1007,7 @@ export const UserManagementPage: React.FC = () => {
               {needsAssignedAshram && (
                 <div className="space-y-1 md:col-span-2">
                   <p className="font-bold text-gray-700 dark:text-gray-300">Assign Ashram *</p>
-                  <p className="text-[11px] font-normal text-gray-500">This owner will be permanently scoped to the ashram you select and will only ever see its data.</p>
+                  <p className="text-[11px] font-normal text-gray-500">This account will be scoped to the selected ashram and will only access that ashram's data.</p>
                   <div className="relative">
                     <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                     <input
@@ -1037,7 +1043,7 @@ export const UserManagementPage: React.FC = () => {
                       })
                     )}
                   </div>
-                  {!newAccountData.assignedAshramId && <p className="text-[11px] font-normal text-red-500">Select the ashram this owner will manage before creating the account.</p>}
+                  {!newAccountData.assignedAshramId && <p className="text-[11px] font-normal text-red-500">Select the ashram this account will access before creating it.</p>}
                 </div>
               )}
             </div>

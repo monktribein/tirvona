@@ -16,8 +16,14 @@ import {
   ValidateIf,
 } from "class-validator";
 import { ASHRAM_OWNER_ROLE } from "../../../common/auth/ashram-access";
-import { PARKING_ROLES } from "../../parking/domain/parking.constants";
 import { USER_ROLES } from "../infrastructure/persistence/user.schema";
+
+const ASHRAM_SCOPED_ACCOUNT_ROLES = [
+  ASHRAM_OWNER_ROLE,
+  "manager",
+  "reception",
+  "housekeeping",
+];
 export class UserQueryDto {
   @IsOptional() @IsString() role?: string;
   @IsOptional() @IsString() status?: string;
@@ -32,11 +38,6 @@ export class CreateStaffDto {
   @IsString() @MinLength(6) password: string;
   @IsIn(["manager", "reception", "housekeeping"]) role: string;
   @IsMongoId() ashramId: string;
-  @IsOptional() @IsIn(PARKING_ROLES) parkingRole?: string;
-  @IsOptional()
-  @IsArray()
-  @IsMongoId({ each: true })
-  parkingLocationIds?: string[];
 }
 export class CreateAccountDto {
   @IsString() @MinLength(2) name: string;
@@ -47,8 +48,10 @@ export class CreateAccountDto {
   @IsIn(["Male", "Female", "Other"]) gender: string;
   @IsOptional() @IsString() aadhaarCardUrl?: string;
   @IsOptional() @IsString() panCardUrl?: string;
-  @ValidateIf((dto: CreateAccountDto) => dto.role === ASHRAM_OWNER_ROLE)
-  @IsMongoId({ message: "Select the ashram this owner will be assigned to" })
+  @ValidateIf((dto: CreateAccountDto) =>
+    ASHRAM_SCOPED_ACCOUNT_ROLES.includes(dto.role),
+  )
+  @IsMongoId({ message: "Select the ashram this account will be assigned to" })
   assignedAshramId?: string;
 }
 export class UserStatusDto {
