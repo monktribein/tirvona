@@ -572,7 +572,7 @@ export const VolunteerJobDetailPage: React.FC = () => {
               </div>
 
               <Link
-                to={ashramUrl(job.ashramId)}
+                to={ashramUrl({ _id: job.ashramId })}
                 className="inline-block w-full py-2.5 text-center bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-[#0A4DA6] text-xs font-black rounded-full hover:bg-gray-100 dark:hover:bg-slate-850 transition-colors"
               >
                 View Ashram Profile →
