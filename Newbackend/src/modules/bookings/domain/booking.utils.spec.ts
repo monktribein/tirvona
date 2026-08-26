@@ -34,8 +34,8 @@ describe("booking domain utilities", () => {
     );
   });
 
-  it("creates a six digit check-in code", () =>
-    expect(checkinCode()).toMatch(/^\d{6}$/));
+  it("creates a four digit check-in code", () =>
+    expect(checkinCode()).toMatch(/^\d{4}$/));
 });
 
 describe("resolveBookingAddon", () => {

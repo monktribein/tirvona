@@ -148,6 +148,21 @@ export class BookingsService {
       );
   }
 
+  private async issueActiveCheckinCode(): Promise<string> {
+    for (let attempt = 0; attempt < 50; attempt += 1) {
+      const code = checkinCode();
+      const collision = await this.bookings.exists({
+        checkInCode: code,
+        status: { $in: ["pending", "confirmed"] },
+        deletedAt: null,
+      });
+      if (!collision) return code;
+    }
+    throw new ServiceUnavailableException(
+      "Could not issue a check-in code. Please retry the booking.",
+    );
+  }
+
   async quote(dto: CreateBookingDto): Promise<any> {
     const quote = await this.pricing.quote(dto);
     return {
@@ -168,7 +183,7 @@ export class BookingsService {
 
   async create(user: AuthenticatedUser, dto: CreateBookingDto): Promise<any> {
     const quote = await this.pricing.quote(dto);
-    const code = checkinCode();
+    const code = await this.issueActiveCheckinCode();
     const booking = await this.transactions.run(async (session) => {
       await this.repository.holdInventory({
         ashramId: dto.ashramId,
@@ -1034,10 +1049,13 @@ export class BookingsService {
       throw new BadRequestException(
         "Only confirmed bookings can be checked in",
       );
-    if (row.checkInCode !== dto.checkInCode)
+    if (row.checkInCode !== dto.checkInCode.trim())
       throw new BadRequestException("Invalid check-in code");
     return this.transactions.run(async (session) => {
+      const checkedInAt = new Date();
       row.status = "checked_in";
+      row.checkedInAt = checkedInAt;
+      row.checkedInBy = user.id;
       if (dto.roomNumber) row.assignedRoomNumber = dto.roomNumber;
       await row.save({ session });
       await this.checkins.create(
@@ -1046,7 +1064,7 @@ export class BookingsService {
             bookingId: row._id,
             ashramId: row.ashramId,
             verifiedBy: user.id,
-            checkedInAt: new Date(),
+            checkedInAt,
             guestCount: row.guestsCount,
             roomNumber: row.assignedRoomNumber,
             notes: dto.notes,
@@ -1106,7 +1124,10 @@ export class BookingsService {
         },
         { session },
       );
+      const checkedOutAt = new Date();
       row.status = "checked_out";
+      row.checkedOutAt = checkedOutAt;
+      row.checkedOutBy = user.id;
       await row.save({ session });
       await this.checkouts.create(
         [
@@ -1114,6 +1135,7 @@ export class BookingsService {
             bookingId: row._id,
             ashramId: row.ashramId,
             checkedOutBy: user.id,
+            checkedOutAt,
             damages: dto.damages ?? [],
             additionalCharges: dto.additionalCharges,
             notes: dto.notes,

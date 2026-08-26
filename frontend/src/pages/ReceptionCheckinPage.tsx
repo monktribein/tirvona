@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Key, RefreshCw, X } from "lucide-react";
+import { Key, RefreshCw, Search, X } from "lucide-react";
 import { useNotifications } from "../contexts/NotificationContext";
 import { bookingService } from "../services";
 import { getErrorMessage } from "../lib/api";
@@ -8,6 +8,7 @@ export const ReceptionCheckinPage: React.FC = () => {
   const { addNotification, promptAction } = useNotifications();
   const [activeBookings, setActiveBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
 
   const [checkInCode, setCheckInCode] = useState("");
   const [verifyingId, setVerifyingId] = useState<string | null>(null);
@@ -20,10 +21,23 @@ export const ReceptionCheckinPage: React.FC = () => {
   const fetchActiveBookings = async () => {
     setLoading(true);
     try {
-      const res = await bookingService.dashboard();
-      if (res.data.success) {
-        setActiveBookings(res.data.data);
-      }
+      const rows: any[] = [];
+      let page = 1;
+      let batch: any[] = [];
+      do {
+        const res = await bookingService.dashboard({
+          page: String(page),
+          limit: "100",
+        });
+        batch = res.data.success ? res.data.data || [] : [];
+        rows.push(...batch);
+        page += 1;
+      } while (batch.length === 100);
+      setActiveBookings(
+        rows.filter((booking) =>
+          ["confirmed", "checked_in"].includes(booking.status),
+        ),
+      );
     } catch (err) {
       console.error("Fetch active bookings error:", err);
       addNotification(
@@ -37,10 +51,23 @@ export const ReceptionCheckinPage: React.FC = () => {
     }
   };
 
+  const visibleBookings = activeBookings.filter((booking) => {
+    const term = search.trim().toLowerCase();
+    if (!term) return true;
+    return [
+      booking.bookingId,
+      booking.reservationNumber,
+      booking.customerId?.name,
+      booking.customerId?.phone,
+      booking.ashramId?.name,
+      booking.roomId?.name,
+    ].some((value) => String(value || "").toLowerCase().includes(term));
+  });
+
   const handleCheckInSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
-    if (!verifyingId || !checkInCode) return;
+    if (!verifyingId || !/^(\d{4}|\d{6})$/.test(checkInCode)) return;
 
     try {
       const res = await bookingService.checkin(verifyingId, checkInCode);
@@ -134,6 +161,16 @@ export const ReceptionCheckinPage: React.FC = () => {
         <div className="h-40 bg-gray-50 border border-gray-100 rounded-[24px] animate-pulse" />
       ) : (
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] shadow-sm overflow-hidden">
+          <label className="relative m-4 block max-w-xl">
+            <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search booking, guest, phone, ashram or room"
+              className="w-full rounded-xl border border-gray-100 bg-gray-50 py-2.5 pl-9 pr-3 text-xs focus:outline-none dark:border-slate-800 dark:bg-slate-900"
+            />
+          </label>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
@@ -146,7 +183,7 @@ export const ReceptionCheckinPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {activeBookings.map((bk) => (
+                {visibleBookings.map((bk) => (
                   <tr
                     key={bk._id}
                     className="border-b border-gray-50 dark:border-slate-850 hover:bg-gray-50/20"
@@ -223,6 +260,13 @@ export const ReceptionCheckinPage: React.FC = () => {
                     </td>
                   </tr>
                 ))}
+                {visibleBookings.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-12 text-center text-xs text-gray-400">
+                      No confirmed or checked-in bookings found.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -250,8 +294,7 @@ export const ReceptionCheckinPage: React.FC = () => {
             </div>
 
             <p className="text-[10px] text-gray-400">
-              Ask the guest customer to provide the 6-digit confirmation
-              Check-in code sent to their registered phone number.
+              Ask the guest to provide their 4-digit confirmation check-in code.
             </p>
 
             {errorMsg && (
@@ -266,11 +309,15 @@ export const ReceptionCheckinPage: React.FC = () => {
               </label>
               <input
                 type="text"
+                inputMode="numeric"
+                pattern="([0-9]{4}|[0-9]{6})"
                 required
                 maxLength={6}
-                placeholder="482012"
+                placeholder="4820"
                 value={checkInCode}
-                onChange={(e) => setCheckInCode(e.target.value)}
+                onChange={(e) =>
+                  setCheckInCode(e.target.value.replace(/\D/g, "").slice(0, 6))
+                }
                 className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-sm text-center tracking-widest font-extrabold focus:outline-none"
               />
             </div>

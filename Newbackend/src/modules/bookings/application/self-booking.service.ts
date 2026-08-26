@@ -88,6 +88,21 @@ export class SelfBookingService {
       );
   }
 
+  private async issueActiveCheckinCode(): Promise<string> {
+    for (let attempt = 0; attempt < 50; attempt += 1) {
+      const code = checkinCode();
+      const collision = await this.bookings.exists({
+        checkInCode: code,
+        status: { $in: ["pending", "confirmed"] },
+        deletedAt: null,
+      });
+      if (!collision) return code;
+    }
+    throw new BadRequestException(
+      "Could not issue a check-in code. Please retry the booking.",
+    );
+  }
+
   private async scope(user: AuthenticatedUser): Promise<AshramScope> {
     return resolveAshramScope(user, this.ashrams);
   }
@@ -289,7 +304,7 @@ export class SelfBookingService {
         "Collected amount cannot exceed the booking total",
       );
 
-    const code = checkinCode();
+    const code = await this.issueActiveCheckinCode();
 
     return this.transactions.run(async (session) => {
       await this.repository.holdInventory({

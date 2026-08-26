@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { ashramUrl, type SluggableAshram } from "../lib/urls";
-import { useSearchParams, Link } from "react-router-dom";
+import { useCanonicalUrl } from "../lib/useCanonicalUrl";
+import { useSearchParams, useParams, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ashramService } from "../services";
 import { formatCurrency } from "../utils/format";
@@ -36,7 +37,25 @@ import {
 export const SearchPage: React.FC = () => {
   const { language, t } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
-  const rawDestination = searchParams.get("destination") || "";
+  // /ashrams/:city renders this same listing, so the city segment acts as the
+  // destination. A ?destination= query still wins on the /search route.
+  const { city: cityParam } = useParams<{ city?: string }>();
+  const cityFromPath = (cityParam || "").replace(/-/g, " ").trim();
+  const rawDestination =
+    searchParams.get("destination") || cityFromPath || "";
+
+  // A city listing is its own indexable page; /search stays out of the index
+  // because its results depend on query parameters.
+  useCanonicalUrl({
+    canonicalPath: cityParam ? `/ashrams/${cityParam.toLowerCase()}` : null,
+    title: cityParam
+      ? `Ashrams in ${cityFromPath.replace(/\b\w/g, (c) => c.toUpperCase())} · Tirvona`
+      : undefined,
+    description: cityParam
+      ? `Book verified ashram stays in ${cityFromPath}. Compare rooms, tariffs and availability on Tirvona.`
+      : undefined,
+    replaceUrl: false,
+  });
   const rawCategory =
     searchParams.get("category") || searchParams.get("service") || "";
   const rawQuery =
