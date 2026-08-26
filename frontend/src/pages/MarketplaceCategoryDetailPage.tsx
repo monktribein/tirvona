@@ -284,7 +284,7 @@ export const MarketplaceCategoryDetailPage: React.FC = () => {
             {filteredProducts.map((prod: any) => (
               <div
                 key={prod._id}
-                onClick={() => navigate(`/marketplace/product/${prod.slug || prod._id}`)}
+                onClick={() => navigate(`/marketplace/products/${prod.slug || prod._id}`)}
                 className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[32px] overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group cursor-pointer"
               >
                 <div>

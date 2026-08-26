@@ -136,7 +136,8 @@ const createFallbackProduct = (idOrSlug: string): Product => {
 };
 
 export const MarketplaceProductDetailPage: React.FC = () => {
-  const { idOrSlug } = useParams();
+  const { productSlug, idOrSlug: legacyKey } = useParams();
+  const idOrSlug = productSlug || legacyKey;
   const navigate = useNavigate();
   const { add, close } = useCart();
 

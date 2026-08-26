@@ -110,7 +110,12 @@ const isStayConfirmed = (booking: BookingDetailsData): boolean =>
   );
 
 export const BookingDetailPage: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  // Public urls carry the booking reference (TRV-…); the API accepts either.
+  const { bookingReference, id } = useParams<{
+    bookingReference?: string;
+    id?: string;
+  }>();
+  const bookingKey = bookingReference || id;
   const navigate = useNavigate();
   const { addNotification, confirmAction } = useNotifications();
 
@@ -123,11 +128,11 @@ export const BookingDetailPage: React.FC = () => {
   const [isDownloadingReceipt, setIsDownloadingReceipt] = useState<boolean>(false);
 
   const fetchBookingDetails = async () => {
-    if (!id) return;
+    if (!bookingKey) return;
     setLoading(true);
     setError("");
     try {
-      const res = await bookingService.getById(id);
+      const res = await bookingService.getById(bookingKey);
       if (res.data?.success && res.data?.data) {
         setBooking(res.data.data);
       } else {
@@ -142,7 +147,7 @@ export const BookingDetailPage: React.FC = () => {
 
   useEffect(() => {
     fetchBookingDetails();
-  }, [id]);
+  }, [bookingKey]);
 
   const handleCancelBooking = async () => {
     if (!booking || cancelling) return;

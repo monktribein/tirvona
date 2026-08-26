@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Header,
+  NotFoundException,
   Param,
   Post,
   Put,
@@ -19,6 +20,10 @@ import {
 } from "../../../common/decorators/current-user.decorator";
 import { AshramsService } from "../application/ashrams.service";
 import {
+  AshramSlugService,
+  ashramPath,
+} from "../application/ashram-slug.service";
+import {
   AshramDocumentsDto,
   AshramQueryDto,
   SaveAddOnDto,
@@ -32,7 +37,10 @@ const addOnBody = new ValidationPipe({ transform: true, whitelist: true });
 @ApiTags("Ashrams")
 @Controller("ashrams")
 export class AshramsController {
-  constructor(private readonly service: AshramsService) {}
+  constructor(
+    private readonly service: AshramsService,
+    private readonly slugs: AshramSlugService,
+  ) {}
   @Public() @Get() @Header("Cache-Control", "no-store") list(@Query() query: AshramQueryDto) {
     return this.service.publicList(query);
   }
@@ -81,6 +89,20 @@ export class AshramsController {
   ) {
     return { success: true, data: await this.service.managedDetail(user, id) };
   }
+  @Public()
+  @Get("by-slug/:city/:slug")
+  @Header("Cache-Control", "no-store")
+  async bySlug(@Param("city") city: string, @Param("slug") slug: string) {
+    const ashram = await this.slugs.findByPath(city, slug);
+    if (!ashram) throw new NotFoundException("Ashram not found");
+    const parts = await this.slugs.ensureSlug(ashram);
+    return {
+      success: true,
+      canonicalPath: parts ? ashramPath(parts) : null,
+      data: await this.service.detail(String(ashram._id)),
+    };
+  }
+
   @Public() @Get(":id") @Header("Cache-Control", "no-store") async detail(@Param("id") id: string) {
     return { success: true, data: await this.service.detail(id) };
   }

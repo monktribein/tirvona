@@ -17,7 +17,7 @@ const entityPath = (type: string, entity: any, banner: any) => {
   const id = entity?._id || banner.linkedEntityId;
   const slug = entity?.slug || banner.linkedEntitySlug || id;
   if (type === "ashram") return `/ashram/${id}`;
-  if (type === "marketplace") return `/marketplace/product/${slug}`;
+  if (type === "marketplace") return `/marketplace/products/${slug}`;
   if (type === "offer") return `/offers/${id}`;
   if (type === "event") return `/events/${slug}`;
   if (type === "destination") return `/search?destination=${encodeURIComponent(entity?.city || entity?.name || banner.linkedEntityName || "")}`;
@@ -25,7 +25,8 @@ const entityPath = (type: string, entity: any, banner: any) => {
 };
 
 const BannerDetailPage: React.FC = () => {
-  const { bannerId } = useParams();
+  const { bannerSlug, bannerId: legacyBannerId } = useParams();
+  const bannerId = bannerSlug || legacyBannerId;
   const navigate = useNavigate();
   const [banner, setBanner] = useState<any>(null);
   const [entity, setEntity] = useState<any>(null);

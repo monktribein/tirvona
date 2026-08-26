@@ -9,10 +9,15 @@ import {
   BookingInventorySchema,
   BookingPricingSchema,
   HousekeepingUnitSchema,
+  OfflineInventoryTransferSchema,
+  OfflineRoomSchema,
   RoomSchema,
 } from "./infrastructure/persistence/ashram.schemas";
 import { BookingSchema } from "../bookings/infrastructure/persistence/booking.schemas";
 import { ParkingModule } from "../parking/parking.module";
+import { AshramSlugService } from "./application/ashram-slug.service";
+import { OfflineInventoryService } from "./application/offline-inventory.service";
+import { OfflineInventoryController } from "./presentation/offline-inventory.controller";
 
 @Module({
   imports: [
@@ -25,10 +30,24 @@ import { ParkingModule } from "../parking/parking.module";
       { name: "BookingPricing", schema: BookingPricingSchema },
       { name: "BookingAddon", schema: BookingAddonSchema },
       { name: "HousekeepingUnit", schema: HousekeepingUnitSchema },
+      { name: "OfflineRoom", schema: OfflineRoomSchema },
+      {
+        name: "OfflineInventoryTransfer",
+        schema: OfflineInventoryTransferSchema,
+      },
     ]),
   ],
-  controllers: [AshramsController, RoomsController],
-  providers: [AshramsService],
-  exports: [MongooseModule, AshramsService],
+  controllers: [
+    AshramsController,
+    RoomsController,
+    OfflineInventoryController,
+  ],
+  providers: [AshramsService, AshramSlugService, OfflineInventoryService],
+  exports: [
+    MongooseModule,
+    AshramsService,
+    AshramSlugService,
+    OfflineInventoryService,
+  ],
 })
 export class AshramsModule {}

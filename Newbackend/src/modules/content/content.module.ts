@@ -25,5 +25,6 @@ import {
     ContentService,
     { provide: CONTENT_REPOSITORY, useClass: MongooseContentRepository },
   ],
+  exports: [MongooseModule],
 })
 export class ContentModule {}

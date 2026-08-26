@@ -25,7 +25,8 @@ import {
 import EventStatusBadge from "../components/EventStatusBadge";
 
 export const EventPassPage: React.FC = () => {
-  const { id = "" } = useParams();
+  const { passCode, id: legacyId } = useParams();
+  const id = passCode || legacyId || "";
   const navigate = useNavigate();
   const { promptAction } = useNotifications();
 

@@ -273,7 +273,7 @@ export const ProfileBookingsPage: React.FC = () => {
                       b.detailHref ||
                       (b.kind === "parking"
                         ? `/parking/booking/${b.id}`
-                        : `/booking/${b.id}`)
+                        : `/booking/${b.reference || b.id}`)
                     }
                     className="shrink-0 hover:opacity-90 transition-opacity"
                   >
@@ -316,7 +316,7 @@ export const ProfileBookingsPage: React.FC = () => {
                         b.detailHref ||
                         (b.kind === "parking"
                           ? `/parking/booking/${b.id}`
-                          : `/booking/${b.id}`)
+                          : `/booking/${b.reference || b.id}`)
                       }
                       className="hover:text-[#0A4DA6] transition-colors block"
                     >
@@ -396,7 +396,7 @@ export const ProfileBookingsPage: React.FC = () => {
                   <div className="flex items-center gap-2 flex-wrap justify-end">
                     {b.kind === "stay" && (
                       <>
-                        <Link to={`/booking/${b.id}`}>
+                        <Link to={`/booking/${b.reference || b.id}`}>
                           <EnterpriseButton
                             variant="primary"
                             size="sm"

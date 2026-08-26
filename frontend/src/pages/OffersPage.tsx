@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { ashramUrl } from "../lib/urls";
 import api from "../lib/api";
 import { useNavigate, useParams } from "react-router-dom";
 import {
@@ -64,18 +65,19 @@ export const OffersPage: React.FC = () => {
   };
 
   const handleBookWithOffer = (offer: any) => {
-    const ashramId = String(
-      offer.ashramId?._id ??
-        offer.ashramId ??
-        offer.applicableAshrams?.[0]?._id ??
-        offer.applicableAshrams?.[0] ??
-        "",
-    );
+    // Prefer the populated ashram so the link can carry its slug; fall back to
+    // a bare id, which the server 301s to the canonical url.
+    const target =
+      (typeof offer.ashramId === "object" ? offer.ashramId : null) ??
+      (typeof offer.applicableAshrams?.[0] === "object"
+        ? offer.applicableAshrams[0]
+        : null) ??
+      (offer.ashramId || offer.applicableAshrams?.[0]
+        ? { _id: String(offer.ashramId ?? offer.applicableAshrams?.[0]) }
+        : null);
     const promo = encodeURIComponent(offer.promoCode || "");
     navigate(
-      ashramId
-        ? `/ashram/${ashramId}?promoCode=${promo}`
-        : `/search?promoCode=${promo}`,
+      target ? ashramUrl(target, `?promoCode=${promo}`) : `/search?promoCode=${promo}`,
     );
   };
 
