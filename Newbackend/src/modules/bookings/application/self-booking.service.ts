@@ -84,7 +84,7 @@ export class SelfBookingService {
   private assertRole(user: AuthenticatedUser): void {
     if (!SELF_BOOKING_ROLES.includes(user.role))
       throw new ForbiddenException(
-        "You are not allowed to record walk-in bookings.",
+        "You are not allowed to record counter bookings.",
       );
   }
 
@@ -422,7 +422,7 @@ export class SelfBookingService {
               bookingId: booking._id,
               fromStatus: "pending",
               toStatus: "confirmed",
-              note: `Walk-in booking recorded (${dto.paymentMethod})`,
+              note: `Self booking recorded (${dto.paymentMethod})`,
               actorId: user.id,
               actorRole: user.role,
             },

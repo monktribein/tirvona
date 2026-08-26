@@ -787,9 +787,15 @@ export class BookingsService {
       .sort({ createdAt: -1 })
       .lean();
   }
-  async get(id: string, user: AuthenticatedUser): Promise<any> {
+  async get(idOrReference: string, user: AuthenticatedUser): Promise<any> {
+    // Public URLs carry the human booking reference (TRV-…), never the id.
+    const isObjectId = /^[0-9a-f]{24}$/i.test(String(idOrReference ?? ""));
     const row = await this.bookings
-      .findById(id)
+      .findOne(
+        isObjectId
+          ? { _id: idOrReference }
+          : { bookingId: String(idOrReference).toUpperCase() },
+      )
       .populate("ashramId", "name address rules images")
       .populate("roomId", "name acType type")
       .populate("customerId", "name email phone")

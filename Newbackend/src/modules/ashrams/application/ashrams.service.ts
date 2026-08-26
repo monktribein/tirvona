@@ -10,6 +10,8 @@ import { InjectModel } from "@nestjs/mongoose";
 import type { Model } from "mongoose";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import { canManageAllAshrams } from "../../../common/auth/ashram-access";
+import { citySlug } from "../../../common/slug/slug.util";
+import { AshramSlugService } from "./ashram-slug.service";
 import {
   assignedAshramIds,
   isUnrestricted,
@@ -48,12 +50,6 @@ const assertNoInlineMedia = (dto: {
     );
 };
 
-const slugify = (value: string): string =>
-  value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "") || "ashram";
 
 const normalizeAshramAddress = (
   address: Record<string, any> = {},
@@ -107,6 +103,7 @@ export class AshramsService {
     @InjectModel("BookingAddon") readonly addons: Model<any>,
     @InjectModel(PARKING_MODEL.Partner) readonly parkingPartners: Model<any>,
     @InjectModel(PARKING_MODEL.Staff) readonly parkingStaff: Model<any>,
+    private readonly slugs: AshramSlugService,
   ) { }
 
   private async parkingEligibleAshrams(
@@ -729,6 +726,7 @@ export class AshramsService {
         );
     }
     const suffix = randomUUID().replace(/-/g, "").slice(0, 8).toUpperCase();
+    const city = citySlug(payload.address?.city ?? "") || "india";
     const ashram = await this.ashrams.create({
       ...payload,
       description:
@@ -737,7 +735,8 @@ export class AshramsService {
       ownerId: user.id,
       createdBy: user.id,
       ashramCode: `ASH-${suffix}`,
-      slug: `${slugify(payload.name)}-${suffix.toLowerCase()}`,
+      citySlug: city,
+      slug: await this.slugs.allocate(payload.name, city),
       status: "pending_docs",
     });
     const validTypes = ["dormitory", "private_room", "family_room", "hall"];
@@ -775,6 +774,7 @@ export class AshramsService {
     const ashram = await this.ashrams.findById(id);
     if (!ashram) throw new NotFoundException("Ashram not found");
     this.assertScope(user, ashram);
+    const slugBefore = { name: ashram.name, city: ashram.address?.city };
     for (const [field, raw] of [
       ["trust.trustRegNo", dto.trust?.trustRegNo],
       ["trust.panNo", dto.trust?.panNo],
@@ -803,6 +803,11 @@ export class AshramsService {
     }
     Object.assign(ashram, payload, { updatedBy: user.id });
     await ashram.save();
+    if (
+      ashram.name !== slugBefore.name ||
+      ashram.address?.city !== slugBefore.city
+    )
+      await this.slugs.syncSlug(ashram);
     return ashram;
   }
 
@@ -1059,16 +1064,23 @@ export class AshramsService {
       const booked = Number(row?.bookedCount ?? 0);
       const held = Number(row?.heldCount ?? 0);
       const maintenance = Number(row?.maintenanceCount ?? 0);
+      const transferredFromOffline = Number(
+        row?.transferredFromOfflineCount ?? 0,
+      );
+      // The booking engine reserves against the daily row's totalInventory, so
+      // the calendar must read the same field or it under-reports capacity that
+      // the owner moved across from their offline pool.
+      const capacity = Number(row?.totalInventory ?? room.totalInventory ?? 0);
       calendar.push({
         date: key,
         price,
         booked,
         held,
         maintenance,
-        available: Math.max(
-          0,
-          room.totalInventory - booked - held - maintenance,
-        ),
+        capacity,
+        baseInventory: Number(room.totalInventory ?? 0),
+        transferredFromOffline,
+        available: Math.max(0, capacity - booked - held - maintenance),
         isClosed: Boolean(row?.isClosed),
       });
     }

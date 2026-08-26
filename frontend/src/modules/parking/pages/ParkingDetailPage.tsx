@@ -66,7 +66,13 @@ const recommendedSlotType = (
     })[0];
 
 export const ParkingDetailPage: React.FC = () => {
-  const { slug } = useParams<{ slug: string }>();
+  // Either /parking/:city/:ashramSlug or the older /parking/:slug.
+  const {
+    slug: locationSlug,
+    city,
+    ashramSlug,
+  } = useParams<{ slug?: string; city?: string; ashramSlug?: string }>();
+  const slug = ashramSlug || locationSlug;
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuth();

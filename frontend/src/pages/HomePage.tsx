@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
+import { ashramUrl } from "../lib/urls";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import api from "../lib/api";
@@ -1466,7 +1467,7 @@ export const HomePage: React.FC = () => {
                     const targetId = item.slug || item._id;
                     if (targetId) {
                       if (isProduct) {
-                        navigate(`/marketplace/product/${targetId}`);
+                        navigate(`/marketplace/products/${targetId}`);
                       } else {
                         navigate(`/marketplace/category/${targetId}`);
                       }
@@ -1607,7 +1608,7 @@ export const HomePage: React.FC = () => {
                 <div
                   onClick={() =>
                     navigate(
-                      `/ashram/${ashram._id}${checkIn || checkOut ? `?checkIn=${checkIn}&checkOut=${checkOut}&guests=${totalGuests}` : ""}`,
+                      ashramUrl(ashram, checkIn || checkOut ? `?checkIn=${checkIn}&checkOut=${checkOut}&guests=${totalGuests}` : ""),
                     )
                   }
                   className="flex-shrink-0 relative group cursor-pointer"

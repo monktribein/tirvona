@@ -291,6 +291,7 @@ export const DashboardLayout: React.FC = () => {
         { label: "Room Availability", path: "/admin/manage/rooms/availability" },
         { label: "Room Pricing", path: "/admin/manage/rooms/pricing" },
         { label: "Room Inventory", path: "/admin/manage/rooms/inventory" },
+        { label: "Offline Rooms (read-only)", path: "/admin/offline-inventory" },
       ],
     },
     {
@@ -586,6 +587,7 @@ export const DashboardLayout: React.FC = () => {
       icon: <Bed size={15} />,
       links: [
         { label: "Manage Rooms", path: `${ownerBase}/rooms` },
+        { label: "Offline Rooms / Inventory", path: `${ownerBase}/offline-inventory` },
         { label: "Inventory Calendar", path: `${ownerBase}/calendar` },
       ],
     },
@@ -612,7 +614,7 @@ export const DashboardLayout: React.FC = () => {
       icon: <Calendar size={15} />,
       links: [
         { label: "All Bookings", path: `${ownerBase}/bookings` },
-        { label: "Walk-in / Offline Booking", path: `${ownerBase}/walk-in-booking` },
+        { label: "Self & Online Booking", path: `${ownerBase}/self-booking` },
         { label: "Payments", path: `${ownerBase}/payments` },
         { label: "Payout Management", path: `${ownerBase}/payouts` },
       ],
@@ -785,7 +787,7 @@ export const DashboardLayout: React.FC = () => {
             groupName: "Front desk",
             icon: <Calendar size={15} />,
             links: [
-              { label: "Walk-in / Offline Booking", path: "/staff/walk-in-booking" },
+              { label: "Self & Online Booking", path: "/staff/self-booking" },
             ],
           },
         ],

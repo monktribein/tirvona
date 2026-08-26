@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
+import { ashramUrl } from "../lib/urls";
+import { useCanonicalUrl } from "../lib/useCanonicalUrl";
 import {
   useParams,
   useNavigate,
+  useLocation,
   Link,
   useSearchParams,
 } from "react-router-dom";
@@ -78,7 +81,8 @@ import {
 import { useProfileAutoFill } from "../hooks/useProfileAutoFill";
 
 export const AshramDetailPage: React.FC = () => {
-  const { id } = useParams();
+  const { id, city, ashramSlug } = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
@@ -118,6 +122,19 @@ export const AshramDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [detailError, setDetailError] = useState("");
 
+  // Publishes the canonical slug url and quietly upgrades a legacy /ashram/:id
+  // address once the listing has loaded. The /book route renders this same
+  // page, so it keeps its own canonical rather than being redirected away.
+  const isBookingRoute = location.pathname.endsWith("/book");
+  useCanonicalUrl({
+    canonicalPath: ashram
+      ? `${ashramUrl(ashram)}${isBookingRoute ? "/book" : ""}`
+      : null,
+    title: ashram ? `${ashram.name} · Tirvona` : undefined,
+    description: ashram?.description?.slice(0, 160),
+    image: ashram?.images?.[0] || ashram?.coverImage,
+  });
+
   const [checkIn, setCheckIn] = useState(validInitialCheckIn);
   const [checkOut, setCheckOut] = useState(validInitialCheckOut);
   const [selectedRoom, setSelectedRoom] = useState<any>(null);
@@ -127,7 +144,7 @@ export const AshramDetailPage: React.FC = () => {
     window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior });
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
-  }, [id]);
+  }, [id, city, ashramSlug]);
 
   useEffect(() => {
     const qCheckIn = searchParams.get("checkIn");
@@ -253,7 +270,7 @@ export const AshramDetailPage: React.FC = () => {
 
   useEffect(() => {
     fetchDetails();
-  }, [id]);
+  }, [id, city, ashramSlug]);
 
   useEffect(() => {
     if (!id) {
@@ -299,7 +316,7 @@ export const AshramDetailPage: React.FC = () => {
     return () => {
       active = false;
     };
-  }, [id]);
+  }, [id, city, ashramSlug]);
 
   useEffect(() => {
     const refreshRooms = (event: Event) => {
@@ -315,7 +332,7 @@ export const AshramDetailPage: React.FC = () => {
       window.removeEventListener("storage", refreshRooms);
       window.removeEventListener("focus", refreshOnFocus);
     };
-  }, [id]);
+  }, [id, city, ashramSlug]);
 
   useEffect(() => {
     if (selectedRoom) {
@@ -715,7 +732,10 @@ export const AshramDetailPage: React.FC = () => {
     setLoading(true);
     setDetailError("");
     try {
-      const res = await ashramService.getById(id!);
+      // Slug route when present, id route only for legacy links.
+      const res = ashramSlug
+        ? await ashramService.getBySlug(city ?? "", ashramSlug)
+        : await ashramService.getById(id!);
       if (res.data.success) {
         const payload = res.data.data;
         const detailAshram = payload?.ashram ?? payload;
@@ -2424,7 +2444,7 @@ export const AshramDetailPage: React.FC = () => {
             {relatedStays.map((rel) => (
               <Link
                 key={rel._id}
-                to={`/ashram/${rel._id}`}
+                to={ashramUrl(rel)}
                 className="shrink-0 w-[260px] sm:w-[300px] bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] overflow-hidden shadow-sm premium-card-hover flex flex-col justify-between"
               >
                 <div className="h-40 overflow-hidden relative bg-gray-50 dark:bg-slate-900">

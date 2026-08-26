@@ -38,14 +38,14 @@ describe("Tirvona and self bookings stay separable", () => {
     expect(BookingInventorySchema.path("onlineBookedCount")).toBeDefined();
   });
 
-  it("records walk-in guest identity on the booking itself", () => {
+  it("records counter guest identity on the booking itself", () => {
     expect(BookingSchema.path("walkInGuest.name")).toBeDefined();
     expect(BookingSchema.path("walkInGuest.phone")).toBeDefined();
     expect(BookingSchema.path("walkInGuest.idNumber")).toBeDefined();
     expect(BookingSchema.path("bookedBy")).toBeDefined();
   });
 
-  it("still allows the offline payment mode used by walk-ins", () => {
+  it("still allows the offline payment mode used by self bookings", () => {
     const mode = BookingSchema.path("paymentMode") as any;
     expect(mode.options.enum).toContain("offline");
   });

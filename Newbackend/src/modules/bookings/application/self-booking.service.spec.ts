@@ -106,7 +106,7 @@ const dto = (over: Record<string, unknown> = {}) =>
     ...over,
   }) as never;
 
-describe("self / walk-in booking", () => {
+describe("self & online counter booking", () => {
   it("records the booking against the staff member's own ashram", async () => {
     const { service, created } = build();
     await service.create(owner(), dto());
@@ -125,7 +125,7 @@ describe("self / walk-in booking", () => {
     ).rejects.toBeInstanceOf(ForbiddenException);
   });
 
-  it("refuses a role that is not allowed to take walk-ins", async () => {
+  it("refuses a role that is not allowed to take counter bookings", async () => {
     const { service } = build();
     await expect(
       service.create(owner({ role: "customer" }), dto()),
@@ -147,7 +147,7 @@ describe("self / walk-in booking", () => {
     expect(created.receipts[0].receiptNumber).toBeTruthy();
   });
 
-  it("holds and confirms real inventory so a walk-in cannot overbook", async () => {
+  it("holds and confirms real inventory so a self booking cannot overbook", async () => {
     const { service, repository } = build();
     await service.create(owner(), dto());
     expect(repository.holdInventory).toHaveBeenCalled();

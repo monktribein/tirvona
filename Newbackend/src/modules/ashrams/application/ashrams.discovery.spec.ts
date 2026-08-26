@@ -64,6 +64,7 @@ describe("AshramsService location discovery", () => {
       emptyModel as any,
       emptyModel as any,
       emptyModel as any,
+      { allocate: jest.fn().mockResolvedValue("slug") } as any,
     );
     return { service, ashrams, aggregate };
   };

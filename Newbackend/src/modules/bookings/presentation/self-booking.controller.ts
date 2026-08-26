@@ -22,7 +22,7 @@ import {
   SelfBookingAvailabilityDto,
 } from "./dtos/self-booking.dto";
 
-@ApiTags("Self / Walk-in Bookings")
+@ApiTags("Self & Online Bookings")
 @ApiBearerAuth()
 @Roles(
   "ashram_owner",
@@ -63,7 +63,7 @@ export class SelfBookingController {
       success: true,
       message: result.requiresOnlinePayment
         ? "Booking held. Collect payment through Razorpay to confirm."
-        : "Walk-in booking recorded.",
+        : "Self booking recorded.",
       data: {
         id: String(result.booking._id),
         bookingId: result.booking.bookingId,

@@ -16,7 +16,8 @@ export const AshramSchema = new Schema(
   {
     ownerId: id("User", true),
     ashramCode: { type: String, unique: true, sparse: true, index: true },
-    slug: { type: String, unique: true, sparse: true, index: true },
+    slug: { type: String, sparse: true, index: true, lowercase: true, trim: true },
+    citySlug: { type: String, sparse: true, index: true, lowercase: true, trim: true },
     name: { type: String, required: true, trim: true },
     tagline: String,
     ashramType: String,
@@ -166,6 +167,10 @@ AshramSchema.index(
     partialFilterExpression: { "trust.panNo": { $type: "string", $gt: "" } },
   },
 );
+AshramSchema.index(
+  { citySlug: 1, slug: 1 },
+  { unique: true, partialFilterExpression: { citySlug: { $type: "string" }, slug: { $type: "string" } } },
+);
 AshramSchema.index({ ownerId: 1 });
 AshramSchema.index({ status: 1, "address.city": 1, "rating.average": -1 });
 AshramSchema.index({ status: 1, "rating.average": -1 });
@@ -216,6 +221,7 @@ export const BookingInventorySchema = new Schema(
     bookedCount: { type: Number, default: 0, min: 0 },
     onlineBookedCount: { type: Number, default: 0, min: 0 },
     offlineBookedCount: { type: Number, default: 0, min: 0 },
+    transferredFromOfflineCount: { type: Number, default: 0, min: 0 },
     maintenanceCount: { type: Number, default: 0, min: 0 },
     customPrice: Number,
     isClosed: { type: Boolean, default: false },
@@ -302,3 +308,50 @@ export const HousekeepingUnitSchema = new Schema(
 );
 HousekeepingUnitSchema.index({ ashramId: 1, unitNumber: 1 }, { unique: true });
 HousekeepingUnitSchema.index({ ashramId: 1, status: 1 });
+
+export const OFFLINE_ROOM_STATUSES = ["active", "inactive"] as const;
+
+export const OfflineRoomSchema = new Schema(
+  {
+    ashramId: id("Ashram", true),
+    roomId: id("Room", true),
+    label: { type: String, required: true, trim: true },
+    totalUnits: { type: Number, required: true, min: 0 },
+    transferredUnits: { type: Number, default: 0, min: 0 },
+    blockedUnits: { type: Number, default: 0, min: 0 },
+    status: {
+      type: String,
+      enum: OFFLINE_ROOM_STATUSES,
+      default: "active",
+      index: true,
+    },
+    notes: { type: String, default: "" },
+    createdBy: id("User"),
+    updatedBy: id("User"),
+    deletedAt: { type: Date, default: null, index: true },
+  },
+  opts("offline_rooms"),
+);
+OfflineRoomSchema.index({ ashramId: 1, status: 1, deletedAt: 1 });
+OfflineRoomSchema.index({ ashramId: 1, roomId: 1 });
+
+export const OfflineInventoryTransferSchema = new Schema(
+  {
+    reference: { type: String, required: true, unique: true },
+    ashramId: id("Ashram", true),
+    offlineRoomId: id("OfflineRoom", true),
+    roomId: id("Room", true),
+    units: { type: Number, required: true, min: 1 },
+    fromDate: { type: Date, required: true },
+    toDate: { type: Date, required: true },
+    datesCovered: { type: Number, default: 0 },
+    reason: { type: String, default: "" },
+    performedBy: id("User", true),
+    performedByRole: String,
+    offlineAvailableBefore: Number,
+    offlineAvailableAfter: Number,
+  },
+  opts("offline_inventory_transfers"),
+);
+OfflineInventoryTransferSchema.index({ ashramId: 1, createdAt: -1 });
+OfflineInventoryTransferSchema.index({ offlineRoomId: 1, createdAt: -1 });

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { ashramUrl } from "../lib/urls";
 import api from "../lib/api";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
@@ -17,7 +18,9 @@ import { useNotifications } from "../contexts/NotificationContext";
 import { formatCurrency } from "../utils/format";
 
 export const OfferDetailPage: React.FC = () => {
-  const { offerId } = useParams();
+  // Public urls carry the promo code; the API still accepts an id.
+  const { promoCode, offerId: legacyOfferId } = useParams();
+  const offerId = promoCode || legacyOfferId;
   const { addNotification } = useNotifications();
   const navigate = useNavigate();
 
@@ -102,7 +105,10 @@ export const OfferDetailPage: React.FC = () => {
       offer.ashramId || (offer.applicableAshrams && offer.applicableAshrams[0]);
     if (targetAshram?._id) {
       navigate(
-        `/ashram/${targetAshram._id}?promoCode=${encodeURIComponent(offer.promoCode)}`,
+        ashramUrl(
+          targetAshram,
+          `?promoCode=${encodeURIComponent(offer.promoCode)}`,
+        ),
       );
     } else {
       navigate(`/search?promoCode=${encodeURIComponent(offer.promoCode)}`);

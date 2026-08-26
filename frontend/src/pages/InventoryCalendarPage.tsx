@@ -286,6 +286,15 @@ export const InventoryCalendarPage: React.FC = () => {
                   <span>{item.available} Left</span>
                 </div>
               </div>
+
+              {Number(item.transferredFromOffline || 0) > 0 && (
+                <div
+                  className="mt-1.5 p-1 rounded-md bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 text-center text-[9px] font-black tracking-wider"
+                  title={`${item.baseInventory} from Tirvona online inventory + ${item.transferredFromOffline} transferred from offline`}
+                >
+                  +{item.transferredFromOffline} FROM OFFLINE
+                </div>
+              )}
             </div>
           ))}
         </div>

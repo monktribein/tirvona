@@ -21,7 +21,7 @@ const BOOKING_TYPES = [
   },
   {
     id: "tirvona",
-    label: "Tirvona Booking",
+    label: "Online Booking (Tirvona)",
     hint: "Guest pays online through Razorpay, exactly like a website booking.",
   },
 ];
@@ -41,7 +41,7 @@ const getList = (response: any): any[] => {
   return Array.isArray(value) ? value : [];
 };
 
-export const WalkInBookingPage: React.FC = () => {
+export const SelfBookingPage: React.FC = () => {
   const { addNotification } = useNotifications();
   const [ashrams, setAshrams] = useState<any[]>([]);
   const [rooms, setRooms] = useState<any[]>([]);
@@ -223,7 +223,7 @@ export const WalkInBookingPage: React.FC = () => {
 
       setConfirmation(data);
       addNotification(
-        isSelf ? "Walk-in Booking Created" : "Tirvona Booking Confirmed",
+        isSelf ? "Self Booking Created" : "Online Booking Confirmed",
         `${data?.bookingId} confirmed for ${form.guestName}.`,
         "success",
       );
@@ -237,7 +237,7 @@ export const WalkInBookingPage: React.FC = () => {
     } catch (error) {
       addNotification(
         "Booking Failed",
-        getErrorMessage(error, "Could not record this walk-in booking."),
+        getErrorMessage(error, "Could not record this booking."),
         "error",
       );
     } finally {
@@ -273,8 +273,8 @@ export const WalkInBookingPage: React.FC = () => {
           <div>
             <h2 className="font-black text-xl text-[#0B192C] dark:text-white">
               {confirmation.bookingSource === "tirvona"
-                ? "Tirvona booking confirmed"
-                : "Walk-in booking confirmed"}
+                ? "Online booking confirmed"
+                : "Self booking confirmed"}
             </h2>
             <p className="text-xs text-gray-400 mt-1">
               Share the check-in code with the guest. Check-in works exactly like a
@@ -346,11 +346,12 @@ export const WalkInBookingPage: React.FC = () => {
     <div className="p-4 sm:p-6 max-w-5xl mx-auto space-y-5">
       <div>
         <h1 className="font-black text-xl text-[#0B192C] dark:text-white flex items-center gap-2">
-          <BedDouble size={22} className="text-[#0A4DA6]" /> Walk-in / Offline Booking
+          <BedDouble size={22} className="text-[#0A4DA6]" /> Self &amp; Online Booking
         </h1>
         <p className="text-xs text-gray-400 mt-1">
-          Record a guest who booked at the counter. These stay separate from Tirvona
-          online bookings in every report.
+          Book a guest at the counter — collect payment directly (Self) or take it
+          online through Razorpay (Online). Both stay clearly separated in every
+          report.
         </p>
       </div>
 
@@ -678,4 +679,4 @@ export const WalkInBookingPage: React.FC = () => {
   );
 };
 
-export default WalkInBookingPage;
+export default SelfBookingPage;

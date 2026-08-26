@@ -35,7 +35,9 @@ const FALLBACK_IMAGE =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E";
 
 export const AartiDetailPage: React.FC = () => {
-  const { id = "" } = useParams();
+  // /aarti/:city/:ashramSlug and /pooja/:city/:ashramSlug, or legacy /aarti/:id.
+  const { id = "", city = "", ashramSlug = "" } = useParams();
+  const aartiKey = ashramSlug || id;
   const navigate = useNavigate();
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -57,7 +59,7 @@ export const AartiDetailPage: React.FC = () => {
     let cancelled = false;
     setLoading(true);
     aartiDiscoveryService
-      .getDetail(id, date || undefined)
+      .getDetail(aartiKey, date || undefined)
       .then((response) => {
         if (cancelled) return;
         const data: AartiSession = response.data?.data;
@@ -78,7 +80,7 @@ export const AartiDetailPage: React.FC = () => {
     };
     // `date` is deliberately excluded — changing it refreshes passes only.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  }, [aartiKey]);
 
   useEffect(() => {
     if (!session || !date) return;

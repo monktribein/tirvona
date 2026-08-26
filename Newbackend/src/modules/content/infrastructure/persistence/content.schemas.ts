@@ -3,6 +3,13 @@ import { Schema, SchemaTypes } from "mongoose";
 const schema = (collection: string): Schema =>
   new Schema({}, { strict: false, timestamps: true, collection });
 
+/** Loose schema that also carries a public slug for id-free URLs. */
+const sluggedSchema = (collection: string): Schema =>
+  new Schema(
+    { slug: { type: String, sparse: true, unique: true, index: true } },
+    { strict: false, timestamps: true, collection },
+  );
+
 export const CONTENT_MODELS = [
   {
     name: "BlogPost",
@@ -31,7 +38,7 @@ export const CONTENT_MODELS = [
     ),
   },
   { name: "Banner", schema: schema("banners") },
-  { name: "FeaturedBanner", schema: schema("featured_banners") },
+  { name: "FeaturedBanner", schema: sluggedSchema("featured_banners") },
   { name: "ContentAuditLog", schema: schema("auditlogs") },
   { name: "PilgrimageCircuit", schema: schema("pilgrimagecircuits") },
   { name: "Temple", schema: schema("temples") },

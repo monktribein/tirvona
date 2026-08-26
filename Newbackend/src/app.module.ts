@@ -13,6 +13,8 @@ import { AuthModule } from "./modules/auth/auth.module";
 import { JwtAuthGuard } from "./modules/auth/guards/jwt-auth.guard";
 import { UsersModule } from "./modules/users/users.module";
 import { ParkingModule } from "./modules/parking/parking.module";
+import { UrlsModule } from "./modules/urls/urls.module";
+import { LegacyUrlModule } from "./modules/urls/legacy-url.module";
 import { AshramsModule } from "./modules/ashrams/ashrams.module";
 import { BookingsModule } from "./modules/bookings/bookings.module";
 import { HousekeepingModule } from "./modules/housekeeping/housekeeping.module";
@@ -121,6 +123,8 @@ import {
     UsersModule,
     AuthModule,
     ParkingModule,
+    UrlsModule,
+    LegacyUrlModule,
     AshramsModule,
     BookingsModule,
     HousekeepingModule,
