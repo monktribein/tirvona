@@ -128,7 +128,7 @@ export const BookingDetailPage: React.FC = () => {
   const [isDownloadingReceipt, setIsDownloadingReceipt] = useState<boolean>(false);
 
   const fetchBookingDetails = async () => {
-    if (!id) return;
+    if (!bookingKey) return;
     setLoading(true);
     setError("");
     try {

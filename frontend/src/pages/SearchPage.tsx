@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { ashramUrl } from "../lib/urls";
+import { ashramUrl, type SluggableAshram } from "../lib/urls";
 import { useSearchParams, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ashramService } from "../services";
@@ -402,7 +402,7 @@ export const SearchPage: React.FC = () => {
     setSearchParams(params);
   };
 
-  const buildDetailLink = (ashramId: string) => {
+  const buildDetailLink = (ashram: SluggableAshram) => {
     const params = new URLSearchParams();
     const activeCheckIn = checkIn || searchState.checkIn;
     const activeCheckOut = checkOut || searchState.checkOut;
@@ -858,7 +858,7 @@ export const SearchPage: React.FC = () => {
                       )}
                     </div>
                     <Link
-                      to={buildDetailLink(ashram._id)}
+                      to={buildDetailLink(ashram)}
                       className="w-full md:w-auto px-5 py-2.5 bg-[#0A4DA6] hover:bg-opacity-95 text-white text-center text-xs font-bold rounded-full transition-all"
                     >
                       View Details
@@ -1051,7 +1051,7 @@ export const SearchPage: React.FC = () => {
                                       : "Contact for price"}
                                   </span>
                                   <Link
-                                    to={buildDetailLink(item._id)}
+                                    to={buildDetailLink(item)}
                                     className="px-3.5 py-1.5 bg-[#0A4DA6] text-white rounded-full text-[9px] font-bold shadow"
                                   >
                                     View Details
