@@ -66,8 +66,12 @@ const PayoutManagementPage = lazy(
 const OwnerParkingSetupPage = lazy(
   () => import("./pages/owner/OwnerParkingSetupPage"),
 );
-const WalkInBookingPage = lazy(
-  () => import("./pages/owner/WalkInBookingPage"),
+const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
+const SelfBookingPage = lazy(
+  () => import("./pages/owner/SelfBookingPage"),
+);
+const OfflineInventoryPage = lazy(
+  () => import("./pages/owner/OfflineInventoryPage"),
 );
 const OffersPage = lazy(() => import("./pages/OffersPage"));
 const OfferDetailPage = lazy(() => import("./pages/OfferDetailPage"));
@@ -394,8 +398,13 @@ const AppContent: React.FC = () => {
           <Route element={<PublicLayout />}>
             <Route path="/" element={<RoleAwareHome />} />
             <Route path="/public" element={<HomePage />} />
-            <Route path="/featured-banner/:bannerId" element={<BannerDetailPage />} />
+            <Route path="/featured-banner/:bannerSlug" element={<BannerDetailPage />} />
             <Route path="/search" element={<SearchPage />} />
+            {/* canonical, id-free */}
+            <Route path="/ashrams/:city/:ashramSlug" element={<AshramDetailPage />} />
+            <Route path="/ashrams/:city/:ashramSlug/book" element={<AshramDetailPage />} />
+            {/* legacy: nginx 301s these in production; kept so dev and any
+                missed link still resolve instead of 404ing */}
             <Route path="/ashram/:id" element={<AshramDetailPage />} />
             <Route path="/faq" element={<FaqPage />} />
             <Route path="/login" element={<LoginPage />} />
@@ -423,13 +432,18 @@ const AppContent: React.FC = () => {
             <Route path="/refund-policy" element={<RefundPolicyPage />} />
             <Route path="/cookie-policy" element={<CookiePolicyPage />} />
             <Route path="/offers" element={<OffersPage />} />
-            <Route path="/offers/:offerId" element={<OfferDetailPage />} />
+            <Route path="/offers/:promoCode" element={<OfferDetailPage />} />
             <Route path="/offers/category/:category" element={<OffersPage />} />
             <Route path="/offers/city/:city" element={<OffersPage />} />
             <Route
               path="/marketplace/categories"
               element={<MarketplaceCategoriesPage />}
             />
+            <Route
+              path="/marketplace/products/:productSlug"
+              element={<MarketplaceProductDetailPage />}
+            />
+            {/* legacy; nginx 301s these in production */}
             <Route
               path="/marketplace/product/:idOrSlug"
               element={<MarketplaceProductDetailPage />}
@@ -454,7 +468,7 @@ const AppContent: React.FC = () => {
             />
             <Route path="/destinations" element={<CircuitsHubPage />} />
             <Route
-              path="/destinations/:slug"
+              path="/destinations/:city"
               element={<CircuitDetailPage />}
             />
             <Route path="/temples" element={<TemplesPage />} />
@@ -499,7 +513,7 @@ const AppContent: React.FC = () => {
             <Route path="/marketplace" element={<MarketplaceHubPage />} />
             <Route path="/volunteer" element={<VolunteerHubPage />} />
             <Route
-              path="/volunteer/:jobId"
+              path="/volunteer/:jobSlug"
               element={<VolunteerJobDetailPage />}
             />
             <Route
@@ -509,10 +523,23 @@ const AppContent: React.FC = () => {
             <Route path="/careers" element={<VolunteerHubPage />} />
 
             <Route path="/parking" element={<ParkingHubPage />} />
+            <Route
+              path="/parking/:city/:ashramSlug"
+              element={<ParkingDetailPage />}
+            />
             <Route path="/parking/:slug" element={<ParkingDetailPage />} />
 
             <Route path="/aarti" element={<AartiHubPage />} />
             <Route path="/live-pooja" element={<LivePoojaPage />} />
+            <Route
+              path="/aarti/:city/:ashramSlug"
+              element={<AartiDetailPage />}
+            />
+            <Route
+              path="/pooja/:city/:ashramSlug"
+              element={<AartiDetailPage />}
+            />
+            {/* legacy; nginx 301s these in production */}
             <Route path="/aarti/:id" element={<AartiDetailPage />} />
 
           </Route>
@@ -524,9 +551,12 @@ const AppContent: React.FC = () => {
               </ProtectedRoute>
             }
           >
-            <Route path="/booking/:id" element={<BookingDetailPage />} />
             <Route
-              path="/profile/bookings/:id"
+              path="/booking/:bookingReference"
+              element={<BookingDetailPage />}
+            />
+            <Route
+              path="/profile/bookings/:bookingReference"
               element={<BookingDetailPage />}
             />
             <Route
@@ -563,17 +593,17 @@ const AppContent: React.FC = () => {
           >
             <Route path="/parking/checkout" element={<ParkingCheckoutPage />} />
             <Route
-              path="/parking/booking/:id"
+              path="/parking/booking/:bookingReference"
               element={<ParkingBookingDetailPage />}
             />
             <Route path="/aarti/checkout" element={<AartiCheckoutPage />} />
             <Route
-              path="/aarti/booking/:id"
+              path="/aarti/booking/:bookingReference"
               element={<AartiBookingDetailPage />}
             />
             <Route path="/profile/aarti" element={<AartiMyBookingsPage />} />
             <Route path="/profile/events" element={<EventMyPassesPage />} />
-            <Route path="/events/pass/:id" element={<EventPassPage />} />
+            <Route path="/events/pass/:passCode" element={<EventPassPage />} />
           </Route>
 
           <Route
@@ -683,9 +713,16 @@ const AppContent: React.FC = () => {
             <Route path="/owner/payouts" element={<PayoutManagementPage />} />
             <Route path="/ashram-admin/payouts" element={<PayoutManagementPage />} />
             <Route path="/ashram-owner/payouts" element={<PayoutManagementPage />} />
-            <Route path="/owner/walk-in-booking" element={<WalkInBookingPage />} />
-            <Route path="/ashram-admin/walk-in-booking" element={<WalkInBookingPage />} />
-            <Route path="/ashram-owner/walk-in-booking" element={<WalkInBookingPage />} />
+            <Route path="/owner/offline-inventory" element={<OfflineInventoryPage />} />
+            <Route path="/ashram-admin/offline-inventory" element={<OfflineInventoryPage />} />
+            <Route path="/ashram-owner/offline-inventory" element={<OfflineInventoryPage />} />
+            <Route path="/owner/self-booking" element={<SelfBookingPage />} />
+            <Route path="/ashram-admin/self-booking" element={<SelfBookingPage />} />
+            <Route path="/ashram-owner/self-booking" element={<SelfBookingPage />} />
+            {/* previous paths kept so existing links keep working */}
+            <Route path="/owner/walk-in-booking" element={<SelfBookingPage />} />
+            <Route path="/ashram-admin/walk-in-booking" element={<SelfBookingPage />} />
+            <Route path="/ashram-owner/walk-in-booking" element={<SelfBookingPage />} />
             <Route
               path="/owner/parking"
               element={<OwnerParkingSetupPage />}
@@ -735,7 +772,8 @@ const AppContent: React.FC = () => {
             }
           >
             <Route path="/staff/reception" element={<ReceptionCheckinPage />} />
-            <Route path="/staff/walk-in-booking" element={<WalkInBookingPage />} />
+            <Route path="/staff/self-booking" element={<SelfBookingPage />} />
+            <Route path="/staff/walk-in-booking" element={<SelfBookingPage />} />
           </Route>
 
           <Route
@@ -829,6 +867,10 @@ const AppContent: React.FC = () => {
             }
           >
             <Route path="/admin/audit-logs" element={<AuditLogsPage />} />
+            <Route
+              path="/admin/offline-inventory"
+              element={<OfflineInventoryPage />}
+            />
             <Route path="/admin/payouts" element={<PayoutManagementPage />} />
             <Route
               path="/admin/lead-collection/leads"
@@ -1066,7 +1108,7 @@ const AppContent: React.FC = () => {
             />
           </Route>
 
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </Suspense>
     </BrowserRouter>

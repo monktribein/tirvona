@@ -35,6 +35,8 @@ export const ashramService = {
   search: (params: Record<string, string> = {}) =>
     api.get("/ashrams", { params }),
   getById: (id: string) => api.get(`/ashrams/${id}`),
+  getBySlug: (city: string, slug: string) =>
+    api.get(`/ashrams/by-slug/${encodeURIComponent(city)}/${encodeURIComponent(slug)}`),
   getManagedById: (id: string) => api.get(`/ashrams/manage/${id}`),
   myListings: () => api.get("/ashrams/my-listings/all"),
   ownerParking: () => api.get("/ashrams/owner-parking"),
@@ -68,6 +70,23 @@ export const roomService = {
     api.get(`/rooms/${id}/availability-calendar`, {
       params: { startDate, endDate },
     }),
+};
+
+export const offlineInventoryService = {
+  rooms: (params: Record<string, string> = {}) =>
+    api.get("/offline-inventory/rooms", { params }),
+  summary: (ashramId?: string) =>
+    api.get("/offline-inventory/summary", {
+      params: ashramId ? { ashramId } : {},
+    }),
+  transfers: (params: Record<string, string> = {}) =>
+    api.get("/offline-inventory/transfers", { params }),
+  create: (data: unknown) => api.post("/offline-inventory/rooms", data),
+  update: (id: string, data: unknown) =>
+    api.put(`/offline-inventory/rooms/${id}`, data),
+  remove: (id: string) => api.delete(`/offline-inventory/rooms/${id}`),
+  transfer: (id: string, data: unknown) =>
+    api.post(`/offline-inventory/rooms/${id}/transfer`, data),
 };
 
 export const selfBookingService = {

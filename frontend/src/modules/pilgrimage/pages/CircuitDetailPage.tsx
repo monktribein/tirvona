@@ -41,7 +41,9 @@ const Stat: React.FC<{
 );
 
 export const CircuitDetailPage: React.FC = () => {
-  const { slug = "" } = useParams();
+  // Destinations are addressed by city; the legacy :slug param maps straight on.
+  const { city, slug: legacySlug } = useParams();
+  const slug = city || legacySlug || "";
   const navigate = useNavigate();
 
   const [circuit, setCircuit] = useState<PilgrimageCircuit | null>(null);

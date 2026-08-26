@@ -14,6 +14,8 @@ export const COMMUNITY_MODELS = [
     schema: loose("volunteerjobs", {
       ownerId: { type: SchemaTypes.ObjectId, ref: "User", index: true },
       ashramId: { type: SchemaTypes.ObjectId, ref: "Ashram", index: true },
+      // Public URLs use this instead of the database id.
+      slug: { type: String, sparse: true, unique: true, index: true },
     }),
   },
   {

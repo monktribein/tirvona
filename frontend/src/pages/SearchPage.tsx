@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { ashramUrl } from "../lib/urls";
 import { useSearchParams, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ashramService } from "../services";
@@ -412,7 +413,7 @@ export const SearchPage: React.FC = () => {
     params.set("children", String(searchState.children));
     params.set("guests", String(totalGuests));
     const qStr = params.toString();
-    return `/ashram/${ashramId}${qStr ? `?${qStr}` : ""}`;
+    return ashramUrl(ashram, qStr ? `?${qStr}` : "");
   };
 
   return (

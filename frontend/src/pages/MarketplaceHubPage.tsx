@@ -372,7 +372,7 @@ const ProductModal: React.FC<{
                 type="button"
                 onClick={() => {
                   onClose();
-                  navigate(`/marketplace/product/${detail.slug || detail._id}`);
+                  navigate(`/marketplace/products/${detail.slug || detail._id}`);
                 }}
                 className="w-full py-2.5 rounded-full border border-gray-200 dark:border-slate-700 text-[#0B192C] dark:text-white hover:bg-gray-50 dark:hover:bg-slate-800 text-xs font-extrabold flex items-center justify-center gap-2 cursor-pointer transition-all"
               >
@@ -458,7 +458,7 @@ export const MarketplaceHubPage: React.FC = () => {
 
   const openProductDetail = useCallback(
     (product: Product) => {
-      navigate(`/marketplace/product/${product.slug || product._id}`);
+      navigate(`/marketplace/products/${product.slug || product._id}`);
     },
     [navigate],
   );

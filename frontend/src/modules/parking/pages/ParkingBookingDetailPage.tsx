@@ -35,7 +35,11 @@ import ParkingQrTicket from "../components/ParkingQrTicket";
 import ParkingStatusBadge from "../components/ParkingStatusBadge";
 
 export const ParkingBookingDetailPage: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const { bookingReference, id: legacyId } = useParams<{
+    bookingReference?: string;
+    id?: string;
+  }>();
+  const id = bookingReference || legacyId;
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 

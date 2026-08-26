@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { ashramUrl } from "../lib/urls";
 import api from "../lib/api";
 import { useNavigate, Link } from "react-router-dom";
 import {
@@ -406,7 +407,7 @@ export const AllAshramsPage: React.FC = () => {
                     </button>
 
                     <Link
-                      to={`/ashram/${ashram._id}`}
+                      to={ashramUrl(ashram)}
                       target="_blank"
                       className="p-2 rounded-full bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 text-gray-700 dark:text-gray-300 cursor-pointer"
                       title="View Public Page"

@@ -26,7 +26,8 @@ import {
 import AartiStatusBadge from "../components/AartiStatusBadge";
 
 export const AartiBookingDetailPage: React.FC = () => {
-  const { id = "" } = useParams();
+  const { bookingReference, id: legacyId } = useParams();
+  const id = bookingReference || legacyId || "";
   const navigate = useNavigate();
   const { promptAction } = useNotifications();
 

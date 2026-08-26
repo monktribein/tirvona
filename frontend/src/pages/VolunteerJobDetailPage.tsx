@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { ashramUrl } from "../lib/urls";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import {
   Briefcase,
@@ -36,7 +37,11 @@ import { useProfileAutoFill } from "../hooks/useProfileAutoFill";
 import { EnterpriseModal, EnterpriseButton } from "../admin/shared";
 
 export const VolunteerJobDetailPage: React.FC = () => {
-  const { jobId } = useParams<{ jobId: string }>();
+  const { jobSlug, jobId: legacyJobId } = useParams<{
+    jobSlug?: string;
+    jobId?: string;
+  }>();
+  const jobId = jobSlug || legacyJobId;
   const navigate = useNavigate();
   const { user } = useAuth();
   const autoFill = useProfileAutoFill();
@@ -567,7 +572,7 @@ export const VolunteerJobDetailPage: React.FC = () => {
               </div>
 
               <Link
-                to={`/ashram/${job.ashramId}`}
+                to={ashramUrl(job.ashramId)}
                 className="inline-block w-full py-2.5 text-center bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-[#0A4DA6] text-xs font-black rounded-full hover:bg-gray-100 dark:hover:bg-slate-850 transition-colors"
               >
                 View Ashram Profile →

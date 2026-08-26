@@ -1400,7 +1400,7 @@ export const EnterpriseModulePage: React.FC<{
               key: "bookingSource",
               label: "Source",
               render: (value: any) =>
-                String(value ?? "tirvona") === "self" ? "Walk-in" : "Tirvona",
+                String(value ?? "tirvona") === "self" ? "Self" : "Online",
             },
             {
               key: "customerId",

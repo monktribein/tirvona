@@ -310,9 +310,9 @@ export const OwnerBookingCenterPage: React.FC<OwnerBookingCenterPageProps> = ({
               onChange={(event) => setSourceFilter(event.target.value)}
               className="px-3 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:outline-none"
             >
-              <option value="all">Tirvona + Walk-in</option>
-              <option value="tirvona">Tirvona online only</option>
-              <option value="self">Walk-in / offline only</option>
+              <option value="all">Self + Online</option>
+              <option value="tirvona">Online (Tirvona) only</option>
+              <option value="self">Self bookings only</option>
             </select>
             <button
               type="button"

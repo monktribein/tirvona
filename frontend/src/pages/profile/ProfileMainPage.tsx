@@ -385,7 +385,7 @@ export const ProfileMainPage: React.FC = () => {
             b.detailHref ||
             (b.kind === "parking"
               ? `/parking/booking/${b.id}`
-              : `/booking/${b.id}`),
+              : `/booking/${b.reference || b.id}`),
           icon:
             b.category === "cancelled" ? (
               <XCircle className="text-rose-500" size={16} />
@@ -851,7 +851,7 @@ export const ProfileMainPage: React.FC = () => {
                                   b.detailHref ||
                                   (b.kind === "parking"
                                     ? `/parking/booking/${b.id}`
-                                    : `/booking/${b.id}`)
+                                    : `/booking/${b.reference || b.id}`)
                                 }
                                 className="px-3.5 py-1.5 bg-gray-100 dark:bg-slate-800 hover:bg-[#0A4DA6] hover:text-white dark:hover:bg-[#0A4DA6] text-[#0B192C] dark:text-gray-200 text-xs font-extrabold rounded-full transition-all"
                               >
