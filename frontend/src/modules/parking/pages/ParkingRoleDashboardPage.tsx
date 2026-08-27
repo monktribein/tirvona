@@ -1,13 +1,9 @@
 import React, { useCallback, useEffect, useState } from "react";
 import {
   Car,
-  ShieldCheck,
   Building2,
   Users,
   QrCode,
-  Search,
-  CheckCircle2,
-  Clock,
   AlertCircle,
   IndianRupee,
   TrendingUp,
@@ -40,12 +36,34 @@ import {
 } from "../utils/parkingFormat";
 import ParkingStatTile from "../components/ParkingStatTile";
 import ParkingStatusBadge from "../components/ParkingStatusBadge";
+import ParkingGuardPanelPage from "./ParkingGuardPanelPage";
+import { AnalyticsBarChart } from "../../../components/dashboard/AnalyticsCharts";
 
 export const ParkingRoleDashboardPage: React.FC = () => {
   const { user } = useAuth();
   const { addNotification } = useNotifications();
 
   const grantedRoles = user?.parkingRoles ?? [];
+  const isPlatformAdmin = user?.role === "super_admin";
+  const isAshramOwner = ["ashram_owner", "ashram_admin", "owner", "stay_admin"].includes(
+    user?.role ?? "",
+  );
+  const canUsePartnerView =
+    isPlatformAdmin || isAshramOwner || grantedRoles.includes("parking_partner");
+  const canUseManagerView =
+    isPlatformAdmin ||
+    isAshramOwner ||
+    grantedRoles.includes("parking_partner") ||
+    grantedRoles.includes("parking_manager");
+  const canUseGuardView =
+    isPlatformAdmin || isAshramOwner || grantedRoles.length > 0;
+  const isGuardOnly =
+    grantedRoles.includes("security_guard") &&
+    !grantedRoles.some((role) =>
+      ["parking_partner", "parking_manager"].includes(role),
+    ) &&
+    !isPlatformAdmin &&
+    !isAshramOwner;
   const [activeRoleView, setActiveRoleView] = useState<
     "partner" | "manager" | "guard"
   >(() => {
@@ -76,12 +94,6 @@ export const ParkingRoleDashboardPage: React.FC = () => {
   const [manualVehicleType, setManualVehicleType] = useState("car");
   const [manualSlotTypeId] = useState("");
 
-  const [qrTokenInput, setQrTokenInput] = useState("");
-  const [plateSearchInput, setPlateSearchInput] = useState("");
-  const [verifying, setVerifying] = useState(false);
-  const [scanResult, setScanResult] = useState<any>(null);
-  const [scanLogs, setScanLogs] = useState<any[]>([]);
-
   const fetchDashboardData = useCallback(
     async (isSilent = false) => {
       if (!isSilent) setLoading(true);
@@ -89,6 +101,15 @@ export const ParkingRoleDashboardPage: React.FC = () => {
       setError("");
 
       try {
+        if (isGuardOnly) {
+          const guardLocationsRes = await parkingScanService.myLocations();
+          const guardLocations = guardLocationsRes.data?.data ?? [];
+          setLocations(guardLocations);
+          setStats(null);
+          if (guardLocations.length > 0 && !selectedLocationId)
+            setSelectedLocationId(guardLocations[0]._id);
+          return;
+        }
         const [dashRes, locRes] = await Promise.all([
           parkingPartnerService.dashboard().catch(() => null),
           parkingPartnerService.listLocations().catch(() => null),
@@ -109,11 +130,17 @@ export const ParkingRoleDashboardPage: React.FC = () => {
         setRefreshing(false);
       }
     },
-    [selectedLocationId],
+    [isGuardOnly, selectedLocationId],
   );
 
   useEffect(() => {
-    fetchDashboardData();
+    void fetchDashboardData();
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") {
+        void fetchDashboardData(true);
+      }
+    }, 30_000);
+    return () => window.clearInterval(timer);
   }, [fetchDashboardData]);
 
   const fetchRoleData = useCallback(async () => {
@@ -149,110 +176,12 @@ export const ParkingRoleDashboardPage: React.FC = () => {
       } catch (err) {
         console.warn("Manager data fetch error:", err);
       }
-    } else if (activeRoleView === "guard" && selectedLocationId) {
-      try {
-        const logsRes = await parkingScanService
-          .logs({ locationId: selectedLocationId, limit: 20 })
-          .catch(() => null);
-        if (logsRes?.data?.success) setScanLogs(logsRes.data.data || []);
-      } catch (err) {
-        console.warn("Guard logs fetch error:", err);
-      }
     }
   }, [activeRoleView, selectedLocationId, statusFilter]);
 
   useEffect(() => {
     fetchRoleData();
   }, [fetchRoleData]);
-
-  const handleVerifyQr = async (tokenString?: string) => {
-    const tokenToUse = tokenString || qrTokenInput.trim();
-    if (!tokenToUse) {
-      addNotification("Pass Required", "Please enter or scan a valid QR pass token.", "warning");
-      return;
-    }
-    if (!selectedLocationId) {
-      addNotification("Location Required", "Please select a parking location first.", "warning");
-      return;
-    }
-
-    setVerifying(true);
-    setScanResult(null);
-    try {
-      const res = await parkingScanService.verify(tokenToUse, selectedLocationId);
-      if (res.data?.success) {
-        setScanResult(res.data.data);
-        addNotification("QR Pass Verified", "Valid parking pass found.", "success");
-      }
-    } catch (err) {
-      const msg = getErrorMessage(err, "Pass verification failed.");
-      addNotification("Verification Error", msg, "error");
-      setScanResult({ error: msg });
-    } finally {
-      setVerifying(false);
-    }
-  };
-
-  const handleGuardCheckIn = async (tokenString: string) => {
-    setVerifying(true);
-    try {
-      const res = await parkingScanService.checkIn(tokenString, selectedLocationId);
-      if (res.data?.success) {
-        addNotification("Vehicle Checked In", res.data.message || "Entry logged successfully.", "success");
-        setScanResult(null);
-        setQrTokenInput("");
-        fetchRoleData();
-        fetchDashboardData(true);
-      }
-    } catch (err) {
-      addNotification("Check-in Error", getErrorMessage(err, "Failed to check in vehicle."), "error");
-    } finally {
-      setVerifying(false);
-    }
-  };
-
-  const handleGuardCheckOut = async (tokenString: string) => {
-    setVerifying(true);
-    try {
-      const res = await parkingScanService.checkOut(tokenString, selectedLocationId, "cash");
-      if (res.data?.success) {
-        addNotification("Vehicle Checked Out", res.data.message || "Exit logged successfully.", "success");
-        setScanResult(null);
-        setQrTokenInput("");
-        fetchRoleData();
-        fetchDashboardData(true);
-      }
-    } catch (err) {
-      addNotification("Check-out Error", getErrorMessage(err, "Failed to check out vehicle."), "error");
-    } finally {
-      setVerifying(false);
-    }
-  };
-
-  const handlePlateLookup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!plateSearchInput.trim()) return;
-    if (!selectedLocationId) {
-      addNotification("Location Required", "Please select a parking facility.", "warning");
-      return;
-    }
-
-    setVerifying(true);
-    try {
-      const res = await parkingScanService.lookupVehicle(
-        plateSearchInput.trim(),
-        selectedLocationId,
-      );
-      if (res.data?.success) {
-        setScanResult(res.data.data);
-        addNotification("Vehicle Found", `Found record for ${plateSearchInput.toUpperCase()}`, "info");
-      }
-    } catch (err) {
-      addNotification("Lookup Error", getErrorMessage(err, "No active booking found for this plate."), "error");
-    } finally {
-      setVerifying(false);
-    }
-  };
 
   const handleToggleBayStatus = async (slotId: string, currentStatus: string) => {
     const nextStatus = currentStatus === "available" ? "maintenance" : "available";
@@ -305,14 +234,14 @@ export const ParkingRoleDashboardPage: React.FC = () => {
       <div className="min-h-screen pt-28 pb-16 flex flex-col items-center justify-center">
         <div className="w-12 h-12 border-4 border-[#0A4DA6] border-t-transparent rounded-full animate-spin mb-4" />
         <p className="text-xs font-bold text-gray-500 dark:text-gray-400">
-          Loading Smart Parking Dashboard...
+          Loading Parking Management...
         </p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 text-left w-full">
+    <div className="flex flex-col gap-6 text-left w-full">
       <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 shadow-xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
 
@@ -320,7 +249,7 @@ export const ParkingRoleDashboardPage: React.FC = () => {
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[11px] font-black tracking-wider flex items-center gap-1.5">
-                <Car size={13} /> Smart Parking Operations
+                <Car size={13} /> Parking Operations
               </span>
               {refreshing && (
                 <span className="text-[11px] font-bold text-gray-400 flex items-center gap-1 animate-pulse">
@@ -329,10 +258,12 @@ export const ParkingRoleDashboardPage: React.FC = () => {
               )}
             </div>
             <h1 className="text-2xl sm:text-3xl font-black text-[#0B192C] dark:text-white tracking-tight">
-              Parking Control Console
+              Parking Management
             </h1>
             <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">
-              Live capacity monitoring, QR gate validation, slot maintenance & revenue control.
+              {isGuardOnly
+                ? "Assigned parking details and secure QR vehicle check-in/check-out."
+                : "Live capacity monitoring, QR gate validation, slot maintenance and parking operations."}
             </p>
           </div>
 
@@ -370,9 +301,9 @@ export const ParkingRoleDashboardPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="mt-6 pt-5 border-t border-gray-100 dark:border-slate-800/80 flex flex-wrap items-center justify-between gap-4">
+        {!isGuardOnly && <div className="mt-6 pt-5 border-t border-gray-100 dark:border-slate-800/80 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-2 bg-gray-100/80 dark:bg-slate-900/80 p-1.5 rounded-2xl border border-gray-200/50 dark:border-slate-800">
-            <button
+            {canUsePartnerView && <button
               onClick={() => setActiveRoleView("partner")}
               className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
                 activeRoleView === "partner"
@@ -382,9 +313,9 @@ export const ParkingRoleDashboardPage: React.FC = () => {
             >
               <Building2 size={14} />
               <span>Partner Dashboard</span>
-            </button>
+            </button>}
 
-            <button
+            {canUseManagerView && <button
               onClick={() => setActiveRoleView("manager")}
               className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
                 activeRoleView === "manager"
@@ -394,9 +325,9 @@ export const ParkingRoleDashboardPage: React.FC = () => {
             >
               <Sliders size={14} />
               <span>Manager Console</span>
-            </button>
+            </button>}
 
-            <button
+            {canUseGuardView && <button
               onClick={() => setActiveRoleView("guard")}
               className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
                 activeRoleView === "guard"
@@ -405,8 +336,8 @@ export const ParkingRoleDashboardPage: React.FC = () => {
               }`}
             >
               <QrCode size={14} />
-              <span>Security Guard Pass Gate</span>
-            </button>
+              <span>Gate Scanner</span>
+            </button>}
           </div>
 
           <div className="text-[11px] font-extrabold text-gray-400">
@@ -415,7 +346,7 @@ export const ParkingRoleDashboardPage: React.FC = () => {
               {activeRoleView}
             </span>
           </div>
-        </div>
+        </div>}
       </div>
 
       {error && (
@@ -425,7 +356,7 @@ export const ParkingRoleDashboardPage: React.FC = () => {
         </div>
       )}
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {activeRoleView !== "guard" && <div className="-order-1 grid grid-cols-2 lg:grid-cols-4 gap-4">
         <ParkingStatTile
           icon={IndianRupee}
           label="Today's Revenue"
@@ -454,7 +385,24 @@ export const ParkingRoleDashboardPage: React.FC = () => {
           sub="Scheduled exits today"
           tone="danger"
         />
-      </div>
+      </div>}
+
+      {activeRoleView === "guard" && selectedLocationId && (() => {
+        const selected = locations.find((location) => location._id === selectedLocationId) as any;
+        if (!selected) return null;
+        return <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-[#0B192C]">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div><h3 className="text-base text-[#0B192C] dark:text-white">{selected.name}</h3><p className="mt-1 text-xs text-gray-400">{[selected.address?.line1, selected.address?.city, selected.address?.state].filter(Boolean).join(", ")}</p></div>
+            <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs text-emerald-700">Assigned facility</span>
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4 text-sm">
+            <div className="rounded-2xl bg-gray-50 p-3"><span className="block text-xs text-gray-400">Capacity</span>{selected.totalCapacity ?? "—"}</div>
+            <div className="rounded-2xl bg-gray-50 p-3"><span className="block text-xs text-gray-400">Contact</span>{selected.contactPhone || "—"}</div>
+            <div className="rounded-2xl bg-gray-50 p-3"><span className="block text-xs text-gray-400">Vehicle types</span>{(selected.supportedVehicleTypes ?? []).map(vehicleLabel).join(", ") || "—"}</div>
+            <div className="rounded-2xl bg-gray-50 p-3"><span className="block text-xs text-gray-400">Facilities</span>{(selected.amenities ?? []).join(", ") || "—"}</div>
+          </div>
+        </div>;
+      })()}
 
       {activeRoleView === "partner" && (
         <div className="space-y-6">
@@ -510,21 +458,15 @@ export const ParkingRoleDashboardPage: React.FC = () => {
                   <h4 className="text-xs font-extrabold text-gray-500 dark:text-gray-400 mb-3">
                     Peak Arrival Traffic Hours
                   </h4>
-                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                    {partnerReports.peakHours.slice(0, 6).map((ph: any) => (
-                      <div
-                        key={ph.hour}
-                        className="p-2.5 text-center rounded-xl bg-amber-500/5 border border-amber-500/10"
-                      >
-                        <span className="text-[10px] font-extrabold text-amber-600 dark:text-amber-400 block">
-                          {ph.label}
-                        </span>
-                        <span className="text-xs font-black text-[#0B192C] dark:text-white">
-                          {ph.count} cars
-                        </span>
-                      </div>
-                    ))}
-                  </div>
+                  <AnalyticsBarChart
+                    data={partnerReports.peakHours.map((hour: any) => ({
+                      label: hour.label,
+                      arrivals: Number(hour.count || 0),
+                    }))}
+                    dataKey="arrivals"
+                    valueFormatter={(value) => `${value} arrival${value === 1 ? "" : "s"}`}
+                    height={220}
+                  />
                 </div>
               )}
             </div>
@@ -727,154 +669,10 @@ export const ParkingRoleDashboardPage: React.FC = () => {
       )}
 
       {activeRoleView === "guard" && (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white tracking-wider flex items-center gap-2">
-                  <QrCode size={16} className="text-amber-500" /> QR Pass Gate Verification
-                </h3>
-                <span className="px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-500 text-[10px] font-black">
-                  Security Duty
-                </span>
-              </div>
-
-              <div className="space-y-3">
-                <label className="text-xs font-extrabold text-gray-500 dark:text-gray-400 block">
-                  Enter QR Token / Hash
-                </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={qrTokenInput}
-                    onChange={(e) => setQrTokenInput(e.target.value)}
-                    placeholder="Paste or scan QR token (e.g. PKG-8812...)"
-                    className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl px-4 py-2.5 text-xs font-mono text-[#0B192C] dark:text-white focus:outline-none"
-                  />
-                  <button
-                    onClick={() => handleVerifyQr()}
-                    disabled={verifying}
-                    className="px-5 py-2.5 rounded-2xl bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs shrink-0 transition-all cursor-pointer flex items-center gap-1.5"
-                  >
-                    {verifying ? (
-                      <RefreshCw size={14} className="animate-spin" />
-                    ) : (
-                      <ShieldCheck size={14} />
-                    )}
-                    <span>Verify Pass</span>
-                  </button>
-                </div>
-              </div>
-
-              {scanResult && !scanResult.error && (
-                <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-                      <CheckCircle2 size={16} /> Verified Parking Pass
-                    </span>
-                    <span className="text-[10px] font-bold text-gray-400">
-                      Status: {scanResult.booking?.status || "Valid"}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 text-xs font-bold text-[#0B192C] dark:text-white pt-1">
-                    <div>
-                      <span className="text-gray-400 block text-[10px]">Vehicle No</span>
-                      <span className="font-mono text-sm">{scanResult.booking?.vehicleNumber}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-400 block text-[10px]">Assigned Bay</span>
-                      <span className="text-amber-500">{scanResult.booking?.assignedSlotNumber || "P-01"}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 pt-2">
-                    <button
-                      onClick={() => handleGuardCheckIn(qrTokenInput)}
-                      className="w-1/2 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs transition-all cursor-pointer flex items-center justify-center gap-1"
-                    >
-                      <LogIn size={14} /> Log Entry
-                    </button>
-                    <button
-                      onClick={() => handleGuardCheckOut(qrTokenInput)}
-                      className="w-1/2 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black text-xs transition-all cursor-pointer flex items-center justify-center gap-1"
-                    >
-                      <LogOut size={14} /> Log Exit
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
-              <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white tracking-wider flex items-center gap-2">
-                <Search size={16} className="text-[#0A4DA6]" /> License Plate Search
-              </h3>
-
-              <form onSubmit={handlePlateLookup} className="space-y-3">
-                <label className="text-xs font-extrabold text-gray-500 dark:text-gray-400 block">
-                  Search Registration Number
-                </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={plateSearchInput}
-                    onChange={(e) => setPlateSearchInput(e.target.value)}
-                    placeholder="e.g. UK07AB1234"
-                    className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl px-4 py-2.5 text-xs font-mono text-[#0B192C] dark:text-white focus:outline-none"
-                  />
-                  <button
-                    type="submit"
-                    disabled={verifying}
-                    className="px-5 py-2.5 rounded-2xl bg-[#0A4DA6] hover:bg-blue-900 text-white font-extrabold text-xs shrink-0 transition-all cursor-pointer flex items-center gap-1.5"
-                  >
-                    <Search size={14} />
-                    <span>Lookup</span>
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
-            <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white tracking-wider flex items-center gap-2">
-              <Clock size={16} className="text-[#0A4DA6]" /> Live Gate Scan Log Activity
-            </h3>
-
-            <div className="space-y-2 max-h-[300px] overflow-y-auto">
-              {scanLogs.length === 0 ? (
-                <p className="text-xs text-gray-400 italic py-4 text-center">
-                  No scan logs recorded yet for this facility.
-                </p>
-              ) : (
-                scanLogs.map((log: any) => (
-                  <div
-                    key={log._id}
-                    className="p-3 rounded-2xl bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold"
-                  >
-                    <div className="space-y-0.5">
-                      <span className="text-[#0B192C] dark:text-white font-mono">
-                        {log.vehicleNumber || "Pass Token Scan"}
-                      </span>
-                      <span className="text-[10px] text-gray-400 block font-normal">
-                        {log.message || "Entry gate check"}
-                      </span>
-                    </div>
-                    <span
-                      className={`px-2.5 py-1 rounded-full text-[10px] font-black ${
-                        log.result === "success" || log.result === "valid"
-                          ? "bg-emerald-500/10 text-emerald-500"
-                          : "bg-red-500/10 text-red-400"
-                      }`}
-                    >
-                      {log.action}: {log.result}
-                    </span>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
+        <ParkingGuardPanelPage
+          embedded
+          preferredLocationId={selectedLocationId}
+        />
       )}
 
       {showManualCheckInModal && (

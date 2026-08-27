@@ -1,659 +1,264 @@
-import React, { useCallback, useEffect, useState } from "react";
-import {
-  ShieldCheck,
-  UserPlus,
-  Search,
-  Trash2,
-  Loader2,
-  AlertTriangle,
-  RefreshCw,
-  X,
-} from "lucide-react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { AlertTriangle, Loader2, RefreshCw, ShieldCheck, Trash2, UserPlus, X } from "lucide-react";
 import { EnterprisePageHeader } from "../../shared/components/EnterprisePageHeader";
 import { EnterpriseStatusBadge } from "../../shared/components/EnterpriseStatusBadge";
 import { useNotifications } from "../../../contexts/NotificationContext";
-import api, { getErrorMessage } from "../../../lib/api";
-import { parkingAdminService } from "../../../modules/parking/services/parking.service";
+import { useAuth } from "../../../contexts/AuthContext";
+import { getErrorMessage } from "../../../lib/api";
+import { parkingPartnerService } from "../../../modules/parking/services/parking.service";
 import { humanizeLabel } from "../../../utils/labels";
 
-const GRANT_STATUS_FILTERS = ["all", "active", "inactive", "suspended"];
-
-const ROLE_BLURB: Record<string, string> = {
-  parking_partner:
-    "Full control of their own parking: locations, pricing, slots, staff, reports and refund requests.",
-  parking_manager:
-    "Day-to-day operations — bookings, occupancy, availability, reports. Can assign security guards only.",
-  security_guard:
-    "Gate duty only: scan a QR, view the booking, check vehicles in and out.",
+type StaffForm = {
+  name: string;
+  email: string;
+  phone: string;
+  ashramId: string;
+  locationId: string;
+  parkingRole: "parking_manager" | "security_guard";
+  shift: string;
+  password: string;
+  confirmPassword: string;
 };
 
-const FALLBACK_ROLES = [
-  "parking_partner",
-  "parking_manager",
-  "security_guard",
-] as const;
+const emptyForm = (): StaffForm => ({
+  name: "",
+  email: "",
+  phone: "",
+  ashramId: "",
+  locationId: "",
+  parkingRole: "security_guard",
+  shift: "general",
+  password: "",
+  confirmPassword: "",
+});
+
+const refId = (value: any): string => String(value?._id ?? value?.id ?? value ?? "");
 
 export const ParkingStaffRolesPage: React.FC = () => {
   const { addNotification, confirmAction } = useNotifications();
-  const [grants, setGrants] = useState<any[]>([]);
-  const [partners, setPartners] = useState<any[]>([]);
+  const { user } = useAuth();
   const [locations, setLocations] = useState<any[]>([]);
-  const [roles, setRoles] = useState<
-    { role: string; capabilities: string[] | null }[]
-  >(FALLBACK_ROLES.map((role) => ({ role, capabilities: null })));
+  const [grants, setGrants] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [busyId, setBusyId] = useState("");
-  const [roleFilter, setRoleFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [userQuery, setUserQuery] = useState("");
-  const [userResults, setUserResults] = useState<any[]>([]);
-  const [searching, setSearching] = useState(false);
-  const [form, setForm] = useState<{
-    userId: string;
-    userLabel: string;
-    partnerId: string;
-    parkingRole: string;
-    locationIds: string[];
-    employeeCode: string;
-    shift: string;
-    phone: string;
-  }>({
-    userId: "",
-    userLabel: "",
-    partnerId: "",
-    parkingRole: "security_guard",
-    locationIds: [],
-    employeeCode: "",
-    shift: "general",
-    phone: "",
-  });
+  const [busyId, setBusyId] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [form, setForm] = useState<StaffForm>(emptyForm);
+  const [credentials, setCredentials] = useState<any>(null);
+  const isParkingManagerOnly =
+    (user?.parkingRoles ?? []).includes("parking_manager") &&
+    !(user?.parkingRoles ?? []).includes("parking_partner") &&
+    !["super_admin", "ashram_owner", "ashram_admin", "owner", "stay_admin"].includes(
+      user?.role ?? "",
+    );
+  const canApprove = [
+    "super_admin",
+    "ashram_owner",
+    "ashram_admin",
+    "owner",
+    "stay_admin",
+  ].includes(user?.role ?? "");
 
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const [staffRes, partnersRes, locationsRes, rolesRes] =
-        await Promise.allSettled([
-          parkingAdminService.listStaff({
-            limit: 100,
-            ...(roleFilter ? { parkingRole: roleFilter } : {}),
-          }),
-          parkingAdminService.listPartners({ limit: 100 }),
-          parkingAdminService.listLocations({ limit: 100 }),
-          parkingAdminService.listRoles(),
-        ]);
-      setGrants(
-        staffRes.status === "fulfilled" ? (staffRes.value.data?.data ?? []) : [],
+      const locationsRes = await parkingPartnerService.listLocations();
+      const scopedLocations = locationsRes.data?.data ?? [];
+      setLocations(scopedLocations);
+      const partnerIds = [...new Set(scopedLocations.map((row: any) => refId(row.partnerId)))].filter(Boolean) as string[];
+      const staffResponses = await Promise.all(
+        partnerIds.map((partnerId) => parkingPartnerService.listStaff(partnerId)),
       );
-      setPartners(
-        partnersRes.status === "fulfilled"
-          ? (partnersRes.value.data?.data ?? [])
-          : [],
+      const unique = new Map<string, any>();
+      staffResponses.forEach((response) =>
+        (response.data?.data ?? []).forEach((grant: any) => unique.set(String(grant._id), grant)),
       );
-      setLocations(
-        locationsRes.status === "fulfilled"
-          ? (locationsRes.value.data?.data ?? [])
-          : [],
-      );
-      setRoles(
-        rolesRes.status === "fulfilled" && rolesRes.value.data?.data?.length
-          ? rolesRes.value.data.data
-          : FALLBACK_ROLES.map((role) => ({ role, capabilities: null })),
-      );
-
-      const failures = [
-        ["Staff roster", staffRes],
-        ["Partners", partnersRes],
-        ["Locations", locationsRes],
-        ["Role catalogue", rolesRes],
-      ]
-        .filter(([, r]) => (r as PromiseSettledResult<unknown>).status === "rejected")
-        .map(
-          ([name, r]) =>
-            `${name}: ${getErrorMessage((r as PromiseRejectedResult).reason)}`,
-        );
-      if (failures.length) setError(failures.join(" · "));
+      setGrants([...unique.values()]);
+    } catch (err) {
+      const message = getErrorMessage(err, "Unable to load parking staff.");
+      setError(message);
+      setLocations([]);
+      setGrants([]);
     } finally {
       setLoading(false);
     }
-  }, [roleFilter]);
+  }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useEffect(() => { void load(); }, [load]);
 
-  const visibleGrants =
-    statusFilter === "all"
-      ? grants
-      : grants.filter((item) => item.status === statusFilter);
-
-  const searchUsers = async (term: string) => {
-    setUserQuery(term);
-    if (term.trim().length < 2) {
-      setUserResults([]);
-      return;
-    }
-    setSearching(true);
-    try {
-      const res = await api.get("/admin/crud/users", {
-        params: { search: term.trim() },
-      });
-      setUserResults((res.data?.data ?? []).slice(0, 8));
-    } catch {
-      setUserResults([]);
-    } finally {
-      setSearching(false);
-    }
-  };
-
-  const partnerLocations = locations.filter(
-    (location) =>
-      String(location.partnerId?._id ?? location.partnerId ?? "") ===
-      form.partnerId,
-  );
-
-  const resetForm = () => {
-    setForm({
-      userId: "",
-      userLabel: "",
-      partnerId: "",
-      parkingRole: "security_guard",
-      locationIds: [],
-      employeeCode: "",
-      shift: "general",
-      phone: "",
+  const ashrams = useMemo(() => {
+    const unique = new Map<string, any>();
+    locations.forEach((location) => {
+      const id = refId(location.ashramId);
+      if (id) unique.set(id, location.ashramId);
     });
-    setUserQuery("");
-    setUserResults([]);
+    return [...unique.entries()].map(([id, value]) => ({ id, name: value?.name ?? "Ashram" }));
+  }, [locations]);
+
+  const ashramLocations = locations.filter((location) => refId(location.ashramId) === form.ashramId);
+  const visibleGrants = grants.filter((grant) => statusFilter === "all" || grant.status === statusFilter);
+
+  const openCreate = () => {
+    const next = emptyForm();
+    if (ashrams.length === 1) next.ashramId = ashrams[0].id;
+    setForm(next);
+    setCredentials(null);
+    setShowForm(true);
   };
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!form.userId || !form.partnerId) {
-      addNotification(
-        "Missing Details",
-        "Pick both a user and the partner the role belongs to.",
-        "error",
-      );
+    if (!form.ashramId || !form.locationId) {
+      addNotification("Parking Required", "Select an ashram and one of its parking facilities.", "error");
+      return;
+    }
+    if (form.password.length < 8) {
+      addNotification("Password Required", "Create a password containing at least 8 characters.", "error");
+      return;
+    }
+    if (form.password !== form.confirmPassword) {
+      addNotification("Passwords Do Not Match", "Password and confirm password must match.", "error");
       return;
     }
     setSaving(true);
     try {
-      const res = await parkingAdminService.assignStaff({
-        userId: form.userId,
-        partnerId: form.partnerId,
-        parkingRole: form.parkingRole,
-        locationIds: form.locationIds,
-        employeeCode: form.employeeCode,
-        shift: form.shift,
+      const response = await parkingPartnerService.createStaffAccount({
+        name: form.name,
+        email: form.email,
         phone: form.phone,
+        ashramId: form.ashramId,
+        locationIds: [form.locationId],
+        parkingRole: form.parkingRole,
+        shift: form.shift,
+        password: form.password,
       });
+      setCredentials(response.data?.data);
       addNotification(
-        "Role Assigned",
-        res.data?.message || "Parking role assigned.",
+        response.data?.data?.approvalRequired
+          ? "Approval Required"
+          : "Parking Staff Created",
+        response.data?.data?.approvalRequired
+          ? "Security guard account created and sent to the Ashram Owner/Admin for approval."
+          : response.data?.message || "The parking staff account is ready.",
         "success",
       );
-      setIsModalOpen(false);
-      resetForm();
       await load();
     } catch (err) {
-      addNotification("Assign Failed", getErrorMessage(err), "error");
+      addNotification("Account Creation Failed", getErrorMessage(err, "Unable to create parking staff."), "error");
     } finally {
       setSaving(false);
     }
   };
 
-  const revoke = async (grant: any) => {
-    const who = grant.userId?.name || grant.userId?.email || "this user";
-    if (!(await confirmAction({ title: "Revoke parking role?", message: `${who} will immediately lose ${String(grant.parkingRole).replace(/_/g, " ")} access.`, confirmLabel: "Revoke Access", tone: "danger" }))) return;
-    setBusyId(grant._id);
+  const approve = async (grant: any) => {
+    setBusyId(String(grant._id));
     try {
-      await parkingAdminService.revokeStaff(grant._id);
-      addNotification("Role Revoked", "Parking access removed.", "info");
+      await parkingPartnerService.approveStaff(String(grant._id));
+      addNotification("Staff Approved", "The security guard can now sign in and use the parking gate.", "success");
       await load();
     } catch (err) {
-      addNotification("Revoke Failed", getErrorMessage(err), "error");
+      addNotification("Approval Failed", getErrorMessage(err), "error");
     } finally {
       setBusyId("");
     }
   };
 
-  const card =
-    "bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] shadow-sm";
-  const th =
-    "text-left px-4 py-3 text-[11px] font-black tracking-wider text-gray-400";
-  const td = "px-4 py-3 text-sm text-[#0B192C] dark:text-slate-200";
-  const input =
-    "w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30";
-  const label =
-    "text-[11px] font-black tracking-wider text-gray-400 block mb-1.5";
+  const revoke = async (grant: any) => {
+    const name = grant.userId?.name ?? grant.userId?.email ?? "this account";
+    const confirmed = await confirmAction({
+      title: "Remove parking access?",
+      message: `${name} will no longer be able to access the selected parking facility.`,
+      confirmLabel: "Remove Access",
+      tone: "danger",
+    });
+    if (!confirmed) return;
+    setBusyId(String(grant._id));
+    try {
+      await parkingPartnerService.revokeStaff(String(grant._id));
+      addNotification("Access Removed", "Parking access was removed.", "info");
+      await load();
+    } catch (err) {
+      addNotification("Remove Failed", getErrorMessage(err), "error");
+    } finally {
+      setBusyId("");
+    }
+  };
+
+  const inputClass = "w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#0A4DA6]/20 dark:border-slate-700 dark:bg-slate-900";
+  const labelClass = "mb-1.5 block text-xs text-gray-500";
 
   return (
-    <div className="space-y-6 text-left w-full">
+    <div className="w-full space-y-6 text-left">
       <EnterprisePageHeader
-        title="Parking Staff & Roles"
-        subtitle="Parking permissions are grants against a partner, not account roles — they do not appear in user management."
+        title="Parking Staff"
+        subtitle="Create dedicated staff accounts scoped to one ashram and its parking facility."
         icon={<ShieldCheck size={22} />}
-        badgeText="Super Admin"
-        actions={
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => {
-                resetForm();
-                setIsModalOpen(true);
-              }}
-              className="px-5 py-2.5 bg-[#0A4DA6] hover:bg-[#083b80] text-white rounded-full text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-[#0A4DA6]/20 cursor-pointer"
-            >
-              <UserPlus size={16} /> Assign Role
-            </button>
-            <button
-              onClick={load}
-              disabled={loading}
-              className="p-2.5 bg-gray-50 dark:bg-slate-900 hover:bg-gray-100 dark:hover:bg-slate-800 border border-gray-100 dark:border-slate-800 rounded-full text-gray-500 cursor-pointer transition-colors"
-              title="Refresh"
-            >
-              <RefreshCw size={16} className={loading ? "animate-spin text-[#0A4DA6]" : ""} />
-            </button>
-          </div>
-        }
+        actions={<div className="flex gap-2">
+          <button type="button" onClick={openCreate} className="flex items-center gap-2 rounded-full bg-[#0A4DA6] px-5 py-2.5 text-xs text-white"><UserPlus size={15} /> Create Parking Staff</button>
+          <button type="button" onClick={() => void load()} className="rounded-full border border-gray-200 p-2.5 text-gray-600" title="Refresh"><RefreshCw size={16} className={loading ? "animate-spin" : ""} /></button>
+        </div>}
       />
 
-      {error && (
-        <div className="flex items-start gap-2.5 p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-800 dark:text-rose-300">
-          <AlertTriangle size={16} className="mt-0.5 shrink-0" />
-          <p className="text-sm font-semibold">{error}</p>
-        </div>
-      )}
+      {error && <div className="flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"><AlertTriangle size={17} /> {error}</div>}
 
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-[11px] font-black uppercase tracking-wider text-gray-400">Status</span>
-        {GRANT_STATUS_FILTERS.map((option) => {
-          const count =
-            option === "all"
-              ? grants.length
-              : grants.filter((item) => item.status === option).length;
-          return (
-            <button
-              key={option}
-              type="button"
-              onClick={() => setStatusFilter(option)}
-              className={`px-3 py-1.5 rounded-full text-[11px] font-extrabold capitalize transition-colors ${
-                statusFilter === option
-                  ? "bg-[#0A4DA6] text-white"
-                  : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200"
-              }`}
-            >
-              {option === "all" ? "All" : option} ({count})
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {roles.map((role) => (
-          <button
-            key={role.role}
-            onClick={() =>
-              setRoleFilter(roleFilter === role.role ? "" : role.role)
-            }
-            className={`${card} p-5 text-left transition-all hover:-translate-y-0.5 ${
-              roleFilter === role.role ? "ring-2 ring-[#0A4DA6]" : ""
-            }`}
-          >
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-black text-[#0B192C] dark:text-white capitalize">
-                {role.role.replace(/_/g, " ")}
-              </span>
-              {role.capabilities && (
-                <span className="px-2 py-0.5 rounded-full bg-[#0A4DA6]/10 text-[#0A4DA6] text-[10px] font-black">
-                  {role.capabilities.length} CAPS
-                </span>
-              )}
-            </div>
-            <p className="text-xs text-gray-400 font-semibold leading-relaxed">
-              {ROLE_BLURB[role.role] ?? ""}
-            </p>
-          </button>
-        ))}
-      </div>
-
-      <div className={`${card} overflow-hidden`}>
-        <div className="p-5 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between gap-3">
-          <h3 className="text-sm font-black tracking-wider text-gray-400">
-            {roleFilter
-              ? `${roleFilter.replace(/_/g, " ")} grants`
-              : "All parking grants"}
-          </h3>
-          {roleFilter && (
-            <button
-              onClick={() => setRoleFilter("")}
-              className="text-xs font-bold text-[#0A4DA6] hover:underline"
-            >
-              Clear filter
-            </button>
-          )}
+      <div className="rounded-[24px] border border-gray-100 bg-white shadow-sm dark:border-slate-800 dark:bg-[#0B192C]">
+        <div className="flex items-center justify-between gap-3 border-b border-gray-100 p-4 dark:border-slate-800">
+          <div><h3 className="text-base text-[#0B192C] dark:text-white">Parking Team</h3><p className="mt-1 text-xs text-gray-400">Staff see only the parking facilities assigned to them.</p></div>
+          <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="rounded-full border border-gray-200 bg-white px-4 py-2 text-xs dark:border-slate-700 dark:bg-slate-900">
+            <option value="all">All statuses</option><option value="pending_approval">Pending approval</option><option value="active">Active</option><option value="inactive">Inactive</option><option value="suspended">Suspended</option>
+          </select>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[860px]">
-            <thead className="bg-gray-50 dark:bg-slate-900/60">
-              <tr>
-                <th className={th}>Staff Member</th>
-                <th className={th}>Partner</th>
-                <th className={th}>Role</th>
-                <th className={th}>Location Scope</th>
-                <th className={th}>Shift</th>
-                <th className={th}>Status</th>
-                <th className={th}>Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
-              {visibleGrants.map((grant) => (
-                <tr key={grant._id}>
-                  <td className={`${td} font-bold`}>
-                    {grant.userId?.name || "—"}
-                    <span className="block text-xs text-gray-400 font-semibold">
-                      {grant.userId?.email || ""}
-                    </span>
-                  </td>
-                  <td className={td}>
-                    {grant.partnerId?.businessName || "—"}
-                  </td>
-                  <td className={`${td} capitalize`}>
-                    {String(grant.parkingRole).replace(/_/g, " ")}
-                    <span className="block text-xs text-gray-400 font-semibold">
-                      {grant.capabilities?.length ?? 0} capabilities
-                    </span>
-                  </td>
-                  <td className={td}>
-                    {grant.scope === "all_partner_locations" ? (
-                      <span className="px-2 py-0.5 rounded-full bg-[#0A4DA6]/10 text-[#0A4DA6] text-[11px] font-black">
-                        ALL PARTNER LOCATIONS
-                      </span>
-                    ) : (
-                      (grant.locationIds ?? [])
-                        .map((l: any) => l?.name || "—")
-                        .join(", ")
-                    )}
-                  </td>
-                  <td className={`${td} capitalize`}>{grant.shift || "—"}</td>
-                  <td className={td}>
-                    <EnterpriseStatusBadge status={grant.status} />
-                  </td>
-                  <td className={td}>
-                    {grant.status === "active" && (
-                      <button
-                        disabled={busyId === grant._id}
-                        onClick={() => revoke(grant)}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold disabled:opacity-50"
-                      >
-                        <Trash2 size={13} />
-                        Revoke
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-              {!visibleGrants.length && !loading && (
-                <tr>
-                  <td
-                    colSpan={7}
-                    className="px-4 py-12 text-center text-sm font-bold text-gray-400"
-                  >
-                    No parking roles assigned yet.
-                  </td>
-                </tr>
-              )}
+          <table className="w-full text-left text-sm">
+            <thead className="bg-gray-50 text-xs text-gray-400 dark:bg-slate-900"><tr><th className="px-5 py-3">Staff</th><th className="px-5 py-3">Parking role</th><th className="px-5 py-3">Parking facility</th><th className="px-5 py-3">Employee code</th><th className="px-5 py-3">Status</th><th className="px-5 py-3 text-right">Action</th></tr></thead>
+            <tbody>
+              {visibleGrants.map((grant) => <tr key={grant._id} className="border-t border-gray-100 dark:border-slate-800">
+                <td className="px-5 py-4"><div>{grant.userId?.name ?? "Parking staff"}</div><div className="text-xs text-gray-400">{grant.userId?.email}</div></td>
+                <td className="px-5 py-4">{humanizeLabel(grant.parkingRole)}</td>
+                <td className="px-5 py-4">{(grant.locationIds ?? []).map((row: any) => row.name).join(", ") || "All partner parking"}</td>
+                <td className="px-5 py-4 font-mono text-xs">{grant.employeeCode || "—"}</td>
+                <td className="px-5 py-4"><EnterpriseStatusBadge status={grant.status} size="sm" /></td>
+                <td className="px-5 py-4 text-right"><div className="flex justify-end gap-2">{grant.status === "pending_approval" && canApprove && <button type="button" onClick={() => void approve(grant)} disabled={busyId === String(grant._id)} className="rounded-full bg-[#0A4DA6] px-3 py-2 text-xs text-white disabled:opacity-50">Approve</button>}{["active", "pending_approval"].includes(grant.status) && <button type="button" onClick={() => void revoke(grant)} disabled={busyId === String(grant._id)} className="rounded-full border border-red-200 p-2 text-red-600 disabled:opacity-50" title="Remove parking access">{busyId === String(grant._id) ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}</button>}</div></td>
+              </tr>)}
+              {!loading && visibleGrants.length === 0 && <tr><td colSpan={6} className="px-5 py-12 text-center text-sm text-gray-400">No parking staff found.</td></tr>}
             </tbody>
           </table>
         </div>
       </div>
 
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white dark:bg-[#0B192C] rounded-[28px] w-full max-w-5xl max-h-[90vh] overflow-y-auto shadow-2xl">
-            <div className="sticky top-0 bg-white dark:bg-[#0B192C] p-6 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between">
-              <h3 className="text-lg font-black text-[#0B192C] dark:text-white">
-                Assign Parking Role
-              </h3>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-800"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <form onSubmit={submit} className="p-6 space-y-5">
-              <div>
-                <label className={label}>Staff Member</label>
-                {form.userId ? (
-                  <div className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900">
-                    <span className="text-sm font-bold text-emerald-900 dark:text-emerald-300">
-                      {form.userLabel}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setForm({ ...form, userId: "", userLabel: "" })
-                      }
-                      className="text-xs font-bold text-emerald-700 hover:underline"
-                    >
-                      Change
-                    </button>
-                  </div>
-                ) : (
-                  <div className="relative">
-                    <Search
-                      size={15}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                    />
-                    <input
-                      value={userQuery}
-                      onChange={(e) => searchUsers(e.target.value)}
-                      placeholder="Search by name or email (min 2 characters)"
-                      className={`${input} pl-9`}
-                    />
-                    {searching && (
-                      <Loader2
-                        size={15}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-gray-400"
-                      />
-                    )}
-                    {userResults.length > 0 && (
-                      <div className="absolute z-10 mt-1 w-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl shadow-xl overflow-hidden">
-                        {userResults.map((user) => (
-                          <button
-                            key={user._id}
-                            type="button"
-                            onClick={() => {
-                              setForm({
-                                ...form,
-                                userId: user._id,
-                                userLabel: `${user.name} · ${user.email}`,
-                                phone: form.phone || user.phone || "",
-                              });
-                              setUserResults([]);
-                              setUserQuery("");
-                            }}
-                            className="w-full text-left px-3.5 py-2.5 hover:bg-gray-50 dark:hover:bg-slate-800 border-b border-gray-100 dark:border-slate-800 last:border-0"
-                          >
-                            <span className="text-sm font-bold block">
-                              {user.name}
-                            </span>
-                            <span className="text-xs text-gray-400">
-                              {user.email} · {humanizeLabel(user.role)}
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className={label}>Partner</label>
-                  <select
-                    required
-                    value={form.partnerId}
-                    onChange={(e) =>
-                      setForm({
-                        ...form,
-                        partnerId: e.target.value,
-                        locationIds: [],
-                      })
-                    }
-                    className={input}
-                  >
-                    <option value="">Select a partner…</option>
-                    {partners.map((partner) => (
-                      <option key={partner._id} value={partner._id}>
-                        {partner.businessName} ({partner.partnerCode})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className={label}>Parking Role</label>
-                  <select
-                    value={form.parkingRole}
-                    onChange={(e) =>
-                      setForm({ ...form, parkingRole: e.target.value })
-                    }
-                    className={input}
-                  >
-                    {(roles.length
-                      ? roles.map((r) => r.role)
-                      : [...FALLBACK_ROLES]
-                    ).map((role) => (
-                      <option key={role} value={role}>
-                        {role.replace(/_/g, " ")}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="text-xs text-gray-400 font-semibold mt-1.5 leading-relaxed">
-                    {ROLE_BLURB[form.parkingRole] ?? ""}
-                  </p>
-                </div>
-              </div>
-
-              <div>
-                <label className={label}>
-                  Location Scope — leave empty for all partner locations
-                </label>
-                {!form.partnerId ? (
-                  <p className="text-sm text-gray-400 font-semibold px-3.5 py-2.5 rounded-xl bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700">
-                    Select a partner first.
-                  </p>
-                ) : partnerLocations.length ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-44 overflow-y-auto p-1">
-                    {partnerLocations.map((location) => {
-                      const checked = form.locationIds.includes(location._id);
-                      return (
-                        <label
-                          key={location._id}
-                          className="flex items-center gap-2.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={() =>
-                              setForm({
-                                ...form,
-                                locationIds: checked
-                                  ? form.locationIds.filter(
-                                      (id) => id !== location._id,
-                                    )
-                                  : [...form.locationIds, location._id],
-                              })
-                            }
-                          />
-                          <span className="text-sm font-semibold truncate">
-                            {location.name}
-                          </span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <p className="text-sm text-gray-400 font-semibold px-3.5 py-2.5 rounded-xl bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700">
-                    This partner has no locations yet — the grant will cover
-                    every location it adds later.
-                  </p>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className={label}>Employee Code</label>
-                  <input
-                    value={form.employeeCode}
-                    onChange={(e) =>
-                      setForm({ ...form, employeeCode: e.target.value })
-                    }
-                    className={input}
-                  />
-                </div>
-                <div>
-                  <label className={label}>Shift</label>
-                  <select
-                    value={form.shift}
-                    onChange={(e) =>
-                      setForm({ ...form, shift: e.target.value })
-                    }
-                    className={input}
-                  >
-                    {[
-                      "general",
-                      "morning",
-                      "evening",
-                      "night",
-                      "rotational",
-                    ].map((shift) => (
-                      <option key={shift} value={shift}>
-                        {shift}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className={label}>Phone</label>
-                  <input
-                    value={form.phone}
-                    onChange={(e) =>
-                      setForm({ ...form, phone: e.target.value })
-                    }
-                    className={input}
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-5 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 text-sm font-bold"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#0A4DA6] text-white text-sm font-bold hover:bg-[#083d85] disabled:opacity-60"
-                >
-                  {saving && <Loader2 size={15} className="animate-spin" />}
-                  Assign Role
-                </button>
-              </div>
-            </form>
+      {showForm && <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm">
+        <div className="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-[28px] bg-white p-6 dark:bg-[#0B192C]">
+          <div className="mb-5 flex items-center justify-between border-b border-gray-100 pb-4 dark:border-slate-800">
+            <div><h3 className="text-lg text-[#0B192C] dark:text-white">Create Parking Staff Account</h3><p className="mt-1 text-xs text-gray-400">Set the staff member's login password. The employee code is generated automatically.</p></div>
+            <button type="button" onClick={() => setShowForm(false)} className="text-gray-400"><X size={19} /></button>
           </div>
+
+          {credentials ? <div className="space-y-4">
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">{credentials.approvalRequired ? "Account created and awaiting Ashram Owner/Admin approval. Share the login details only after approval." : "Account created. The staff member can sign in with the password you set."}</div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-2xl bg-gray-50 p-4"><div className="text-xs text-gray-400">Email</div><div className="mt-1 break-all">{credentials.account?.email}</div></div>
+              <div className="rounded-2xl bg-gray-50 p-4"><div className="text-xs text-gray-400">Employee code</div><div className="mt-1 font-mono">{credentials.account?.employeeCode}</div></div>
+            </div>
+            <button type="button" onClick={() => setShowForm(false)} className="w-full rounded-full bg-[#0A4DA6] py-3 text-sm text-white">Done</button>
+          </div> : <form onSubmit={submit} className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label><span className={labelClass}>Full name</span><input required minLength={2} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inputClass} /></label>
+              <label><span className={labelClass}>Email</span><input required type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className={inputClass} /></label>
+              <label><span className={labelClass}>Phone</span><input required inputMode="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className={inputClass} /></label>
+              <label><span className={labelClass}>Parking role</span><select value={form.parkingRole} onChange={(e) => setForm({ ...form, parkingRole: e.target.value as StaffForm["parkingRole"] })} className={inputClass}><option value="security_guard">Parking Security Guard</option>{!isParkingManagerOnly && <option value="parking_manager">Parking Manager</option>}</select></label>
+              <label><span className={labelClass}>Ashram</span><select required value={form.ashramId} onChange={(e) => setForm({ ...form, ashramId: e.target.value, locationId: "" })} className={inputClass}><option value="">Select ashram</option>{ashrams.map((ashram) => <option key={ashram.id} value={ashram.id}>{ashram.name}</option>)}</select></label>
+              <label><span className={labelClass}>Parking facility</span><select required disabled={!form.ashramId} value={form.locationId} onChange={(e) => setForm({ ...form, locationId: e.target.value })} className={inputClass}><option value="">Select parking</option>{ashramLocations.map((location) => <option key={location._id} value={location._id}>{location.name}</option>)}</select></label>
+              <label className="sm:col-span-2"><span className={labelClass}>Shift</span><select value={form.shift} onChange={(e) => setForm({ ...form, shift: e.target.value })} className={inputClass}><option value="general">General</option><option value="morning">Morning</option><option value="evening">Evening</option><option value="night">Night</option></select></label>
+              <label><span className={labelClass}>Password</span><input required type="password" minLength={8} autoComplete="new-password" placeholder="Minimum 8 characters" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} className={inputClass} /></label>
+              <label><span className={labelClass}>Confirm password</span><input required type="password" minLength={8} autoComplete="new-password" placeholder="Re-enter password" value={form.confirmPassword} onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })} className={inputClass} /></label>
+            </div>
+            <div className="flex gap-3 border-t border-gray-100 pt-4 dark:border-slate-800"><button type="button" onClick={() => setShowForm(false)} className="flex-1 rounded-full bg-gray-100 py-3 text-sm">Cancel</button><button disabled={saving} type="submit" className="flex flex-1 items-center justify-center gap-2 rounded-full bg-[#0A4DA6] py-3 text-sm text-white disabled:opacity-60">{saving && <Loader2 size={16} className="animate-spin" />} Create Account</button></div>
+          </form>}
         </div>
-      )}
+      </div>}
     </div>
   );
 };

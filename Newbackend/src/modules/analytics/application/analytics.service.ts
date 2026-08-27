@@ -134,6 +134,35 @@ export class AnalyticsService {
         checkOut < new Date(today.getTime() + 86_400_000)
       );
     }).length;
+    const dayKey = (date: Date): string => date.toISOString().slice(0, 10);
+    const revenueTrend = Array.from({ length: 14 }, (_, index) => {
+      const date = new Date(today);
+      date.setDate(today.getDate() - (13 - index));
+      const key = dayKey(date);
+      const rows = bookings.filter((booking: any) => {
+        const createdAt = new Date(booking.createdAt);
+        return !Number.isNaN(createdAt.getTime()) && dayKey(createdAt) === key;
+      });
+      return {
+        date: key,
+        label: date.toLocaleDateString("en-IN", {
+          day: "2-digit",
+          month: "short",
+        }),
+        bookings: rows.length,
+        revenue: round2(rows.reduce((sum: number, row: any) => sum + paid(row), 0)),
+        gross: round2(rows.reduce((sum: number, row: any) => sum + total(row), 0)),
+      };
+    });
+    const countBy = (field: "status" | "paymentStatus") =>
+      Object.entries(
+        bookings.reduce<Record<string, number>>((counts, booking: any) => {
+          const key = String(booking[field] || "unknown");
+          counts[key] = (counts[key] ?? 0) + 1;
+          return counts;
+        }, {}),
+      ).map(([status, count]) => ({ status, count }));
+
     return {
       totalAshrams: stays.length,
       totalRoomCategories: rooms.length,
@@ -175,6 +204,10 @@ export class AnalyticsService {
             ).toFixed(1),
           )
         : 0,
+      revenueTrend,
+      bookingStatuses: countBy("status"),
+      paymentStatuses: countBy("paymentStatus"),
+      updatedAt: new Date().toISOString(),
     };
   }
   private jurisdictionFilter(user: AuthenticatedUser): Record<string, any> {

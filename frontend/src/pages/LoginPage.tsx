@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useAuth, type OtpChallenge } from "../contexts/AuthContext";
 import OtpChallengeForm from "../components/OtpChallengeForm";
@@ -10,6 +10,8 @@ import {
   Lock,
   Mail,
   Phone,
+  Send,
+  Loader2,
   Eye,
   EyeOff,
   BadgeCheck,
@@ -57,6 +59,8 @@ export const LoginPage: React.FC = () => {
   const [remember, setRemember] = useState(true);
   const [phone, setPhone] = useState("");
   const [otpSent, setOtpSent] = useState(false);
+  const [sendingOtp, setSendingOtp] = useState(false);
+  const [resendIn, setResendIn] = useState(0);
   const [otpCode, setOtpCode] = useState("");
   const [serverOtpMsg, setServerOtpMsg] = useState("");
   const [error, setError] = useState("");
@@ -155,20 +159,36 @@ export const LoginPage: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    if (resendIn <= 0) return;
+    const timer = window.setTimeout(() => setResendIn((n) => n - 1), 1000);
+    return () => window.clearTimeout(timer);
+  }, [resendIn]);
+
   const handleSendOtp = async (e: React.MouseEvent) => {
     e.preventDefault();
     setError("");
     if (!phone) return setError("Enter phone number");
-    setLoading(true);
+    setSendingOtp(true);
+    // A very fast response makes the spinner flash and read as "nothing
+    // happened", so hold it briefly before showing the result.
+    const startedAt = Date.now();
+    const settle = async () => {
+      const elapsed = Date.now() - startedAt;
+      if (elapsed < 700)
+        await new Promise((resolve) => setTimeout(resolve, 700 - elapsed));
+      setSendingOtp(false);
+    };
     try {
       const res = await authService.sendOtp(phone);
-      setLoading(false);
+      await settle();
       if (res.data.success) {
         setOtpSent(true);
-        setServerOtpMsg("OTP sent to your registered phone number.");
+        setResendIn(30);
+        setServerOtpMsg("OTP sent to your WhatsApp number.");
       }
     } catch (err) {
-      setLoading(false);
+      await settle();
       setError(getErrorMessage(err, "Error requesting OTP"));
     }
   };
@@ -587,10 +607,22 @@ export const LoginPage: React.FC = () => {
                         <button
                           type="button"
                           onClick={handleSendOtp}
-                          disabled={loading}
-                          className="px-3.5 py-2 bg-[#0B192C] text-white rounded-xl text-xs font-bold hover:opacity-90 transition-all cursor-pointer shrink-0"
+                          disabled={sendingOtp || resendIn > 0}
+                          className="px-3.5 py-2 bg-[#25D366] text-white rounded-xl text-xs font-bold hover:bg-[#1FB855] transition-all cursor-pointer shrink-0 inline-flex items-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap"
                         >
-                          {otpSent ? "Resend" : "Send OTP"}
+                          {sendingOtp ? (
+                            <>
+                              <Loader2 size={13} className="animate-spin" />
+                              Sending…
+                            </>
+                          ) : resendIn > 0 ? (
+                            `Resend in ${resendIn}s`
+                          ) : (
+                            <>
+                              <Send size={13} />
+                              {otpSent ? "Resend on WhatsApp" : "Get OTP on WhatsApp"}
+                            </>
+                          )}
                         </button>
                       </div>
                     </div>

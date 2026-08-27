@@ -7,14 +7,12 @@ import {
   Loader2,
   Pencil,
   Plus,
-  ShieldCheck,
-  Trash2,
   Users,
   X,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ImageGalleryManager from "../../admin/shared/components/ImageGalleryManager";
-import { ashramService, userService } from "../../services";
+import { ashramService } from "../../services";
 import { parkingPartnerService } from "../../modules/parking/services/parking.service";
 import { getErrorMessage } from "../../lib/api";
 import { useNotifications } from "../../contexts/NotificationContext";
@@ -57,12 +55,9 @@ export const OwnerParkingSetupPage: React.FC = () => {
     hourlyRate: "",
     dailyRate: "",
   });
-  const [ownerStaff, setOwnerStaff] = useState<any[]>([]);
-  const [parkingStaff, setParkingStaff] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showLocation, setShowLocation] = useState(false);
-  const [showTeam, setShowTeam] = useState(false);
   const [viewLocation, setViewLocation] = useState<any | null>(null);
   const [editingLocationId, setEditingLocationId] = useState<string | null>(null);
   const [application, setApplication] = useState({
@@ -74,12 +69,6 @@ export const OwnerParkingSetupPage: React.FC = () => {
     state: "",
   });
   const [location, setLocation] = useState(emptyLocation);
-  const [teamForm, setTeamForm] = useState({
-    userId: "",
-    parkingRole: "parking_manager",
-    locationIds: [] as string[],
-  });
-
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -88,18 +77,10 @@ export const OwnerParkingSetupPage: React.FC = () => {
       setPartner(nextPartner);
       setAshrams(setup.data?.data?.ashrams ?? []);
       if (nextPartner) {
-        const [locationRes, parkingStaffRes, ownerStaffRes] = await Promise.all([
-          parkingPartnerService.listLocations(),
-          parkingPartnerService.listStaff(),
-          userService.listStaff(),
-        ]);
+        const locationRes = await parkingPartnerService.listLocations();
         setLocations(getList(locationRes));
-        setParkingStaff(getList(parkingStaffRes).filter((grant) => grant.status !== "inactive"));
-        setOwnerStaff(getList(ownerStaffRes));
       } else {
         setLocations([]);
-        setParkingStaff([]);
-        setOwnerStaff([]);
       }
     } catch (error) {
       addNotification("Parking Unavailable", getErrorMessage(error, "Could not load parking setup."), "error");
@@ -274,58 +255,17 @@ export const OwnerParkingSetupPage: React.FC = () => {
     }
   };
 
-  const toggleTeamLocation = (id: string) => {
-    setTeamForm((current) => ({
-      ...current,
-      locationIds: current.locationIds.includes(id)
-        ? current.locationIds.filter((value) => value !== id)
-        : [...current.locationIds, id],
-    }));
-  };
-
-  const assignParkingRole = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!teamForm.locationIds.length) {
-      addNotification("Select Parking", "Select at least one parking facility for filtered access.", "warning");
-      return;
-    }
-    setSaving(true);
-    try {
-      await parkingPartnerService.assignStaff({ ...teamForm, partnerId: getId(partner) });
-      addNotification("Parking Role Added", "The staff member will see only the selected parking facilities after signing in again.", "success");
-      setTeamForm({ userId: "", parkingRole: "parking_manager", locationIds: [] });
-      await load();
-    } catch (error) {
-      addNotification("Role Not Added", getErrorMessage(error, "Could not assign this parking role."), "error");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const revokeParkingRole = async (id: string) => {
-    setSaving(true);
-    try {
-      await parkingPartnerService.revokeStaff(id);
-      addNotification("Parking Role Removed", "Parking dashboard access was removed.", "success");
-      await load();
-    } catch (error) {
-      addNotification("Role Not Removed", getErrorMessage(error, "Could not remove this parking role."), "error");
-    } finally {
-      setSaving(false);
-    }
-  };
-
   if (loading) return <div className="h-64 rounded-[24px] bg-gray-100 dark:bg-slate-800 animate-pulse" />;
 
   return (
     <div className="space-y-5 text-left w-full">
       <section className="flex flex-wrap items-start justify-between gap-4 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 sm:p-6 shadow-sm">
         <div>
-          <h1 className="text-lg font-black text-[#0B192C] dark:text-white flex items-center gap-2"><CircleParking size={21} className="text-[#0A4DA6]" /> My Ashram Parking</h1>
+          <h1 className="text-lg font-black text-[#0B192C] dark:text-white flex items-center gap-2"><CircleParking size={21} className="text-[#0A4DA6]" /> Parking Management</h1>
           <p className="text-xs text-gray-400 font-semibold mt-1">View and edit facilities, assign parking staff, and manage bookings.</p>
         </div>
         {partner && <div className="flex flex-wrap gap-2">
-          <button onClick={() => setShowTeam(true)} className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full border border-[#0A4DA6] text-[#0A4DA6] text-xs font-extrabold"><Users size={14} /> Parking Team</button>
+          <button onClick={() => navigate("staff")} className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full border border-[#0A4DA6] text-[#0A4DA6] text-xs font-extrabold"><Users size={14} /> Parking Staff</button>
           <button onClick={() => openLocationForm()} className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full border border-[#0A4DA6] text-[#0A4DA6] text-xs font-extrabold"><Plus size={14} /> Add Parking</button>
           <button onClick={() => navigate("/parking/dashboard")} className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-[#0A4DA6] text-white text-xs font-extrabold">Open Console <ExternalLink size={13} /></button>
         </div>}
@@ -432,15 +372,6 @@ export const OwnerParkingSetupPage: React.FC = () => {
         <button disabled={saving} className="w-full py-3 rounded-full bg-[#0A4DA6] text-white text-xs font-extrabold disabled:opacity-60">{saving ? <Loader2 size={15} className="animate-spin mx-auto" /> : editingLocationId ? 'Save Facility Changes' : 'Submit Parking for Review'}</button>
       </form></div>}
 
-      {showTeam && partner && <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center"><div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-white dark:bg-[#0B192C] rounded-[28px] p-5 sm:p-7 space-y-5">
-        <div className="flex justify-between"><div><h2 className="font-black text-lg text-[#0B192C] dark:text-white flex items-center gap-2"><ShieldCheck size={19} className="text-[#0A4DA6]" /> Parking Team & Access</h2><p className="text-xs text-gray-400 mt-1">Managers and guards receive dashboards filtered to their assigned facilities.</p></div><button onClick={() => setShowTeam(false)} className="text-gray-400"><X size={19} /></button></div>
-        <form onSubmit={assignParkingRole} className="rounded-2xl border border-gray-100 dark:border-slate-800 p-4 space-y-4">
-          <div className="grid sm:grid-cols-2 gap-3"><select required value={teamForm.userId} onChange={(event) => setTeamForm((current) => ({ ...current, userId: event.target.value }))} className="px-3.5 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs"><option value="">Select existing staff member</option>{ownerStaff.map((staff) => <option key={getId(staff)} value={getId(staff)}>{staff.name || staff.fullName || staff.email} ({staff.role || 'staff'})</option>)}</select><select value={teamForm.parkingRole} onChange={(event) => setTeamForm((current) => ({ ...current, parkingRole: event.target.value }))} className="px-3.5 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs"><option value="parking_manager">Parking Manager</option><option value="security_guard">Parking Guard</option></select></div>
-          <div><p className="text-[10px] uppercase font-black text-gray-400 mb-2">Allowed parking facilities</p><div className="grid sm:grid-cols-2 gap-2">{locations.map((item) => { const id = getId(item); return <label key={id} className="flex items-center gap-2 rounded-xl border border-gray-100 dark:border-slate-800 px-3 py-2.5 text-xs font-bold"><input type="checkbox" checked={teamForm.locationIds.includes(id)} onChange={() => toggleTeamLocation(id)} /> {item.name}</label>; })}</div></div>
-          <button disabled={saving || !ownerStaff.length || !locations.length} className="px-5 py-2.5 rounded-full bg-[#0A4DA6] text-white text-xs font-extrabold disabled:opacity-50">Assign Filtered Parking Role</button>
-        </form>
-        <div className="space-y-2"><h3 className="text-xs font-black uppercase text-gray-400">Assigned parking team</h3>{parkingStaff.map((grant) => { const user = grant.userId || grant.user || {}; const assigned = grant.locationIds || grant.locations || []; return <div key={getId(grant)} className="flex flex-wrap justify-between items-center gap-3 rounded-xl border border-gray-100 dark:border-slate-800 p-3"><div><p className="text-sm font-extrabold text-[#0B192C] dark:text-white">{user.name || user.fullName || user.email || 'Staff member'}</p><p className="text-[11px] text-gray-400 mt-0.5">{String(grant.parkingRole || grant.role || '').replaceAll('_', ' ')} · {assigned.map((item: any) => item.name || locations.find((locationItem) => getId(locationItem) === getId(item))?.name).filter(Boolean).join(', ') || 'Assigned facilities'}</p></div><button disabled={saving} onClick={() => revokeParkingRole(getId(grant))} className="p-2.5 rounded-full bg-rose-50 text-rose-600" title="Remove parking role"><Trash2 size={14} /></button></div>; })}{parkingStaff.length === 0 && <p className="rounded-xl bg-gray-50 dark:bg-slate-900 p-4 text-xs text-gray-400">No parking manager or guard has been assigned.</p>}</div>
-      </div></div>}
     </div>
   );
 };

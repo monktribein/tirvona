@@ -1,908 +1,231 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
-  analyticsService,
-  bookingService,
-  approvalService,
-  ashramService,
-} from "../services";
-import api, { getErrorMessage } from "../lib/api";
-import { RecordFieldList } from "../admin/shared/components/RecordValue";
-import { useNotifications } from "../contexts/NotificationContext";
-import { useAuth } from "../contexts/AuthContext";
-import { formatCurrency, getFormattingLocale } from "../utils/format";
-import {
-  Bed,
-  Users,
-  Clock,
-  DollarSign,
-  Star,
-  XCircle,
-  MessageSquare,
-  ShieldCheck,
-  Plus,
-  FileText,
-  Building2,
-  CalendarCheck,
+  BedDouble, Building2, CalendarCheck, CalendarDays, CircleParking,
+  Clock3, IndianRupee, LayoutDashboard, Percent, Plus, RefreshCw,
+  Tag, Users, WalletCards,
 } from "lucide-react";
+import {
+  AnalyticsAreaChart,
+  AnalyticsBarChart,
+  AnalyticsDonutChart,
+} from "../components/dashboard/AnalyticsCharts";
+import { useAuth } from "../contexts/AuthContext";
+import { analyticsService } from "../services";
+import { formatCurrency, formatIndianNumber } from "../utils/format";
+import { humanizeLabel } from "../utils/labels";
 
-interface CmsRequest {
-  _id: string;
-  page: string;
-  section: string;
-  title: string;
-  oldValue: any;
-  newValue: any;
-  status: "pending" | "approved" | "rejected";
-  createdAt: string;
-  userId?: { name: string; email: string; phone: string; role: string };
+interface TrendPoint {
+  date: string;
+  label: string;
+  bookings: number;
+  revenue: number;
+  gross: number;
 }
+
+interface DashboardAnalytics {
+  totalAshrams: number;
+  totalRoomCategories: number;
+  totalInventory: number;
+  occupiedRooms: number;
+  availableRooms: number;
+  totalBookings: number;
+  activeBookings: number;
+  occupancyRate: number;
+  revenue: number;
+  grossBookingValue: number;
+  pendingPayments: number;
+  checkInsToday: number;
+  checkoutSoon: number;
+  todayRevenue: number;
+  monthlyRevenue: number;
+  cancelledBookings: number;
+  averageRating: number;
+  revenueTrend?: TrendPoint[];
+  bookingStatuses?: { status: string; count: number }[];
+  paymentStatuses?: { status: string; count: number }[];
+  updatedAt?: string;
+}
+
+const tones = [
+  "from-blue-600 to-indigo-700", "from-emerald-500 to-teal-700",
+  "from-violet-600 to-fuchsia-700", "from-amber-500 to-orange-600",
+  "from-cyan-500 to-blue-700", "from-rose-500 to-pink-700",
+];
+
+const MetricCard: React.FC<{
+  label: string; value: string; detail: string; icon: React.ReactNode; tone: string;
+}> = ({ label, value, detail, icon, tone }) => (
+  <article className={`relative min-h-28 overflow-hidden rounded-2xl bg-gradient-to-br ${tone} p-4 text-white shadow-sm`}>
+    <div className="absolute -right-5 -top-5 h-24 w-24 rounded-full bg-white/10" />
+    <div className="relative flex items-start justify-between gap-3">
+      <div>
+        <p className="text-[11px] text-white/75">{label}</p>
+        <strong className="mt-2 block text-2xl font-semibold tabular-nums">{value}</strong>
+        <span className="mt-1 block text-[10px] text-white/75">{detail}</span>
+      </div>
+      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white/15">{icon}</span>
+    </div>
+  </article>
+);
 
 export const OwnerDashboard: React.FC = () => {
   const { user } = useAuth();
-  const { addNotification } = useNotifications();
-
-  const [analytics, setAnalytics] = useState<any>(null);
-  const [recentBookings, setRecentBookings] = useState<any[]>([]);
-  const [estateSummary, setEstateSummary] = useState({
-    totalAshrams: 0,
-    totalRoomCategories: 0,
-    totalInventory: 0,
-  });
-  const [pendingCmsRequests, setPendingCmsRequests] = useState<CmsRequest[]>(
-    [],
-  );
-  const [rejectionModalId, setRejectionModalId] = useState<string | null>(null);
-  const [rejectionReason, setRejectionReason] = useState("");
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [analytics, setAnalytics] = useState<DashboardAnalytics | null>(null);
+  const [chartMetric, setChartMetric] = useState<"revenue" | "bookings">("revenue");
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
-  const [categoryRequests, setCategoryRequests] = useState<any[]>([]);
-  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
-  const [submittingCategory, setSubmittingCategory] = useState(false);
-  const [categoryForm, setCategoryForm] = useState({
-    name: "",
-    description: "",
-    maxGuests: 2,
-    defaultAmenities: "WiFi, Hot Water, Daily Prayers",
-    suggestedBasePrice: 800,
-    reasonForRequest: "",
-    notes: "",
-  });
+  const basePath = location.pathname.startsWith("/ashram-admin")
+    ? "/ashram-admin"
+    : location.pathname.startsWith("/ashram-owner")
+      ? "/ashram-owner"
+      : "/owner";
 
-  useEffect(() => {
-    fetchDashboardData();
-    fetchPendingCmsRequests();
-    fetchCategoryRequests();
-  }, []);
-
-  const fetchCategoryRequests = async () => {
-    try {
-      const res = await approvalService.getRoomCategoryRequests();
-      if (res.success) {
-        setCategoryRequests(res.data);
-      }
-    } catch (err) {
-      console.error("Error loading category requests:", err);
-    }
-  };
-
-  const handleCategorySubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!categoryForm.name.trim()) return;
-
-    setSubmittingCategory(true);
-    try {
-      const res = await approvalService.submitRoomCategoryRequest({
-        name: categoryForm.name.trim(),
-        description: categoryForm.description,
-        maxGuests: Number(categoryForm.maxGuests),
-        defaultAmenities: categoryForm.defaultAmenities
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
-        suggestedBasePrice: Number(categoryForm.suggestedBasePrice),
-        reasonForRequest: categoryForm.reasonForRequest,
-        notes: categoryForm.notes,
-      });
-
-      if (res.success) {
-        addNotification(
-          "Approval Request Submitted",
-          `Request for room category "${categoryForm.name}" has been sent to Super Admin for approval.`,
-          "success",
-        );
-        setIsCategoryModalOpen(false);
-        setCategoryForm({
-          name: "",
-          description: "",
-          maxGuests: 2,
-          defaultAmenities: "WiFi, Hot Water, Daily Prayers",
-          suggestedBasePrice: 800,
-          reasonForRequest: "",
-          notes: "",
-        });
-        fetchCategoryRequests();
-      }
-    } catch (err) {
-      console.error("Error submitting category request:", err);
-      addNotification(
-        "Submission Failed",
-        getErrorMessage(err, "Failed to submit room category request."),
-        "error",
-      );
-    } finally {
-      setSubmittingCategory(false);
-    }
-  };
-
-  const fetchDashboardData = async () => {
-    setLoading(true);
+  const load = useCallback(async (background = false) => {
+    if (background) setRefreshing(true);
+    else setLoading(true);
     setError("");
     try {
-      const [analyticsResult, bookingsResult] = await Promise.allSettled([
-        analyticsService.dashboard(),
-        bookingService.dashboard({ page: "1", limit: "8" }),
-      ]);
-      if (
-        analyticsResult.status === "fulfilled" &&
-        analyticsResult.value.data.success
-      )
-        setAnalytics(analyticsResult.value.data.data);
-      else throw analyticsResult.status === "rejected"
-        ? analyticsResult.reason
-        : new Error("Analytics response was not successful");
-
-      if (
-        bookingsResult.status === "fulfilled" &&
-        bookingsResult.value.data.success
-      )
-        setRecentBookings(bookingsResult.value.data.data.slice(0, 8));
-      else setRecentBookings([]);
-
-      const ashramsResult = await ashramService.myListings();
-      const ashrams = ashramsResult.data?.success
-        ? ashramsResult.data.data || []
-        : [];
-      const roomResults = await Promise.allSettled(
-        ashrams.map((ashram: any) => ashramService.getManagedById(ashram._id)),
-      );
-      const rooms = roomResults.flatMap((result) =>
-        result.status === "fulfilled" && result.value.data?.success
-          ? result.value.data.data?.rooms || []
-          : [],
-      );
-      setEstateSummary({
-        totalAshrams: ashrams.length,
-        totalRoomCategories: rooms.length,
-        totalInventory: rooms.reduce(
-          (total: number, room: any) =>
-            total + Number(room.totalInventory ?? room.totalRooms ?? 0),
-          0,
-        ),
-      });
-    } catch (err) {
-      console.error("Owner dashboard load error:", err);
-      setError("Unable to load dashboard data. Please try again.");
-      setAnalytics(null);
-      setRecentBookings([]);
-      setEstateSummary({
-        totalAshrams: 0,
-        totalRoomCategories: 0,
-        totalInventory: 0,
-      });
+      const response = await analyticsService.dashboard();
+      if (!response.data?.success) throw new Error("Analytics response was not successful");
+      setAnalytics(response.data.data);
+    } catch (loadError) {
+      console.error("Role dashboard analytics load failed:", loadError);
+      setError("Dashboard analytics could not be loaded. Refresh to try again.");
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, []);
 
-  const fetchPendingCmsRequests = async () => {
-    try {
-      const res = await api.get("/cms/pending-approvals");
-      if (res.data?.success) {
-        setPendingCmsRequests(res.data.data);
-      }
-    } catch (err) {
-      console.error("Fetch CMS pending error:", err);
-    }
-  };
+  useEffect(() => {
+    void load();
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") void load(true);
+    }, 30_000);
+    return () => window.clearInterval(timer);
+  }, [load]);
 
-  const handleApproveCms = async (id: string) => {
-    try {
-      const res = await api.post(`/cms/approve/${id}`, {});
-      if (res.data?.success) {
-        addNotification(
-          "CMS Content Approved",
-          "The proposed banner/content is now published live!",
-          "success",
-        );
-        fetchPendingCmsRequests();
-      }
-    } catch (err) {
-      addNotification(
-        "Action Failed",
-        getErrorMessage(err, "Could not approve CMS content edit."),
-        "error",
-      );
-    }
-  };
-
-  const handleRejectCms = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!rejectionModalId) return;
-
-    try {
-      const res = await api.post(`/cms/reject/${rejectionModalId}`, {
-        reason: rejectionReason,
-      });
-      if (res.data?.success) {
-        addNotification(
-          "Request Rejected",
-          "Feedback has been sent back to Content Manager.",
-          "warning",
-        );
-        setRejectionModalId(null);
-        setRejectionReason("");
-        fetchPendingCmsRequests();
-      }
-    } catch (err) {
-      addNotification(
-        "Action Failed",
-        getErrorMessage(err, "Could not reject CMS request."),
-        "error",
-      );
-    }
-  };
-
-  const totalAshrams =
-    estateSummary.totalAshrams || Number(analytics?.totalAshrams ?? 0);
-  const totalRoomCategories =
-    estateSummary.totalRoomCategories ||
-    Number(analytics?.totalRoomCategories ?? 0);
-  const totalInventory =
-    estateSummary.totalInventory || Number(analytics?.totalInventory ?? 0);
-  const availableRooms = Number(
-    analytics?.availableRooms ??
-      Math.max(0, totalInventory - Number(analytics?.occupiedRooms ?? 0)),
+  const trend = useMemo(
+    () => (analytics?.revenueTrend ?? []).map((point) => ({
+      ...point,
+      revenue: Number(point.revenue || 0),
+      bookings: Number(point.bookings || 0),
+    })),
+    [analytics?.revenueTrend],
   );
-  const occupiedRooms = Number(
-    analytics?.occupiedRooms ?? Math.max(0, totalInventory - availableRooms),
+  const statuses = useMemo(
+    () => (analytics?.bookingStatuses ?? []).map((row) => ({
+      label: humanizeLabel(row.status), value: Number(row.count || 0),
+    })),
+    [analytics?.bookingStatuses],
   );
-  const occupancyRate =
-    analytics?.occupancyRate ??
-    (totalInventory ? Math.round((occupiedRooms * 100) / totalInventory) : 0);
-  const collectedRevenue = Number(analytics?.revenue ?? 0);
-  const pendingCollections = Number(analytics?.pendingPayments ?? 0);
-  const grossBookingValue = Number(
-    analytics?.grossBookingValue ?? collectedRevenue + pendingCollections,
-  );
+  const inventoryBars = [
+    { label: "Available", value: Number(analytics?.availableRooms ?? 0) },
+    { label: "Occupied", value: Number(analytics?.occupiedRooms ?? 0) },
+  ];
+
+  const canManage = ["ashram_owner", "ashram_admin", "owner", "stay_admin"].includes(String(user?.role || ""));
+  const canOperate = canManage || user?.role === "manager";
+  const quickActions = [
+    ...(canManage ? [
+      { label: "Create booking", detail: "Counter or online reservation", icon: <Plus size={17} />, path: `${basePath}/self-booking` },
+      { label: "Manage bookings", detail: "Open booking and payment center", icon: <CalendarCheck size={17} />, path: `${basePath}/bookings` },
+    ] : []),
+    ...(canOperate ? [
+      { label: "Check-in desk", detail: "Verify arrivals and departures", icon: <Clock3 size={17} />, path: `${basePath}/check-in-out` },
+      { label: "Rooms & inventory", detail: "Categories, rooms and availability", icon: <BedDouble size={17} />, path: `${basePath}/rooms` },
+      { label: "Inventory calendar", detail: "Update sellable room inventory", icon: <CalendarDays size={17} />, path: `${basePath}/calendar` },
+    ] : []),
+    ...(canManage ? [
+      { label: "Offers", detail: "Manage coupons and promotions", icon: <Tag size={17} />, path: `${basePath}/offers` },
+      { label: "Payouts", detail: "Bank account and payout requests", icon: <WalletCards size={17} />, path: `${basePath}/payouts` },
+      { label: "Parking", detail: "Facilities and parking operations", icon: <CircleParking size={17} />, path: `${basePath}/parking` },
+    ] : []),
+  ];
+
+  if (loading && !analytics) {
+    return (
+      <div className="space-y-5">
+        <div className="h-24 rounded-2xl bg-slate-100 animate-pulse" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 8 }).map((_, index) => <div key={index} className="h-28 rounded-2xl bg-slate-100 animate-pulse" />)}
+        </div>
+        <div className="h-80 rounded-2xl bg-slate-100 animate-pulse" />
+      </div>
+    );
+  }
+
+  const collectionRate = analytics?.grossBookingValue
+    ? Math.round((Number(analytics.revenue || 0) * 100) / Number(analytics.grossBookingValue || 1))
+    : 0;
+  const cards = [
+    { label: "Collected revenue", value: formatCurrency(analytics?.revenue ?? 0), detail: `${formatCurrency(analytics?.todayRevenue ?? 0)} today`, icon: <IndianRupee size={18} /> },
+    { label: "Bookings", value: formatIndianNumber(analytics?.totalBookings ?? 0), detail: `${formatIndianNumber(analytics?.activeBookings ?? 0)} active`, icon: <CalendarCheck size={18} /> },
+    { label: "Occupancy", value: `${analytics?.occupancyRate ?? 0}%`, detail: `${analytics?.occupiedRooms ?? 0} of ${analytics?.totalInventory ?? 0} occupied`, icon: <Percent size={18} /> },
+    { label: "Available rooms", value: formatIndianNumber(analytics?.availableRooms ?? 0), detail: `${analytics?.totalRoomCategories ?? 0} room categories`, icon: <BedDouble size={18} /> },
+    { label: "Ashrams", value: formatIndianNumber(analytics?.totalAshrams ?? 0), detail: "Within your authorized scope", icon: <Building2 size={18} /> },
+    { label: "Check-ins today", value: formatIndianNumber(analytics?.checkInsToday ?? 0), detail: `${analytics?.checkoutSoon ?? 0} check-outs today`, icon: <Users size={18} /> },
+    { label: "Booked value", value: formatCurrency(analytics?.grossBookingValue ?? 0), detail: `${collectionRate}% collected`, icon: <WalletCards size={18} /> },
+    { label: "Monthly revenue", value: formatCurrency(analytics?.monthlyRevenue ?? 0), detail: `${analytics?.averageRating ?? 0}/5 average rating`, icon: <LayoutDashboard size={18} /> },
+  ];
 
   return (
-    <div className="space-y-8">
-      <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[28px] shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-[#0A4DA6]/10 text-[#0A4DA6] flex items-center justify-center shrink-0 border border-[#0A4DA6]/15">
-            <Bed size={22} />
-          </div>
-          <div>
-            <h2 className="text-xl sm:text-2xl font-black text-[#0B192C] dark:text-white tracking-tight">
-              {user?.role === "ashram_admin" || user?.role === "stay_admin"
-                ? "Ashram Admin Portal"
-                : "Ashram Owner Portal"}
-            </h2>
-            <p className="text-xs text-gray-400 font-semibold mt-0.5">
-              Live telemetry, room occupancy, guest reservations, and pending
-              CMS change approvals.
-            </p>
-          </div>
-        </div>
+    <div className={`space-y-5 transition-opacity ${refreshing ? "opacity-70" : "opacity-100"}`}>
+      {error && <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs text-rose-700">{error}</div>}
 
-        <span className="px-3.5 py-1.5 bg-[#E58C28]/15 text-[#E58C28] border border-[#E58C28]/30 rounded-full text-xs font-black tracking-wider">
-          Tirvona Verified Portal
-        </span>
-      </div>
-
-      {error && (
-        <div className="p-4 bg-rose-50 text-rose-600 border border-rose-200 text-xs font-bold rounded-2xl">
-          {error}
-        </div>
-      )}
-
-      <section className="space-y-4">
-        <div className="flex items-end justify-between gap-4 px-1">
-          <div>
-            <h3 className="text-lg font-black text-[#0B192C] dark:text-white">Platform Overview</h3>
-            <p className="text-xs font-semibold text-gray-400">Live totals across every ashram this account is authorized to manage.</p>
-          </div>
-          <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[10px] font-black text-emerald-700">LIVE DATA</span>
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {[
-            { label: "Total Ashrams", value: totalAshrams, detail: "Platform accommodations", icon: <Building2 size={22} />, accent: "from-blue-600 to-[#0A4DA6]" },
-            { label: "Total Bookings", value: Number(analytics?.totalBookings ?? 0), detail: `${Number(analytics?.activeBookings ?? 0)} active reservations`, icon: <CalendarCheck size={22} />, accent: "from-violet-600 to-indigo-700" },
-            { label: "Collected Revenue", value: formatCurrency(collectedRevenue), detail: `${formatCurrency(Number(analytics?.todayRevenue ?? 0))} collected today`, icon: <DollarSign size={22} />, accent: "from-emerald-600 to-teal-700" },
-            { label: "Available Rooms", value: availableRooms, detail: `${occupiedRooms} occupied of ${totalInventory} rooms`, icon: <Bed size={22} />, accent: "from-orange-500 to-[#E58C28]" },
-          ].map((metric) => (
-            <div key={metric.label} className="relative overflow-hidden rounded-[24px] border border-gray-100 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-[#0B192C]">
-              <div className={`absolute inset-y-0 left-0 w-1.5 bg-gradient-to-b ${metric.accent}`} />
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.12em] text-gray-400">{metric.label}</p>
-                  <p className="mt-2 text-3xl font-black tracking-tight text-[#0B192C] dark:text-white">{loading ? "—" : metric.value}</p>
-                  <p className="mt-1 text-[11px] font-semibold text-gray-400">{metric.detail}</p>
-                </div>
-                <div className={`rounded-2xl bg-gradient-to-br ${metric.accent} p-3 text-white shadow-lg`}>{metric.icon}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="rounded-[24px] border border-gray-100 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-[#0B192C]">
-          <div className="grid grid-cols-2 divide-x-0 divide-y divide-gray-100 sm:grid-cols-3 lg:grid-cols-5 lg:divide-x lg:divide-y-0 dark:divide-slate-800">
-            {[
-              ["Gross Booking Value", formatCurrency(grossBookingValue)],
-              ["Pending Collections", formatCurrency(pendingCollections)],
-              ["Room Categories", totalRoomCategories],
-              ["Occupancy", `${occupancyRate}%`],
-              ["Average Rating", `${Number(analytics?.averageRating ?? 0)} / 5`],
-              ["Today's Check-ins", Number(analytics?.checkInsToday ?? 0)],
-              ["Today's Check-outs", Number(analytics?.checkoutSoon ?? 0)],
-              ["Cancelled", Number(analytics?.cancelledBookings ?? 0)],
-              ["Occupied Rooms", occupiedRooms],
-              ["Total Inventory", totalInventory],
-            ].map(([label, value]) => (
-              <div key={String(label)} className="min-w-0 px-4 py-4 first:pl-0 lg:py-2">
-                <p className="truncate text-[10px] font-extrabold uppercase tracking-wider text-gray-400">{label}</p>
-                <p className="mt-1 truncate text-lg font-black text-[#0B192C] dark:text-white">{loading ? "—" : value}</p>
-              </div>
-            ))}
-          </div>
-        </div>
+      <section className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+        {cards.map((card, index) => <MetricCard key={card.label} {...card} tone={tones[index % tones.length]} />)}
       </section>
 
-      <div className="bg-white dark:bg-[#0B192C] border border-amber-200 dark:border-amber-900/50 p-6 rounded-[24px] shadow-sm space-y-4">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-4">
-          <div>
-            <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white">
-              Pending Content Approvals (CMS Workflow)
-            </h3>
-            <p className="text-xs text-gray-400">
-              Review proposed banner & homepage changes submitted by Content Managers.
-            </p>
+      <div className="flex justify-end">
+        <button type="button" onClick={() => void load(true)} disabled={refreshing} className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-white px-4 py-2 text-xs text-slate-700 hover:border-[#0A4DA6] disabled:opacity-60">
+          <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} /> Refresh data
+        </button>
+      </div>
+
+      <section className="grid grid-cols-1 xl:grid-cols-12 gap-5">
+        <article className="xl:col-span-7 rounded-2xl border border-orange-200 bg-white dark:bg-[#0B192C] p-5 shadow-sm">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+            <div><h2 className="text-base font-semibold text-slate-900 dark:text-white">14-day performance</h2><p className="text-[11px] text-slate-400">Automatically refreshes every 30 seconds</p></div>
+            <div className="flex rounded-xl bg-slate-100 p-1 text-[11px]">
+              {(["revenue", "bookings"] as const).map((metric) => (
+                <button key={metric} type="button" onClick={() => setChartMetric(metric)} className={`rounded-lg px-3 py-1.5 capitalize ${chartMetric === metric ? "bg-[#0A4DA6] text-white" : "text-slate-500"}`}>{metric}</button>
+              ))}
+            </div>
           </div>
+          <AnalyticsAreaChart data={trend} series={[{ key: chartMetric, label: chartMetric === "revenue" ? "Collected revenue" : "Bookings", color: chartMetric === "revenue" ? "#0A4DA6" : "#8B5CF6" }]} valueFormatter={chartMetric === "revenue" ? (value) => formatCurrency(value) : (value) => formatIndianNumber(value)} />
+        </article>
+        <article className="xl:col-span-5 rounded-2xl border border-orange-200 bg-white dark:bg-[#0B192C] p-5 shadow-sm">
+          <h2 className="text-base font-semibold text-slate-900 dark:text-white">Booking status mix</h2>
+          <p className="text-[11px] text-slate-400">All bookings in your authorized scope</p>
+          <AnalyticsDonutChart data={statuses} centerLabel="Bookings" centerValue={formatIndianNumber(analytics?.totalBookings ?? 0)} />
+        </article>
+      </section>
 
-          <span className="px-3 py-1 bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 rounded-full text-xs font-black">
-            {pendingCmsRequests.length} Pending Approval
-            {pendingCmsRequests.length === 1 ? "" : "s"}
-          </span>
-        </div>
-
-        {pendingCmsRequests.length === 0 ? (
-          <div className="py-6 text-center text-xs text-gray-400 font-medium">
-            No pending CMS content approval requests.
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {pendingCmsRequests.map((req) => (
-              <div
-                key={req._id}
-                className="p-4 bg-amber-50/40 dark:bg-slate-900/60 border border-amber-200/60 dark:border-slate-800 rounded-2xl space-y-3"
-              >
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-xs">
-                  <div className="space-y-0.5">
-                    <span className="font-extrabold text-sm text-[#0B192C] dark:text-white">
-                      {req.title}
-                    </span>
-                    <div className="text-[11px] text-gray-500 flex items-center gap-2">
-                      <span>
-                        Submitted by:{" "}
-                        <strong>{req.userId?.name || "Content Manager"}</strong> (
-                        {req.userId?.email})
-                      </span>
-                      <span>•</span>
-                      <span>
-                        Section:{" "}
-                        <code className="font-bold text-amber-700 dark:text-amber-300">
-                          {req.section}
-                        </code>
-                      </span>
-                    </div>
-                  </div>
-
-                  <span className="text-[10px] text-gray-400 font-mono">
-                    {new Date(req.createdAt).toLocaleString(getFormattingLocale())}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                  <div className="p-3 bg-white dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl space-y-1">
-                    <span className="text-[10px] font-extrabold text-gray-400 tracking-wider block">
-                      Current Live Version (Old)
-                    </span>
-                    <RecordFieldList
-                      data={req.oldValue}
-                      emptyLabel="Default system content"
-                      className="text-[11px] text-gray-600 dark:text-gray-400 overflow-y-auto max-h-32"
-                    />
-                  </div>
-
-                  <div className="p-3 bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 rounded-xl space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-[10px] font-extrabold text-emerald-700 dark:text-emerald-300 tracking-wider block">
-                        Proposed Content Version (New)
-                      </span>
-                      {req.newValue?.bannerWidth && (
-                        <span className="px-2 py-0.5 bg-emerald-200 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-100 rounded text-[9px] font-mono font-bold">
-                          {req.newValue.bannerWidth} ×{" "}
-                          {req.newValue.bannerHeight} px (
-                          {req.newValue.bannerSizePreset || "Custom"})
-                        </span>
-                      )}
-                    </div>
-
-                    {req.newValue?.bannerImage && (
-                      <div className="w-full h-24 rounded-lg overflow-hidden border border-emerald-200 dark:border-emerald-800 bg-gray-100 dark:bg-slate-900">
-                        <img
-                          src={req.newValue.bannerImage}
-                          alt="Proposed Banner"
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    )}
-
-                    <RecordFieldList
-                      data={req.newValue}
-                      emptyLabel="No changes proposed"
-                      className="text-[11px] text-emerald-900 dark:text-emerald-200 overflow-y-auto max-h-32"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex justify-end items-center gap-3 pt-2">
-                  <button
-                    onClick={() => {
-                      setRejectionModalId(req._id);
-                      setRejectionReason("");
-                    }}
-                    className="px-4 py-2 bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 hover:bg-rose-200 rounded-full text-xs font-bold transition-colors cursor-pointer flex items-center gap-1"
-                  >
-                    <XCircle size={14} /> Reject & Request Changes
-                  </button>
-
-                  <button
-                    onClick={() => handleApproveCms(req._id)}
-                    className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full text-xs font-black shadow-md transition-all cursor-pointer flex items-center gap-1"
-                  >
-                    <ShieldCheck size={14} /> Approve & Publish Live
-                  </button>
-                </div>
-              </div>
+      <section className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <article className="rounded-2xl border border-orange-200 bg-white dark:bg-[#0B192C] p-5 shadow-sm">
+          <h2 className="text-base font-semibold text-slate-900 dark:text-white">Room utilization</h2>
+          <p className="text-[11px] text-slate-400">Live occupied versus available inventory</p>
+          <AnalyticsBarChart data={inventoryBars} dataKey="value" />
+        </article>
+        <article className="lg:col-span-2 rounded-2xl border border-orange-200 bg-white dark:bg-[#0B192C] p-5 shadow-sm">
+          <div className="mb-4"><h2 className="text-base font-semibold text-slate-900 dark:text-white">Quick actions</h2><p className="text-[11px] text-slate-400">Only actions permitted for your current role are shown</p></div>
+          <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">
+            {quickActions.map((action) => (
+              <button key={action.path} type="button" onClick={() => navigate(action.path)} className="group flex min-h-20 items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-3 text-left transition hover:-translate-y-0.5 hover:border-[#0A4DA6] hover:bg-blue-50">
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white text-[#0A4DA6] shadow-sm group-hover:bg-[#0A4DA6] group-hover:text-white">{action.icon}</span>
+                <span><strong className="block text-xs font-semibold text-slate-900">{action.label}</strong><small className="mt-1 block text-[10px] leading-snug text-slate-400">{action.detail}</small></span>
+              </button>
             ))}
           </div>
-        )}
-      </div>
-
-      {rejectionModalId && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <form
-            onSubmit={handleRejectCms}
-            className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-md w-full rounded-[28px] p-6 space-y-4 text-left shadow-2xl animate-in zoom-in-95 duration-150"
-          >
-            <h3 className="font-extrabold text-base text-rose-600 flex items-center gap-2">
-              <XCircle size={18} /> Reject Proposed Content Change
-            </h3>
-            <div className="space-y-1 text-xs">
-              <label className="font-bold text-gray-700 dark:text-gray-300">
-                Feedback / Reason for Rejection *
-              </label>
-              <textarea
-                required
-                rows={3}
-                placeholder="e.g. Please update hero image resolution and revise discount details..."
-                value={rejectionReason}
-                onChange={(e) => setRejectionReason(e.target.value)}
-                className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:border-rose-500"
-              />
-            </div>
-            <div className="flex gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setRejectionModalId(null)}
-                className="flex-1 py-2 bg-gray-100 text-gray-700 rounded-full font-bold text-xs"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="flex-1 py-2 bg-rose-600 text-white rounded-full font-extrabold text-xs shadow"
-              >
-                Confirm Rejection
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[24px] shadow-sm space-y-4">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-gray-100 dark:border-slate-800 pb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#0A4DA6]/10 text-[#0A4DA6] flex items-center justify-center">
-              <Bed size={20} />
-            </div>
-            <div>
-              <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white flex items-center gap-2">
-                Room Category Approval Workflow
-              </h3>
-              <p className="text-xs text-gray-400">
-                Request additional custom room categories for Super Admin review
-                & approval.
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => setIsCategoryModalOpen(true)}
-            className="px-4 py-2 bg-[#0A4DA6] hover:bg-opacity-95 text-white text-xs font-bold rounded-full transition-all flex items-center gap-1.5 shadow-sm shrink-0 cursor-pointer"
-          >
-            <Plus size={14} /> Request New Room Category
-          </button>
-        </div>
-
-        {categoryRequests.length === 0 ? (
-          <div className="p-6 text-center text-xs text-gray-400 font-semibold bg-gray-50/50 dark:bg-slate-900/40 rounded-2xl border border-dashed border-gray-200 dark:border-slate-800">
-            No room category requests submitted yet. Click "+ Request New Room
-            Category" to initiate a request.
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="border-b border-gray-100 dark:border-slate-800 text-gray-400 font-bold text-[10px] tracking-wider">
-                  <th className="py-2.5 px-3">Request ID</th>
-                  <th className="py-2.5 px-3">Category Name</th>
-                  <th className="py-2.5 px-3">Max Guests</th>
-                  <th className="py-2.5 px-3">Suggested Base Price</th>
-                  <th className="py-2.5 px-3">Status</th>
-                  <th className="py-2.5 px-3">Review Comment</th>
-                </tr>
-              </thead>
-              <tbody>
-                {categoryRequests.map((req) => (
-                  <tr
-                    key={req._id}
-                    className="border-b border-gray-100 dark:border-slate-800 hover:bg-gray-50/50 dark:hover:bg-slate-900/40"
-                  >
-                    <td className="py-3 px-3 font-bold text-[#0A4DA6]">
-                      {req.requestId}
-                    </td>
-                    <td className="py-3 px-3 font-bold text-[#0B192C] dark:text-white">
-                      {req.categoryData?.name}
-                    </td>
-                    <td className="py-3 px-3 font-semibold">
-                      {req.categoryData?.maxGuests} Guests
-                    </td>
-                    <td className="py-3 px-3 font-bold">
-                      {formatCurrency(req.categoryData?.suggestedBasePrice)}
-                    </td>
-                    <td className="py-3 px-3">
-                      <span
-                        className={`px-2.5 py-0.5 rounded-full text-[9px] font-extrabold border ${
-                          req.status === "approved"
-                            ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
-                            : req.status === "rejected"
-                              ? "bg-rose-500/10 text-rose-600 border-rose-500/20"
-                              : req.status === "needs_modification"
-                                ? "bg-amber-500/10 text-amber-600 border-amber-500/20"
-                                : "bg-blue-500/10 text-blue-600 border-blue-500/20"
-                        }`}
-                      >
-                        {req.status?.replace("_", " ")}
-                      </span>
-                    </td>
-                    <td className="py-3 px-3 text-gray-400 max-w-xs truncate">
-                      {req.reviewComment || "—"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {isCategoryModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 max-w-lg w-full space-y-4 shadow-2xl animate-in fade-in zoom-in duration-200">
-            <div className="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-3">
-              <h3 className="font-extrabold text-lg text-[#0B192C] dark:text-white flex items-center gap-2">
-                <Bed size={20} className="text-[#0A4DA6]" /> Request New Room
-                Category
-              </h3>
-              <button
-                onClick={() => setIsCategoryModalOpen(false)}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-white"
-              >
-                ✕
-              </button>
-            </div>
-
-            <form
-              onSubmit={handleCategorySubmit}
-              className="space-y-3.5 text-left"
-            >
-              <div>
-                <label className="block text-[11px] font-bold text-gray-600 dark:text-gray-300 tracking-wider mb-1">
-                  Category Name *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Deluxe VIP Suite, Satsang Family Hall"
-                  value={categoryForm.name}
-                  onChange={(e) =>
-                    setCategoryForm({ ...categoryForm, name: e.target.value })
-                  }
-                  className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#0A4DA6]"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-bold text-gray-600 dark:text-gray-300 tracking-wider mb-1">
-                    Max Guest Capacity *
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="50"
-                    required
-                    value={categoryForm.maxGuests}
-                    onChange={(e) =>
-                      setCategoryForm({
-                        ...categoryForm,
-                        maxGuests: Number(e.target.value),
-                      })
-                    }
-                    className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#0A4DA6]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-gray-600 dark:text-gray-300 tracking-wider mb-1">
-                    Suggested Base Price (₹)
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={categoryForm.suggestedBasePrice}
-                    onChange={(e) =>
-                      setCategoryForm({
-                        ...categoryForm,
-                        suggestedBasePrice: Number(e.target.value),
-                      })
-                    }
-                    className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#0A4DA6]"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-bold text-gray-600 dark:text-gray-300 tracking-wider mb-1">
-                  Default Amenities (comma separated)
-                </label>
-                <input
-                  type="text"
-                  value={categoryForm.defaultAmenities}
-                  onChange={(e) =>
-                    setCategoryForm({
-                      ...categoryForm,
-                      defaultAmenities: e.target.value,
-                    })
-                  }
-                  className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#0A4DA6]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-bold text-gray-600 dark:text-gray-300 tracking-wider mb-1">
-                  Reason for Request *
-                </label>
-                <textarea
-                  rows={2}
-                  required
-                  placeholder="Explain why this category is required for pilgrim lodging..."
-                  value={categoryForm.reasonForRequest}
-                  onChange={(e) =>
-                    setCategoryForm({
-                      ...categoryForm,
-                      reasonForRequest: e.target.value,
-                    })
-                  }
-                  className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#0A4DA6]"
-                />
-              </div>
-
-              <div className="flex justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsCategoryModalOpen(false)}
-                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-full font-bold text-xs"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submittingCategory}
-                  className="px-5 py-2 bg-[#0A4DA6] text-white rounded-full font-extrabold text-xs shadow-md hover:bg-opacity-95 disabled:opacity-50"
-                >
-                  {submittingCategory
-                    ? "Submitting..."
-                    : "Submit Request for Approval"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[24px] shadow-sm space-y-4">
-        <div className="flex justify-between items-center">
-          <div className="space-y-0.5">
-            <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white">
-              Recent Ashram Stay Bookings
-            </h3>
-            <p className="text-xs text-gray-400">
-              Live reservation traffic from pilgrims across ashrams.
-            </p>
-          </div>
-        </div>
-
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead>
-              <tr className="border-b border-gray-100 dark:border-slate-800 text-gray-400 font-bold text-[10px] tracking-wider">
-                <th className="py-3 px-4">Booking ID</th>
-                <th className="py-3 px-4">Pilgrim Name</th>
-                <th className="py-3 px-4">Ashram</th>
-                <th className="py-3 px-4">Room Type</th>
-                <th className="py-3 px-4">Amount</th>
-                <th className="py-3 px-4">Payment</th>
-                <th className="py-3 px-4">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recentBookings.length === 0 ? (
-                <tr><td colSpan={7} className="py-8 text-center font-semibold text-gray-400">No recent bookings across the platform.</td></tr>
-              ) : recentBookings.map((bk) => (
-                <tr
-                  key={bk._id}
-                  className="border-b border-gray-100 dark:border-slate-800 hover:bg-gray-50/50 dark:hover:bg-slate-900/40"
-                >
-                  <td className="py-3.5 px-4 font-bold text-[#0B192C] dark:text-white">
-                    {bk.bookingId}
-                  </td>
-                  <td className="py-3.5 px-4">
-                    <div className="flex flex-col">
-                      <span className="font-semibold">
-                        {bk.customerId?.name}
-                      </span>
-                      <span className="text-[10px] text-gray-400">
-                        {bk.customerId?.phone}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="py-3.5 px-4">
-                    <div className="font-semibold text-[#0B192C] dark:text-white">{bk.ashramId?.name || "Unknown ashram"}</div>
-                    <div className="text-[10px] text-gray-400">{bk.ashramId?.address?.city || ""}</div>
-                  </td>
-                  <td className="py-3.5 px-4 text-gray-500">
-                    {bk.roomId?.name}
-                  </td>
-                  <td className="py-3.5 px-4 font-extrabold text-[#0B192C] dark:text-white">
-                    {formatCurrency(bk.pricing?.totalAmount)}
-                  </td>
-                  <td className="py-3.5 px-4">
-                    <span
-                      className={`px-2.5 py-1 rounded-full text-[9px] font-bold capitalize ${
-                        bk.paymentStatus === "fully_paid"
-                          ? "bg-success/10 text-success"
-                          : bk.paymentStatus === "refunded"
-                            ? "bg-danger/10 text-danger"
-                            : "bg-yellow-50 text-yellow-750"
-                      }`}
-                    >
-                      {bk.paymentStatus?.replace("_", " ")}
-                    </span>
-                  </td>
-                  <td className="py-3.5 px-4">
-                    <span
-                      className={`px-2.5 py-0.5 rounded-full text-[9px] font-extrabold capitalize border ${
-                        bk.status === "confirmed"
-                          ? "bg-primary/10 text-primary border-primary/20"
-                          : bk.status === "checked_in"
-                            ? "bg-success/10 text-success border-success/20"
-                            : bk.status === "checked_out"
-                              ? "bg-blue-500/10 text-blue-500 border-blue-500/20"
-                              : bk.status === "cancelled"
-                                ? "bg-danger/10 text-danger border-danger/20"
-                                : "bg-gray-100 text-gray-505 border-gray-200"
-                      }`}
-                    >
-                      {bk.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="block md:hidden divide-y divide-gray-100 dark:divide-slate-800">
-          {recentBookings.length === 0 ? (
-            <div className="text-center py-6 text-xs text-gray-400">
-              No recent bookings.
-            </div>
-          ) : (
-            recentBookings.map((bk) => (
-              <div key={bk._id} className="py-4.5 space-y-3">
-                <div className="flex justify-between items-center text-xs">
-                  <span className="font-extrabold text-[#0B192C] dark:text-white">
-                    {bk.bookingId}
-                  </span>
-                  <span
-                    className={`px-2 py-0.5 rounded text-[9px] font-extrabold capitalize border ${
-                      bk.status === "confirmed"
-                        ? "bg-primary/10 text-primary border-primary/20"
-                        : bk.status === "checked_in"
-                          ? "bg-success/10 text-success border-success/20"
-                          : bk.status === "checked_out"
-                            ? "bg-blue-500/10 text-blue-500 border-blue-500/20"
-                            : bk.status === "cancelled"
-                              ? "bg-danger/10 text-danger border-danger/20"
-                              : "bg-gray-100 text-gray-550 border-gray-200"
-                    }`}
-                  >
-                    {bk.status}
-                  </span>
-                </div>
-                <div className="text-xs space-y-1">
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Guest:</span>
-                    <span className="font-semibold text-secondary dark:text-white">
-                      {bk.customerId?.name} ({bk.customerId?.phone})
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Ashram:</span>
-                    <span className="font-semibold text-right text-secondary dark:text-white">{bk.ashramId?.name || "Unknown ashram"}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Room:</span>
-                    <span className="text-gray-500 truncate max-w-[200px]">
-                      {bk.roomId?.name}
-                    </span>
-                  </div>
-                  <div className="flex justify-between pt-1 border-t border-gray-50 dark:border-slate-850 items-center">
-                    <span className="font-bold text-[#0B192C] dark:text-white">
-                      {formatCurrency(bk.pricing?.totalAmount)}
-                    </span>
-                    <span
-                      className={`px-2 py-0.5 rounded text-[8.5px] font-bold capitalize ${
-                        bk.paymentStatus === "fully_paid"
-                          ? "bg-success/10 text-success"
-                          : bk.paymentStatus === "refunded"
-                            ? "bg-danger/10 text-danger"
-                            : "bg-yellow-50 text-yellow-750"
-                      }`}
-                    >
-                      {bk.paymentStatus?.replace("_", " ")}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
+        </article>
+      </section>
+      <p className="text-right text-[10px] text-slate-400">Last synchronized {analytics?.updatedAt ? new Date(analytics.updatedAt).toLocaleTimeString("en-IN") : "just now"}</p>
     </div>
   );
 };

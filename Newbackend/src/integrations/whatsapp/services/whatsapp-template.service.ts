@@ -105,7 +105,19 @@ export class WhatsAppTemplateService {
             "WhatsApp OTP must contain 4 to 8 digits",
             "CONFIGURATION_INVALID",
           );
-        return `Your Tirvona verification code is ${otp}. It expires in ${expires || "5"} minutes. Do not share this code with anyone.`;
+        const minutes = expires || "5";
+        // Matches the formatting of the booking and parking messages so every
+        // Tirvona WhatsApp reads as one product.
+        return [
+          "*Tirvona Verification Code*",
+          "",
+          `*${otp}*`,
+          "",
+          `This code expires in ${minutes} minutes.`,
+          "Enter it on the Tirvona login screen to continue.",
+          "",
+          "_Never share this code with anyone. Tirvona staff will never ask for it._",
+        ].join("\n");
       }
       case WHATSAPP_TEMPLATE.BOOKING_CONFIRMATION:
         return `Your Tirvona booking${suffix} is confirmed.`;

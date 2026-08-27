@@ -33,6 +33,7 @@ export const StaffManagementPage: React.FC = () => {
   const [showCreate, setShowCreate] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   const [form, setForm] = useState({
     name: "",
@@ -75,6 +76,14 @@ export const StaffManagementPage: React.FC = () => {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError("");
+    if (form.password.length < 8) {
+      setFormError("Create a password containing at least 8 characters.");
+      return;
+    }
+    if (form.password !== confirmPassword) {
+      setFormError("Password and confirm password must match.");
+      return;
+    }
     setSubmitting(true);
     try {
       const res = await userService.createStaff(form);
@@ -88,6 +97,7 @@ export const StaffManagementPage: React.FC = () => {
           role: "reception",
           ashramId: ashrams[0]?._id || "",
         });
+        setConfirmPassword("");
         addNotification(
           "Staff Added",
           `${res.data.data.name} can now log in with the ${ROLE_LABELS[res.data.data.role]} portal.`,
@@ -275,10 +285,21 @@ export const StaffManagementPage: React.FC = () => {
               <input
                 required
                 type="password"
-                minLength={6}
-                placeholder="Temporary password (min 6 chars)"
+                minLength={8}
+                autoComplete="new-password"
+                placeholder="Password (minimum 8 characters)"
                 value={form.password}
                 onChange={(e) => set("password", e.target.value)}
+                className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none"
+              />
+              <input
+                required
+                type="password"
+                minLength={8}
+                autoComplete="new-password"
+                placeholder="Confirm password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
                 className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none"
               />
               <div className="grid grid-cols-2 gap-3">

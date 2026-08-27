@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   IndianRupee,
@@ -29,6 +30,7 @@ import {
 } from "../utils/parkingFormat";
 import ParkingStatTile from "../components/ParkingStatTile";
 import ParkingStatusBadge from "../components/ParkingStatusBadge";
+import { AnalyticsBarChart } from "../../../components/dashboard/AnalyticsCharts";
 
 interface ReportBundle {
   revenue?: {
@@ -50,6 +52,7 @@ interface ReportBundle {
 }
 
 export const ParkingPartnerDashboardPage: React.FC = () => {
+  const navigate = useNavigate();
   const [stats, setStats] = useState<ParkingDashboardStats | null>(null);
   const [locations, setLocations] = useState<
     (ParkingLocation & { liveOccupancy?: Record<string, number> })[]
@@ -87,7 +90,11 @@ export const ParkingPartnerDashboardPage: React.FC = () => {
   }, [statusFilter]);
 
   useEffect(() => {
-    load();
+    void load();
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") void load();
+    }, 30_000);
+    return () => window.clearInterval(timer);
   }, [load]);
 
   if (loading && !stats) {
@@ -110,34 +117,6 @@ export const ParkingPartnerDashboardPage: React.FC = () => {
 
   return (
     <div className="space-y-6 text-left w-full">
-      <header className="flex items-start justify-between gap-3 flex-wrap">
-        <div className="space-y-1">
-          <h1 className="inline-flex items-center gap-2.5 text-xl sm:text-2xl font-black text-[#0B192C] dark:text-white">
-            <span className="w-9 h-9 rounded-2xl bg-[#0A4DA6] text-white flex items-center justify-center shadow-md">
-              <CircleParking size={18} className="stroke-[2.5]" />
-            </span>
-            Parking Operations
-          </h1>
-          <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-            Live occupancy, arrivals and revenue across your parking locations.
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={load}
-          disabled={loading}
-          className="inline-flex items-center gap-2 bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-700 hover:border-[#0A4DA6] text-slate-700 dark:text-gray-200 text-xs font-extrabold px-4 py-2 rounded-full shadow-sm transition-all active:scale-95 cursor-pointer disabled:opacity-60"
-        >
-          {loading ? (
-            <Loader2 size={13} className="animate-spin stroke-[2.5]" />
-          ) : (
-            <TrendingUp size={13} className="stroke-[2.5]" />
-          )}
-          Refresh
-        </button>
-      </header>
-
       {error && (
         <div className="flex items-start gap-2.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-300 rounded-2xl px-4 py-3">
           <AlertCircle size={15} className="shrink-0 mt-0.5 stroke-[2.5]" />
@@ -216,6 +195,42 @@ export const ParkingPartnerDashboardPage: React.FC = () => {
         </motion.section>
       )}
 
+      <div className="flex justify-end">
+        <button type="button" onClick={load} disabled={loading} className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-xs text-slate-700 disabled:opacity-60 dark:border-slate-700 dark:bg-[#0B192C]">
+          {loading ? <Loader2 size={13} className="animate-spin" /> : <TrendingUp size={13} />} Refresh data
+        </button>
+      </div>
+
+      <div className="grid lg:grid-cols-3 gap-5">
+        <section className="lg:col-span-2 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 shadow-sm">
+          <h2 className="font-semibold text-sm text-[#0B192C] dark:text-white">Booking activity by hour</h2>
+          <p className="text-[10px] text-gray-400">Live peak-hour distribution from recorded parking entries</p>
+          <AnalyticsBarChart
+            data={(reports.peakHours ?? []).map((hour) => ({ label: hour.label, bookings: hour.count }))}
+            dataKey="bookings"
+            valueFormatter={(value) => `${value} booking${value === 1 ? "" : "s"}`}
+          />
+        </section>
+        <section className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 shadow-sm">
+          <h2 className="font-semibold text-sm text-[#0B192C] dark:text-white">Quick actions</h2>
+          <p className="mb-4 text-[10px] text-gray-400">Open a dedicated parking workspace</p>
+          <div className="space-y-2">
+            {[
+              { label: "Parking management", path: "/parking/dashboard" },
+              { label: "Parking staff", path: "/parking/staff" },
+              { label: "Gate scanner", path: "/parking/gate" },
+              { label: "Parking bookings", path: "/parking/my-bookings" },
+            ].map((action, index) => (
+              <button key={action.path} type="button" onClick={() => navigate(action.path)} className="flex w-full items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 p-3 text-left text-xs text-slate-700 transition hover:border-[#0A4DA6]">
+                <span className="grid h-8 w-8 place-items-center rounded-lg text-white" style={{ backgroundColor: ["#0A4DA6", "#14B8A6", "#F59E0B", "#8B5CF6"][index] }}><CircleParking size={15} /></span>
+                {action.label}
+              </button>
+            ))}
+          </div>
+        </section>
+      </div>
+
+      {false && (
       <div className="grid lg:grid-cols-3 gap-5">
         <section className="lg:col-span-2 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 space-y-4 shadow-sm">
           <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -361,7 +376,7 @@ export const ParkingPartnerDashboardPage: React.FC = () => {
             )}
           </section>
 
-          {reports.peakHours && reports.peakHours.length > 0 && (
+          {(reports.peakHours?.length ?? 0) > 0 && (
             <section className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 space-y-3 shadow-sm">
               <h2 className="inline-flex items-center gap-2 font-extrabold text-sm text-[#0B192C] dark:text-white">
                 <Clock size={15} className="text-[#0A4DA6] stroke-[2.5]" />
@@ -373,7 +388,7 @@ export const ParkingPartnerDashboardPage: React.FC = () => {
                 role="img"
                 aria-label="Bookings by hour of entry"
               >
-                {reports.peakHours.map((h) => (
+                {(reports.peakHours ?? []).map((h) => (
                   <div
                     key={h.hour}
                     className="flex-1 flex flex-col items-center gap-1 group relative"
@@ -396,7 +411,7 @@ export const ParkingPartnerDashboardPage: React.FC = () => {
             </section>
           )}
 
-          {reports.revenue && (
+          {reports.revenue?.totals && (
             <section className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 space-y-2.5 shadow-sm">
               <h2 className="font-extrabold text-sm text-[#0B192C] dark:text-white">
                 Last 30 Days
@@ -405,33 +420,33 @@ export const ParkingPartnerDashboardPage: React.FC = () => {
               {[
                 [
                   "Gross revenue",
-                  formatCurrency(reports.revenue.totals.revenue),
+                  formatCurrency(reports.revenue?.totals.revenue ?? 0),
                 ],
                 [
                   "Your earnings",
-                  formatCurrency(reports.revenue.totals.partnerEarning),
+                  formatCurrency(reports.revenue?.totals.partnerEarning ?? 0),
                 ],
                 [
                   "Platform commission",
-                  formatCurrency(reports.revenue.totals.commission),
+                  formatCurrency(reports.revenue?.totals.commission ?? 0),
                 ],
-                ["Bookings", String(reports.revenue.totals.bookings)],
+                ["Bookings", String(reports.revenue?.totals.bookings ?? 0)],
                 [
                   "Avg. stay",
                   reports.averageStay
-                    ? `${reports.averageStay.averageHours} hr`
+                    ? `${reports.averageStay?.averageHours ?? 0} hr`
                     : "—",
                 ],
                 [
                   "Cancellation rate",
                   reports.cancellations
-                    ? `${reports.cancellations.cancellationRate}%`
+                    ? `${reports.cancellations?.cancellationRate ?? 0}%`
                     : "—",
                 ],
                 [
                   "No-show rate",
                   reports.cancellations
-                    ? `${reports.cancellations.noShowRate}%`
+                    ? `${reports.cancellations?.noShowRate ?? 0}%`
                     : "—",
                 ],
               ].map(([label, value]) => (
@@ -448,6 +463,7 @@ export const ParkingPartnerDashboardPage: React.FC = () => {
           )}
         </div>
       </div>
+      )}
     </div>
   );
 };

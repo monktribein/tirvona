@@ -114,6 +114,8 @@ describe("creating a parking location as an ashram owner", () => {
       {} as never,
       {} as never,
       {} as never,
+      {} as never,
+      {} as never,
     );
     return { service, created };
   };

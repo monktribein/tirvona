@@ -69,14 +69,15 @@ describe("WhatsAppModule integration", () => {
 
     const [url, init] = fetchMock.mock.calls[0];
     expect(url).toBe("https://app.aknexus.in/api/send");
-    expect(JSON.parse(String(init?.body))).toEqual({
+    const body = JSON.parse(String(init?.body));
+    expect(body).toMatchObject({
       number: "919936968762",
       type: "text",
-      message:
-        "Your Tirvona verification code is 123456. It expires in 5 minutes. Do not share this code with anyone.",
       instance_id: "integration-instance",
       access_token: "integration-access-token",
     });
+    expect(body.message).toContain("123456");
+    expect(body.message).toContain("5 minutes");
     await module.close();
   });
 });

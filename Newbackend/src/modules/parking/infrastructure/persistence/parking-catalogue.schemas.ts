@@ -375,7 +375,7 @@ export const ParkingStaffSchema = new Schema(
     phone: String,
     status: {
       type: String,
-      enum: ["active", "inactive", "suspended"],
+      enum: ["pending_approval", "active", "inactive", "suspended"],
       default: "active",
       index: true,
     },

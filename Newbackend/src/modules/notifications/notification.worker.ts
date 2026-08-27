@@ -10,6 +10,7 @@ import type { Model } from "mongoose";
 import { Resend } from "resend";
 import { ConfigService } from "@nestjs/config";
 import { NotificationsGateway } from "./notifications.gateway";
+import { PARKING_MODEL } from "../parking/domain/parking.constants";
 import { WhatsAppTransactionalNotificationService } from "../../integrations/whatsapp/services/whatsapp-transactional-notification.service";
 export interface NotificationJob {
   domain: "booking" | "parking" | "community";
@@ -37,6 +38,11 @@ export class NotificationWorker
     @InjectModel("ParkingNotification") private readonly parking: Model<any>,
     @InjectModel("CommunityNotification") private readonly community: Model<any>,
     @InjectModel("User") private readonly users: Model<any>,
+    @InjectModel("Booking") private readonly bookings: Model<any>,
+    @InjectModel(PARKING_MODEL.Booking)
+    private readonly parkingBookings: Model<any>,
+    @InjectModel(PARKING_MODEL.QrCode)
+    private readonly parkingQrCodes: Model<any>,
     private readonly gateway: NotificationsGateway,
     private readonly config: ConfigService,
     private readonly whatsapp: WhatsAppTransactionalNotificationService,
@@ -232,6 +238,16 @@ export class NotificationWorker
               correlationId,
             }),
           );
+          const bookingRef = data.bookingId || outboxRow?.bookingId;
+          const [stay, parkingPass] = await Promise.all([
+            data.domain === "booking"
+              ? this.stayContext(bookingRef)
+              : Promise.resolve(null),
+            data.domain === "parking"
+              ? this.parkingContext(bookingRef)
+              : Promise.resolve(null),
+          ]);
+
           const whatsapp = await this.whatsapp.sendOutboxEvent({
             domain: data.domain,
             notificationId: data.notificationId,
@@ -240,6 +256,9 @@ export class NotificationWorker
             recipientName: user?.name,
             title: data.title,
             message: data.message,
+            reference: stay?.reference ?? parkingPass?.reference,
+            stay: stay ?? undefined,
+            parking: parkingPass ?? undefined,
             correlationId,
           });
           if (whatsapp?.status === "accepted") {
@@ -336,6 +355,80 @@ export class NotificationWorker
         );
       throw error;
     }
+  }
+
+
+  /**
+   * Loads the stay behind a booking notification so WhatsApp can show the
+   * guest name, ashram, dates and check-in code instead of a bare sentence.
+   */
+  private async stayContext(bookingId: unknown): Promise<any | null> {
+    if (!bookingId) return null;
+    const booking: any = await this.bookings
+      .findById(String(bookingId))
+      .select(
+        "+checkInCode bookingId checkInDate checkOutDate guestsCount roomsBookedCount pricing walkInGuest",
+      )
+      .populate("ashramId", "name address")
+      .populate("roomId", "name type")
+      .populate("customerId", "name")
+      .lean();
+    if (!booking) return null;
+    return {
+      guestName: booking.walkInGuest?.name || booking.customerId?.name,
+      reference: booking.bookingId,
+      ashramName: booking.ashramId?.name,
+      ashramCity: booking.ashramId?.address?.city,
+      ashramState: booking.ashramId?.address?.state,
+      roomName: booking.roomId?.name,
+      checkInDate: booking.checkInDate,
+      checkOutDate: booking.checkOutDate,
+      guestsCount: booking.guestsCount,
+      roomsCount: booking.roomsBookedCount,
+      checkInCode: booking.checkInCode,
+      amountPaid: booking.pricing?.amountPaid,
+      totalAmount: booking.pricing?.totalAmount,
+      currency: booking.pricing?.currency,
+    };
+  }
+
+  /**
+   * Loads the parking pass so the message can carry the gate code and a link
+   * to the QR. The provider sends text only, so the pass is linked, not
+   * attached.
+   */
+  private async parkingContext(bookingId: unknown): Promise<any | null> {
+    if (!bookingId) return null;
+    const booking: any = await this.parkingBookings
+      .findById(String(bookingId))
+      .select(
+        "bookingReference vehicleNumber vehicleType entryAt exitAt pricing amountPaid",
+      )
+      .populate("locationId", "name address")
+      .lean();
+    if (!booking) return null;
+    const qr: any = await this.parkingQrCodes
+      .findOne({ bookingId: booking._id })
+      .sort({ version: -1 })
+      .select("displayCode")
+      .lean();
+    const siteUrl =
+      this.config.get<string>("frontendUrl") || "https://www.tirvona.com";
+    return {
+      reference: booking.bookingReference,
+      locationName: booking.locationId?.name,
+      locationCity: booking.locationId?.address?.city,
+      vehicleNumber: booking.vehicleNumber,
+      vehicleType: booking.vehicleType,
+      entryAt: booking.entryAt,
+      exitAt: booking.exitAt,
+      displayCode: qr?.displayCode,
+      passUrl: booking.bookingReference
+        ? `${siteUrl}/parking/booking/${booking.bookingReference}`
+        : undefined,
+      amountPaid: booking.pricing?.amountPaid ?? booking.amountPaid,
+      currency: booking.pricing?.currency,
+    };
   }
 
   private logChannelFailure(

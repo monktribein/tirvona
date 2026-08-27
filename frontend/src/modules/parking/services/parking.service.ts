@@ -217,6 +217,10 @@ export const parkingPartnerService = {
     api.get("/parking/partner/staff", { params: clean({ partnerId }) }),
   assignStaff: (payload: unknown) =>
     api.post("/parking/partner/staff", payload),
+  createStaffAccount: (payload: unknown) =>
+    api.post("/parking/partner/staff/accounts", payload),
+  approveStaff: (id: string) =>
+    api.patch(`/parking/partner/staff/${id}/approve`, {}),
   revokeStaff: (id: string) => api.delete(`/parking/partner/staff/${id}`),
 
   getSettings: (locationId: string) =>

@@ -50,13 +50,18 @@ describe("WhatsAppTemplateService", () => {
       idempotencyKey: "otp:two",
     });
 
-    expect(provider.sendMessage).toHaveBeenCalledWith({
-      to: "919876543210",
-      messageType: "auth_otp",
-      message:
-        "Your Tirvona verification code is 123456. It expires in 5 minutes. Do not share this code with anyone.",
-      idempotencyKey: "otp:two",
-    });
+    expect(provider.sendMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: "919876543210",
+        messageType: "auth_otp",
+        idempotencyKey: "otp:two",
+      }),
+    );
+    const sent = (provider.sendMessage as jest.Mock).mock.calls[0][0]
+      .message as string;
+    expect(sent).toContain("123456");
+    expect(sent).toContain("5 minutes");
+    expect(sent.toLowerCase()).toContain("never share this code");
   });
 
   it("retries only errors explicitly marked retryable", async () => {

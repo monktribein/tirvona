@@ -8,7 +8,6 @@ import {
 } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import bcrypt from "bcryptjs";
-import { randomBytes } from "node:crypto";
 import type { Model } from "mongoose";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import type {
@@ -151,7 +150,7 @@ export class UsersService {
   async createAccount(
     actor: AuthenticatedUser,
     dto: CreateAccountDto,
-  ): Promise<{ user: any; tempPassword: string }> {
+  ): Promise<{ user: any }> {
     if (await this.users.exists({ email: dto.email.toLowerCase() }))
       throw new ConflictException("Email address already registered");
     if (await this.users.exists({ phone: dto.phone.trim() }))
@@ -165,8 +164,6 @@ export class UsersService {
       throw new BadRequestException(
         "Aadhaar card and PAN card are mandatory for role accounts",
       );
-    const tempPassword =
-      dto.password || `Tirvona#${randomBytes(8).toString("base64url")}9!`;
     const assignedAshram = await this.resolveAssignedAshram(dto);
     const user = await this.users.create({
       name: dto.name,
@@ -176,7 +173,7 @@ export class UsersService {
       panCardUrl: dto.panCardUrl,
       email: dto.email.toLowerCase(),
       phone: dto.phone.trim(),
-      passwordHash: await bcrypt.hash(tempPassword, 12),
+      passwordHash: await bcrypt.hash(dto.password, 12),
       status: "active",
       permissions:
         dto.role === "ashram_admin" ? ["ashrams.manage_all"] : [],
@@ -197,7 +194,7 @@ export class UsersService {
     delete safeUser.passwordHash;
     delete safeUser.aadhaarCardUrl;
     delete safeUser.panCardUrl;
-    return { user: safeUser, tempPassword };
+    return { user: safeUser };
   }
   async assignableAshrams(search?: string): Promise<any[]> {
     const term = search?.trim();

@@ -117,6 +117,10 @@ export const AshramDetailPage: React.FC = () => {
       : getTomorrowYMD(validInitialCheckIn);
 
   const [ashram, setAshram] = useState<any>(null);
+  // Canonical ashram routes use city/slug and therefore do not have the
+  // legacy `:id` route param. Booking, quote and promo APIs must always use
+  // the persisted ashram id once the canonical listing has loaded.
+  const currentAshramId = String(ashram?._id ?? id ?? "");
   const [rooms, setRooms] = useState<any[]>([]);
   const [volunteerJobs, setVolunteerJobs] = useState<VolunteerJobItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -172,7 +176,7 @@ export const AshramDetailPage: React.FC = () => {
     const code = (codeToTest || couponCode).trim().toUpperCase();
     if (!code) return;
     const bookingAmount = subtotalRef.current;
-    if (!stayReadyRef.current) {
+    if (!stayReadyRef.current || !currentAshramId) {
       setPendingPromo(code);
       return;
     }
@@ -180,7 +184,7 @@ export const AshramDetailPage: React.FC = () => {
       const res = await offerService.validatePromo({
         promoCode: code,
         bookingAmount,
-        ashramId: id,
+        ashramId: currentAshramId,
       });
       const offerData = res.data?.data;
       if (res.data?.success && offerData?.valid) {
@@ -273,7 +277,7 @@ export const AshramDetailPage: React.FC = () => {
   }, [id, city, ashramSlug]);
 
   useEffect(() => {
-    if (!id) {
+    if (!currentAshramId) {
       setAvailableOffers([]);
       return;
     }
@@ -282,7 +286,7 @@ export const AshramDetailPage: React.FC = () => {
       setOffersLoading(true);
       try {
         const response = await offerService.getPublicOffers({
-          ashramId: id,
+          ashramId: currentAshramId,
           status: "active",
           targetRoute: "stays",
           limit: "20",
@@ -301,7 +305,10 @@ export const AshramDetailPage: React.FC = () => {
                   String(ashram?._id ?? ashram ?? ""),
                 )
               : [];
-            return directAshramId === id || applicableAshramIds.includes(id);
+            return (
+              directAshramId === currentAshramId ||
+              applicableAshramIds.includes(currentAshramId)
+            );
           };
           setAvailableOffers(offers.filter(belongsToCurrentAshram));
         }
@@ -316,7 +323,7 @@ export const AshramDetailPage: React.FC = () => {
     return () => {
       active = false;
     };
-  }, [id, city, ashramSlug]);
+  }, [currentAshramId]);
 
   useEffect(() => {
     const refreshRooms = (event: Event) => {
@@ -350,7 +357,11 @@ export const AshramDetailPage: React.FC = () => {
       } catch {}
     }
 
-    if (pb && id && (pb.ashramId === id || !pb.ashramId)) {
+    if (
+      pb &&
+      currentAshramId &&
+      (pb.ashramId === currentAshramId || !pb.ashramId)
+    ) {
       try {
         const draftDates = normalizeBookingDates(
           pb.checkIn || pb.checkInDate || "",
@@ -397,7 +408,7 @@ export const AshramDetailPage: React.FC = () => {
         console.error("Error restoring pending booking:", e);
       }
     }
-  }, [id, rooms]);
+  }, [currentAshramId, rooms]);
 
   const handleClearDraft = () => {
     localStorage.removeItem("pending_booking");
@@ -672,10 +683,15 @@ export const AshramDetailPage: React.FC = () => {
     const timer = setTimeout(() => handleValidatePromo(code), 400);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [grossPayableCalc, appliedPromo, pendingPromo]);
+  }, [
+    grossPayableCalc,
+    appliedPromo,
+    pendingPromo,
+    currentAshramId,
+  ]);
 
   useEffect(() => {
-    if (!id || !selectedRoom?._id || !checkIn || !checkOut) {
+    if (!currentAshramId || !selectedRoom?._id || !checkIn || !checkOut) {
       setServerQuote(null);
       return;
     }
@@ -684,7 +700,7 @@ export const AshramDetailPage: React.FC = () => {
       setQuoting(true);
       try {
         const res = await bookingService.quote({
-          ashramId: id,
+          ashramId: currentAshramId,
           roomId: selectedRoom._id,
           checkInDate: checkIn,
           checkOutDate: checkOut,
@@ -712,7 +728,7 @@ export const AshramDetailPage: React.FC = () => {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    id,
+    currentAshramId,
     selectedRoom?._id,
     checkIn,
     checkOut,
