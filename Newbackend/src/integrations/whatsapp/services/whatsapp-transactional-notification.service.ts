@@ -11,6 +11,12 @@ import type {
   WhatsAppTemplateValue,
 } from "../types/whatsapp.types";
 import { WhatsAppTemplateService } from "./whatsapp-template.service";
+import {
+  buildParkingMessage,
+  buildStayMessage,
+} from "../utils/whatsapp-message.builder";
+
+type StayMessageKind = Parameters<typeof buildStayMessage>[0];
 
 interface TransactionalInput {
   phone: string;
@@ -47,6 +53,54 @@ export class WhatsAppTransactionalNotificationService {
     return this.send(WHATSAPP_TEMPLATE.CHECKIN_REMINDER, input);
   }
 
+  /** Maps an outbox event onto the shape of message it should read as. */
+  private stayKindFor(event: string): StayMessageKind | null {
+    const key = event.toLowerCase();
+    if (key.includes("confirm")) return "confirmed";
+    if (key.includes("held") || key.includes("hold")) return "held";
+    if (key.includes("expired")) return "expired";
+    if (key.includes("cancel")) return "cancelled";
+    if (key.includes("payment_success") || key === "payment_success")
+      return "payment_success";
+    if (key.includes("payment_failed")) return "payment_failed";
+    if (key.includes("refund")) return "refund";
+    if (key.includes("checkin") || key.includes("check_in"))
+      return "checkin_reminder";
+    return null;
+  }
+
+  /**
+   * Composes the body a guest actually reads. Falls back to the row's title and
+   * message only when the worker could not load the booking behind it.
+   */
+  private composeBody(notification: WhatsAppOutboxNotification): string {
+    const fallback = {
+      title: notification.title,
+      message: notification.message,
+    };
+
+    if (notification.parking) {
+      const key = notification.event.toLowerCase();
+      const kind = key.includes("cancel")
+        ? "cancelled"
+        : key.includes("remind")
+          ? "reminder"
+          : "confirmed";
+      return buildParkingMessage(kind, notification.parking, fallback);
+    }
+
+    if (notification.stay) {
+      const kind = this.stayKindFor(notification.event);
+      if (kind) return buildStayMessage(kind, notification.stay, fallback);
+    }
+
+    // No booking context reached us, so fall back to the notification row's
+    // own wording with the title bolded as a heading.
+    return notification.title
+      ? [`*${notification.title}*`, "", notification.message].join("\n")
+      : notification.message;
+  }
+
   sendOutboxEvent(
     notification: WhatsAppOutboxNotification,
   ): Promise<WhatsAppProviderResult | null> {
@@ -57,8 +111,9 @@ export class WhatsAppTransactionalNotificationService {
       phone: notification.phone,
       recipientName: notification.recipientName,
       reference: notification.reference,
-      title: notification.title,
-      message: notification.message,
+      // The composed body is the whole message, so no separate title is passed
+      // or the renderer would print the heading twice.
+      message: this.composeBody(notification),
       idempotencyKey: `${notification.domain}:${notification.notificationId}:whatsapp`,
       correlationId: notification.correlationId,
     });

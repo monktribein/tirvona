@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import { Key, RefreshCw, Search, X } from "lucide-react";
 import { useNotifications } from "../contexts/NotificationContext";
 import { bookingService } from "../services";
@@ -9,16 +9,15 @@ export const ReceptionCheckinPage: React.FC = () => {
   const [activeBookings, setActiveBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<
+    "active" | "confirmed" | "checked_in" | "checked_out"
+  >("active");
 
   const [checkInCode, setCheckInCode] = useState("");
   const [verifyingId, setVerifyingId] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
 
-  useEffect(() => {
-    fetchActiveBookings();
-  }, []);
-
-  const fetchActiveBookings = async () => {
+  const fetchActiveBookings = useCallback(async () => {
     setLoading(true);
     try {
       const rows: any[] = [];
@@ -35,7 +34,7 @@ export const ReceptionCheckinPage: React.FC = () => {
       } while (batch.length === 100);
       setActiveBookings(
         rows.filter((booking) =>
-          ["confirmed", "checked_in"].includes(booking.status),
+          ["confirmed", "checked_in", "checked_out"].includes(booking.status),
         ),
       );
     } catch (err) {
@@ -49,9 +48,18 @@ export const ReceptionCheckinPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [addNotification]);
+
+  useEffect(() => {
+    void fetchActiveBookings();
+  }, [fetchActiveBookings]);
 
   const visibleBookings = activeBookings.filter((booking) => {
+    const matchesStatus =
+      statusFilter === "active"
+        ? ["confirmed", "checked_in"].includes(booking.status)
+        : booking.status === statusFilter;
+    if (!matchesStatus) return false;
     const term = search.trim().toLowerCase();
     if (!term) return true;
     return [
@@ -161,16 +169,31 @@ export const ReceptionCheckinPage: React.FC = () => {
         <div className="h-40 bg-gray-50 border border-gray-100 rounded-[24px] animate-pulse" />
       ) : (
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] shadow-sm overflow-hidden">
-          <label className="relative m-4 block max-w-xl">
-            <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              type="search"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search booking, guest, phone, ashram or room"
-              className="w-full rounded-xl border border-gray-100 bg-gray-50 py-2.5 pl-9 pr-3 text-xs focus:outline-none dark:border-slate-800 dark:bg-slate-900"
-            />
-          </label>
+          <div className="m-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <label className="relative block w-full max-w-xl">
+              <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="search"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search booking, guest, phone, ashram or room"
+                className="w-full rounded-xl border border-gray-100 bg-gray-50 py-2.5 pl-9 pr-3 text-xs focus:outline-none dark:border-slate-800 dark:bg-slate-900"
+              />
+            </label>
+            <select
+              value={statusFilter}
+              onChange={(event) =>
+                setStatusFilter(event.target.value as typeof statusFilter)
+              }
+              className="rounded-full border border-gray-200 bg-white px-4 py-2.5 text-xs outline-none dark:border-slate-700 dark:bg-slate-900"
+              aria-label="Filter check-in and check-out status"
+            >
+              <option value="active">Active desk</option>
+              <option value="confirmed">Awaiting check-in</option>
+              <option value="checked_in">Checked in</option>
+              <option value="checked_out">Checked out</option>
+            </select>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
@@ -215,14 +238,14 @@ export const ReceptionCheckinPage: React.FC = () => {
                         <span className="inline-block mt-0.5 px-2 py-0.5 bg-purple-50 text-purple-700 text-[10px] font-bold rounded">
                           {bk.assignedRoomNumber}
                         </span>
-                      ) : (
+                      ) : bk.status !== "checked_out" ? (
                         <button
                           onClick={() => handleAssignRoomNumber(bk._id)}
                           className="mt-0.5 text-[10px] font-bold text-[#0A4DA6] hover:underline cursor-pointer"
                         >
                           + Assign Room No
                         </button>
-                      )}
+                      ) : null}
                     </td>
                     <td className="py-4.5 px-6">
                       <span
@@ -263,7 +286,7 @@ export const ReceptionCheckinPage: React.FC = () => {
                 {visibleBookings.length === 0 && (
                   <tr>
                     <td colSpan={5} className="px-6 py-12 text-center text-xs text-gray-400">
-                      No confirmed or checked-in bookings found.
+                      No bookings found for this status.
                     </td>
                   </tr>
                 )}

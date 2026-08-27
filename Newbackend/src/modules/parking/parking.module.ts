@@ -1,6 +1,10 @@
 import { Module } from "@nestjs/common";
 import { MongooseModule } from "@nestjs/mongoose";
 import { AshramSchema } from "../ashrams/infrastructure/persistence/ashram.schemas";
+import {
+  User,
+  UserSchema,
+} from "../users/infrastructure/persistence/user.schema";
 import { PARKING_MODEL } from "./domain/parking.constants";
 import { PARKING_REPOSITORY } from "./domain/parking.repository";
 import { ParkingAccessService } from "./application/parking-access.service";
@@ -63,7 +67,10 @@ const schemas = [
   [PARKING_MODEL.Commission, ParkingCommissionSchema],
 ].map(([name, schema]) => ({ name: name as string, schema: schema as any }));
 
-const tenantSchemas = [{ name: "Ashram", schema: AshramSchema as any }];
+const tenantSchemas = [
+  { name: "Ashram", schema: AshramSchema as any },
+  { name: User.name, schema: UserSchema as any },
+];
 
 @Module({
   imports: [MongooseModule.forFeature([...schemas, ...tenantSchemas])],

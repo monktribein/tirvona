@@ -1,4 +1,8 @@
 import type { WHATSAPP_TEMPLATE } from "../constants/whatsapp.constants";
+import type {
+  WhatsAppParkingContext,
+  WhatsAppStayContext,
+} from "../utils/whatsapp-message.builder";
 
 export type WhatsAppTemplateKey =
   (typeof WHATSAPP_TEMPLATE)[keyof typeof WHATSAPP_TEMPLATE];
@@ -35,4 +39,10 @@ export interface WhatsAppOutboxNotification {
   message: string;
   reference?: string;
   correlationId?: string;
+  /**
+   * Booking or parking details loaded by the worker. When present the message
+   * is composed from these instead of echoing the row's raw title and message.
+   */
+  stay?: WhatsAppStayContext;
+  parking?: WhatsAppParkingContext;
 }

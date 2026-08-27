@@ -53,6 +53,7 @@ export const OwnerUsersPage: React.FC = () => {
     role: "manager",
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [createLoading, setCreateLoading] = useState(false);
   const [createMsg, setCreateMsg] = useState<{
     type: "success" | "error";
@@ -89,6 +90,20 @@ export const OwnerUsersPage: React.FC = () => {
 
   const handleCreateStaff = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (formData.password.length < 8) {
+      setCreateMsg({
+        type: "error",
+        text: "Create a password containing at least 8 characters.",
+      });
+      return;
+    }
+    if (formData.password !== confirmPassword) {
+      setCreateMsg({
+        type: "error",
+        text: "Password and confirm password must match.",
+      });
+      return;
+    }
     setCreateLoading(true);
     setCreateMsg(null);
     try {
@@ -105,6 +120,7 @@ export const OwnerUsersPage: React.FC = () => {
           password: "",
           role: "manager",
         });
+        setConfirmPassword("");
         fetchStaff();
         setTimeout(() => {
           setShowAddModal(false);
@@ -565,41 +581,47 @@ export const OwnerUsersPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div>
-                  <div className="flex items-center justify-between mb-1">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
                     <label className="block text-[10px] font-black text-gray-400">
                       Login Password
                     </label>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        generateRandomPassword((val) =>
-                          setFormData({ ...formData, password: val }),
-                        )
-                      }
-                      className="text-[10px] font-extrabold text-[#0A4DA6] hover:underline flex items-center gap-1 cursor-pointer"
-                    >
-                      <Sparkles size={11} /> Auto Generate
-                    </button>
+                    <div className="relative mt-1">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        required
+                        minLength={8}
+                        autoComplete="new-password"
+                        placeholder="Minimum 8 characters"
+                        value={formData.password}
+                        onChange={(e) =>
+                          setFormData({ ...formData, password: e.target.value })
+                        }
+                        className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl pl-4 pr-10 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+                      >
+                        {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                      </button>
+                    </div>
                   </div>
-                  <div className="relative">
+                  <div>
+                    <label className="block text-[10px] font-black text-gray-400">
+                      Confirm Password
+                    </label>
                     <input
-                      type={showPassword ? "text" : "password"}
+                      type="password"
                       required
-                      placeholder="Enter password..."
-                      value={formData.password}
-                      onChange={(e) =>
-                        setFormData({ ...formData, password: e.target.value })
-                      }
-                      className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl pl-4 pr-10 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                      minLength={8}
+                      autoComplete="new-password"
+                      placeholder="Re-enter password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="mt-1 w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
-                    >
-                      {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
-                    </button>
                   </div>
                 </div>
 

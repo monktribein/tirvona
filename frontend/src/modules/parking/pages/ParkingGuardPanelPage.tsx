@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import QrScanner from "qr-scanner";
 import {
   ScanLine,
   LogIn,
@@ -31,7 +32,15 @@ import ParkingStatusBadge from "../components/ParkingStatusBadge";
 
 type Mode = "verify" | "check-in" | "check-out";
 
-export const ParkingGuardPanelPage: React.FC = () => {
+interface ParkingGuardPanelPageProps {
+  embedded?: boolean;
+  preferredLocationId?: string;
+}
+
+export const ParkingGuardPanelPage: React.FC<ParkingGuardPanelPageProps> = ({
+  embedded = false,
+  preferredLocationId,
+}) => {
   const [context, setContext] = useState<ParkingGuardContext | null>(null);
   const [locationId, setLocationId] = useState("");
   const [mode, setMode] = useState<Mode>("check-in");
@@ -54,6 +63,7 @@ export const ParkingGuardPanelPage: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const busyRef = useRef(false);
   const lastSubmittedRef = useRef("");
+  const submitTokenRef = useRef<(raw: string) => Promise<void>>(async () => {});
 
   useEffect(() => {
     (async () => {
@@ -66,7 +76,11 @@ export const ParkingGuardPanelPage: React.FC = () => {
             capabilities: res.data.capabilities || [],
           };
           setContext(ctx);
-          if (ctx.locations.length === 1) setLocationId(ctx.locations[0]._id);
+          const preferredLocation = ctx.locations.find(
+            (location) => location._id === preferredLocationId,
+          );
+          if (preferredLocation) setLocationId(preferredLocation._id);
+          else if (ctx.locations.length === 1) setLocationId(ctx.locations[0]._id);
         }
       } catch (err) {
         setMessage(
@@ -80,7 +94,7 @@ export const ParkingGuardPanelPage: React.FC = () => {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [preferredLocationId]);
 
   const refocus = useCallback(() => {
     window.setTimeout(() => inputRef.current?.focus(), 60);
@@ -99,73 +113,76 @@ export const ParkingGuardPanelPage: React.FC = () => {
     refocus();
   };
 
-  const cameraSupported =
-    typeof window !== "undefined" && "BarcodeDetector" in window;
+  const cameraAvailable =
+    typeof navigator !== "undefined" &&
+    Boolean(navigator.mediaDevices?.getUserMedia);
 
   useEffect(() => {
     if (!cameraOn) return;
     let cancelled = false;
-    let timer = 0;
-    let activeStream: MediaStream | null = null;
     const video = videoRef.current;
+    let scanner: QrScanner | null = null;
 
     (async () => {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "environment" },
+        if (!cameraAvailable || !video) {
+          throw new Error("Camera access is not supported by this browser.");
+        }
+        const permissionStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: "environment" } },
+          audio: false,
         });
-        if (cancelled) {
-          stream.getTracks().forEach((track) => track.stop());
-          return;
-        }
-        activeStream = stream;
-        if (video) {
-          video.srcObject = stream;
-          await video.play();
-        }
-        const Detector = (
-          window as unknown as {
-            BarcodeDetector: new (options: { formats: string[] }) => {
-              detect: (source: CanvasImageSource) => Promise<{ rawValue: string }[]>;
-            };
-          }
-        ).BarcodeDetector;
-        const detector = new Detector({ formats: ["qr_code"] });
+        permissionStream.getTracks().forEach((track) => track.stop());
+        if (cancelled) return;
 
-        const tick = async () => {
-          if (cancelled) return;
-          if (video && video.readyState >= 2 && !busyRef.current) {
-            try {
-              const [found] = await detector.detect(video);
-              const value = found?.rawValue?.trim();
-              if (value && value !== lastSubmittedRef.current) {
-                setToken(value);
-                await submitToken(value);
-              }
-            } catch {
+        scanner = new QrScanner(
+          video,
+          (scanResult) => {
+            const value = scanResult.data.trim();
+            if (
+              value &&
+              value !== lastSubmittedRef.current &&
+              !busyRef.current
+            ) {
+              setToken(value);
+              void submitTokenRef.current(value);
             }
-          }
-          if (!cancelled) timer = window.setTimeout(tick, 350);
-        };
-        void tick();
+          },
+          {
+            preferredCamera: "environment",
+            maxScansPerSecond: 8,
+            highlightScanRegion: true,
+            highlightCodeOutline: true,
+            returnDetailedScanResult: true,
+          },
+        );
+        await scanner.start();
+        if (cancelled) scanner.stop();
       } catch (err) {
-        if (!cancelled)
-          setCameraError(
-            getErrorMessage(
-              err,
-              "Could not open the camera. Check the browser's camera permission.",
-            ),
-          );
+        if (!cancelled) {
+          const errorName = err instanceof DOMException ? err.name : "";
+          const errorText = String(err).toLowerCase();
+          const permissionMessage = errorName === "NotAllowedError"
+            ? "Camera permission is blocked. Select the camera icon in the address bar, allow access, then try again."
+            : errorName === "NotFoundError" || errorText.includes("not found")
+              ? "No camera was found on this device. Connect a camera or enter the gate code manually."
+              : errorName === "NotReadableError"
+                ? "The camera is already in use by another app or browser tab. Close it there and try again."
+                : getErrorMessage(
+                    err,
+                    "Could not open the camera. Check the browser's camera permission.",
+                  );
+          setCameraError(permissionMessage);
+          setCameraOn(false);
+        }
       }
     })();
 
     return () => {
       cancelled = true;
-      window.clearTimeout(timer);
-      activeStream?.getTracks().forEach((track) => track.stop());
-      if (video) video.srcObject = null;
+      scanner?.destroy();
     };
-  }, [cameraOn, locationId, mode]);
+  }, [cameraOn, locationId, mode, cameraAvailable]);
 
   const submitToken = async (raw: string) => {
     const value = raw.trim();
@@ -205,6 +222,7 @@ export const ParkingGuardPanelPage: React.FC = () => {
       refocus();
     }
   };
+  submitTokenRef.current = submitToken;
 
   const handleScan = (e: React.FormEvent) => {
     e.preventDefault();
@@ -216,7 +234,10 @@ export const ParkingGuardPanelPage: React.FC = () => {
     const value = token.trim();
     if (!isCompleteScanInput(value) || value === lastSubmittedRef.current)
       return;
-    const timer = window.setTimeout(() => void submitToken(value), 250);
+    const timer = window.setTimeout(
+      () => void submitTokenRef.current(value),
+      250,
+    );
     return () => window.clearTimeout(timer);
   }, [token, autoScan, manualMode, busy, locationId, mode]);
 
@@ -251,7 +272,7 @@ export const ParkingGuardPanelPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="max-w-3xl mx-auto px-4 pt-10 pb-20 space-y-4">
+      <div className={`max-w-3xl mx-auto space-y-4 ${embedded ? "w-full" : "px-4 pt-10 pb-20"}`}>
         <div className="h-24 bg-gray-100 dark:bg-slate-800 animate-pulse rounded-[24px]" />
         <div className="h-64 bg-gray-100 dark:bg-slate-800 animate-pulse rounded-[24px]" />
       </div>
@@ -260,7 +281,7 @@ export const ParkingGuardPanelPage: React.FC = () => {
 
   if (!context?.locations.length) {
     return (
-      <div className="max-w-2xl mx-auto px-4 pt-16 pb-20 text-center space-y-3">
+      <div className={`max-w-2xl mx-auto text-center space-y-3 ${embedded ? "py-8" : "px-4 pt-16 pb-20"}`}>
         <ShieldCheck
           size={40}
           className="text-gray-300 dark:text-slate-700 mx-auto"
@@ -277,8 +298,8 @@ export const ParkingGuardPanelPage: React.FC = () => {
   }
 
   return (
-    <div className="pb-16 lg:pb-24 pt-8 sm:pt-10 min-h-screen">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 space-y-4">
+    <div className={embedded ? "w-full" : "pb-16 lg:pb-24 pt-8 sm:pt-10 min-h-screen"}>
+      <div className={`max-w-3xl mx-auto space-y-4 ${embedded ? "w-full" : "px-4 sm:px-6"}`}>
         <header className="space-y-1">
           <h1 className="inline-flex items-center gap-2.5 text-xl sm:text-2xl font-black text-[#0B192C] dark:text-white">
             <span className="w-9 h-9 rounded-2xl bg-[#0A4DA6] text-white flex items-center justify-center shadow-md">
@@ -369,7 +390,7 @@ export const ParkingGuardPanelPage: React.FC = () => {
                     </label>
                   </div>
 
-                  {cameraSupported && (
+                  {cameraAvailable && (
                     <button
                       type="button"
                       onClick={() => {

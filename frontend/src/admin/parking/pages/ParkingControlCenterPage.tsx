@@ -263,7 +263,7 @@ export const ParkingControlCenterPage: React.FC = () => {
   return (
     <div className="space-y-6 text-left w-full">
       <EnterprisePageHeader
-        title="Parking Control Center"
+        title="Parking Management"
         subtitle="Partner approvals, location status, payouts and platform analytics. Listings and search live under Parking Management."
         icon={<Car size={22} />}
         badgeText="Super Admin"

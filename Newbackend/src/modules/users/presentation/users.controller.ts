@@ -95,7 +95,6 @@ export class UsersController {
     return {
       success: true,
       message: "Account created successfully",
-      tempPassword: result.tempPassword,
       data: result.user,
     };
   }

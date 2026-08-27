@@ -403,9 +403,10 @@ export const DashboardLayout: React.FC = () => {
       groupName: "Parking Management",
       icon: <Car size={15} />,
       links: [
-        { label: "Parking Operations Dashboard", path: "/parking/dashboard" },
-        { label: "Parking Control Center", path: "/admin/parking/control" },
-        { label: "Parking Staff & Roles", path: "/admin/parking/roles" },
+        { label: "Parking Dashboard", path: "/parking/dashboard" },
+        { label: "QR Gate Scanner", path: "/parking/gate" },
+        { label: "Parking Management", path: "/admin/parking/control" },
+        { label: "Parking Staff", path: "/admin/parking/roles" },
         { label: "Parking Partners", path: "/admin/manage/parking_partners/all" },
         {
           label: "Pending Parking Partners",
@@ -650,8 +651,10 @@ export const DashboardLayout: React.FC = () => {
       groupName: "Parking Management",
       icon: <Car size={15} />,
       links: [
-        { label: "My Ashram Parking", path: `${ownerBase}/parking` },
-        { label: "Parking Operations", path: "/parking/dashboard" },
+        { label: "Parking Facilities", path: `${ownerBase}/parking` },
+        { label: "Parking Staff", path: `${ownerBase}/parking/staff` },
+        { label: "Parking Dashboard", path: "/parking/dashboard" },
+        { label: "QR Gate Scanner", path: "/parking/gate" },
       ],
     },
   ];
@@ -690,15 +693,23 @@ export const DashboardLayout: React.FC = () => {
   ];
 
   const userHasParkingRole = isParkingRole(user?.parkingRoles, user?.role, user?.email);
+  const isParkingGuardOnly =
+    (user?.parkingRoles ?? []).includes("security_guard") &&
+    !(user?.parkingRoles ?? []).some((role) =>
+      ["parking_manager", "parking_partner"].includes(role),
+    );
   const parkingGroups: NavGroup[] = [
     {
-      groupName: "Parking operations",
+      groupName: isParkingGuardOnly ? "QR Gate Scanner" : "Parking Tools",
       icon: <Car size={15} />,
       links: [
-        { label: "⚡ Operations Console", path: "/parking/dashboard" },
-        { label: "Partner & Revenue Console", path: "/parking/partner" },
-        { label: "Gate Scanner & Verifier", path: "/parking/gate" },
-        { label: "My Parking Bookings", path: "/parking/my-bookings" },
+        ...(isParkingGuardOnly
+          ? []
+          : [
+              { label: "Parking Overview", path: "/parking/partner" },
+              { label: "Parking Staff", path: "/parking/staff" },
+            ]),
+        { label: "QR Gate Scanner", path: "/parking/gate" },
       ],
     },
   ];
@@ -720,7 +731,7 @@ export const DashboardLayout: React.FC = () => {
     ) {
       return {
         topLink: {
-          label: "Parking Console",
+          label: "Parking Management",
           path: "/parking/dashboard",
           icon: <Car size={16} className="text-[#E58C28]" />,
         },
@@ -755,6 +766,7 @@ export const DashboardLayout: React.FC = () => {
                   "/owner/bookings",
                   "/owner/payments",
                   "/owner/parking",
+                  "/owner/parking/staff",
                   "/parking/dashboard",
                 ].includes(link.path),
             ),
@@ -1080,13 +1092,15 @@ export const DashboardLayout: React.FC = () => {
     <div className="dashboard-shell flex min-h-screen flex-col bg-[#F0F4F9] text-left text-[#0B192C] dark:bg-[#070F1B] dark:text-white">
       <header className="sticky top-0 z-30 flex h-[72px] w-full items-center justify-between gap-3 border-b border-blue-100 bg-white px-3 shadow-sm sm:px-5 lg:gap-6 lg:px-7 dark:border-slate-800 dark:bg-[#0B192C]">
         <div className="flex items-center gap-3 shrink-0">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="lg:hidden p-2 rounded-full hover:bg-blue-50 text-[#0B192C] dark:text-white transition-colors"
-            aria-label={t("Open navigation menu")}
-          >
-            <Menu size={20} />
-          </button>
+          {!isParkingGuardOnly && (
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="lg:hidden p-2 rounded-full hover:bg-blue-50 text-[#0B192C] dark:text-white transition-colors"
+              aria-label={t("Open navigation menu")}
+            >
+              <Menu size={20} />
+            </button>
+          )}
 
           <Link to="/" className="group flex shrink-0 cursor-pointer items-center gap-3">
             <div className="flex items-center justify-center rounded-xl border border-blue-100 bg-white p-1.5 shadow-sm transition-all group-hover:border-[#0A4DA6]/60">
@@ -1186,11 +1200,13 @@ export const DashboardLayout: React.FC = () => {
       </header>
 
       <div className="flex flex-row flex-grow min-h-0">
-        <aside className="sticky top-[72px] hidden h-[calc(100vh-72px)] w-[272px] shrink-0 flex-col border-r border-blue-100 bg-white text-[#0B192C] shadow-sm lg:flex dark:border-slate-800 dark:bg-[#0B192C] dark:text-white">
-          {renderSidebarContent(false)}
-        </aside>
+        {!isParkingGuardOnly && (
+          <aside className="sticky top-[72px] hidden h-[calc(100vh-72px)] w-[272px] shrink-0 flex-col border-r border-blue-100 bg-white text-[#0B192C] shadow-sm lg:flex dark:border-slate-800 dark:bg-[#0B192C] dark:text-white">
+            {renderSidebarContent(false)}
+          </aside>
+        )}
 
-        {sidebarOpen && (
+        {sidebarOpen && !isParkingGuardOnly && (
           <div className="fixed inset-0 z-50 lg:hidden flex">
             <div
               className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"

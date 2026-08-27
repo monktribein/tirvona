@@ -66,6 +66,8 @@ export class ParkingPartnerController {
       : { _id: { $in: req.parking.locationIds } };
     const data = await this.service.locations
       .find(filter)
+      .populate("ashramId", "name address.city address.state")
+      .populate("partnerId", "businessName partnerCode status")
       .sort({ createdAt: -1 });
     return { success: true, count: data.length, data };
   }
@@ -352,18 +354,37 @@ export class ParkingPartnerController {
     @Query("partnerId") requested?: string,
   ) {
     const partnerId = requested || req.parking.partnerIds[0];
+    if (!partnerId && req.parking.isPlatformAdmin)
+      return this.service.staffRoster({ limit: "100" });
     if (!partnerId) return { success: true, count: 0, data: [] };
-    if (
-      !req.parking.isPlatformAdmin &&
-      !req.parking.partnerIds.includes(partnerId)
-    )
-      return { success: false, message: "Not authorised for this partner." };
+    if (!req.parking.isPlatformAdmin && !req.parking.partnerIds.includes(partnerId)) {
+      const scopedPartnerLocation = await this.service.locations.exists({
+        _id: { $in: req.parking.locationIds },
+        partnerId,
+      });
+      if (!scopedPartnerLocation)
+        return { success: false, message: "Not authorised for this partner." };
+    }
     const data = await this.service.staff
       .find({ partnerId })
       .populate("userId", "name email phone role status")
       .populate("locationIds", "name slug")
       .sort({ createdAt: -1 });
     return { success: true, count: data.length, data };
+  }
+
+  @Post("staff/accounts")
+  @ParkingCapabilities(PARKING_CAPABILITIES.MANAGE_STAFF)
+  async createStaffAccount(
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() req: ParkingRequest,
+    @Body() body: Record<string, any>,
+  ) {
+    return {
+      success: true,
+      message: "Parking staff account created.",
+      data: await this.service.createStaffAccount(user, req.parking, body),
+    };
   }
 
   @Post("staff")
@@ -388,13 +409,29 @@ export class ParkingPartnerController {
     if (
       !req.parking.isPlatformAdmin &&
       !req.parking.partnerIds.includes(String(grant.partnerId))
-    )
-      return { success: false, message: "Not authorised for this partner." };
+    ) {
+      const scopedGrantLocation = await this.service.locations.exists({
+        _id: { $in: req.parking.locationIds },
+        partnerId: grant.partnerId,
+      });
+      if (!scopedGrantLocation)
+        return { success: false, message: "Not authorised for this partner." };
+    }
     await this.service.staff.updateOne(
       { _id: id },
       { $set: { status: "inactive" } },
     );
     return { success: true, message: "Staff access revoked." };
+  }
+
+  @Patch("staff/:id/approve")
+  @ParkingCapabilities(PARKING_CAPABILITIES.MANAGE_STAFF)
+  async approveStaff(@Req() req: ParkingRequest, @Param("id") id: string) {
+    return {
+      success: true,
+      message: "Parking staff account approved.",
+      data: await this.service.approveStaffAccount(req.parking, id),
+    };
   }
 
   @Get("locations/:id/settings")

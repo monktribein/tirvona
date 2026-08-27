@@ -51,7 +51,9 @@ export class ParkingScanController {
       success: true,
       data: await this.locations
         .find(filter)
-        .select("name slug address.city address.line1")
+        .select(
+          "name slug description address openingHours totalCapacity amenities supportedVehicleTypes contactPhone hasCctv hasSecurity hasWashroom hasEvCharging hasWheelchairAccess",
+        )
         .sort({ name: 1 })
         .limit(200),
       roles: req.parking.roles,

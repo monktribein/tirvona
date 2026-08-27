@@ -617,6 +617,7 @@ const AppContent: React.FC = () => {
             }
           >
             <Route path="/parking/dashboard" element={<ParkingRoleDashboardPage />} />
+            <Route path="/parking/staff" element={<ParkingStaffRolesPage />} />
             <Route
               path="/admin/parking/dashboard"
               element={<ParkingRoleDashboardPage />}
@@ -660,6 +661,9 @@ const AppContent: React.FC = () => {
             <Route path="/owner/check-in-out" element={<ReceptionCheckinPage />} />
             <Route path="/ashram-admin/check-in-out" element={<ReceptionCheckinPage />} />
             <Route path="/ashram-owner/check-in-out" element={<ReceptionCheckinPage />} />
+            <Route path="/owner/parking/staff" element={<ParkingStaffRolesPage />} />
+            <Route path="/ashram-admin/parking/staff" element={<ParkingStaffRolesPage />} />
+            <Route path="/ashram-owner/parking/staff" element={<ParkingStaffRolesPage />} />
             <Route path="/owner/volunteer" element={<OwnerVolunteerPage />} />
             <Route path="/ashram-admin/volunteer" element={<OwnerVolunteerPage />} />
             <Route path="/ashram-owner/volunteer" element={<OwnerVolunteerPage />} />

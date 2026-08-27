@@ -35,7 +35,7 @@ export class CreateStaffDto {
   @IsString() @MinLength(2) name: string;
   @IsEmail() email: string;
   @IsString() phone: string;
-  @IsString() @MinLength(6) password: string;
+  @IsString() @MinLength(8) password: string;
   @IsIn(["manager", "reception", "housekeeping"]) role: string;
   @IsMongoId() ashramId: string;
 }
@@ -43,7 +43,7 @@ export class CreateAccountDto {
   @IsString() @MinLength(2) name: string;
   @IsEmail() email: string;
   @IsString() @IsNotEmpty() phone: string;
-  @IsOptional() @IsString() @MinLength(6) password?: string;
+  @IsString() @MinLength(8) password: string;
   @IsIn(USER_ROLES) role: string;
   @IsIn(["Male", "Female", "Other"]) gender: string;
   @IsOptional() @IsString() aadhaarCardUrl?: string;

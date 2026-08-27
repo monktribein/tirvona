@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -7,10 +8,13 @@ import {
 import { InjectModel } from "@nestjs/mongoose";
 import { Types, type Model } from "mongoose";
 import { Interval } from "@nestjs/schedule";
+import bcrypt from "bcryptjs";
+import { randomBytes } from "crypto";
 import { TransactionService } from "../../../common/database/transaction.service";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import {
   PARKING_AMENITIES,
+  PARKING_ASHRAM_OWNER_ROLE,
   PARKING_MODEL,
   PARKING_ROLE_CAPABILITIES,
   PARKING_ROLES,
@@ -68,6 +72,8 @@ export class ParkingManagementService {
     @InjectModel(PARKING_MODEL.VehicleType) readonly vehicleTypes: Model<any>,
     @InjectModel(PARKING_MODEL.QrCode) readonly qrCodes: Model<any>,
     @InjectModel(PARKING_MODEL.Notification) readonly notifications: Model<any>,
+    @InjectModel("Ashram") readonly ashrams: Model<any>,
+    @InjectModel("User") readonly users: Model<any>,
   ) {}
 
   scopedIds(access: ParkingAccess): Promise<string[]> {
@@ -284,6 +290,199 @@ export class ParkingManagementService {
       },
       { upsert: true, new: true },
     );
+  }
+
+  async createStaffAccount(
+    user: AuthenticatedUser,
+    access: ParkingAccess,
+    body: Record<string, any>,
+  ): Promise<any> {
+    const name = String(body.name ?? "").trim();
+    const email = String(body.email ?? "").trim().toLowerCase();
+    const phone = String(body.phone ?? "").replace(/[^0-9+]/g, "");
+    const password = String(body.password ?? "");
+    const ashramId = String(body.ashramId ?? "");
+    const parkingRole = String(body.parkingRole ?? "");
+    const locationIds = [
+      ...new Set(
+        (Array.isArray(body.locationIds) ? body.locationIds : [])
+          .map((value: unknown) => String(value))
+          .filter((value: string) => Types.ObjectId.isValid(value)),
+      ),
+    ];
+
+    if (name.length < 2)
+      throw new BadRequestException("Enter the parking staff member's name.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+      throw new BadRequestException("Enter a valid staff email address.");
+    if (!/^\+?[1-9]\d{9,14}$/.test(phone))
+      throw new BadRequestException("Enter a valid staff phone number.");
+    if (password.length < 8)
+      throw new BadRequestException(
+        "Create a password containing at least 8 characters.",
+      );
+    if (!Types.ObjectId.isValid(ashramId))
+      throw new BadRequestException("Select the ashram for this parking role.");
+    if (!["parking_manager", "security_guard"].includes(parkingRole))
+      throw new BadRequestException("Select a valid parking staff role.");
+    if (!locationIds.length)
+      throw new BadRequestException("Select at least one parking facility.");
+
+    const managerOnly =
+      !access.isPlatformAdmin &&
+      access.roles.includes("parking_manager") &&
+      !access.roles.includes("parking_partner") &&
+      !access.roles.includes("ashram_parking_owner");
+    if (managerOnly && parkingRole !== "security_guard")
+      throw new ForbiddenException(
+        "A parking manager can only create security guard accounts.",
+      );
+
+    const locations = await this.locations
+      .find({ _id: { $in: locationIds }, ashramId })
+      .select("_id partnerId ashramId name status")
+      .lean();
+    if (locations.length !== locationIds.length)
+      throw new BadRequestException(
+        "Every selected parking facility must belong to the selected ashram.",
+      );
+    for (const location of locations)
+      this.assert(access, String(location._id));
+
+    const partnerIds = [
+      ...new Set(locations.map((location: any) => String(location.partnerId))),
+    ].filter((value) => Types.ObjectId.isValid(value));
+    if (partnerIds.length !== 1)
+      throw new BadRequestException(
+        "Selected parking facilities must belong to one parking partner.",
+      );
+    const partnerId = partnerIds[0];
+    if (!(await this.partners.exists({ _id: partnerId })))
+      throw new NotFoundException("The parking partner no longer exists.");
+    if (!(await this.ashrams.exists({ _id: ashramId })))
+      throw new NotFoundException("The selected ashram no longer exists.");
+
+    const duplicate = await this.users.exists({
+      $or: [{ email }, { phone }],
+      isDeleted: { $ne: true },
+    });
+    if (duplicate)
+      throw new ConflictException(
+        "An account with this email or phone number already exists.",
+      );
+
+    const employeeCode = `PKG-${new Date().getFullYear()}-${randomBytes(3)
+      .toString("hex")
+      .toUpperCase()}`;
+    const passwordHash = await bcrypt.hash(password, 12);
+    const requiresApproval = managerOnly && parkingRole === "security_guard";
+
+    try {
+      return await this.transactionsService.run(async (session) => {
+        const [account] = await this.users.create(
+          [
+            {
+              name,
+              email,
+              phone,
+              passwordHash,
+              role: "staff",
+              status: requiresApproval ? "pending_approval" : "active",
+              isVerified: true,
+              authProvider: "local",
+              employerAshramId: ashramId,
+              scopedAshramIds: [ashramId],
+              designation:
+                parkingRole === "parking_manager"
+                  ? "Parking Manager"
+                  : "Parking Security Guard",
+              department: "Parking",
+              employeeId: employeeCode,
+              username: `parking_${randomBytes(4).toString("hex")}`,
+            },
+          ],
+          { session },
+        );
+        const grant = await this.staff.findOneAndUpdate(
+          { userId: account._id, partnerId, parkingRole },
+          {
+            $set: {
+              locationIds,
+              employeeCode,
+              shift: String(body.shift ?? "general"),
+              phone,
+              assignedBy: user.id,
+              status: requiresApproval ? "pending_approval" : "active",
+            },
+            $setOnInsert: { userId: account._id, partnerId, parkingRole },
+          },
+          { upsert: true, new: true, session },
+        );
+        return {
+          account: {
+            id: String(account._id),
+            name: account.name,
+            email: account.email,
+            phone: account.phone,
+            employeeCode,
+          },
+          grant,
+          approvalRequired: requiresApproval,
+        };
+      });
+    } catch (error: any) {
+      if (error?.code === 11000)
+        throw new ConflictException(
+          "That email, phone number, employee code or username is already in use.",
+        );
+      throw error;
+    }
+  }
+
+  async approveStaffAccount(
+    access: ParkingAccess,
+    id: string,
+  ): Promise<any> {
+    if (!Types.ObjectId.isValid(id))
+      throw new BadRequestException("Invalid parking staff record.");
+    const grant = await this.staff.findById(id);
+    if (!grant) throw new NotFoundException("Parking staff record not found.");
+    if (
+      !access.isPlatformAdmin &&
+      !access.roles.includes(PARKING_ASHRAM_OWNER_ROLE)
+    )
+      throw new ForbiddenException(
+        "Only an Ashram Owner/Admin or Super Admin can approve parking staff.",
+      );
+    if (grant.locationIds?.length) {
+      for (const locationId of grant.locationIds)
+        this.assert(access, String(locationId));
+    } else if (!access.isPlatformAdmin) {
+      const scopedPartnerLocation = await this.locations.exists({
+        _id: { $in: access.locationIds },
+        partnerId: grant.partnerId,
+      });
+      if (!scopedPartnerLocation)
+        throw new ForbiddenException("Not authorised for this parking partner.");
+    }
+    if (grant.status !== "pending_approval")
+      throw new BadRequestException(
+        "This parking staff account is not pending approval.",
+      );
+
+    return this.transactionsService.run(async (session) => {
+      grant.status = "active";
+      await grant.save({ session });
+      await this.users.updateOne(
+        { _id: grant.userId },
+        {
+          $set: { status: "active", isSuspended: false },
+          $inc: { tokenVersion: 1 },
+        },
+        { session },
+      );
+      return grant;
+    });
   }
 
   async staffRoster(query: Record<string, string>): Promise<any> {

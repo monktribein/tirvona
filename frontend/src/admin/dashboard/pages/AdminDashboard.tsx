@@ -23,6 +23,7 @@ import {
   LayoutDashboard,
 } from "lucide-react";
 import { EnterprisePageHeader } from "../../shared";
+import { AnalyticsAreaChart } from "../../../components/dashboard/AnalyticsCharts";
 
 const VIZ_TOKENS = `
 .tv-viz {
@@ -664,12 +665,14 @@ export const AdminDashboard: React.FC = () => {
   const [range, setRange] = useState<Range>("daily");
   const [metric, setMetric] = useState<Metric>("gross");
   const [showTable, setShowTable] = useState(false);
+  // The overview intentionally does not load or render operational row lists.
   const [searchTerm, setSearchTerm] = useState("");
+  const bookings: any[] = [];
+  const activities: any[] = [];
+  const filteredBookings: any[] = [];
 
   const [overview, setOverview] = useState<Overview | null>(null);
   const [system, setSystem] = useState<any>(null);
-  const [bookings, setBookings] = useState<any[]>([]);
-  const [activities, setActivities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
@@ -679,12 +682,10 @@ export const AdminDashboard: React.FC = () => {
       if (isInitial) setLoading(true);
       else setRefreshing(true);
 
-      const [overviewRes, systemRes, bookingsRes, logsRes] =
+      const [overviewRes, systemRes] =
         await Promise.allSettled([
           analyticsService.overview(nextRange),
           analyticsService.system(),
-          analyticsService.recentBookings(8),
-          analyticsService.auditLogs(),
         ]);
 
       const failed: string[] = [];
@@ -696,14 +697,6 @@ export const AdminDashboard: React.FC = () => {
         setSystem(systemRes.value.data?.data ?? null);
       else failed.push("platform totals");
 
-      if (bookingsRes.status === "fulfilled")
-        setBookings(bookingsRes.value.data?.data ?? []);
-      else failed.push("recent bookings");
-
-      if (logsRes.status === "fulfilled")
-        setActivities(logsRes.value.data?.data?.slice(0, 6) ?? []);
-      else failed.push("audit activity");
-
       setErrors(failed);
       setLoading(false);
       setRefreshing(false);
@@ -713,18 +706,12 @@ export const AdminDashboard: React.FC = () => {
 
   useEffect(() => {
     load(range, overview === null);
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") void load(range, false);
+    }, 30_000);
+    return () => window.clearInterval(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [range, load]);
-
-  const filteredBookings = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase();
-    if (!term) return bookings;
-    return bookings.filter((row) =>
-      [row.customerName, row.ashramName, row.city, row.bookingId]
-        .filter(Boolean)
-        .some((field: string) => String(field).toLowerCase().includes(term)),
-    );
-  }, [bookings, searchTerm]);
 
   const statusRows = useMemo(
     () =>
@@ -913,7 +900,22 @@ export const AdminDashboard: React.FC = () => {
             ) : showTable ? (
               <TrendTable series={series} metric={metric} />
             ) : (
-              <TrendChart series={series} metric={metric} />
+              <AnalyticsAreaChart
+                data={series.map((point) => ({
+                  label: point.label,
+                  online: METRIC[metric].online(point),
+                  desk: METRIC[metric].desk(point),
+                }))}
+                series={[
+                  { key: "online", label: "Online Gateway", color: "#2A78D6" },
+                  { key: "desk", label: "Direct Desk", color: "#EB6834" },
+                ]}
+                valueFormatter={(value) =>
+                  METRIC[metric].money
+                    ? formatCurrency(value)
+                    : formatIndianNumber(value)
+                }
+              />
             )}
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-gray-200 dark:border-slate-800">
@@ -1047,6 +1049,8 @@ export const AdminDashboard: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Detailed booking rows belong in Booking Management, not the overview. */}
+          {false && (
           <div className="lg:col-span-7 bg-white dark:bg-[#0B192C] rounded-2xl border border-gray-200 dark:border-slate-800 p-6 shadow-sm space-y-4">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div>
@@ -1154,6 +1158,7 @@ export const AdminDashboard: React.FC = () => {
               </div>
             )}
           </div>
+          )}
 
           <div className="lg:col-span-5 bg-white dark:bg-[#0B192C] rounded-2xl border border-gray-200 dark:border-slate-800 p-6 shadow-sm space-y-4">
             <div>
@@ -1170,8 +1175,31 @@ export const AdminDashboard: React.FC = () => {
               <RankedBars rows={ashramRows} format={formatCurrency} />
             )}
           </div>
+
+          <div className="lg:col-span-7 bg-white dark:bg-[#0B192C] rounded-2xl border border-gray-200 dark:border-slate-800 p-6 shadow-sm space-y-4">
+            <div>
+              <h3 className="text-base font-bold text-[#0B192C] dark:text-white tracking-tight">Quick actions</h3>
+              <span className="text-xs text-gray-500 font-medium">Open the dedicated workspace for each operation</span>
+            </div>
+            <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">
+              {[
+                { label: "Manage users", path: "/admin/users", icon: <Users size={17} />, tone: "bg-blue-50 text-blue-700" },
+                { label: "All bookings", path: "/admin/manage/bookings/all", icon: <Eye size={17} />, tone: "bg-violet-50 text-violet-700" },
+                { label: "Verification queue", path: "/admin/verifications", icon: <ClipboardCheck size={17} />, tone: "bg-amber-50 text-amber-700" },
+                { label: "Payout management", path: "/admin/payouts", icon: <Plus size={17} />, tone: "bg-emerald-50 text-emerald-700" },
+                { label: "Audit logs", path: "/admin/audit-logs", icon: <Lock size={17} />, tone: "bg-rose-50 text-rose-700" },
+                { label: "Ashram management", path: "/admin/manage/ashrams/all", icon: <Building2 size={17} />, tone: "bg-cyan-50 text-cyan-700" },
+              ].map((action) => (
+                <button key={action.path} type="button" onClick={() => navigate(action.path)} className="flex min-h-20 items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50/60 p-3 text-left transition hover:-translate-y-0.5 hover:border-[#0A4DA6]">
+                  <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${action.tone}`}>{action.icon}</span>
+                  <span className="text-xs font-semibold text-[#0B192C] dark:text-white">{action.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
+        {false && (
         <div className="bg-white dark:bg-[#0B192C] rounded-2xl border border-gray-200 dark:border-slate-800 p-6 shadow-sm space-y-4">
           <div className="flex justify-between items-center border-b border-gray-200 dark:border-slate-800 pb-3">
             <h3 className="text-base font-bold text-[#0B192C] dark:text-white tracking-tight">
@@ -1217,6 +1245,7 @@ export const AdminDashboard: React.FC = () => {
             </div>
           )}
         </div>
+        )}
       </div>
     </div>
   );

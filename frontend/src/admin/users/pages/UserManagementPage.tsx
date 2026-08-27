@@ -150,6 +150,8 @@ export const UserManagementPage: React.FC = () => {
     aadhaarCardUrl: "",
     panCardUrl: "",
     assignedAshramId: "",
+    password: "",
+    confirmPassword: "",
   });
 
   const [ashramSearch, setAshramSearch] = useState("");
@@ -252,6 +254,22 @@ export const UserManagementPage: React.FC = () => {
 
   const handleCreateAccountSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if ((newAccountData.password ?? "").length < 8) {
+      addNotification(
+        "Password Required",
+        "Create a password containing at least 8 characters.",
+        "error",
+      );
+      return;
+    }
+    if (newAccountData.password !== newAccountData.confirmPassword) {
+      addNotification(
+        "Passwords Do Not Match",
+        "Password and confirm password must match.",
+        "error",
+      );
+      return;
+    }
     const isPilgrim = newAccountData.role === "customer";
     if (
       !isPilgrim &&
@@ -278,11 +296,13 @@ export const UserManagementPage: React.FC = () => {
     }
     setCreatingAccount(true);
     try {
-      const res = await userService.createAccount(newAccountData);
+      const accountPayload = { ...newAccountData };
+      delete accountPayload.confirmPassword;
+      const res = await userService.createAccount(accountPayload);
       if (res.data?.success) {
         addNotification(
           "Account Created",
-          `Successfully created account for ${newAccountData.name}. Temp password: ${res.data.tempPassword}`,
+          `Successfully created account for ${newAccountData.name}. The account can use the password you set.`,
           "success",
         );
         setIsCreateOpen(false);
@@ -295,6 +315,8 @@ export const UserManagementPage: React.FC = () => {
           aadhaarCardUrl: "",
           panCardUrl: "",
           assignedAshramId: "",
+          password: "",
+          confirmPassword: "",
         });
         setAshramSearch("");
         setAshramOptions([]);
@@ -1003,6 +1025,12 @@ export const UserManagementPage: React.FC = () => {
               </label>
               <label className="space-y-1 font-bold text-gray-700 dark:text-gray-300 md:col-span-2">Role *
                 <select required value={newAccountData.role} onChange={(e) => setNewAccountData({ ...newAccountData, role: e.target.value })} className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 font-bold text-[#0A4DA6] focus:border-[#0A4DA6] focus:outline-none dark:border-slate-800 dark:bg-slate-900">{ALL_ROLES.map((role) => <option key={role.id} value={role.id}>{role.label}</option>)}</select>
+              </label>
+              <label className="space-y-1 font-bold text-gray-700 dark:text-gray-300">Password *
+                <input type="password" required minLength={8} autoComplete="new-password" placeholder="Minimum 8 characters" value={newAccountData.password} onChange={(e) => setNewAccountData({ ...newAccountData, password: e.target.value })} className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 font-normal focus:border-[#0A4DA6] focus:outline-none dark:border-slate-800 dark:bg-slate-900" />
+              </label>
+              <label className="space-y-1 font-bold text-gray-700 dark:text-gray-300">Confirm Password *
+                <input type="password" required minLength={8} autoComplete="new-password" placeholder="Re-enter password" value={newAccountData.confirmPassword} onChange={(e) => setNewAccountData({ ...newAccountData, confirmPassword: e.target.value })} className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 font-normal focus:border-[#0A4DA6] focus:outline-none dark:border-slate-800 dark:bg-slate-900" />
               </label>
               {needsAssignedAshram && (
                 <div className="space-y-1 md:col-span-2">

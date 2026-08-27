@@ -38,6 +38,16 @@ const jobData: NotificationJob = {
   correlationId: "booking:booking-1:confirmed",
 };
 
+const lookupChain = (row: unknown) => {
+  const chain: any = {
+    select: jest.fn(() => chain),
+    sort: jest.fn(() => chain),
+    populate: jest.fn(() => chain),
+    lean: jest.fn().mockResolvedValue(row),
+  };
+  return chain;
+};
+
 const worker = (
   booking: ReturnType<typeof notificationModel>,
   whatsapp: { sendOutboxEvent: jest.Mock },
@@ -48,6 +58,11 @@ const worker = (
     notificationModel() as never,
     notificationModel() as never,
     userModel() as never,
+    // Booking, ParkingBooking and ParkingQrCode - loaded so WhatsApp can show
+    // the ashram, dates and codes rather than the row's bare message.
+    { findById: jest.fn(() => lookupChain(null)) } as never,
+    { findById: jest.fn(() => lookupChain(null)) } as never,
+    { findOne: jest.fn(() => lookupChain(null)) } as never,
     gateway as never,
     { get: jest.fn() } as never,
     whatsapp as never,
