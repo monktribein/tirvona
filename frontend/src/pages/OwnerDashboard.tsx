@@ -5,7 +5,6 @@ import {
   Clock3, IndianRupee, LayoutDashboard, Percent, Plus, RefreshCw,
   Tag, Users, WalletCards,
 } from "lucide-react";
-import { EnterprisePageHeader } from "../admin/shared";
 import {
   AnalyticsAreaChart,
   AnalyticsBarChart,
@@ -177,22 +176,17 @@ export const OwnerDashboard: React.FC = () => {
 
   return (
     <div className={`space-y-5 transition-opacity ${refreshing ? "opacity-70" : "opacity-100"}`}>
-      <EnterprisePageHeader
-        title="Overview Dashboard"
-        subtitle="Live operational and financial analytics across your authorized ashrams."
-        icon={<LayoutDashboard size={22} />}
-        badgeText="Live"
-        actions={
-          <button type="button" onClick={() => void load(true)} disabled={refreshing} className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-white px-4 py-2 text-xs text-slate-700 hover:border-[#0A4DA6] disabled:opacity-60">
-            <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} /> Refresh
-          </button>
-        }
-      />
       {error && <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs text-rose-700">{error}</div>}
 
       <section className="grid grid-cols-2 xl:grid-cols-4 gap-4">
         {cards.map((card, index) => <MetricCard key={card.label} {...card} tone={tones[index % tones.length]} />)}
       </section>
+
+      <div className="flex justify-end">
+        <button type="button" onClick={() => void load(true)} disabled={refreshing} className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-white px-4 py-2 text-xs text-slate-700 hover:border-[#0A4DA6] disabled:opacity-60">
+          <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} /> Refresh data
+        </button>
+      </div>
 
       <section className="grid grid-cols-1 xl:grid-cols-12 gap-5">
         <article className="xl:col-span-7 rounded-2xl border border-orange-200 bg-white dark:bg-[#0B192C] p-5 shadow-sm">

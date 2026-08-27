@@ -241,7 +241,7 @@ export const ParkingRoleDashboardPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 text-left w-full">
+    <div className="flex flex-col gap-6 text-left w-full">
       <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 shadow-xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
 
@@ -356,7 +356,7 @@ export const ParkingRoleDashboardPage: React.FC = () => {
         </div>
       )}
 
-      {activeRoleView !== "guard" && <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {activeRoleView !== "guard" && <div className="-order-1 grid grid-cols-2 lg:grid-cols-4 gap-4">
         <ParkingStatTile
           icon={IndianRupee}
           label="Today's Revenue"

@@ -623,15 +623,15 @@ const StatTile: React.FC<{
   caption?: React.ReactNode;
   children?: React.ReactNode;
 }> = ({ label, value, caption, children }) => (
-  <div className="bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-2">
+  <div className="flex h-full min-h-[172px] flex-col bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm">
     <span className="text-[11px] font-extrabold text-gray-500 dark:text-gray-400 block tracking-wide">
       {label}
     </span>
-    <h4 className="text-2xl font-black text-[#0B192C] dark:text-white">
+    <h4 className="mt-2 text-2xl font-black text-[#0B192C] dark:text-white">
       {value}
     </h4>
-    {caption && <div className="text-[10px] font-semibold">{caption}</div>}
-    {children}
+    {caption && <div className="mt-2 text-[10px] font-semibold">{caption}</div>}
+    {children && <div className="mt-auto pt-3">{children}</div>}
   </div>
 );
 
@@ -779,6 +779,7 @@ export const AdminDashboard: React.FC = () => {
         </div>
       )}
 
+      <div className="hidden" aria-hidden="true">
       <EnterprisePageHeader
         title="Executive Dashboard"
         subtitle={`Live platform telemetry for ${user?.name || "Super Admin"} · ${RANGE_LABEL[range]}`}
@@ -811,11 +812,23 @@ export const AdminDashboard: React.FC = () => {
           </div>
         }
       />
+      </div>
 
       <div
-        className={`space-y-6 transition-opacity ${refreshing ? "opacity-60" : "opacity-100"}`}
+        className={`flex flex-col gap-6 transition-opacity ${refreshing ? "opacity-60" : "opacity-100"}`}
       >
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="order-2 flex flex-wrap items-center justify-end gap-3">
+          <div className="flex items-center gap-1.5 rounded-2xl border border-gray-200 bg-white p-1 text-xs dark:border-slate-800 dark:bg-slate-900">
+            {(["daily", "weekly", "monthly", "yearly"] as const).map((tab) => (
+              <button key={tab} type="button" onClick={() => setRange(tab)} className={`rounded-xl px-3 py-1.5 capitalize ${range === tab ? "bg-[#0A4DA6] text-white" : "text-gray-500 hover:text-[#0A4DA6]"}`}>{tab}</button>
+            ))}
+          </div>
+          <button type="button" onClick={() => load(range, false)} className="rounded-2xl border border-gray-200 bg-white p-2.5 text-gray-500 dark:border-slate-800 dark:bg-slate-900" title="Refresh analytics">
+            <RefreshCw size={16} className={refreshing ? "animate-spin text-[#0A4DA6]" : ""} />
+          </button>
+        </div>
+
+        <div className="order-3 grid grid-cols-1 lg:grid-cols-12 gap-6">
           <div className="lg:col-span-8 bg-white dark:bg-[#0B192C] rounded-2xl border border-gray-200 dark:border-slate-800 p-6 shadow-sm space-y-5">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div className="space-y-1">
@@ -997,7 +1010,7 @@ export const AdminDashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="order-1 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 auto-rows-fr gap-5">
           <StatTile
             label="Booked value"
             value={formatCurrency(overview?.totals.windowGrossValue ?? 0)}
@@ -1046,9 +1059,25 @@ export const AdminDashboard: React.FC = () => {
               </span>
             }
           />
+
+          <StatTile label="Verified ashrams" value={formatIndianNumber(system?.ashrams?.approved ?? 0)} caption={<span className="text-gray-400">{formatIndianNumber(system?.ashrams?.pending ?? 0)} awaiting verification</span>} />
+          <StatTile label="Pilgrims booked" value={formatIndianNumber(system?.users?.pilgrims ?? 0)} caption={<span className="text-gray-400">Distinct pilgrims with bookings</span>} />
+          <StatTile label="Registered owners" value={formatIndianNumber(system?.users?.owners ?? 0)} caption={<span className="text-gray-400">Across authorized ashrams</span>} />
+          {(overview?.modules ?? []).map((module) => (
+            <StatTile
+              key={module.module}
+              label={`${module.label} revenue`}
+              value={formatCurrency(module.revenue ?? 0)}
+              caption={
+                <span className="text-gray-400">
+                  {formatIndianNumber(module.bookings ?? 0)} bookings in {RANGE_LABEL[range]}
+                </span>
+              }
+            />
+          ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="order-4 grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Detailed booking rows belong in Booking Management, not the overview. */}
           {false && (
           <div className="lg:col-span-7 bg-white dark:bg-[#0B192C] rounded-2xl border border-gray-200 dark:border-slate-800 p-6 shadow-sm space-y-4">

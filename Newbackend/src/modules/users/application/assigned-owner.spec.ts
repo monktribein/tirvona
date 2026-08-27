@@ -35,6 +35,7 @@ const dto = (over: Record<string, unknown> = {}) =>
     name: "Asha Devi",
     email: "Asha@Example.com",
     phone: "9876543210",
+    password: "TestAccount@123",
     role: "ashram_owner",
     gender: "Female",
     aadhaarCardUrl: "https://cdn/a.png",

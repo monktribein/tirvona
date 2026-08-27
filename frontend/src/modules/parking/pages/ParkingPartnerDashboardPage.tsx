@@ -117,34 +117,6 @@ export const ParkingPartnerDashboardPage: React.FC = () => {
 
   return (
     <div className="space-y-6 text-left w-full">
-      <header className="flex items-start justify-between gap-3 flex-wrap">
-        <div className="space-y-1">
-          <h1 className="inline-flex items-center gap-2.5 text-xl sm:text-2xl font-black text-[#0B192C] dark:text-white">
-            <span className="w-9 h-9 rounded-2xl bg-[#0A4DA6] text-white flex items-center justify-center shadow-md">
-              <CircleParking size={18} className="stroke-[2.5]" />
-            </span>
-            Parking Management
-          </h1>
-          <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-            Live occupancy, arrivals and revenue across your parking locations.
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={load}
-          disabled={loading}
-          className="inline-flex items-center gap-2 bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-700 hover:border-[#0A4DA6] text-slate-700 dark:text-gray-200 text-xs font-extrabold px-4 py-2 rounded-full shadow-sm transition-all active:scale-95 cursor-pointer disabled:opacity-60"
-        >
-          {loading ? (
-            <Loader2 size={13} className="animate-spin stroke-[2.5]" />
-          ) : (
-            <TrendingUp size={13} className="stroke-[2.5]" />
-          )}
-          Refresh
-        </button>
-      </header>
-
       {error && (
         <div className="flex items-start gap-2.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-300 rounded-2xl px-4 py-3">
           <AlertCircle size={15} className="shrink-0 mt-0.5 stroke-[2.5]" />
@@ -222,6 +194,12 @@ export const ParkingPartnerDashboardPage: React.FC = () => {
           />
         </motion.section>
       )}
+
+      <div className="flex justify-end">
+        <button type="button" onClick={load} disabled={loading} className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-xs text-slate-700 disabled:opacity-60 dark:border-slate-700 dark:bg-[#0B192C]">
+          {loading ? <Loader2 size={13} className="animate-spin" /> : <TrendingUp size={13} />} Refresh data
+        </button>
+      </div>
 
       <div className="grid lg:grid-cols-3 gap-5">
         <section className="lg:col-span-2 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 shadow-sm">
