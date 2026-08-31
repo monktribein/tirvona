@@ -163,11 +163,7 @@ export const HomePage: React.FC = () => {
     try {
       const res = await api.get("/offers?status=active");
       if (res.data?.success && Array.isArray(res.data.data)) {
-        const homepageOffers = res.data.data.filter((o: any) => {
-          const route = o.targetRoute || o.category || "homepage";
-          return route === "homepage" || route === "all";
-        });
-        setOffers(homepageOffers.length > 0 ? homepageOffers : res.data.data);
+        setOffers(res.data.data);
       }
     } catch (err) {
       console.error("Fetch active offers error:", err);
@@ -658,18 +654,43 @@ export const HomePage: React.FC = () => {
   };
 
   const getTabbedAshrams = () => {
+    let list = [...ashrams];
     if (activeTab === "top_rated")
-      return [...ashrams]
-        .sort((a, b) => (b.rating?.average || 0) - (a.rating?.average || 0))
-        .slice(0, 6);
-    if (activeTab === "most_booked")
-      return [...ashrams]
-        .sort((a, b) => (b.rating?.count || 0) - (a.rating?.count || 0))
-        .slice(0, 6);
-    if (activeTab === "recent") return [...ashrams].slice(-6).reverse();
-    if (activeTab === "govt_recom")
-      return ashrams.filter((a) => (a.rating?.average || 0) >= 4.6).slice(0, 6);
-    return ashrams.slice(0, 6);
+      list.sort((a, b) => (b.rating?.average || 0) - (a.rating?.average || 0));
+    else if (activeTab === "most_booked")
+      list.sort((a, b) => (b.rating?.count || 0) - (a.rating?.count || 0));
+    else if (activeTab === "recent")
+      list = [...list].reverse();
+    else if (activeTab === "govt_recom")
+      list = list.filter((a) => (a.rating?.average || 0) >= 4.6);
+
+    // ONLY prioritize ashrams that have active LAST MINUTE DEALS
+    const isLastMin = (o: any) =>
+      Boolean(o?.isLastMinuteDeal) ||
+      o?.offerType === "LAST MINUTE DEAL" ||
+      o?.offerType === "Last Minute Deal" ||
+      (o?.promoCode && String(o.promoCode).toUpperCase().startsWith("LASTMINUTE"));
+
+    const dealMap = new Map<string, any>();
+    offers.forEach((o: any) => {
+      if (!isLastMin(o)) return;
+      const aId = String(o.ashramId?._id ?? o.ashramId ?? "");
+      if (aId && !dealMap.has(aId)) dealMap.set(aId, o);
+      if (Array.isArray(o.applicableAshrams)) {
+        o.applicableAshrams.forEach((appA: any) => {
+          const appAId = String(appA?._id ?? appA ?? "");
+          if (appAId && !dealMap.has(appAId)) dealMap.set(appAId, o);
+        });
+      }
+    });
+
+    list.sort((a, b) => {
+      const aHasDeal = dealMap.has(String(a._id));
+      const bHasDeal = dealMap.has(String(b._id));
+      return (bHasDeal ? 1 : 0) - (aHasDeal ? 1 : 0);
+    });
+
+    return list.slice(0, 10);
   };
 
   const scrollCarousel = (direction: "left" | "right") => {
@@ -1604,78 +1625,152 @@ export const HomePage: React.FC = () => {
             <MarqueeSlider
               items={getTabbedAshrams()}
               speed={30}
-              renderItem={(ashram: any, idx: number) => (
-                <div
-                  onClick={() =>
-                    navigate(
-                      ashramUrl(ashram, checkIn || checkOut ? `?checkIn=${checkIn}&checkOut=${checkOut}&guests=${totalGuests}` : ""),
-                    )
-                  }
-                  className="flex-shrink-0 relative group cursor-pointer"
-                  style={{ width: "clamp(200px, 48vw, 220px)" }}
-                >
-                  <div className="w-full bg-white dark:bg-[#0B192C] rounded-3xl overflow-hidden border border-gray-100 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col hover:-translate-y-1">
-                    <div
-                      className="relative overflow-hidden bg-gray-100 dark:bg-slate-900"
-                      style={{ height: "clamp(170px, 40vw, 190px)" }}
-                    >
-                      <img
-                        src={
-                          ashram.images?.[0] ||
-                          "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E"
-                        }
-                        alt={ashram.name}
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                        onError={(e) => {
-                          e.currentTarget.onerror = null;
-                          e.currentTarget.src =
-                            "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E";
-                        }}
-                      />
-                      <span className="absolute top-3 left-3 bg-[#0A4DA6] text-white text-[10px] sm:text-[11px] font-extrabold px-3 py-1 rounded-full shadow-sm">
-                        {formatCurrency(ashram.lowestNightPrice ?? 150)} / night
-                      </span>
-                      {ashram.rating?.count > 0 && (
-                        <span className="absolute top-3 right-3 bg-white/95 dark:bg-[#0B192C]/90 text-[#0B192C] dark:text-white text-[10px] font-extrabold px-2 py-1 rounded-full shadow-sm flex items-center gap-1 backdrop-blur-sm">
-                          <Star
-                            size={11}
-                            className="text-[#D4AF37] fill-[#D4AF37]"
-                          />{" "}
-                          {ashram.rating.average}
-                        </span>
-                      )}
-                    </div>
+              renderItem={(ashram: any, idx: number) => {
+                const aId = String(ashram._id || "");
+                const isLastMin = (o: any) =>
+                  Boolean(o?.isLastMinuteDeal) ||
+                  o?.offerType === "LAST MINUTE DEAL" ||
+                  o?.offerType === "Last Minute Deal" ||
+                  (o?.promoCode && String(o.promoCode).toUpperCase().startsWith("LASTMINUTE"));
 
-                    <div className="p-4 text-center flex flex-col items-center justify-center min-h-[72px]">
-                      <h4 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight line-clamp-1 text-center">
-                        {ashram.name}
-                      </h4>
-                      <p className="text-[11px] text-gray-400 font-bold mt-1 text-center">
-                        {ashram.address?.city}, {ashram.address?.state}
-                      </p>
-                      {ashram.rating?.count > 0 ? (
-                        <div className="flex items-center justify-center gap-1 mt-1.5">
-                          <Star
-                            size={11}
-                            className="text-[#D4AF37] fill-[#D4AF37]"
-                          />
-                          <span className="text-[11px] font-extrabold text-[#0B192C] dark:text-white">
+                const ashramDeal = offers.find((o: any) => {
+                  if (!isLastMin(o)) return false;
+                  const directId = String(o.ashramId?._id ?? o.ashramId ?? "");
+                  const applicableIds = Array.isArray(o.applicableAshrams)
+                    ? o.applicableAshrams.map((app: any) =>
+                        String(app?._id ?? app ?? ""),
+                      )
+                    : [];
+                  return directId === aId || applicableIds.includes(aId);
+                });
+
+                const rawNightPrice = ashram.lowestNightPrice ?? 150;
+                let finalNightPrice = rawNightPrice;
+                let dealDiscountPct = 0;
+                if (ashramDeal) {
+                  if (ashramDeal.discountType === "Percentage") {
+                    dealDiscountPct = Math.min(100, Math.max(1, Number(ashramDeal.discountValue) || 0));
+                    finalNightPrice = Math.max(0, Math.round(rawNightPrice * (1 - dealDiscountPct / 100)));
+                  } else if (ashramDeal.discountType === "Flat Amount") {
+                    finalNightPrice = Math.max(0, rawNightPrice - Number(ashramDeal.discountValue || 0));
+                    dealDiscountPct = rawNightPrice > 0 ? Math.min(100, Math.round(((rawNightPrice - finalNightPrice) / rawNightPrice) * 100)) : 0;
+                  }
+                }
+
+                const queryParts: string[] = [];
+                if (checkIn || checkOut) {
+                  queryParts.push(`checkIn=${checkIn}&checkOut=${checkOut}&guests=${totalGuests}`);
+                }
+                if (ashramDeal?.promoCode) {
+                  queryParts.push(`promoCode=${ashramDeal.promoCode}`);
+                }
+                const queryString = queryParts.length > 0 ? `?${queryParts.join("&")}` : "";
+
+                return (
+                  <div
+                    key={ashram._id || idx}
+                    onClick={() => navigate(ashramUrl(ashram, queryString))}
+                    className="flex-shrink-0 relative group cursor-pointer"
+                    style={{ width: "clamp(200px, 48vw, 220px)" }}
+                  >
+                    <div className="w-full bg-white dark:bg-[#0B192C] rounded-3xl overflow-hidden border border-gray-100 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col hover:-translate-y-1">
+                      <div
+                        className="relative overflow-hidden bg-gray-100 dark:bg-slate-900"
+                        style={{ height: "clamp(170px, 40vw, 190px)" }}
+                      >
+                        <img
+                          src={
+                            ashram.images?.[0] ||
+                            "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E"
+                          }
+                          alt={ashram.name}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src =
+                              "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E";
+                          }}
+                        />
+
+                        {ashramDeal && (
+                          <div className="absolute top-2.5 inset-x-2.5 flex items-center justify-between pointer-events-none z-10">
+                            <span
+                              className={`text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-md backdrop-blur-md flex items-center gap-1 ${
+                                ashramDeal.isLastMinuteDeal
+                                  ? "bg-rose-600/90 text-white animate-pulse"
+                                  : "bg-amber-500/90 text-white"
+                              }`}
+                            >
+                              <Sparkles size={9} />
+                              {ashramDeal.isLastMinuteDeal ? "Last Minute Deal" : "Special Deal"}
+                            </span>
+                            {dealDiscountPct > 0 && (
+                              <span className="text-[9px] font-black bg-black/70 text-amber-400 px-2 py-0.5 rounded-full shadow-sm">
+                                {dealDiscountPct}% OFF
+                              </span>
+                            )}
+                          </div>
+                        )}
+
+                        <div className="absolute bottom-2.5 left-2.5">
+                          {ashramDeal && finalNightPrice < rawNightPrice ? (
+                            <div className="bg-[#0A4DA6]/95 backdrop-blur-sm text-white px-2.5 py-0.5 rounded-full shadow-sm flex items-center gap-1.5">
+                              <span className="text-[9px] line-through opacity-70">
+                                {formatCurrency(rawNightPrice)}
+                              </span>
+                              <span className="text-[10px] sm:text-[11px] font-black text-amber-300">
+                                {formatCurrency(finalNightPrice)} / night
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="bg-[#0A4DA6] text-white text-[10px] sm:text-[11px] font-extrabold px-3 py-1 rounded-full shadow-sm">
+                              {formatCurrency(rawNightPrice)} / night
+                            </span>
+                          )}
+                        </div>
+
+                        {ashram.rating?.count > 0 && !ashramDeal && (
+                          <span className="absolute top-3 right-3 bg-white/95 dark:bg-[#0B192C]/90 text-[#0B192C] dark:text-white text-[10px] font-extrabold px-2 py-1 rounded-full shadow-sm flex items-center gap-1 backdrop-blur-sm">
+                            <Star
+                              size={11}
+                              className="text-[#D4AF37] fill-[#D4AF37]"
+                            />{" "}
                             {ashram.rating.average}
                           </span>
-                          <span className="text-[10px] text-gray-400 font-semibold">
-                            ({ashram.rating.count} reviews)
+                        )}
+                      </div>
+
+                      <div className="p-4 text-center flex flex-col items-center justify-center min-h-[72px]">
+                        <h4 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight line-clamp-1 text-center group-hover:text-[#0A4DA6] transition-colors">
+                          {ashram.name}
+                        </h4>
+                        <p className="text-[11px] text-gray-400 font-bold mt-1 text-center">
+                          {ashram.address?.city}, {ashram.address?.state}
+                        </p>
+                        {ashram.rating?.count > 0 ? (
+                          <div className="flex items-center justify-center gap-1 mt-1.5">
+                            <Star
+                              size={11}
+                              className="text-[#D4AF37] fill-[#D4AF37]"
+                            />
+                            <span className="text-[11px] font-extrabold text-[#0B192C] dark:text-white">
+                              {ashram.rating.average}
+                            </span>
+                            <span className="text-[10px] text-gray-400 font-semibold">
+                              ({ashram.rating.count} reviews)
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-[10px] text-gray-400 font-semibold mt-1.5">
+                            No reviews yet
                           </span>
-                        </div>
-                      ) : (
-                        <span className="text-[10px] text-gray-400 font-semibold mt-1.5">
-                          No reviews yet
-                        </span>
-                      )}
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                );
+              }}
             />
           </div>
         )}

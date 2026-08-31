@@ -15,6 +15,8 @@ export const BookingCouponSchema = new Schema(
   {
     ownerId: id("User", true),
     ashramId: id("Ashram"),
+    roomId: id("Room"),
+    isLastMinuteDeal: { type: Boolean, default: false },
     applicableAshrams: [{ type: SchemaTypes.ObjectId, ref: "Ashram" }],
     applicableCities: [String],
     applicableStates: [String],

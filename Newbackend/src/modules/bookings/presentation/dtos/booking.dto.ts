@@ -2,6 +2,7 @@ import { PartialType } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 import {
   IsArray,
+  IsBoolean,
   IsIn,
   IsInt,
   IsMongoId,
@@ -14,6 +15,7 @@ import {
   Matches,
   Min,
   MinLength,
+  ValidateIf,
   ValidateNested,
 } from "class-validator";
 
@@ -117,6 +119,13 @@ export class SaveOfferDto {
   @Type(() => Number) @IsNumber() @Min(0) discountValue: number;
   @IsString() validTill: string;
   @IsOptional() @IsMongoId() ashramId?: string | null;
+  @IsOptional()
+  @ValidateIf((o) => Boolean(o.roomId))
+  @IsMongoId()
+  roomId?: string | null;
+  @IsOptional()
+  @IsBoolean()
+  isLastMinuteDeal?: boolean;
   @IsOptional()
   @Type(() => Number)
   @IsNumber()

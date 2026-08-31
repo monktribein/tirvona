@@ -16,6 +16,7 @@ import {
   MapPin,
   Power,
   RefreshCw,
+  Zap,
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useNotifications } from "../../contexts/NotificationContext";
@@ -63,6 +64,8 @@ const EMPTY_FORM = () => ({
   maximumRedemptions: 500,
   destination: "",
   ashramId: "",
+  roomId: "",
+  isLastMinuteDeal: false,
 });
 
 const ashramIdOf = (offer: any): string =>
@@ -72,10 +75,18 @@ const isOfferExpired = (offer: any): boolean =>
   offer?.status === "expired" ||
   Boolean(offer?.validTill && new Date(offer.validTill).getTime() < Date.now());
 
+const isLastMinuteDealOffer = (offer: any): boolean =>
+  Boolean(offer?.isLastMinuteDeal) ||
+  offer?.offerType === "LAST MINUTE DEAL" ||
+  offer?.offerType === "Last Minute Deal" ||
+  (offer?.promoCode && String(offer.promoCode).toUpperCase().startsWith("LASTMINUTE"));
+
 export const AdminOffersPage: React.FC = () => {
   const { addNotification } = useNotifications();
   const { user } = useAuth();
-  const isPlatformAdmin = user?.role === "super_admin";
+  const isPlatformAdmin = Boolean(
+    user?.role && ["admin", "super_admin", "superadmin", "platform_admin"].includes(user.role),
+  );
 
   const [offers, setOffers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -92,7 +103,7 @@ export const AdminOffersPage: React.FC = () => {
 
   const [pendingAction, setPendingAction] = useState<{
     id: string;
-    action: "delete" | "duplicate" | "status" | "view";
+    action: string;
   } | null>(null);
 
   const [viewOffer, setViewOffer] = useState<any>(null);
@@ -106,6 +117,23 @@ export const AdminOffersPage: React.FC = () => {
   const [loadingAshrams, setLoadingAshrams] = useState(false);
 
   const [myAshrams, setMyAshrams] = useState<any[]>([]);
+  const [availableRooms, setAvailableRooms] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!formData.ashramId) {
+      setAvailableRooms([]);
+      return;
+    }
+    ashramService.getManagedById(formData.ashramId)
+      .then((res) => {
+        if (res.data?.success && res.data.data?.rooms) {
+          setAvailableRooms(res.data.data.rooms);
+        } else {
+          setAvailableRooms([]);
+        }
+      })
+      .catch(() => setAvailableRooms([]));
+  }, [formData.ashramId]);
 
   const loadDestinationAshrams = useCallback(
     async (city: string) => {
@@ -142,7 +170,7 @@ export const AdminOffersPage: React.FC = () => {
   );
 
   const handleDestinationChange = (city: string) => {
-    setFormData((prev: any) => ({ ...prev, destination: city, ashramId: "" }));
+    setFormData((prev: any) => ({ ...prev, destination: city, ashramId: "", roomId: "" }));
     loadDestinationAshrams(city);
   };
 
@@ -178,6 +206,12 @@ export const AdminOffersPage: React.FC = () => {
       : ashramService.myListings().then((res) => {
           const rows: any[] = res.data?.data || [];
           setMyAshrams(rows);
+          if (rows.length === 1 && !formData.ashramId) {
+            setFormData((prev: any) => ({
+              ...prev,
+              ashramId: rows[0]._id,
+            }));
+          }
           const byCity = new Map<string, any>();
           for (const a of rows) {
             const city = String(a.address?.city || "").trim();
@@ -208,15 +242,34 @@ export const AdminOffersPage: React.FC = () => {
 
   const stats = {
     totalOffers: offers.length,
-    activeOffers: offers.filter((o) => o.status === "active" && !isOfferExpired(o))
-      .length,
+    activeOffers: offers.filter(
+      (o) => o.status === "active" && !isLastMinuteDealOffer(o) && !isOfferExpired(o),
+    ).length,
+    lastMinuteDeals: offers.filter(
+      (o) => isLastMinuteDealOffer(o) && !isOfferExpired(o),
+    ).length,
     featuredOffers: offers.filter((o) => o.featured).length,
     expiredOffers: offers.filter(isOfferExpired).length,
   };
 
-  const openCreateModal = () => {
+  const openCreateModal = (isLastMinute: boolean = false) => {
     setEditOfferId(null);
-    setFormData(EMPTY_FORM());
+    setFormData({
+      ...EMPTY_FORM(),
+      ...(isLastMinute
+        ? {
+            offerTitle: "Last Minute Special Deal",
+            promoCode: `LASTMINUTE_${Math.floor(100 + Math.random() * 900)}`,
+            offerType: "LAST MINUTE DEAL",
+            targetRoute: "stays",
+            isLastMinuteDeal: true,
+            discountType: "Percentage",
+            discountValue: 25,
+            validTill: new Date().toISOString().split("T")[0],
+            description: "Exclusive last minute discount applied for immediate bookings.",
+          }
+        : {}),
+    });
     setDestinationAshrams([]);
     setShowModal(true);
   };
@@ -227,14 +280,23 @@ export const AdminOffersPage: React.FC = () => {
     setDestinationAshrams([]);
     if (destination) loadDestinationAshrams(destination);
 
+    const roomId = offer.roomId?._id
+      ? String(offer.roomId._id)
+      : offer.roomId
+        ? String(offer.roomId)
+        : "";
+    const isLastMin = isLastMinuteDealOffer(offer);
+
     setEditOfferId(offer._id);
     setFormData({
       destination,
       ashramId: ashramIdOf(offer),
+      roomId,
+      isLastMinuteDeal: isLastMin,
       offerTitle: offer.offerTitle || offer.title || "",
       promoCode: offer.promoCode || "",
       targetRoute: offer.targetRoute || offer.category || "homepage",
-      offerType: offer.offerType || "MAHAKUMBH OFFER",
+      offerType: offer.offerType || (isLastMin ? "LAST MINUTE DEAL" : "MAHAKUMBH OFFER"),
       description: offer.description || "",
       discountType:
         offer.discountType === "FixedAmount"
@@ -319,6 +381,8 @@ export const AdminOffersPage: React.FC = () => {
         featured: Boolean(formData.featured),
         maximumRedemptions: Number(formData.maximumRedemptions) || 100,
         ashramId: formData.ashramId || null,
+        roomId: formData.roomId || null,
+        isLastMinuteDeal: Boolean(formData.isLastMinuteDeal),
       };
 
       if (editOfferId) await offerService.update(editOfferId, payload);
@@ -418,7 +482,9 @@ export const AdminOffersPage: React.FC = () => {
     const isExpired = isOfferExpired(offer);
 
     let matchesStatus = true;
-    if (selectedStatus === "Active") matchesStatus = offer.status === "active" && !isExpired;
+    if (selectedStatus === "Active Offers") matchesStatus = offer.status === "active" && !offer.isLastMinuteDeal && !isExpired;
+    else if (selectedStatus === "⚡ Last Minute Deals" || selectedStatus === "Last Minute Deals") matchesStatus = Boolean(offer.isLastMinuteDeal) && !isExpired;
+    else if (selectedStatus === "Active") matchesStatus = offer.status === "active" && !isExpired;
     else if (selectedStatus === "Featured") matchesStatus = Boolean(offer.featured);
     else if (selectedStatus === "Expired") matchesStatus = isExpired;
 
@@ -441,51 +507,66 @@ export const AdminOffersPage: React.FC = () => {
             <span className="px-3 py-1 rounded-full bg-[#0A4DA6]/10 text-[#0A4DA6] dark:text-blue-400 text-[10px] font-black uppercase tracking-wider flex items-center gap-1">
               <Tag size={12} />{" "}
               {isPlatformAdmin
-                ? "Super Admin Offers Module"
-                : "Ashram Offers & Coupons"}
+                ? "Super Admin Offers & Deals Module"
+                : "Ashram Offers & Deals"}
             </span>
           </div>
           <h1 className="text-2xl font-extrabold text-[#0B192C] dark:text-white">
-            Exclusive Offers & Coupon Vouchers
+            Offers & Last Minute Deals
           </h1>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
             {isPlatformAdmin
-              ? "Create, schedule, and assign promotional offers across Homepage, Stays, Seva, Services, and Marketplace."
-              : "Create and schedule promotional offers for your ashrams. Guests who open a coupon land on that ashram's booking page with the code already applied."}
+              ? "Create, schedule, and assign promotional offers and flash room deals across Homepage, Stays, and Services."
+              : "Create promotional coupon vouchers and publish urgent Last Minute room deals for your ashrams."}
           </p>
         </div>
 
-        <button
-          onClick={openCreateModal}
-          className="px-5 py-3 rounded-full bg-[#0A4DA6] hover:bg-blue-900 text-white text-xs font-extrabold flex items-center gap-2 shadow-md cursor-pointer transition-all shrink-0 self-start sm:self-auto"
-        >
-          <Plus size={16} /> Create New Offer
-        </button>
+        <div className="flex flex-wrap items-center gap-3 shrink-0 self-start sm:self-auto">
+          <button
+            onClick={() => openCreateModal(false)}
+            className="px-5 py-3 rounded-full bg-[#0A4DA6] hover:bg-blue-900 text-white text-xs font-extrabold flex items-center gap-2 shadow-md cursor-pointer transition-all"
+          >
+            <Plus size={16} /> Create New Offer
+          </button>
+
+          <button
+            onClick={() => openCreateModal(true)}
+            className="px-5 py-3 rounded-full bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 text-white text-xs font-extrabold flex items-center gap-2 shadow-lg cursor-pointer transition-all animate-pulse"
+          >
+            <Zap size={16} /> Create Last Minute Deal
+          </button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4">
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Offers</p>
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Items</p>
           <p className="text-2xl font-black text-[#0B192C] dark:text-white mt-1">{stats.totalOffers}</p>
         </div>
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
           <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-wider">Active Offers</p>
           <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">{stats.activeOffers}</p>
         </div>
-        <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
-          <p className="text-[10px] font-bold text-amber-500 uppercase tracking-wider">Featured Deals</p>
-          <p className="text-2xl font-black text-amber-600 dark:text-amber-400 mt-1">{stats.featuredOffers}</p>
+        <div className="bg-white dark:bg-[#0B192C] border border-rose-100 dark:border-rose-900/40 rounded-2xl p-4 shadow-sm bg-rose-50/30 dark:bg-rose-950/20">
+          <p className="text-[10px] font-black text-rose-600 dark:text-rose-400 uppercase tracking-wider flex items-center gap-1">
+            <Zap size={12} /> Last Minute Deals
+          </p>
+          <p className="text-2xl font-black text-rose-600 dark:text-rose-400 mt-1">{stats.lastMinuteDeals}</p>
         </div>
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
-          <p className="text-[10px] font-bold text-rose-500 uppercase tracking-wider">Expired Offers</p>
-          <p className="text-2xl font-black text-rose-600 dark:text-rose-400 mt-1">{stats.expiredOffers}</p>
+          <p className="text-[10px] font-bold text-amber-500 uppercase tracking-wider">Featured</p>
+          <p className="text-2xl font-black text-amber-600 dark:text-amber-400 mt-1">{stats.featuredOffers}</p>
+        </div>
+        <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-4 shadow-sm col-span-2 sm:col-span-1">
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Expired</p>
+          <p className="text-2xl font-black text-gray-500 dark:text-gray-400 mt-1">{stats.expiredOffers}</p>
         </div>
       </div>
 
       <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-5 space-y-4 shadow-sm">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
-            {["All", "Active", "Featured", "Expired"].map((tab) => (
+            {["All", "Active Offers", "⚡ Last Minute Deals", "Featured", "Expired"].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setSelectedStatus(tab)}
@@ -563,7 +644,7 @@ export const AdminOffersPage: React.FC = () => {
             Try adjusting your search query or route filters, or create a new offer for the homepage.
           </p>
           <button
-            onClick={openCreateModal}
+            onClick={() => openCreateModal(false)}
             className="mt-2 inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[#0A4DA6] text-white text-xs font-extrabold"
           >
             <Plus size={14} /> Add New Offer
@@ -716,10 +797,18 @@ export const AdminOffersPage: React.FC = () => {
             <div className="shrink-0 flex items-start justify-between gap-3 border-b border-gray-100 dark:border-slate-800 px-5 sm:px-8 pt-5 sm:pt-6 pb-4">
               <div className="min-w-0">
                 <h2 className="text-lg sm:text-xl font-extrabold text-[#0B192C] dark:text-white">
-                  {editOfferId ? "Edit Offer" : "Create New Offer"}
+                  {editOfferId
+                    ? formData.isLastMinuteDeal
+                      ? "Edit Last Minute Deal"
+                      : "Edit Offer"
+                    : formData.isLastMinuteDeal
+                      ? "Create New Deal"
+                      : "Create New Offer"}
                 </h2>
                 <p className="text-[11px] sm:text-xs text-gray-400 font-semibold mt-0.5">
-                  Configure promotion title, discount code, validity, and category route placement.
+                  {formData.isLastMinuteDeal
+                    ? "Configure deal title, discount code, target room category, and validity."
+                    : "Configure promotion title, discount code, validity, and category route placement."}
                 </p>
               </div>
               <button
@@ -739,14 +828,15 @@ export const AdminOffersPage: React.FC = () => {
               <div className="flex-1 min-h-0 overflow-y-auto px-5 sm:px-8 py-5 grid grid-cols-1 sm:grid-cols-2 gap-4 content-start">
                 <div className="sm:col-span-2">
                   <label className="text-[11px] font-extrabold text-gray-700 dark:text-gray-300 block mb-1">
-                    Offer Title <span className="text-rose-500">*</span>
+                    {formData.isLastMinuteDeal ? "Deal Title" : "Offer Title"}{" "}
+                    <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="text"
                     required
                     value={formData.offerTitle}
                     onChange={(e) => setFormData({ ...formData, offerTitle: e.target.value })}
-                    placeholder="e.g. Mahakumbh Sacred Stay Special"
+                    placeholder={formData.isLastMinuteDeal ? "e.g. Last Minute Special Deal - Deluxe AC Room" : "e.g. Mahakumbh Sacred Stay Special"}
                     className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6]"
                   />
                 </div>
@@ -786,70 +876,82 @@ export const AdminOffersPage: React.FC = () => {
                   <div className="sm:col-span-2 flex items-center gap-2 flex-wrap">
                     <MapPin size={14} className="text-[#0A4DA6]" />
                     <p className="text-[11px] font-extrabold text-[#0B192C] dark:text-white">
-                      Applies To
+                      Applies To Ashram &amp; Target Room Category
                     </p>
                     <span className="text-[10px] font-semibold text-gray-400">
-                      {isPlatformAdmin
-                        ? "Leave blank to make this coupon valid across all ashrams"
-                        : "Choose which of your ashrams this coupon is redeemable at"}
+                      Select which ashram and specific room category this deal applies to
                     </span>
                   </div>
 
-                  <div>
+                  {isPlatformAdmin && (
+                    <div>
+                      <label className="text-[11px] font-extrabold text-gray-700 dark:text-gray-300 block mb-1">
+                        Destination / Area
+                      </label>
+                      <select
+                        value={formData.destination}
+                        onChange={(e) => handleDestinationChange(e.target.value)}
+                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 text-xs font-bold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6] cursor-pointer"
+                      >
+                        <option value="">All Destinations</option>
+                        {destinations.map((d) => (
+                          <option key={d.city} value={d.city}>
+                            {d.city}
+                            {d.state ? `, ${d.state}` : ""} ({d.count})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  <div className={isPlatformAdmin ? "" : "sm:col-span-2"}>
                     <label className="text-[11px] font-extrabold text-gray-700 dark:text-gray-300 block mb-1">
-                      Destination / Area{" "}
-                      {!isPlatformAdmin && (
-                        <span className="text-rose-500">*</span>
-                      )}
+                      Ashram <span className="text-rose-500">*</span>
                     </label>
                     <select
-                      value={formData.destination}
-                      onChange={(e) => handleDestinationChange(e.target.value)}
+                      value={formData.ashramId}
+                      onChange={(e) => {
+                        const ashramId = e.target.value;
+                        setFormData((prev: any) => ({ ...prev, ashramId, roomId: "" }));
+                        if (ashramId) {
+                          ashramService.getManagedById(ashramId)
+                            .then((res) => {
+                              if (res.data?.success && res.data.data?.rooms) {
+                                setAvailableRooms(res.data.data.rooms);
+                              } else {
+                                setAvailableRooms([]);
+                              }
+                            })
+                            .catch(() => setAvailableRooms([]));
+                        } else {
+                          setAvailableRooms([]);
+                        }
+                      }}
                       className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 text-xs font-bold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6] cursor-pointer"
                     >
-                      <option value="">
-                        {isPlatformAdmin
-                          ? "All destinations"
-                          : destinations.length === 0
-                            ? "No published ashrams yet"
-                            : "Select a destination"}
-                      </option>
-                      {destinations.map((d) => (
-                        <option key={d.city} value={d.city}>
-                          {d.city}
-                          {d.state ? `, ${d.state}` : ""} ({d.count})
+                      <option value="">Select an Ashram</option>
+                      {(destinationAshrams.length > 0 ? destinationAshrams : myAshrams).map((a) => (
+                        <option key={a._id} value={a._id}>
+                          {a.name} ({a.address?.city || ""})
                         </option>
                       ))}
                     </select>
                   </div>
 
-                  <div>
+                  <div className="sm:col-span-2">
                     <label className="text-[11px] font-extrabold text-gray-700 dark:text-gray-300 block mb-1">
-                      Ashram{" "}
-                      {(formData.destination || !isPlatformAdmin) && (
-                        <span className="text-rose-500">*</span>
-                      )}
+                      Target Room Category {formData.isLastMinuteDeal ? "(Required for Last Minute Deal)" : "(Optional)"}
                     </label>
                     <select
-                      value={formData.ashramId}
-                      disabled={!formData.destination || loadingAshrams}
-                      onChange={(e) =>
-                        setFormData({ ...formData, ashramId: e.target.value })
-                      }
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 text-xs font-bold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                      value={formData.roomId || ""}
+                      onChange={(e) => setFormData({ ...formData, roomId: e.target.value })}
+                      disabled={!formData.ashramId}
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 text-xs font-bold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6] cursor-pointer disabled:opacity-50"
                     >
-                      <option value="">
-                        {!formData.destination
-                          ? "Select a destination first"
-                          : loadingAshrams
-                            ? "Loading ashrams..."
-                            : destinationAshrams.length === 0
-                              ? "No ashrams in this destination"
-                              : "Select an ashram"}
-                      </option>
-                      {destinationAshrams.map((a) => (
-                        <option key={a._id} value={a._id}>
-                          {a.name}
+                      <option value="">All Room Categories (Whole Ashram)</option>
+                      {availableRooms.map((r: any) => (
+                        <option key={r._id} value={r._id}>
+                          {r.name} (Base Tariff: ₹{r.basePrice || 0}/night)
                         </option>
                       ))}
                     </select>
@@ -957,7 +1059,56 @@ export const AdminOffersPage: React.FC = () => {
                     onChange={(e) => setFormData({ ...formData, validTill: e.target.value })}
                     className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6]"
                   />
+                  {formData.isLastMinuteDeal && (
+                    <span className="text-[10px] font-bold text-rose-600 dark:text-rose-400 mt-1 block">
+                      ⚡ Automatically expires tonight at 11:59 PM (23:59).
+                    </span>
+                  )}
                 </div>
+
+                {(() => {
+                  const targetRoom = availableRooms.find((r) => r._id === formData.roomId);
+                  if (!targetRoom && !formData.discountValue) return null;
+                  const originalPrice = targetRoom ? targetRoom.basePrice : null;
+                  let discountedRate = originalPrice;
+                  let pct = 0;
+                  if (originalPrice != null) {
+                    if (formData.discountType === "Percentage") {
+                      pct = Math.min(100, Math.max(0, formData.discountValue));
+                      discountedRate = Math.max(0, Math.round(originalPrice * (1 - pct / 100)));
+                    } else if (formData.discountType === "Flat Amount") {
+                      discountedRate = Math.max(0, originalPrice - formData.discountValue);
+                      pct = originalPrice > 0 ? Math.round(((originalPrice - discountedRate) / originalPrice) * 100) : 0;
+                    }
+                  }
+                  return (
+                    <div className="sm:col-span-2 p-3 bg-blue-50/70 dark:bg-slate-900 border border-blue-100 dark:border-slate-800 rounded-2xl flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 block uppercase">
+                          {targetRoom ? `Selected: ${targetRoom.name}` : "All Ashram Room Categories"}
+                        </span>
+                        {originalPrice != null ? (
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-xs text-gray-400 line-through">₹{originalPrice}</span>
+                            <span className="text-sm font-black text-emerald-600 dark:text-emerald-400">
+                              ₹{discountedRate} / night
+                            </span>
+                            <span className="text-[10px] font-black bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full">
+                              {pct}% OFF
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-xs font-bold text-[#0A4DA6] dark:text-amber-400">
+                            {formData.discountType === "Percentage" ? `${formData.discountValue}% OFF` : `₹${formData.discountValue} OFF`} applied to bookings
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[10px] font-bold text-gray-400">
+                        {formData.isLastMinuteDeal ? "⚡ Last Minute Priority Listing" : "Standard Deal"}
+                      </span>
+                    </div>
+                  );
+                })()}
 
                 <div className="sm:col-span-2 space-y-2">
                   <label className="text-[11px] font-extrabold text-gray-700 dark:text-gray-300 block">

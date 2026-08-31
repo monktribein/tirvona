@@ -230,7 +230,7 @@ export const PublicLayout: React.FC = () => {
     if (["ashram_admin", "stay_admin"].includes(user.role))
       return "Ashram Admin Dashboard";
     if (["ashram_owner", "owner"].includes(user.role))
-      return "Ashram Owner Dashboard";
+      return "Stay Owner Dashboard";
     if (user.role === "support") return "Support Console";
     if (isParkingRole(user.parkingRoles, user.role, user.email))
       return "Parking Dashboard";
@@ -261,7 +261,7 @@ export const PublicLayout: React.FC = () => {
     if (user.role === "govt_admin") return "Govt Admin";
     if (user.role === "district_officer") return "District Admin";
     if (["ashram_admin", "stay_admin"].includes(user.role)) return "Ashram Admin";
-    if (["ashram_owner", "owner"].includes(user.role)) return "Ashram Owner";
+    if (["ashram_owner", "owner"].includes(user.role)) return "Stay Owner";
     if (isParkingRole(user.parkingRoles, user.role, user.email))
       return "Parking Partner";
     if (user.role === "volunteer") return "Volunteer";

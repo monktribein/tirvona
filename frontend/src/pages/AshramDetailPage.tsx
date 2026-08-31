@@ -639,17 +639,29 @@ export const AshramDetailPage: React.FC = () => {
 
   const extraGuestCalc = adults > 2 ? (adults - 2) * 200 * daysCount : 0;
   const loyaltyCalc = useLoyalty ? 100 : 0;
-  const platformFeeCalc = !platformFeeAppliesTo(
-    platformSettings,
-    "ashram_booking",
-  )
-    ? 0
-    : platformSettings.type === "percentage"
-      ? Math.round((subtotalCalc * platformSettings.value) / 100)
-      : Math.round(platformSettings.value || 49);
+
+  const propertyType = (
+    ashram?.ashramType ||
+    ashram?.listingType ||
+    ashram?.type ||
+    ""
+  ).toLowerCase();
+  const isHotelListing =
+    propertyType.includes("hotel") ||
+    (ashram?.name || "").toLowerCase().includes("hotel");
+
+  const platformFeeCalc = isHotelListing
+    ? roundMoney(subtotalCalc * 0.10)
+    : !platformFeeAppliesTo(platformSettings, "ashram_booking")
+      ? 0
+      : platformSettings.type === "percentage"
+        ? Math.round((subtotalCalc * platformSettings.value) / 100)
+        : Math.round(platformSettings.value || 49);
 
   const gstRateCalc = platformGstRate;
-  const gstCalc = roundMoney((platformFeeCalc * gstRateCalc) / 100);
+  const gstCalc = isHotelListing
+    ? roundMoney(subtotalCalc * 0.02)
+    : roundMoney((platformFeeCalc * gstRateCalc) / 100);
 
   const grossPayableCalc = roundMoney(
     subtotalCalc + extraGuestCalc + platformFeeCalc + gstCalc,
@@ -1422,39 +1434,125 @@ export const AshramDetailPage: React.FC = () => {
           </div>
 
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-5 shadow-sm">
-            <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white border-b border-gray-50 dark:border-slate-850 pb-3">
-              Available Room Categories
-            </h3>
+            <div className="flex items-center justify-between border-b border-gray-50 dark:border-slate-850 pb-3">
+              <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white">
+                Available Room Categories
+              </h3>
+              {availableOffers.some((o) => o.isLastMinuteDeal) && (
+                <span className="px-3 py-1 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[10px] font-black flex items-center gap-1 border border-rose-200 dark:border-rose-900/40">
+                  <Sparkles size={11} className="animate-pulse" /> ⚡ Last Minute Deals Available Today
+                </span>
+              )}
+            </div>
             <div className="space-y-4">
-              {rooms.map((r) => (
-                <div
-                  key={r._id}
-                  onClick={() => setSelectedRoom(r)}
-                  className={`p-4 border rounded-[20px] cursor-pointer flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-all ${selectedRoom?._id === r._id ? "border-[#0A4DA6] bg-[#0A4DA6]/5 shadow-sm" : "border-gray-100 dark:border-slate-800 hover:bg-gray-50/50 dark:hover:bg-slate-800/10"}`}
-                >
-                  <div className="space-y-1">
-                    <span className="text-xs font-extrabold text-[#0B192C] dark:text-white">
-                      {r.name}
-                    </span>
-                    <span className="text-[10px] text-gray-400 block font-bold capitalize tracking-wide">
-                      {r.type.replace("_", " ")} • {r.acType} • Capacity:{" "}
-                      {r.capacity} Guests
-                    </span>
-                    <p className="text-[10px] text-gray-500 max-w-md">
-                      {r.description ||
-                        "Simple clean room with standard Vedic facilities."}
-                    </p>
+              {rooms.map((r) => {
+                // Check if this room has an active Last Minute Deal
+                const isLastMinuteOffer = (o: any) =>
+                  Boolean(o?.isLastMinuteDeal) ||
+                  o?.offerType === "LAST MINUTE DEAL" ||
+                  o?.offerType === "Last Minute Deal" ||
+                  (o?.promoCode && String(o.promoCode).toUpperCase().startsWith("LASTMINUTE"));
+
+                const isTargetRoomMatch = (o: any) => {
+                  const targetId = String(o?.roomId?._id ?? o?.roomId ?? "").trim();
+                  if (!targetId || targetId === "null" || targetId === "undefined" || targetId === "") {
+                    return true; // Applied to all rooms in ashram
+                  }
+                  return targetId === String(r._id);
+                };
+
+                const roomDeal = availableOffers.find(
+                  (o: any) => isLastMinuteOffer(o) && isTargetRoomMatch(o),
+                );
+
+                let discountedPrice = r.basePrice;
+                let discountPercent = 0;
+                const isDeal = Boolean(roomDeal);
+
+                if (isDeal && roomDeal) {
+                  if (roomDeal.discountType === "Percentage") {
+                    discountPercent = Math.min(100, Math.max(1, Number(roomDeal.discountValue) || 0));
+                    discountedPrice = Math.max(
+                      0,
+                      Math.round(r.basePrice * (1 - discountPercent / 100)),
+                    );
+                  } else if (roomDeal.discountType === "Flat Amount") {
+                    const flatVal = Number(roomDeal.discountValue) || 0;
+                    discountedPrice = Math.max(0, r.basePrice - flatVal);
+                    discountPercent =
+                      r.basePrice > 0
+                        ? Math.min(100, Math.round(((r.basePrice - discountedPrice) / r.basePrice) * 100))
+                        : 0;
+                  }
+                }
+
+                return (
+                  <div
+                    key={r._id}
+                    onClick={() => {
+                      setSelectedRoom(r);
+                      if (isDeal && roomDeal?.promoCode && (!appliedPromo || appliedPromo !== roomDeal.promoCode)) {
+                        setCouponCode(roomDeal.promoCode);
+                        handleApplyAvailableOffer(roomDeal);
+                      }
+                    }}
+                    className={`p-4 sm:p-5 border rounded-[20px] cursor-pointer flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-all relative overflow-hidden ${
+                      selectedRoom?._id === r._id
+                        ? "border-[#0A4DA6] bg-[#0A4DA6]/5 shadow-sm ring-1 ring-[#0A4DA6]/30"
+                        : "border-gray-100 dark:border-slate-800 hover:bg-gray-50/50 dark:hover:bg-slate-800/10"
+                    }`}
+                  >
+                    {isDeal && (
+                      <div className="absolute top-0 right-0">
+                        <span className="text-[9px] font-black uppercase px-3 py-1 rounded-bl-xl shadow-sm flex items-center gap-1 bg-gradient-to-r from-rose-600 to-amber-500 text-white">
+                          <Sparkles size={10} />
+                          ⚡ Last Minute Deal &bull; {discountPercent}% OFF
+                        </span>
+                      </div>
+                    )}
+                    <div className="space-y-1.5 min-w-0 pr-4 sm:pr-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs font-extrabold text-[#0B192C] dark:text-white">
+                          {r.name}
+                        </span>
+                        {isDeal && (
+                          <span className="text-[10px] font-black bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900 px-2 py-0.5 rounded-full">
+                            {discountPercent}% OFF
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[10px] text-gray-400 block font-bold capitalize tracking-wide">
+                        {r.type.replace("_", " ")} • {r.acType} • Capacity:{" "}
+                        {r.capacity} Guests
+                      </span>
+                      <p className="text-[10px] text-gray-500 max-w-md">
+                        {r.description ||
+                          "Simple clean room with standard Vedic facilities."}
+                      </p>
+                    </div>
+                    <div className="flex flex-col sm:items-end text-left sm:text-right shrink-0 pt-2 sm:pt-0">
+                      <span className="text-[10px] text-gray-400 font-bold tracking-wider uppercase">
+                        Bed Rate
+                      </span>
+                      {isDeal && discountedPrice < r.basePrice ? (
+                        <div className="flex flex-col sm:items-end">
+                          <span className="text-[11px] text-gray-400 line-through font-bold">
+                            {formatCurrency(r.basePrice)}
+                          </span>
+                          <span className="text-sm sm:text-base font-black text-emerald-600 dark:text-emerald-400">
+                            {formatCurrency(discountedPrice)}{" "}
+                            <span className="text-[10px] text-gray-400 font-bold">/ night</span>
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-sm font-extrabold text-[#0B192C] dark:text-white">
+                          {formatCurrency(r.basePrice)} / night
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex flex-col sm:items-end text-left sm:text-right shrink-0">
-                    <span className="text-xs text-gray-400 font-bold tracking-wider">
-                      Bed Rate
-                    </span>
-                    <span className="text-sm font-extrabold text-[#0B192C] dark:text-white">
-                      {formatCurrency(r.basePrice)} / night
-                    </span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
@@ -1986,49 +2084,74 @@ export const AshramDetailPage: React.FC = () => {
                               : offer.discountType === "Flat Amount"
                                 ? `${formatCurrency(offer.discountValue || 0)} OFF`
                                 : offer.discountType || "Special Offer";
-                          return (
-                            <div
-                              key={offer._id || code}
-                              className={`rounded-2xl border p-3 transition-colors ${
-                                isApplied
-                                  ? "border-emerald-300 bg-emerald-50/80 dark:border-emerald-800 dark:bg-emerald-950/30"
-                                  : "border-amber-200 bg-amber-50/70 dark:border-amber-900/60 dark:bg-amber-950/20"
-                              }`}
-                            >
-                              <div className="flex items-start justify-between gap-3">
-                                <div className="min-w-0 space-y-1">
-                                  <div className="flex flex-wrap items-center gap-1.5">
-                                    <span className="text-[11px] font-black text-[#0B192C] dark:text-white">
-                                      {offer.offerTitle || offer.shortTitle || "Stay Offer"}
-                                    </span>
-                                    <span className="rounded-full bg-[#E58C28] px-2 py-0.5 text-[9px] font-black text-white">
-                                      {discountLabel}
-                                    </span>
-                                  </div>
-                                  <p className="text-[10px] text-gray-500 dark:text-gray-400 line-clamp-2">
-                                    {offer.description || "Apply this offer to your stay."}
-                                  </p>
-                                  {Number(offer.minimumBookingAmount || 0) > 0 && (
-                                    <p className="text-[9px] font-bold text-amber-700 dark:text-amber-300">
-                                      Minimum booking {formatCurrency(offer.minimumBookingAmount)}
+                            const isLastMin =
+                              Boolean(offer.isLastMinuteDeal) ||
+                              offer.offerType === "LAST MINUTE DEAL" ||
+                              offer.offerType === "Last Minute Deal" ||
+                              code.startsWith("LASTMINUTE");
+
+                            const targetRoomName =
+                              rooms.find(
+                                (rm) =>
+                                  String(rm._id) ===
+                                  String(offer.roomId?._id ?? offer.roomId ?? ""),
+                              )?.name || (offer.roomId ? "Selected Room" : "All Room Categories");
+
+                            return (
+                              <div
+                                key={offer._id || code}
+                                className={`rounded-2xl border p-3 transition-colors space-y-1.5 ${
+                                  isApplied
+                                    ? "border-emerald-300 bg-emerald-50/80 dark:border-emerald-800 dark:bg-emerald-950/30"
+                                    : isLastMin
+                                      ? "border-rose-300 bg-rose-50/70 dark:border-rose-900/60 dark:bg-rose-950/20"
+                                      : "border-amber-200 bg-amber-50/70 dark:border-amber-900/60 dark:bg-amber-950/20"
+                                }`}
+                              >
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="min-w-0 space-y-1">
+                                    <div className="flex flex-wrap items-center gap-1.5">
+                                      {isLastMin && (
+                                        <span className="rounded-full bg-gradient-to-r from-rose-600 to-amber-500 px-2 py-0.5 text-[8px] font-black text-white uppercase shadow-xs">
+                                          ⚡ Last Minute Deal
+                                        </span>
+                                      )}
+                                      <span className="text-[11px] font-black text-[#0B192C] dark:text-white">
+                                        {offer.offerTitle || offer.shortTitle || "Stay Offer"}
+                                      </span>
+                                      <span className="rounded-full bg-[#E58C28] px-2 py-0.5 text-[9px] font-black text-white">
+                                        {discountLabel}
+                                      </span>
+                                    </div>
+                                    <p className="text-[10px] text-gray-500 dark:text-gray-400 line-clamp-2">
+                                      {offer.description || "Apply this offer to your stay."}
                                     </p>
-                                  )}
+                                    <div className="flex items-center gap-2 flex-wrap text-[9px] font-bold text-slate-500 dark:text-slate-400">
+                                      <span className="text-[#0A4DA6] dark:text-blue-400">
+                                        Applied on: {targetRoomName}
+                                      </span>
+                                      {Number(offer.minimumBookingAmount || 0) > 0 && (
+                                        <span className="text-amber-700 dark:text-amber-300">
+                                          • Min {formatCurrency(offer.minimumBookingAmount)}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    disabled={isApplied}
+                                    onClick={() => handleApplyAvailableOffer(offer)}
+                                    className={`shrink-0 rounded-xl px-3 py-2 text-[10px] font-black transition-colors ${
+                                      isApplied
+                                        ? "cursor-default bg-emerald-500 text-white"
+                                        : "cursor-pointer bg-[#0A4DA6] text-white hover:bg-[#083b80]"
+                                    }`}
+                                  >
+                                    {isApplied ? "Applied" : `Apply ${code}`}
+                                  </button>
                                 </div>
-                                <button
-                                  type="button"
-                                  disabled={isApplied}
-                                  onClick={() => handleApplyAvailableOffer(offer)}
-                                  className={`shrink-0 rounded-xl px-3 py-2 text-[10px] font-black transition-colors ${
-                                    isApplied
-                                      ? "cursor-default bg-emerald-500 text-white"
-                                      : "cursor-pointer bg-[#0A4DA6] text-white hover:bg-[#083b80]"
-                                  }`}
-                                >
-                                  {isApplied ? "Applied" : `Apply ${code}`}
-                                </button>
                               </div>
-                            </div>
-                          );
+                            );
                         })}
                       </div>
                     )}

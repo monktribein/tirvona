@@ -52,13 +52,43 @@ export const OfflineInventoryPage: React.FC = () => {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<any | null>(null);
   const [form, setForm] = useState(emptyRoom);
+  const [transferRoomCategories, setTransferRoomCategories] = useState<any[]>([]);
   const [transferTarget, setTransferTarget] = useState<any | null>(null);
   const [transferForm, setTransferForm] = useState({
+    roomId: "",
     units: "1",
     fromDate: today(),
     toDate: inDays(7),
     reason: "",
   });
+
+  const openTransferModal = async (row: any) => {
+    setTransferTarget(row);
+    const initialRoomId = getId(row.roomId);
+    setTransferForm({
+      roomId: initialRoomId,
+      units: "1",
+      fromDate: today(),
+      toDate: inDays(7),
+      reason: "",
+    });
+
+    const ashramId = getId(row.ashramId);
+    if (ashramId) {
+      try {
+        const res = await ashramService.getManagedById(ashramId);
+        const categories = res.data?.data?.rooms || [];
+        setTransferRoomCategories(categories);
+        if (categories.length > 0 && !initialRoomId) {
+          setTransferForm((c) => ({ ...c, roomId: getId(categories[0]) }));
+        }
+      } catch {
+        setTransferRoomCategories([]);
+      }
+    } else {
+      setTransferRoomCategories([]);
+    }
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -195,6 +225,7 @@ export const OfflineInventoryPage: React.FC = () => {
     setSaving(true);
     try {
       await offlineInventoryService.transfer(getId(transferTarget), {
+        roomId: transferForm.roomId || undefined,
         units: Number(transferForm.units),
         fromDate: transferForm.fromDate,
         toDate: transferForm.toDate,
@@ -224,7 +255,7 @@ export const OfflineInventoryPage: React.FC = () => {
     "bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px]";
 
   return (
-    <div className="p-4 sm:p-6 space-y-5">
+    <div className="space-y-6 w-full text-left">
       <EnterprisePageHeader
         title="Offline Rooms & Inventory"
         subtitle="Rooms and beds held back from Tirvona. Move them online whenever you need extra capacity."
@@ -255,17 +286,6 @@ export const OfflineInventoryPage: React.FC = () => {
           </>
         }
       />
-
-      <div className="rounded-2xl border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/20 p-4">
-        <p className="text-xs font-extrabold text-amber-800 dark:text-amber-400">
-          Offline Inventory — not visible on Tirvona
-        </p>
-        <p className="text-[11px] text-amber-700/80 dark:text-amber-500/80 mt-1">
-          These units are held by the ashram and never appear in Tirvona online
-          availability on their own. Use <strong>Transfer to Tirvona</strong> to
-          move units into Tirvona Online Inventory for a date range.
-        </p>
-      </div>
 
       {summary && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -315,17 +335,17 @@ export const OfflineInventoryPage: React.FC = () => {
       ) : tab === "rooms" ? (
         <div className={`${card} overflow-hidden`}>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[880px] text-left">
+            <table className="w-full text-left text-xs border-collapse">
               <thead className="bg-gray-50 dark:bg-slate-900/60">
                 <tr className="text-[10px] uppercase font-black text-gray-400">
-                  <th className="py-3 px-4">Offline room</th>
-                  <th className="py-3 px-4">Room type</th>
-                  <th className="py-3 px-4">Ashram</th>
-                  <th className="py-3 px-4">Offline total</th>
-                  <th className="py-3 px-4">Available offline</th>
-                  <th className="py-3 px-4">Moved to Tirvona online</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4">Actions</th>
+                  <th className="py-3 px-4 whitespace-nowrap">Offline room</th>
+                  <th className="py-3 px-4 whitespace-nowrap">Room type</th>
+                  <th className="py-3 px-4 whitespace-nowrap">Ashram</th>
+                  <th className="py-3 px-4 whitespace-nowrap">Offline total</th>
+                  <th className="py-3 px-4 whitespace-nowrap">Available offline</th>
+                  <th className="py-3 px-4 whitespace-nowrap">Moved to Tirvona online</th>
+                  <th className="py-3 px-4 whitespace-nowrap">Status</th>
+                  <th className="py-3 px-4 whitespace-nowrap">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
@@ -363,10 +383,7 @@ export const OfflineInventoryPage: React.FC = () => {
                       {canManage ? (
                         <div className="flex flex-wrap gap-1.5">
                           <button
-                            onClick={() => {
-                              setTransferTarget(row);
-                              setTransferForm((c) => ({ ...c, units: "1" }));
-                            }}
+                            onClick={() => openTransferModal(row)}
                             disabled={row.availableUnits <= 0}
                             className="px-2.5 py-1.5 rounded-lg bg-[#0A4DA6] text-white text-[10px] font-extrabold disabled:opacity-40"
                           >
@@ -608,6 +625,32 @@ export const OfflineInventoryPage: React.FC = () => {
                 <X size={18} />
               </button>
             </div>
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                Target Room Category
+              </label>
+              <select
+                required
+                value={transferForm.roomId}
+                onChange={(e) =>
+                  setTransferForm((c) => ({ ...c, roomId: e.target.value }))
+                }
+                className={field}
+              >
+                {transferRoomCategories.length === 0 ? (
+                  <option value={getId(transferTarget.roomId)}>
+                    {transferTarget.roomId?.name || transferTarget.label || "Default Category"}
+                  </option>
+                ) : (
+                  transferRoomCategories.map((cat) => (
+                    <option key={cat._id} value={cat._id}>
+                      {cat.name} ({cat.totalRooms || 0} total rooms)
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
+
             <div className="grid sm:grid-cols-2 gap-3">
               <input
                 required

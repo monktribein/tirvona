@@ -152,7 +152,7 @@ const getFormattedRole = (role?: string): string => {
       return "Ashram Admin";
     case "ashram_owner":
     case "owner":
-      return "Ashram Owner";
+      return "Stay Owner";
     case "support":
       return "Support";
     case "reception":
@@ -531,9 +531,9 @@ export const DashboardLayout: React.FC = () => {
       ],
     },
     {
-      groupName: "Payout Management",
+      groupName: "Tirvona Account",
       icon: <DollarSign size={15} />,
-      links: [{ label: "Payout Dashboard", path: "/admin/payouts" }],
+      links: [{ label: "Tirvona Account Dashboard", path: "/admin/payouts" }],
     },
     {
       groupName: "Refund Management",
@@ -612,9 +612,10 @@ export const DashboardLayout: React.FC = () => {
       links: [
         { label: "All Bookings", path: `${ownerBase}/bookings` },
         { label: "Check-in & Check-out", path: `${ownerBase}/check-in-out` },
-        { label: "Self & Online Booking", path: `${ownerBase}/self-booking` },
+        { label: "Self Booking", path: `${ownerBase}/self-booking` },
+        { label: "Tirvona Booking", path: `${ownerBase}/tirvona-booking` },
         { label: "Payments", path: `${ownerBase}/payments` },
-        { label: "Payout Management", path: `${ownerBase}/payouts` },
+        { label: "Tirvona Account", path: `${ownerBase}/payouts` },
       ],
     },
     {
@@ -627,14 +628,6 @@ export const DashboardLayout: React.FC = () => {
           path: `${ownerBase}/events/registrations`,
         },
         { label: "Event Gate Scanner", path: "/events/gate" },
-      ],
-    },
-    {
-      groupName: "Pilgrimage Circuits",
-      icon: <Compass size={15} />,
-      links: [
-        { label: "Manage Circuits", path: `${ownerBase}/circuits` },
-        { label: "Itinerary Planner", path: "/destinations/planner" },
       ],
     },
     {
@@ -796,7 +789,8 @@ export const DashboardLayout: React.FC = () => {
             groupName: "Front desk",
             icon: <Calendar size={15} />,
             links: [
-              { label: "Self & Online Booking", path: "/staff/self-booking" },
+              { label: "Self Booking", path: "/staff/self-booking" },
+              { label: "Tirvona Booking", path: "/staff/tirvona-booking" },
             ],
           },
         ],

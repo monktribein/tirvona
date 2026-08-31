@@ -18,6 +18,7 @@ import {
   X,
   Award,
   Clock,
+  Zap,
 } from "lucide-react";
 import { useNotifications } from "../contexts/NotificationContext";
 import FileUploader from "../components/FileUploader";
@@ -74,7 +75,30 @@ export const OwnerOffersPage: React.FC = () => {
     priority: 1,
     featured: false,
     status: "active",
+    roomId: "",
+    isLastMinuteDeal: false,
   });
+
+  const [availableRooms, setAvailableRooms] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!formData.ashramId) {
+      setAvailableRooms([]);
+      return;
+    }
+    api.get(`/ashrams/${formData.ashramId}/managed`)
+      .then((res) => {
+        if (res.data.success && res.data.data?.rooms) {
+          setAvailableRooms(res.data.data.rooms);
+        } else {
+          setAvailableRooms([]);
+        }
+      })
+      .catch(() => {
+        const found = ashrams.find((a) => a._id === formData.ashramId);
+        setAvailableRooms(found?.rooms || []);
+      });
+  }, [formData.ashramId, ashrams]);
 
   const offerCategories = [
     "Weekend Offer",
@@ -122,14 +146,14 @@ export const OwnerOffersPage: React.FC = () => {
     }
   };
 
-  const handleOpenWizard = (offerToEdit?: any) => {
+  const handleOpenWizard = (offerToEdit?: any, isLastMinute: boolean = false) => {
     if (offerToEdit) {
       setEditOfferId(offerToEdit._id);
       setFormData({
         offerTitle: offerToEdit.offerTitle || "",
         shortTitle: offerToEdit.shortTitle || "",
         subtitle: offerToEdit.subtitle || "",
-        offerType: offerToEdit.offerType || "Festival Offer",
+        offerType: offerToEdit.offerType || (isLastMinute ? "Last Minute Deal" : "Festival Offer"),
         ashramId: offerToEdit.ashramId?._id || offerToEdit.ashramId || "",
         applicableAshrams: offerToEdit.applicableAshrams || [],
         description: offerToEdit.description || "",
@@ -155,46 +179,52 @@ export const OwnerOffersPage: React.FC = () => {
           : new Date().toISOString().split("T")[0],
         validTill: offerToEdit.validTill
           ? new Date(offerToEdit.validTill).toISOString().split("T")[0]
-          : new Date().toISOString().split("T")[0],
+          : new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0],
         maximumRedemptions: offerToEdit.maximumRedemptions || 100,
         perUserLimit: offerToEdit.perUserLimit || 1,
         priority: offerToEdit.priority || 1,
         featured: offerToEdit.featured || false,
         status: offerToEdit.status || "active",
+        roomId: offerToEdit.roomId?._id || offerToEdit.roomId || "",
+        isLastMinuteDeal: offerToEdit.isLastMinuteDeal || isLastMinute,
       });
     } else {
       setEditOfferId(null);
+      const defaultAshram = ashrams[0]?._id || "";
       setFormData({
-        offerTitle: "",
-        shortTitle: "",
-        subtitle: "",
-        offerType: "Festival Offer",
-        ashramId: ashrams[0]?._id || "",
+        offerTitle: isLastMinute ? "Last Minute Special Deal" : "",
+        shortTitle: isLastMinute ? "Last Minute Deal" : "",
+        subtitle: isLastMinute ? "Exclusive instant discount for upcoming stays" : "",
+        offerType: isLastMinute ? "Last Minute Deal" : "Festival Offer",
+        ashramId: defaultAshram,
         applicableAshrams: ashrams.map((a) => a._id),
-        description: "",
+        description: isLastMinute ? "Exclusive last minute discount applied for quick bookings." : "",
         fullHtmlDescription: "",
-        highlights: "Free Satvik Meal, Direct Ganga View, Room Upgrade",
-        termsAndConditions:
-          "Valid for online bookings, Cannot be combined with other coupons",
-        promoCode: `FESTIVAL_${Math.floor(100 + Math.random() * 900)}`,
+        highlights: "Instant Discount, Guaranteed Room, Satvik Meals Included",
+        termsAndConditions: "Valid for immediate online bookings, Cannot be combined with other coupons",
+        promoCode: isLastMinute
+          ? `LASTMINUTE_${Math.floor(100 + Math.random() * 900)}`
+          : `FESTIVAL_${Math.floor(100 + Math.random() * 900)}`,
         discountType: "Percentage",
-        discountValue: 20,
+        discountValue: 25,
         maximumDiscount: 500,
-        minimumBookingAmount: 1000,
+        minimumBookingAmount: 500,
         bannerImage: "",
         thumbnailImage: "",
         desktopBanner: "",
         mobileBanner: "",
         galleryImages: [],
         validFrom: new Date().toISOString().split("T")[0],
-        validTill: new Date(Date.now() + 30 * 86400000)
-          .toISOString()
-          .split("T")[0],
-        maximumRedemptions: 100,
+        validTill: isLastMinute
+          ? new Date().toISOString().split("T")[0]
+          : new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0],
+        maximumRedemptions: 50,
         perUserLimit: 1,
-        priority: 1,
+        priority: isLastMinute ? 10 : 1,
         featured: true,
         status: "active",
+        roomId: "",
+        isLastMinuteDeal: isLastMinute,
       });
     }
     setCurrentStep(1);
@@ -314,12 +344,20 @@ export const OwnerOffersPage: React.FC = () => {
           </p>
         </div>
 
-        <button
-          onClick={() => handleOpenWizard()}
-          className="bg-amber-500 hover:bg-amber-600 text-white font-black text-xs sm:text-sm px-6 py-3.5 rounded-full flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer shrink-0 active:scale-95"
-        >
-          <Plus size={16} /> Launch Create Offer Wizard
-        </button>
+        <div className="flex flex-wrap items-center gap-3 shrink-0">
+          <button
+            onClick={() => handleOpenWizard(undefined, false)}
+            className="bg-[#0A4DA6] hover:bg-[#083b80] text-white font-black text-xs sm:text-sm px-5 py-3 rounded-full flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer active:scale-95"
+          >
+            <Plus size={16} /> Launch Create Offer Wizard
+          </button>
+          <button
+            onClick={() => handleOpenWizard(undefined, true)}
+            className="bg-amber-500 hover:bg-amber-600 text-white font-black text-xs sm:text-sm px-5 py-3 rounded-full flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer active:scale-95 animate-pulse"
+          >
+            <Zap size={16} /> Create Last Minute Deal
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -625,23 +663,45 @@ export const OwnerOffersPage: React.FC = () => {
 
               {currentStep === 2 && (
                 <div className="space-y-4">
-                  <label className="block text-[10px] font-black text-gray-400 mb-1">
-                    Select Primary Ashram
-                  </label>
-                  <select
-                    value={formData.ashramId}
-                    onChange={(e) =>
-                      setFormData({ ...formData, ashramId: e.target.value })
-                    }
-                    className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
-                  >
-                    <option value="">All My Owned Ashrams</option>
-                    {ashrams.map((a) => (
-                      <option key={a._id} value={a._id}>
-                        {a.name} ({a.address?.city})
-                      </option>
-                    ))}
-                  </select>
+                  <div>
+                    <label className="block text-[10px] font-black text-gray-400 mb-1">
+                      Select Primary Ashram
+                    </label>
+                    <select
+                      value={formData.ashramId}
+                      onChange={(e) =>
+                        setFormData({ ...formData, ashramId: e.target.value, roomId: "" })
+                      }
+                      className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                    >
+                      <option value="">All My Owned Ashrams</option>
+                      {ashrams.map((a) => (
+                        <option key={a._id} value={a._id}>
+                          {a.name} ({a.address?.city})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-gray-400 mb-1">
+                      Target Room Category {formData.isLastMinuteDeal ? "(Required for Last Minute Deal)" : "(Optional)"}
+                    </label>
+                    <select
+                      value={formData.roomId || ""}
+                      onChange={(e) =>
+                        setFormData({ ...formData, roomId: e.target.value })
+                      }
+                      className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                    >
+                      <option value="">All Room Categories (Whole Ashram)</option>
+                      {availableRooms.map((r) => (
+                        <option key={r._id} value={r._id}>
+                          {r.name} (Base Tariff: ₹{r.basePrice || 0}/night)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               )}
 
@@ -832,6 +892,11 @@ export const OwnerOffersPage: React.FC = () => {
                       }
                       className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-semibold"
                     />
+                    {formData.isLastMinuteDeal && (
+                      <span className="text-[10px] font-bold text-rose-600 dark:text-rose-400 mt-1 block">
+                        ⚡ Automatically expires tonight at 11:59 PM (23:59).
+                      </span>
+                    )}
                   </div>
                 </div>
               )}
