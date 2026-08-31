@@ -178,6 +178,8 @@ export const InventoryCalendarPage: React.FC = () => {
     }
   };
 
+  const selectedRoom = myRooms.find((r) => r._id === selectedRoomId);
+
   return (
     <div className="space-y-6 text-left w-full">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[24px] shadow-sm gap-4">
@@ -194,14 +196,14 @@ export const InventoryCalendarPage: React.FC = () => {
         {myAshrams.length > 0 && (
           <div className="flex flex-wrap items-center justify-end gap-3 shrink-0">
             <div className="flex items-center gap-2">
-              <label className="text-[10px] font-extrabold text-gray-400 tracking-wider">
-                Active Ashram
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                Active Ashram:
               </label>
               <select
                 value={selectedAshramId}
                 onChange={(e) => setSelectedAshramId(e.target.value)}
                 aria-label="Active ashram"
-                className="p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none"
+                className="p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs font-extrabold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6]"
               >
                 {myAshrams.length > 1 && (
                   <option value={ALL_ASHRAMS}>
@@ -216,14 +218,14 @@ export const InventoryCalendarPage: React.FC = () => {
               </select>
             </div>
             <div className="flex items-center gap-2">
-              <label className="text-[10px] font-extrabold text-gray-400 tracking-wider">
-                Active Category
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                Room Category:
               </label>
               <select
                 value={selectedRoomId}
                 disabled={myRooms.length === 0}
                 onChange={(e) => setSelectedRoomId(e.target.value)}
-                className="p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none disabled:opacity-50"
+                className="p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs font-extrabold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6] disabled:opacity-50"
               >
                 {myRooms.length === 0 && <option value="">No room categories</option>}
                 {myRooms.map((room) => (
@@ -239,6 +241,28 @@ export const InventoryCalendarPage: React.FC = () => {
         )}
       </div>
 
+      {selectedRoom && (
+        <div className="p-4.5 rounded-[22px] bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#0A4DA6]/10 text-[#0A4DA6] flex items-center justify-center font-black text-xs">
+              30D
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-[#0B192C] dark:text-white">
+                30-Day Inventory for: {selectedRoom.name}
+              </h3>
+              <p className="text-xs text-gray-400 font-semibold mt-0.5">
+                {selectedRoom.ashramName ? `${selectedRoom.ashramName} · ` : ""}
+                Base Price: ₹{selectedRoom.basePrice || 0} /night · Total Capacity: {selectedRoom.totalRooms || 1} Room(s)
+              </p>
+            </div>
+          </div>
+          <span className="px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 text-xs font-bold">
+            Live 30-Day Calendar Active
+          </span>
+        </div>
+      )}
+
       {loadingAshrams || loading ? (
         <div className="h-40 bg-gray-50 border border-gray-100 rounded-[24px] animate-pulse" />
       ) : (
@@ -249,11 +273,11 @@ export const InventoryCalendarPage: React.FC = () => {
               className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[20px] p-4.5 shadow-sm space-y-3 relative hover:border-[#0A4DA6]/50 transition-colors"
             >
               <div className="flex justify-between items-center border-b border-gray-50 dark:border-slate-850 pb-2">
-                <span className="text-[10px] font-bold text-gray-400 flex items-center gap-1">
-                  <CalendarIcon size={12} className="text-[#0A4DA6]" />{" "}
+                <span className="text-xs font-black text-[#0B192C] dark:text-white flex items-center gap-1.5">
+                  <CalendarIcon size={13} className="text-[#0A4DA6] shrink-0" />{" "}
                   {new Date(item.date).toLocaleDateString(undefined, {
-                    day: "numeric",
                     month: "short",
+                    day: "numeric",
                   })}
                 </span>
                 <button
@@ -265,7 +289,7 @@ export const InventoryCalendarPage: React.FC = () => {
                   className="p-1 hover:bg-gray-50 dark:hover:bg-slate-900 rounded text-gray-400 hover:text-[#0A4DA6] transition-colors cursor-pointer"
                   title="Override daily pricing"
                 >
-                  <Edit2 size={10} />
+                  <Edit2 size={12} />
                 </button>
               </div>
 

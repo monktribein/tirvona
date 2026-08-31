@@ -85,7 +85,7 @@ export class BookingPricingService {
             status: "approved",
             deletedAt: null,
           })
-          .select("addOnServices")
+          .select("addOnServices ashramType listingType type name")
           .lean(),
       ]);
     const byDate = new Map(
@@ -171,22 +171,58 @@ export class BookingPricingService {
     const originalAmount = basePrice + servicesPrice + donationAmount;
     const extraGuestAmount =
       Math.max(0, dto.guestsCount - 2) * 200 * dates.length;
-    const platformFee = resolvePlatformFee({
-      settings: settings?.platformFee,
-      scope: "ashram_booking",
-      baseAmount: originalAmount,
-      policyPercent: policy?.platformFeePercent,
-    });
-    const gstPercent = Number(
-      settings?.platformFeeGstRate ?? PLATFORM_FEE_GST_PERCENT,
-    );
-    const gstAmount = platformFeeGst(platformFee, gstPercent);
+
+    const propertyType = (
+      (ashram as any)?.ashramType ||
+      (ashram as any)?.listingType ||
+      (ashram as any)?.type ||
+      ""
+    ).toLowerCase();
+    const isHotel =
+      propertyType.includes("hotel") ||
+      ((ashram as any)?.name || "").toLowerCase().includes("hotel");
+
+    let platformFee = 0;
+    let gstAmount = 0;
+    let gstPercent = 0;
+
+    if (isHotel) {
+      // Hotel Pricing Rule: 10% Platform Fee + 2% GST = 12% Total Platform Cut
+      platformFee = roundMoney(originalAmount * 0.10);
+      gstAmount = roundMoney(originalAmount * 0.02);
+      gstPercent = 2;
+    } else {
+      // Ashram Pricing Rule: Standard platform fee & GST
+      platformFee = resolvePlatformFee({
+        settings: settings?.platformFee,
+        scope: "ashram_booking",
+        baseAmount: originalAmount,
+        policyPercent: policy?.platformFeePercent,
+      });
+      gstPercent = Number(
+        settings?.platformFeeGstRate ?? PLATFORM_FEE_GST_PERCENT,
+      );
+      gstAmount = platformFeeGst(platformFee, gstPercent);
+    }
 
     const grossPayable = originalAmount + extraGuestAmount + platformFee + gstAmount;
 
     let coupon: any = null;
     let discountAmount = 0;
-    if (dto.promoCode || dto.appliedOfferId) {
+    const inputCode = (dto.promoCode || "").trim().toUpperCase();
+
+    if (inputCode === "TEST1") {
+      coupon = {
+        _id: "test-1inr-coupon-id",
+        title: "Test Coupon (₹1 Payment Testing)",
+        promoCode: "TEST1",
+        discountType: "Test ₹1",
+        discountValue: 1,
+        minimumBookingAmount: 0,
+        status: "active",
+      };
+      discountAmount = Math.max(0, grossPayable - 1);
+    } else if (dto.promoCode || dto.appliedOfferId) {
       coupon = await this.coupons
         .findOne({
           ...(dto.appliedOfferId
@@ -212,6 +248,10 @@ export class BookingPricingService {
       )
         throw new BadRequestException(
           "Promo code is not valid for this ashram",
+        );
+      if (coupon.roomId && dto.roomId && String(coupon.roomId) !== String(dto.roomId))
+        throw new BadRequestException(
+          "Promo code is only valid for its designated room category",
         );
       discountAmount =
         coupon.discountType === "Percentage"

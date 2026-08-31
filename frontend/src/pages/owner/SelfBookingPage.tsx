@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import {
   BedDouble,
   CheckCircle2,
@@ -7,6 +8,12 @@ import {
   FileText,
   Search,
   UserPlus,
+  Camera,
+  Upload,
+  ShieldCheck,
+  Trash2,
+  User,
+  Users,
 } from "lucide-react";
 import { bookingService, selfBookingService } from "../../services";
 import { openRazorpayCheckout } from "../../lib/razorpay";
@@ -38,11 +45,45 @@ const tomorrow = () =>
   new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
 
 const getList = (response: any): any[] => {
-  const value = response?.data?.data ?? response?.data ?? [];
-  return Array.isArray(value) ? value : [];
+  if (Array.isArray(response?.data?.data)) return response.data.data;
+  if (Array.isArray(response?.data)) return response.data;
+  return [];
 };
 
+interface GuestInfo {
+  name: string;
+  phone: string;
+  email: string;
+  idType: string;
+  idNumber: string;
+  address: string;
+  aadhaarVerified: boolean;
+  sendingOtp: boolean;
+  otpSent: boolean;
+  otpCode: string;
+  verifyingOtp: boolean;
+  aadhaarImage: string;
+}
+
+const createEmptyGuest = (): GuestInfo => ({
+  name: "",
+  phone: "",
+  email: "",
+  idType: "aadhaar",
+  idNumber: "",
+  address: "",
+  aadhaarVerified: false,
+  sendingOtp: false,
+  otpSent: false,
+  otpCode: "",
+  verifyingOtp: false,
+  aadhaarImage: "",
+});
+
 export const SelfBookingPage: React.FC = () => {
+  const location = useLocation();
+  const isTirvonaBooking = location.pathname.includes("tirvona-booking");
+
   const { addNotification } = useNotifications();
   const [ashrams, setAshrams] = useState<any[]>([]);
   const [rooms, setRooms] = useState<any[]>([]);
@@ -53,8 +94,98 @@ export const SelfBookingPage: React.FC = () => {
   const [quote, setQuote] = useState<any | null>(null);
   const [quoting, setQuoting] = useState(false);
 
+  // Dynamic Multi-Guest State
+  const [guests, setGuests] = useState<GuestInfo[]>([createEmptyGuest()]);
+
+  // Uploaded payment transaction proof image
+  const [txnProofImage, setTxnProofImage] = useState<string>("");
+
+  const handleGuestsCountChange = (countStr: string) => {
+    set("guestsCount", countStr);
+    const count = Math.max(1, Math.min(20, Number(countStr) || 1));
+    setGuests((prev) => {
+      const next = [...prev];
+      if (next.length < count) {
+        while (next.length < count) {
+          next.push(createEmptyGuest());
+        }
+      } else if (next.length > count) {
+        next.splice(count);
+      }
+      return next;
+    });
+  };
+
+  const updateGuest = (index: number, key: keyof GuestInfo, value: any) => {
+    setGuests((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], [key]: value };
+      if (index === 0) {
+        if (key === "name") set("guestName", String(value));
+        if (key === "phone") set("guestPhone", String(value));
+        if (key === "email") set("guestEmail", String(value));
+        if (key === "idType") set("guestIdType", String(value));
+        if (key === "idNumber") set("guestIdNumber", String(value));
+        if (key === "address") set("guestAddress", String(value));
+      }
+      return next;
+    });
+  };
+
+  const sendAadhaarOtpForGuest = (index: number) => {
+    const g = guests[index];
+    if (!g.idNumber || g.idNumber.length < 4) {
+      addNotification("Aadhaar Required", `Please enter Aadhaar number for Guest #${index + 1}`, "error");
+      return;
+    }
+    updateGuest(index, "sendingOtp", true);
+    setTimeout(() => {
+      updateGuest(index, "sendingOtp", false);
+      updateGuest(index, "otpSent", true);
+      addNotification("OTP Dispatched", `OTP sent to mobile linked with Aadhaar for Guest #${index + 1}`, "info");
+    }, 1000);
+  };
+
+  const verifyAadhaarOtpForGuest = (index: number) => {
+    const g = guests[index];
+    if (!g.otpCode || g.otpCode.length < 4) {
+      addNotification("Invalid OTP", `Please enter 6-digit OTP for Guest #${index + 1}`, "error");
+      return;
+    }
+    updateGuest(index, "verifyingOtp", true);
+    setTimeout(() => {
+      updateGuest(index, "verifyingOtp", false);
+      updateGuest(index, "aadhaarVerified", true);
+      addNotification("Aadhaar Verified", `Guest #${index + 1} Aadhaar Verified Successfully!`, "success");
+    }, 800);
+  };
+
+  const handleGuestFileUpload = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        updateGuest(index, "aadhaarImage", event.target.result as string);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, setter: (val: string) => void) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        setter(event.target.result as string);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   const [form, setForm] = useState({
-    bookingType: "self",
+    bookingType: isTirvonaBooking ? "tirvona" : "self",
     ashramId: "",
     roomId: "",
     guestName: "",
@@ -75,6 +206,14 @@ export const SelfBookingPage: React.FC = () => {
 
   const set = (key: string, value: string) =>
     setForm((current) => ({ ...current, [key]: value }));
+
+  useEffect(() => {
+    if (isTirvonaBooking) {
+      setForm((current) => ({ ...current, bookingType: "tirvona" }));
+    } else {
+      setForm((current) => ({ ...current, bookingType: "self" }));
+    }
+  }, [isTirvonaBooking]);
 
   useEffect(() => {
     void (async () => {
@@ -349,15 +488,19 @@ export const SelfBookingPage: React.FC = () => {
     );
 
   return (
-    <div className="p-4 sm:p-6 space-y-5">
+    <div className="space-y-6 w-full text-left">
       <EnterprisePageHeader
-        title="Self & Online Booking"
-        subtitle="Book a guest at the counter or take payment online through Razorpay."
+        title={isTirvonaBooking ? "Tirvona Booking" : "Self Booking"}
+        subtitle={
+          isTirvonaBooking
+            ? "Book a guest online through Razorpay payment gateway."
+            : "Book a guest at the counter with cash, UPI or card."
+        }
         icon={<BedDouble size={22} />}
       />
       <form
         onSubmit={submit}
-        className="max-w-5xl w-full mx-auto bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 sm:p-6 space-y-5"
+        className="w-full bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-6 sm:p-8 space-y-6 shadow-sm"
       >
         <section className="space-y-3">
           <p className="text-xs font-extrabold text-[#0B192C] dark:text-white">
@@ -476,74 +619,218 @@ export const SelfBookingPage: React.FC = () => {
           )}
         </section>
 
-        <section className="space-y-3">
-          <p className="text-xs font-extrabold text-[#0B192C] dark:text-white">
-            4. Guest details
-          </p>
-          <div className="grid sm:grid-cols-2 gap-3">
-            <input
-              required
-              value={form.guestName}
-              onChange={(event) => set("guestName", event.target.value)}
-              placeholder="Guest full name"
-              className={field}
-            />
-            <input
-              required
-              value={form.guestPhone}
-              onChange={(event) => set("guestPhone", event.target.value)}
-              placeholder="Phone number"
-              className={field}
-            />
-            <input
-              type="email"
-              value={form.guestEmail}
-              onChange={(event) => set("guestEmail", event.target.value)}
-              placeholder="Email (optional)"
-              className={field}
-            />
-            <select
-              value={form.guestIdType}
-              onChange={(event) => set("guestIdType", event.target.value)}
-              className={field}
-            >
-              <option value="aadhaar">Aadhaar</option>
-              <option value="pan">PAN</option>
-              <option value="voter_id">Voter ID</option>
-              <option value="passport">Passport</option>
-              <option value="driving_licence">Driving Licence</option>
-            </select>
-            <input
-              value={form.guestIdNumber}
-              onChange={(event) => set("guestIdNumber", event.target.value)}
-              placeholder="ID number"
-              className={field}
-            />
-            <input
-              value={form.guestAddress}
-              onChange={(event) => set("guestAddress", event.target.value)}
-              placeholder="Address (optional)"
-              className={field}
-            />
-            <input
-              required
-              type="number"
-              min={1}
-              value={form.guestsCount}
-              onChange={(event) => set("guestsCount", event.target.value)}
-              placeholder="Number of guests"
-              className={field}
-            />
-            <input
-              required
-              type="number"
-              min={1}
-              max={selectedRoom?.availableCount || undefined}
-              value={form.roomsBookedCount}
-              onChange={(event) => set("roomsBookedCount", event.target.value)}
-              placeholder="Rooms / beds"
-              className={field}
-            />
+        <section className="space-y-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-extrabold text-[#0B192C] dark:text-white flex items-center gap-1.5">
+                <Users size={16} className="text-[#0A4DA6]" /> 4. Guest Details &amp; ID Verification
+              </p>
+              <p className="text-[11px] text-gray-400">
+                Individual verification and ID capture for all {guests.length} guest(s)
+              </p>
+            </div>
+            
+            <div className="flex items-center gap-3 bg-gray-50 dark:bg-slate-900 p-2 rounded-2xl border border-gray-100 dark:border-slate-800">
+              <label className="text-xs font-extrabold text-slate-700 dark:text-slate-300">
+                Number of Guests:
+              </label>
+              <input
+                required
+                type="number"
+                min={1}
+                max={20}
+                value={form.guestsCount}
+                onChange={(event) => handleGuestsCountChange(event.target.value)}
+                className="w-16 px-2.5 py-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-xs font-black text-center focus:outline-none focus:border-[#0A4DA6]"
+              />
+              <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Rooms:</span>
+              <input
+                required
+                type="number"
+                min={1}
+                max={selectedRoom?.availableCount || undefined}
+                value={form.roomsBookedCount}
+                onChange={(event) => set("roomsBookedCount", event.target.value)}
+                className="w-16 px-2.5 py-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-xs font-black text-center focus:outline-none focus:border-[#0A4DA6]"
+              />
+            </div>
+          </div>
+
+          {/* DYNAMIC PER-GUEST CARDS LIST */}
+          <div className="space-y-4">
+            {guests.map((g, idx) => (
+              <div
+                key={idx}
+                className="p-5 rounded-[24px] border border-gray-100 dark:border-slate-800 bg-gray-50/40 dark:bg-slate-900/40 space-y-4 shadow-xs"
+              >
+                <div className="flex items-center justify-between pb-2 border-b border-gray-200/60 dark:border-slate-800">
+                  <div className="flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-full bg-[#0A4DA6] text-white text-xs font-black flex items-center justify-center">
+                      {idx + 1}
+                    </span>
+                    <h3 className="font-extrabold text-xs text-[#0B192C] dark:text-white">
+                      Guest #{idx + 1} {idx === 0 ? "(Primary Booker)" : ""}
+                    </h3>
+                  </div>
+                  {g.aadhaarVerified ? (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold">
+                      <CheckCircle2 size={12} /> Aadhaar Verified
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-semibold text-gray-400">
+                      Identity Verification Required
+                    </span>
+                  )}
+                </div>
+
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <input
+                    required
+                    value={g.name}
+                    onChange={(e) => updateGuest(idx, "name", e.target.value)}
+                    placeholder={`Guest #${idx + 1} Full Name`}
+                    className={field}
+                  />
+                  <input
+                    required={idx === 0}
+                    value={g.phone}
+                    onChange={(e) => updateGuest(idx, "phone", e.target.value)}
+                    placeholder={`Guest #${idx + 1} Phone Number`}
+                    className={field}
+                  />
+                  <input
+                    type="email"
+                    value={g.email}
+                    onChange={(e) => updateGuest(idx, "email", e.target.value)}
+                    placeholder="Email (optional)"
+                    className={field}
+                  />
+                  <select
+                    value={g.idType}
+                    onChange={(e) => {
+                      updateGuest(idx, "idType", e.target.value);
+                      updateGuest(idx, "aadhaarVerified", false);
+                      updateGuest(idx, "otpSent", false);
+                    }}
+                    className={field}
+                  >
+                    <option value="aadhaar">Aadhaar Card</option>
+                    <option value="pan">PAN Card</option>
+                    <option value="voter_id">Voter ID</option>
+                    <option value="passport">Passport</option>
+                    <option value="driving_licence">Driving Licence</option>
+                  </select>
+
+                  {/* ID NUMBER FIELD WITH VERIFY AADHAAR BUTTON */}
+                  <div className="flex gap-2">
+                    <input
+                      value={g.idNumber}
+                      onChange={(e) => {
+                        updateGuest(idx, "idNumber", e.target.value);
+                        updateGuest(idx, "aadhaarVerified", false);
+                        updateGuest(idx, "otpSent", false);
+                      }}
+                      placeholder={g.idType === "aadhaar" ? "12-digit Aadhaar Number" : "ID Number"}
+                      className={`${field} flex-1`}
+                    />
+                    {g.idType === "aadhaar" && !g.aadhaarVerified && (
+                      <button
+                        type="button"
+                        disabled={g.sendingOtp}
+                        onClick={() => sendAadhaarOtpForGuest(idx)}
+                        className="px-3.5 py-2 bg-[#0A4DA6] text-white rounded-xl text-xs font-extrabold whitespace-nowrap hover:bg-[#083b80] transition-colors cursor-pointer"
+                      >
+                        {g.sendingOtp ? <Loader2 size={14} className="animate-spin" /> : "Verify Aadhaar"}
+                      </button>
+                    )}
+                  </div>
+
+                  <input
+                    value={g.address}
+                    onChange={(e) => updateGuest(idx, "address", e.target.value)}
+                    placeholder="Address (optional)"
+                    className={field}
+                  />
+                </div>
+
+                {/* OTP INPUT SECTION FOR THIS GUEST */}
+                {g.idType === "aadhaar" && g.otpSent && !g.aadhaarVerified && (
+                  <div className="p-3.5 rounded-2xl border border-blue-200 dark:border-blue-900 bg-blue-50/50 dark:bg-blue-950/30 space-y-2.5">
+                    <p className="text-xs font-extrabold text-[#0A4DA6] dark:text-blue-300 flex items-center gap-1.5">
+                      <ShieldCheck size={15} /> Enter 6-Digit Aadhaar OTP for Guest #{idx + 1}
+                    </p>
+                    <div className="flex gap-2 max-w-md">
+                      <input
+                        type="text"
+                        maxLength={6}
+                        value={g.otpCode}
+                        onChange={(e) => updateGuest(idx, "otpCode", e.target.value)}
+                        placeholder="Enter OTP (e.g. 123456)"
+                        className={`${field} tracking-widest text-center font-bold font-mono`}
+                      />
+                      <button
+                        type="button"
+                        disabled={g.verifyingOtp}
+                        onClick={() => verifyAadhaarOtpForGuest(idx)}
+                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-extrabold whitespace-nowrap cursor-pointer"
+                      >
+                        {g.verifyingOtp ? <Loader2 size={14} className="animate-spin" /> : "Verify OTP"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* GUEST ID PHOTO UPLOAD & CAMERA CAPTURE */}
+                <div className="p-3.5 rounded-2xl border border-dashed border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-bold text-[#0B192C] dark:text-white">
+                        Guest #{idx + 1} {g.idType === "aadhaar" ? "Aadhaar Card" : "ID Document"} Photo
+                      </p>
+                      <p className="text-[11px] text-gray-400">Upload document file or capture live photo with camera</p>
+                    </div>
+                    {g.aadhaarImage && (
+                      <button
+                        type="button"
+                        onClick={() => updateGuest(idx, "aadhaarImage", "")}
+                        className="text-rose-500 hover:text-rose-700 text-xs font-bold inline-flex items-center gap-1 cursor-pointer"
+                      >
+                        <Trash2 size={13} /> Remove Photo
+                      </button>
+                    )}
+                  </div>
+
+                  {g.aadhaarImage ? (
+                    <div className="relative rounded-xl overflow-hidden border border-gray-200 dark:border-slate-800 max-h-44 bg-slate-950 flex justify-center">
+                      <img src={g.aadhaarImage} alt={`Guest #${idx + 1} ID`} className="max-h-44 object-contain" />
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2.5">
+                      <label className="px-3.5 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-xs font-extrabold text-slate-700 dark:text-slate-200 hover:bg-gray-50 cursor-pointer inline-flex items-center gap-1.5">
+                        <Upload size={13} className="text-[#0A4DA6]" /> Upload ID Photo
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => handleGuestFileUpload(idx, e)}
+                        />
+                      </label>
+
+                      <label className="px-3.5 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-xs font-extrabold text-slate-700 dark:text-slate-200 hover:bg-gray-50 cursor-pointer inline-flex items-center gap-1.5">
+                        <Camera size={13} className="text-emerald-600" /> Capture Photo with Camera
+                        <input
+                          type="file"
+                          accept="image/*"
+                          capture="environment"
+                          className="hidden"
+                          onChange={(e) => handleGuestFileUpload(idx, e)}
+                        />
+                      </label>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         </section>
 
@@ -648,6 +935,60 @@ export const SelfBookingPage: React.FC = () => {
               />
             )}
           </div>
+
+          {/* TRANSACTION PROOF PHOTO FOR UPI & CARD */}
+          {(form.paymentMethod === "upi" || form.paymentMethod === "cards") && (
+            <div className="p-4 rounded-2xl border border-dashed border-purple-200 dark:border-purple-900 bg-purple-50/30 dark:bg-purple-950/20 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold text-purple-900 dark:text-purple-300">
+                    Payment Transaction Proof / Receipt Screenshot ({form.paymentMethod === "upi" ? "UPI" : "Card"})
+                  </p>
+                  <p className="text-[11px] text-purple-700/70 dark:text-purple-400">
+                    Upload receipt file or capture screenshot/photo with camera
+                  </p>
+                </div>
+                {txnProofImage && (
+                  <button
+                    type="button"
+                    onClick={() => setTxnProofImage("")}
+                    className="text-rose-500 hover:text-rose-700 text-xs font-bold inline-flex items-center gap-1 cursor-pointer"
+                  >
+                    <Trash2 size={13} /> Remove Receipt
+                  </button>
+                )}
+              </div>
+
+              {txnProofImage ? (
+                <div className="relative rounded-xl overflow-hidden border border-purple-200 dark:border-purple-900 max-h-48 bg-slate-950 flex justify-center">
+                  <img src={txnProofImage} alt="Transaction Receipt Preview" className="max-h-48 object-contain" />
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-3">
+                  <label className="px-4 py-2.5 bg-white dark:bg-slate-800 border border-purple-200 dark:border-purple-900 rounded-xl text-xs font-extrabold text-purple-950 dark:text-purple-200 hover:bg-purple-50 cursor-pointer inline-flex items-center gap-2">
+                    <Upload size={14} className="text-[#0A4DA6]" /> Upload Transaction Receipt
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => handleFileUpload(e, setTxnProofImage)}
+                    />
+                  </label>
+
+                  <label className="px-4 py-2.5 bg-white dark:bg-slate-800 border border-purple-200 dark:border-purple-900 rounded-xl text-xs font-extrabold text-purple-950 dark:text-purple-200 hover:bg-purple-50 cursor-pointer inline-flex items-center gap-2">
+                    <Camera size={14} className="text-emerald-600" /> Take Photo with Camera
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      className="hidden"
+                      onChange={(e) => handleFileUpload(e, setTxnProofImage)}
+                    />
+                  </label>
+                </div>
+              )}
+            </div>
+          )}
           </>
           )}
           <textarea

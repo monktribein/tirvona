@@ -729,6 +729,9 @@ const AppContent: React.FC = () => {
             <Route path="/owner/self-booking" element={<SelfBookingPage />} />
             <Route path="/ashram-admin/self-booking" element={<SelfBookingPage />} />
             <Route path="/ashram-owner/self-booking" element={<SelfBookingPage />} />
+            <Route path="/owner/tirvona-booking" element={<SelfBookingPage />} />
+            <Route path="/ashram-admin/tirvona-booking" element={<SelfBookingPage />} />
+            <Route path="/ashram-owner/tirvona-booking" element={<SelfBookingPage />} />
             {/* previous paths kept so existing links keep working */}
             <Route path="/owner/walk-in-booking" element={<SelfBookingPage />} />
             <Route path="/ashram-admin/walk-in-booking" element={<SelfBookingPage />} />

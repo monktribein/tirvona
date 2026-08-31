@@ -1215,7 +1215,7 @@ export const AdminDashboard: React.FC = () => {
                 { label: "Manage users", path: "/admin/users", icon: <Users size={17} />, tone: "bg-blue-50 text-blue-700" },
                 { label: "All bookings", path: "/admin/manage/bookings/all", icon: <Eye size={17} />, tone: "bg-violet-50 text-violet-700" },
                 { label: "Verification queue", path: "/admin/verifications", icon: <ClipboardCheck size={17} />, tone: "bg-amber-50 text-amber-700" },
-                { label: "Payout management", path: "/admin/payouts", icon: <Plus size={17} />, tone: "bg-emerald-50 text-emerald-700" },
+                { label: "Tirvona Account", path: "/admin/payouts", icon: <Plus size={17} />, tone: "bg-emerald-50 text-emerald-700" },
                 { label: "Audit logs", path: "/admin/audit-logs", icon: <Lock size={17} />, tone: "bg-rose-50 text-rose-700" },
                 { label: "Ashram management", path: "/admin/manage/ashrams/all", icon: <Building2 size={17} />, tone: "bg-cyan-50 text-cyan-700" },
               ].map((action) => (

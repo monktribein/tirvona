@@ -302,7 +302,7 @@ export const PayoutManagementPage: React.FC = () => {
       <section className="rounded-3xl border border-orange-200 bg-white p-6 mb-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="rounded-2xl bg-blue-50 p-3 text-[#0757b5]"><IndianRupee /></div>
-          <div><h1 className="text-2xl font-black">Payout Management</h1><p className="text-sm text-slate-500">Secure ashram earnings, bank accounts and RazorpayX reconciliation.</p></div>
+          <div><h1 className="text-2xl font-black">Tirvona Account</h1><p className="text-sm text-slate-500">Secure ashram earnings, bank accounts and RazorpayX reconciliation.</p></div>
         </div>
         <div className="flex gap-2">
           <select value={ashramId} onChange={(event) => { setAshramId(event.target.value); setPage(1); }} className="rounded-xl border border-orange-200 bg-white px-4 py-2 text-sm font-bold">
