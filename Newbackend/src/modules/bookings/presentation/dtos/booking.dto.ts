@@ -1,5 +1,5 @@
 import { PartialType } from "@nestjs/swagger";
-import { Type, Transform } from "class-transformer";
+import { Type } from "class-transformer";
 import {
   IsArray,
   IsBoolean,

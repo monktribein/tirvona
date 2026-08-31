@@ -786,6 +786,7 @@ const AppContent: React.FC = () => {
           >
             <Route path="/staff/reception" element={<ReceptionCheckinPage />} />
             <Route path="/staff/self-booking" element={<SelfBookingPage />} />
+            <Route path="/staff/tirvona-booking" element={<SelfBookingPage />} />
             <Route path="/staff/walk-in-booking" element={<SelfBookingPage />} />
           </Route>
 

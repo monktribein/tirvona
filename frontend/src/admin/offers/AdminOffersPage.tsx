@@ -85,7 +85,7 @@ export const AdminOffersPage: React.FC = () => {
   const { addNotification } = useNotifications();
   const { user } = useAuth();
   const isPlatformAdmin = Boolean(
-    user?.role && ["admin", "superadmin", "platform_admin"].includes(user.role),
+    user?.role && ["admin", "super_admin", "superadmin", "platform_admin"].includes(user.role),
   );
 
   const [offers, setOffers] = useState<any[]>([]);
