@@ -848,10 +848,12 @@ export class BookingsService {
       ];
     if (query.date) {
       const start = new Date(`${query.date}T00:00:00.000Z`);
-      filter.checkInDate = {
-        $gte: start,
-        $lt: new Date(start.getTime() + 86_400_000),
-      };
+      const nextDay = new Date(start.getTime() + 86_400_000);
+      filter.$or = [
+        { checkInDate: { $gte: start, $lt: nextDay } },
+        { occupiedDates: { $gte: start, $lt: nextDay } },
+        { checkInDate: { $lte: start }, checkOutDate: { $gt: start } },
+      ];
     }
     return this.bookings
       .find(filter)
@@ -1199,10 +1201,12 @@ export class BookingsService {
       })
       .sort({ scope: 1 })
       .lean();
+    const isHostOrAdminCancel = String(existing.customerId) !== user.id;
     const hoursBefore =
       (new Date(existing.checkInDate).getTime() - Date.now()) / 3_600_000;
-    const refundPercent =
-      hoursBefore >= Number(policy?.cancellationFreeHours ?? 24)
+    const refundPercent = isHostOrAdminCancel
+      ? 100
+      : hoursBefore >= Number(policy?.cancellationFreeHours ?? 24)
         ? Number(policy?.refundBeforeWindowPercent ?? 100)
         : Number(policy?.refundInsideWindowPercent ?? 0);
     return this.transactions.run(async (session) => {

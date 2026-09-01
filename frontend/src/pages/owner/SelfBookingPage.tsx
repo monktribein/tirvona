@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   BedDouble,
   CheckCircle2,
@@ -82,6 +82,7 @@ const createEmptyGuest = (): GuestInfo => ({
 
 export const SelfBookingPage: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const isTirvonaBooking = location.pathname.includes("tirvona-booking");
 
   const { addNotification } = useNotifications();
@@ -502,25 +503,71 @@ export const SelfBookingPage: React.FC = () => {
         onSubmit={submit}
         className="w-full bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-6 sm:p-8 space-y-6 shadow-sm"
       >
-        <section className="space-y-3">
+        <section className="space-y-2.5">
           <p className="text-xs font-extrabold text-[#0B192C] dark:text-white">
-            1. Booking type
+            1. Booking Channel
           </p>
-          <select
-            required
-            value={form.bookingType}
-            onChange={(event) => set("bookingType", event.target.value)}
-            className={field}
-          >
-            {BOOKING_TYPES.map((type) => (
-              <option key={type.id} value={type.id}>
-                {type.label}
-              </option>
-            ))}
-          </select>
-          <p className="text-[11px] text-gray-400">
-            {BOOKING_TYPES.find((type) => type.id === form.bookingType)?.hint}
-          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                set("bookingType", "self");
+                const targetPath = location.pathname.replace("tirvona-booking", "self-booking");
+                if (targetPath !== location.pathname) navigate(targetPath);
+              }}
+              className={`p-4 rounded-2xl border text-left transition flex items-start justify-between cursor-pointer ${
+                form.bookingType === "self"
+                  ? "border-[#0A4DA6] bg-blue-50/60 dark:bg-blue-950/40 ring-1 ring-[#0A4DA6]"
+                  : "border-gray-200 dark:border-slate-800 bg-gray-50/70 dark:bg-slate-900/60 hover:border-gray-300"
+              }`}
+            >
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-black text-slate-900 dark:text-white">
+                    Self Counter Booking
+                  </span>
+                  {form.bookingType === "self" && (
+                    <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-[#0A4DA6] text-white">
+                      Selected
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] text-gray-500 dark:text-gray-400 font-medium">
+                  Direct counter reservation — guest pays at reception via Cash, UPI, or Card.
+                </p>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                set("bookingType", "tirvona");
+                const targetPath = location.pathname.replace("self-booking", "tirvona-booking");
+                if (targetPath !== location.pathname) navigate(targetPath);
+              }}
+              className={`p-4 rounded-2xl border text-left transition flex items-start justify-between cursor-pointer ${
+                form.bookingType === "tirvona"
+                  ? "border-[#0A4DA6] bg-blue-50/60 dark:bg-blue-950/40 ring-1 ring-[#0A4DA6]"
+                  : "border-gray-200 dark:border-slate-800 bg-gray-50/70 dark:bg-slate-900/60 hover:border-gray-300"
+              }`}
+            >
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-black text-slate-900 dark:text-white">
+                    Tirvona Online Booking
+                  </span>
+                  {form.bookingType === "tirvona" && (
+                    <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-600 text-white">
+                      Selected
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] text-gray-500 dark:text-gray-400 font-medium">
+                  Online reservation — guest pays via Tirvona Razorpay gateway exactly like a website booking.
+                </p>
+              </div>
+            </button>
+          </div>
         </section>
 
         <section className="space-y-3">

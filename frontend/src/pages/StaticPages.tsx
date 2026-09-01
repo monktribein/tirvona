@@ -461,6 +461,12 @@ export const StayPoliciesPage: React.FC = () => (
         </p>
       </StaticSection>
 
+      <StaticSection title="Ashram-Initiated Room Cancellations">
+        <p>
+          In the rare event that a room reservation is cancelled by the ashram or stay management (due to emergency maintenance, unexpected events, or unforeseen circumstances), the guest is entitled to a <strong className="text-[#0E7B6C] font-extrabold">100% full refund</strong> of all payments made, processed promptly back to the original payment source.
+        </p>
+      </StaticSection>
+
       <StaticSection title="Damage & Liability">
         <p>
           Guests are responsible for any damage caused to ashram property during
@@ -545,7 +551,7 @@ export const TermsPage: React.FC = () => (
         </p>
         <p>
           Prices are inclusive of applicable taxes unless otherwise stated. GST
-          is charged at the applicable slab based on per-night room tariff.
+          is charged at the applicable slab based on per-night room tariff. If a booking is cancelled from the ashram or host management side, a 100% full refund is guaranteed to the customer without any platform deductions.
         </p>
       </StaticSection>
       <StaticSection title="5. Limitation of Liability">
