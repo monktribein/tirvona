@@ -644,7 +644,7 @@ export const OfflineInventoryPage: React.FC = () => {
                 ) : (
                   transferRoomCategories.map((cat) => (
                     <option key={cat._id} value={cat._id}>
-                      {cat.name} ({cat.totalRooms || 0} total rooms)
+                      {cat.name} ({cat.totalInventory ?? cat.totalRooms ?? 0} total rooms)
                     </option>
                   ))
                 )}

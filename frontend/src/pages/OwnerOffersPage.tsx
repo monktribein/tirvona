@@ -318,9 +318,21 @@ export const OwnerOffersPage: React.FC = () => {
       o.offerTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
       o.promoCode.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesStatus =
-      selectedStatus === "All" ||
-      o.status.toLowerCase() === selectedStatus.toLowerCase();
+    const isExpired = Boolean(o.validTill && new Date(o.validTill).getTime() < Date.now()) || o.status === "expired";
+    const isScheduled = Boolean(o.validFrom && new Date(o.validFrom).getTime() > Date.now()) || o.status === "scheduled";
+    const isActive = o.status === "active" && !isExpired && !isScheduled;
+
+    let matchesStatus = true;
+    if (selectedStatus === "Active") {
+      matchesStatus = isActive;
+    } else if (selectedStatus === "Expired") {
+      matchesStatus = isExpired;
+    } else if (selectedStatus === "Scheduled") {
+      matchesStatus = isScheduled;
+    } else if (selectedStatus !== "All") {
+      matchesStatus = o.status.toLowerCase() === selectedStatus.toLowerCase();
+    }
+
     const matchesCat =
       selectedCategoryFilter === "All" ||
       o.offerType === selectedCategoryFilter;

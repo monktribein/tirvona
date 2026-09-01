@@ -253,7 +253,7 @@ export const InventoryCalendarPage: React.FC = () => {
               </h3>
               <p className="text-xs text-gray-400 font-semibold mt-0.5">
                 {selectedRoom.ashramName ? `${selectedRoom.ashramName} · ` : ""}
-                Base Price: ₹{selectedRoom.basePrice || 0} /night · Total Capacity: {selectedRoom.totalRooms || 1} Room(s)
+                Base Price: ₹{selectedRoom.basePrice || 0} /night · Total Capacity: {selectedRoom.totalInventory ?? selectedRoom.totalRooms ?? 1} Room(s)
               </p>
             </div>
           </div>
