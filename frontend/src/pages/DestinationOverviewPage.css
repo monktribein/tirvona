@@ -1,0 +1,225 @@
+/* DestinationOverviewPage — page-specific styles
+   All colours reference existing Tirvona CSS variables. */
+
+/* ── Hero ──────────────────────────────────────────────────────────────────── */
+.dest-hero {
+  position: relative;
+  overflow: hidden;
+  min-height: 340px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (min-width: 640px) {
+  .dest-hero {
+    min-height: 420px;
+  }
+}
+
+.dest-hero__bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.dest-hero__overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to right,
+    rgba(11, 25, 44, 0.82) 0%,
+    rgba(11, 25, 44, 0.55) 50%,
+    rgba(0, 0, 0, 0.3) 100%
+  );
+}
+
+.dark .dest-hero__overlay {
+  background: linear-gradient(
+    to right,
+    rgba(7, 15, 27, 0.92) 0%,
+    rgba(7, 15, 27, 0.65) 50%,
+    transparent 100%
+  );
+}
+
+/* ── Quick Stats ───────────────────────────────────────────────────────────── */
+.dest-stats-strip {
+  display: flex;
+  gap: 0.75rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  padding-bottom: 0.25rem;
+}
+
+.dest-stats-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.dest-stat-pill {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 5.5rem;
+  padding: 0.875rem 1.25rem;
+  border-radius: 1.25rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.dest-stat-pill:hover {
+  transform: translateY(-2px);
+  border-color: var(--primary);
+}
+
+/* ── Horizontal Scroll Containers ──────────────────────────────────────────── */
+.dest-scroll-row {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  padding-bottom: 0.5rem;
+}
+
+.dest-scroll-row::-webkit-scrollbar {
+  display: none;
+}
+
+.dest-scroll-row > * {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+}
+
+/* ── Card image hover zoom ─────────────────────────────────────────────────── */
+.dest-card-img-wrap {
+  overflow: hidden;
+  border-radius: 1.25rem 1.25rem 0 0;
+}
+
+.dest-card-img-wrap img {
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+}
+
+.dest-card-img-wrap:hover img,
+.group:hover .dest-card-img-wrap img {
+  transform: scale(1.06);
+}
+
+
+/* ── Category Tabs ─────────────────────────────────────────────────────────── */
+.dest-tab {
+  padding: 0.5rem 1.25rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  border: 1.5px solid var(--border);
+  background: var(--card);
+  color: var(--foreground);
+  transition: all 0.2s ease;
+}
+
+.dest-tab:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.dest-tab--active {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border-color: var(--primary);
+}
+
+/* ── Section heading accent (Kalam font) ───────────────────────────────────── */
+.dest-section-title {
+  font-family: "Kalam", cursive, sans-serif;
+  color: #e58c28;
+}
+
+/* ── Plan Your Visit grid ──────────────────────────────────────────────────── */
+.dest-plan-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .dest-plan-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* ── Ashram selector dropdown ──────────────────────────────────────────────── */
+.dest-ashram-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%230A4DA6' viewBox='0 0 16 16'%3E%3Cpath d='M1.5 5.5l6.5 6 6.5-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 12px;
+  padding-right: 2rem;
+  border: 1.5px solid var(--border);
+  border-radius: 9999px;
+  padding: 0.5rem 2.25rem 0.5rem 1rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--foreground);
+  background-color: var(--card);
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.dest-ashram-select:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+/* ── Badge ─────────────────────────────────────────────────────────────────── */
+.dest-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.dest-badge--tirvona {
+  background: rgba(10, 77, 166, 0.12);
+  color: #0a4da6;
+}
+
+.dark .dest-badge--tirvona {
+  background: rgba(10, 77, 166, 0.25);
+  color: #6bb3ff;
+}
+
+.dest-badge--info {
+  background: rgba(100, 116, 139, 0.12);
+  color: #64748b;
+}
+
+/* ── Skeleton cards ────────────────────────────────────────────────────────── */
+.dest-skeleton-card {
+  border-radius: 1.5rem;
+  min-height: 260px;
+}
+
+@media (min-width: 640px) {
+  .dest-skeleton-card {
+    min-height: 300px;
+  }
+}

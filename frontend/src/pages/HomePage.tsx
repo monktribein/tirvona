@@ -7,6 +7,16 @@ import { ashramService, reviewService, marketplaceService } from "../services";
 import { visitorArticleService } from "../services/visitorArticleService";
 import { formatCurrency } from "../utils/format";
 import { toTitleCase } from "../utils/textCase";
+const EXCLUDED_DESTINATIONS = new Set([
+  "ayodhya",
+  "ujjain",
+  "varanasi",
+  "varanshi",
+  "kashi",
+  "govardhan",
+  "goverdhan",
+  "barsana",
+]);
 import { CouponVoucherCard } from "../components/CouponVoucherCard";
 import { DateRangePicker } from "../components/DateRangePicker";
 import { GuestRoomSelector } from "../components/shared/GuestRoomSelector";
@@ -98,6 +108,7 @@ export const HomePage: React.FC = () => {
 
   const [publishedCms, setPublishedCms] = useState<any>({});
   const [publishedFeatured, setPublishedFeatured] = useState<any>({});
+  const [destinationsData, setDestinationsData] = useState<any[]>([]);
 
   useEffect(() => {
     fetchStays();
@@ -105,6 +116,7 @@ export const HomePage: React.FC = () => {
     fetchFeedbacks();
     fetchPublishedCms();
     fetchPublishedFeatured();
+    fetchDestinations();
     const handleClickOutside = (event: MouseEvent) => {
       if (
         autocompleteRef.current &&
@@ -176,6 +188,17 @@ export const HomePage: React.FC = () => {
       if (res.data.success) setFeedbacks(res.data.data);
     } catch (err) {
       console.error("Fetch recent reviews error:", err);
+    }
+  };
+
+  const fetchDestinations = async () => {
+    try {
+      const destRes = await ashramService.destinations();
+      if (destRes.data?.success) {
+        setDestinationsData(destRes.data.data || []);
+      }
+    } catch (err) {
+      console.warn("Error fetching destinations for home:", err);
     }
   };
 
@@ -553,6 +576,15 @@ export const HomePage: React.FC = () => {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    if (searchTab === "destinations" && destination.trim()) {
+      const slug = destination
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+      navigate(`/destination/${slug}`);
+      return;
+    }
     updateBookingSearch({
       destination,
       checkIn,
@@ -703,8 +735,6 @@ export const HomePage: React.FC = () => {
   };
 
   const sacredDestinations = useMemo(() => {
-    if (!ashrams || ashrams.length === 0) return [];
-
     const destMap = new Map<
       string,
       {
@@ -717,6 +747,24 @@ export const HomePage: React.FC = () => {
       }
     >();
 
+    // 1. Ingest backend aggregated destinations directly from database
+    destinationsData.forEach((d: any) => {
+      const city = d.city?.trim();
+      if (!city) return;
+      const key = city.toLowerCase();
+      if (EXCLUDED_DESTINATIONS.has(key)) return;
+
+      destMap.set(key, {
+        name: toTitleCase(city),
+        state: toTitleCase(d.state || "India"),
+        img: d.image || "",
+        count: d.count || 0,
+        ratingSum: (d.avgRating || 4.8) * (d.count || 1),
+        ratingCount: d.count || 1,
+      });
+    });
+
+    // 2. Ingest active ashrams from database (dynamically updates counts & live photos)
     ashrams.forEach((a: any) => {
       const city =
         a.address?.city?.trim() ||
@@ -725,6 +773,8 @@ export const HomePage: React.FC = () => {
       if (!city) return;
 
       const key = city.toLowerCase();
+      if (EXCLUDED_DESTINATIONS.has(key)) return;
+
       const primaryImg =
         (Array.isArray(a.images) &&
           a.images.find(
@@ -749,7 +799,9 @@ export const HomePage: React.FC = () => {
           ratingCount: ratingVal ? 1 : 0,
         });
       } else {
-        existing.count += 1;
+        if (!destinationsData.some((d: any) => String(d.city).toLowerCase() === key)) {
+          existing.count += 1;
+        }
         if (!existing.img && primaryImg) {
           existing.img = primaryImg;
         }
@@ -760,14 +812,21 @@ export const HomePage: React.FC = () => {
       }
     });
 
-    return Array.from(destMap.values()).map((d) => ({
-      name: d.name,
-      state: d.state,
-      rating: d.ratingCount > 0 ? (d.ratingSum / d.ratingCount).toFixed(1) : "4.8",
-      tours: `${d.count} ${d.count === 1 ? "Stay" : "Stays"}`,
-      img: d.img,
-    }));
-  }, [ashrams]);
+    return Array.from(destMap.values())
+      .filter((d) => !EXCLUDED_DESTINATIONS.has(d.name.toLowerCase()))
+      .map((d) => ({
+        name: d.name,
+        state: d.state,
+        rating:
+          d.ratingCount > 0
+            ? (d.ratingSum / d.ratingCount).toFixed(1)
+            : "4.8",
+        tours: `${d.count} ${d.count === 1 ? "Stay" : "Stays"}`,
+        img:
+          d.img ||
+          "https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=800&q=80",
+      }));
+  }, [destinationsData, ashrams]);
 
   const customerFeedbacks = feedbacks.map((r, i) => ({
     name: r.ashramId?.name || "Ashram stay",
@@ -1223,8 +1282,9 @@ export const HomePage: React.FC = () => {
             <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
           </div>
           <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-xl mx-auto leading-relaxed">
-            Explore sacred cities across India including Vrindavan, Mathura,
-            Goverdhan, Barsana, and Haridwar.
+            {publishedCms.destinations_banner?.subtitle ||
+              publishedCms.destinations_banner?.description ||
+              "Discover sacred holy destinations across India with verified ashrams, dharamshalas, secure parking, and divine temples."}
           </p>
           <button
             type="button"
@@ -1243,7 +1303,7 @@ export const HomePage: React.FC = () => {
               <div
                 onClick={() =>
                   navigate(
-                    `/search?destination=${encodeURIComponent(item.name)}${checkIn ? `&checkIn=${checkIn}` : ""}${checkOut ? `&checkOut=${checkOut}` : ""}${totalGuests ? `&guests=${totalGuests}` : ""}`,
+                    `/destination/${item.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")}`,
                   )
                 }
                 className="flex-shrink-0 relative group cursor-pointer"

@@ -281,6 +281,7 @@ const CircuitApprovalsPage = lazy(
 );
 const LocalServicesHubPage = lazy(() => import("./pages/LocalServicesHubPage"));
 const ServicesHubPage = lazy(() => import("./pages/ServicesHubPage"));
+const DestinationOverviewPage = lazy(() => import("./pages/DestinationOverviewPage"));
 const MarketplaceHubPage = lazy(() => import("./pages/MarketplaceHubPage"));
 const MarketplaceProductDetailPage = lazy(
   () => import("./pages/MarketplaceProductDetailPage"),
@@ -472,7 +473,11 @@ const AppContent: React.FC = () => {
             <Route path="/destinations" element={<CircuitsHubPage />} />
             <Route
               path="/destinations/:city"
-              element={<CircuitDetailPage />}
+              element={<DestinationOverviewPage />}
+            />
+            <Route
+              path="/destination/:slug"
+              element={<DestinationOverviewPage />}
             />
             <Route path="/temples" element={<TemplesPage />} />
             <Route path="/temples/:slug" element={<TempleDetailPage />} />
