@@ -15,6 +15,7 @@ import {
 import { useLanguage } from "../contexts/LanguageContext";
 import { hiUi } from "../i18n/resources";
 import { useNearbyAshramDiscovery } from "../hooks/useNearbyAshramDiscovery";
+import { toTitleCase } from "../utils/textCase";
 import {
   Filter,
   MapPin,
@@ -32,6 +33,8 @@ import {
   Clock,
   BedDouble,
   CheckCircle2,
+  ArrowRight,
+  Sparkles,
 } from "lucide-react";
 
 export const SearchPage: React.FC = () => {
@@ -692,6 +695,30 @@ export const SearchPage: React.FC = () => {
             }
             count={results.length}
           />
+
+          {rawDestination && !loading && (
+            <div className="bg-gradient-to-r from-[#0A4DA6]/10 via-[#E58C28]/10 to-transparent border border-[rgba(229,140,40,0.35)] rounded-[24px] p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#0A4DA6]/10 text-[#0A4DA6] text-[10px] font-black uppercase tracking-wider">
+                    <Sparkles size={11} className="text-[#E58C28]" /> Destination Guide
+                  </span>
+                  <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white">
+                    {toTitleCase(rawDestination)} Overview
+                  </h3>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                  Plan your visit with complete ashrams, parking, prasad, and sacred temples in {toTitleCase(rawDestination)}.
+                </p>
+              </div>
+              <Link
+                to={`/destination/${rawDestination.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")}`}
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-[#083b80] text-white text-xs font-extrabold transition-all shrink-0 shadow-sm"
+              >
+                Explore {toTitleCase(rawDestination)} <ArrowRight size={13} />
+              </Link>
+            </div>
+          )}
 
           {loading ? (
             <div className="space-y-4">

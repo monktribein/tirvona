@@ -23,6 +23,7 @@ export interface TirvonaMapProps {
   className?: string;
   interactive?: boolean;
   fitToMarkers?: boolean;
+  activeMarkerId?: string;
   onMarkerClick?: (id: string) => void;
   onMapClick?: (latitude: number, longitude: number) => void;
   draggableMarker?: boolean;
@@ -69,13 +70,15 @@ const buildPopup = (marker: MapMarker) => {
   const subtitle = marker.subtitle
     ? `<p style="margin:2px 0 0;font-size:11px;color:#64748b;font-weight:500;">${esc(marker.subtitle)}</p>`
     : "";
+  const gmapsLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(marker.title + " " + (marker.subtitle || ""))}`;
   const link = marker.href
     ? `<a href="${esc(marker.href)}" style="display:inline-block;margin-top:6px;font-size:11px;font-weight:800;color:#0A4DA6;text-decoration:none;">View details →</a>`
-    : "";
+    : `<a href="${gmapsLink}" target="_blank" rel="noopener noreferrer" style="display:inline-block;margin-top:6px;font-size:11px;font-weight:800;color:#0A4DA6;text-decoration:none;">Open in Google Maps ↗</a>`;
 
-  return `<div style="min-width:150px;font-family:Inter,system-ui,sans-serif;">
+  return `<div style="min-width:160px;font-family:Inter,system-ui,sans-serif;">
       <p style="margin:0;font-size:12px;font-weight:800;color:#0B192C;">${esc(marker.title)}</p>
-      ${subtitle}${link}
+      ${subtitle}
+      <div>${link}</div>
     </div>`;
 };
 
@@ -87,6 +90,7 @@ export const TirvonaMapView: React.FC<TirvonaMapProps> = ({
   className = "",
   interactive = true,
   fitToMarkers = false,
+  activeMarkerId,
   onMarkerClick,
   onMapClick,
   draggableMarker = false,
@@ -155,16 +159,20 @@ export const TirvonaMapView: React.FC<TirvonaMapProps> = ({
 
     layer.clearLayers();
 
+    let targetPin: L.Marker | null = null;
+
     validMarkers.forEach((m) => {
+      const isActive = Boolean(m.active || (activeMarkerId && m.id === activeMarkerId));
+      const markerData = isActive ? { ...m, active: true } : m;
       const pin = L.marker([m.latitude, m.longitude], {
-        icon: buildIcon(m),
+        icon: buildIcon(markerData),
         draggable: draggableMarker,
         keyboard: true,
         title: m.title,
         alt: m.title,
       });
 
-      if (m.title || m.subtitle) pin.bindPopup(buildPopup(m));
+      if (m.title || m.subtitle) pin.bindPopup(buildPopup(markerData));
       if (onMarkerClick) pin.on("click", () => onMarkerClick(m.id));
       if (draggableMarker && onMarkerDrag) {
         pin.on("dragend", () => {
@@ -174,9 +182,15 @@ export const TirvonaMapView: React.FC<TirvonaMapProps> = ({
       }
 
       pin.addTo(layer);
+
+      if (isActive) {
+        targetPin = pin;
+      }
     });
 
-    if (fitToMarkers && validMarkers.length > 0) {
+    if (targetPin) {
+      (targetPin as L.Marker).openPopup();
+    } else if (fitToMarkers && validMarkers.length > 0) {
       const bounds = L.latLngBounds(
         validMarkers.map((m) => [m.latitude, m.longitude] as [number, number]),
       );
@@ -190,6 +204,7 @@ export const TirvonaMapView: React.FC<TirvonaMapProps> = ({
     validMarkers,
     fitToMarkers,
     draggableMarker,
+    activeMarkerId,
     onMarkerClick,
     onMarkerDrag,
   ]);
@@ -202,12 +217,11 @@ export const TirvonaMapView: React.FC<TirvonaMapProps> = ({
     if (
       !map ||
       centerLat === undefined ||
-      centerLng === undefined ||
-      fitToMarkers
+      centerLng === undefined
     )
       return;
-    map.setView([centerLat, centerLng], zoom);
-  }, [ready, centerLat, centerLng, zoom, fitToMarkers]);
+    map.setView([centerLat, centerLng], zoom, { animate: true });
+  }, [ready, centerLat, centerLng, zoom]);
 
   useEffect(() => {
     const map = mapRef.current;

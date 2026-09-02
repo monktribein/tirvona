@@ -51,4 +51,4 @@ export const bookingUrl = (booking: {
   `/booking/${clean(booking?.bookingId) || booking?._id || booking?.id || ""}`;
 
 export const destinationUrl = (city: string): string =>
-  `/destinations/${clean(city).replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")}`;
+  `/destination/${clean(city).replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")}`;
