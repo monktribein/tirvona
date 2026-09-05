@@ -7,6 +7,7 @@ import { ashramService, reviewService, marketplaceService } from "../services";
 import { visitorArticleService } from "../services/visitorArticleService";
 import { formatCurrency } from "../utils/format";
 import { toTitleCase } from "../utils/textCase";
+import { getDestinationBySlug } from "../data/destinationData";
 const EXCLUDED_DESTINATIONS = new Set([
   "ayodhya",
   "ujjain",
@@ -814,18 +815,22 @@ export const HomePage: React.FC = () => {
 
     return Array.from(destMap.values())
       .filter((d) => !EXCLUDED_DESTINATIONS.has(d.name.toLowerCase()))
-      .map((d) => ({
-        name: d.name,
-        state: d.state,
-        rating:
-          d.ratingCount > 0
-            ? (d.ratingSum / d.ratingCount).toFixed(1)
-            : "4.8",
-        tours: `${d.count} ${d.count === 1 ? "Stay" : "Stays"}`,
-        img:
-          d.img ||
-          "https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=800&q=80",
-      }));
+      .map((d) => {
+        const staticDest = getDestinationBySlug(d.name);
+        return {
+          name: d.name,
+          state: staticDest?.state || d.state,
+          rating:
+            d.ratingCount > 0
+              ? (d.ratingSum / d.ratingCount).toFixed(1)
+              : "4.8",
+          tours: `${d.count} ${d.count === 1 ? "Stay" : "Stays"}`,
+          img:
+            staticDest?.heroImage ||
+            d.img ||
+            "https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=800&q=80",
+        };
+      });
   }, [destinationsData, ashrams]);
 
   const customerFeedbacks = feedbacks.map((r, i) => ({

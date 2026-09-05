@@ -213,6 +213,8 @@ const SmartContactAnalyticsPage = lazy(
 const namedPage = <T extends Record<string, React.ComponentType<any>>>(
   loader: () => Promise<T>,
   name: keyof T,
+) => lazy(() => loader().then((module) => ({ default: module[name] })));
+
 const SacredDirectoryModulePage = namedPage(
   () => import("./pages/SacredDirectoryModulePage"),
   "SacredDirectoryModulePage",

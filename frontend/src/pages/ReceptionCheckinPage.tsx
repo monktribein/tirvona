@@ -194,7 +194,8 @@ export const ReceptionCheckinPage: React.FC = () => {
     });
     if (roomNo === null) return;
     try {
-      const res = await bookingService.assignRoomNumber(bookingId, roomNo);
+      const roomNumbersArray = roomNo.split(",").map(s => s.trim()).filter(Boolean);
+      const res = await bookingService.assignRoomNumber(bookingId, roomNumbersArray);
       if (res.data?.success) {
         addNotification(
           "Room Assigned",
@@ -323,7 +324,11 @@ export const ReceptionCheckinPage: React.FC = () => {
 
                     <td className="py-3.5 px-3 sm:px-4 text-gray-500 dark:text-gray-400 whitespace-nowrap">
                       <div className="font-medium">{bk.roomId?.name || "Room"}</div>
-                      {bk.assignedRoomNumber ? (
+                      {bk.assignedRoomNumbers && bk.assignedRoomNumbers.length > 0 ? (
+                        <span className="inline-block mt-0.5 px-2 py-0.5 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 text-[10px] font-bold rounded">
+                          {bk.assignedRoomNumbers.join(", ")}
+                        </span>
+                      ) : bk.assignedRoomNumber ? (
                         <span className="inline-block mt-0.5 px-2 py-0.5 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 text-[10px] font-bold rounded">
                           {bk.assignedRoomNumber}
                         </span>

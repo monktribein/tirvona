@@ -346,12 +346,17 @@ export const ProfileBookingsPage: React.FC = () => {
                         </p>
                       )}
 
-                      {b.assignedRoomNumber && (
+                      {(b.assignedRoomNumbers && b.assignedRoomNumbers.length > 0) ? (
+                        <p className="inline-flex items-center gap-1.5 bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 px-2.5 py-1 rounded-full text-[10px] font-black">
+                          <BedDouble size={11} /> Assigned:{" "}
+                          {b.assignedRoomNumbers.join(", ")}
+                        </p>
+                      ) : b.assignedRoomNumber ? (
                         <p className="inline-flex items-center gap-1.5 bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 px-2.5 py-1 rounded-full text-[10px] font-black">
                           <BedDouble size={11} /> Assigned:{" "}
                           {b.assignedRoomNumber}
                         </p>
-                      )}
+                      ) : null}
 
                       {b.kind === "stay" && (
                         <span className="inline-flex items-center gap-1 bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 px-2.5 py-1 rounded-full text-[10px] font-bold">
@@ -525,7 +530,16 @@ export const ProfileBookingsPage: React.FC = () => {
                   </span>
                 </div>
 
-                {selectedReceipt.assignedRoomNumber && (
+                {(selectedReceipt.assignedRoomNumbers && selectedReceipt.assignedRoomNumbers.length > 0) ? (
+                  <div className="flex justify-between">
+                    <span className="text-gray-400 font-bold">
+                      Assigned Rooms:
+                    </span>
+                    <span className="font-bold text-purple-600 dark:text-purple-400">
+                      {selectedReceipt.assignedRoomNumbers.join(", ")}
+                    </span>
+                  </div>
+                ) : selectedReceipt.assignedRoomNumber ? (
                   <div className="flex justify-between">
                     <span className="text-gray-400 font-bold">
                       Assigned Room:
@@ -534,7 +548,7 @@ export const ProfileBookingsPage: React.FC = () => {
                       {selectedReceipt.assignedRoomNumber}
                     </span>
                   </div>
-                )}
+                ) : null}
 
                 <div className="flex justify-between">
                   <span className="text-gray-400 font-bold">

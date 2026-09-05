@@ -43,27 +43,41 @@ export class BookingPricingService {
     const dates = eachNight(start, end);
     if (!dates.length || dates.length > 30)
       throw new BadRequestException("A stay must be between 1 and 30 nights");
-    const room = await this.rooms
-      .findOne({
-        _id: dto.roomId,
+    const roomIds = dto.rooms.map((r) => r.roomId);
+    const dbRooms = await this.rooms
+      .find({
+        _id: { $in: roomIds },
         ashramId: dto.ashramId,
         status: "active",
         deletedAt: null,
       })
       .lean();
-    if (!room) throw new NotFoundException("Room category not found");
-    if (dto.guestsCount > room.capacity * dto.roomsBookedCount)
+    if (dbRooms.length !== roomIds.length) {
+      throw new NotFoundException("One or more room categories not found");
+    }
+
+    let totalCapacity = 0;
+    const roomMap = new Map();
+    for (const r of dbRooms) {
+       roomMap.set(String(r._id), r);
+    }
+    for (const r of dto.rooms) {
+       const dbRoom = roomMap.get(String(r.roomId));
+       totalCapacity += (dbRoom.capacity || 1) * r.units;
+    }
+
+    if (dto.guestsCount > totalCapacity)
       throw new BadRequestException(
-        "Guest count exceeds the selected room capacity",
+        "Guest count exceeds the selected rooms capacity",
       );
     const [availability, rules, addonRows, policy, settings, ashram] =
       await Promise.all([
-        this.inventory.find({ roomId: room._id, date: { $in: dates } }).lean(),
+        this.inventory.find({ roomId: { $in: roomIds }, date: { $in: dates } }).lean(),
         this.pricingRules
           .find({
             ashramId: dto.ashramId,
             isActive: true,
-            $or: [{ roomId: null }, { roomId: room._id }],
+            $or: [{ roomId: null }, { roomId: { $in: roomIds } }],
           })
           .sort({ priority: -1 })
           .lean(),
@@ -88,31 +102,34 @@ export class BookingPricingService {
           .select("addOnServices ashramType listingType type name")
           .lean(),
       ]);
-    const byDate = new Map(
-      availability.map((row: any) => [
-        new Date(row.date).toISOString().slice(0, 10),
-        row,
-      ]),
-    );
+
     let basePrice = 0;
     for (const date of dates) {
-      const day = byDate.get(date.toISOString().slice(0, 10)) as any;
-      const rule = rules.find(
-        (r: any) =>
-          (!r.validFrom || date >= new Date(r.validFrom)) &&
-          (!r.validUntil || date <= new Date(r.validUntil)) &&
-          (!r.daysOfWeek?.length || r.daysOfWeek.includes(date.getUTCDay())),
-      );
-      const embedded = room.pricingRules?.find(
-        (r: any) =>
-          date >= new Date(r.startDate) && date <= new Date(r.endDate),
-      );
-      const daily =
-        day?.customPrice ??
-        rule?.overridePrice ??
-        embedded?.overridePrice ??
-        room.basePrice * (rule?.multiplier ?? embedded?.multiplier ?? 1);
-      basePrice += daily * dto.roomsBookedCount;
+      const dateString = date.toISOString().slice(0, 10);
+      for (const reqRoom of dto.rooms) {
+        const room = roomMap.get(String(reqRoom.roomId));
+        const dayAvailability = availability.find(
+          (r: any) => String(r.roomId) === String(reqRoom.roomId) && new Date(r.date).toISOString().slice(0, 10) === dateString
+        );
+        
+        const rule = rules.find(
+          (r: any) =>
+            (!r.validFrom || date >= new Date(r.validFrom)) &&
+            (!r.validUntil || date <= new Date(r.validUntil)) &&
+            (!r.daysOfWeek?.length || r.daysOfWeek.includes(date.getUTCDay())) &&
+            (!r.roomId || String(r.roomId) === String(reqRoom.roomId))
+        );
+        const embedded = room.pricingRules?.find(
+          (r: any) =>
+            date >= new Date(r.startDate) && date <= new Date(r.endDate),
+        );
+        const daily =
+          dayAvailability?.customPrice ??
+          rule?.overridePrice ??
+          embedded?.overridePrice ??
+          room.basePrice * (rule?.multiplier ?? embedded?.multiplier ?? 1);
+        basePrice += daily * reqRoom.units;
+      }
     }
     const selected: any[] = [];
     let servicesPrice = 0;
@@ -249,7 +266,7 @@ export class BookingPricingService {
         throw new BadRequestException(
           "Promo code is not valid for this ashram",
         );
-      if (coupon.roomId && dto.roomId && String(coupon.roomId) !== String(dto.roomId))
+      if (coupon.roomId && dto.rooms && !dto.rooms.some(r => String(r.roomId) === String(coupon.roomId)))
         throw new BadRequestException(
           "Promo code is only valid for its designated room category",
         );
@@ -269,7 +286,7 @@ export class BookingPricingService {
     }
     const totalAmount = Math.max(0, roundMoney(grossPayable - discountAmount));
     return {
-      room,
+      room: dbRooms[0],
       dates,
       coupon,
       services,

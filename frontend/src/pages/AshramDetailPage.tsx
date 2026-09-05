@@ -141,8 +141,30 @@ export const AshramDetailPage: React.FC = () => {
 
   const [checkIn, setCheckIn] = useState(validInitialCheckIn);
   const [checkOut, setCheckOut] = useState(validInitialCheckOut);
-  const [selectedRoom, setSelectedRoom] = useState<any>(null);
+  const [selectedRooms, setSelectedRooms] = useState<Record<string, number>>({});
   const [roomsCount, setRoomsCount] = useState(initialRooms);
+  
+  const handleUpdateRoomQty = (roomId: string, delta: number) => {
+    setSelectedRooms((prev) => {
+      const current = prev[roomId] || 0;
+      const requestedRoomCount = Math.max(1, Number(searchState.rooms) || roomsCount || 1);
+      const selectedRoomCount = Object.values(prev).reduce((total, quantity) => total + quantity, 0);
+      if (delta > 0 && selectedRoomCount >= requestedRoomCount) {
+        return prev;
+      }
+      const next = Math.max(0, current + delta);
+      const newMap = { ...prev };
+      if (next === 0) {
+        delete newMap[roomId];
+      } else {
+        newMap[roomId] = next;
+      }
+      return newMap;
+    });
+  };
+
+  const firstSelectedRoomId = Object.keys(selectedRooms)[0];
+  const firstSelectedRoom = rooms.find((r) => String(r._id) === firstSelectedRoomId);
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior });
@@ -342,10 +364,10 @@ export const AshramDetailPage: React.FC = () => {
   }, [id, city, ashramSlug]);
 
   useEffect(() => {
-    if (selectedRoom) {
+    if (firstSelectedRoom) {
       fetchAvailability();
     }
-  }, [selectedRoom]);
+  }, [firstSelectedRoom]);
 
   useEffect(() => {
     const draft = getBookingDraft();
@@ -398,9 +420,12 @@ export const AshramDetailPage: React.FC = () => {
         if (pb.appliedDiscount) setAppliedDiscount(pb.appliedDiscount);
         if (pb.specialRequests) setSpecialRequests(pb.specialRequests);
 
-        if (rooms.length > 0 && pb.roomId) {
-          const match = rooms.find((r) => r._id === pb.roomId);
-          if (match) setSelectedRoom(match);
+        if (pb.rooms) {
+          const restoredRooms: Record<string, number> = {};
+          pb.rooms.forEach((r: any) => { restoredRooms[r.roomId] = r.units; });
+          setSelectedRooms(restoredRooms);
+        } else if (rooms.length > 0 && pb.roomId) {
+          setSelectedRooms({ [pb.roomId]: 1 });
         }
 
         setRestoredNotice(true);
@@ -530,7 +555,10 @@ export const AshramDetailPage: React.FC = () => {
   };
 
   const daysCount = calculateDays();
-  const basePriceCalc = (selectedRoom?.basePrice || 0) * roomsCount * daysCount;
+  const basePriceCalc = Object.entries(selectedRooms).reduce((acc, [roomId, qty]) => {
+    const r = rooms.find((room) => String(room._id) === roomId);
+    return acc + (r?.basePrice || 0) * qty * daysCount;
+  }, 0);
 
   let dynamicAddOnsCalc = 0;
   const activeAddOnsList: any[] = [];
@@ -703,7 +731,7 @@ export const AshramDetailPage: React.FC = () => {
   ]);
 
   useEffect(() => {
-    if (!currentAshramId || !selectedRoom?._id || !checkIn || !checkOut) {
+    if (!currentAshramId || !firstSelectedRoom?._id || !checkIn || !checkOut) {
       setServerQuote(null);
       return;
     }
@@ -713,7 +741,7 @@ export const AshramDetailPage: React.FC = () => {
       try {
         const res = await bookingService.quote({
           ashramId: currentAshramId,
-          roomId: selectedRoom._id,
+          roomId: firstSelectedRoom._id,
           checkInDate: checkIn,
           checkOutDate: checkOut,
           guestsCount: Math.max(1, adults + children),
@@ -741,7 +769,7 @@ export const AshramDetailPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     currentAshramId,
-    selectedRoom?._id,
+    firstSelectedRoom?._id,
     checkIn,
     checkOut,
     adults,
@@ -760,24 +788,18 @@ export const AshramDetailPage: React.FC = () => {
     setLoading(true);
     setDetailError("");
     try {
-      // Slug route when present, id route only for legacy links.
       const res = ashramSlug
         ? await ashramService.getBySlug(city ?? "", ashramSlug)
         : await ashramService.getById(id!);
       if (res.data.success) {
         const payload = res.data.data;
         const detailAshram = payload?.ashram ?? payload;
-        const detailRooms = Array.isArray(payload?.rooms) ? payload.rooms : [];
+        const detailRooms = res.data.data.rooms || [];
         if (!detailAshram?._id)
           throw new Error("Stay details are unavailable.");
 
         setAshram(detailAshram);
         setRooms(detailRooms);
-        setSelectedRoom((current: any) =>
-          detailRooms.find((room: any) => room._id === current?._id) ??
-          detailRooms[0] ??
-          null,
-        );
 
         if (id) {
           fetchReviews(id);
@@ -833,7 +855,7 @@ export const AshramDetailPage: React.FC = () => {
   };
 
   const fetchAvailability = async () => {
-    if (!selectedRoom) {
+    if (!firstSelectedRoom) {
       generateSimulatedCalendar();
       return;
     }
@@ -845,7 +867,7 @@ export const AshramDetailPage: React.FC = () => {
         .split("T")[0];
 
       const res = await roomService.availabilityCalendar(
-        selectedRoom._id,
+        firstSelectedRoom._id,
         today,
         end,
       );
@@ -867,14 +889,14 @@ export const AshramDetailPage: React.FC = () => {
       const d = new Date(today);
       d.setDate(today.getDate() + i);
       const rand = Math.random();
-      let available = selectedRoom
-        ? Math.floor(selectedRoom.totalInventory * 0.4)
+      let available = firstSelectedRoom
+        ? Math.floor(firstSelectedRoom.totalInventory * 0.4)
         : 10;
       if (rand > 0.8) available = 0;
       else if (rand > 0.6) available = 2;
       simulated.push({
         date: d.toISOString().split("T")[0],
-        price: selectedRoom?.basePrice || 150,
+        price: firstSelectedRoom?.basePrice || 150,
         available,
       });
     }
@@ -887,8 +909,9 @@ export const AshramDetailPage: React.FC = () => {
       const returnUrl = window.location.pathname + window.location.search;
       saveBookingDraft({
         ashramId: ashram._id,
-        roomId: selectedRoom?._id,
-        roomType: selectedRoom?.name,
+        rooms: Object.entries(selectedRooms).map(([roomId, units]) => ({ roomId, units })),
+        roomId: firstSelectedRoomId,
+        roomType: firstSelectedRoom?.name,
         checkIn,
         checkOut,
         guestsCount: adults + children,
@@ -935,7 +958,8 @@ export const AshramDetailPage: React.FC = () => {
     parking,
     prasad,
     roomsCount,
-    selectedRoom,
+    selectedRooms,
+    firstSelectedRoomId,
     specialRequests,
   ]);
 
@@ -950,8 +974,9 @@ export const AshramDetailPage: React.FC = () => {
       const currentUrl = window.location.pathname + window.location.search;
       const draftPayload: BookingDraftPayload = {
         ashramId: ashram._id,
-        roomId: selectedRoom?._id,
-        roomType: selectedRoom?.name,
+        rooms: Object.entries(selectedRooms).map(([roomId, units]) => ({ roomId, units })),
+        roomId: firstSelectedRoomId,
+        roomType: firstSelectedRoom?.name,
         checkIn,
         checkOut,
         guestsCount: adults + children,
@@ -995,7 +1020,8 @@ export const AshramDetailPage: React.FC = () => {
 
     const payload = {
       ashramId: ashram._id,
-      roomId: selectedRoom._id,
+      rooms: Object.entries(selectedRooms).map(([roomId, units]) => ({ roomId, units })),
+      roomId: firstSelectedRoomId,
       checkInDate: checkIn,
       checkOutDate: checkOut,
       guestsCount,
@@ -1446,7 +1472,6 @@ export const AshramDetailPage: React.FC = () => {
             </div>
             <div className="space-y-4">
               {rooms.map((r) => {
-                // Check if this room has an active Last Minute Deal
                 const isLastMinuteOffer = (o: any) =>
                   Boolean(o?.isLastMinuteDeal) ||
                   o?.offerType === "LAST MINUTE DEAL" ||
@@ -1456,7 +1481,7 @@ export const AshramDetailPage: React.FC = () => {
                 const isTargetRoomMatch = (o: any) => {
                   const targetId = String(o?.roomId?._id ?? o?.roomId ?? "").trim();
                   if (!targetId || targetId === "null" || targetId === "undefined" || targetId === "") {
-                    return true; // Applied to all rooms in ashram
+                    return true;
                   }
                   return targetId === String(r._id);
                 };
@@ -1486,18 +1511,21 @@ export const AshramDetailPage: React.FC = () => {
                   }
                 }
 
+                const selectedQty = selectedRooms[r._id] || 0;
+                const selectedRoomCount = Object.values(selectedRooms).reduce(
+                  (total, quantity) => total + quantity,
+                  0,
+                );
+                const requestedRoomCount = Math.max(
+                  1,
+                  Number(searchState.rooms) || roomsCount || 1,
+                );
+
                 return (
                   <div
                     key={r._id}
-                    onClick={() => {
-                      setSelectedRoom(r);
-                      if (isDeal && roomDeal?.promoCode && (!appliedPromo || appliedPromo !== roomDeal.promoCode)) {
-                        setCouponCode(roomDeal.promoCode);
-                        handleApplyAvailableOffer(roomDeal);
-                      }
-                    }}
-                    className={`p-4 sm:p-5 border rounded-[20px] cursor-pointer flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-all relative overflow-hidden ${
-                      selectedRoom?._id === r._id
+                    className={`p-4 sm:p-5 border rounded-[20px] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-all relative overflow-hidden ${
+                      selectedQty > 0
                         ? "border-[#0A4DA6] bg-[#0A4DA6]/5 shadow-sm ring-1 ring-[#0A4DA6]/30"
                         : "border-gray-100 dark:border-slate-800 hover:bg-gray-50/50 dark:hover:bg-slate-800/10"
                     }`}
@@ -1549,221 +1577,38 @@ export const AshramDetailPage: React.FC = () => {
                           {formatCurrency(r.basePrice)} / night
                         </span>
                       )}
+                      
+                      <div className="flex items-center gap-3 mt-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-full p-1 shadow-sm">
+                        <button
+                          onClick={() => handleUpdateRoomQty(r._id, -1)}
+                          className="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-rose-600 transition-colors disabled:opacity-30"
+                          disabled={selectedQty === 0}
+                        >
+                          <span className="text-lg leading-none font-medium">−</span>
+                        </button>
+                        <span className="text-sm font-black text-[#0B192C] dark:text-white w-4 text-center">
+                          {selectedQty}
+                        </span>
+                        <button
+                          onClick={() => {
+                            handleUpdateRoomQty(r._id, 1);
+                            if (isDeal && roomDeal?.promoCode && (!appliedPromo || appliedPromo !== roomDeal.promoCode)) {
+                              setCouponCode(roomDeal.promoCode);
+                              handleApplyAvailableOffer(roomDeal);
+                            }
+                          }}
+                          className="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-emerald-600 transition-colors"
+                          disabled={selectedRoomCount >= requestedRoomCount}
+                        >
+                          <span className="text-lg leading-none font-medium">＋</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
               })}
             </div>
           </div>
-
-          {false && (
-          <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-4 sm:p-6 space-y-4 sm:space-y-5 shadow-sm">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-50 dark:border-slate-850 pb-3">
-              <h3 className="min-w-0 text-base font-extrabold text-[#0B192C] dark:text-white flex items-center gap-1.5">
-                <CalendarIcon size={18} className="text-[#0A4DA6] shrink-0" />{" "}
-                Room Availability
-              </h3>
-              <span className="shrink-0 text-[10px] text-gray-400 font-bold tracking-wider">
-                Next 30 days
-              </span>
-            </div>
-            <p className="text-[10px] text-gray-400 font-bold">
-              Room Category:{" "}
-              <span className="text-[#0B192C] dark:text-white font-extrabold">
-                {selectedRoom?.name || "Selected Room"}
-              </span>
-            </p>
-
-            {loadingCalendar ? (
-              <div className="h-64 bg-gray-50 dark:bg-slate-900 rounded-2xl animate-pulse" />
-            ) : (
-              (() => {
-                const statusOf = (available: number) =>
-                  available <= 0
-                    ? "sold_out"
-                    : available <= 2
-                      ? "almost_full"
-                      : available <= 5
-                        ? "limited"
-                        : "available";
-
-                const swatch: Record<string, string> = {
-                  sold_out: "bg-danger/10 border-danger/20 text-danger",
-                  almost_full:
-                    "bg-amber-500/10 border-amber-500/20 text-amber-700",
-                  limited:
-                    "bg-yellow-500/10 border-yellow-500/20 text-yellow-600",
-                  available: "bg-success/10 border-success/20 text-success",
-                };
-
-                const days = availabilityCalendar;
-                if (days.length === 0) {
-                  return (
-                    <p className="text-xs text-gray-400 font-semibold py-6 text-center">
-                      Availability for this room category is not published yet.
-                    </p>
-                  );
-                }
-
-                const firstDate = new Date(days[0].date);
-                const lastDate = new Date(days[days.length - 1].date);
-
-                const leadingBlanks = firstDate.getDay();
-                const trailingBlanks =
-                  (7 - ((leadingBlanks + days.length) % 7)) % 7;
-
-                const monthLabel =
-                  firstDate.getMonth() === lastDate.getMonth()
-                    ? firstDate.toLocaleString("en-US", {
-                        month: "long",
-                        year: "numeric",
-                      })
-                    : firstDate.toLocaleString("en-US", { month: "long" }) +
-                      " – " +
-                      lastDate.toLocaleString("en-US", {
-                        month: "long",
-                        year: "numeric",
-                      });
-
-                const openDays = days.filter(
-                  (d: any) => d.available > 0,
-                ).length;
-
-                return (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-3 gap-2 text-[9px] sm:text-[10px] font-bold">
-                      {[
-                        {
-                          cls: "bg-success/20 border-success/40",
-                          title: "Available",
-                          sub: "6+ left",
-                        },
-                        {
-                          cls: "bg-yellow-500/20 border-yellow-500/40",
-                          title: "Limited",
-                          sub: "1-5 left",
-                        },
-                        {
-                          cls: "bg-danger/20 border-danger/40",
-                          title: "Sold Out",
-                          sub: "Fully booked",
-                        },
-                      ].map((l) => (
-                        <div
-                          key={l.title}
-                          className="flex items-start gap-1.5 min-w-0"
-                        >
-                          <span
-                            className={
-                              "w-3 h-3 rounded border shrink-0 mt-0.5 " + l.cls
-                            }
-                          />
-                          <span className="min-w-0">
-                            <span className="block text-gray-600 dark:text-gray-300 leading-tight">
-                              {l.title}
-                            </span>
-                            <span className="block text-gray-400 font-semibold leading-tight">
-                              {l.sub}
-                            </span>
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-
-                    <p className="text-center text-sm font-extrabold text-[#0B192C] dark:text-white">
-                      {monthLabel}
-                    </p>
-
-                    <div className="grid grid-cols-7 gap-1 sm:gap-1.5 text-center text-[9px] sm:text-[10px] font-extrabold text-gray-400 tracking-wider">
-                      {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(
-                        (d) => (
-                          <span key={d}>{d}</span>
-                        ),
-                      )}
-                    </div>
-
-                    <div className="grid grid-cols-7 gap-1 sm:gap-1.5">
-                      {Array.from({ length: leadingBlanks }).map((_, i) => (
-                        <div
-                          key={"lead-" + i}
-                          aria-hidden
-                          className="h-14 sm:h-16 rounded-xl border border-dashed border-gray-100 dark:border-slate-850"
-                        />
-                      ))}
-
-                      {days.map((day: any, i: number) => {
-                        const status = statusOf(day.available);
-                        const dateObj = new Date(day.date);
-                        const label =
-                          dateObj.toLocaleDateString("en-US", {
-                            weekday: "long",
-                            day: "numeric",
-                            month: "long",
-                          }) +
-                          " - " +
-                          (day.available > 0
-                            ? day.available + " left"
-                            : "sold out");
-                        return (
-                          <div
-                            key={i}
-                            title={label}
-                            className={
-                              "h-14 sm:h-16 px-0.5 rounded-xl border flex flex-col items-center justify-center select-none " +
-                              swatch[status]
-                            }
-                          >
-                            <span className="text-[11px] sm:text-xs font-extrabold leading-none">
-                              {dateObj.getDate()}
-                            </span>
-                            <span className="text-[8px] sm:text-[9px] font-semibold leading-tight mt-0.5">
-                              {formatCurrency(day.price)}
-                            </span>
-                            <span className="text-[7px] sm:text-[8px] font-extrabold leading-tight">
-                              {status === "sold_out"
-                                ? "Full"
-                                : day.available + " left"}
-                            </span>
-                          </div>
-                        );
-                      })}
-
-                      {Array.from({ length: trailingBlanks }).map((_, i) => (
-                        <div
-                          key={"trail-" + i}
-                          aria-hidden
-                          className="h-14 sm:h-16 rounded-xl border border-dashed border-gray-100 dark:border-slate-850"
-                        />
-                      ))}
-                    </div>
-
-                    <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 p-3">
-                      <div className="min-w-0">
-                        <p className="text-xs font-extrabold text-[#0B192C] dark:text-white">
-                          Availability Overview
-                        </p>
-                        <p className="text-[10px] text-gray-400 font-bold">
-                          {firstDate.toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                          })}{" "}
-                          &ndash;{" "}
-                          {lastDate.toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                          })}
-                        </p>
-                      </div>
-                      <span className="shrink-0 px-3 py-1 rounded-full bg-[#0A4DA6]/10 text-[#0A4DA6] dark:text-amber-400 text-[10px] font-black">
-                        {openDays} Available {openDays === 1 ? "Day" : "Days"}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })()
-            )}
-          </div>
-          )}
 
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-5 shadow-sm">
             <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white border-b border-gray-50 dark:border-slate-850 pb-3">
@@ -1923,7 +1768,7 @@ export const AshramDetailPage: React.FC = () => {
                 <RoomAvailabilityCalendar
                   days={availabilityCalendar}
                   loading={loadingCalendar}
-                  roomName={selectedRoom?.name}
+                  roomName={firstSelectedRoom?.name}
                   selectedDate={checkIn}
                   onSelect={(date) => {
                     const nextOut = getTomorrowYMD(date);
@@ -1939,10 +1784,12 @@ export const AshramDetailPage: React.FC = () => {
                     Active Category
                   </span>
                   <span className="text-xs font-extrabold text-secondary dark:text-white block leading-tight">
-                    {selectedRoom?.name}
+                    {Object.keys(selectedRooms).length > 0
+                      ? `Book ${Object.values(selectedRooms).reduce((a, b) => a + b, 0)} ${Object.values(selectedRooms).reduce((a, b) => a + b, 0) === 1 ? "Room" : "Rooms"}`
+                      : firstSelectedRoom?.name}
                   </span>
                   <span className="text-[10px] font-bold text-[#0A4DA6]">
-                    {formatCurrency(selectedRoom?.basePrice)} / bed per night
+                    {formatCurrency(firstSelectedRoom?.basePrice || 0)} / bed per night
                   </span>
                 </div>
 

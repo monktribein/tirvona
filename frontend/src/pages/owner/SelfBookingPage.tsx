@@ -90,6 +90,7 @@ export const SelfBookingPage: React.FC = () => {
   const [rooms, setRooms] = useState<any[]>([]);
   const [loadingRooms, setLoadingRooms] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [selectedRooms, setSelectedRooms] = useState<Record<string, number>>({});
   const [confirmation, setConfirmation] = useState<any | null>(null);
   const [qrSvg, setQrSvg] = useState("");
   const [quote, setQuote] = useState<any | null>(null);
@@ -188,6 +189,7 @@ export const SelfBookingPage: React.FC = () => {
   const [form, setForm] = useState({
     bookingType: isTirvonaBooking ? "tirvona" : "self",
     ashramId: "",
+    rooms: {} as Record<string, number>,
     roomId: "",
     guestName: "",
     guestPhone: "",
@@ -235,6 +237,7 @@ export const SelfBookingPage: React.FC = () => {
 
   const loadRooms = useCallback(async () => {
     if (!form.ashramId || !form.checkInDate || !form.checkOutDate) return;
+    if (new Date(form.checkOutDate) <= new Date(form.checkInDate)) return;
     setLoadingRooms(true);
     try {
       const res = await selfBookingService.availability({
@@ -274,7 +277,7 @@ export const SelfBookingPage: React.FC = () => {
       try {
         const res = await bookingService.quote({
           ashramId: form.ashramId,
-          roomId: form.roomId,
+          rooms: Object.entries(selectedRooms).map(([roomId, units]) => ({ roomId, units })),
           checkInDate: form.checkInDate,
           checkOutDate: form.checkOutDate,
           guestsCount: Number(form.guestsCount) || 1,
@@ -627,39 +630,38 @@ export const SelfBookingPage: React.FC = () => {
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {rooms.map((room) => {
                 const soldOut = room.availableCount <= 0;
-                const active = form.roomId === room.roomId;
+                const selectedUnits = form.rooms?.[room.roomId] || 0;
+                const canSelect = Number(form.roomsBookedCount) < 10;
+                
+                const updateUnits = (delta: number) => {
+                  const current = form.rooms?.[room.roomId] || 0;
+                  const next = Math.max(0, current + delta);
+                  const newRooms = { ...form.rooms };
+                  if (next === 0) delete newRooms[room.roomId];
+                  else newRooms[room.roomId] = next;
+                  setForm((prev) => ({ ...prev, rooms: newRooms }));
+                };
+
                 return (
-                  <button
-                    key={room.roomId}
-                    type="button"
-                    disabled={soldOut}
-                    onClick={() => set("roomId", room.roomId)}
-                    className={`rounded-2xl border p-3.5 text-left transition-colors ${
-                      active
-                        ? "border-[#0A4DA6] bg-[#0A4DA6]/5"
-                        : "border-gray-100 dark:border-slate-800"
-                    } ${soldOut ? "opacity-45 cursor-not-allowed" : "hover:border-[#0A4DA6]"}`}
-                  >
-                    <p className="text-xs font-extrabold text-[#0B192C] dark:text-white">
-                      {room.name}
-                    </p>
-                    <p className="text-[11px] text-gray-400 mt-0.5 capitalize">
-                      {room.type}
-                    </p>
-                    <div className="flex items-center justify-between gap-2 mt-2">
-                      <p
-                        className={`text-[11px] font-black ${soldOut ? "text-rose-500" : "text-emerald-600"}`}
-                      >
-                        {soldOut ? "Full" : `${room.availableCount} available`}
+                  <div key={room.roomId} className={`p-3 border rounded-xl ${selectedUnits > 0 ? "border-[#0A4DA6] bg-[#0A4DA6]/5" : "border-gray-100"}`}>
+                    <p className="text-xs font-extrabold text-[#0B192C] dark:text-white">{room.name}</p>
+                    <p className="text-[11px] text-gray-400 capitalize">{room.type}</p>
+                    <div className="flex items-center justify-between mt-2">
+                      <p className={`text-[11px] font-black ${room.availableCount <= 0 ? "text-rose-500" : "text-emerald-600"}`}>
+                        {room.availableCount <= 0 ? "Full" : `${room.availableCount} available`}
                       </p>
                       {room.basePrice > 0 && (
                         <p className="text-[11px] font-black text-[#0B192C] dark:text-white">
-                          ₹{room.basePrice}
-                          <span className="font-bold text-gray-400"> /night</span>
+                          ₹{room.basePrice}<span className="font-bold text-gray-400"> /night</span>
                         </p>
                       )}
                     </div>
-                  </button>
+                    <div className="flex items-center mt-2 space-x-2">
+                      <button type="button" onClick={() => updateUnits(-1)} disabled={selectedUnits === 0} className="px-2 py-1 bg-gray-200 rounded disabled:opacity-40">-</button>
+                      <span className="w-6 text-center">{selectedUnits}</span>
+                      <button type="button" onClick={() => updateUnits(1)} disabled={!canSelect || selectedUnits >= room.availableCount} className="px-2 py-1 bg-[#0A4DA6] text-white rounded disabled:opacity-40">+</button>
+                    </div>
+                  </div>
                 );
               })}
             </div>

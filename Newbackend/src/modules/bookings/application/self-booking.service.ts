@@ -289,7 +289,7 @@ export class SelfBookingService {
 
     const quote = await this.pricing.quote({
       ashramId: dto.ashramId,
-      roomId: dto.roomId,
+      rooms: dto.rooms,
       checkInDate: dto.checkInDate,
       checkOutDate: dto.checkOutDate,
       guestsCount: dto.guestsCount,
@@ -307,14 +307,16 @@ export class SelfBookingService {
     const code = await this.issueActiveCheckinCode();
 
     return this.transactions.run(async (session) => {
-      await this.repository.holdInventory({
-        ashramId: dto.ashramId,
-        roomId: dto.roomId,
-        dates: quote.dates,
-        count: dto.roomsBookedCount,
-        capacity: quote.room.totalInventory,
-        session,
-      });
+      for (const roomReq of dto.rooms) {
+        await this.repository.holdInventory({
+          ashramId: dto.ashramId,
+          roomId: roomReq.roomId,
+          dates: quote.dates,
+          count: roomReq.units,
+          capacity: quote.room.totalInventory,
+          session,
+        });
+      }
 
       const guest = await this.resolveWalkInGuest(dto, session);
 
@@ -325,7 +327,8 @@ export class SelfBookingService {
             reservationNumber: reservationReference(),
             customerId: guest._id,
             ashramId: dto.ashramId,
-            roomId: dto.roomId,
+            rooms: dto.rooms.map(r => ({ roomId: r.roomId, units: r.units })),
+            roomId: dto.rooms[0]?.roomId,
             bookingSource: isSelf
               ? SELF_BOOKING_SOURCE
               : TIRVONA_BOOKING_SOURCE,
@@ -364,17 +367,19 @@ export class SelfBookingService {
       );
 
       if (isSelf) {
-        await this.repository.confirmInventory({
-          roomId: dto.roomId,
-          dates: quote.dates,
-          count: dto.roomsBookedCount,
-          session,
-        });
-        await this.inventory.updateMany(
-          { roomId: dto.roomId, date: { $in: quote.dates } },
-          { $inc: { offlineBookedCount: dto.roomsBookedCount } },
-          { session },
-        );
+        for (const roomReq of dto.rooms) {
+          await this.repository.confirmInventory({
+            roomId: roomReq.roomId,
+            dates: quote.dates,
+            count: roomReq.units,
+            session,
+          });
+          await this.inventory.updateMany(
+            { roomId: roomReq.roomId, date: { $in: quote.dates } },
+            { $inc: { offlineBookedCount: roomReq.units } },
+            { session },
+          );
+        }
       }
 
       let payment: any = null;

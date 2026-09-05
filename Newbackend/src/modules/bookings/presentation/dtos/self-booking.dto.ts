@@ -10,16 +10,24 @@ import {
   Min,
   MinLength,
   ValidateIf,
+  IsArray,
+  ValidateNested
 } from "class-validator";
 import {
   BOOKING_SOURCES,
   OFFLINE_PAYMENT_METHODS,
 } from "../../domain/booking.utils";
 
+import { RoomBookingDto } from "./booking.dto";
+
 export class CreateSelfBookingDto {
   @IsIn(BOOKING_SOURCES) bookingType: string;
   @IsMongoId() ashramId: string;
-  @IsMongoId() roomId: string;
+  
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => RoomBookingDto)
+  rooms: RoomBookingDto[];
 
   @IsString() @MinLength(2) guestName: string;
   @IsString() @IsNotEmpty() guestPhone: string;

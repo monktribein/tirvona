@@ -42,7 +42,12 @@ export const BookingSchema = new Schema(
       address: String,
     },
     bookedBy: id("User"),
-    roomId: id("Room", true),
+    rooms: [
+      {
+        roomId: id("Room", true),
+        units: { type: Number, required: true, min: 1 },
+      },
+    ],
     checkInDate: { type: Date, required: true },
     checkOutDate: { type: Date, required: true },
     occupiedDates: [Date],
@@ -110,7 +115,7 @@ export const BookingSchema = new Schema(
     discountPercentage: Number,
     reservationExpiresAt: Date,
     paymentSummary: SchemaTypes.Mixed,
-    assignedRoomNumber: String,
+    assignedRoomNumbers: [String],
     paymentMode: {
       type: String,
       enum: ["pay_at_ashram", "online", "offline"],
@@ -211,7 +216,7 @@ export const BookingCheckinSchema = new Schema(
     checkInCodeHash: String,
     checkedInAt: { type: Date, default: Date.now },
     guestCount: Number,
-    roomNumber: String,
+    roomNumbers: [String],
     notes: String,
   },
   opts("booking_checkins"),

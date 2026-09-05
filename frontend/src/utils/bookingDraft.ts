@@ -1,5 +1,6 @@
 export interface BookingDraftPayload {
   ashramId: string;
+  rooms?: { roomId: string; units: number }[];
   roomId?: string;
   roomType?: string;
   checkIn: string;
