@@ -676,7 +676,7 @@ export const LeadAgentsPage: React.FC = () => {
                 }}
               >
                 <option value="">Select state</option>
-                {getAllStates().map((state) => (
+                {getAllStates().map((state: any) => (
                   <option key={state.code} value={state.name}>{state.name}</option>
                 ))}
               </select>
@@ -690,8 +690,8 @@ export const LeadAgentsPage: React.FC = () => {
               >
                 <option value="">Select district</option>
                 {getDistricts(
-                  getAllStates().find((state) => state.name === newRegionState)?.code ?? "",
-                ).map((district) => (
+                  getAllStates().find((state: any) => state.name === newRegionState)?.code ?? "",
+                ).map((district: any) => (
                   <option key={district} value={district}>{district}</option>
                 ))}
               </select>

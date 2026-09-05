@@ -8,7 +8,7 @@ import { escapeRegex } from "../../../common/utils/escape-regex";
 import { PARKING_MODEL } from "../../parking/domain/parking.constants";
 
 export interface SearchHit {
-  type: "ashram" | "user" | "booking" | "parking";
+  type: "ashram" | "user" | "booking" | "parking" | "temple";
   id: string;
   title: string;
   subtitle: string;
@@ -34,6 +34,7 @@ export class SearchService {
     @InjectModel("Booking") private readonly bookings: Model<any>,
     @InjectModel(PARKING_MODEL.Location)
     private readonly parkingLocations: Model<any>,
+    @InjectModel("Temple") private readonly temples: Model<any>,
   ) {}
 
   private async ashramScope(
@@ -64,14 +65,15 @@ export class SearchService {
     const pattern = new RegExp(escapeRegex(term), "i");
     const scope = await this.ashramScope(user);
 
-    const [ashrams, users, bookings, parking] = await Promise.all([
+    const [ashrams, users, bookings, parking, temples] = await Promise.all([
       this.findAshrams(scope, pattern, perType),
       this.findUsers(user, pattern, perType),
       this.findBookings(scope, pattern, perType),
       this.findParking(user, pattern, perType),
+      this.findTemples(user, pattern, perType),
     ]);
 
-    const results = [...ashrams, ...users, ...bookings, ...parking];
+    const results = [...ashrams, ...users, ...bookings, ...parking, ...temples];
     return { query: term, total: results.length, results };
   }
 
@@ -190,6 +192,36 @@ export class SearchService {
         .join(", "),
       badge: String(row.status ?? "").replace(/_/g, " "),
       url: `/parking/${row.slug}`,
+    }));
+  }
+
+  private async findTemples(
+    user: AuthenticatedUser,
+    pattern: RegExp,
+    limit: number,
+  ): Promise<SearchHit[]> {
+    if (!NATIONAL_ROLES.includes(user.role)) return [];
+    const rows = await this.temples
+      .find({
+        deletedAt: null,
+        $or: [
+          { name: pattern },
+          { slug: pattern },
+          { "address.city": pattern },
+        ],
+      })
+      .select("name slug status address")
+      .limit(limit)
+      .lean();
+    return rows.map((row: any) => ({
+      type: "temple" as const,
+      id: String(row._id),
+      title: row.name,
+      subtitle: [row.address?.city, row.address?.state]
+        .filter(Boolean)
+        .join(", "),
+      badge: String(row.status ?? "").replace(/_/g, " "),
+      url: `/temples/${row.slug}`,
     }));
   }
 }

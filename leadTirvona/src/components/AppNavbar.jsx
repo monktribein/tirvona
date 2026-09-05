@@ -132,7 +132,7 @@ export default function AppNavbar({
                   }`}
                 >
                   <Building2 size={15} className={activePage === 'approved' ? 'text-[#0A4DA6]' : 'text-gray-400'} />
-                  <span>{t('Approved Ashrams')}</span>
+                  <span>{t('Approved Stays')}</span>
                   <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full transition-colors ${
                     activePage === 'approved'
                       ? 'bg-[#0A4DA6] text-white'
@@ -280,7 +280,7 @@ export default function AppNavbar({
                 >
                   <span className="flex items-center gap-2">
                     <Building2 size={16} />
-                    <span>Approved Ashrams</span>
+                    <span>Approved Stays</span>
                   </span>
                   <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
                     activePage === 'approved' ? 'bg-white/20 text-white' : 'bg-blue-50 text-[#0A4DA6]'

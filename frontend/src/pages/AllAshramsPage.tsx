@@ -196,7 +196,7 @@ export const AllAshramsPage: React.FC = () => {
     <div className="space-y-8">
       <div className="text-center space-y-2.5 max-w-3xl mx-auto py-2">
         <p className="font-['Kalam'] text-2xl sm:text-4xl lg:text-5xl font-bold text-[#E58C28]">
-          Registered Ashrams &amp; Dharamshalas
+          Registered Stays &amp; Dharamshalas
         </p>
         <div className="flex items-center justify-center gap-2.5 my-1.5">
           <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
@@ -208,14 +208,14 @@ export const AllAshramsPage: React.FC = () => {
         </div>
         <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-xl mx-auto leading-relaxed">
           Inspect, manage, and edit details for all {ashrams.length} registered
-          ashram accommodations across India.
+          stay accommodations across India.
         </p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-1">
           <div className="text-xs font-bold text-gray-400 tracking-wider">
-            Total Ashrams
+            Total Stays
           </div>
           <div className="text-2xl font-black text-[#0B192C] dark:text-white">
             {ashrams.length}
@@ -281,7 +281,7 @@ export const AllAshramsPage: React.FC = () => {
           />
           <input
             type="text"
-            placeholder="Search ashram name or location..."
+            placeholder="Search stay name or location..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-full pl-9 pr-4 py-2 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
@@ -300,7 +300,7 @@ export const AllAshramsPage: React.FC = () => {
             className="mx-auto text-gray-300 dark:text-gray-600"
           />
           <h3 className="text-lg font-black text-[#0B192C] dark:text-white">
-            No Ashrams Found
+            No Stays Found
           </h3>
           <p className="text-xs text-gray-400">
             Try adjusting your city filter or search term.
@@ -370,7 +370,7 @@ export const AllAshramsPage: React.FC = () => {
 
                   <p className="text-xs text-gray-600 dark:text-gray-300 line-clamp-2 leading-relaxed font-semibold">
                     {ashram.description ||
-                      "Spiritual Ashram lodging & accommodation."}
+                      "Spiritual Stay lodging & accommodation."}
                   </p>
 
                   <div className="flex flex-wrap gap-1.5">
@@ -394,7 +394,7 @@ export const AllAshramsPage: React.FC = () => {
                     onClick={() => handleOpenEditModal(ashram)}
                     className="px-4 py-2 rounded-full bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 border border-amber-500/20 text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer"
                   >
-                    <Edit3 size={13} /> View & Edit Ashram
+                    <Edit3 size={13} /> View & Edit Stay
                   </button>
 
                   <div className="flex items-center gap-2">
@@ -439,7 +439,7 @@ export const AllAshramsPage: React.FC = () => {
                     Master Edit: {selectedAshram.name}
                   </h3>
                   <p className="text-xs text-gray-400">
-                    Update Ashram profile, address, assigned owner, and
+                    Update Stay profile, address, assigned owner, and
                     verification status.
                   </p>
                 </div>
@@ -456,7 +456,7 @@ export const AllAshramsPage: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[10px] font-black text-gray-400 mb-1">
-                    Ashram Name
+                    Stay Name
                   </label>
                   <input
                     type="text"
@@ -638,7 +638,7 @@ export const AllAshramsPage: React.FC = () => {
               <div className="bg-gray-50/80 dark:bg-slate-900/80 border border-gray-100 dark:border-slate-800 rounded-2xl p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <label className="text-[10px] font-black text-gray-400 flex items-center gap-1.5">
-                    <ImageIcon size={14} className="text-[#0A4DA6]" /> Ashram
+                    <ImageIcon size={14} className="text-[#0A4DA6]" /> Stay
                     Photo Gallery ({editFormData.images?.length || 0} Photos)
                   </label>
                   <span className="text-[10px] text-gray-400 font-bold">

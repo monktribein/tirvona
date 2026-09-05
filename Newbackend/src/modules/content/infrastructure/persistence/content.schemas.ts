@@ -41,7 +41,12 @@ export const CONTENT_MODELS = [
   { name: "FeaturedBanner", schema: sluggedSchema("featured_banners") },
   { name: "ContentAuditLog", schema: schema("auditlogs") },
   { name: "PilgrimageCircuit", schema: schema("pilgrimagecircuits") },
-  { name: "Temple", schema: schema("temples") },
+  // Registered under a content-specific model name while pointing at the same
+  // `temples` collection. The strict, indexed `Temple` model owned by
+  // TemplesModule must be the sole holder of the "Temple" Mongoose name;
+  // registering a second permissive schema under that name would let whichever
+  // module initialised first silently define the schema for both.
+  { name: "ContentTemple", schema: schema("temples") },
   { name: "EventFestival", schema: schema("eventfestivals") },
   { name: "SacredDirectoryItem", schema: schema("sacreddirectoryitems") },
   { name: "PlannerTemplate", schema: schema("plannertemplates") },

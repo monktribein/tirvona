@@ -102,7 +102,7 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
     <div className="space-y-6 text-left w-full">
       <EnterprisePageHeader
         title="Room Category Approval Engine"
-        subtitle="Review and validate structural room category additions requested by Ashram Owners across ashrams."
+        subtitle="Review and validate structural room category additions requested by Stay Owners across stays."
         icon={<Layers size={22} />}
         badgeText="Super Admin Console"
       />
@@ -138,7 +138,7 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
           />
           <input
             type="text"
-            placeholder="Search request ID, ashram..."
+            placeholder="Search request ID, stay..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-9 pr-4 py-2 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#0A4DA6]"
@@ -161,8 +161,8 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
               <thead>
                 <tr className="border-b border-gray-100 dark:border-slate-800 text-gray-400 font-bold text-[10px] tracking-wider">
                   <th className="py-3 px-4">Request ID</th>
-                  <th className="py-3 px-4">Ashram Name</th>
-                  <th className="py-3 px-4">Ashram Owner</th>
+                  <th className="py-3 px-4">Stay Name</th>
+                  <th className="py-3 px-4">Stay Owner</th>
                   <th className="py-3 px-4">Category Name</th>
                   <th className="py-3 px-4">Capacity / Price</th>
                   <th className="py-3 px-4">Created Date</th>
@@ -265,7 +265,7 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-gray-50 dark:bg-slate-900/60 p-4 rounded-2xl text-xs">
               <div>
                 <span className="text-gray-400 block text-[10px] font-bold">
-                  Target Ashram
+                  Target Stay
                 </span>
                 <span className="font-extrabold text-[#0B192C] dark:text-white">
                   {selectedRequest.ashramId?.name}
@@ -273,7 +273,7 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
               </div>
               <div>
                 <span className="text-gray-400 block text-[10px] font-bold">
-                  Ashram Owner
+                  Stay Owner
                 </span>
                 <span className="font-bold text-gray-700 dark:text-gray-200">
                   {selectedRequest.stayAdminId?.name}

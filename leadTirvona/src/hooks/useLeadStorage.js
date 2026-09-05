@@ -138,6 +138,23 @@ export function useLeadStorage(isSignedIn = false) {
     }
   };
 
+  const updateLead = async (leadId, leadData) => {
+    if (!isSignedIn) {
+      showToast('Sign in with an authorised account first.', 'error');
+      return null;
+    }
+
+    try {
+      const updated = await leadApi.updateLead(leadId, toApiLead(leadData));
+      await refreshAll();
+      showToast(`"${updated.name}" updated successfully`);
+      return fromApiLead(updated);
+    } catch (error) {
+      showToast(error.message, 'error');
+      return null;
+    }
+  };
+
   return {
     leads,
     approvedAshrams,
@@ -145,6 +162,7 @@ export function useLeadStorage(isSignedIn = false) {
     toast,
     showToast,
     addLead,
+    updateLead,
     approveLead,
     removeLead,
     updateAppointment,

@@ -195,6 +195,10 @@ const LeadCollectionPage = lazy(
   () => import("./admin/leads/pages/LeadCollectionPage"),
 );
 const LeadAgentsPage = lazy(() => import("./admin/leads/pages/LeadAgentsPage"));
+const TempleSearchPage = lazy(() => import("./pages/temples/TempleSearchPage"));
+const TempleDetailPage = lazy(() => import("./pages/temples/TempleDetailPage"));
+const TempleManagementPage = lazy(() => import("./admin/temples/pages/TempleManagementPage"));
+const AddEditTemplePage = lazy(() => import("./admin/temples/pages/AddEditTemplePage"));
 
 const SmartContactProfilesPage = lazy(
   () => import("./admin/smart-contact/pages/SmartContactProfilesPage"),
@@ -209,15 +213,6 @@ const SmartContactAnalyticsPage = lazy(
 const namedPage = <T extends Record<string, React.ComponentType<any>>>(
   loader: () => Promise<T>,
   name: keyof T,
-) => lazy(() => loader().then((module) => ({ default: module[name] })));
-const TemplesPage = namedPage(
-  () => import("./pages/TemplesPage"),
-  "TemplesPage",
-);
-const TempleDetailPage = namedPage(
-  () => import("./pages/TempleDetailPage"),
-  "TempleDetailPage",
-);
 const SacredDirectoryModulePage = namedPage(
   () => import("./pages/SacredDirectoryModulePage"),
   "SacredDirectoryModulePage",
@@ -410,6 +405,10 @@ const AppContent: React.FC = () => {
             {/* legacy: nginx 301s these in production; kept so dev and any
                 missed link still resolve instead of 404ing */}
             <Route path="/ashram/:id" element={<AshramDetailPage />} />
+            <Route path="/stay/:id" element={<AshramDetailPage />} />
+            <Route path="/stays" element={<SearchPage />} />
+            <Route path="/temples" element={<TempleSearchPage />} />
+            <Route path="/temples/:slug" element={<TempleDetailPage />} />
             <Route path="/faq" element={<FaqPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
@@ -479,8 +478,6 @@ const AppContent: React.FC = () => {
               path="/destination/:slug"
               element={<DestinationOverviewPage />}
             />
-            <Route path="/temples" element={<TemplesPage />} />
-            <Route path="/temples/:slug" element={<TempleDetailPage />} />
             <Route path="/events" element={<EventsHubPage />} />
             <Route path="/events/:idOrSlug" element={<EventDetailPage />} />
             <Route
@@ -648,8 +645,11 @@ const AppContent: React.FC = () => {
             }
           >
             <Route path="/owner/ashrams" element={<ManageAshramsPage />} />
+            <Route path="/owner/stays" element={<ManageAshramsPage />} />
             <Route path="/ashram-admin/ashrams" element={<ManageAshramsPage />} />
+            <Route path="/stay-admin/stays" element={<ManageAshramsPage />} />
             <Route path="/ashram-owner/ashrams" element={<ManageAshramsPage />} />
+            <Route path="/stay-owner/stays" element={<ManageAshramsPage />} />
             <Route path="/owner/add-ons" element={<OwnerAddOnsPage />} />
             <Route path="/ashram-admin/add-ons" element={<OwnerAddOnsPage />} />
             <Route path="/ashram-owner/add-ons" element={<OwnerAddOnsPage />} />
@@ -687,7 +687,9 @@ const AppContent: React.FC = () => {
           >
             <Route path="/owner/dashboard" element={<OwnerDashboard />} />
             <Route path="/ashram-admin/dashboard" element={<OwnerDashboard />} />
+            <Route path="/stay-admin/dashboard" element={<OwnerDashboard />} />
             <Route path="/ashram-owner/dashboard" element={<OwnerDashboard />} />
+            <Route path="/stay-owner/dashboard" element={<OwnerDashboard />} />
           </Route>
 
           <Route
@@ -701,8 +703,14 @@ const AppContent: React.FC = () => {
               path="/owner/ashrams/add"
               element={<AddAshramWizardPage />}
             />
+            <Route
+              path="/owner/stays/add"
+              element={<AddAshramWizardPage />}
+            />
             <Route path="/ashram-admin/ashrams/add" element={<AddAshramWizardPage />} />
+            <Route path="/stay-admin/stays/add" element={<AddAshramWizardPage />} />
             <Route path="/ashram-owner/ashrams/add" element={<AddAshramWizardPage />} />
+            <Route path="/stay-owner/stays/add" element={<AddAshramWizardPage />} />
             <Route path="/owner/users" element={<OwnerGuestsPage />} />
             <Route path="/ashram-admin/users" element={<OwnerGuestsPage />} />
             <Route path="/ashram-owner/users" element={<OwnerGuestsPage />} />
@@ -899,6 +907,11 @@ const AppContent: React.FC = () => {
               path="/admin/lead-collection/agents"
               element={<LeadAgentsPage />}
             />
+            <Route path="/admin/temples" element={<TempleManagementPage />} />
+            <Route path="/admin/temples/new" element={<AddEditTemplePage />} />
+            <Route path="/admin/temples/:id/edit" element={<AddEditTemplePage />} />
+            {/* Smart Contact QR. `/analytics` is declared before the `:id`
+              route so the literal segment is not swallowed as a profile id. */}
             <Route
               path="/admin/smart-contacts"
               element={<SmartContactProfilesPage />}

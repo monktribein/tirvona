@@ -93,7 +93,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
             Tirvona Agent Login
           </h2>
           <p className="text-xs text-[#64748B] font-medium">
-            Enter your credentials to access the Ashram Field Verification Console
+            Enter your credentials to access the Stay Field Verification Console
           </p>
         </div>
 

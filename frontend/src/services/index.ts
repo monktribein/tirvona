@@ -58,6 +58,34 @@ export const ashramService = {
     api.delete(`/ashrams/${ashramId}/add-ons/${serviceId}`),
 };
 
+// ── Temples ─────────────────────────────────────────────────────────────────
+export const templeService = {
+  list: (params: Record<string, string | number | boolean> = {}) =>
+    api.get("/temples", { params }),
+  getBySlug: (slug: string) => api.get(`/temples/${encodeURIComponent(slug)}`),
+  nearby: (id: string, radius = 5) => api.get(`/temples/${id}/nearby`, { params: { radius } }),
+  nearbyByCoordinates: (lat: number, lng: number, radius = 5) =>
+    api.get("/temples/nearby", { params: { lat, lng, radius } }),
+  adminList: (params: Record<string, string | number | boolean> = {}) =>
+    api.get("/temples/admin/all", { params }),
+  /** Load exactly one temple by id for the admin editor. */
+  getAdminById: (id: string) => api.get(`/temples/admin/${id}`),
+  create: (data: unknown) => api.post("/temples/admin", data),
+  update: (id: string, data: unknown) => api.patch(`/temples/admin/${id}`, data),
+  setStatus: (id: string, status: "draft" | "published" | "archived") =>
+    api.patch(`/temples/admin/${id}`, { status }),
+  remove: (id: string) => api.delete(`/temples/admin/${id}`),
+  aartis: (id: string) => api.get(`/temples/admin/${id}/aartis`),
+  addAarti: (id: string, data: unknown) => api.post(`/temples/admin/${id}/aartis`, data),
+  updateAarti: (id: string, aartiId: string, data: unknown) => api.patch(`/temples/admin/${id}/aartis/${aartiId}`, data),
+  removeAarti: (id: string, aartiId: string) => api.delete(`/temples/admin/${id}/aartis/${aartiId}`),
+  festivals: (id: string) => api.get(`/temples/admin/${id}/festivals`),
+  addFestival: (id: string, data: unknown) => api.post(`/temples/admin/${id}/festivals`, data),
+  updateFestival: (id: string, festivalId: string, data: unknown) => api.patch(`/temples/admin/${id}/festivals/${festivalId}`, data),
+  removeFestival: (id: string, festivalId: string) => api.delete(`/temples/admin/${id}/festivals/${festivalId}`),
+};
+
+// ── Rooms ────────────────────────────────────────────────────────────────────
 export const roomService = {
   create: (data: unknown) => api.post("/rooms", data),
   update: (id: string, data: unknown) => api.put(`/rooms/${id}`, data),

@@ -1,6 +1,7 @@
 import React from 'react';
 import {
-  Phone, Trash2, Pencil, MapPin, MessageCircle, Calendar, FileCheck
+  Phone, Trash2, Pencil, MapPin, MessageCircle, Calendar, FileCheck,
+  User, Clock, CheckCircle2, FileText, Camera
 } from 'lucide-react';
 import { formatDate } from '../utils/formatDate';
 
@@ -12,6 +13,8 @@ export default function LeadCard({
   onBookAppointment,
   onOpenDocuments
 }) {
+  const [showFullNotes, setShowFullNotes] = React.useState(false);
+
   const phone = lead.contact?.phone || '';
   const cleanPhone = phone.replace(/[^0-9+]/g, '');
   const waPhone = cleanPhone.startsWith('+') ? cleanPhone.slice(1) : cleanPhone;

@@ -21,19 +21,22 @@ const createService = (rows: {
   users?: unknown[];
   bookings?: unknown[];
   parking?: unknown[];
+  temples?: unknown[];
 }) => {
   const ashramFind = jest.fn((_filter: any) => findChain(rows.ashrams ?? []));
   const userFind = jest.fn((_filter: any) => findChain(rows.users ?? []));
   const bookingFind = jest.fn((_filter: any) => findChain(rows.bookings ?? []));
   const parkingFind = jest.fn((_filter: any) => findChain(rows.parking ?? []));
+  const templeFind = jest.fn((_filter: any) => findChain(rows.temples ?? []));
   const distinct = jest.fn().mockResolvedValue(["ashram-1"]);
   const service = new SearchService(
     { find: ashramFind, distinct } as never,
     { find: userFind } as never,
     { find: bookingFind } as never,
     { find: parkingFind } as never,
+    { find: templeFind } as never,
   );
-  return { service, ashramFind, userFind, bookingFind, parkingFind, distinct };
+  return { service, ashramFind, userFind, bookingFind, parkingFind, templeFind, distinct };
 };
 
 describe("SearchService scoping", () => {

@@ -204,13 +204,13 @@ export const ManageAshramsPage: React.FC = () => {
       <div className="bg-gradient-to-r from-[#0B192C] via-[#0A4DA6] to-[#0B192C] rounded-[28px] p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-amber-300 text-xs font-bold backdrop-blur-md">
-            <Building size={14} /> Ashram Management Console
+            <Building size={14} /> Stay Management Console
           </div>
           <h1 className="text-2xl sm:text-3xl font-black">
-            My Ashram Accommodations
+            My Stay Accommodations
           </h1>
           <p className="text-xs sm:text-sm text-gray-200 max-w-2xl font-medium">
-            Manage your sacred ashram profile, spiritual history, daily
+            Manage your sacred stay profile, spiritual history, daily
             guidelines, amenities, and Tirvona verification status.
           </p>
         </div>
@@ -220,7 +220,7 @@ export const ManageAshramsPage: React.FC = () => {
           className="bg-[#E58C28] hover:bg-[#d47d1f] text-white font-extrabold text-xs sm:text-sm px-6 py-3.5 rounded-full flex items-center justify-center gap-2 shadow-lg shadow-black/20 transition-all cursor-pointer shrink-0 active:scale-95"
         >
           <Plus size={16} />
-          <span>List New Ashram</span>
+          <span>List New Stay</span>
         </button>
       </div>
 
@@ -235,17 +235,17 @@ export const ManageAshramsPage: React.FC = () => {
             className="mx-auto text-gray-300 dark:text-gray-600"
           />
           <h3 className="text-lg font-black text-[#0B192C] dark:text-white">
-            No Ashrams Listed Yet
+            No Stays Listed Yet
           </h3>
           <p className="text-xs text-gray-400 max-w-md mx-auto">
-            You have not registered any ashram accommodations under this
+            You have not registered any stay accommodations under this
             account.
           </p>
           <button
             onClick={() => navigate(`${consoleBase}/ashrams/add`)}
             className="px-6 py-3 bg-[#0A4DA6] text-white font-extrabold text-xs rounded-full shadow-md"
           >
-            Register Ashram Now
+            Register Stay Now
           </button>
         </div>
       ) : (
@@ -347,7 +347,7 @@ export const ManageAshramsPage: React.FC = () => {
 
                   <div className="space-y-3">
                     <h3 className="text-xs font-black tracking-wider text-gray-400">
-                      Ashram Facilities & Services
+                      Stay Facilities & Services
                     </h3>
                     <div className="flex flex-wrap gap-2">
                       {(Array.isArray(ashram.amenities) &&
@@ -444,10 +444,10 @@ export const ManageAshramsPage: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white">
-                    Edit Ashram Details
+                    Edit Stay Details
                   </h3>
                   <p className="text-xs text-gray-400">
-                    Update Ashram Name, Bio, Heritage, Rules, and Amenities.
+                    Update Stay Name, Bio, Heritage, Rules, and Amenities.
                   </p>
                 </div>
               </div>
@@ -462,7 +462,7 @@ export const ManageAshramsPage: React.FC = () => {
             <form onSubmit={handleSaveEdit} className="space-y-4">
               <div>
                 <label className="block text-[10px] font-black text-gray-400 mb-1">
-                  Ashram Name
+                  Stay Name
                 </label>
                 <input
                   type="text"
@@ -545,7 +545,7 @@ export const ManageAshramsPage: React.FC = () => {
               <div className="bg-gray-50/80 dark:bg-slate-900/80 border border-gray-100 dark:border-slate-800 rounded-2xl p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <label className="text-[10px] font-black text-gray-400 flex items-center gap-1.5">
-                    <ImageIcon size={14} className="text-[#0A4DA6]" /> Ashram
+                    <ImageIcon size={14} className="text-[#0A4DA6]" /> Stay
                     Photo Gallery ({editFormData.images?.length || 0} Photos)
                   </label>
                   <span className="text-[10px] text-gray-400 font-bold">
@@ -635,7 +635,7 @@ export const ManageAshramsPage: React.FC = () => {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 max-w-md w-full rounded-[28px] p-6 space-y-4 text-left">
             <h3 className="font-bold text-sm text-[#0B192C] dark:text-white flex items-center gap-1.5">
-              <Upload size={16} className="text-[#0A4DA6]" /> Upload Ashram
+              <Upload size={16} className="text-[#0A4DA6]" /> Upload Stay
               Deeds & Certificates
             </h3>
             <p className="text-[10px] text-gray-400">

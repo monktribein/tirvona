@@ -89,7 +89,7 @@ export const HomePage: React.FC = () => {
 
   const activityOptions = [
     { value: "", label: "Trip Type" },
-    { value: "ashram", label: "Ashram Stay" },
+    { value: "ashram", label: "Stay" },
     { value: "dharamshala", label: "Dharamshala" },
     { value: "homestay", label: "Homestay" },
   ];
@@ -634,15 +634,15 @@ export const HomePage: React.FC = () => {
   };
   const serviceHighlights = [
     {
-      title: publishedCms.destinations_banner?.title || "Destinations",
-      href: "/pilgrimage-circuits",
-      cta: publishedCms.destinations_banner?.ctaText || "Explore Holy Places",
+      title: publishedCms.temples_banner?.title || "Temples",
+      href: "/temples",
+      cta: publishedCms.temples_banner?.ctaText || "Explore Temples",
       description:
-        publishedCms.destinations_banner?.description ||
-        publishedCms.destinations_banner?.subtitle ||
-        "Explore sacred places, plan your trip and discover spiritual experiences.",
-      img: publishedCms.destinations_banner?.bannerImage || "",
-      alt: "Sacred Destinations",
+        publishedCms.temples_banner?.description ||
+        publishedCms.temples_banner?.subtitle ||
+        "Explore sacred temples, plan your trip and discover spiritual experiences.",
+      img: publishedCms.temples_banner?.bannerImage || publishedCms.destinations_banner?.bannerImage || "",
+      alt: "Sacred Temples",
       overlay: "bg-gradient-to-t from-black/90 via-black/55 to-black/35",
       eyebrowClass: "text-[#E58C28]",
       descriptionClass: "text-gray-200",
@@ -655,7 +655,7 @@ export const HomePage: React.FC = () => {
       description:
         publishedCms.parking_banner?.description ||
         publishedCms.parking_banner?.subtitle ||
-        "Reserve hassle-free vehicle parking slots near ashrams, temples, and yatra circuits.",
+        "Reserve hassle-free vehicle parking slots near stays, temples, and yatra circuits.",
       img: publishedCms.parking_banner?.bannerImage || "",
       alt: "Sacred Parking Facilities",
       overlay: "bg-gradient-to-t from-black/90 via-black/55 to-black/35",
@@ -829,7 +829,7 @@ export const HomePage: React.FC = () => {
   }, [destinationsData, ashrams]);
 
   const customerFeedbacks = feedbacks.map((r, i) => ({
-    name: r.ashramId?.name || "Ashram stay",
+    name: r.ashramId?.name || "Stay",
     location: r.ashramId?.address
       ? [r.ashramId.address.city, r.ashramId.address.state]
         .filter(Boolean)
@@ -1217,7 +1217,7 @@ export const HomePage: React.FC = () => {
             <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
           </div>
           <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-xl mx-auto leading-relaxed">
-            Find verified ashram stays and authentic spiritual experiences with Tirvona.
+            Find verified stays and authentic spiritual experiences with Tirvona.
           </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-6 w-full pt-2 pb-6">
@@ -1404,7 +1404,7 @@ export const HomePage: React.FC = () => {
             >
               {publishedFeatured.description ||
                 publishedFeatured.subtitle ||
-                "Experience the divine spiritual gathering on the sacred banks of Ganga in Haridwar. Secure your holy ashram stay today for peace and divine blessings."}
+                "Experience the divine spiritual gathering on the sacred banks of Ganga in Haridwar. Secure your holy stay today for peace and divine blessings."}
             </motion.p>
 
             <motion.div
@@ -1631,7 +1631,7 @@ export const HomePage: React.FC = () => {
             <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
           </div>
           <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-xl mx-auto leading-relaxed">
-            Tirvona Verified ashrams and dharamshalas providing peaceful
+            Tirvona Verified stays and dharamshalas providing peaceful
             rooms, satvik food, and morning prayers.
           </p>
           <button
@@ -1639,7 +1639,7 @@ export const HomePage: React.FC = () => {
             onClick={() => navigate("/search")}
             className="mt-2 inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-[#083b80] text-white text-xs font-extrabold shadow-md transition-all cursor-pointer"
           >
-            Explore All Ashrams <ArrowRight size={14} />
+            Explore All Stays <ArrowRight size={14} />
           </button>
         </div>
         <div
@@ -2049,7 +2049,7 @@ export const HomePage: React.FC = () => {
             </div>
             <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-xl mx-auto leading-relaxed">
               Real reviews and experiences shared by pilgrims who booked their
-              ashram stays through Tirvona.
+              stays through Tirvona.
             </p>
           </div>
 
@@ -2099,7 +2099,7 @@ export const HomePage: React.FC = () => {
                               {fb.reviewer}
                               {fb.verifiedStay && (
                                 <span
-                                  title="Stayed at this ashram"
+                                  title="Stayed at this stay"
                                   className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-emerald-500/25 border border-emerald-400/40 text-emerald-200 text-[9px] font-black shrink-0"
                                 >
                                   <CheckCircle size={9} /> Verified stay

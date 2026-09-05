@@ -769,7 +769,7 @@ export const AshramDetailPage: React.FC = () => {
         const detailAshram = payload?.ashram ?? payload;
         const detailRooms = Array.isArray(payload?.rooms) ? payload.rooms : [];
         if (!detailAshram?._id)
-          throw new Error("Ashram details are unavailable.");
+          throw new Error("Stay details are unavailable.");
 
         setAshram(detailAshram);
         setRooms(detailRooms);
@@ -788,7 +788,7 @@ export const AshramDetailPage: React.FC = () => {
     } catch (err) {
       console.error("Fetch details error:", err);
       setAshram(null);
-      setDetailError(getErrorMessage(err, "Unable to load this ashram."));
+      setDetailError(getErrorMessage(err, "Unable to load this stay."));
     } finally {
       setLoading(false);
     }
@@ -1130,10 +1130,10 @@ export const AshramDetailPage: React.FC = () => {
     return (
       <div className="max-w-3xl mx-auto px-6 py-20 text-center space-y-4">
         <h2 className="text-2xl font-extrabold text-[#0B192C] dark:text-white">
-          Ashram unavailable
+          Stay unavailable
         </h2>
         <p className="text-sm text-gray-500">
-          {detailError || "The requested ashram could not be found."}
+          {detailError || "The requested stay could not be found."}
         </p>
         <Link
           to="/search"
@@ -1961,7 +1961,7 @@ export const AshramDetailPage: React.FC = () => {
                   {availableAddOns.filter((a: any) => a.enabled !== false)
                     .length === 0 ? (
                     <p className="text-[11px] text-gray-400 italic">
-                      No add-on services available for this ashram.
+                      No add-on services available for this stay.
                     </p>
                   ) : (
                     <div className="space-y-2.5">
@@ -2046,7 +2046,7 @@ export const AshramDetailPage: React.FC = () => {
 
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-gray-400 flex items-center gap-1">
-                    Ashram Donation (₹){" "}
+                    Stay Donation (₹){" "}
                     <Heart size={10} className="text-danger fill-danger" />
                   </label>
                   <input
@@ -2335,7 +2335,7 @@ export const AshramDetailPage: React.FC = () => {
 
                   {donationCalc > 0 && (
                     <div className="flex justify-between text-gray-600 dark:text-gray-300">
-                      <span>Ashram Donation:</span>
+                      <span>Stay Donation:</span>
                       <span>{formatCurrency(donationCalc)}</span>
                     </div>
                   )}
