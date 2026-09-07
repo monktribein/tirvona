@@ -73,6 +73,7 @@ import {
   Trash2,
   Edit3,
 } from "lucide-react";
+import { checkAshramBookingAvailable } from "../utils/ashramAvailabilityHelper";
 
 import {
   volunteerService,
@@ -1460,10 +1461,17 @@ export const AshramDetailPage: React.FC = () => {
           </div>
 
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-5 shadow-sm">
-            <div className="flex items-center justify-between border-b border-gray-50 dark:border-slate-850 pb-3">
-              <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white">
-                Available Room Categories
-              </h3>
+            <div className="flex items-center justify-between border-b border-gray-50 dark:border-slate-850 pb-3 flex-wrap gap-2">
+              <div className="flex items-center gap-2.5">
+                <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white">
+                  Available Room Categories
+                </h3>
+                {!checkAshramBookingAvailable(ashram) && (
+                  <span className="px-2.5 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/60 text-[11px] font-black uppercase tracking-wider">
+                    Not Available
+                  </span>
+                )}
+              </div>
               {availableOffers.some((o) => o.isLastMinuteDeal) && (
                 <span className="px-3 py-1 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[10px] font-black flex items-center gap-1 border border-rose-200 dark:border-rose-900/40">
                   <Sparkles size={11} className="animate-pulse" /> ⚡ Last Minute Deals Available Today
@@ -1582,7 +1590,7 @@ export const AshramDetailPage: React.FC = () => {
                         <button
                           onClick={() => handleUpdateRoomQty(r._id, -1)}
                           className="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-rose-600 transition-colors disabled:opacity-30"
-                          disabled={selectedQty === 0}
+                          disabled={selectedQty === 0 || !checkAshramBookingAvailable(ashram)}
                         >
                           <span className="text-lg leading-none font-medium">−</span>
                         </button>
@@ -1597,8 +1605,8 @@ export const AshramDetailPage: React.FC = () => {
                               handleApplyAvailableOffer(roomDeal);
                             }
                           }}
-                          className="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-emerald-600 transition-colors"
-                          disabled={selectedRoomCount >= requestedRoomCount}
+                          className="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-emerald-600 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                          disabled={selectedRoomCount >= requestedRoomCount || !checkAshramBookingAvailable(ashram)}
                         >
                           <span className="text-lg leading-none font-medium">＋</span>
                         </button>
@@ -2276,15 +2284,21 @@ export const AshramDetailPage: React.FC = () => {
 
                 <button
                   type="submit"
-                  disabled={paying || quoting}
-                  className="w-full py-3.5 bg-[#0A4DA6] hover:bg-[#083b80] disabled:opacity-60 disabled:cursor-not-allowed text-white font-black rounded-full text-xs shadow-lg shadow-[#0A4DA6]/25 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-98"
+                  disabled={paying || quoting || !checkAshramBookingAvailable(ashram)}
+                  className={`w-full py-3.5 text-white font-black rounded-full text-xs flex items-center justify-center gap-2 transition-all ${
+                    !checkAshramBookingAvailable(ashram)
+                      ? "bg-rose-600 hover:bg-rose-700 cursor-not-allowed opacity-90 shadow-md shadow-rose-900/20"
+                      : "bg-[#0A4DA6] hover:bg-[#083b80] disabled:opacity-60 disabled:cursor-not-allowed shadow-lg shadow-[#0A4DA6]/25 cursor-pointer active:scale-98"
+                  }`}
                 >
-                  {paying
-                    ? "Opening Secure Payment..."
-                    : quoting
-                      ? "Updating price..."
-                      : "Book & Pay"}
-                  {!paying && <ArrowRight size={14} />}
+                  {!checkAshramBookingAvailable(ashram)
+                    ? "Booking Not Available"
+                    : paying
+                      ? "Opening Secure Payment..."
+                      : quoting
+                        ? "Updating price..."
+                        : "Book & Pay"}
+                  {checkAshramBookingAvailable(ashram) && !paying && <ArrowRight size={14} />}
                 </button>
               </form>
             ) : (

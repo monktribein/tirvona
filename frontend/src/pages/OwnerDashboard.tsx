@@ -114,6 +114,25 @@ export const OwnerDashboard: React.FC = () => {
   const [selectedRoomId, setSelectedRoomId] = useState("");
   const [calendar, setCalendar] = useState<any[]>([]);
   const [calendarLoading, setCalendarLoading] = useState(false);
+  const calendarScrollRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const scrollToCenter = () => {
+      if (calendarScrollRef.current) {
+        const container = calendarScrollRef.current;
+        const centerEl = container.querySelector('[data-is-center="true"]') as HTMLElement;
+        if (centerEl) {
+          const targetScroll = centerEl.offsetLeft - (container.clientWidth / 2) + (centerEl.clientWidth / 2);
+          container.scrollTo({ left: targetScroll, behavior: "smooth" });
+        }
+      }
+    };
+    
+    // Immediate and post-render frame execution
+    requestAnimationFrame(scrollToCenter);
+    const timeout = setTimeout(scrollToCenter, 150);
+    return () => clearTimeout(timeout);
+  }, [centerDate, calendarLoading, selectedRoomId]);
 
   // Date Booking Details & Actions Modal
   const [activeDetailDate, setActiveDetailDate] = useState<string | null>(null);
@@ -746,71 +765,78 @@ export const OwnerDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* 15-DAY HORIZONTAL ROLLING CALENDAR STRIP */}
+        {/* 15-DAY HORIZONTAL ROLLING CALENDAR STRIP (SINGLE LINE: 4 LEFT, TODAY IN CENTER, 4 RIGHT) */}
         {loadingAshrams || calendarLoading ? (
-          <div className="h-32 rounded-2xl bg-slate-100 dark:bg-slate-900 animate-pulse" />
+          <div className="h-28 rounded-2xl bg-slate-100 dark:bg-slate-900 animate-pulse" />
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-8 xl:grid-cols-15 gap-2 overflow-x-auto pb-1">
-            {fifteenDays.map((day) => {
-              const isToday = day.isToday;
-              const isSelected = activeDetailDate === day.date;
+          <div className="relative group">
+            <div
+              ref={calendarScrollRef}
+              className="flex items-stretch gap-2.5 overflow-x-auto pb-2 pt-1 scroll-smooth scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-700"
+            >
+              {fifteenDays.map((day) => {
+                const isToday = day.isToday;
+                const isSelected = activeDetailDate === day.date;
+                const isCenter = day.isCenter;
 
-              return (
-                <div
-                  key={day.date}
-                  onClick={() => setActiveDetailDate(day.date)}
-                  className={`relative rounded-2xl p-2.5 text-center cursor-pointer transition-all duration-200 flex flex-col justify-between select-none ${
-                    isSelected
-                      ? "ring-2 ring-[#0A4DA6] bg-blue-50/90 dark:bg-blue-950/50 shadow-md transform -translate-y-0.5"
-                      : isToday
-                        ? "border-2 border-orange-400 bg-orange-50/60 dark:bg-orange-950/20 shadow-xs hover:border-orange-500"
-                        : "border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/70 hover:border-[#0A4DA6]/60 hover:bg-blue-50/40"
-                  }`}
-                >
-                  {/* Top Badge (TODAY / Offset) */}
-                  <div className="flex items-center justify-between gap-1 mb-1">
-                    <span className="text-[10px] font-black uppercase text-slate-400">
-                      {day.dayName}
-                    </span>
-                    {isToday && (
-                      <span className="text-[8px] font-black uppercase px-1.5 py-0.5 rounded-full bg-orange-500 text-white animate-pulse">
-                        Today
+                return (
+                  <div
+                    key={day.date}
+                    data-is-center={isCenter ? "true" : "false"}
+                    onClick={() => setActiveDetailDate(day.date)}
+                    className={`relative shrink-0 flex-1 min-w-[95px] max-w-[125px] rounded-2xl p-2.5 text-center cursor-pointer transition-all duration-200 flex flex-col justify-between select-none ${
+                      isSelected
+                        ? "ring-2 ring-[#0A4DA6] bg-blue-50/90 dark:bg-blue-950/50 shadow-md transform -translate-y-0.5"
+                        : isToday
+                          ? "border-2 border-orange-500 bg-orange-50/70 dark:bg-orange-950/30 shadow-xs ring-2 ring-orange-400/30 font-semibold"
+                          : "border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/70 hover:border-[#0A4DA6]/60 hover:bg-blue-50/40 hover:-translate-y-0.5"
+                    }`}
+                  >
+                    {/* Top Badge (TODAY / Day Name) */}
+                    <div className="flex items-center justify-between gap-1 mb-1">
+                      <span className="text-[10px] font-black uppercase text-slate-400 tracking-tight">
+                        {day.dayName}
                       </span>
-                    )}
-                  </div>
-
-                  {/* Day Number */}
-                  <div className="my-1">
-                    <span className={`text-base font-black tabular-nums ${isToday ? "text-orange-600 dark:text-orange-400 font-extrabold" : "text-slate-900 dark:text-white"}`}>
-                      {day.dayNumber}
-                    </span>
-                    <span className="block text-[9px] font-bold text-slate-400 uppercase tracking-tight">
-                      {day.monthName}
-                    </span>
-                  </div>
-
-                  {/* Pricing */}
-                  <div className="text-[10px] font-black text-slate-700 dark:text-slate-300 my-0.5">
-                    {day.price > 0 ? formatCurrency(day.price) : "—"}
-                  </div>
-
-                  {/* Booked / Free Mini Badges */}
-                  <div className="space-y-1 mt-1.5 pt-1.5 border-t border-slate-200/60 dark:border-slate-800">
-                    <div className={`text-[9px] font-black py-0.5 px-1 rounded ${day.booked > 0 ? "bg-[#0A4DA6] text-white" : "bg-slate-200/60 dark:bg-slate-800 text-slate-500"}`}>
-                      {day.booked} Bkd
+                      {isToday && (
+                        <span className="text-[8px] font-black uppercase px-1.5 py-0.2 rounded-full bg-orange-500 text-white">
+                          Today
+                        </span>
+                      )}
                     </div>
-                    <div className="text-[9px] font-black py-0.5 px-1 rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
-                      {day.available} Free
+
+                    {/* Day Number & Month */}
+                    <div className="my-0.5">
+                      <span className={`text-base font-black leading-tight tabular-nums ${isToday ? "text-orange-600 dark:text-orange-400 font-extrabold" : "text-slate-900 dark:text-white"}`}>
+                        {day.dayNumber}
+                      </span>
+                      <span className="block text-[9px] font-bold text-slate-400 uppercase tracking-tight">
+                        {day.monthName}
+                      </span>
+                    </div>
+
+                    {/* Pricing */}
+                    <div className="text-[10px] font-black text-slate-700 dark:text-slate-300 my-0.5">
+                      {day.price > 0 ? formatCurrency(day.price) : "—"}
+                    </div>
+
+                    {/* Booked / Free Mini Badges */}
+                    <div className="space-y-1 mt-1 pt-1.5 border-t border-slate-200/60 dark:border-slate-800">
+                      <div className={`text-[9px] font-black py-0.5 px-1 rounded ${day.booked > 0 ? "bg-[#0A4DA6] text-white" : "bg-slate-200/60 dark:bg-slate-800 text-slate-500"}`}>
+                        {day.booked} Bkd
+                      </div>
+                      <div className="text-[9px] font-black py-0.5 px-1 rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
+                        {day.available} Free
+                      </div>
+                    </div>
+
+                    {/* Action link */}
+                    <div className="mt-1 text-[8px] font-extrabold text-[#0A4DA6] dark:text-blue-400 underline flex items-center justify-center gap-0.5">
+                      Details →
                     </div>
                   </div>
-
-                  {/* Action link */}
-                  <div className="mt-1.5 text-[8px] font-extrabold text-[#0A4DA6] dark:text-blue-400 underline flex items-center justify-center gap-0.5">
-                    Details →
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         )}
       </section>

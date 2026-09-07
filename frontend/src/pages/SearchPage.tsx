@@ -33,9 +33,11 @@ import {
   Clock,
   BedDouble,
   CheckCircle2,
+  XCircle,
   ArrowRight,
   Sparkles,
 } from "lucide-react";
+import { checkAshramBookingAvailable } from "../utils/ashramAvailabilityHelper";
 
 export const SearchPage: React.FC = () => {
   const { language, t } = useLanguage();
@@ -248,6 +250,13 @@ export const SearchPage: React.FC = () => {
           });
         }
 
+        // Sort so that available stays appear first, and unavailable stays appear at the bottom
+        fetchedData.sort((a: any, b: any) => {
+          const availA = checkAshramBookingAvailable(a) ? 1 : 0;
+          const availB = checkAshramBookingAvailable(b) ? 1 : 0;
+          return availB - availA;
+        });
+
         setResults(fetchedData);
         setDiscovery(res.data.discovery ?? null);
       }
@@ -432,24 +441,23 @@ export const SearchPage: React.FC = () => {
     if (activeCheckOut) params.set("checkOut", activeCheckOut);
     params.set("rooms", String(searchState.rooms));
     params.set("adults", String(searchState.adults));
-    params.set("children", String(searchState.children));
     params.set("guests", String(totalGuests));
     const qStr = params.toString();
     return ashramUrl(ashram, qStr ? `?${qStr}` : "");
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-1 pb-12 space-y-4 lg:pb-12 lg:h-[calc(100vh-5.5rem)] lg:flex lg:flex-col lg:overflow-hidden">
-      <div className="relative z-[100] isolate overflow-visible bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 p-1.5 sm:p-2 rounded-[28px] lg:rounded-full shadow-lg shadow-[#0B192C]/8 shrink-0">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2 pb-12 space-y-4">
+      <div className="relative z-[100] isolate overflow-visible bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 p-1 sm:p-1.5 rounded-2xl lg:rounded-full shadow-md shadow-[#0B192C]/5 shrink-0">
         <form
           onSubmit={handleSearchSubmit}
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.45fr_1.35fr_1.15fr_auto] gap-1 lg:gap-0 items-center"
         >
           <div
-            className="flex flex-col justify-center text-left relative min-h-[62px] px-5 py-2 rounded-2xl lg:rounded-full lg:border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0B192C] hover:bg-slate-50 dark:hover:bg-slate-900/60 hover:shadow-lg z-10 focus-within:z-[90]"
+            className="flex flex-col justify-center text-left relative min-h-[46px] px-4 py-1.5 rounded-xl lg:rounded-full lg:border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0B192C] hover:bg-slate-50 dark:hover:bg-slate-900/60 hover:shadow-sm z-10 focus-within:z-[90]"
             ref={autocompleteRef}
           >
-            <label className="text-[11px] font-extrabold text-[#0B192C] dark:text-white">
+            <label className="text-[10px] font-extrabold text-[#0B192C] dark:text-white uppercase tracking-wider">
               Where
             </label>
             <div className="relative">
@@ -459,7 +467,7 @@ export const SearchPage: React.FC = () => {
                 onChange={handleInputChange}
                 onFocus={() => setShowSuggestions(true)}
                 placeholder={t("Search destinations")}
-                className="w-full bg-transparent border-0 p-0 mt-0.5 text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-300 focus:outline-none"
+                className="w-full bg-transparent border-0 p-0 text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 focus:outline-none"
               />
             </div>
 
@@ -469,14 +477,14 @@ export const SearchPage: React.FC = () => {
                   initial={{ opacity: 0, y: 5 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 5 }}
-                  className="absolute left-0 right-0 top-full mt-3 bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden z-50 text-xs"
+                  className="absolute left-0 right-0 top-full mt-2 bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 rounded-2xl shadow-xl overflow-hidden z-50 text-xs"
                 >
                   {suggestions.map((sug, i) => (
                     <button
                       key={i}
                       type="button"
                       onClick={() => selectSuggestion(sug)}
-                      className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-slate-800 font-semibold flex items-center gap-2 border-b border-gray-50 dark:border-slate-850 last:border-b-0 cursor-pointer"
+                      className="w-full text-left px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-slate-800 font-semibold flex items-center gap-2 border-b border-gray-50 dark:border-slate-850 last:border-b-0 cursor-pointer"
                     >
                       <Compass size={12} className="text-[#0A4DA6]" />
                       <span>{t(sug)}</span>
@@ -487,7 +495,7 @@ export const SearchPage: React.FC = () => {
             </AnimatePresence>
           </div>
 
-          <div className="relative rounded-2xl lg:rounded-full px-5 py-2 min-h-[62px] flex items-center lg:border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0B192C] hover:bg-slate-50 dark:hover:bg-slate-900/60 hover:shadow-lg z-10 focus-within:z-[90]">
+          <div className="relative rounded-xl lg:rounded-full px-4 py-1.5 min-h-[46px] flex items-center lg:border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0B192C] hover:bg-slate-50 dark:hover:bg-slate-900/60 hover:shadow-sm z-10 focus-within:z-[90]">
             <DateRangePicker
               checkIn={checkIn}
               checkOut={checkOut}
@@ -501,68 +509,55 @@ export const SearchPage: React.FC = () => {
             />
           </div>
 
-          <div className="relative rounded-2xl lg:rounded-full px-5 py-2 min-h-[62px] flex items-center bg-white dark:bg-[#0B192C] hover:bg-slate-50 dark:hover:bg-slate-900/60 hover:shadow-lg z-10 focus-within:z-[90]">
+          <div className="relative rounded-xl lg:rounded-full px-4 py-1.5 min-h-[46px] flex items-center bg-white dark:bg-[#0B192C] hover:bg-slate-50 dark:hover:bg-slate-900/60 hover:shadow-sm z-10 focus-within:z-[90]">
             <GuestRoomSelector compact pill />
           </div>
 
           <button
             type="submit"
-            className="w-full lg:w-auto h-12 lg:h-14 px-6 bg-[#0A4DA6] hover:bg-opacity-95 text-white font-extrabold rounded-full text-xs flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-[#0A4DA6]/10"
+            className="w-full lg:w-auto h-10 lg:h-11 px-5 bg-[#0A4DA6] hover:bg-opacity-95 text-white font-extrabold rounded-xl lg:rounded-full text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-sm shadow-[#0A4DA6]/10"
           >
-            <Search size={14} /> Modify Search
+            <Search size={13} /> Modify Search
           </button>
         </form>
       </div>
 
-      <div
-        className={`shrink-0 rounded-[24px] border px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
-          coordinates && discovery?.locationApplied
-            ? "border-emerald-200 bg-emerald-50/80 dark:border-emerald-900 dark:bg-emerald-950/30"
-            : "border-blue-100 bg-blue-50/70 dark:border-blue-900 dark:bg-blue-950/30"
-        }`}
-      >
-        <div className="flex items-start gap-3">
-          <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-[#0A4DA6] shadow-sm dark:bg-slate-900">
-            <Navigation size={18} />
-          </span>
-          <div>
-            <p className="text-sm font-extrabold text-[#0B192C] dark:text-white">
-              {coordinates && discovery?.locationApplied
-                ? `${discovery.nearbyCount} nearby Ashram${discovery.nearbyCount === 1 ? "" : "s"} found first`
-                : locationStatus === "requesting"
-                  ? "Detecting your area…"
-                  : "Find Ashrams near your current area"}
-            </p>
-            <p className="mt-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-300">
-              {coordinates && discovery?.locationApplied
-                ? `Near ${
-                    [
-                      discovery.detectedArea?.city,
-                      discovery.detectedArea?.district,
-                      discovery.detectedArea?.state,
-                    ]
-                      .filter(Boolean)
-                      .join(", ") || "your current area"
-                  } within ${discovery.radiusKm} km. Nearby stays are ranked by distance; the full catalogue follows.`
-                : locationError ||
-                  "Allow location for distance-ranked results, or use the city/area search above. Your precise location is not saved."}
-            </p>
+      {!coordinates && (
+        <div
+          className="shrink-0 rounded-2xl border px-4 py-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-blue-100 bg-blue-50/70 dark:border-blue-900 dark:bg-blue-950/30"
+        >
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-[#0A4DA6] shadow-xs dark:bg-slate-900">
+              <Navigation size={14} />
+            </span>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                <p className="text-xs font-extrabold text-[#0B192C] dark:text-white">
+                  {locationStatus === "requesting"
+                    ? "Detecting your area…"
+                    : "Find Ashrams near your current area"}
+                </p>
+                <span className="hidden sm:inline text-gray-300 dark:text-slate-700 text-xs">•</span>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                  {locationError ||
+                    "Allow location for distance-ranked results, or use city search above."}
+                </p>
+              </div>
+            </div>
           </div>
-        </div>
-        {!coordinates && (
           <button
             type="button"
             onClick={requestLocation}
             disabled={locationStatus === "requesting"}
-            className="shrink-0 rounded-full bg-[#0A4DA6] px-5 py-2.5 text-xs font-bold text-white disabled:cursor-wait disabled:opacity-60"
+            className="shrink-0 self-start sm:self-auto rounded-full bg-[#0A4DA6] px-3.5 py-1.5 text-[11px] font-bold text-white disabled:cursor-wait disabled:opacity-60 hover:bg-[#083b80] transition-colors"
           >
             {locationStatus === "requesting" ? "Locating…" : "Use my location"}
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 lg:flex-1 lg:min-h-0">
-        <aside className="space-y-6 lg:overflow-y-auto lg:pr-1 scrollbar-none">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
+        <aside className="space-y-6 lg:sticky lg:top-20">
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[28px] shadow-sm space-y-6">
             <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white flex items-center gap-2 border-b border-gray-50 dark:border-slate-850 pb-3">
               <Filter size={16} className="text-[#0A4DA6]" /> Filters
@@ -611,11 +606,9 @@ export const SearchPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="border-t border-gray-100 dark:border-slate-800" />
-
-            <div className="space-y-4">
-              <h4 className="text-[10px] font-extrabold text-gray-400 tracking-wider">
-                Common Facilities
+            <div className="space-y-4 pt-4 border-t border-gray-50 dark:border-slate-850">
+              <h4 className="text-[10px] uppercase font-extrabold text-gray-400 tracking-wider">
+                Facilities
               </h4>
               <div className="space-y-3.5">
                 <label className="flex items-center gap-3 text-xs font-semibold cursor-pointer select-none">
@@ -625,7 +618,7 @@ export const SearchPage: React.FC = () => {
                     onChange={() => setAcFilter(!acFilter)}
                     className="rounded border-gray-200 dark:border-slate-700 text-[#0A4DA6] focus:ring-[#0A4DA6]/20 cursor-pointer w-4 h-4"
                   />
-                  <span className="flex items-center gap-1.5">
+                  <span className="flex items-center gap-1.5 text-[#0B192C] dark:text-gray-200">
                     <Wifi size={14} className="text-gray-400" /> AC Rooms
                   </span>
                 </label>
@@ -637,9 +630,8 @@ export const SearchPage: React.FC = () => {
                     onChange={() => setFoodFilter(!foodFilter)}
                     className="rounded border-gray-200 dark:border-slate-700 text-[#0A4DA6] focus:ring-[#0A4DA6]/20 cursor-pointer w-4 h-4"
                   />
-                  <span className="flex items-center gap-1.5">
-                    <UtensilsCrossed size={14} className="text-gray-400" />{" "}
-                    Satvik Vegetarian Food
+                  <span className="flex items-center gap-1.5 text-[#0B192C] dark:text-gray-200">
+                    <UtensilsCrossed size={14} className="text-gray-400" /> Pure Vegetarian Food
                   </span>
                 </label>
 
@@ -650,7 +642,7 @@ export const SearchPage: React.FC = () => {
                     onChange={() => setParkingFilter(!parkingFilter)}
                     className="rounded border-gray-200 dark:border-slate-700 text-[#0A4DA6] focus:ring-[#0A4DA6]/20 cursor-pointer w-4 h-4"
                   />
-                  <span className="flex items-center gap-1.5">
+                  <span className="flex items-center gap-1.5 text-[#0B192C] dark:text-gray-200">
                     <Car size={14} className="text-gray-400" /> Parking
                   </span>
                 </label>
@@ -658,27 +650,46 @@ export const SearchPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[28px] shadow-sm flex flex-col items-center justify-center text-center space-y-4 relative overflow-hidden">
-            <div className="absolute inset-0 bg-[#0A4DA6]/5 opacity-40 pointer-events-none" />
-            <MapPin className="text-[#0A4DA6]" size={28} />
-            <h4 className="text-xs font-extrabold text-[#0B192C] dark:text-white">
-              How far is each stay?
+          <div className="bg-gradient-to-br from-blue-500/10 via-amber-500/5 to-transparent border border-[#0A4DA6]/20 p-5 rounded-[24px] space-y-2">
+            <h4 className="text-xs font-extrabold text-[#0B192C] dark:text-white flex items-center gap-2">
+              <Navigation size={14} className="text-[#0A4DA6]" /> Near Temple Finder
             </h4>
-            <p className="text-[10px] text-gray-400 max-w-[200px] leading-relaxed">
-              See every ashram on a map, sorted by distance from{" "}
-              <strong className="text-[#0A4DA6] font-bold">
-                {getCentralLandmark().name}
-              </strong>
-              .
+            <p className="text-[11px] text-gray-500 leading-relaxed font-medium">
+              Find ashrams walking distance from major ghats & temples.
             </p>
             <button
-              type="button"
               onClick={() => {
-                if (results.length > 0) {
-                  const mapItems = getMapItems();
-                  setSelectedMapAshram(mapItems[0]);
+                const landmark = getCentralLandmark();
+                if (landmark) {
+                  const sorted = [...results].sort((a, b) => {
+                    const distA = getDistanceInKm(
+                      landmark.lat,
+                      landmark.lon,
+                      a.location?.coordinates?.coordinates?.[1] ||
+                        a.location?.coordinates?.[1] ||
+                        a.latitude ||
+                        0,
+                      a.location?.coordinates?.coordinates?.[0] ||
+                        a.location?.coordinates?.[0] ||
+                        a.longitude ||
+                        0,
+                    );
+                    const distB = getDistanceInKm(
+                      landmark.lat,
+                      landmark.lon,
+                      b.location?.coordinates?.coordinates?.[1] ||
+                        b.location?.coordinates?.[1] ||
+                        b.latitude ||
+                        0,
+                      b.location?.coordinates?.coordinates?.[0] ||
+                        b.location?.coordinates?.[0] ||
+                        b.longitude ||
+                        0,
+                    );
+                    return distA - distB;
+                  });
+                  setResults(sorted);
                 }
-                setShowMapGrid(true);
               }}
               className="px-5 py-2.5 bg-[#0A4DA6]/10 text-[#0A4DA6] border border-[#0A4DA6]/20 rounded-full text-[10px] font-bold hover:bg-[#0A4DA6]/15 transition-all cursor-pointer"
             >
@@ -687,7 +698,7 @@ export const SearchPage: React.FC = () => {
           </div>
         </aside>
 
-        <section className="lg:col-span-3 space-y-6 lg:overflow-y-auto lg:pr-2 lg:pb-6 scrollbar-none">
+        <section className="lg:col-span-3 space-y-3">
           <SearchResultStatus
             loading={loading}
             destination={
@@ -697,25 +708,25 @@ export const SearchPage: React.FC = () => {
           />
 
           {rawDestination && !loading && (
-            <div className="bg-gradient-to-r from-[#0A4DA6]/10 via-[#E58C28]/10 to-transparent border border-[rgba(229,140,40,0.35)] rounded-[24px] p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
-              <div className="space-y-1">
+            <div className="bg-gradient-to-r from-[#0A4DA6]/10 via-[#E58C28]/10 to-transparent border border-[rgba(229,140,40,0.35)] rounded-2xl px-3.5 py-2 sm:px-4 sm:py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shadow-2xs">
+              <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#0A4DA6]/10 text-[#0A4DA6] text-[10px] font-black uppercase tracking-wider">
-                    <Sparkles size={11} className="text-[#E58C28]" /> Destination Guide
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#0A4DA6]/10 text-[#0A4DA6] text-[9px] font-black uppercase tracking-wider">
+                    <Sparkles size={10} className="text-[#E58C28]" /> Destination Guide
                   </span>
-                  <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white">
+                  <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white">
                     {toTitleCase(rawDestination)} Overview
                   </h3>
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                <p className="text-[11px] text-gray-500 dark:text-gray-400 font-medium line-clamp-1">
                   Plan your visit with complete ashrams, parking, prasad, and sacred temples in {toTitleCase(rawDestination)}.
                 </p>
               </div>
               <Link
                 to={`/destination/${rawDestination.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")}`}
-                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-[#083b80] text-white text-xs font-extrabold transition-all shrink-0 shadow-sm"
+                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#0A4DA6] hover:bg-[#083b80] text-white text-[11px] font-extrabold transition-all shrink-0 shadow-xs"
               >
-                Explore {toTitleCase(rawDestination)} <ArrowRight size={13} />
+                Explore {toTitleCase(rawDestination)} <ArrowRight size={12} />
               </Link>
             </div>
           )}
@@ -741,8 +752,10 @@ export const SearchPage: React.FC = () => {
               </p>
             </div>
           ) : (
-            <div className="space-y-5">
-              {results.map((ashram, index) => (
+            <div className="space-y-3.5">
+              {results.map((ashram, index) => {
+                const isAvailable = checkAshramBookingAvailable(ashram);
+                return (
                 <React.Fragment key={ashram._id}>
                   {coordinates && ashram.discovery?.isNearby && index === 0 && (
                     <div className="flex items-center gap-2 px-1 pt-1 text-sm font-extrabold text-[#0B192C] dark:text-white">
@@ -760,7 +773,11 @@ export const SearchPage: React.FC = () => {
                       </div>
                     )}
                 <div
-                  className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-5 shadow-sm premium-card-hover flex flex-col md:flex-row gap-6"
+                  className={`bg-white dark:bg-[#0B192C] border rounded-[28px] p-5 shadow-sm premium-card-hover flex flex-col md:flex-row gap-6 relative transition-all ${
+                    !isAvailable
+                      ? "border-rose-200/80 dark:border-rose-950/50 bg-white/80 dark:bg-[#0B192C]/80 backdrop-blur-[1.5px] opacity-90"
+                      : "border-gray-100 dark:border-slate-800"
+                  }`}
                 >
                   <div className="w-full md:w-60 h-40 rounded-[20px] bg-gray-50 dark:bg-slate-900 relative overflow-hidden shrink-0">
                     <img
@@ -769,7 +786,7 @@ export const SearchPage: React.FC = () => {
                         "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E"
                       }
                       alt={ashram.name}
-                      className="w-full h-full object-cover"
+                      className={`w-full h-full object-cover transition-all ${!isAvailable ? "grayscale-[15%]" : ""}`}
                       onError={(e) => {
                         e.currentTarget.onerror = null;
                         e.currentTarget.src =
@@ -784,6 +801,11 @@ export const SearchPage: React.FC = () => {
                     {(ashram.images?.length ?? 0) > 1 && (
                       <span className="absolute bottom-3 right-3 rounded-full bg-slate-950/75 px-2 py-1 text-[9px] font-bold text-white">
                         {ashram.images.length} images
+                      </span>
+                    )}
+                    {!isAvailable && (
+                      <span className="absolute top-3 right-3 rounded-full bg-rose-600 text-white px-2.5 py-1 text-[10px] font-black uppercase tracking-wider shadow-md">
+                        Not Available
                       </span>
                     )}
                   </div>
@@ -843,15 +865,30 @@ export const SearchPage: React.FC = () => {
                           ? ashram.discovery.food.type || "Food available"
                           : "No food listed"}
                       </span>
-                      <span className="flex items-center gap-1.5 rounded-xl bg-slate-50 px-2.5 py-2 dark:bg-slate-900">
-                        <CheckCircle2 size={13} className="text-emerald-600" />
-                        {ashram.discovery?.bookingAvailability?.checkedForDates
-                          ? ashram.discovery.bookingAvailability.available
-                            ? `${ashram.discovery.bookingAvailability.availableRooms} available`
-                            : "Unavailable"
-                          : ashram.discovery?.rooms?.totalInventory
-                            ? `${ashram.discovery.rooms.totalInventory} rooms`
-                            : "Check availability"}
+                      <span
+                        className={`flex items-center gap-1.5 rounded-xl px-2.5 py-2 font-bold ${
+                          !isAvailable
+                            ? "bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200/60 dark:border-rose-900/40"
+                            : "bg-slate-50 dark:bg-slate-900 text-emerald-600 dark:text-emerald-400"
+                        }`}
+                      >
+                        {!isAvailable ? (
+                          <>
+                            <XCircle size={13} className="text-rose-600 dark:text-rose-400 shrink-0" />
+                            <span className="text-rose-600 dark:text-rose-400 font-extrabold">Not Available</span>
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle2 size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                            <span>
+                              {ashram.discovery?.bookingAvailability?.checkedForDates
+                                ? `${ashram.discovery.bookingAvailability.availableRooms} available`
+                                : ashram.discovery?.rooms?.totalInventory
+                                  ? `${ashram.discovery.rooms.totalInventory} available`
+                                  : "Available"}
+                            </span>
+                          </>
+                        )}
                       </span>
                     </div>
 
@@ -905,14 +942,19 @@ export const SearchPage: React.FC = () => {
                     </div>
                     <Link
                       to={buildDetailLink(ashram)}
-                      className="w-full md:w-auto px-5 py-2.5 bg-[#0A4DA6] hover:bg-opacity-95 text-white text-center text-xs font-bold rounded-full transition-all"
+                      className={`w-full md:w-auto px-5 py-2.5 text-center text-xs font-bold rounded-full transition-all ${
+                        !isAvailable
+                          ? "bg-slate-700 hover:bg-slate-800 text-white opacity-95"
+                          : "bg-[#0A4DA6] hover:bg-opacity-95 text-white"
+                      }`}
                     >
                       View Details
                     </Link>
                   </div>
                 </div>
                 </React.Fragment>
-              ))}
+              );
+              })}
             </div>
           )}
         </section>

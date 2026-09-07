@@ -17,7 +17,7 @@ export const SearchResultStatus: React.FC<SearchResultStatusProps> = ({
 
   if (loading) {
     return (
-      <div className="flex justify-between items-center bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 px-5 py-3.5 rounded-[20px] shadow-sm">
+      <div className="flex justify-between items-center bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 px-4 py-2 rounded-xl shadow-2xs">
         <div className="text-xs font-bold text-gray-500">
           Finding Tirvona Verified Ashrams in{" "}
           <span className="text-[#0A4DA6] font-extrabold">{displayLabel}</span>
@@ -33,7 +33,7 @@ export const SearchResultStatus: React.FC<SearchResultStatusProps> = ({
 
   if (count > 0) {
     return (
-      <div className="flex justify-between items-center bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 px-5 py-3.5 rounded-[20px] shadow-sm">
+      <div className="flex justify-between items-center bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 px-4 py-2 rounded-xl shadow-2xs">
         <div className="text-xs font-bold text-gray-500">
           Found{" "}
           <span className="text-[#0A4DA6] font-extrabold">
@@ -46,7 +46,7 @@ export const SearchResultStatus: React.FC<SearchResultStatusProps> = ({
   }
 
   return (
-    <div className="flex justify-between items-center bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 px-5 py-3.5 rounded-[20px] shadow-sm">
+    <div className="flex justify-between items-center bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 px-4 py-2 rounded-xl shadow-2xs">
       <div className="text-xs font-bold text-gray-500">
         No Tirvona Verified Ashrams found matching{" "}
         <span className="text-[#0A4DA6] font-extrabold">{displayLabel}</span>
