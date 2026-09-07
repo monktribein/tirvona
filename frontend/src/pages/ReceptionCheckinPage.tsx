@@ -49,7 +49,13 @@ export const ReceptionCheckinPage: React.FC = () => {
           page: String(page),
           limit: "100",
         });
-        batch = res.data.success ? res.data.data || [] : [];
+        batch = Array.isArray(res.data)
+          ? res.data
+          : res.data?.success && Array.isArray(res.data?.data)
+            ? res.data.data
+            : Array.isArray(res.data?.data)
+              ? res.data.data
+              : [];
         rows.push(...batch);
         page += 1;
       } while (batch.length === 100);
