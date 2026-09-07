@@ -287,9 +287,16 @@ export class SelfBookingService {
     });
     if (!ashram) throw new NotFoundException("Ashram not found");
 
+    const rooms =
+      Array.isArray(dto.rooms) && dto.rooms.length > 0
+        ? dto.rooms
+        : (dto as any).roomId
+          ? [{ roomId: String((dto as any).roomId), units: Number(dto.roomsBookedCount || 1) }]
+          : [];
+
     const quote = await this.pricing.quote({
       ashramId: dto.ashramId,
-      rooms: dto.rooms,
+      rooms,
       checkInDate: dto.checkInDate,
       checkOutDate: dto.checkOutDate,
       guestsCount: dto.guestsCount,
@@ -307,13 +314,13 @@ export class SelfBookingService {
     const code = await this.issueActiveCheckinCode();
 
     return this.transactions.run(async (session) => {
-      for (const roomReq of dto.rooms) {
+      for (const roomReq of rooms) {
         await this.repository.holdInventory({
           ashramId: dto.ashramId,
           roomId: roomReq.roomId,
           dates: quote.dates,
           count: roomReq.units,
-          capacity: quote.room.totalInventory,
+          capacity: quote.room?.totalInventory ?? 10,
           session,
         });
       }
@@ -327,8 +334,8 @@ export class SelfBookingService {
             reservationNumber: reservationReference(),
             customerId: guest._id,
             ashramId: dto.ashramId,
-            rooms: dto.rooms.map(r => ({ roomId: r.roomId, units: r.units })),
-            roomId: dto.rooms[0]?.roomId,
+            rooms: rooms.map((r) => ({ roomId: r.roomId, units: r.units })),
+            roomId: rooms[0]?.roomId,
             bookingSource: isSelf
               ? SELF_BOOKING_SOURCE
               : TIRVONA_BOOKING_SOURCE,
@@ -367,7 +374,7 @@ export class SelfBookingService {
       );
 
       if (isSelf) {
-        for (const roomReq of dto.rooms) {
+        for (const roomReq of rooms) {
           await this.repository.confirmInventory({
             roomId: roomReq.roomId,
             dates: quote.dates,

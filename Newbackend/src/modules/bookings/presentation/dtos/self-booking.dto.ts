@@ -24,10 +24,15 @@ export class CreateSelfBookingDto {
   @IsIn(BOOKING_SOURCES) bookingType: string;
   @IsMongoId() ashramId: string;
   
+  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => RoomBookingDto)
-  rooms: RoomBookingDto[];
+  rooms?: RoomBookingDto[];
+
+  @IsOptional()
+  @IsMongoId()
+  roomId?: string;
 
   @IsString() @MinLength(2) guestName: string;
   @IsString() @IsNotEmpty() guestPhone: string;
