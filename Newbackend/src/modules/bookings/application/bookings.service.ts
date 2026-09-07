@@ -854,14 +854,18 @@ export class BookingsService {
         { checkInDate: { $lte: start }, checkOutDate: { $gt: start } },
       ];
     }
+    const page = Math.max(1, Number(query?.page) || 1);
+    const limit = Math.min(100, Math.max(1, Number(query?.limit) || 20));
+
     return this.bookings
       .find(filter)
       .populate("customerId", "name email phone")
       .populate("ashramId", "name address")
       .populate("roomId", "name type acType")
+      .populate("rooms.roomId", "name type acType")
       .sort({ createdAt: -1 })
-      .skip((query.page - 1) * query.limit)
-      .limit(query.limit)
+      .skip((page - 1) * limit)
+      .limit(limit)
       .lean();
   }
 
