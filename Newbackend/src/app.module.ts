@@ -30,6 +30,10 @@ import { CommunityModule } from "./modules/community/community.module";
 import { GovernanceModule } from "./modules/governance/governance.module";
 import { RefundsModule } from "./modules/refunds/refunds.module";
 import { SearchModule } from "./modules/search/search.module";
+import { TemplesModule } from "./modules/temples/temples.module";
+// Self-contained lead-capture product. Owns its own database connection and
+// account table; see lead-collection.module.ts for what it deliberately
+// does not share with the platform.
 import { LeadCollectionModule } from "./modules/lead-collection/lead-collection.module";
 import { SmartContactModule } from "./modules/smart-contact/smart-contact.module";
 import { PayoutsModule } from "./modules/payouts/payouts.module";
@@ -126,6 +130,7 @@ import {
     UrlsModule,
     LegacyUrlModule,
     AshramsModule,
+    TemplesModule,
     BookingsModule,
     HousekeepingModule,
     SupportModule,

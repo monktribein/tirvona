@@ -620,7 +620,7 @@ export class AshramsService {
     const ashram = await this.ashrams
       .findOne({ _id: id, status: "approved", deletedAt: null })
       .lean();
-    if (!ashram) throw new NotFoundException("Ashram not found");
+    if (!ashram) throw new NotFoundException("Stay not found");
     const [rooms, managedAddOns] = await Promise.all([
       this.rooms
         .find({ ashramId: id, status: "active", deletedAt: null })
@@ -640,7 +640,7 @@ export class AshramsService {
 
   async managedDetail(user: AuthenticatedUser, id: string): Promise<any> {
     const ashram = await this.ashrams.findOne({ _id: id, deletedAt: null });
-    if (!ashram) throw new NotFoundException("Ashram not found");
+    if (!ashram) throw new NotFoundException("Stay not found");
     this.assertScope(user, ashram);
     const rooms = await this.rooms
       .find({ ashramId: id, deletedAt: null })
@@ -698,7 +698,7 @@ export class AshramsService {
   }
 
   assertScope(user: AuthenticatedUser, ashram: any): void {
-    if (!ashram) throw new NotFoundException("Ashram not found");
+    if (!ashram) throw new NotFoundException("Stay not found");
     if (canManageAllAshrams(user)) return;
     if (String(ashram.ownerId) === user.id) return;
     if (assignedAshramIds(user).includes(String(ashram._id))) return;
@@ -772,7 +772,7 @@ export class AshramsService {
   ): Promise<any> {
     assertNoInlineMedia(dto);
     const ashram = await this.ashrams.findById(id);
-    if (!ashram) throw new NotFoundException("Ashram not found");
+    if (!ashram) throw new NotFoundException("Stay not found");
     this.assertScope(user, ashram);
     const slugBefore = { name: ashram.name, city: ashram.address?.city };
     for (const [field, raw] of [
@@ -818,7 +818,7 @@ export class AshramsService {
   ): Promise<{ documents: any; status: string; reopened: boolean }> {
     assertNoInlineMedia({ documents: body });
     const ashram = await this.ashrams.findOne({ _id: id, deletedAt: null });
-    if (!ashram) throw new NotFoundException("Ashram not found");
+    if (!ashram) throw new NotFoundException("Stay not found");
     this.assertScope(user, ashram);
     ashram.documents = {
       ...(ashram.documents?.toObject?.() ?? ashram.documents ?? {}),
@@ -889,7 +889,7 @@ export class AshramsService {
 
   async createRoom(user: AuthenticatedUser, dto: CreateRoomDto): Promise<any> {
     const ashram = await this.ashrams.findById(dto.ashramId);
-    if (!ashram) throw new NotFoundException("Ashram not found");
+    if (!ashram) throw new NotFoundException("Stay not found");
     this.assertScope(user, ashram);
     return this.rooms.create(dto);
   }

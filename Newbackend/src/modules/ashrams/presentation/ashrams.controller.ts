@@ -35,7 +35,7 @@ import {
 const addOnBody = new ValidationPipe({ transform: true, whitelist: true });
 
 @ApiTags("Ashrams")
-@Controller("ashrams")
+@Controller(["ashrams", "stays"])
 export class AshramsController {
   constructor(
     private readonly service: AshramsService,

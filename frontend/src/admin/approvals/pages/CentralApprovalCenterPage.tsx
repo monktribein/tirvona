@@ -270,7 +270,7 @@ export const CentralApprovalCenterPage: React.FC = () => {
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
           {[
             { id: "all", label: "📥 All Requests" },
-            { id: "ashram", label: "🏨 Ashram Requests" },
+            { id: "ashram", label: "🏨 Stay Requests" },
             { id: "room_category", label: "🛏 Room Categories" },
             { id: "room", label: "🏠 Rooms" },
             { id: "amenities", label: "🛁 Amenities" },
@@ -335,7 +335,7 @@ export const CentralApprovalCenterPage: React.FC = () => {
             />
             <input
               type="text"
-              placeholder="Search request ID, title, ashram..."
+              placeholder="Search request ID, title, stay..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-9 pr-4 py-1.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#0A4DA6]"
@@ -361,8 +361,8 @@ export const CentralApprovalCenterPage: React.FC = () => {
                 <tr className="border-b border-gray-100 dark:border-slate-800 text-gray-400 font-bold text-[10px] tracking-wider">
                   <th className="py-3 px-4">Request ID</th>
                   <th className="py-3 px-4">Module</th>
-                  <th className="py-3 px-4">Ashram Name</th>
-                  <th className="py-3 px-4">Ashram Owner</th>
+                  <th className="py-3 px-4">Stay Name</th>
+                  <th className="py-3 px-4">Stay Owner</th>
                   <th className="py-3 px-4">Title / Summary</th>
                   <th className="py-3 px-4">Priority</th>
                   <th className="py-3 px-4">Status</th>
@@ -479,7 +479,7 @@ export const CentralApprovalCenterPage: React.FC = () => {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-gray-50 dark:bg-slate-900/60 p-4 rounded-2xl text-xs">
               <div>
                 <span className="text-gray-400 block text-[10px] font-bold">
-                  Ashram
+                  Stay
                 </span>
                 <span className="font-extrabold text-[#0B192C] dark:text-white">
                   {selectedRequest.ashramId?.name || "—"}
@@ -487,7 +487,7 @@ export const CentralApprovalCenterPage: React.FC = () => {
               </div>
               <div>
                 <span className="text-gray-400 block text-[10px] font-bold">
-                  Ashram Owner
+                  Stay Owner
                 </span>
                 <span className="font-bold text-gray-700 dark:text-gray-200">
                   {selectedRequest.stayAdminId?.name}

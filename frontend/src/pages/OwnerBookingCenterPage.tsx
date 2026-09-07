@@ -447,7 +447,7 @@ export const OwnerBookingCenterPage: React.FC<OwnerBookingCenterPageProps> = ({
                 ["Booking status", label(selectedBooking.status)],
                 ["Payment status", label(selectedBooking.paymentStatus)],
                 ["Payment mode", label(selectedBooking.paymentMode)],
-                ["Assigned room", selectedBooking.assignedRoomNumber || "Not assigned"],
+                ["Assigned rooms", (selectedBooking.assignedRoomNumbers && selectedBooking.assignedRoomNumbers.length > 0) ? selectedBooking.assignedRoomNumbers.join(", ") : (selectedBooking.assignedRoomNumber || "Not assigned")],
               ].map(([title, value]) => <div key={String(title)} className="rounded-2xl bg-gray-50 dark:bg-slate-900 p-3"><p className="text-[9px] uppercase tracking-wide text-gray-400 font-bold">{title}</p><p className="text-xs font-extrabold text-[#0B192C] dark:text-white mt-1 break-words">{String(value || "—")}</p></div>)}
             </div>
             <div><h3 className="text-xs font-extrabold text-[#0B192C] dark:text-white mb-2">Pricing breakdown</h3><div className="grid grid-cols-2 sm:grid-cols-4 gap-2">{Object.entries(selectedBooking.pricing || {}).filter(([, value]) => typeof value === "number").map(([key, value]) => <div key={key} className="flex justify-between gap-2 rounded-xl border border-gray-100 dark:border-slate-800 px-3 py-2 text-[10px]"><span className="text-gray-400">{label(key)}</span><b>{key.toLowerCase().includes("percent") ? `${String(value)}%` : money(value)}</b></div>)}</div></div>

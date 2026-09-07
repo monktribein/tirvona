@@ -185,14 +185,16 @@ export class BookingsService {
     const quote = await this.pricing.quote(dto);
     const code = await this.issueActiveCheckinCode();
     const booking = await this.transactions.run(async (session) => {
-      await this.repository.holdInventory({
-        ashramId: dto.ashramId,
-        roomId: dto.roomId,
-        dates: quote.dates,
-        count: dto.roomsBookedCount,
-        capacity: quote.room.totalInventory,
-        session,
-      });
+      for (const reqRoom of dto.rooms) {
+        await this.repository.holdInventory({
+          ashramId: dto.ashramId,
+          roomId: reqRoom.roomId,
+          dates: quote.dates,
+          count: reqRoom.units,
+          capacity: quote.rooms.find((r: any) => String(r._id) === String(reqRoom.roomId))?.totalInventory,
+          session,
+        });
+      }
       if (quote.coupon) {
         const used = await this.redemptions
           .countDocuments({
@@ -217,6 +219,7 @@ export class BookingsService {
         dto.ashramId,
         session,
       );
+      const totalUnits = dto.rooms.reduce((sum, r) => sum + r.units, 0);
       const [created] = await this.bookings.create(
         [
           {
@@ -225,12 +228,12 @@ export class BookingsService {
             identityCode,
             customerId: user.id,
             ashramId: dto.ashramId,
-            roomId: dto.roomId,
+            rooms: dto.rooms,
+            roomsBookedCount: totalUnits,
             checkInDate: new Date(dto.checkInDate),
             checkOutDate: new Date(dto.checkOutDate),
             occupiedDates: quote.dates,
             guestsCount: dto.guestsCount,
-            roomsBookedCount: dto.roomsBookedCount,
             services: quote.services,
             pricing: quote.pricing,
             paymentSummary: quote.paymentSummary,
@@ -256,6 +259,16 @@ export class BookingsService {
         ],
         { session },
       );
+      const holdDocs = dto.rooms.map((reqRoom) => ({
+        bookingId: created._id,
+        ashramId: dto.ashramId,
+        roomId: reqRoom.roomId,
+        dates: quote.dates,
+        units: reqRoom.units,
+        state: "held",
+        expiresAt: created.reservationExpiresAt,
+      }));
+      await this.inventoryHolds.create(holdDocs, { session });
       await Promise.all([
         this.history.create(
           [
@@ -303,20 +316,6 @@ export class BookingsService {
                 status: "pending",
                 totalAmount: quote.pricing.totalAmount,
               },
-            },
-          ],
-          { session },
-        ),
-        this.inventoryHolds.create(
-          [
-            {
-              bookingId: created._id,
-              ashramId: dto.ashramId,
-              roomId: dto.roomId,
-              dates: quote.dates,
-              units: dto.roomsBookedCount,
-              state: "held",
-              expiresAt: created.reservationExpiresAt,
             },
           ],
           { session },
@@ -873,7 +872,7 @@ export class BookingsService {
   ): Promise<any> {
     if (user.role !== "super_admin")
       throw new ForbiddenException("Only Super Admin can edit booking details");
-    if (dto.assignedRoomNumber === undefined && dto.specialRequests === undefined)
+    if (dto.assignedRoomNumbers === undefined && dto.specialRequests === undefined)
       throw new BadRequestException("No editable booking fields were provided");
 
     await this.transactions.run(async (session) => {
@@ -881,43 +880,58 @@ export class BookingsService {
       if (!row) throw new NotFoundException("Booking not found");
 
       const updatedFields: string[] = [];
-      if (dto.assignedRoomNumber !== undefined) {
+      if (dto.assignedRoomNumbers !== undefined) {
         if (!["confirmed", "checked_in"].includes(row.status))
           throw new BadRequestException(
-            "A room number can only be assigned to a confirmed or checked-in booking",
+            "Room numbers can only be assigned to a confirmed or checked-in booking",
           );
-        const roomNumber = dto.assignedRoomNumber.trim();
-        const conflict = await this.bookings
-          .exists({
-            _id: { $ne: row._id },
-            deletedAt: null,
-            ashramId: row.ashramId,
-            assignedRoomNumber: roomNumber,
-            status: { $in: ["confirmed", "checked_in"] },
-            checkInDate: { $lt: row.checkOutDate },
-            checkOutDate: { $gt: row.checkInDate },
-          })
-          .session(session);
-        if (conflict)
-          throw new ConflictException(
-            `Room ${roomNumber} is already assigned for overlapping dates`,
-          );
-        await this.assignments.findOneAndUpdate(
-          { bookingId: row._id, status: { $ne: "released" } },
-          {
-            $set: {
+        
+        const roomNumbers = dto.assignedRoomNumbers.map(n => n.trim()).filter(Boolean);
+        
+        // Conflict check for each room number
+        for (const roomNumber of roomNumbers) {
+          const conflict = await this.bookings
+            .exists({
+              _id: { $ne: row._id },
+              deletedAt: null,
               ashramId: row.ashramId,
-              roomId: row.roomId,
+              assignedRoomNumbers: roomNumber,
+              status: { $in: ["confirmed", "checked_in"] },
+              checkInDate: { $lt: row.checkOutDate },
+              checkOutDate: { $gt: row.checkInDate },
+            })
+            .session(session);
+          if (conflict)
+            throw new ConflictException(
+              `Room ${roomNumber} is already assigned for overlapping dates`,
+            );
+        }
+
+        // Clear existing assignments for this booking
+        await this.assignments.updateMany(
+          { bookingId: row._id, status: { $ne: "released" } },
+          { $set: { status: "released", releasedAt: new Date() } },
+          { session }
+        );
+
+        // Create new assignments
+        for (const roomNumber of roomNumbers) {
+          await this.assignments.create(
+            [{
+              bookingId: row._id,
+              ashramId: row.ashramId,
+              roomId: row.roomId, // If multiple rooms are from different categories, row.roomId might not be accurate for all, but we stick to the existing schema for now
               roomNumber,
               assignedBy: user.id,
               assignedAt: new Date(),
               status: row.status === "checked_in" ? "occupied" : "assigned",
-            },
-          },
-          { upsert: true, new: true, session },
-        );
-        row.assignedRoomNumber = roomNumber;
-        updatedFields.push("assignedRoomNumber");
+            }],
+            { session },
+          );
+        }
+        
+        row.assignedRoomNumbers = roomNumbers;
+        updatedFields.push("assignedRoomNumbers");
       }
       if (dto.specialRequests !== undefined) {
         row.specialRequests = dto.specialRequests.trim();
@@ -1008,33 +1022,41 @@ export class BookingsService {
     const row = await this.bookings.findById(id);
     if (!row) throw new NotFoundException("Booking not found");
     await this.assertCanManage(user, row);
-    const conflict = await this.bookings.exists({
-      _id: { $ne: row._id },
-      ashramId: row.ashramId,
-      assignedRoomNumber: dto.roomNumber,
-      status: { $in: ["confirmed", "checked_in"] },
-      checkInDate: { $lt: row.checkOutDate },
-      checkOutDate: { $gt: row.checkInDate },
-    });
-    if (conflict)
-      throw new ConflictException(
-        `Room ${dto.roomNumber} is already assigned for overlapping dates`,
-      );
-    await this.assignments.findOneAndUpdate(
+    const roomNumbers = dto.roomNumbers.map(n => n.trim()).filter(Boolean);
+    
+    for (const roomNumber of roomNumbers) {
+      const conflict = await this.bookings.exists({
+        _id: { $ne: row._id },
+        ashramId: row.ashramId,
+        assignedRoomNumbers: roomNumber,
+        status: { $in: ["confirmed", "checked_in"] },
+        checkInDate: { $lt: row.checkOutDate },
+        checkOutDate: { $gt: row.checkInDate },
+      });
+      if (conflict)
+        throw new ConflictException(
+          `Room ${roomNumber} is already assigned for overlapping dates`,
+        );
+    }
+
+    await this.assignments.updateMany(
       { bookingId: row._id, status: { $ne: "released" } },
-      {
-        $set: {
-          ashramId: row.ashramId,
-          roomId: row.roomId,
-          roomNumber: dto.roomNumber,
-          assignedBy: user.id,
-          assignedAt: new Date(),
-          status: "assigned",
-        },
-      },
-      { upsert: true, new: true },
+      { $set: { status: "released", releasedAt: new Date() } }
     );
-    row.assignedRoomNumber = dto.roomNumber;
+
+    for (const roomNumber of roomNumbers) {
+      await this.assignments.create({
+        bookingId: row._id,
+        ashramId: row.ashramId,
+        roomId: row.roomId,
+        roomNumber,
+        assignedBy: user.id,
+        assignedAt: new Date(),
+        status: "assigned",
+      });
+    }
+
+    row.assignedRoomNumbers = roomNumbers;
     await row.save();
     return row;
   }
@@ -1058,7 +1080,7 @@ export class BookingsService {
       row.status = "checked_in";
       row.checkedInAt = checkedInAt;
       row.checkedInBy = user.id;
-      if (dto.roomNumber) row.assignedRoomNumber = dto.roomNumber;
+      if (dto.roomNumbers) row.assignedRoomNumbers = dto.roomNumbers.map(n => n.trim()).filter(Boolean);
       await row.save({ session });
       await this.checkins.create(
         [
@@ -1068,13 +1090,13 @@ export class BookingsService {
             verifiedBy: user.id,
             checkedInAt,
             guestCount: row.guestsCount,
-            roomNumber: row.assignedRoomNumber,
+            roomNumbers: row.assignedRoomNumbers,
             notes: dto.notes,
           },
         ],
         { session },
       );
-      await this.assignments.updateOne(
+      await this.assignments.updateMany(
         { bookingId: row._id, status: "assigned" },
         { $set: { status: "occupied" } },
         { session },
@@ -1145,25 +1167,28 @@ export class BookingsService {
         ],
         { session },
       );
-      await this.assignments.updateOne(
+      await this.assignments.updateMany(
         { bookingId: row._id, status: "occupied" },
         { $set: { status: "released", releasedAt: new Date() } },
         { session },
       );
-      if (row.assignedRoomNumber)
-        await this.housekeeping.findOneAndUpdate(
-          { ashramId: row.ashramId, unitNumber: row.assignedRoomNumber },
-          {
-            $set: {
-              roomId: row.roomId,
-              bookingId: row._id,
-              status: "dirty",
-              priority: "high",
-              notes: "Checkout cleaning required",
+      if (row.assignedRoomNumbers && row.assignedRoomNumbers.length > 0) {
+        for (const roomNumber of row.assignedRoomNumbers) {
+          await this.housekeeping.findOneAndUpdate(
+            { ashramId: row.ashramId, unitNumber: roomNumber },
+            {
+              $set: {
+                roomId: row.roomId,
+                bookingId: row._id,
+                status: "dirty",
+                priority: "high",
+                notes: "Checkout cleaning required",
+              },
             },
-          },
-          { upsert: true, session },
-        );
+            { upsert: true, session },
+          );
+        }
+      }
       await this.history.create(
         [
           {

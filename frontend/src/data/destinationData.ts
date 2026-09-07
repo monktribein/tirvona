@@ -225,8 +225,7 @@ const destinations: Destination[] = [
     country: "India",
     description:
       "Known as the Yoga Capital of the World, Rishikesh sits in the foothills of the Himalayas along the sacred Ganges. It is a haven for spiritual seekers, adventurers, and those seeking inner peace.",
-    heroImage:
-      "https://images.unsplash.com/photo-1588096344356-9b0f80f3cab5?w=1400&q=80&auto=format&fit=crop",
+    heroImage: "/images/destinations/rishikesh/triveni_ghat.jpg",
     coordinates: { lat: 30.0869, lng: 78.2676 },
     stats: { ashrams: 20, stays: 40, parking: 6, prasad: 10, places: 25 },
     nearbyPlaces: [

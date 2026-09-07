@@ -97,13 +97,14 @@ export const OwnerDashboard: React.FC = () => {
   const [error, setError] = useState("");
 
   // Inventory Calendar & Rolling Date Window State
-  const getTodayDateStr = () => {
-    const d = new Date();
+  const formatLocalDate = (d: Date) => {
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, "0");
     const day = String(d.getDate()).padStart(2, "0");
     return `${year}-${month}-${day}`;
   };
+
+  const getTodayDateStr = () => formatLocalDate(new Date());
 
   const todayStr = useMemo(() => getTodayDateStr(), []);
   const [centerDate, setCenterDate] = useState<string>(getTodayDateStr());
@@ -161,13 +162,13 @@ export const OwnerDashboard: React.FC = () => {
   const maxSearchDate = useMemo(() => {
     const d = new Date();
     d.setDate(d.getDate() + 90);
-    return d.toISOString().split("T")[0];
+    return formatLocalDate(d);
   }, []);
 
   const minSearchDate = useMemo(() => {
     const d = new Date();
     d.setDate(d.getDate() - 30);
-    return d.toISOString().split("T")[0];
+    return formatLocalDate(d);
   }, []);
 
   // 15-Day Rolling Window: 7 days before centerDate, centerDate, and 7 days after centerDate
@@ -177,7 +178,7 @@ export const OwnerDashboard: React.FC = () => {
     for (let i = -7; i <= 7; i++) {
       const d = new Date(base);
       d.setDate(base.getDate() + i);
-      const dateStr = d.toISOString().split("T")[0];
+      const dateStr = formatLocalDate(d);
       const dayName = d.toLocaleDateString("en-US", { weekday: "short" });
       const dayNumber = d.getDate();
       const monthName = d.toLocaleDateString("en-US", { month: "short" });
@@ -296,8 +297,8 @@ export const OwnerDashboard: React.FC = () => {
       const endObj = new Date(base);
       endObj.setDate(base.getDate() + 20);
 
-      const start = startObj.toISOString().split("T")[0];
-      const end = endObj.toISOString().split("T")[0];
+      const start = formatLocalDate(startObj);
+      const end = formatLocalDate(endObj);
       const res = await roomService.calendar(selectedRoomId, start, end);
       if (res.data?.success) {
         setCalendar(res.data.data || []);
@@ -353,13 +354,13 @@ export const OwnerDashboard: React.FC = () => {
   const handlePrev7Days = () => {
     const curr = new Date(`${centerDate}T00:00:00`);
     curr.setDate(curr.getDate() - 7);
-    setCenterDate(curr.toISOString().split("T")[0]);
+    setCenterDate(formatLocalDate(curr));
   };
 
   const handleNext7Days = () => {
     const curr = new Date(`${centerDate}T00:00:00`);
     curr.setDate(curr.getDate() + 7);
-    setCenterDate(curr.toISOString().split("T")[0]);
+    setCenterDate(formatLocalDate(curr));
   };
 
   const handleResetToday = () => {
@@ -414,8 +415,9 @@ export const OwnerDashboard: React.FC = () => {
     if (!editRoomNumber.trim()) return;
     setSavingRoomNo(true);
     try {
-      await bookingService.assignRoomNumber(bookingId, editRoomNumber.trim());
-      notifyRef.current("Room Assigned", `Room number set to ${editRoomNumber.trim()}`, "success");
+      const roomNumbersArray = editRoomNumber.split(",").map(s => s.trim()).filter(Boolean);
+      await bookingService.assignRoomNumber(bookingId, roomNumbersArray);
+      notifyRef.current("Room Assigned", `Room numbers set to ${roomNumbersArray.join(", ")}`, "success");
       setEditingBooking(null);
       setEditRoomNumber("");
       if (activeDetailDate) void fetchDateBookings(activeDetailDate);
@@ -920,7 +922,7 @@ export const OwnerDashboard: React.FC = () => {
                     const guestPhone = booking.customerId?.phone || booking.primaryGuest?.phone || "N/A";
                     const guestEmail = booking.customerId?.email || booking.primaryGuest?.email || "N/A";
                     const roomName = booking.roomId?.name || "Standard Room";
-                    const assignedRoom = booking.assignedRoomNumber || booking.roomNumber || "Unassigned";
+                    const assignedRoom = (booking.assignedRoomNumbers && booking.assignedRoomNumbers.length > 0) ? booking.assignedRoomNumbers.join(", ") : booking.assignedRoomNumber || booking.roomNumber || "Unassigned";
                     const isCheckedIn = booking.status === "checked_in";
                     const isCancelled = ["cancelled", "refunded"].includes(booking.status);
                     const isConfirmed = booking.status === "confirmed";

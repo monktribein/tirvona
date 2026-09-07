@@ -11,7 +11,6 @@ import {
   LayoutDashboard,
   Bed,
   Calendar,
-  ShieldAlert,
   Users,
   LogOut,
   FileCheck,
@@ -24,13 +23,11 @@ import {
   Heart,
   ChevronDown,
   ChevronRight,
-  MapPin,
   Compass,
   ShoppingBag,
   Image,
   BarChart3,
   Bell,
-  ShieldCheck,
   Globe,
   ArrowRight,
   Landmark,
@@ -38,6 +35,7 @@ import {
   Flame,
   Radio,
   PartyPopper,
+  Building2,
   Undo2,
   ContactRound,
   Sparkles,
@@ -149,7 +147,7 @@ const getFormattedRole = (role?: string): string => {
       return "Super Admin";
     case "ashram_admin":
     case "stay_admin":
-      return "Ashram Admin";
+      return "Stay Admin";
     case "ashram_owner":
     case "owner":
       return "Stay Owner";
@@ -270,13 +268,21 @@ export const DashboardLayout: React.FC = () => {
       ],
     },
     {
-      groupName: "Ashram Management",
+      groupName: "Temple Management",
+      icon: <Building2 size={15} />,
+      links: [
+        { label: "All Temples", path: "/admin/temples" },
+        { label: "Add Temple", path: "/admin/temples/new" },
+      ],
+    },
+    {
+      groupName: "Stay Management",
       icon: <Building size={15} />,
       links: [
-        { label: "All Ashrams", path: "/admin/manage/ashrams/all" },
+        { label: "All Stays", path: "/admin/manage/ashrams/all" },
         { label: "Pending Verification", path: "/admin/verifications" },
-        { label: "Approved Ashrams", path: "/admin/manage/ashrams/approved" },
-        { label: "Rejected Ashrams", path: "/admin/manage/ashrams/rejected" },
+        { label: "Approved Stays", path: "/admin/manage/ashrams/approved" },
+        { label: "Rejected Stays", path: "/admin/manage/ashrams/rejected" },
       ],
     },
     {
@@ -572,10 +578,10 @@ export const DashboardLayout: React.FC = () => {
       : "/owner";
   const ownerGroups: NavGroup[] = [
     {
-      groupName: "Ashram management",
+      groupName: "Stay management",
       icon: <Building size={15} />,
       links: [
-        { label: "Manage Ashrams", path: `${ownerBase}/ashrams` },
+        { label: "Manage Stays", path: `${ownerBase}/ashrams` },
         { label: "Add-On Services", path: `${ownerBase}/add-ons` },
       ],
     },
@@ -644,9 +650,9 @@ export const DashboardLayout: React.FC = () => {
       groupName: "Parking Management",
       icon: <Car size={15} />,
       links: [
-        { label: "Parking Facilities", path: `${ownerBase}/parking` },
+        { label: "My Stay Parking", path: `${ownerBase}/parking` },
         { label: "Parking Staff", path: `${ownerBase}/parking/staff` },
-        { label: "Parking Dashboard", path: "/parking/dashboard" },
+        { label: "Parking Operations", path: "/parking/dashboard" },
         { label: "QR Gate Scanner", path: "/parking/gate" },
       ],
     },
@@ -656,11 +662,11 @@ export const DashboardLayout: React.FC = () => {
 
   const districtAdminGroups: NavGroup[] = [
     {
-      groupName: "Verifications & ashrams",
+      groupName: "Verifications & stays",
       icon: <FileCheck size={15} />,
       links: [
         { label: "Verification Queue", path: "/admin/verifications" },
-        { label: "Approved Ashrams", path: "/admin/manage/ashrams/approved" },
+        { label: "Approved Stays", path: "/admin/manage/ashrams/approved" },
       ],
     },
     {

@@ -24,6 +24,7 @@ export default function App() {
     toast,
     showToast,
     addLead,
+    updateLead,
     approveLead,
     removeLead,
     updateAppointment,
@@ -35,6 +36,17 @@ export default function App() {
       setEditingLeadData(null);
     }
     setActivePage(page);
+    if (page !== 'create') setEditingLead(null);
+    if (window.lenisInstance) {
+      window.lenisInstance.scrollTo(0, { duration: 1.2 });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const handleEditLead = (lead) => {
+    setEditingLead(lead);
+    setActivePage('create');
     if (window.lenisInstance) {
       window.lenisInstance.scrollTo(0, { duration: 1.2 });
     } else {
@@ -178,6 +190,7 @@ export default function App() {
             key={editingLeadData ? (editingLeadData._id || editingLeadData.id || 'editing') : 'new-lead'}
             agentRole={agent?.role}
             onSubmitLead={handleSaveLead}
+            onUpdateLead={updateLead}
             onSuccessNavigate={() => {
               setEditingLeadData(null);
               if (agent?.role === 'field_supervisor') {

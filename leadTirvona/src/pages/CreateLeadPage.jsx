@@ -54,12 +54,14 @@ const getFreshFormData = (lead, assignedJurisdiction) => {
 export default function CreateLeadPage({
   agentRole = null,
   onSubmitLead,
+  onUpdateLead,
   onSuccessNavigate,
   attendanceCoordinates,
   assignedJurisdiction,
   editingLead = null,
   onBackToConsole = null
 }) {
+  const isEditMode = Boolean(editingLead);
   const [currentDateTime, setCurrentDateTime] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [isListeningAgentNotes, setIsListeningAgentNotes] = useState(false);
@@ -100,8 +102,11 @@ export default function CreateLeadPage({
         meetingRequested: editingLead.meeting?.requested ?? true,
         meetingTime: editingLead.meeting?.time || '',
         meetingMode: editingLead.meeting?.mode || 'Call',
-        coordinates: editingLead.location?.coordinates || { lat: '', lng: '' },
-        images: Array.isArray(editingLead.images) ? editingLead.images : []
+        coordinates: {
+          lat: editingLead.location?.coordinates?.lat ?? '',
+          lng: editingLead.location?.coordinates?.lng ?? ''
+        },
+        images: Array.isArray(editingLead.images) ? editingLead.images.slice(0, 10) : []
       };
     }
     // Field agents should never see a stale draft — skip restoration.
@@ -531,7 +536,9 @@ export default function CreateLeadPage({
 
     if (res === null) return;
 
-    clearFormDraft();
+    if (result === null) return;
+
+    if (!isEditMode) clearFormDraft();
     onSuccessNavigate();
   };
 
@@ -557,10 +564,10 @@ export default function CreateLeadPage({
         <div className="flex flex-row items-start sm:items-center justify-between gap-2 sm:gap-3 pb-4 sm:pb-6 border-b border-[#E2E8F0] mb-5 sm:mb-6">
           <div className="min-w-0 flex-1">
             <h1 className="text-base sm:text-2xl font-extrabold text-[#0F172A] tracking-tight">
-              {editingLead ? 'Edit Ashram Lead' : (agentRole === 'field_agent' ? 'Update Ashram Lead' : 'Ashram Onboarding Form')}
+              {editingLead ? 'Edit Stay Lead' : (agentRole === 'field_agent' ? 'Update Stay Lead' : 'Stay Onboarding Form')}
             </h1>
             <p className="text-[11px] sm:text-xs text-[#64748B] font-medium mt-0.5">
-              {editingLead ? 'Update Field Verification & Contact Registration' : (agentRole === 'field_agent' ? 'Field Lead Verification & Details Update' : 'Field Verification & Contact Registration')}
+              {editingLead ? `Editing: ${editingLead.name}` : (agentRole === 'field_agent' ? 'Field Lead Verification & Details Update' : 'Field Verification & Contact Registration')}
             </p>
           </div>
 
@@ -574,15 +581,17 @@ export default function CreateLeadPage({
 
         <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
           
+          {/* GPS is captured only by the attendance modal after login. */}
+          {/* SECTION 1: Stay Details */}
           <div className="space-y-3.5 pb-5 border-b border-[#E2E8F0]">
             <span className="text-xs sm:text-sm font-extrabold text-[#0F172A] block">
-              1. Ashram Details &amp; Room Inventory
+              1. Stay Details &amp; Room Inventory
             </span>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className={labelClass}>Stay Name <span className="text-[#EF4444]">*</span></label>
-                <input type="text" required placeholder="e.g. Parmarth Niketan Ashram"
+                <input type="text" required placeholder="e.g. Parmarth Niketan"
                   className={inputClass} value={formData.name}
                   onChange={(e) => handleChange('name', e.target.value)} />
               </div>
@@ -841,7 +850,7 @@ export default function CreateLeadPage({
                   <select className={inputClass} value={formData.meetingMode}
                     onChange={(e) => handleChange('meetingMode', e.target.value)}>
                     <option value="Call">Phone / WhatsApp Call</option>
-                    <option value="In-person">In-person Ashram Visit</option>
+                    <option value="In-person">In-person Stay Visit</option>
                   </select>
                 </div>
               </div>
@@ -902,7 +911,7 @@ export default function CreateLeadPage({
           {/* SECTION: Image Upload (Icon Removed) */}
           <div className="space-y-3 pb-2">
             <span className="text-xs sm:text-sm font-extrabold text-[#0F172A] flex items-center justify-between gap-1.5">
-              <span>{showFieldExecutiveNotes ? '6. Ashram Attachments' : '5. Ashram Attachments'}</span>
+              <span>{showFieldExecutiveNotes ? '6. Stay Attachments' : '5. Stay Attachments'}</span>
               <div className="flex items-center gap-2">
                 {isUploading && (
                   <span className="flex items-center gap-1.5 text-[11px] font-bold text-[#0A4DA6] bg-[#0A4DA6]/10 px-2.5 py-0.5 rounded-full border border-[#0A4DA6]/20">
@@ -1017,8 +1026,8 @@ export default function CreateLeadPage({
           <div className="w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl">
             <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-[#E2E8F0]">
               <div>
-                <h2 className="text-sm sm:text-base font-extrabold text-[#0F172A]">Take Ashram Photo</h2>
-                <p className="text-[10px] sm:text-xs text-[#64748B]">Position the ashram clearly inside the camera frame.</p>
+                <h2 className="text-sm sm:text-base font-extrabold text-[#0F172A]">Take Stay Photo</h2>
+                <p className="text-[10px] sm:text-xs text-[#64748B]">Position the stay clearly inside the camera frame.</p>
               </div>
               <button type="button" onClick={closeCamera} className="w-9 h-9 rounded-full flex items-center justify-center text-[#64748B] hover:bg-slate-100 cursor-pointer" aria-label="Close camera">
                 <X size={19} />

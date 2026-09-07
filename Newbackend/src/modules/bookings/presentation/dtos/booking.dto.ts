@@ -19,9 +19,17 @@ import {
   ValidateNested,
 } from "class-validator";
 
+export class RoomBookingDto {
+  @IsMongoId() roomId: string;
+  @Type(() => Number) @IsInt() @Min(1) @Max(20) units: number;
+}
+
 export class CreateBookingDto {
   @IsMongoId() ashramId: string;
-  @IsMongoId() roomId: string;
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => RoomBookingDto)
+  rooms: RoomBookingDto[];
   @IsString() checkInDate: string;
   @IsString() checkOutDate: string;
   @Type(() => Number) @IsInt() @Min(1) @Max(100) guestsCount: number;
@@ -61,7 +69,7 @@ export class CheckinDto {
     message: "Check-in code must be 4 digits (or a legacy 6-digit code)",
   })
   checkInCode: string;
-  @IsOptional() @IsString() roomNumber?: string;
+  @IsOptional() @IsArray() roomNumbers?: string[];
   @IsOptional() @IsString() notes?: string;
 }
 export class CheckoutDto {
@@ -73,7 +81,7 @@ export class CancelBookingDto {
   @IsString() @MinLength(2) reason: string;
 }
 export class AssignRoomDto {
-  @IsString() @MinLength(1) roomNumber: string;
+  @IsArray() @IsString({ each: true }) @MinLength(1, { each: true }) roomNumbers: string[];
 }
 export class UpdateBookingStatusDto {
   @IsIn([
@@ -91,8 +99,8 @@ export class UpdateBookingStatusDto {
 }
 
 export class AdminUpdateBookingDto {
-  @IsOptional() @IsString() @MinLength(1) @MaxLength(50)
-  assignedRoomNumber?: string;
+  @IsOptional() @IsArray()
+  assignedRoomNumbers?: string[];
 
   @IsOptional() @IsString() @MaxLength(1000)
   specialRequests?: string;

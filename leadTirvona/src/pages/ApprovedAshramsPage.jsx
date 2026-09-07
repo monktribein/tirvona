@@ -8,7 +8,7 @@ export default function ApprovedAshramsPage({ approvedAshrams, onNavigateLeads }
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
           <h1 className="text-lg sm:text-2xl font-extrabold text-[#0F172A] tracking-tight">
-            Converted Tirvona Ashrams
+            Converted Tirvona Stays
           </h1>
           <p className="text-[11px] sm:text-xs text-[#64748B] font-medium mt-0.5">
             Verified &amp; Active Onboarded Properties
@@ -28,7 +28,7 @@ export default function ApprovedAshramsPage({ approvedAshrams, onNavigateLeads }
         </div>
       ) : (
         <div className="bg-white border border-[#E2E8F0] rounded-2xl p-8 sm:p-16 text-center space-y-3 sm:space-y-4 shadow-xs">
-          <h3 className="text-base sm:text-lg font-extrabold text-[#0F172A]">No Approved Ashrams Yet</h3>
+          <h3 className="text-base sm:text-lg font-extrabold text-[#0F172A]">No Approved Stays Yet</h3>
           <p className="text-xs text-[#64748B] max-w-sm mx-auto font-medium">
             You have not approved any submitted field leads yet.
           </p>

@@ -63,7 +63,7 @@ export const VerificationQueuePage: React.FC = () => {
         setComments("");
         addNotification(
           "Inspection Decided",
-          `Ashram has been marked as ${humanizeLabel(targetStatus)}`,
+          `Stay has been marked as ${humanizeLabel(targetStatus)}`,
           "success",
         );
         fetchPending();
@@ -108,7 +108,7 @@ export const VerificationQueuePage: React.FC = () => {
   return (
     <div className="space-y-6 text-left w-full">
       <EnterprisePageHeader
-        title="Tirvona Ashram Verification Queue"
+        title="Tirvona Stay Verification Queue"
         subtitle="Screen trust deeds, review local fire certificates, and submit inspection decisions."
         icon={<ShieldCheck size={22} />}
         badgeText={`${pendingList.length} PENDING INSPECTIONS`}
@@ -123,7 +123,7 @@ export const VerificationQueuePage: React.FC = () => {
             Verification Queue Clear
           </h4>
           <p className="text-xs text-gray-400 max-w-sm mx-auto leading-relaxed">
-            There are no pending Ashram registrations or audits in your district
+            There are no pending Stay registrations or audits in your district
             jurisdiction.
           </p>
         </div>

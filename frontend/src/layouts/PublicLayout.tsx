@@ -228,7 +228,7 @@ export const PublicLayout: React.FC = () => {
     if (["district_officer", "govt_admin", "super_admin"].includes(user.role))
       return "Admin Dashboard";
     if (["ashram_admin", "stay_admin"].includes(user.role))
-      return "Ashram Admin Dashboard";
+      return "Stay Admin Dashboard";
     if (["ashram_owner", "owner"].includes(user.role))
       return "Stay Owner Dashboard";
     if (user.role === "support") return "Support Console";
@@ -260,7 +260,7 @@ export const PublicLayout: React.FC = () => {
     if (user.role === "super_admin") return "Super Admin";
     if (user.role === "govt_admin") return "Govt Admin";
     if (user.role === "district_officer") return "District Admin";
-    if (["ashram_admin", "stay_admin"].includes(user.role)) return "Ashram Admin";
+    if (["ashram_admin", "stay_admin"].includes(user.role)) return "Stay Admin";
     if (["ashram_owner", "owner"].includes(user.role)) return "Stay Owner";
     if (isParkingRole(user.parkingRoles, user.role, user.email))
       return "Parking Partner";
@@ -931,7 +931,7 @@ export const PublicLayout: React.FC = () => {
                         size={10}
                         className="text-slate-500 shrink-0"
                       />{" "}
-                      Ashram Stays
+                      Stays
                     </Link>
                   </li>
                   <li>

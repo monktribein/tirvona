@@ -38,6 +38,7 @@ interface BookingDetailsData {
   guestsCount: number;
   roomsBookedCount: number;
   assignedRoomNumber?: string;
+  assignedRoomNumbers?: string[];
   checkInCode?: string;
   checkedInAt?: string;
   checkedOutAt?: string;
@@ -370,7 +371,7 @@ export const BookingDetailPage: React.FC = () => {
         "GUESTS & ROOMS",
         `${booking.guestsCount} Guest(s) • ${booking.roomsBookedCount} Room(s)`,
         "ASSIGNED ROOM",
-        booking.assignedRoomNumber || "Front Desk",
+        (booking.assignedRoomNumbers && booking.assignedRoomNumbers.length > 0) ? booking.assignedRoomNumbers.join(", ") : (booking.assignedRoomNumber || "Front Desk"),
         312
       );
 
@@ -632,10 +633,10 @@ export const BookingDetailPage: React.FC = () => {
                 </span>
               </div>
 
-              {stayConfirmed && booking.assignedRoomNumber ? (
+              {stayConfirmed && (booking.assignedRoomNumbers?.length || booking.assignedRoomNumber) ? (
                 <div className="bg-purple-50 dark:bg-purple-950/50 border border-purple-200 dark:border-purple-900/50 text-purple-700 dark:text-purple-300 px-3.5 py-1.5 rounded-xl flex items-center gap-2 font-extrabold">
                   <BedDouble size={15} />
-                  <span>Assigned Room: {booking.assignedRoomNumber}</span>
+                  <span>Assigned Room(s): {(booking.assignedRoomNumbers && booking.assignedRoomNumbers.length > 0) ? booking.assignedRoomNumbers.join(", ") : booking.assignedRoomNumber}</span>
                 </div>
               ) : (
                 <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/40 text-amber-800 dark:text-amber-300 px-3.5 py-1.5 rounded-xl flex items-center gap-2 text-xs">
@@ -984,7 +985,7 @@ export const BookingDetailPage: React.FC = () => {
                   <dt className="text-gray-400 font-bold text-[10px]">Assigned Room:</dt>
                   <dd className="font-bold text-purple-600 dark:text-purple-400">
                     {stayConfirmed
-                      ? booking.assignedRoomNumber || "Front Desk"
+                      ? ((booking.assignedRoomNumbers && booking.assignedRoomNumbers.length > 0) ? booking.assignedRoomNumbers.join(", ") : (booking.assignedRoomNumber || "Front Desk"))
                       : "After payment"}
                   </dd>
                 </div>

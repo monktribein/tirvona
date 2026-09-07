@@ -63,7 +63,7 @@ export class VerificationController {
   ) {
     return {
       success: true,
-      message: `Ashram status updated to: ${dto.status}`,
+      message: `Stay status updated to: ${dto.status}`,
       data: await this.service.status(user, id, dto),
     };
   }

@@ -80,7 +80,7 @@ export default function LeadsDashboardPage({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
           <h1 className="text-lg sm:text-2xl font-extrabold text-[#0F172A] tracking-tight">
-            Ashram Onboarding Leads Dashboard
+            Stay Onboarding Leads Dashboard
           </h1>
           <p className="text-[11px] sm:text-xs text-[#64748B] font-medium mt-0.5">
             Field Submitted Leads &amp; Admin Approval Simulator
@@ -166,15 +166,16 @@ export default function LeadsDashboardPage({
       {filtered.length > 0 ? (
         <div className="space-y-2">
           {filtered.map((lead) => (
-            <LeadCard
-              key={lead.id}
-              lead={lead}
-              onApprove={onApproveLead}
-              onDelete={onDeleteLead}
-              onEdit={onEditLead}
-              onBookAppointment={onUpdateAppointment ? (l) => setSelectedLeadForAppointment(l) : null}
-              onOpenDocuments={(l) => setSelectedLeadForDocs(l)}
-            />
+            <div key={lead.id} className="snap-start shrink-0 w-[300px] sm:w-[360px] md:w-[380px]">
+              <LeadCard
+                lead={lead}
+                onApprove={onApproveLead}
+                onDelete={onDeleteLead}
+                onEdit={onEditLead}
+                onBookAppointment={onUpdateAppointment ? (l) => setSelectedLeadForAppointment(l) : null}
+                onOpenDocuments={(l) => setSelectedLeadForDocs(l)}
+              />
+            </div>
           ))}
         </div>
       ) : (

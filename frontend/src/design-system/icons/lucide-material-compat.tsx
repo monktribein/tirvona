@@ -120,6 +120,7 @@ export const Copy = materialIcon("content_copy");
 export const CornerDownLeft = materialIcon("keyboard_return");
 export const Cpu = materialIcon("memory");
 export const CreditCard = materialIcon("credit_card");
+export const Crosshair = materialIcon("my_location");
 export const DollarSign = materialIcon("attach_money");
 export const Download = materialIcon("download");
 export const Droplets = materialIcon("water_drop");
