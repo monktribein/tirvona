@@ -12,6 +12,7 @@ export interface UnifiedBooking {
   reference: string;
   reservationNumber?: string;
   assignedRoomNumber?: string;
+  assignedRoomNumbers?: string[];
   paymentMode?: string;
   specialRequests?: string;
   addOnsList?: any[];
@@ -71,6 +72,7 @@ const fromStay = (b: any): UnifiedBooking => {
     reference: b.bookingId || b._id,
     reservationNumber: b.reservationNumber,
     assignedRoomNumber: b.assignedRoomNumber,
+    assignedRoomNumbers: b.assignedRoomNumbers || (b.assignedRoomNumber ? [b.assignedRoomNumber] : []),
     paymentMode: b.paymentMode || "pay_at_ashram",
     specialRequests: b.specialRequests,
     addOnsList: b.services?.selectedAddOns || [],
