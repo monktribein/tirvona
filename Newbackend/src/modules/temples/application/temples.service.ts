@@ -266,13 +266,19 @@ export class TemplesService {
 
     if (cityRegex && ashramsRaw.length < 5) {
       try {
+        const seenAshramIds = new Set(ashramsRaw.map((a: any) => String(a._id)));
         const cityAshrams = await this.ashrams.find({
           $or: [{ "address.city": cityRegex }, { "address.district": cityRegex }, { "address.area": cityRegex }],
           deletedAt: null,
           status: "approved",
           _id: { $nin: ashramsRaw.map((a: any) => a._id) }
         }).select("name slug address images ashramType rating pricing").limit(15).lean();
-        ashramsRaw.push(...cityAshrams);
+        for (const a of (cityAshrams || [])) {
+          if (!seenAshramIds.has(String(a._id))) {
+            seenAshramIds.add(String(a._id));
+            ashramsRaw.push(a);
+          }
+        }
       } catch (err) {
         this.logger.debug?.(`City fallback ashrams failed: ${err}`);
       }
