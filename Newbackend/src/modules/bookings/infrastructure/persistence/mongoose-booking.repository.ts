@@ -25,6 +25,7 @@ export class MongooseBookingRepository implements BookingRepository {
     session: ClientSession;
   }): Promise<void> {
     for (const date of dates) {
+      const validCapacity = Math.max(1, Number(capacity) || 10);
       await this.inventory.updateOne(
         { roomId, date },
         {
@@ -32,10 +33,13 @@ export class MongooseBookingRepository implements BookingRepository {
             ashramId,
             roomId,
             date,
-            totalInventory: capacity,
+            totalInventory: validCapacity,
             heldCount: 0,
             bookedCount: 0,
             maintenanceCount: 0,
+          },
+          $max: {
+            totalInventory: validCapacity,
           },
         },
         { upsert: true, session },
