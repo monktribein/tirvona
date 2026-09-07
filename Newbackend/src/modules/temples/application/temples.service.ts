@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, ConflictException } from "@nestjs/common";
+import { Injectable, NotFoundException, BadRequestException, ConflictException, Logger } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { CreateTempleDto, UpdateTempleDto, CreateAartiDto, CreateFestivalDto } from "../presentation/dtos/temple.dto";
@@ -26,6 +26,8 @@ const addDistances = (lng: number, lat: number, rows: any[]) => rows.map((row) =
 
 @Injectable()
 export class TemplesService {
+  private readonly logger = new Logger(TemplesService.name);
+
   constructor(
     @InjectModel("Temple") private readonly temples: Model<any>,
     @InjectModel("TempleAarti") private readonly aartis: Model<any>,
