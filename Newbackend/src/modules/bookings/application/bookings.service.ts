@@ -201,12 +201,14 @@ export class BookingsService {
 
     const booking = await this.transactions.run(async (session) => {
       for (const reqRoom of normalizedRooms) {
+        const foundRoom = quote.rooms?.find((r: any) => String(r._id) === String(reqRoom.roomId)) || quote.room;
+        const capacity = Number(foundRoom?.totalInventory) || Number(foundRoom?.inventory) || Number(foundRoom?.capacity) || Math.max(10, reqRoom.units);
         await this.repository.holdInventory({
           ashramId: dto.ashramId,
           roomId: reqRoom.roomId,
           dates: quote.dates,
           count: reqRoom.units,
-          capacity: quote.rooms?.find((r: any) => String(r._id) === String(reqRoom.roomId))?.totalInventory,
+          capacity,
           session,
         });
       }

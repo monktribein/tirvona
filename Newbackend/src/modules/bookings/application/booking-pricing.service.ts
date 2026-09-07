@@ -295,6 +295,7 @@ export class BookingPricingService {
     const totalAmount = Math.max(0, roundMoney(grossPayable - discountAmount));
     return {
       room: dbRooms[0],
+      rooms: dbRooms,
       dates,
       coupon,
       services,
