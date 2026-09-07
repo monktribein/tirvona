@@ -26,10 +26,12 @@ export class RoomBookingDto {
 
 export class CreateBookingDto {
   @IsMongoId() ashramId: string;
+  @IsOptional() @IsMongoId() roomId?: string;
+  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => RoomBookingDto)
-  rooms: RoomBookingDto[];
+  rooms?: RoomBookingDto[];
   @IsString() checkInDate: string;
   @IsString() checkOutDate: string;
   @Type(() => Number) @IsInt() @Min(1) @Max(100) guestsCount: number;
