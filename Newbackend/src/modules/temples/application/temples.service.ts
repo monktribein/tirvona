@@ -258,9 +258,9 @@ export class TemplesService {
     ]);
 
     // Fallback/enrichment with same city query if geo is sparse
-    let ashramsRaw = [...ashramsRawGeo];
-    let parking = [...parkingGeo];
-    let temples = [...templesGeo];
+    const ashramsRaw = [...ashramsRawGeo];
+    const parking = [...parkingGeo];
+    const temples = [...templesGeo];
 
     if (cityRegex && ashramsRaw.length < 5) {
       try {
@@ -271,7 +271,9 @@ export class TemplesService {
           _id: { $nin: ashramsRaw.map((a: any) => a._id) }
         }).select("name slug address images ashramType rating pricing").limit(15).lean();
         ashramsRaw.push(...cityAshrams);
-      } catch {}
+      } catch (err) {
+        this.logger.debug?.(`City fallback ashrams failed: ${err}`);
+      }
     }
 
     if (cityRegex && parking.length < 3) {
@@ -282,7 +284,9 @@ export class TemplesService {
           _id: { $nin: parking.map((p: any) => p._id) }
         }).select("name slug address geo coverImage images rating totalCapacity").limit(10).lean();
         parking.push(...cityParking);
-      } catch {}
+      } catch (err) {
+        this.logger.debug?.(`City fallback parking failed: ${err}`);
+      }
     }
 
     const ashrams = (ashramsRaw as any[]).filter((row) => !this.homestayPattern.test(String(row.ashramType || row.name || "")));
