@@ -20,6 +20,8 @@ import {
   ClipboardList,
   Tag,
   Building,
+  Building2,
+  Undo2,
   Heart,
   ChevronDown,
   ChevronRight,
@@ -35,12 +37,24 @@ import {
   Flame,
   Radio,
   PartyPopper,
-  Building2,
-  Undo2,
   ContactRound,
   Sparkles,
   DollarSign,
+  Ban,
+  CheckCircle2,
+  Clock,
+  Send,
 } from "lucide-react";
+import {
+  checkAshramBookingAvailable,
+  setManualAshramAvailability,
+  submitAvailabilityApprovalRequest,
+  getSuperAdminAvailabilityRequests,
+  approveAvailabilityRequest,
+  rejectAvailabilityRequest,
+  type AvailabilityRequest,
+} from "../../../utils/ashramAvailabilityHelper";
+import { ashramService } from "../../../services";
 
 interface NavGroup {
   groupName: string;
@@ -192,6 +206,45 @@ export const DashboardLayout: React.FC = () => {
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const [languageOpen, setLanguageOpen] = useState(false);
   const { language, setLanguage, t } = useLanguage();
+
+  // Stay Owner Availability Control State
+  const [ownerAshrams, setOwnerAshrams] = useState<any[]>([]);
+  const [selectedOwnerAshram, setSelectedOwnerAshram] = useState<any>(null);
+  const [availabilityModalOpen, setAvailabilityModalOpen] = useState(false);
+  const [requestFeedbackMsg, setRequestFeedbackMsg] = useState("");
+  const [pendingSuperAdminRequests, setPendingSuperAdminRequests] = useState<AvailabilityRequest[]>([]);
+
+  // Load owner's stays if stay owner / admin
+  const isStayOwnerOrAdmin = ["ashram_owner", "owner", "ashram_admin", "stay_admin"].includes(
+    String(user?.role || ""),
+  );
+  const isSuperAdmin = user?.role === "super_admin";
+
+  const refreshOwnerStays = React.useCallback(async () => {
+    if (!isStayOwnerOrAdmin) return;
+    try {
+      const res = await ashramService.myListings();
+      if (res.data?.success && Array.isArray(res.data.data)) {
+        setOwnerAshrams(res.data.data);
+        if (res.data.data.length > 0 && !selectedOwnerAshram) {
+          setSelectedOwnerAshram(res.data.data[0]);
+        }
+      }
+    } catch (err) {
+      console.error("Error loading owner stays:", err);
+    }
+  }, [isStayOwnerOrAdmin, selectedOwnerAshram]);
+
+  const refreshAdminRequests = React.useCallback(() => {
+    if (isSuperAdmin) {
+      setPendingSuperAdminRequests(getSuperAdminAvailabilityRequests());
+    }
+  }, [isSuperAdmin]);
+
+  React.useEffect(() => {
+    refreshOwnerStays();
+    refreshAdminRequests();
+  }, [refreshOwnerStays, refreshAdminRequests]);
 
   React.useEffect(() => {
     const activeGroup = superAdminGroups.find((group) =>
@@ -1084,6 +1137,118 @@ export const DashboardLayout: React.FC = () => {
           })}
         </div>
       </nav>
+
+      {/* Stay Owner Availability Control Widget in Sidebar */}
+      {isStayOwnerOrAdmin && ownerAshrams.length > 0 && selectedOwnerAshram && (
+        <div className="p-3 border-t border-blue-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50">
+          <div className="p-3 bg-white dark:bg-[#0B192C] border border-blue-100 dark:border-slate-800 rounded-2xl shadow-xs space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+                Booking Status
+              </span>
+              <span
+                className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${
+                  checkAshramBookingAvailable(selectedOwnerAshram)
+                    ? "bg-emerald-50 text-emerald-600 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400"
+                    : "bg-rose-50 text-rose-600 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-400"
+                }`}
+              >
+                {checkAshramBookingAvailable(selectedOwnerAshram) ? "Available" : "Not Available"}
+              </span>
+            </div>
+
+            <p className="text-[11px] font-extrabold text-[#0B192C] dark:text-white truncate">
+              {selectedOwnerAshram.name}
+            </p>
+
+            <div className="flex items-center gap-1.5">
+              {checkAshramBookingAvailable(selectedOwnerAshram) ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setManualAshramAvailability(selectedOwnerAshram._id, false);
+                    setRequestFeedbackMsg(`"${selectedOwnerAshram.name}" marked as Not Available for all guests.`);
+                    setTimeout(() => setRequestFeedbackMsg(""), 4000);
+                    refreshOwnerStays();
+                  }}
+                  className="w-full py-1.5 px-3 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 dark:border-rose-900/50 rounded-xl text-[10px] font-black flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Ban size={12} /> Tick Not Available
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    submitAvailabilityApprovalRequest({
+                      ashramId: selectedOwnerAshram._id,
+                      ashramName: selectedOwnerAshram.name,
+                      ownerId: (user as any)?.id || (user as any)?._id || "",
+                      ownerName: user?.name || user?.email,
+                      requestedState: "available",
+                    });
+                    setRequestFeedbackMsg("Request sent to Super Admin for confirmation!");
+                    setTimeout(() => setRequestFeedbackMsg(""), 4500);
+                    refreshAdminRequests();
+                  }}
+                  className="w-full py-1.5 px-3 bg-[#0A4DA6] hover:bg-[#083b80] text-white rounded-xl text-[10px] font-black flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                >
+                  <Send size={11} /> Request Available
+                </button>
+              )}
+            </div>
+
+            {requestFeedbackMsg && (
+              <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 p-1.5 rounded-lg text-center animate-in fade-in">
+                {requestFeedbackMsg}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Super Admin Availability Requests Quick Widget */}
+      {isSuperAdmin && pendingSuperAdminRequests.filter((r) => r.status === "pending").length > 0 && (
+        <div className="p-3 border-t border-blue-100 dark:border-slate-800 bg-amber-50/50 dark:bg-amber-950/20">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-700 dark:text-amber-300 flex items-center gap-1">
+              <Clock size={11} /> Owner Requests ({pendingSuperAdminRequests.filter((r) => r.status === "pending").length})
+            </span>
+          </div>
+          <div className="space-y-2">
+            {pendingSuperAdminRequests
+              .filter((r) => r.status === "pending")
+              .slice(0, 2)
+              .map((req) => (
+                <div key={req.id} className="p-2 bg-white dark:bg-[#0B192C] rounded-xl border border-amber-200 dark:border-amber-900/50 text-[10px] space-y-1.5">
+                  <p className="font-extrabold truncate text-[#0B192C] dark:text-white">{req.ashramName}</p>
+                  <p className="text-gray-500 dark:text-gray-400">Request: <strong className="text-emerald-600 font-black">Make Available</strong></p>
+                  <div className="flex items-center gap-1.5 pt-0.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        approveAvailabilityRequest(req.id);
+                        refreshAdminRequests();
+                      }}
+                      className="flex-1 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-black text-[9px] cursor-pointer"
+                    >
+                      Confirm
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        rejectAvailabilityRequest(req.id);
+                        refreshAdminRequests();
+                      }}
+                      className="flex-1 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-slate-800 dark:text-gray-300 rounded-lg font-black text-[9px] cursor-pointer"
+                    >
+                      Reject
+                    </button>
+                  </div>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
 
     </>
   );

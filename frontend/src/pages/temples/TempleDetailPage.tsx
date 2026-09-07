@@ -263,33 +263,33 @@ export default function TempleDetailPage() {
       {previewId && <div className="bg-amber-100 px-4 py-2 text-center text-sm font-semibold text-amber-900">Preview mode: this temple is not visible to the public until published.</div>}
       <nav className="mx-auto flex max-w-7xl items-center gap-2 px-4 pt-5 text-sm text-gray-500 sm:px-6" aria-label="Breadcrumb"><Link to="/" className="hover:text-[#E58C28]">Home</Link><span>/</span><Link to="/temples" className="hover:text-[#E58C28]">Temples</Link><span>/</span><span className="truncate text-gray-900">{temple.name}</span></nav>
       {/* Hero Section */}
-      <div className="relative h-[60vh] min-h-[400px] bg-black">
-        {temple.media?.coverImage ? (
-          <img src={temple.media.coverImage} onClick={() => setLightboxOpen(true)} className="w-full h-full cursor-zoom-in object-cover opacity-60" alt={temple.name} />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center opacity-20">
-            <Building2 className="w-32 h-32 text-white" />
-          </div>
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
-        
-        <button 
-          onClick={() => navigate(-1)}
-          className="absolute top-6 left-6 z-10 w-10 h-10 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
+      <div className="relative pt-12 pb-16 bg-gradient-to-br from-[#0B192C] via-[#0D233E] to-[#0B192C] rounded-b-3xl shadow-lg">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 relative">
+          <button 
+            onClick={() => navigate(-1)}
+            className="mb-6 w-10 h-10 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white transition-colors cursor-pointer"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
 
-        <div className="absolute bottom-0 left-0 w-full p-8 md:p-12 max-w-7xl mx-auto">
-          {temple.isVerified && <span className="mb-3 inline-flex items-center gap-2 rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-bold text-white">Verified</span>}
-          {temple.deity && (
-            <span className="inline-block bg-[#E58C28] text-white text-xs font-bold px-3 py-1.5 rounded-lg mb-4">
-              Dedicated to {temple.deity}
-            </span>
-          )}
-          <h1 className="text-4xl md:text-6xl font-bold text-white mb-4 leading-tight">{temple.name}</h1>
-          {locationLabel && <p className="text-xl text-gray-200 flex items-center gap-2 font-medium"><MapPin className="w-5 h-5 text-[#E58C28]" /> {locationLabel}</p>}
-          {temple.shortDescription && <p className="mt-3 max-w-2xl text-base text-gray-200">{temple.shortDescription}</p>}
+          <div>
+            <div className="flex items-center gap-2 flex-wrap mb-3">
+              {temple.isVerified && <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-3 py-1 text-xs font-bold">✓ Verified Temple</span>}
+              {temple.deity && (
+                <span className="inline-block bg-[#E58C28] text-white text-xs font-bold px-3 py-1 rounded-full shadow-sm">
+                  Dedicated to {temple.deity}
+                </span>
+              )}
+            </div>
+            <h1 
+              className="text-3xl sm:text-5xl font-bold text-white mb-3 leading-tight"
+              style={{ fontFamily: "'Kalam', cursive, sans-serif" }}
+            >
+              {temple.name}
+            </h1>
+            {locationLabel && <p className="text-base sm:text-lg text-slate-200 flex items-center gap-2 font-medium"><MapPin className="w-5 h-5 text-[#E58C28]" /> {locationLabel}</p>}
+            {temple.shortDescription && <p className="mt-3 max-w-3xl text-sm sm:text-base text-slate-300 leading-relaxed">{temple.shortDescription}</p>}
+          </div>
         </div>
       </div>
 
@@ -459,13 +459,7 @@ export default function TempleDetailPage() {
             </div>
           )}
 
-          {Array.isArray(temple.media?.galleryImages) && temple.media.galleryImages.length > 0 && (
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-              <div className="flex items-center gap-3 mb-6"><div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center"><ImageIcon className="w-5 h-5 text-amber-600" /></div><h2 className="text-2xl font-bold text-gray-900">Gallery</h2></div>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">{gallery.map((image: string, index: number) => <button key={image} type="button" onClick={() => { setActiveImage(index); setLightboxOpen(true); }} className="overflow-hidden rounded-xl"><img src={image} alt={`${temple.name} gallery ${index + 1}`} loading="lazy" className="h-40 w-full object-cover transition-transform hover:scale-105" /></button>)}</div>
-            </div>
-          )}
-
+          {/* End of content */}
         </div>
 
         {/* Sidebar */}

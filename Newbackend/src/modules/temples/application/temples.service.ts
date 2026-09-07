@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, ConflictException } from "@nestjs/common";
+import { Injectable, NotFoundException, BadRequestException, ConflictException, Logger } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { CreateTempleDto, UpdateTempleDto, CreateAartiDto, CreateFestivalDto } from "../presentation/dtos/temple.dto";
@@ -26,6 +26,8 @@ const addDistances = (lng: number, lat: number, rows: any[]) => rows.map((row) =
 
 @Injectable()
 export class TemplesService {
+  private readonly logger = new Logger(TemplesService.name);
+
   constructor(
     @InjectModel("Temple") private readonly temples: Model<any>,
     @InjectModel("TempleAarti") private readonly aartis: Model<any>,
@@ -244,16 +246,56 @@ export class TemplesService {
   private readonly homestayPattern = /home\s*stay|guest\s*house|rest\s*house|temple\s*trust\s*stay/i;
 
   private async nearbyBundle(lng: number, lat: number, radiusKm: number, excludeTempleId?: any, anchorCity?: string) {
-    const maxMeters = radiusKm * 1000;
+    const maxMeters = Math.max(radiusKm, 15) * 1000;
     const templeFilter: Record<string, any> = { deletedAt: null, status: { $in: ["published", "active"] } };
     if (excludeTempleId) templeFilter._id = { $ne: excludeTempleId };
 
-    const [ashramsRaw, parking, temples, prasad] = await Promise.all([
-      this.safeNear(this.ashrams, "address.coordinates", lng, lat, maxMeters, { deletedAt: null, status: "approved" }, "name slug address images ashramType rating pricing", 20),
-      this.safeNear(this.parkingLocations, "geo", lng, lat, maxMeters, { status: "active" }, "name slug address geo coverImage images rating totalCapacity", 10),
-      this.safeNear(this.temples, "address.coordinates", lng, lat, maxMeters, templeFilter, "name slug address media.coverImage deity", 10),
+    const cityRegex = anchorCity ? new RegExp(`^${String(anchorCity).trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i") : null;
+
+    const [ashramsRawGeo, parkingGeo, templesGeo, prasad] = await Promise.all([
+      this.safeNear(this.ashrams, "address.coordinates", lng, lat, maxMeters, { deletedAt: null, status: "approved" }, "name slug address images ashramType rating pricing", 30),
+      this.safeNear(this.parkingLocations, "geo", lng, lat, maxMeters, { status: "active" }, "name slug address geo coverImage images rating totalCapacity", 15),
+      this.safeNear(this.temples, "address.coordinates", lng, lat, maxMeters, templeFilter, "name slug address media.coverImage deity", 15),
       this.nearbyPrasad(anchorCity),
     ]);
+
+    // Fallback/enrichment with same city query if geo is sparse
+    const ashramsRaw = [...ashramsRawGeo];
+    const parking = [...parkingGeo];
+    const temples = [...templesGeo];
+
+    if (cityRegex && ashramsRaw.length < 5) {
+      try {
+        const seenAshramIds = new Set(ashramsRaw.map((a: any) => String(a._id)));
+        const cityAshrams = await this.ashrams.find({
+          $or: [{ "address.city": cityRegex }, { "address.district": cityRegex }, { "address.area": cityRegex }],
+          deletedAt: null,
+          status: "approved",
+          _id: { $nin: ashramsRaw.map((a: any) => a._id) }
+        }).select("name slug address images ashramType rating pricing").limit(15).lean();
+        for (const a of (cityAshrams || [])) {
+          if (!seenAshramIds.has(String(a._id))) {
+            seenAshramIds.add(String(a._id));
+            ashramsRaw.push(a);
+          }
+        }
+      } catch (err) {
+        this.logger.debug?.(`City fallback ashrams failed: ${err}`);
+      }
+    }
+
+    if (cityRegex && parking.length < 3) {
+      try {
+        const cityParking = await this.parkingLocations.find({
+          $or: [{ "address.city": cityRegex }, { "address.district": cityRegex }],
+          status: "active",
+          _id: { $nin: parking.map((p: any) => p._id) }
+        }).select("name slug address geo coverImage images rating totalCapacity").limit(10).lean();
+        parking.push(...cityParking);
+      } catch (err) {
+        this.logger.debug?.(`City fallback parking failed: ${err}`);
+      }
+    }
 
     const ashrams = (ashramsRaw as any[]).filter((row) => !this.homestayPattern.test(String(row.ashramType || row.name || "")));
     const homestays = (ashramsRaw as any[]).filter((row) => this.homestayPattern.test(String(row.ashramType || row.name || "")));
