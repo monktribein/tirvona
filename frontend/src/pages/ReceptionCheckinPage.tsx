@@ -95,7 +95,7 @@ export const ReceptionCheckinPage: React.FC = () => {
       booking.customerId?.name,
       booking.customerId?.phone,
       booking.ashramId?.name,
-      booking.roomId?.name,
+      booking.rooms?.[0]?.roomId?.name,
     ].some((value) => String(value || "").toLowerCase().includes(term));
   });
 
@@ -329,7 +329,7 @@ export const ReceptionCheckinPage: React.FC = () => {
                     </td>
 
                     <td className="py-3.5 px-3 sm:px-4 text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                      <div className="font-medium">{bk.roomId?.name || "Room"}</div>
+                      <div className="font-medium">{bk.rooms?.[0]?.roomId?.name || "Room"}</div>
                       {bk.assignedRoomNumbers && bk.assignedRoomNumbers.length > 0 ? (
                         <span className="inline-block mt-0.5 px-2 py-0.5 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 text-[10px] font-bold rounded">
                           {bk.assignedRoomNumbers.join(", ")}
@@ -422,7 +422,7 @@ export const ReceptionCheckinPage: React.FC = () => {
                 <span className="text-[#0A4DA6] font-mono">{verifyingBooking.bookingId}</span>
               </div>
               <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between">
-                <span>{verifyingBooking.roomId?.name || "Room"}</span>
+                <span>{verifyingBooking.rooms?.[0]?.roomId?.name || "Room"}</span>
                 <span>
                   {formatDate(verifyingBooking.checkInDate || verifyingBooking.checkIn)} → {formatDate(verifyingBooking.checkOutDate || verifyingBooking.checkOut)}
                 </span>
