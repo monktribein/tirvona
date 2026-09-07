@@ -180,7 +180,7 @@ export class SelfBookingService {
       .findById(id)
       .select("+checkInCode")
       .populate("ashramId", "name address")
-      .populate("roomId", "name type")
+      .populate("rooms.roomId", "name type")
       .lean();
     if (!booking) throw new NotFoundException("Booking not found");
     assertAshramInScope(

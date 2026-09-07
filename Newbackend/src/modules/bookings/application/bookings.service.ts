@@ -118,6 +118,15 @@ export class BookingsService {
     return resolveAshramScope(user, this.ashrams);
   }
 
+  private roomUnits(row: any): { roomId: string; units: number }[] {
+    if (Array.isArray(row.rooms) && row.rooms.length)
+      return row.rooms.map((r: any) => ({
+        roomId: String(r.roomId?._id ?? r.roomId),
+        units: r.units,
+      }));
+    return [{ roomId: String(row.roomId), units: row.roomsBookedCount }];
+  }
+
   private async assertCanManage(
     user: AuthenticatedUser,
     booking: any,
@@ -480,14 +489,15 @@ export class BookingsService {
           throw new BadRequestException(
             "This booking was cancelled; the payment will be refunded",
           );
-        await this.repository.holdInventory({
-          ashramId: String(booking.ashramId),
-          roomId: String(booking.roomId),
-          dates: booking.occupiedDates,
-          count: booking.roomsBookedCount,
-          capacity: booking.roomsBookedCount,
-          session,
-        });
+        for (const room of this.roomUnits(booking))
+          await this.repository.holdInventory({
+            ashramId: String(booking.ashramId),
+            roomId: room.roomId,
+            dates: booking.occupiedDates,
+            count: room.units,
+            capacity: room.units,
+            session,
+          });
         booking.status = "pending";
         booking.reservationExpiresAt = new Date(Date.now() + 15 * 60_000);
         await this.audits.create(
@@ -506,12 +516,13 @@ export class BookingsService {
         );
       }
 
-      await this.repository.confirmInventory({
-        roomId: String(booking.roomId),
-        dates: booking.occupiedDates,
-        count: booking.roomsBookedCount,
-        session,
-      });
+      for (const room of this.roomUnits(booking))
+        await this.repository.confirmInventory({
+          roomId: room.roomId,
+          dates: booking.occupiedDates,
+          count: room.units,
+          session,
+        });
       await this.inventoryHolds.updateOne(
         { bookingId: booking._id, state: "held" },
         {
@@ -797,7 +808,7 @@ export class BookingsService {
     return this.bookings
       .find({ customerId: userId })
       .populate("ashramId", "name address rules images")
-      .populate("roomId", "name acType type")
+      .populate("rooms.roomId", "name acType type")
       .sort({ createdAt: -1 })
       .lean();
   }
@@ -811,7 +822,7 @@ export class BookingsService {
           : { bookingId: String(idOrReference).toUpperCase() },
       )
       .populate("ashramId", "name address rules images")
-      .populate("roomId", "name acType type")
+      .populate("rooms.roomId", "name acType type")
       .populate("customerId", "name email phone")
       .lean();
     if (!row) throw new NotFoundException("Booking not found");
@@ -861,7 +872,6 @@ export class BookingsService {
       .find(filter)
       .populate("customerId", "name email phone")
       .populate("ashramId", "name address")
-      .populate("roomId", "name type acType")
       .populate("rooms.roomId", "name type acType")
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
@@ -919,12 +929,13 @@ export class BookingsService {
         );
 
         // Create new assignments
+        const primaryRoomId = this.roomUnits(row)[0]?.roomId;
         for (const roomNumber of roomNumbers) {
           await this.assignments.create(
             [{
               bookingId: row._id,
               ashramId: row.ashramId,
-              roomId: row.roomId, // If multiple rooms are from different categories, row.roomId might not be accurate for all, but we stick to the existing schema for now
+              roomId: primaryRoomId, // If multiple rooms are from different categories, this might not be accurate for all, but we stick to the existing schema for now
               roomNumber,
               assignedBy: user.id,
               assignedAt: new Date(),
@@ -960,7 +971,7 @@ export class BookingsService {
       .findById(id)
       .populate("customerId", "name email phone")
       .populate("ashramId", "name address")
-      .populate("roomId", "name type acType")
+      .populate("rooms.roomId", "name type acType")
       .lean();
   }
 
@@ -987,13 +998,14 @@ export class BookingsService {
         .findOne({ bookingId: row._id, state: "held" })
         .session(session);
       if (activeHold) {
-        await this.repository.releaseInventory({
-          roomId: String(row.roomId),
-          dates: row.occupiedDates,
-          count: row.roomsBookedCount,
-          state: "held",
-          session,
-        });
+        for (const room of this.roomUnits(row))
+          await this.repository.releaseInventory({
+            roomId: room.roomId,
+            dates: row.occupiedDates,
+            count: room.units,
+            state: "held",
+            session,
+          });
         activeHold.state = "released";
         activeHold.releasedAt = new Date();
         activeHold.releaseReason = "Deleted by Super Admin";
@@ -1048,11 +1060,12 @@ export class BookingsService {
       { $set: { status: "released", releasedAt: new Date() } }
     );
 
+    const primaryRoomId = this.roomUnits(row)[0]?.roomId;
     for (const roomNumber of roomNumbers) {
       await this.assignments.create({
         bookingId: row._id,
         ashramId: row.ashramId,
-        roomId: row.roomId,
+        roomId: primaryRoomId,
         roomNumber,
         assignedBy: user.id,
         assignedAt: new Date(),
@@ -1134,13 +1147,14 @@ export class BookingsService {
         "Only checked-in bookings can be checked out",
       );
     return this.transactions.run(async (session) => {
-      await this.repository.releaseInventory({
-        roomId: String(row.roomId),
-        dates: row.occupiedDates,
-        count: row.roomsBookedCount,
-        state: "booked",
-        session,
-      });
+      for (const room of this.roomUnits(row))
+        await this.repository.releaseInventory({
+          roomId: room.roomId,
+          dates: row.occupiedDates,
+          count: room.units,
+          state: "booked",
+          session,
+        });
       await this.inventoryHolds.updateOne(
         { bookingId: row._id, state: "confirmed" },
         {
@@ -1177,12 +1191,13 @@ export class BookingsService {
         { session },
       );
       if (row.assignedRoomNumbers && row.assignedRoomNumbers.length > 0) {
+        const primaryRoomId = this.roomUnits(row)[0]?.roomId;
         for (const roomNumber of row.assignedRoomNumbers) {
           await this.housekeeping.findOneAndUpdate(
             { ashramId: row.ashramId, unitNumber: roomNumber },
             {
               $set: {
-                roomId: row.roomId,
+                roomId: primaryRoomId,
                 bookingId: row._id,
                 status: "dirty",
                 priority: "high",
@@ -1240,13 +1255,14 @@ export class BookingsService {
         : Number(policy?.refundInsideWindowPercent ?? 0);
     return this.transactions.run(async (session) => {
       const state = existing.status === "pending" ? "held" : "booked";
-      await this.repository.releaseInventory({
-        roomId: String(existing.roomId),
-        dates: existing.occupiedDates,
-        count: existing.roomsBookedCount,
-        state,
-        session,
-      });
+      for (const room of this.roomUnits(existing))
+        await this.repository.releaseInventory({
+          roomId: room.roomId,
+          dates: existing.occupiedDates,
+          count: room.units,
+          state,
+          session,
+        });
       await this.inventoryHolds.updateOne(
         { bookingId: existing._id, state: { $in: ["held", "confirmed"] } },
         {
