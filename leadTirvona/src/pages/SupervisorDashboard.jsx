@@ -86,6 +86,13 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
   const [createError, setCreateError] = useState('');
   const [toastMessage, setToastMessage] = useState(null);
 
+  // Attendance state
+  const [attendanceAgent, setAttendanceAgent] = useState(null);
+  const [attendanceData, setAttendanceData] = useState(null);
+  const [loadingAttendance, setLoadingAttendance] = useState(false);
+  const [attendanceSummaryMap, setAttendanceSummaryMap] = useState({});
+  const [attendanceTodayMap, setAttendanceTodayMap] = useState({});
+
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
   const langRef = useRef(null);
 
@@ -136,6 +143,24 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
   const markAllNotificationsRead = () => {
     setNotifications(prev => prev.map(n => ({ ...n, unread: false })));
   };
+
+  const isAnyModalOpen = Boolean(attendanceAgent || selectedLead || showCreateModal || resettingAgent || confirmDeleteAgent);
+
+  useEffect(() => {
+    if (isAnyModalOpen) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      if (window.lenisInstance) {
+        window.lenisInstance.stop();
+      }
+      return () => {
+        document.body.style.overflow = originalOverflow || '';
+        if (window.lenisInstance) {
+          window.lenisInstance.start();
+        }
+      };
+    }
+  }, [isAnyModalOpen]);
 
   const showToast = (text, type = 'success') => {
     setToastMessage({ text, type });
@@ -234,11 +259,34 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
     }
   }, []);
 
+  const openAttendanceModal = async (agent) => {
+    setAttendanceAgent(agent);
+    setLoadingAttendance(true);
+    setAttendanceData(null);
+    try {
+      const res = await supervisorApi.getAgentAttendance(agent._id);
+      setAttendanceData(res);
+    } catch (err) {
+      showToast(err.message || 'Could not load attendance records', 'error');
+    } finally {
+      setLoadingAttendance(false);
+    }
+  };
+
   const loadAgents = useCallback(async () => {
     setLoadingAgents(true);
     try {
       const res = await supervisorApi.listAgents({ limit: 100 });
       setAgents(res?.items || []);
+      try {
+        const summaryRes = await supervisorApi.getAttendanceSummary();
+        if (summaryRes) {
+          setAttendanceSummaryMap(summaryRes.summaryMap || {});
+          setAttendanceTodayMap(summaryRes.todayMap || {});
+        }
+      } catch {
+        // Non-blocking
+      }
     } catch (err) {
       showToast(err.message || 'Could not load field executives', 'error');
     } finally {
@@ -263,6 +311,23 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
   useEffect(() => {
     loadDashboard();
     loadAgents();
+
+    // Auto-refresh dynamic data every 30 seconds
+    const interval = setInterval(() => {
+      loadDashboard();
+      // Silently refresh agents without showing full loading spinners
+      supervisorApi.listAgents({ limit: 100 }).then((res) => {
+        if (res?.items) setAgents(res.items);
+      }).catch(() => {});
+      supervisorApi.getAttendanceSummary().then((summaryRes) => {
+        if (summaryRes) {
+          setAttendanceSummaryMap(summaryRes.summaryMap || {});
+          setAttendanceTodayMap(summaryRes.todayMap || {});
+        }
+      }).catch(() => {});
+    }, 30000);
+
+    return () => clearInterval(interval);
   }, [loadDashboard, loadAgents]);
 
   const handleRefresh = () => {
@@ -374,20 +439,20 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
         </div>
       )}
 
-      <header className="bg-white border-b border-gray-200/80 sticky top-0 z-40 px-4 sm:px-8 py-3 flex items-center justify-between gap-4 shadow-2xs">
-        <div className="flex items-center gap-3.5 shrink-0">
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-40 px-3 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-3 shadow-2xs">
+        <div className="flex items-center gap-3 shrink-0">
           <div className="w-10 h-10 rounded-full border border-blue-100 bg-blue-50/50 flex items-center justify-center p-1 shadow-2xs">
             <img src="/logo.png" alt="Tirvona Logo" className="h-6 w-auto object-contain" />
           </div>
           <div>
-            <div className="text-[13px] sm:text-[15px] font-bold text-[#0F172A] leading-tight tracking-tight">{t('Tirvona')}</div>
-            <div className="text-[9px] sm:text-[10px] font-semibold text-[#0A4DA6] uppercase tracking-wider mt-0.5">
+            <div className="text-[13px] sm:text-[15px] font-extrabold text-[#0F172A] leading-tight tracking-tight">{t('Tirvona')}</div>
+            <div className="text-[9px] sm:text-[10px] font-bold text-[#0A4DA6] uppercase tracking-wider mt-0.5">
               {t('Field Supervisor')}
             </div>
           </div>
         </div>
 
-        <div className="hidden md:flex items-center relative flex-1 max-w-xl mx-4 lg:mx-8">
+        <div className="hidden md:flex items-center relative flex-1 max-w-md lg:max-w-xl mx-2 lg:mx-6">
           <div className="relative w-full">
             <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#0A4DA6]" />
             <input
@@ -403,7 +468,7 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
+        <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
           
           <div className="relative" ref={langRef}>
             <button
@@ -533,18 +598,18 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
           <button
             type="button"
             onClick={() => onOpenFieldPortal && onOpenFieldPortal(null)}
-            className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-1.5 sm:py-2 bg-[#0A4DA6] hover:bg-[#083D85] text-white rounded-full text-[11px] sm:text-xs font-extrabold transition-all shadow-xs cursor-pointer"
+            className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-[#0A4DA6] hover:bg-[#083D85] text-white rounded-full text-[11px] sm:text-xs font-extrabold transition-all shadow-xs cursor-pointer"
             title={t('Lead Portal')}
           >
             <Globe size={12} className="sm:w-[13px] sm:h-[13px]" />
-            <span className="hidden min-[400px]:inline">{t('Lead Portal')}</span>
-            <span className="min-[400px]:hidden">{t('Portal')}</span>
+            <span className="hidden min-[480px]:inline">{t('Lead Portal')}</span>
+            <span className="min-[480px]:hidden">{t('Portal')}</span>
             <ArrowRight size={11} className="sm:w-[13px] sm:h-[13px]" />
           </button>
 
           <button
             onClick={onLogout}
-            className="px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-[11px] sm:text-xs font-bold text-gray-700 hover:text-rose-600 hover:bg-rose-50 border border-gray-200 hover:border-rose-200 rounded-full flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
+            className="px-2.5 sm:px-3 py-1.5 sm:py-2 text-[11px] sm:text-xs font-bold text-gray-700 hover:text-rose-600 hover:bg-rose-50 border border-gray-200 hover:border-rose-200 rounded-full flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
             title={t('Sign Out')}
           >
             <LogOut size={12} className="sm:w-[13px] sm:h-[13px]" />
@@ -553,7 +618,7 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
         </div>
       </header>
 
-      <div className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 grid grid-cols-1 lg:grid-cols-[250px_1fr] gap-5 sm:gap-6 text-left">
+      <div className="flex-1 w-full max-w-[1440px] mx-auto px-3 sm:px-5 lg:px-8 py-4 sm:py-6 grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-5 sm:gap-6 text-left">
         
         <aside className="space-y-4 sm:space-y-5">
           <div className="bg-white border border-[#E2E8F0] rounded-2xl sm:rounded-3xl p-3.5 sm:p-4 shadow-xs space-y-1.5">
@@ -635,21 +700,21 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
           </div>
         </aside>
 
-        <main className="space-y-5">
+        <main className="space-y-5 min-w-0">
           
           {(activeNav === 'agents' || !activeNav) && (
             <div className="space-y-5">
-              <div className="bg-white border border-[#E2E8F0] rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-blue-50 text-[#0A4DA6] flex items-center justify-center shrink-0">
-                    <Users size={24} />
+              <div className="bg-white border border-[#E2E8F0] rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5 sm:gap-4 min-w-0">
+                  <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-blue-50 text-[#0A4DA6] flex items-center justify-center shrink-0">
+                    <Users size={22} className="sm:w-6 sm:h-6" />
                   </div>
-                  <div>
-                    <div className="flex items-center gap-2.5 flex-wrap">
-                      <h1 className="text-base sm:text-2xl font-extrabold text-[#0F172A] tracking-tight">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h1 className="text-base sm:text-xl md:text-2xl font-extrabold text-[#0F172A] tracking-tight">
                         {t('Field Executives')}
                       </h1>
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-amber-50 text-amber-800 border border-amber-200/80">
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-amber-50 text-amber-800 border border-amber-200/80 shrink-0">
                         {t('LEAD COLLECTION')}
                       </span>
                     </div>
@@ -659,19 +724,19 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+                <div className="flex items-center gap-2 shrink-0">
                   <button
                     onClick={() => setShowCreateModal(true)}
-                    className="px-5 py-2.5 sm:px-6 sm:py-3 bg-[#0A4DA6] hover:bg-[#083D85] text-white rounded-full text-xs sm:text-sm font-extrabold flex items-center gap-2 cursor-pointer shadow-xs transition-all"
+                    className="w-full sm:w-auto px-4 sm:px-5 py-2.5 sm:py-2.5 bg-[#0A4DA6] hover:bg-[#083D85] text-white rounded-full text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 cursor-pointer shadow-xs transition-all shrink-0"
                   >
                     <Plus size={16} />
-                    <span>{t('Create Field Executive')}</span>
+                    <span>{t('Create Executive')}</span>
                   </button>
                 </div>
               </div>
 
-              <div className="bg-white border border-[#E2E8F0] rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-xs">
-                <div className="relative w-full lg:w-[420px]">
+              <div className="bg-white border border-[#E2E8F0] rounded-2xl sm:rounded-3xl p-3.5 sm:p-4 shadow-xs">
+                <div className="relative w-full max-w-md">
                   <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748B]" />
                   <input
                     type="text"
@@ -681,7 +746,7 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
                       setAgentSearch(e.target.value);
                       setPage(1);
                     }}
-                    className="w-full min-h-[44px] pl-11 pr-4 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/20 focus:border-[#0A4DA6] transition-all placeholder:text-[#94A3B8]"
+                    className="w-full min-h-[42px] pl-11 pr-4 py-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/20 focus:border-[#0A4DA6] transition-all placeholder:text-[#94A3B8]"
                   />
                 </div>
               </div>
@@ -711,15 +776,14 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
                   <div className="overflow-x-auto">
                     <table className="w-full text-left">
                       <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
-                        <tr className="text-xs font-bold text-[#64748B] tracking-wider uppercase">
-                          <th className="px-6 py-4">{t('Field Executive')}</th>
-                          <th className="px-6 py-4">{t('Phone')}</th>
-                          <th className="px-6 py-4">{t('Role')}</th>
-                          <th className="px-6 py-4">{t('Region')}</th>
-                          <th className="px-6 py-4">{t('Leads')}</th>
-                          <th className="px-6 py-4">{t('Last Login')}</th>
-                          <th className="px-6 py-4">{t('Status')}</th>
-                          <th className="px-6 py-4 text-right">{t('Actions')}</th>
+                        <tr className="text-[11px] font-extrabold text-[#64748B] tracking-wider uppercase">
+                          <th className="px-4 py-3.5">{t('Field Executive')}</th>
+                          <th className="px-4 py-3.5">{t('Phone')}</th>
+                          <th className="px-4 py-3.5">{t('Role')}</th>
+                          <th className="px-4 py-3.5">{t('Region')}</th>
+                          <th className="px-3 py-3.5 text-center">{t('Leads')}</th>
+                          <th className="px-4 py-3.5">{t('Last Login')}</th>
+                          <th className="px-4 py-3.5 text-right">{t('Actions')}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-[#E2E8F0]">
@@ -728,58 +792,75 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
                             key={agent._id}
                             className="hover:bg-slate-50/70 transition-colors"
                           >
-                            <td className="px-6 py-4">
-                              <div
-                                onClick={() => handleOpenAgent(agent._id)}
-                                className="text-xs sm:text-sm font-extrabold text-[#0F172A] hover:text-[#0A4DA6] cursor-pointer transition-colors"
-                              >
-                                {agent.name}
+                            <td className="px-4 py-3.5">
+                              <div className="flex items-center gap-2">
+                                <span
+                                  onClick={() => handleOpenAgent(agent._id)}
+                                  className="text-xs sm:text-sm font-extrabold text-[#0F172A] hover:text-[#0A4DA6] cursor-pointer transition-colors"
+                                  title={agent.name}
+                                >
+                                  {agent.name}
+                                </span>
+                                <span
+                                  className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-extrabold uppercase border ${
+                                    agent.status === 'active' || !agent.status
+                                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                      : 'bg-rose-50 text-rose-700 border-rose-200'
+                                  }`}
+                                >
+                                  {agent.status === 'active' || !agent.status ? 'Active' : 'Suspended'}
+                                </span>
                               </div>
-                              <div className="text-xs font-medium text-[#64748B] mt-0.5">
-                                {agent.email || agent.employeeCode || '—'}
-                              </div>
+                              {(agent.email || agent.employeeCode) && (
+                                <div className="text-[11px] font-medium text-[#64748B] mt-0.5" title={agent.email || agent.employeeCode}>
+                                  {agent.email || agent.employeeCode}
+                                </div>
+                              )}
                             </td>
 
-                            <td className="px-6 py-4 text-xs sm:text-sm font-semibold text-[#0F172A]">
+                            <td className="px-4 py-3.5 text-xs sm:text-sm font-semibold text-[#0F172A] whitespace-nowrap">
                               {agent.phone}
                             </td>
 
-                            <td className="px-6 py-4 text-xs sm:text-sm font-medium text-[#64748B] capitalize">
-                              {agent.role === 'lead_executive' ? t('Lead Executive') : agent.role === 'document_verifier' ? t('Document Verifier') : agent.role === 'field_agent' ? t('Field Executive') : agent.role ? agent.role.replace(/_/g, ' ') : t('Field Executive')}
+                            <td className="px-4 py-3.5 text-xs sm:text-sm font-medium text-[#64748B] capitalize whitespace-nowrap">
+                              {agent.role === 'lead_executive' ? t('Lead Executive') : agent.role === 'document_verifier' ? t('Doc Verifier') : agent.role === 'field_agent' ? t('Field Executive') : agent.role ? agent.role.replace(/_/g, ' ') : t('Field Executive')}
                             </td>
 
-                            <td className="px-6 py-4 text-xs sm:text-sm font-medium text-[#64748B] capitalize">
+                            <td className="px-4 py-3.5 text-xs sm:text-sm font-medium text-[#64748B] capitalize">
                               {agent.region || `${agent.district || supervisor?.district}, ${agent.state || supervisor?.state}`}
                             </td>
 
-                            <td className="px-6 py-4 text-xs sm:text-sm font-extrabold text-[#0A4DA6]">
+                            <td className="px-3 py-3.5 text-xs sm:text-sm font-extrabold text-[#0A4DA6] text-center">
                               <button
                                 onClick={() => handleOpenAgent(agent._id)}
-                                className="hover:underline cursor-pointer"
+                                className="hover:underline cursor-pointer px-2 py-0.5 rounded-md hover:bg-blue-50"
                               >
                                 {agent.leadCount ?? 0}
                               </button>
                             </td>
 
-                            <td className="px-6 py-4 text-xs font-medium text-[#64748B]">
+                            <td className="px-4 py-3.5 text-xs font-medium text-[#64748B] whitespace-nowrap">
                               {agent.lastLoginAt ? formatDate(agent.lastLoginAt) : 'Never'}
                             </td>
 
-                            <td className="px-6 py-4">
-                              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
-                                <CheckCircle2 size={13} />
-                                <span className="capitalize">{agent.status || 'Active'}</span>
-                              </span>
-                            </td>
-
-                            <td className="px-6 py-4 text-right">
+                            <td className="px-4 py-3.5 text-right whitespace-nowrap">
                               <div className="flex items-center justify-end gap-1.5">
+                                {(agent.role === 'field_agent' || agent.role === 'field_executive') && (
+                                  <button
+                                    title={t('View Attendance & GPS Location')}
+                                    onClick={() => openAttendanceModal(agent)}
+                                    className="p-1 rounded-lg text-emerald-600 hover:bg-emerald-50 cursor-pointer transition-colors"
+                                  >
+                                    <MapPin size={14} />
+                                  </button>
+                                )}
+
                                 <button
                                   title={t('Edit')}
                                   onClick={() => openEdit(agent)}
-                                  className="p-2 rounded-xl text-[#0A4DA6] hover:bg-blue-50 cursor-pointer transition-colors"
+                                  className="p-1 rounded-lg text-[#0A4DA6] hover:bg-blue-50 cursor-pointer transition-colors"
                                 >
-                                  <Pencil size={15} />
+                                  <Pencil size={14} />
                                 </button>
 
                                 <button
@@ -788,38 +869,38 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
                                     setNewPassword('');
                                     setResettingAgent(agent);
                                   }}
-                                  className="p-2 rounded-xl text-amber-600 hover:bg-amber-50 cursor-pointer transition-colors"
+                                  className="p-1 rounded-lg text-amber-600 hover:bg-amber-50 cursor-pointer transition-colors"
                                 >
-                                  <KeyRound size={15} />
+                                  <KeyRound size={14} />
                                 </button>
 
                                 <button
                                   title={agent.status === 'active' ? t('Suspend') : t('Activate')}
                                   disabled={saving}
                                   onClick={() => handleToggleStatus(agent)}
-                                  className={`p-2 rounded-xl cursor-pointer transition-colors disabled:opacity-40 ${
+                                  className={`p-1 rounded-lg cursor-pointer transition-colors disabled:opacity-40 ${
                                     agent.status === 'active'
                                       ? 'text-[#64748B] hover:bg-slate-100'
                                       : 'text-emerald-600 hover:bg-emerald-50'
                                   }`}
                                 >
-                                  {agent.status === 'active' ? <UserX size={15} /> : <UserCheck size={15} />}
+                                  {agent.status === 'active' ? <UserX size={14} /> : <UserCheck size={14} />}
                                 </button>
 
                                 <button
                                   title={t('Delete')}
                                   onClick={() => setConfirmDeleteAgent(agent)}
-                                  className="p-2 rounded-xl text-rose-600 hover:bg-rose-50 cursor-pointer transition-colors"
+                                  className="p-1 rounded-lg text-rose-600 hover:bg-rose-50 cursor-pointer transition-colors"
                                 >
-                                  <Trash2 size={15} />
+                                  <Trash2 size={14} />
                                 </button>
 
                                 <button
                                   onClick={() => handleOpenAgent(agent._id)}
                                   title={t('View Details')}
-                                  className="p-2 rounded-xl text-slate-400 hover:text-[#0A4DA6] hover:bg-blue-50 cursor-pointer transition-colors"
+                                  className="p-1 rounded-lg text-slate-400 hover:text-[#0A4DA6] hover:bg-blue-50 cursor-pointer transition-colors"
                                 >
-                                  <Eye size={15} />
+                                  <Eye size={14} />
                                 </button>
                               </div>
                             </td>
@@ -1276,8 +1357,14 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
       )}
 
       {selectedLead && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F172A]/50 backdrop-blur-xs animate-fadeIn">
-          <div className="bg-white border border-[#E2E8F0] rounded-2xl sm:rounded-3xl p-6 sm:p-8 w-full max-w-xl shadow-2xl relative animate-scaleUp text-left max-h-[90vh] overflow-y-auto space-y-4">
+        <div 
+          data-lenis-prevent="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F172A]/50 backdrop-blur-xs animate-fadeIn overscroll-contain"
+        >
+          <div 
+            data-lenis-prevent="true"
+            className="bg-white border border-[#E2E8F0] rounded-2xl sm:rounded-3xl p-6 sm:p-8 w-full max-w-xl shadow-2xl relative animate-scaleUp text-left max-h-[90vh] overflow-y-auto space-y-4 overscroll-contain"
+          >
             <button
               onClick={() => setSelectedLead(null)}
               className="absolute top-4 right-4 p-2 text-[#64748B] hover:text-[#0F172A] rounded-full hover:bg-slate-100 cursor-pointer"
@@ -1384,6 +1471,226 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
               >
                 <ExternalLink size={14} />
                 <span>{t('Open in Form')}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Attendance & GPS Tracking Modal */}
+      {attendanceAgent && (
+        <div 
+          data-lenis-prevent="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F172A]/50 backdrop-blur-xs animate-fadeIn overscroll-contain"
+        >
+          <div 
+            data-lenis-prevent="true"
+            className="bg-white border border-[#E2E8F0] rounded-2xl sm:rounded-3xl p-6 sm:p-8 w-full max-w-3xl shadow-2xl relative animate-scaleUp text-left max-h-[90vh] overflow-y-auto space-y-5 overscroll-contain"
+          >
+            <button
+              onClick={() => {
+                setAttendanceAgent(null);
+                setAttendanceData(null);
+              }}
+              className="absolute top-4 right-4 p-2 text-[#64748B] hover:text-[#0F172A] rounded-full hover:bg-slate-100 cursor-pointer"
+            >
+              <X size={18} />
+            </button>
+
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-blue-50 text-[#0A4DA6] border border-blue-200/80">
+                  {attendanceAgent.role ? attendanceAgent.role.replace(/_/g, ' ') : 'FIELD EXECUTIVE'}
+                </span>
+                <span className="text-xs font-semibold text-[#64748B]">
+                  District: <strong className="text-[#0F172A]">{attendanceAgent.region || supervisor?.district}</strong>
+                </span>
+              </div>
+              <h2 className="text-xl font-extrabold text-[#0F172A]">
+                Attendance &amp; GPS Logs — {attendanceAgent.name}
+              </h2>
+              <p className="text-xs text-[#64748B] font-medium">
+                Phone: {attendanceAgent.phone} {attendanceAgent.employeeCode ? `• Code: ${attendanceAgent.employeeCode}` : ''}
+              </p>
+            </div>
+
+            {loadingAttendance ? (
+              <div className="py-16 flex flex-col items-center justify-center gap-3">
+                <Loader2 size={24} className="animate-spin text-[#0A4DA6]" />
+                <p className="text-xs font-bold text-gray-400">Loading attendance &amp; GPS records...</p>
+              </div>
+            ) : (
+              <div className="space-y-5">
+                {/* Stats Summary */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="p-4 rounded-2xl border border-blue-100 bg-blue-50/50">
+                    <div className="flex items-center gap-2 text-xs font-bold text-[#0A4DA6] mb-1">
+                      <Calendar size={14} />
+                      Total Days Present
+                    </div>
+                    <div className="text-2xl font-black text-[#0F172A]">
+                      {attendanceData?.summary?.totalDaysPresent ?? 0} <span className="text-xs font-medium text-gray-500">Days</span>
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-2xl border border-indigo-100 bg-indigo-50/50">
+                    <div className="flex items-center gap-2 text-xs font-bold text-indigo-700 mb-1">
+                      <Clock size={14} />
+                      Total Hours Logged
+                    </div>
+                    <div className="text-2xl font-black text-[#0F172A]">
+                      {Number(attendanceData?.summary?.totalWorkingHours ?? 0).toFixed(1)} <span className="text-xs font-medium text-gray-500">Hours</span>
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-2xl border border-emerald-100 bg-emerald-50/50">
+                    <div className="flex items-center gap-2 text-xs font-bold text-emerald-700 mb-1">
+                      <CheckCircle2 size={14} />
+                      Today's Status
+                    </div>
+                    <div className="text-sm font-black text-[#0F172A]">
+                      {attendanceData?.records?.[0]?.date === new Date().toISOString().split('T')[0] ? (
+                        attendanceData.records[0].checkOutTime ? (
+                          <span className="text-gray-500 font-bold">Checked Out (Shift Ended)</span>
+                        ) : (
+                          <span className="text-emerald-600 font-bold flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                            Active (Checked In)
+                          </span>
+                        )
+                      ) : (
+                        <span className="text-gray-400 font-bold">Not Logged In Today</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Records Table */}
+                <div>
+                  <div className="text-xs font-extrabold text-[#0F172A] mb-2 flex items-center justify-between">
+                    <span>Attendance Records ({attendanceData?.records?.length || 0})</span>
+                    <span className="text-[10px] font-medium text-[#64748B]">Click GPS map link for exact location</span>
+                  </div>
+
+                  {(!attendanceData?.records || attendanceData.records.length === 0) ? (
+                    <div className="p-8 text-center rounded-2xl border border-dashed border-[#E2E8F0]">
+                      <MapPin className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                      <p className="text-xs font-bold text-[#64748B]">No attendance records found for this executive.</p>
+                      <p className="text-[11px] text-[#94A3B8] mt-0.5">When executive checks in from their app, GPS logs will appear here.</p>
+                    </div>
+                  ) : (
+                    <div 
+                      data-lenis-prevent="true"
+                      className="border border-[#E2E8F0] rounded-2xl overflow-x-auto max-h-80 overscroll-contain"
+                    >
+                      <table className="w-full text-left border-collapse min-w-[620px]">
+                        <thead>
+                          <tr className="border-b border-[#E2E8F0] bg-[#F8FAFC] text-[10px] font-extrabold uppercase text-[#64748B]">
+                            <th className="px-4 py-3">Date</th>
+                            <th className="px-4 py-3">Check In (Time &amp; GPS)</th>
+                            <th className="px-4 py-3">Check Out (Time &amp; GPS)</th>
+                            <th className="px-4 py-3">Duration</th>
+                            <th className="px-4 py-3 text-right">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#E2E8F0] text-xs">
+                          {attendanceData.records.map((rec) => (
+                            <tr key={rec._id} className="hover:bg-slate-50/70 transition-colors">
+                              <td className="px-4 py-3 font-extrabold text-[#0F172A] align-top">
+                                {rec.date}
+                              </td>
+                              <td className="px-4 py-3 align-top space-y-1">
+                                <div className="font-bold text-emerald-700 flex items-center gap-1">
+                                  <Clock size={12} />
+                                  {rec.checkInTime ? new Date(rec.checkInTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '—'}
+                                </div>
+                                {rec.checkInLocation?.latitude ? (
+                                  <a
+                                    href={rec.checkInLocation.mapsUrl || `https://www.google.com/maps?q=${rec.checkInLocation.latitude},${rec.checkInLocation.longitude}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="inline-flex items-center gap-1 text-[11px] font-bold text-[#0A4DA6] hover:underline"
+                                  >
+                                    <ExternalLink size={11} />
+                                    Google Maps ({rec.checkInLocation.latitude.toFixed(4)}, {rec.checkInLocation.longitude.toFixed(4)})
+                                  </a>
+                                ) : (
+                                  <span className="text-[10px] text-gray-400">No GPS coords</span>
+                                )}
+                                {rec.checkInLocation?.address && (
+                                  <div className="text-[10px] text-gray-500 line-clamp-1">
+                                    📍 {rec.checkInLocation.address}
+                                  </div>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 align-top space-y-1">
+                                {rec.checkOutTime ? (
+                                  <>
+                                    <div className="font-bold text-indigo-700 flex items-center gap-1">
+                                      <Clock size={12} />
+                                      {new Date(rec.checkOutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                    </div>
+                                    {rec.checkOutLocation?.latitude ? (
+                                      <a
+                                        href={rec.checkOutLocation.mapsUrl || `https://www.google.com/maps?q=${rec.checkOutLocation.latitude},${rec.checkOutLocation.longitude}`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="inline-flex items-center gap-1 text-[11px] font-bold text-[#0A4DA6] hover:underline"
+                                      >
+                                        <ExternalLink size={11} />
+                                        Google Maps ({rec.checkOutLocation.latitude.toFixed(4)}, {rec.checkOutLocation.longitude.toFixed(4)})
+                                      </a>
+                                    ) : (
+                                      <span className="text-[10px] text-gray-400">No GPS coords</span>
+                                    )}
+                                    {rec.checkOutLocation?.address && (
+                                      <div className="text-[10px] text-gray-500 line-clamp-1">
+                                        📍 {rec.checkOutLocation.address}
+                                      </div>
+                                    )}
+                                  </>
+                                ) : (
+                                  <span className="inline-flex px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                                    In Progress
+                                  </span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 font-extrabold text-[#0F172A] align-top">
+                                {rec.totalHours ? `${rec.totalHours.toFixed(1)} hrs` : '—'}
+                              </td>
+                              <td className="px-4 py-3 text-right align-top">
+                                <span
+                                  className={`inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
+                                    rec.status === 'present'
+                                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                      : rec.status === 'half_day'
+                                      ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                                      : 'bg-gray-100 text-gray-700'
+                                  }`}
+                                >
+                                  {rec.status}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="pt-3 border-t border-[#E2E8F0] flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setAttendanceAgent(null);
+                  setAttendanceData(null);
+                }}
+                className="px-6 py-2.5 bg-white border border-[#E2E8F0] hover:bg-slate-50 text-[#0F172A] font-extrabold rounded-full text-xs cursor-pointer shadow-xs"
+              >
+                {t('Close')}
               </button>
             </div>
           </div>

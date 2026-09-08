@@ -21,6 +21,7 @@ import {
   type LeadAdminActor,
 } from "../application/lead-users.service";
 import { LeadsService } from "../application/leads.service";
+import { LeadAttendanceService } from "../application/lead-attendance.service";
 import {
   CreateLeadUserDto,
   CreateLeadRegionDto,
@@ -29,6 +30,7 @@ import {
   UpdateLeadUserDto,
 } from "./dtos/lead-user.dto";
 import { LeadDecisionDto, LeadQueryDto, SaveLeadDto } from "./dtos/lead.dto";
+import { AttendanceQueryDto } from "./dtos/lead-attendance.dto";
 
 @ApiTags("Lead Collection")
 @ApiBearerAuth()
@@ -39,6 +41,7 @@ export class LeadAdminController {
   constructor(
     private readonly leads: LeadsService,
     private readonly leadUsers: LeadUsersService,
+    private readonly attendanceService: LeadAttendanceService,
   ) {}
 
   private actor(user: AuthenticatedUser): LeadAdminActor {
@@ -222,6 +225,25 @@ export class LeadAdminController {
       success: true,
       message: "Field agent deleted. Their captured leads were retained.",
       data: await this.leadUsers.remove(id),
+    };
+  }
+
+  @Get("attendance/summary")
+  async attendanceSummary() {
+    return {
+      success: true,
+      data: await this.attendanceService.getAllAgentsAttendanceSummary(),
+    };
+  }
+
+  @Get("attendance/agent/:id")
+  async agentAttendance(
+    @Param("id") id: string,
+    @Query() query: AttendanceQueryDto,
+  ) {
+    return {
+      success: true,
+      data: await this.attendanceService.getAgentAttendanceHistory(id, query),
     };
   }
 }

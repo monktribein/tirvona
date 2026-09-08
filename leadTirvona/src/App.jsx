@@ -71,7 +71,16 @@ export default function App() {
     handlePageChange('create', true);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    if (agent?.role === 'field_agent') {
+      try {
+        await leadApi.checkOut({
+          address: `${agent?.district || 'Mathura'}, ${agent?.state || 'Uttar Pradesh'}`,
+        });
+      } catch {
+        // Non-blocking
+      }
+    }
     logout();
     setAttendanceState(null);
   };

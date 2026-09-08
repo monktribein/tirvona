@@ -30,6 +30,16 @@ export class BookingPricingService {
   ) {}
 
   async quote(dto: CreateBookingDto): Promise<any> {
+    const ashramAvailability = await this.ashrams
+      .findOne({ _id: dto.ashramId, deletedAt: null })
+      .select("status bookingPaused")
+      .lean();
+    if (!ashramAvailability || ashramAvailability.status !== "approved")
+      throw new BadRequestException("This stay is not currently accepting bookings.");
+    if (ashramAvailability.bookingPaused)
+      throw new BadRequestException(
+        "This stay's owner has temporarily marked it unavailable for booking.",
+      );
     const start = new Date(dto.checkInDate);
     const end = new Date(dto.checkOutDate);
     if (

@@ -127,6 +127,56 @@ export class BookingsService {
     return [{ roomId: String(row.roomId), units: row.roomsBookedCount }];
   }
 
+  private resolveRoomNumberAssignments(
+    row: any,
+    input: { roomNumbers?: string[]; rooms?: { roomId: string; roomNumbers: string[] }[] },
+  ): { roomId: string; roomNumber: string }[] {
+    const units = this.roomUnits(row);
+    const totalUnits = units.reduce((sum, u) => sum + u.units, 0);
+
+    if (Array.isArray(input.rooms) && input.rooms.length) {
+      const unitMap = new Map(units.map((u) => [u.roomId, u.units]));
+      const seen = new Set<string>();
+      const result: { roomId: string; roomNumber: string }[] = [];
+      for (const group of input.rooms) {
+        const roomId = String(group.roomId);
+        if (!unitMap.has(roomId))
+          throw new BadRequestException(
+            "One or more room categories do not belong to this booking",
+          );
+        if (seen.has(roomId))
+          throw new BadRequestException(
+            "Duplicate room category in room number assignment",
+          );
+        seen.add(roomId);
+        const numbers = (group.roomNumbers || []).map((n) => n.trim()).filter(Boolean);
+        const expected = unitMap.get(roomId)!;
+        if (numbers.length !== expected)
+          throw new BadRequestException(
+            `Expected ${expected} room number(s) for this room category, got ${numbers.length}`,
+          );
+        for (const roomNumber of numbers) result.push({ roomId, roomNumber });
+      }
+      if (seen.size !== unitMap.size)
+        throw new BadRequestException(
+          "Room numbers must be provided for every room category in this booking",
+        );
+      return result;
+    }
+
+    const flat = (input.roomNumbers || []).map((n) => n.trim()).filter(Boolean);
+    if (units.length > 1)
+      throw new BadRequestException(
+        "This booking has multiple room categories; provide room numbers grouped per category",
+      );
+    if (flat.length !== totalUnits)
+      throw new BadRequestException(
+        `Expected ${totalUnits} room number(s) for this booking, got ${flat.length}`,
+      );
+    const onlyRoomId = units[0]?.roomId;
+    return flat.map((roomNumber) => ({ roomId: onlyRoomId, roomNumber }));
+  }
+
   private async assertCanManage(
     user: AuthenticatedUser,
     booking: any,
@@ -897,7 +947,11 @@ export class BookingsService {
   ): Promise<any> {
     if (user.role !== "super_admin")
       throw new ForbiddenException("Only Super Admin can edit booking details");
-    if (dto.assignedRoomNumbers === undefined && dto.specialRequests === undefined)
+    if (
+      dto.assignedRoomNumbers === undefined &&
+      dto.roomAssignments === undefined &&
+      dto.specialRequests === undefined
+    )
       throw new BadRequestException("No editable booking fields were provided");
 
     await this.transactions.run(async (session) => {
@@ -905,14 +959,18 @@ export class BookingsService {
       if (!row) throw new NotFoundException("Booking not found");
 
       const updatedFields: string[] = [];
-      if (dto.assignedRoomNumbers !== undefined) {
+      if (dto.assignedRoomNumbers !== undefined || dto.roomAssignments !== undefined) {
         if (!["confirmed", "checked_in"].includes(row.status))
           throw new BadRequestException(
             "Room numbers can only be assigned to a confirmed or checked-in booking",
           );
-        
-        const roomNumbers = dto.assignedRoomNumbers.map(n => n.trim()).filter(Boolean);
-        
+
+        const resolved = this.resolveRoomNumberAssignments(row, {
+          roomNumbers: dto.assignedRoomNumbers,
+          rooms: dto.roomAssignments,
+        });
+        const roomNumbers = resolved.map((r) => r.roomNumber);
+
         // Conflict check for each room number
         for (const roomNumber of roomNumbers) {
           const conflict = await this.bookings
@@ -939,14 +997,13 @@ export class BookingsService {
           { session }
         );
 
-        // Create new assignments
-        const primaryRoomId = this.roomUnits(row)[0]?.roomId;
-        for (const roomNumber of roomNumbers) {
+        // Create new assignments, each tagged with its correct room category
+        for (const { roomId, roomNumber } of resolved) {
           await this.assignments.create(
             [{
               bookingId: row._id,
               ashramId: row.ashramId,
-              roomId: primaryRoomId, // If multiple rooms are from different categories, this might not be accurate for all, but we stick to the existing schema for now
+              roomId,
               roomNumber,
               assignedBy: user.id,
               assignedAt: new Date(),
@@ -955,7 +1012,7 @@ export class BookingsService {
             { session },
           );
         }
-        
+
         row.assignedRoomNumbers = roomNumbers;
         updatedFields.push("assignedRoomNumbers");
       }
@@ -1049,8 +1106,12 @@ export class BookingsService {
     const row = await this.bookings.findById(id);
     if (!row) throw new NotFoundException("Booking not found");
     await this.assertCanManage(user, row);
-    const roomNumbers = dto.roomNumbers.map(n => n.trim()).filter(Boolean);
-    
+    const resolved = this.resolveRoomNumberAssignments(row, {
+      roomNumbers: dto.roomNumbers,
+      rooms: dto.rooms,
+    });
+    const roomNumbers = resolved.map((r) => r.roomNumber);
+
     for (const roomNumber of roomNumbers) {
       const conflict = await this.bookings.exists({
         _id: { $ne: row._id },
@@ -1071,12 +1132,11 @@ export class BookingsService {
       { $set: { status: "released", releasedAt: new Date() } }
     );
 
-    const primaryRoomId = this.roomUnits(row)[0]?.roomId;
-    for (const roomNumber of roomNumbers) {
+    for (const { roomId, roomNumber } of resolved) {
       await this.assignments.create({
         bookingId: row._id,
         ashramId: row.ashramId,
-        roomId: primaryRoomId,
+        roomId,
         roomNumber,
         assignedBy: user.id,
         assignedAt: new Date(),
@@ -1202,13 +1262,21 @@ export class BookingsService {
         { session },
       );
       if (row.assignedRoomNumbers && row.assignedRoomNumbers.length > 0) {
-        const primaryRoomId = this.roomUnits(row)[0]?.roomId;
+        const assignmentDocs = await this.assignments
+          .find({ bookingId: row._id, roomNumber: { $in: row.assignedRoomNumbers } })
+          .session(session)
+          .lean();
+        const roomIdByNumber = new Map(
+          assignmentDocs.map((a: any) => [a.roomNumber, String(a.roomId)]),
+        );
+        const fallbackRoomId = this.roomUnits(row)[0]?.roomId;
         for (const roomNumber of row.assignedRoomNumbers) {
+          const roomId = roomIdByNumber.get(roomNumber) ?? fallbackRoomId;
           await this.housekeeping.findOneAndUpdate(
             { ashramId: row.ashramId, unitNumber: roomNumber },
             {
               $set: {
-                roomId: primaryRoomId,
+                roomId,
                 bookingId: row._id,
                 status: "dirty",
                 priority: "high",

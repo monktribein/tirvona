@@ -43,7 +43,7 @@ export interface LeadUser {
   name: string;
   phone: string;
   email?: string;
-  role: "field_agent" | "field_supervisor" | "lead_executive";
+  role: "field_agent" | "field_supervisor" | "lead_executive" | "document_verifier" | "field_executive";
   status: "active" | "suspended";
   region?: string;
   state?: string;
@@ -114,4 +114,20 @@ export const leadCollectionService = {
   resetUserPassword: (id: string, password: string) =>
     api.post(`${BASE}/users/${id}/reset-password`, { password }),
   deleteUser: (id: string) => api.delete(`${BASE}/users/${id}`),
+
+  getAttendanceSummary: () =>
+    api.get<{ data: { summaryMap: Record<string, any>; todayMap: Record<string, any> } }>(
+      `${BASE}/attendance/summary`,
+    ),
+  getAgentAttendance: (agentId: string, params: Record<string, string | number> = {}) =>
+    api.get<{
+      data: {
+        agent: any;
+        stats: { totalDaysPresent: number; totalHoursWorked: string; totalMinutesWorked: number; totalRecords: number };
+        items: any[];
+        total: number;
+        page: number;
+        pages: number;
+      };
+    }>(`${BASE}/attendance/agent/${agentId}`, { params }),
 };

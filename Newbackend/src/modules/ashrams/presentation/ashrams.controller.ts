@@ -6,6 +6,7 @@ import {
   Header,
   NotFoundException,
   Param,
+  Patch,
   Post,
   Put,
   Query,
@@ -70,6 +71,13 @@ export class AshramsController {
       data: await this.service.onboardOwnerParking(user, body),
     };
   }
+  @Get("availability-requests")
+  @ApiBearerAuth()
+  @Roles("super_admin")
+  async availabilityRequests(@CurrentUser() user: AuthenticatedUser) {
+    const data = await this.service.listAvailabilityRequests(user);
+    return { success: true, count: data.length, data };
+  }
   @Public() @Get("destinations") async destinations() {
     const data = await this.service.destinations();
     return { success: true, count: data.length, data };
@@ -127,6 +135,50 @@ export class AshramsController {
       success: true,
       message: "Ashram updated.",
       data: await this.service.update(user, id, dto),
+    };
+  }
+  @Patch(":id/booking-pause")
+  @ApiBearerAuth()
+  @Roles("owner", "stay_admin", "manager", "super_admin")
+  async pauseBooking(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("id") id: string,
+  ) {
+    return {
+      success: true,
+      message: "This stay is now marked as not available for booking.",
+      data: await this.service.pauseBooking(user, id),
+    };
+  }
+  @Patch(":id/booking-resume-request")
+  @ApiBearerAuth()
+  @Roles("owner", "stay_admin", "manager", "super_admin")
+  async requestResume(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("id") id: string,
+  ) {
+    const data = await this.service.requestResume(user, id);
+    return {
+      success: true,
+      message: data.bookingPaused
+        ? "Request sent to Super Admin for approval."
+        : "This stay is now available for booking.",
+      data,
+    };
+  }
+  @Patch(":id/booking-resume-decide")
+  @ApiBearerAuth()
+  @Roles("super_admin")
+  async decideResume(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("id") id: string,
+    @Body("approve") approve: boolean,
+  ) {
+    const data = await this.service.decideAvailabilityRequest(user, id, Boolean(approve));
+    return {
+      success: true,
+      message: approve ? "Availability request approved." : "Availability request rejected.",
+      data,
     };
   }
   @Post(":id/documents")

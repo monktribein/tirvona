@@ -178,7 +178,7 @@ export default function AppNavbar({
                     </button>
                   )}
 
-                  {['field_agent', 'field_supervisor', 'supervisor', 'lead_executive'].includes(user.role) && (
+                  {(user.role === 'field_agent' || user.role === 'field_executive') && (
                     <button
                       onClick={() => setIsAttendanceModalOpen(true)}
                       className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1 sm:py-1.5 text-[11px] sm:text-xs font-semibold text-[#0B192C] hover:text-[#0A4DA6] hover:bg-slate-50 border border-gray-200 rounded-full transition-colors cursor-pointer shadow-2xs"

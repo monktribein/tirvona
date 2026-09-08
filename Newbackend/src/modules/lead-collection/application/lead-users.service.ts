@@ -212,14 +212,7 @@ export class LeadUsersService {
       this.leadUsers.countDocuments(filter),
     ]);
 
-    const counts = await this.leads.aggregate<{
-      _id: Types.ObjectId;
-      total: number;
-    }>([
-      { $match: { capturedBy: { $in: items.map((item) => item._id) } } },
-      { $group: { _id: "$capturedBy", total: { $sum: 1 } } },
-    ]);
-    const byAgent = new Map(counts.map((row) => [String(row._id), row.total]));
+    const byAgent = await this.countLeadsForAgents(items.map((item) => item._id));
 
     return {
       items: items.map((item) => ({
@@ -230,6 +223,40 @@ export class LeadUsersService {
       page,
       limit,
     };
+  }
+
+  private async countLeadsForAgents(userIds: Types.ObjectId[]): Promise<Map<string, number>> {
+    if (!userIds || userIds.length === 0) return new Map();
+
+    const counts = await this.leads.aggregate<{
+      _id: Types.ObjectId;
+      total: number;
+    }>([
+      {
+        $match: {
+          $or: [
+            { capturedBy: { $in: userIds } },
+            { assignedAgentId: { $in: userIds } },
+            { fieldVerifiedById: { $in: userIds } },
+          ],
+        },
+      },
+      {
+        $project: {
+          agents: [
+            { $cond: [{ $in: ["$capturedBy", userIds] }, "$capturedBy", null] },
+            { $cond: [{ $in: ["$assignedAgentId", userIds] }, "$assignedAgentId", null] },
+            { $cond: [{ $in: ["$fieldVerifiedById", userIds] }, "$fieldVerifiedById", null] },
+          ],
+        },
+      },
+      { $unwind: "$agents" },
+      { $match: { agents: { $ne: null } } },
+      { $group: { _id: { lead: "$_id", agent: "$agents" } } },
+      { $group: { _id: "$_id.agent", total: { $sum: 1 } } },
+    ]);
+
+    return new Map(counts.map((row) => [String(row._id), row.total]));
   }
 
   async findOne(id: string): Promise<LeadUserRecord> {
@@ -427,14 +454,7 @@ export class LeadUsersService {
       this.leadUsers.countDocuments(filter),
     ]);
 
-    const counts = await this.leads.aggregate<{
-      _id: Types.ObjectId;
-      total: number;
-    }>([
-      { $match: { capturedBy: { $in: items.map((item) => item._id) } } },
-      { $group: { _id: "$capturedBy", total: { $sum: 1 } } },
-    ]);
-    const byAgent = new Map(counts.map((row) => [String(row._id), row.total]));
+    const byAgent = await this.countLeadsForAgents(items.map((item) => item._id));
 
     return {
       items: items.map((item) => ({

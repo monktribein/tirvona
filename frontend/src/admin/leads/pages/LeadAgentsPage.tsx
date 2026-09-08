@@ -20,9 +20,14 @@ import {
 } from "../../shared";
 import {
   AlertTriangle,
+  Calendar,
+  CheckCircle2,
   ClipboardList,
+  Clock,
+  ExternalLink,
   KeyRound,
   Loader2,
+  MapPin,
   MapPinned,
   Pencil,
   Plus,
@@ -54,7 +59,7 @@ interface AgentForm {
   phone: string;
   email: string;
   password: string;
-  role: "field_agent" | "field_supervisor" | "lead_executive" | "document_verifier";
+  role: "field_agent" | "field_supervisor" | "lead_executive" | "document_verifier" | "field_executive";
   state: string;
   district: string;
   employeeCode: string;
@@ -112,6 +117,13 @@ export const LeadAgentsPage: React.FC = () => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<LeadUser | null>(null);
 
+  // Attendance Modal & Data State
+  const [attendanceAgent, setAttendanceAgent] = useState<LeadUser | null>(null);
+  const [attendanceData, setAttendanceData] = useState<any | null>(null);
+  const [loadingAttendance, setLoadingAttendance] = useState(false);
+  const [attendanceSummaryMap, setAttendanceSummaryMap] = useState<Record<string, any>>({});
+  const [attendanceTodayMap, setAttendanceTodayMap] = useState<Record<string, any>>({});
+
   const limit = 20;
   const pages = Math.max(1, Math.ceil(total / limit));
 
@@ -123,6 +135,18 @@ export const LeadAgentsPage: React.FC = () => {
     return () => clearTimeout(timer);
   }, [search]);
 
+  const loadAttendanceSummary = useCallback(async () => {
+    try {
+      const res = await leadCollectionService.getAttendanceSummary();
+      if (res.data?.data) {
+        setAttendanceSummaryMap(res.data.data.summaryMap || {});
+        setAttendanceTodayMap(res.data.data.todayMap || {});
+      }
+    } catch {
+      // Non-blocking
+    }
+  }, []);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
@@ -132,13 +156,28 @@ export const LeadAgentsPage: React.FC = () => {
       const res = await leadCollectionService.listUsers(params);
       setAgents(res.data.data.items ?? []);
       setTotal(res.data.data.total ?? 0);
+      void loadAttendanceSummary();
     } catch (err) {
       setError(getErrorMessage(err, "Could not load field agents."));
       setAgents([]);
     } finally {
       setLoading(false);
     }
-  }, [page, debouncedSearch]);
+  }, [page, debouncedSearch, loadAttendanceSummary]);
+
+  const openAttendanceModal = async (agent: LeadUser) => {
+    setAttendanceAgent(agent);
+    setLoadingAttendance(true);
+    setAttendanceData(null);
+    try {
+      const res = await leadCollectionService.getAgentAttendance(agent._id);
+      setAttendanceData(res.data.data);
+    } catch (err) {
+      toast.error(getErrorMessage(err, "Could not load attendance records."));
+    } finally {
+      setLoadingAttendance(false);
+    }
+  };
 
   const loadRegions = useCallback(async () => {
     try {
@@ -402,13 +441,16 @@ export const LeadAgentsPage: React.FC = () => {
                   <th className="px-5 py-3">ROLE</th>
                   <th className="px-5 py-3">REGION</th>
                   <th className="px-5 py-3">LEADS</th>
-                  <th className="px-5 py-3">LAST LOGIN</th>
+                  <th className="px-5 py-3">ATTENDANCE</th>
                   <th className="px-5 py-3">STATUS</th>
                   <th className="px-5 py-3 text-right">ACTIONS</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
-                {agents.map((agent) => (
+                {agents.map((agent) => {
+                  const summary = attendanceSummaryMap[agent._id];
+                  const todayLog = attendanceTodayMap[agent._id];
+                  return (
                   <tr
                     key={agent._id}
                     className="hover:bg-gray-50/70 dark:hover:bg-slate-900/40 transition-colors"
@@ -437,6 +479,23 @@ export const LeadAgentsPage: React.FC = () => {
                       {formatDate(agent.lastLoginAt)}
                     </td>
                     <td className="px-5 py-3">
+                      {agent.role === 'field_agent' || agent.role === 'field_executive' ? (
+                        <button
+                          onClick={() => void openAttendanceModal(agent)}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-50 dark:bg-blue-950/40 text-[#0A4DA6] hover:bg-blue-100 dark:hover:bg-blue-900/50 border border-blue-200/60 dark:border-blue-800/40 transition-colors cursor-pointer"
+                          title="View GPS & Attendance Logs"
+                        >
+                          <Calendar size={11} className="text-[#0A4DA6]" />
+                          <span>{summary ? `${summary.daysPresent} Days` : "View Logs"}</span>
+                          {todayLog?.checkedIn && (
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" title="Checked in today" />
+                          )}
+                        </button>
+                      ) : (
+                        <span className="text-gray-400 font-semibold text-xs">—</span>
+                      )}
+                    </td>
+                    <td className="px-5 py-3">
                       {agent.createdByAdminId ? (
                         <EnterpriseStatusBadge status={agent.status} size="sm" />
                       ) : (
@@ -447,6 +506,15 @@ export const LeadAgentsPage: React.FC = () => {
                     </td>
                     <td className="px-5 py-3">
                       <div className="flex items-center justify-end gap-1.5">
+                        {(agent.role === 'field_agent' || agent.role === 'field_executive') && (
+                          <button
+                            title="View Attendance & GPS Location"
+                            onClick={() => void openAttendanceModal(agent)}
+                            className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 cursor-pointer"
+                          >
+                            <MapPin size={15} />
+                          </button>
+                        )}
                         <button
                           title="Edit"
                           disabled={!agent.createdByAdminId}
@@ -494,7 +562,8 @@ export const LeadAgentsPage: React.FC = () => {
                       </div>
                     </td>
                   </tr>
-                ))}
+                );
+              })}
               </tbody>
             </table>
           </div>
@@ -802,6 +871,196 @@ export const LeadAgentsPage: React.FC = () => {
           {confirmDelete?.leadCount ?? 0} lead(s) they captured stay in the
           system, still attributed to their name.
         </p>
+      </EnterpriseModal>
+
+      {/* Attendance & GPS Tracking Modal */}
+      <EnterpriseModal
+        isOpen={Boolean(attendanceAgent)}
+        onClose={() => {
+          setAttendanceAgent(null);
+          setAttendanceData(null);
+        }}
+        title={`Attendance & GPS Logs — ${attendanceAgent?.name || ""}`}
+        subtitle={`${attendanceAgent?.role?.replace(/_/g, " ").toUpperCase() || "FIELD AGENT"} • Phone: ${attendanceAgent?.phone || "—"} • District: ${attendanceAgent?.region || "—"}`}
+        icon={<MapPin size={18} className="text-[#0A4DA6]" />}
+        maxWidth="3xl"
+        footer={
+          <div className="flex justify-end">
+            <EnterpriseButton
+              variant="outline"
+              onClick={() => {
+                setAttendanceAgent(null);
+                setAttendanceData(null);
+              }}
+            >
+              Close
+            </EnterpriseButton>
+          </div>
+        }
+      >
+        {loadingAttendance ? (
+          <div className="py-16 flex flex-col items-center justify-center gap-3">
+            <Loader2 className="w-7 h-7 text-[#0A4DA6] animate-spin" />
+            <p className="text-xs font-bold text-gray-400">Loading attendance & GPS tracking data...</p>
+          </div>
+        ) : (
+          <div className="space-y-5">
+            {/* Top Stat Summary Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="p-3.5 rounded-xl border border-blue-100 dark:border-blue-900/40 bg-blue-50/50 dark:bg-blue-950/20">
+                <div className="flex items-center gap-2 text-xs font-bold text-[#0A4DA6] dark:text-blue-400 mb-1">
+                  <Calendar size={14} />
+                  Total Days Present
+                </div>
+                <div className="text-2xl font-black text-[#0B192C] dark:text-white">
+                  {attendanceData?.summary?.totalDaysPresent ?? 0} <span className="text-xs font-semibold text-gray-400">Days</span>
+                </div>
+              </div>
+
+              <div className="p-3.5 rounded-xl border border-indigo-100 dark:border-indigo-900/40 bg-indigo-50/50 dark:bg-indigo-950/20">
+                <div className="flex items-center gap-2 text-xs font-bold text-indigo-700 dark:text-indigo-400 mb-1">
+                  <Clock size={14} />
+                  Total Hours Logged
+                </div>
+                <div className="text-2xl font-black text-[#0B192C] dark:text-white">
+                  {Number(attendanceData?.summary?.totalWorkingHours ?? 0).toFixed(1)} <span className="text-xs font-semibold text-gray-400">Hours</span>
+                </div>
+              </div>
+
+              <div className="p-3.5 rounded-xl border border-emerald-100 dark:border-emerald-900/40 bg-emerald-50/50 dark:bg-emerald-950/20">
+                <div className="flex items-center gap-2 text-xs font-bold text-emerald-700 dark:text-emerald-400 mb-1">
+                  <CheckCircle2 size={14} />
+                  Today's Status
+                </div>
+                <div className="text-sm font-black text-[#0B192C] dark:text-white">
+                  {attendanceData?.records?.[0]?.date === new Date().toISOString().split("T")[0] ? (
+                    attendanceData.records[0].checkOutTime ? (
+                      <span className="text-gray-500 font-bold">Checked Out (Shift Done)</span>
+                    ) : (
+                      <span className="text-emerald-600 font-bold flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                        Currently Active (Checked In)
+                      </span>
+                    )
+                  ) : (
+                    <span className="text-gray-400 font-bold">Not Logged In Today</span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Attendance Records Table */}
+            <div>
+              <div className="text-xs font-black text-[#0B192C] dark:text-white mb-2 flex items-center justify-between">
+                <span>Check-in & Check-out Records ({attendanceData?.records?.length || 0})</span>
+                <span className="text-[10px] font-semibold text-gray-400">Click Google Maps to verify exact on-field GPS location</span>
+              </div>
+
+              {(!attendanceData?.records || attendanceData.records.length === 0) ? (
+                <div className="p-8 text-center rounded-xl border border-dashed border-gray-200 dark:border-slate-800">
+                  <MapPin className="w-8 h-8 text-gray-300 dark:text-slate-700 mx-auto mb-2" />
+                  <p className="text-xs font-bold text-gray-500">No attendance logs found for this agent.</p>
+                  <p className="text-[11px] text-gray-400 mt-0.5">When the executive checks in from the mobile lead app, GPS coordinates and check-in times will appear here.</p>
+                </div>
+              ) : (
+                <div className="border border-gray-100 dark:border-slate-800 rounded-xl overflow-x-auto max-h-96">
+                  <table className="w-full text-left border-collapse min-w-[650px]">
+                    <thead>
+                      <tr className="border-b border-gray-100 dark:border-slate-800 bg-gray-50/75 dark:bg-slate-900/50 text-[10px] font-black uppercase text-gray-400">
+                        <th className="px-3.5 py-2.5">Date</th>
+                        <th className="px-3.5 py-2.5">Check In (Time & Location)</th>
+                        <th className="px-3.5 py-2.5">Check Out (Time & Location)</th>
+                        <th className="px-3.5 py-2.5">Total Duration</th>
+                        <th className="px-3.5 py-2.5 text-right">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
+                      {attendanceData.records.map((rec: any) => (
+                        <tr key={rec._id} className="hover:bg-gray-50/50 dark:hover:bg-slate-900/30 transition-colors">
+                          <td className="px-3.5 py-3 text-xs font-bold text-[#0B192C] dark:text-white align-top">
+                            {rec.date}
+                          </td>
+                          <td className="px-3.5 py-3 text-xs align-top space-y-1">
+                            <div className="font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
+                              <Clock size={12} />
+                              {rec.checkInTime ? new Date(rec.checkInTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "—"}
+                            </div>
+                            {rec.checkInLocation?.latitude ? (
+                              <a
+                                href={rec.checkInLocation.mapsUrl || `https://www.google.com/maps?q=${rec.checkInLocation.latitude},${rec.checkInLocation.longitude}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1 text-[11px] font-bold text-[#0A4DA6] hover:underline"
+                              >
+                                <ExternalLink size={11} />
+                                View GPS Map ({rec.checkInLocation.latitude.toFixed(4)}, {rec.checkInLocation.longitude.toFixed(4)})
+                              </a>
+                            ) : (
+                              <span className="text-[10px] text-gray-400">No GPS coords</span>
+                            )}
+                            {rec.checkInLocation?.address && (
+                              <div className="text-[10px] text-gray-500 line-clamp-2">
+                                📍 {rec.checkInLocation.address}
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-3.5 py-3 text-xs align-top space-y-1">
+                            {rec.checkOutTime ? (
+                              <>
+                                <div className="font-bold text-indigo-700 dark:text-indigo-400 flex items-center gap-1">
+                                  <Clock size={12} />
+                                  {new Date(rec.checkOutTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                                </div>
+                                {rec.checkOutLocation?.latitude ? (
+                                  <a
+                                    href={rec.checkOutLocation.mapsUrl || `https://www.google.com/maps?q=${rec.checkOutLocation.latitude},${rec.checkOutLocation.longitude}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="inline-flex items-center gap-1 text-[11px] font-bold text-[#0A4DA6] hover:underline"
+                                  >
+                                    <ExternalLink size={11} />
+                                    View GPS Map ({rec.checkOutLocation.latitude.toFixed(4)}, {rec.checkOutLocation.longitude.toFixed(4)})
+                                  </a>
+                                ) : (
+                                  <span className="text-[10px] text-gray-400">No GPS coords</span>
+                                )}
+                                {rec.checkOutLocation?.address && (
+                                  <div className="text-[10px] text-gray-500 line-clamp-2">
+                                    📍 {rec.checkOutLocation.address}
+                                  </div>
+                                )}
+                              </>
+                            ) : (
+                              <span className="inline-flex px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                                In Progress
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-3.5 py-3 text-xs font-bold text-gray-700 dark:text-gray-300 align-top">
+                            {rec.totalHours ? `${rec.totalHours.toFixed(1)} hrs` : "—"}
+                          </td>
+                          <td className="px-3.5 py-3 text-right align-top">
+                            <span
+                              className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                                rec.status === "present"
+                                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                  : rec.status === "half_day"
+                                  ? "bg-amber-50 text-amber-700 border border-amber-200"
+                                  : "bg-gray-100 text-gray-700"
+                              }`}
+                            >
+                              {rec.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </EnterpriseModal>
     </div>
   );

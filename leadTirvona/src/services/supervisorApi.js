@@ -81,5 +81,14 @@ export const supervisorApi = {
       method: 'PUT',
       body: data,
     }),
+
+  getAttendanceSummary: () => request('/attendance/summary'),
+
+  getAgentAttendance: (agentId, params = {}) => {
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== '' && v != null),
+    ).toString();
+    return request(`/agents/${agentId}/attendance${query ? `?${query}` : ''}`);
+  },
 };
 

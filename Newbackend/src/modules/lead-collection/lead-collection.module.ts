@@ -11,11 +11,13 @@ import { LeadAgentController } from "./presentation/lead-agent.controller";
 import { LeadAuthController } from "./presentation/lead-auth.controller";
 import { LeadSupervisorController } from "./presentation/lead-supervisor.controller";
 import { LeadUploadController } from "./presentation/lead-upload.controller";
+import { LeadAttendanceAgentController } from "./presentation/lead-attendance-agent.controller";
 import { LeadAgentGuard } from "./presentation/guards/lead-agent.guard";
 import { LeadSupervisorGuard } from "./presentation/guards/lead-supervisor.guard";
 import { LeadRateLimitIdentityMiddleware } from "./presentation/lead-rate-limit-identity.middleware";
 import { UploadsModule } from "../uploads/uploads.module";
 import { AshramsModule } from "../ashrams/ashrams.module";
+import { LeadAttendanceService } from "./application/lead-attendance.service";
 
 @Module({
   imports: [
@@ -42,11 +44,13 @@ import { AshramsModule } from "../ashrams/ashrams.module";
     LeadAdminController,
     LeadSupervisorController,
     LeadUploadController,
+    LeadAttendanceAgentController,
   ],
   providers: [
     LeadAuthService,
     LeadUsersService,
     LeadsService,
+    LeadAttendanceService,
     LeadAgentGuard,
     LeadSupervisorGuard,
     LeadRateLimitIdentityMiddleware,

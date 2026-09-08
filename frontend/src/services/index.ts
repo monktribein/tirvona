@@ -49,6 +49,11 @@ export const ashramService = {
   destinations: () => api.get("/ashrams/destinations"),
   byDestination: (city: string) =>
     api.get(`/ashrams/destinations/${encodeURIComponent(city)}`),
+  pauseBooking: (id: string) => api.patch(`/ashrams/${id}/booking-pause`, {}),
+  requestResume: (id: string) => api.patch(`/ashrams/${id}/booking-resume-request`, {}),
+  decideResumeRequest: (id: string, approve: boolean) =>
+    api.patch(`/ashrams/${id}/booking-resume-decide`, { approve }),
+  listAvailabilityRequests: () => api.get("/ashrams/availability-requests"),
   getAddOns: (ashramId: string) => api.get(`/ashrams/${ashramId}/add-ons`),
   createAddOn: (ashramId: string, data: unknown) =>
     api.post(`/ashrams/${ashramId}/add-ons`, data),
@@ -150,8 +155,16 @@ export const bookingService = {
   checkout: (id: string) => api.post(`/bookings/${id}/checkout`, {}),
   cancel: (id: string, reason: string) =>
     api.post(`/bookings/${id}/cancel`, { reason }),
-  assignRoomNumber: (id: string, roomNumbers: string[]) =>
-    api.put(`/bookings/${id}/room-number`, { roomNumbers }),
+  assignRoomNumber: (
+    id: string,
+    payload: string[] | { roomId: string; roomNumbers: string[] }[],
+  ) =>
+    api.put(
+      `/bookings/${id}/room-number`,
+      Array.isArray(payload) && payload.length && typeof payload[0] === "object"
+        ? { rooms: payload }
+        : { roomNumbers: payload },
+    ),
   updateStatus: (id: string, status: string) =>
     api.put(`/bookings/${id}/status`, { status }),
 };

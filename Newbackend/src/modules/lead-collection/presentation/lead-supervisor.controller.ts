@@ -15,6 +15,7 @@ import { SkipThrottle } from "@nestjs/throttler";
 import { Public } from "../../../common/decorators/public.decorator";
 import { LeadUsersService } from "../application/lead-users.service";
 import { LeadsService } from "../application/leads.service";
+import { LeadAttendanceService } from "../application/lead-attendance.service";
 import type { AuthenticatedLeadUser } from "../domain/lead-collection.types";
 import { CurrentLeadAgent } from "./decorators/current-lead-agent.decorator";
 import {
@@ -24,6 +25,7 @@ import {
   UpdateLeadUserDto,
 } from "./dtos/lead-user.dto";
 import { LeadQueryDto, SaveLeadDto } from "./dtos/lead.dto";
+import { AttendanceQueryDto } from "./dtos/lead-attendance.dto";
 import { LeadAgentGuard } from "./guards/lead-agent.guard";
 import { LeadSupervisorGuard } from "./guards/lead-supervisor.guard";
 
@@ -36,6 +38,7 @@ export class LeadSupervisorController {
   constructor(
     private readonly leadUsers: LeadUsersService,
     private readonly leads: LeadsService,
+    private readonly attendance: LeadAttendanceService,
   ) { }
 
   @Get("dashboard")
@@ -246,6 +249,32 @@ export class LeadSupervisorController {
       success: true,
       message: "Field agent deleted. Their captured leads were retained.",
       data: await this.leadUsers.remove(agentId),
+    };
+  }
+
+  @Get("attendance/summary")
+  async getAttendanceSummary() {
+    return {
+      success: true,
+      data: await this.attendance.getAllAgentsAttendanceSummary(),
+    };
+  }
+
+  @Get("agents/:agentId/attendance")
+  async getAgentAttendance(
+    @CurrentLeadAgent() supervisor: AuthenticatedLeadUser,
+    @Param("agentId") agentId: string,
+    @Query() query: AttendanceQueryDto,
+  ) {
+    await this.leadUsers.findOneInDistrict(
+      agentId,
+      supervisor.state,
+      supervisor.district,
+    );
+
+    return {
+      success: true,
+      data: await this.attendance.getAgentAttendanceHistory(agentId, query),
     };
   }
 }

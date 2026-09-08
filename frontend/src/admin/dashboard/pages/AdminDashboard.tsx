@@ -1227,54 +1227,6 @@ export const AdminDashboard: React.FC = () => {
             </div>
           </div>
         </div>
-
-        {false && (
-        <div className="bg-white dark:bg-[#0B192C] rounded-2xl border border-gray-200 dark:border-slate-800 p-6 shadow-sm space-y-4">
-          <div className="flex justify-between items-center border-b border-gray-200 dark:border-slate-800 pb-3">
-            <h3 className="text-base font-bold text-[#0B192C] dark:text-white tracking-tight">
-              Recent system activity
-            </h3>
-            <button
-              onClick={() => navigate("/admin/audit-logs")}
-              className="text-[11px] font-bold text-[#0A4DA6] hover:underline cursor-pointer"
-            >
-              View full audit log
-            </button>
-          </div>
-
-          {activities.length === 0 ? (
-            <EmptyState
-              message="No audit activity recorded"
-              hint="Entries appear here as admins approve listings, change roles and settle payments."
-            />
-          ) : (
-            <div className="space-y-4 text-xs">
-              {activities.map((log) => (
-                <div key={log._id} className="flex items-start gap-4">
-                  <span className="w-32 text-[11px] font-semibold text-gray-500 shrink-0 tabular-nums">
-                    {log.timestamp
-                      ? new Date(log.timestamp).toLocaleString(getFormattingLocale(), {
-                          day: "2-digit",
-                          month: "short",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })
-                      : "—"}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <h4 className="font-extrabold text-[#0B192C] dark:text-white text-xs">
-                      {humanizeLabel(String(log.action ?? "Activity"))}
-                    </h4>
-                    <span className="text-[11px] text-gray-500 font-medium block truncate">
-                      {log.userId?.name || "System"} · {log.summary || log.module}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-        )}
       </div>
     </div>
   );

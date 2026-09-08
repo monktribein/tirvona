@@ -16,6 +16,7 @@ import type {
 } from "../domain/lead-collection.types";
 import type { LeadLoginDto } from "../presentation/dtos/lead-auth.dto";
 import { LeadUsersService } from "./lead-users.service";
+import { LeadAttendanceService } from "./lead-attendance.service";
 
 export interface LeadLoginResult {
   token: string;
@@ -31,6 +32,7 @@ export class LeadAuthService {
     @InjectModel(LEAD_USER_MODEL, LEAD_CONNECTION)
     private readonly leadUsers: Model<LeadUserDocument>,
     private readonly jwt: JwtService,
+    private readonly attendanceService?: LeadAttendanceService,
   ) {}
 
   private toAuthenticated(user: LeadUserRecord): AuthenticatedLeadUser {
@@ -83,6 +85,24 @@ export class LeadAuthService {
       { $set: { lastLoginAt: new Date() } },
     );
 
+    const authUser = this.toAuthenticated(user);
+
+    if (user.role === "field_agent" && this.attendanceService) {
+      try {
+        const defaultLat = user.district === "Mathura" ? 27.4924 : 27.5806;
+        const defaultLng = user.district === "Mathura" ? 77.6737 : 77.7006;
+        await this.attendanceService.markCheckIn(authUser, {
+          latitude: defaultLat,
+          longitude: defaultLng,
+          accuracy: 15,
+          address: `${user.district || 'Mathura'}, ${user.state || 'Uttar Pradesh'}`,
+          notes: "Shift login check-in",
+        });
+      } catch {
+        // Non-blocking
+      }
+    }
+
     const payload: LeadTokenPayload = {
       sub: user._id.toString(),
       scope: "lead",
@@ -98,7 +118,7 @@ export class LeadAuthService {
         audience: this.config.jwtAudience,
       }),
       expiresIn: this.config.jwtExpiresIn,
-      user: this.toAuthenticated(user),
+      user: authUser,
     };
   }
 

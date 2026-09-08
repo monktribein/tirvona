@@ -82,8 +82,17 @@ export class CheckoutDto {
 export class CancelBookingDto {
   @IsString() @MinLength(2) reason: string;
 }
-export class AssignRoomDto {
+export class RoomNumberGroupDto {
+  @IsMongoId() roomId: string;
   @IsArray() @IsString({ each: true }) @MinLength(1, { each: true }) roomNumbers: string[];
+}
+export class AssignRoomDto {
+  @IsOptional() @IsArray() @IsString({ each: true }) @MinLength(1, { each: true }) roomNumbers?: string[];
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => RoomNumberGroupDto)
+  rooms?: RoomNumberGroupDto[];
 }
 export class UpdateBookingStatusDto {
   @IsIn([
@@ -103,6 +112,12 @@ export class UpdateBookingStatusDto {
 export class AdminUpdateBookingDto {
   @IsOptional() @IsArray()
   assignedRoomNumbers?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => RoomNumberGroupDto)
+  roomAssignments?: RoomNumberGroupDto[];
 
   @IsOptional() @IsString() @MaxLength(1000)
   specialRequests?: string;
