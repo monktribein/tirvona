@@ -17,9 +17,15 @@ const build = () => {
       select: jest.fn(() => ({ lean: jest.fn().mockResolvedValue([]) })),
     })),
   };
+  const temples = {
+    findOne: jest.fn(() => ({ select: jest.fn(() => ({ lean: jest.fn().mockResolvedValue(null) })) })),
+    find: jest.fn(() => ({
+      select: jest.fn(() => ({ lean: jest.fn().mockResolvedValue([]) })),
+    })),
+  };
   const audits = { create: jest.fn().mockResolvedValue(undefined) };
   return {
-    service: new UsersService(users as never, ashrams as never, audits as never),
+    service: new UsersService(users as never, ashrams as never, temples as never, audits as never),
     created,
     audits,
   };

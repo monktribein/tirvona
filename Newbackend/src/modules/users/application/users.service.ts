@@ -29,6 +29,7 @@ export class UsersService {
   constructor(
     @InjectModel("User") private readonly users: Model<any>,
     @InjectModel("Ashram") private readonly ashrams: Model<any>,
+    @InjectModel("Temple") private readonly temples: Model<any>,
     @InjectModel("AuditLog") private readonly audits: Model<any>,
   ) {}
   private audit(
@@ -165,6 +166,7 @@ export class UsersService {
         "Aadhaar card and PAN card are mandatory for role accounts",
       );
     const assignedAshram = await this.resolveAssignedAshram(dto);
+    const assignedTemple = await this.resolveAssignedTemple(dto);
     const user = await this.users.create({
       name: dto.name,
       gender: dto.gender,
@@ -179,22 +181,52 @@ export class UsersService {
         dto.role === "ashram_admin" ? ["ashrams.manage_all"] : [],
       employerAshramId: assignedAshram?._id ?? null,
       scopedAshramIds: assignedAshram ? [assignedAshram._id] : [],
+      employerTempleId: assignedTemple?._id ?? null,
+      scopedTempleIds: assignedTemple ? [assignedTemple._id] : [],
       employeeId: `EMP-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
       username: `usr_${dto.name.toLowerCase().replace(/\s+/g, "_")}_${Math.floor(100 + Math.random() * 900)}`,
       joiningDate: new Date(),
       isVerified: true,
     });
+    if (assignedTemple)
+      await this.temples.updateOne(
+        { _id: assignedTemple._id },
+        { $set: { ownerId: user._id } },
+      );
     await this.audit(actor, "USER_ACCOUNT_CREATED", {
       targetUserId: user._id,
       role: user.role,
       assignedAshramId: assignedAshram?._id ?? null,
       assignedAshramName: assignedAshram?.name ?? null,
+      assignedTempleId: assignedTemple?._id ?? null,
+      assignedTempleName: assignedTemple?.name ?? null,
     });
     const safeUser = user.toObject();
     delete safeUser.passwordHash;
     delete safeUser.aadhaarCardUrl;
     delete safeUser.panCardUrl;
     return { user: safeUser };
+  }
+  async assignableTemples(search?: string): Promise<any[]> {
+    const term = search?.trim();
+    const filter: Record<string, unknown> = {
+      status: { $in: ["published", "active"] },
+      deletedAt: null,
+    };
+    if (term) {
+      const safe = escapeRegex(term);
+      filter.$or = [
+        { name: { $regex: safe, $options: "i" } },
+        { "address.city": { $regex: safe, $options: "i" } },
+        { "address.state": { $regex: safe, $options: "i" } },
+      ];
+    }
+    return this.temples
+      .find(filter)
+      .select("_id name address.city address.state")
+      .sort({ name: 1 })
+      .limit(50)
+      .lean();
   }
   async assignableAshrams(search?: string): Promise<any[]> {
     const term = search?.trim();
@@ -245,6 +277,26 @@ export class UsersService {
         "The selected ashram does not exist or is not approved",
       );
     return ashram as { _id: any; name: string };
+  }
+
+  private async resolveAssignedTemple(
+    dto: Pick<CreateAccountDto, "role" | "assignedTempleId">,
+  ): Promise<{ _id: any; name: string } | null> {
+    if (dto.role !== "temple_owner") return null;
+    if (!dto.assignedTempleId)
+      throw new BadRequestException(
+        "An assigned temple is required for this role",
+      );
+    const temple = await this.temples
+      .findOne({
+        _id: dto.assignedTempleId,
+        deletedAt: null,
+      })
+      .select("_id name")
+      .lean();
+    if (!temple)
+      throw new BadRequestException("The selected temple does not exist");
+    return temple as { _id: any; name: string };
   }
 
   private async row(id: string): Promise<any> {

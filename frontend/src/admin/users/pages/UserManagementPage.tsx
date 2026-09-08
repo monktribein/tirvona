@@ -75,6 +75,12 @@ interface AssignableAshram {
   address?: { city?: string; state?: string };
 }
 
+interface AssignableTemple {
+  _id: string;
+  name: string;
+  address?: { city?: string; state?: string };
+}
+
 const ASSIGNED_OWNER_ROLE = "ashram_owner";
 const ASHRAM_SCOPED_ROLES = new Set([
   ASSIGNED_OWNER_ROLE,
@@ -82,6 +88,7 @@ const ASHRAM_SCOPED_ROLES = new Set([
   "reception",
   "housekeeping",
 ]);
+const TEMPLE_SCOPED_ROLES = new Set(["temple_owner"]);
 
 const ALL_ROLES = [
   { id: "super_admin", label: "Super Admin" },
@@ -94,6 +101,7 @@ const ALL_ROLES = [
   { id: "manager", label: "Ashram Manager" },
   { id: "reception", label: "Ashram Reception" },
   { id: "housekeeping", label: "Ashram Housekeeping" },
+  { id: "temple_owner", label: "Temple Owner (Assigned Temple Only)" },
   { id: "offer_manager", label: "Offer Manager" },
   { id: "blog_manager", label: "Blog Manager" },
   { id: "local_manager", label: "Local Hub Manager" },
@@ -150,6 +158,7 @@ export const UserManagementPage: React.FC = () => {
     aadhaarCardUrl: "",
     panCardUrl: "",
     assignedAshramId: "",
+    assignedTempleId: "",
     password: "",
     confirmPassword: "",
   });
@@ -157,6 +166,10 @@ export const UserManagementPage: React.FC = () => {
   const [ashramSearch, setAshramSearch] = useState("");
   const [ashramOptions, setAshramOptions] = useState<AssignableAshram[]>([]);
   const [loadingAshrams, setLoadingAshrams] = useState(false);
+
+  const [templeSearch, setTempleSearch] = useState("");
+  const [templeOptions, setTempleOptions] = useState<AssignableTemple[]>([]);
+  const [loadingTemples, setLoadingTemples] = useState(false);
 
   const [suspendTarget, setSuspendTarget] = useState<ManagedUser | null>(null);
   const [roleTarget, setRoleTarget] = useState<ManagedUser | null>(null);
@@ -235,6 +248,36 @@ export const UserManagementPage: React.FC = () => {
       }));
   }, [needsAssignedAshram, newAccountData.assignedAshramId]);
 
+  const needsAssignedTemple = TEMPLE_SCOPED_ROLES.has(newAccountData.role);
+
+  useEffect(() => {
+    if (!isCreateOpen || !needsAssignedTemple) return;
+    let cancelled = false;
+    setLoadingTemples(true);
+    const timer = window.setTimeout(async () => {
+      try {
+        const res = await userService.assignableTemples(templeSearch.trim());
+        if (!cancelled && res.data?.success) setTempleOptions(res.data.data);
+      } catch {
+        if (!cancelled) setTempleOptions([]);
+      } finally {
+        if (!cancelled) setLoadingTemples(false);
+      }
+    }, 300);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [isCreateOpen, needsAssignedTemple, templeSearch]);
+
+  useEffect(() => {
+    if (!needsAssignedTemple && newAccountData.assignedTempleId)
+      setNewAccountData((current: Record<string, any>) => ({
+        ...current,
+        assignedTempleId: "",
+      }));
+  }, [needsAssignedTemple, newAccountData.assignedTempleId]);
+
   const fetchUsers = async () => {
     setLoading(true);
     setError("");
@@ -294,6 +337,17 @@ export const UserManagementPage: React.FC = () => {
       );
       return;
     }
+    if (
+      needsAssignedTemple &&
+      !newAccountData.assignedTempleId
+    ) {
+      addNotification(
+        "Temple Required",
+        "Select the temple this account will be assigned to.",
+        "error",
+      );
+      return;
+    }
     setCreatingAccount(true);
     try {
       const accountPayload = { ...newAccountData };
@@ -315,11 +369,14 @@ export const UserManagementPage: React.FC = () => {
           aadhaarCardUrl: "",
           panCardUrl: "",
           assignedAshramId: "",
+          assignedTempleId: "",
           password: "",
           confirmPassword: "",
         });
         setAshramSearch("");
         setAshramOptions([]);
+        setTempleSearch("");
+        setTempleOptions([]);
         fetchUsers();
       }
     } catch (err) {
@@ -1072,6 +1129,48 @@ export const UserManagementPage: React.FC = () => {
                     )}
                   </div>
                   {!newAccountData.assignedAshramId && <p className="text-[11px] font-normal text-red-500">Select the ashram this account will access before creating it.</p>}
+                </div>
+              )}
+              {needsAssignedTemple && (
+                <div className="space-y-1 md:col-span-2">
+                  <p className="font-bold text-gray-700 dark:text-gray-300">Assign Temple *</p>
+                  <p className="text-[11px] font-normal text-gray-500">This account will be scoped to the selected temple and will only access that temple's data.</p>
+                  <div className="relative">
+                    <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <input
+                      type="search"
+                      value={templeSearch}
+                      onChange={(e) => setTempleSearch(e.target.value)}
+                      placeholder="Search published temples by name, city or state"
+                      className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 pl-9 font-normal focus:border-[#0A4DA6] focus:outline-none dark:border-slate-800 dark:bg-slate-900"
+                    />
+                  </div>
+                  <div className="mt-2 max-h-56 overflow-y-auto rounded-xl border border-gray-200 dark:border-slate-800">
+                    {loadingTemples ? (
+                      <p className="p-3 text-xs text-gray-500">Loading temples…</p>
+                    ) : templeOptions.length === 0 ? (
+                      <p className="p-3 text-xs text-gray-500">{templeSearch.trim() ? "No published temple matches that search." : "No published temples are available to assign."}</p>
+                    ) : (
+                      templeOptions.map((temple) => {
+                        const selected = newAccountData.assignedTempleId === temple._id;
+                        return (
+                          <button
+                            key={temple._id}
+                            type="button"
+                            onClick={() => setNewAccountData((current: Record<string, any>) => ({ ...current, assignedTempleId: temple._id }))}
+                            className={`flex w-full items-center justify-between gap-3 border-b border-gray-100 p-3 text-left last:border-b-0 dark:border-slate-800 ${selected ? "bg-[#0A4DA6]/10" : "hover:bg-gray-50 dark:hover:bg-slate-900"}`}
+                          >
+                            <span>
+                              <span className="block text-sm font-bold text-[#0B192C] dark:text-white">{temple.name}</span>
+                              <span className="block text-[11px] font-normal text-gray-500">{[temple.address?.city, temple.address?.state].filter(Boolean).join(", ") || "Location not set"}</span>
+                            </span>
+                            {selected && <CheckCircle size={16} className="shrink-0 text-[#0A4DA6]" />}
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                  {!newAccountData.assignedTempleId && <p className="text-[11px] font-normal text-red-500">Select the temple this account will access before creating it.</p>}
                 </div>
               )}
             </div>

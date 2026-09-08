@@ -21,10 +21,16 @@ const build = (ashram: unknown = APPROVED) => {
       return { ...doc, _id: "user-1", toObject: () => ({ ...doc }) };
     }),
   };
+  const temples = {
+    findOne: jest.fn().mockReturnValue({
+      select: jest.fn().mockReturnValue({ lean: jest.fn().mockResolvedValue(null) }),
+    }),
+  };
   const audits = { create: jest.fn().mockResolvedValue(undefined) };
   const service = new UsersService(
     users as never,
     ashrams as never,
+    temples as never,
     audits as never,
   );
   return { service, users, ashrams, audits, created };

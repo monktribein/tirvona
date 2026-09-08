@@ -12,6 +12,7 @@ export const USER_ROLES = [
   "ashram_owner",
   "stay_admin",
   "owner",
+  "temple_owner",
   "manager",
   "reception",
   "housekeeping",
@@ -71,6 +72,10 @@ export class User {
   employerAshramId?: Types.ObjectId;
   @Prop({ type: [SchemaTypes.ObjectId], ref: "Ashram", default: [] })
   scopedAshramIds: Types.ObjectId[];
+  @Prop({ type: SchemaTypes.ObjectId, ref: "Temple", default: null })
+  employerTempleId?: Types.ObjectId;
+  @Prop({ type: [SchemaTypes.ObjectId], ref: "Temple", default: [] })
+  scopedTempleIds: Types.ObjectId[];
   @Prop({ default: false, index: true }) isDeleted: boolean;
   @Prop({ default: true, index: true }) isVerified: boolean;
   @Prop({ default: 0 }) tokenVersion: number;
@@ -111,3 +116,5 @@ export const UserSchema = SchemaFactory.createForClass(User);
 UserSchema.index({ role: 1, status: 1, isDeleted: 1 });
 UserSchema.index({ employerAshramId: 1, role: 1, status: 1 });
 UserSchema.index({ scopedAshramIds: 1, role: 1 });
+UserSchema.index({ employerTempleId: 1, role: 1, status: 1 });
+UserSchema.index({ scopedTempleIds: 1, role: 1 });

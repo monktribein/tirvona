@@ -87,6 +87,12 @@ export class UsersController {
     const data = await this.service.assignableAshrams(search);
     return { success: true, count: data.length, data };
   }
+  @Get("assignable-temples")
+  @Roles("super_admin")
+  async assignableTemples(@Query("search") search?: string) {
+    const data = await this.service.assignableTemples(search);
+    return { success: true, count: data.length, data };
+  }
   @Post("create-account") @Roles("super_admin") async create(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: CreateAccountDto,

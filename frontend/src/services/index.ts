@@ -73,6 +73,8 @@ export const templeService = {
     api.get("/temples/nearby", { params: { lat, lng, radius } }),
   adminList: (params: Record<string, string | number | boolean> = {}) =>
     api.get("/temples/admin/all", { params }),
+  /** Temples the current user (temple owner or super admin) may manage. */
+  myTemples: () => api.get("/temples/admin/mine"),
   /** Load exactly one temple by id for the admin editor. */
   getAdminById: (id: string) => api.get(`/temples/admin/${id}`),
   create: (data: unknown) => api.post("/temples/admin", data),
@@ -294,6 +296,10 @@ export const userService = {
   createAccount: (data: unknown) => api.post("/users/create-account", data),
   assignableAshrams: (search?: string) =>
     api.get("/users/assignable-ashrams", {
+      params: search ? { search } : undefined,
+    }),
+  assignableTemples: (search?: string) =>
+    api.get("/users/assignable-temples", {
       params: search ? { search } : undefined,
     }),
   updateAccount: (id: string, data: unknown) => api.patch(`/users/${id}`, data),
