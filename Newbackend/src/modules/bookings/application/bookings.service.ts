@@ -193,14 +193,22 @@ export class BookingsService {
   async create(user: AuthenticatedUser, dto: CreateBookingDto): Promise<any> {
     const quote = await this.pricing.quote(dto);
     const code = await this.issueActiveCheckinCode();
+    const normalizedRooms = Array.isArray(dto.rooms) && dto.rooms.length
+      ? dto.rooms
+      : dto.roomId
+        ? [{ roomId: dto.roomId, units: Math.max(1, Number(dto.roomsBookedCount) || 1) }]
+        : [];
+
     const booking = await this.transactions.run(async (session) => {
-      for (const reqRoom of dto.rooms) {
+      for (const reqRoom of normalizedRooms) {
+        const foundRoom = quote.rooms?.find((r: any) => String(r._id) === String(reqRoom.roomId)) || quote.room;
+        const capacity = Number(foundRoom?.totalInventory) || Number(foundRoom?.inventory) || Number(foundRoom?.capacity) || Math.max(10, reqRoom.units);
         await this.repository.holdInventory({
           ashramId: dto.ashramId,
           roomId: reqRoom.roomId,
           dates: quote.dates,
           count: reqRoom.units,
-          capacity: quote.rooms.find((r: any) => String(r._id) === String(reqRoom.roomId))?.totalInventory,
+          capacity,
           session,
         });
       }
@@ -228,7 +236,7 @@ export class BookingsService {
         dto.ashramId,
         session,
       );
-      const totalUnits = dto.rooms.reduce((sum, r) => sum + r.units, 0);
+      const totalUnits = normalizedRooms.reduce((sum, r) => sum + r.units, 0);
       const [created] = await this.bookings.create(
         [
           {
@@ -237,7 +245,7 @@ export class BookingsService {
             identityCode,
             customerId: user.id,
             ashramId: dto.ashramId,
-            rooms: dto.rooms,
+            rooms: normalizedRooms,
             roomsBookedCount: totalUnits,
             checkInDate: new Date(dto.checkInDate),
             checkOutDate: new Date(dto.checkOutDate),
@@ -268,7 +276,7 @@ export class BookingsService {
         ],
         { session },
       );
-      const holdDocs = dto.rooms.map((reqRoom) => ({
+      const holdDocs = normalizedRooms.map((reqRoom) => ({
         bookingId: created._id,
         ashramId: dto.ashramId,
         roomId: reqRoom.roomId,
@@ -277,7 +285,10 @@ export class BookingsService {
         state: "held",
         expiresAt: created.reservationExpiresAt,
       }));
-      await this.inventoryHolds.create(holdDocs, { session });
+      // Mongoose refuses create() with a session on >1 document unless
+      // ordered is explicit; multi-room-category bookings produce one hold
+      // doc per room, so this array can have length > 1.
+      await this.inventoryHolds.create(holdDocs, { session, ordered: true });
       await Promise.all([
         this.history.create(
           [
@@ -523,7 +534,7 @@ export class BookingsService {
           count: room.units,
           session,
         });
-      await this.inventoryHolds.updateOne(
+      await this.inventoryHolds.updateMany(
         { bookingId: booking._id, state: "held" },
         {
           $set: {
@@ -1155,7 +1166,7 @@ export class BookingsService {
           state: "booked",
           session,
         });
-      await this.inventoryHolds.updateOne(
+      await this.inventoryHolds.updateMany(
         { bookingId: row._id, state: "confirmed" },
         {
           $set: {
@@ -1263,7 +1274,7 @@ export class BookingsService {
           state,
           session,
         });
-      await this.inventoryHolds.updateOne(
+      await this.inventoryHolds.updateMany(
         { bookingId: existing._id, state: { $in: ["held", "confirmed"] } },
         {
           $set: {

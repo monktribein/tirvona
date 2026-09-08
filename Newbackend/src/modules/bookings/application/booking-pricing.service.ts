@@ -43,7 +43,15 @@ export class BookingPricingService {
     const dates = eachNight(start, end);
     if (!dates.length || dates.length > 30)
       throw new BadRequestException("A stay must be between 1 and 30 nights");
-    const roomIds = dto.rooms.map((r) => r.roomId);
+    const rawRooms = Array.isArray(dto.rooms) && dto.rooms.length
+      ? dto.rooms
+      : dto.roomId
+        ? [{ roomId: dto.roomId, units: Math.max(1, Number(dto.roomsBookedCount) || 1) }]
+        : [];
+    if (!rawRooms.length) {
+      throw new BadRequestException("Please select at least one room category");
+    }
+    const roomIds = rawRooms.map((r) => r.roomId);
     const dbRooms = await this.rooms
       .find({
         _id: { $in: roomIds },
@@ -61,7 +69,7 @@ export class BookingPricingService {
     for (const r of dbRooms) {
        roomMap.set(String(r._id), r);
     }
-    for (const r of dto.rooms) {
+    for (const r of rawRooms) {
        const dbRoom = roomMap.get(String(r.roomId));
        totalCapacity += (dbRoom.capacity || 1) * r.units;
     }
@@ -106,7 +114,7 @@ export class BookingPricingService {
     let basePrice = 0;
     for (const date of dates) {
       const dateString = date.toISOString().slice(0, 10);
-      for (const reqRoom of dto.rooms) {
+      for (const reqRoom of rawRooms) {
         const room = roomMap.get(String(reqRoom.roomId));
         const dayAvailability = availability.find(
           (r: any) => String(r.roomId) === String(reqRoom.roomId) && new Date(r.date).toISOString().slice(0, 10) === dateString
@@ -287,6 +295,7 @@ export class BookingPricingService {
     const totalAmount = Math.max(0, roundMoney(grossPayable - discountAmount));
     return {
       room: dbRooms[0],
+      rooms: dbRooms,
       dates,
       coupon,
       services,
