@@ -43,7 +43,7 @@ export interface LeadUser {
   name: string;
   phone: string;
   email?: string;
-  role: "field_agent" | "field_supervisor" | "lead_executive";
+  role: "field_agent" | "field_supervisor" | "lead_executive" | "document_verifier" | "field_executive";
   status: "active" | "suspended";
   region?: string;
   state?: string;

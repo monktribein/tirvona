@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model } from "mongoose";
+import { Model, Types } from "mongoose";
 import {
   LEAD_ATTENDANCE_MODEL,
   LEAD_CONNECTION,
@@ -8,8 +8,6 @@ import {
 } from "../domain/lead-collection.constants";
 import type { AuthenticatedLeadUser } from "../domain/lead-collection.types";
 import {
-  MarkCheckInDto,
-  MarkCheckOutDto,
   AttendanceQueryDto,
 } from "../presentation/dtos/lead-attendance.dto";
 
@@ -288,7 +286,6 @@ export class LeadAttendanceService {
 
   private objectId(id: string): any {
     try {
-      const { Types } = require("mongoose");
       return Types.ObjectId.isValid(id) ? new Types.ObjectId(id) : id;
     } catch {
       return id;

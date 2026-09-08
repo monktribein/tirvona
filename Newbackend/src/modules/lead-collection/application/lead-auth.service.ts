@@ -98,7 +98,7 @@ export class LeadAuthService {
           address: `${user.district || 'Mathura'}, ${user.state || 'Uttar Pradesh'}`,
           notes: "Shift login check-in",
         });
-      } catch (err) {
+      } catch {
         // Non-blocking
       }
     }

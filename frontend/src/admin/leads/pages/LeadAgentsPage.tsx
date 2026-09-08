@@ -59,7 +59,7 @@ interface AgentForm {
   phone: string;
   email: string;
   password: string;
-  role: "field_agent" | "field_supervisor" | "lead_executive" | "document_verifier";
+  role: "field_agent" | "field_supervisor" | "lead_executive" | "document_verifier" | "field_executive";
   state: string;
   district: string;
   employeeCode: string;
@@ -562,7 +562,8 @@ export const LeadAgentsPage: React.FC = () => {
                       </div>
                     </td>
                   </tr>
-                ))}
+                );
+              })}
               </tbody>
             </table>
           </div>
