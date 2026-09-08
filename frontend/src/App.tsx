@@ -199,6 +199,7 @@ const TempleSearchPage = lazy(() => import("./pages/temples/TempleSearchPage"));
 const TempleDetailPage = lazy(() => import("./pages/temples/TempleDetailPage"));
 const TempleManagementPage = lazy(() => import("./admin/temples/pages/TempleManagementPage"));
 const AddEditTemplePage = lazy(() => import("./admin/temples/pages/AddEditTemplePage"));
+const TempleOwnerDashboard = lazy(() => import("./pages/temple-owner/TempleOwnerDashboard"));
 
 const SmartContactProfilesPage = lazy(
   () => import("./admin/smart-contact/pages/SmartContactProfilesPage"),
@@ -696,6 +697,17 @@ const AppContent: React.FC = () => {
 
           <Route
             element={
+              <ProtectedRoute allowedRoles={["temple_owner", "super_admin"]}>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/temple-owner/dashboard" element={<TempleOwnerDashboard />} />
+            <Route path="/admin/temples/:id/edit" element={<AddEditTemplePage />} />
+          </Route>
+
+          <Route
+            element={
               <ProtectedRoute allowedRoles={["ashram_owner", "ashram_admin", "owner", "stay_admin"]}>
                 <DashboardLayout />
               </ProtectedRoute>
@@ -911,7 +923,6 @@ const AppContent: React.FC = () => {
             />
             <Route path="/admin/temples" element={<TempleManagementPage />} />
             <Route path="/admin/temples/new" element={<AddEditTemplePage />} />
-            <Route path="/admin/temples/:id/edit" element={<AddEditTemplePage />} />
             {/* Smart Contact QR. `/analytics` is declared before the `:id`
               route so the literal segment is not swallowed as a profile id. */}
             <Route

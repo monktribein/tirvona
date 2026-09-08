@@ -173,6 +173,7 @@ export const TempleSchema = new Schema(
     isFeatured: { type: Boolean, default: false },
     isPopular: { type: Boolean, default: false },
 
+    ownerId: id("User"),
     createdBy: id("User"),
     updatedBy: id("User"),
     deletedAt: Date,
@@ -186,6 +187,7 @@ TempleSchema.index({ "address.coordinates": "2dsphere" });
 TempleSchema.index({ slug: 1 });
 TempleSchema.index({ "address.city": 1, status: 1 });
 TempleSchema.index({ isFeatured: 1, status: 1 });
+TempleSchema.index({ ownerId: 1 });
 
 export const TempleAartiSchema = new Schema(
   {

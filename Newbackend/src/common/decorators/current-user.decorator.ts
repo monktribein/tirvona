@@ -12,6 +12,8 @@ export interface AuthenticatedUser {
   permissions: string[];
   scopedAshramIds: string[];
   employerAshramId?: string;
+  scopedTempleIds: string[];
+  employerTempleId?: string;
   district?: string;
   state?: string;
 }

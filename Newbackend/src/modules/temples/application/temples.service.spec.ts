@@ -56,7 +56,7 @@ const build = () => {
   return { service, ...m };
 };
 
-const user = { id: "admin-1" };
+const user = { id: "admin-1", role: "super_admin" };
 const baseDto = () => ({
   name: "Shri Test Temple",
   shortDescription: "short",

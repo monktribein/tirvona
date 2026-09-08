@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import EnterprisePageHeader from "../../shared/components/EnterprisePageHeader";
 import api, { getErrorMessage } from "../../../lib/api";
 import { templeService } from "../../../services";
+import { useAuth } from "../../../contexts/AuthContext";
 import { toast } from "../../../lib/toast";
 import TirvonaMap from "../../../components/TirvonaMap";
 import { ImageGalleryManager } from "../../shared/components/ImageGalleryManager";
@@ -41,7 +42,9 @@ export default function AddEditTemplePage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEdit = Boolean(id);
-  
+  const { user } = useAuth();
+  const isTempleOwner = user?.role === "temple_owner";
+
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -374,10 +377,12 @@ export default function AddEditTemplePage() {
           <input type="text" value={formData.religiousTradition} onChange={(e) => handleChange("religiousTradition", e.target.value)} className="w-full rounded-full border border-gray-200 px-4 py-2" />
         </div>
         <div><label className="block text-sm font-medium text-gray-700 mb-1">Tags</label><input type="text" value={formData.templeTags.join(", ")} onChange={(e) => handleChange("templeTags", e.target.value.split(",").map((tag) => tag.trim()).filter(Boolean))} className="w-full rounded-full border border-gray-200 px-4 py-2" placeholder="heritage, pilgrimage, riverfront" /></div>
+        {!isTempleOwner && (
         <div className="md:col-span-2 flex flex-wrap gap-5 text-sm font-medium text-gray-700">
           {["isVerified", "isFeatured", "isPopular"].map((field) => <label key={field} className="flex items-center gap-2"><input type="checkbox" checked={(formData as any)[field]} onChange={(e) => handleChange(field, e.target.checked)} /> {field.replace(/^is/, "").replace(/[A-Z]/g, " $&")}</label>)}
           <label className="flex items-center gap-2">Status <select value={formData.status} onChange={(e) => handleChange("status", e.target.value)} className="rounded-lg border px-2 py-1"><option value="draft">Draft</option><option value="published">Published</option><option value="archived">Archived</option></select></label>
         </div>
+        )}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Temple Type</label>
           <select value={formData.templeType} onChange={(e) => handleChange("templeType", e.target.value)} className="w-full rounded-full border border-gray-200 px-4 py-2 focus:ring-2 focus:ring-[#E58C28] focus:border-transparent">
@@ -700,23 +705,39 @@ export default function AddEditTemplePage() {
   const renderStep11 = () => (
     <div className="space-y-6 animate-fade-in text-center py-10">
       <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-      <h2 className="text-2xl font-bold text-gray-900">Ready to Publish</h2>
+      <h2 className="text-2xl font-bold text-gray-900">
+        {isTempleOwner ? "Save Your Changes" : "Ready to Publish"}
+      </h2>
       <p className="text-gray-500 max-w-md mx-auto">
-        Please review all the information before publishing. Published temples will be immediately visible on the public Tirvona portal.
+        {isTempleOwner
+          ? "Your changes are saved to this temple's record. Publishing and verification status is managed by Tirvona Super Admin."
+          : "Please review all the information before publishing. Published temples will be immediately visible on the public Tirvona portal."}
       </p>
       <div className="flex items-center justify-center gap-4 mt-8">
-        <button
-          onClick={() => saveForm(false)}
-          className="px-6 py-3 bg-white border-2 border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors flex items-center gap-2"
-        >
-          <Save className="w-4 h-4" /> Save as Draft
-        </button>
-        <button
-          onClick={() => saveForm(true)}
-          className="px-8 py-3 bg-[#E58C28] text-white rounded-xl font-bold hover:bg-[#d67d1d] shadow-lg shadow-orange-200 transition-colors flex items-center gap-2"
-        >
-          <Globe className="w-4 h-4" /> Publish Temple
-        </button>
+        {isTempleOwner ? (
+          <button
+            onClick={() => saveForm(false)}
+            disabled={saving}
+            className="px-8 py-3 bg-[#E58C28] text-white rounded-xl font-bold hover:bg-[#d67d1d] shadow-lg shadow-orange-200 transition-colors flex items-center gap-2 disabled:opacity-50"
+          >
+            <Save className="w-4 h-4" /> {saving ? "Saving..." : "Save Changes"}
+          </button>
+        ) : (
+          <>
+            <button
+              onClick={() => saveForm(false)}
+              className="px-6 py-3 bg-white border-2 border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition-colors flex items-center gap-2"
+            >
+              <Save className="w-4 h-4" /> Save as Draft
+            </button>
+            <button
+              onClick={() => saveForm(true)}
+              className="px-8 py-3 bg-[#E58C28] text-white rounded-xl font-bold hover:bg-[#d67d1d] shadow-lg shadow-orange-200 transition-colors flex items-center gap-2"
+            >
+              <Globe className="w-4 h-4" /> Publish Temple
+            </button>
+          </>
+        )}
         {isEdit && formData.slug && <button onClick={() => navigate(`/temples/${formData.slug}?previewId=${id}`)} className="px-6 py-3 bg-[#0B192C] text-white rounded-xl font-medium hover:bg-gray-800 transition-colors flex items-center gap-2"><Eye className="w-4 h-4" /> Preview Temple</button>}
       </div>
       {isEdit && formData.status === "published" && (
@@ -793,7 +814,7 @@ export default function AddEditTemplePage() {
                     disabled={saving}
                     className="text-gray-500 hover:text-gray-800 font-medium px-4 py-2"
                   >
-                    Save Draft
+                    {isTempleOwner ? "Save Changes" : "Save Draft"}
                   </button>
                   <button
                     onClick={() => setCurrentStep(s => Math.min(STEPS.length - 1, s + 1))}

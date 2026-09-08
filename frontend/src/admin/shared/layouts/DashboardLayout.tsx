@@ -61,6 +61,7 @@ const SIDEBAR_SEQUENCE = [
   "user & access",
   "institution",
   "ashram",
+  "temple",
   "room",
   "platform fee",
   "booking",
@@ -91,6 +92,7 @@ const MATERIAL_ICON_BY_SECTION: Array<[string, string]> = [
   ["user & access", "manage_accounts"],
   ["institution", "account_balance"],
   ["ashram", "temple_hindu"],
+  ["temple", "temple_hindu"],
   ["room", "bed"],
   ["platform fee", "payments"],
   ["booking", "event_note"],
@@ -160,6 +162,8 @@ const getFormattedRole = (role?: string): string => {
     case "ashram_owner":
     case "owner":
       return "Stay Owner";
+    case "temple_owner":
+      return "Temple Owner";
     case "support":
       return "Support";
     case "reception":
@@ -559,7 +563,6 @@ export const DashboardLayout: React.FC = () => {
       icon: <Compass size={15} />,
       links: [
         { label: "Spiritual Circuits", path: "/admin/manage/planner/circuits" },
-        { label: "Temple Directory", path: "/admin/manage/planner/temples" },
         { label: "Yatra Routes", path: "/admin/manage/planner/routes" },
         { label: "Itineraries", path: "/admin/manage/planner/itineraries" },
         { label: "Ritual Packages", path: "/admin/manage/planner/rituals" },
@@ -763,6 +766,14 @@ export const DashboardLayout: React.FC = () => {
 
 
 
+  const templeOwnerGroups: NavGroup[] = [
+    {
+      groupName: "Temple Management",
+      icon: <Building2 size={15} />,
+      links: [{ label: "My Temple", path: "/temple-owner/dashboard" }],
+    },
+  ];
+
   const districtAdminGroups: NavGroup[] = [
     {
       groupName: "Verifications & stays",
@@ -848,6 +859,16 @@ export const DashboardLayout: React.FC = () => {
           icon: <LayoutDashboard size={16} className="text-[#E58C28]" />,
         },
         groups: ownerGroups,
+      };
+    }
+    if (user?.role === "temple_owner") {
+      return {
+        topLink: {
+          label: "My Temple",
+          path: "/temple-owner/dashboard",
+          icon: <LayoutDashboard size={16} className="text-[#E58C28]" />,
+        },
+        groups: templeOwnerGroups,
       };
     }
     if (user?.role === "manager") {

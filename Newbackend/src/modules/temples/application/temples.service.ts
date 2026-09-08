@@ -3,6 +3,12 @@ import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { CreateTempleDto, UpdateTempleDto, CreateAartiDto, CreateFestivalDto } from "../presentation/dtos/temple.dto";
 import { PARKING_MODEL } from "../../parking/domain/parking.constants";
+import { canManageAllTemples } from "../../../common/auth/temple-access";
+import {
+  assertTempleInScope,
+  resolveTempleScope,
+  templeScopeFilter,
+} from "../../../common/auth/temple-scope";
 
 const slugify = (value: string): string =>
   value
@@ -60,6 +66,13 @@ export class TemplesService {
   }
 
   async update(id: string, dto: UpdateTempleDto, user: any) {
+    const existing = await this.temples.findOne({ _id: id, deletedAt: null }).lean();
+    await this.assertTempleScope(user, existing);
+    if (!canManageAllTemples(user)) {
+      delete (dto as any).status;
+      delete (dto as any).isVerified;
+      delete (dto as any).isFeatured;
+    }
     if (dto.address?.coordinates) this.validateCoordinates(dto.address.coordinates);
     if (dto.slug && await this.temples.exists({ slug: dto.slug, _id: { $ne: id }, deletedAt: null })) {
       throw new ConflictException("Temple slug is already in use");
@@ -74,6 +87,8 @@ export class TemplesService {
   }
 
   async delete(id: string, user: any) {
+    const existing = await this.temples.findOne({ _id: id, deletedAt: null }).lean();
+    await this.assertTempleScope(user, existing);
     const temple = await this.temples.findByIdAndUpdate(
       id,
       { deletedAt: new Date(), updatedBy: user?.id },
@@ -83,7 +98,7 @@ export class TemplesService {
     return { success: true };
   }
 
-  async findAll(query: any = {}) {
+  async findAll(query: any = {}, user?: any) {
     const filter: any = { deletedAt: null };
     if (query._id || query.id) filter._id = query._id || query.id;
     if (query.city) filter["address.city"] = new RegExp(query.city, "i");
@@ -96,10 +111,15 @@ export class TemplesService {
       const pattern = new RegExp(String(query.search).trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
       filter.$or = [{ name: pattern }, { templeShortName: pattern }, { slug: pattern }, { deity: pattern }, { "address.city": pattern }, { "address.area": pattern }, { "address.district": pattern }, { "address.state": pattern }];
     }
-    
+
     // For public users, only show published or active
     if (query.public) {
       filter.status = { $in: ["published", "active"] };
+    }
+
+    if (user && !canManageAllTemples(user)) {
+      const scope = await resolveTempleScope(user, this.temples);
+      Object.assign(filter, templeScopeFilter(scope, "_id"));
     }
 
     const page = parseInt(query.page) || 1;
@@ -120,6 +140,13 @@ export class TemplesService {
     };
   }
 
+  async findMine(user: any) {
+    if (canManageAllTemples(user)) return this.temples.find({ deletedAt: null }).sort({ createdAt: -1 }).lean();
+    const scope = await resolveTempleScope(user, this.temples);
+    const filter: any = { deletedAt: null, ...templeScopeFilter(scope, "_id") };
+    return this.temples.find(filter).sort({ createdAt: -1 }).lean();
+  }
+
   async findOneBySlug(slug: string, publicOnly = false) {
     const filter: any = { slug, deletedAt: null };
     if (publicOnly) filter.status = { $in: ["published", "active"] };
@@ -127,48 +154,54 @@ export class TemplesService {
     if (!temple) throw new NotFoundException("Temple not found");
     return temple;
   }
-  
-  async findOneById(id: string) {
+
+  async findOneById(id: string, user?: any) {
     const temple = await this.temples.findOne({ _id: id, deletedAt: null }).lean();
     if (!temple) throw new NotFoundException("Temple not found");
+    if (user) await this.assertTempleScope(user, temple);
     return temple;
   }
 
   async addAarti(templeId: string, dto: CreateAartiDto, user: any) {
-    await this.requireTemple(templeId);
+    await this.requireTemple(templeId, user);
     return this.aartis.create({ ...dto, templeId, createdBy: user?.id, updatedBy: user?.id });
   }
 
-  async getAartis(templeId: string, publicOnly = false) {
+  async getAartis(templeId: string, publicOnly = false, user?: any) {
+    if (user) await this.requireTemple(templeId, user);
     const filter: any = { templeId };
     if (publicOnly) filter.isActive = { $ne: false };
     return this.aartis.find(filter).sort({ startTime: 1 }).lean();
   }
 
   async addFestival(templeId: string, dto: CreateFestivalDto, user: any) {
-    await this.requireTemple(templeId);
+    await this.requireTemple(templeId, user);
     this.validateFestivalDates(dto.startDate, dto.endDate);
     return this.festivals.create({ ...dto, templeId, createdBy: user?.id, updatedBy: user?.id });
   }
 
-  async getFestivals(templeId: string, publicOnly = true) {
+  async getFestivals(templeId: string, publicOnly = true, user?: any) {
+    if (user) await this.requireTemple(templeId, user);
     const filter: any = { templeId };
     if (publicOnly) filter.isActive = { $ne: false };
     return this.festivals.find(filter).sort({ startDate: 1 }).lean();
   }
 
   async updateAarti(templeId: string, aartiId: string, dto: Partial<CreateAartiDto>, user: any) {
+    await this.requireTemple(templeId, user);
     const aarti = await this.aartis.findOneAndUpdate({ _id: aartiId, templeId }, { ...dto, updatedBy: user?.id }, { new: true }).lean();
     if (!aarti) throw new NotFoundException("Aarti not found");
     return aarti;
   }
 
   async deleteAarti(templeId: string, aartiId: string, user: any) {
+    await this.requireTemple(templeId, user);
     const result = await this.aartis.findOneAndUpdate({ _id: aartiId, templeId }, { isActive: false, updatedBy: user?.id }, { new: true });
     if (!result) throw new NotFoundException("Aarti not found");
   }
 
   async updateFestival(templeId: string, festivalId: string, dto: Partial<CreateFestivalDto>, user: any) {
+    await this.requireTemple(templeId, user);
     if (dto.startDate != null || dto.endDate != null) {
       const current = await this.festivals.findOne({ _id: festivalId, templeId }).select("startDate endDate").lean();
       this.validateFestivalDates(dto.startDate ?? current?.startDate, dto.endDate ?? current?.endDate);
@@ -179,13 +212,21 @@ export class TemplesService {
   }
 
   async deleteFestival(templeId: string, festivalId: string, user: any) {
+    await this.requireTemple(templeId, user);
     const result = await this.festivals.findOneAndUpdate({ _id: festivalId, templeId }, { isActive: false, updatedBy: user?.id }, { new: true });
     if (!result) throw new NotFoundException("Festival not found");
   }
 
-  private async requireTemple(id: string) {
-    const temple = await this.temples.findOne({ _id: id, deletedAt: null }).select("_id").lean();
+  private async assertTempleScope(user: any, temple: any): Promise<void> {
     if (!temple) throw new NotFoundException("Temple not found");
+    const scope = await resolveTempleScope(user, this.temples);
+    assertTempleInScope(scope, temple._id);
+  }
+
+  private async requireTemple(id: string, user?: any) {
+    const temple = await this.temples.findOne({ _id: id, deletedAt: null }).select("_id ownerId").lean();
+    if (!temple) throw new NotFoundException("Temple not found");
+    if (user) await this.assertTempleScope(user, temple);
     return temple;
   }
 

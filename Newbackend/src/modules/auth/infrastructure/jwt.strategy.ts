@@ -52,6 +52,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       permissions: user.permissions ?? [],
       scopedAshramIds: (user.scopedAshramIds ?? []).map(String),
       employerAshramId: user.employerAshramId?.toString(),
+      scopedTempleIds: (user.scopedTempleIds ?? []).map(String),
+      employerTempleId: user.employerTempleId?.toString(),
       district: user.district,
       state: user.state,
       tokenVersion: user.tokenVersion,

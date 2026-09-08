@@ -56,6 +56,9 @@ export const getRoleDefaultDashboard = (
     case "owner": // legacy session
       return "/ashram-owner/dashboard";
 
+    case "temple_owner":
+      return "/temple-owner/dashboard";
+
     case "district_officer":
     case "district_admin":
     case "state_admin":

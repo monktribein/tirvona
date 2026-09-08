@@ -1657,7 +1657,6 @@ export class GovernanceService {
         "authors",
         "comments",
         "circuits",
-        "temples",
         "events",
       ],
       offer_manager: ["offers"],

@@ -53,6 +53,9 @@ export class CreateAccountDto {
   )
   @IsMongoId({ message: "Select the ashram this account will be assigned to" })
   assignedAshramId?: string;
+  @ValidateIf((dto: CreateAccountDto) => dto.role === "temple_owner")
+  @IsMongoId({ message: "Select the temple this account will be assigned to" })
+  assignedTempleId?: string;
 }
 export class UserStatusDto {
   @IsIn([
