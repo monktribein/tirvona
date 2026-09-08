@@ -14,6 +14,13 @@ const STALE_INDEXES: {
     index: "bookingId_1",
     isCurrent: (definition) => Boolean(definition.partialFilterExpression),
   },
+  {
+    // Replaced by a compound { bookingId, roomId } unique index so a
+    // multi-room-category booking can hold one inventory row per room.
+    collection: "booking_inventory",
+    index: "bookingId_1",
+    isCurrent: () => false,
+  },
 ];
 
 async function dropStaleIndexes(connection: Connection): Promise<void> {

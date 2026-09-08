@@ -4,6 +4,7 @@ import {
   ExceptionFilter,
   HttpException,
   HttpStatus,
+  Logger,
 } from "@nestjs/common";
 import type { Request, Response } from "express";
 
@@ -49,10 +50,20 @@ const databaseFailure = (
 
 @Catch()
 export class ApiExceptionFilter implements ExceptionFilter {
+  private readonly logger = new Logger(ApiExceptionFilter.name);
+
   catch(exception: unknown, host: ArgumentsHost): void {
     const context = host.switchToHttp();
     const response = context.getResponse<Response>();
     const request = context.getRequest<Request & { id?: string }>();
+
+    if (!(exception instanceof HttpException)) {
+      const err = exception as { stack?: string; message?: string };
+      this.logger.error(
+        `Unhandled exception on ${request.method} ${request.originalUrl}: ${err?.message ?? String(exception)}`,
+        err?.stack,
+      );
+    }
 
     const database =
       exception instanceof HttpException ? null : databaseFailure(exception);

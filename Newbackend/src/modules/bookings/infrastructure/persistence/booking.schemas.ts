@@ -238,7 +238,7 @@ BookingCheckoutSchema.index({ bookingId: 1 }, { unique: true });
 
 export const BookingInventoryHoldSchema = new Schema(
   {
-    bookingId: { ...id("Booking", true), unique: true },
+    bookingId: id("Booking", true),
     ashramId: id("Ashram", true),
     roomId: id("Room", true),
     dates: [Date],
@@ -256,5 +256,8 @@ export const BookingInventoryHoldSchema = new Schema(
   },
   opts("booking_inventory"),
 );
+// One hold document per (booking, room category) — a booking can span
+// multiple room categories, so bookingId alone can't be unique.
+BookingInventoryHoldSchema.index({ bookingId: 1, roomId: 1 }, { unique: true });
 BookingInventoryHoldSchema.index({ state: 1, expiresAt: 1 });
 BookingInventoryHoldSchema.index({ roomId: 1, dates: 1, state: 1 });

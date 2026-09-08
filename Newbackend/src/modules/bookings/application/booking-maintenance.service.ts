@@ -42,14 +42,22 @@ export class BookingMaintenanceService {
           { new: true, session },
         );
         if (!booking) return;
-        await this.repository.releaseInventory({
-          roomId: String(booking.roomId),
-          dates: booking.occupiedDates,
-          count: booking.roomsBookedCount,
-          state: "held",
-          session,
-        });
-        await this.holds.updateOne(
+        const rooms =
+          Array.isArray(booking.rooms) && booking.rooms.length
+            ? booking.rooms.map((r: any) => ({
+                roomId: String(r.roomId?._id ?? r.roomId),
+                units: r.units,
+              }))
+            : [{ roomId: String(booking.roomId), units: booking.roomsBookedCount }];
+        for (const room of rooms)
+          await this.repository.releaseInventory({
+            roomId: room.roomId,
+            dates: booking.occupiedDates,
+            count: room.units,
+            state: "held",
+            session,
+          });
+        await this.holds.updateMany(
           { bookingId: booking._id, state: "held" },
           {
             $set: {

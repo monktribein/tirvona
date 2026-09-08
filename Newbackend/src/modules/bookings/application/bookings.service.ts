@@ -285,7 +285,10 @@ export class BookingsService {
         state: "held",
         expiresAt: created.reservationExpiresAt,
       }));
-      await this.inventoryHolds.create(holdDocs, { session });
+      // Mongoose refuses create() with a session on >1 document unless
+      // ordered is explicit; multi-room-category bookings produce one hold
+      // doc per room, so this array can have length > 1.
+      await this.inventoryHolds.create(holdDocs, { session, ordered: true });
       await Promise.all([
         this.history.create(
           [
@@ -531,7 +534,7 @@ export class BookingsService {
           count: room.units,
           session,
         });
-      await this.inventoryHolds.updateOne(
+      await this.inventoryHolds.updateMany(
         { bookingId: booking._id, state: "held" },
         {
           $set: {
@@ -1163,7 +1166,7 @@ export class BookingsService {
           state: "booked",
           session,
         });
-      await this.inventoryHolds.updateOne(
+      await this.inventoryHolds.updateMany(
         { bookingId: row._id, state: "confirmed" },
         {
           $set: {
@@ -1271,7 +1274,7 @@ export class BookingsService {
           state,
           session,
         });
-      await this.inventoryHolds.updateOne(
+      await this.inventoryHolds.updateMany(
         { bookingId: existing._id, state: { $in: ["held", "confirmed"] } },
         {
           $set: {
