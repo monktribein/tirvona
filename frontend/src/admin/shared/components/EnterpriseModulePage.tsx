@@ -2942,6 +2942,29 @@ export const EnterpriseModulePage: React.FC<{
     }
   };
 
+  const handleTogglePause = async (item: any) => {
+    try {
+      const wasPaused = Boolean(item.bookingPaused);
+      if (wasPaused) {
+        await ashramService.requestResume(item._id || item.id);
+      } else {
+        await ashramService.pauseBooking(item._id || item.id);
+      }
+      addNotification(
+        wasPaused ? "Booking Resumed" : "Booking Paused",
+        `${item.name || "This stay"} is now ${wasPaused ? "available" : "not available"} for booking.`,
+        wasPaused ? "success" : "warning",
+      );
+      fetchModuleData();
+    } catch (err) {
+      addNotification(
+        "Update Failed",
+        getErrorMessage(err, "Could not update booking availability."),
+        "error",
+      );
+    }
+  };
+
   const handleExportCSV = () => {
     if (data.length === 0) return;
     const cols = moduleConfig.columns;
@@ -3134,6 +3157,11 @@ export const EnterpriseModulePage: React.FC<{
         }
         onToggleStatus={
           isReadOnlyFinance || activeModule === "bookings" ? undefined : (item) => handleToggleStatus(item)
+        }
+        onTogglePause={
+          activeModule === "ashrams" && !isReadOnlyFinance
+            ? (item) => handleTogglePause(item)
+            : undefined
         }
         onResetOwnerPassword={
           activeModule === "ashrams"

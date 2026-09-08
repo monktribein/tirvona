@@ -235,6 +235,7 @@ export interface EnterpriseDataTableProps {
   onBulkSuspend?: (ids: string[]) => void | Promise<void>;
   onBulkActivate?: (ids: string[]) => void | Promise<void>;
   onToggleStatus?: (item: any) => void;
+  onTogglePause?: (item: any) => void | Promise<void>;
   onResetOwnerPassword?: (ownerId: string, password: string) => Promise<void>;
   formFields?: Array<{
     name: string;
@@ -259,6 +260,7 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
   onManage,
   onDelete,
   onToggleStatus,
+  onTogglePause,
   onResetOwnerPassword,
   onBulkDelete,
   onBulkApprove,
@@ -1211,6 +1213,19 @@ export const EnterpriseDataTable: React.FC<EnterpriseDataTableProps> = ({
                       {["active", "approved"].includes(String(detailItem.status || "").toLowerCase())
                         ? "Suspend"
                         : "Reactivate"}
+                    </button>
+                  )}
+                  {onTogglePause && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const wasPaused = Boolean(detailItem.bookingPaused);
+                        await onTogglePause(detailItem);
+                        setDetailItem((current: any) => ({ ...current, bookingPaused: !wasPaused }));
+                      }}
+                      className="px-5 py-2.5 rounded-full bg-rose-50 text-rose-600 text-xs font-extrabold cursor-pointer"
+                    >
+                      {detailItem.bookingPaused ? "Resume Booking" : "Pause Booking"}
                     </button>
                   )}
                   {onResetOwnerPassword && detailOwnerId && (
