@@ -732,7 +732,7 @@ export const AshramDetailPage: React.FC = () => {
   ]);
 
   useEffect(() => {
-    if (!currentAshramId || !firstSelectedRoom?._id || !checkIn || !checkOut) {
+    if (!currentAshramId || !Object.keys(selectedRooms).length || !checkIn || !checkOut) {
       setServerQuote(null);
       return;
     }
@@ -742,7 +742,7 @@ export const AshramDetailPage: React.FC = () => {
       try {
         const res = await bookingService.quote({
           ashramId: currentAshramId,
-          roomId: firstSelectedRoom._id,
+          rooms: Object.entries(selectedRooms).map(([roomId, units]) => ({ roomId, units })),
           checkInDate: checkIn,
           checkOutDate: checkOut,
           guestsCount: Math.max(1, adults + children),
@@ -770,7 +770,7 @@ export const AshramDetailPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     currentAshramId,
-    firstSelectedRoom?._id,
+    JSON.stringify(selectedRooms),
     checkIn,
     checkOut,
     adults,

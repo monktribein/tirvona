@@ -190,32 +190,85 @@ export const ReceptionCheckinPage: React.FC = () => {
     }
   };
 
-  const handleAssignRoomNumber = async (bookingId: string) => {
-    const roomNo = await promptAction({
-      title: "Assign room number",
-      message: "Enter the physical room number for this reservation.",
-      placeholder: "e.g. Room 102",
-      confirmLabel: "Assign Room",
-      required: true,
-    });
-    if (roomNo === null) return;
-    try {
-      const roomNumbersArray = roomNo.split(",").map(s => s.trim()).filter(Boolean);
-      const res = await bookingService.assignRoomNumber(bookingId, roomNumbersArray);
-      if (res.data?.success) {
+  const getBookingRoomCategories = (booking: any): { roomId: string; name: string; units: number }[] => {
+    if (Array.isArray(booking?.rooms) && booking.rooms.length) {
+      return booking.rooms.map((r: any) => ({
+        roomId: String(r.roomId?._id || r.roomId || ""),
+        name: r.roomId?.name || "Room",
+        units: Number(r.units) || 1,
+      }));
+    }
+    return [
+      {
+        roomId: String(booking?.roomId?._id || booking?.roomId || ""),
+        name: booking?.roomId?.name || "Room",
+        units: Number(booking?.roomsBookedCount) || 1,
+      },
+    ];
+  };
+
+  const handleAssignRoomNumber = async (booking: any) => {
+    const categories = getBookingRoomCategories(booking);
+
+    if (categories.length <= 1) {
+      const roomNo = await promptAction({
+        title: "Assign room number",
+        message: `Enter ${categories[0].units} room number(s) for this reservation, comma-separated.`,
+        placeholder: "e.g. Room 102",
+        confirmLabel: "Assign Room",
+        required: true,
+      });
+      if (roomNo === null) return;
+      const roomNumbersArray = roomNo.split(",").map((s) => s.trim()).filter(Boolean);
+      if (roomNumbersArray.length !== categories[0].units) {
         addNotification(
-          "Room Assigned",
-          `Assigned room "${roomNo}" to reservation.`,
-          "success",
+          "Count Mismatch",
+          `This booking needs ${categories[0].units} room number(s), you entered ${roomNumbersArray.length}.`,
+          "error",
         );
+        return;
+      }
+      try {
+        const res = await bookingService.assignRoomNumber(booking._id, roomNumbersArray);
+        if (res.data?.success) {
+          addNotification("Room Assigned", `Assigned room "${roomNo}" to reservation.`, "success");
+          fetchActiveBookings();
+        }
+      } catch (err) {
+        addNotification("Assignment Failed", getErrorMessage(err, "Could not assign room."), "error");
+      }
+      return;
+    }
+
+    const groups: { roomId: string; roomNumbers: string[] }[] = [];
+    for (const cat of categories) {
+      const roomNo = await promptAction({
+        title: `Assign room number — ${cat.name}`,
+        message: `Enter ${cat.units} room number(s) for ${cat.name}, comma-separated.`,
+        placeholder: "e.g. 101, 102",
+        confirmLabel: "Next",
+        required: true,
+      });
+      if (roomNo === null) return;
+      const numbers = roomNo.split(",").map((s) => s.trim()).filter(Boolean);
+      if (numbers.length !== cat.units) {
+        addNotification(
+          "Count Mismatch",
+          `${cat.name} needs ${cat.units} room number(s), you entered ${numbers.length}.`,
+          "error",
+        );
+        return;
+      }
+      groups.push({ roomId: cat.roomId, roomNumbers: numbers });
+    }
+    try {
+      const res = await bookingService.assignRoomNumber(booking._id, groups);
+      if (res.data?.success) {
+        addNotification("Room Assigned", "Assigned rooms to reservation.", "success");
         fetchActiveBookings();
       }
     } catch (err) {
-      addNotification(
-        "Assignment Failed",
-        getErrorMessage(err, "Could not assign room."),
-        "error",
-      );
+      addNotification("Assignment Failed", getErrorMessage(err, "Could not assign room."), "error");
     }
   };
 
@@ -340,7 +393,7 @@ export const ReceptionCheckinPage: React.FC = () => {
                         </span>
                       ) : bk.status !== "checked_out" ? (
                         <button
-                          onClick={() => handleAssignRoomNumber(bk._id)}
+                          onClick={() => handleAssignRoomNumber(bk)}
                           className="mt-0.5 text-[10px] font-bold text-[#0A4DA6] hover:underline cursor-pointer"
                         >
                           + Assign Room No

@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { X, MapPin, Clock, CheckCircle2, LogOut, Navigation, AlertCircle, Calendar, ShieldCheck } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, MapPin, Clock, CheckCircle2, LogOut, Navigation, AlertCircle, Calendar, ShieldCheck, Loader2 } from 'lucide-react';
 import { useGeolocation } from '../hooks/useGeolocation';
 import { buildGoogleMapsUrl } from '../utils/formatDate';
 import { useLanguage } from '../context/LanguageContext';
+import { leadApi } from '../services/leadApi';
 
 export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpdated }) {
   const { t } = useLanguage();
@@ -11,11 +12,50 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
     checkedIn: false,
     checkInTime: null,
     checkInCoords: null,
+    checkInAddress: '',
     checkedOut: false,
     checkOutTime: null,
     checkOutCoords: null,
+    checkOutAddress: '',
   });
+  const [loadingInitial, setLoadingInitial] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
+
+  // Fetch today's current attendance state from backend
+  useEffect(() => {
+    if (isOpen) {
+      let isMounted = true;
+      setLoadingInitial(true);
+      leadApi.getTodayAttendance()
+        .then((data) => {
+          if (!isMounted || !data) return;
+          if (data.checkedIn) {
+            setAttendance({
+              checkedIn: true,
+              checkInTime: data.checkInTime ? new Date(data.checkInTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : null,
+              checkInCoords: data.checkInLocation ? { lat: data.checkInLocation.latitude, lng: data.checkInLocation.longitude } : null,
+              checkInAddress: data.checkInLocation?.address || '',
+              checkedOut: data.checkedOut,
+              checkOutTime: data.checkOutTime ? new Date(data.checkOutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : null,
+              checkOutCoords: data.checkOutLocation ? { lat: data.checkOutLocation.latitude, lng: data.checkOutLocation.longitude } : null,
+              checkOutAddress: data.checkOutLocation?.address || '',
+            });
+          }
+        })
+        .catch((err) => {
+          console.warn('Could not fetch initial attendance:', err);
+        })
+        .finally(() => {
+          if (isMounted) setLoadingInitial(false);
+        });
+
+      return () => {
+        isMounted = false;
+      };
+    }
+  }, [isOpen]);
+
   // Lock background body scroll and pause Lenis smooth scroll while modal is open
   React.useEffect(() => {
     if (isOpen) {
@@ -62,33 +102,61 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
 
   const handleCheckIn = () => {
     setStatusMsg('Capturing Geotag location...');
-    captureCurrentLocation((coords) => {
-      const now = new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'medium' });
-      const record = {
-        ...attendance,
-        checkedIn: true,
-        checkInTime: now,
-        checkInCoords: coords,
-      };
-      setAttendance(record);
-      setStatusMsg('✅ Check-In Attendance Marked with Geotag Location!');
-      if (onAttendanceUpdated) onAttendanceUpdated(record);
+    captureCurrentLocation(async (coords) => {
+      setSubmitting(true);
+      try {
+        const res = await leadApi.checkIn({
+          latitude: coords.lat,
+          longitude: coords.lng,
+          accuracy: coords.accuracy || 10,
+          address: coords.address || `${user?.district || 'Field'}, Uttar Pradesh`
+        });
+        const nowFormatted = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const record = {
+          ...attendance,
+          checkedIn: true,
+          checkInTime: nowFormatted,
+          checkInCoords: coords,
+          checkInAddress: coords.address || '',
+        };
+        setAttendance(record);
+        setStatusMsg('✅ Check-In Attendance Saved to Server with GPS Location!');
+        if (onAttendanceUpdated) onAttendanceUpdated(record);
+      } catch (err) {
+        setStatusMsg(`❌ Check-in failed: ${err.message || 'Server error'}`);
+      } finally {
+        setSubmitting(false);
+      }
     });
   };
 
   const handleCheckOut = () => {
     setStatusMsg('Capturing Geotag location for Check-Out...');
-    captureCurrentLocation((coords) => {
-      const now = new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'medium' });
-      const record = {
-        ...attendance,
-        checkedOut: true,
-        checkOutTime: now,
-        checkOutCoords: coords,
-      };
-      setAttendance(record);
-      setStatusMsg('✅ Check-Out Marked with Geotag Location!');
-      if (onAttendanceUpdated) onAttendanceUpdated(record);
+    captureCurrentLocation(async (coords) => {
+      setSubmitting(true);
+      try {
+        const res = await leadApi.checkOut({
+          latitude: coords.lat,
+          longitude: coords.lng,
+          accuracy: coords.accuracy || 10,
+          address: coords.address || `${user?.district || 'Field'}, Uttar Pradesh`
+        });
+        const nowFormatted = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const record = {
+          ...attendance,
+          checkedOut: true,
+          checkOutTime: nowFormatted,
+          checkOutCoords: coords,
+          checkOutAddress: coords.address || '',
+        };
+        setAttendance(record);
+        setStatusMsg('✅ Check-Out Saved to Server with GPS Location!');
+        if (onAttendanceUpdated) onAttendanceUpdated(record);
+      } catch (err) {
+        setStatusMsg(`❌ Check-out failed: ${err.message || 'Server error'}`);
+      } finally {
+        setSubmitting(false);
+      }
     });
   };
 

@@ -4,10 +4,12 @@ export const LEAD_CONNECTION = "leadCollection";
 export const LEAD_USER_MODEL = "LeadCollectionUser";
 export const LEAD_MODEL = "LeadCollectionLead";
 export const LEAD_REGION_MODEL = "LeadCollectionRegion";
+export const LEAD_ATTENDANCE_MODEL = "LeadCollectionAttendance";
 
 export const LEAD_USER_COLLECTION = "lead_users";
 export const LEAD_COLLECTION_NAME = "leads";
 export const LEAD_REGION_COLLECTION = "lead_regions";
+export const LEAD_ATTENDANCE_COLLECTION = "lead_attendances";
 
 export const LEAD_USER_ROLES = [
   "field_agent",

@@ -108,5 +108,21 @@ export const leadApi = {
   updateLead: (id, lead) =>
     request(`/agent/leads/${id}`, { method: 'PUT', body: lead }),
 
-  deleteLead: (id) => request(`/agent/leads/${id}`, { method: 'DELETE' })
+  deleteLead: (id) => request(`/agent/leads/${id}`, { method: 'DELETE' }),
+
+  // Attendance Endpoints
+  getTodayAttendance: () => request('/agent/attendance/today'),
+
+  checkIn: (data) =>
+    request('/agent/attendance/check-in', { method: 'POST', body: data }),
+
+  checkOut: (data) =>
+    request('/agent/attendance/check-out', { method: 'POST', body: data }),
+
+  myAttendanceHistory: (params = {}) => {
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, value]) => value !== '' && value != null)
+    ).toString();
+    return request(`/agent/attendance/history${query ? `?${query}` : ''}`);
+  }
 };

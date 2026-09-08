@@ -142,6 +142,7 @@ export const OwnerDashboard: React.FC = () => {
   // Booking Edit / Assign Room Number State
   const [editingBooking, setEditingBooking] = useState<any | null>(null);
   const [editRoomNumber, setEditRoomNumber] = useState("");
+  const [roomNumberInputs, setRoomNumberInputs] = useState<Record<string, string>>({});
   const [savingRoomNo, setSavingRoomNo] = useState(false);
 
   // Ashram Cancellation Modal State (100% Refund)
@@ -429,16 +430,71 @@ export const OwnerDashboard: React.FC = () => {
     }
   };
 
+  // Room categories on a booking, each with how many physical room numbers it needs
+  const getBookingRoomCategories = (booking: any): { roomId: string; name: string; units: number }[] => {
+    if (Array.isArray(booking?.rooms) && booking.rooms.length) {
+      return booking.rooms.map((r: any) => ({
+        roomId: String(r.roomId?._id || r.roomId || ""),
+        name: r.roomId?.name || "Room",
+        units: Number(r.units) || 1,
+      }));
+    }
+    return [
+      {
+        roomId: String(booking?.roomId?._id || booking?.roomId || ""),
+        name: booking?.roomId?.name || "Room",
+        units: Number(booking?.roomsBookedCount) || 1,
+      },
+    ];
+  };
+
   // Handle Room Assignment
   const handleSaveRoomNumber = async (bookingId: string) => {
-    if (!editRoomNumber.trim()) return;
+    const categories = getBookingRoomCategories(editingBooking);
     setSavingRoomNo(true);
     try {
-      const roomNumbersArray = editRoomNumber.split(",").map(s => s.trim()).filter(Boolean);
-      await bookingService.assignRoomNumber(bookingId, roomNumbersArray);
-      notifyRef.current("Room Assigned", `Room numbers set to ${roomNumbersArray.join(", ")}`, "success");
+      if (categories.length <= 1) {
+        const roomNumbersArray = editRoomNumber.split(",").map((s) => s.trim()).filter(Boolean);
+        if (!roomNumbersArray.length) {
+          setSavingRoomNo(false);
+          return;
+        }
+        if (roomNumbersArray.length !== categories[0].units) {
+          notifyRef.current(
+            "Count Mismatch",
+            `This booking needs ${categories[0].units} room number(s), you entered ${roomNumbersArray.length}.`,
+            "error",
+          );
+          setSavingRoomNo(false);
+          return;
+        }
+        await bookingService.assignRoomNumber(bookingId, roomNumbersArray);
+        notifyRef.current("Room Assigned", `Room numbers set to ${roomNumbersArray.join(", ")}`, "success");
+      } else {
+        const groups: { roomId: string; roomNumbers: string[] }[] = [];
+        for (const cat of categories) {
+          const numbers = (roomNumberInputs[cat.roomId] || "").split(",").map((s) => s.trim()).filter(Boolean);
+          if (numbers.length !== cat.units) {
+            notifyRef.current(
+              "Count Mismatch",
+              `${cat.name} needs ${cat.units} room number(s), you entered ${numbers.length}.`,
+              "error",
+            );
+            setSavingRoomNo(false);
+            return;
+          }
+          groups.push({ roomId: cat.roomId, roomNumbers: numbers });
+        }
+        await bookingService.assignRoomNumber(bookingId, groups);
+        notifyRef.current(
+          "Room Assigned",
+          `Room numbers set to ${groups.flatMap((g) => g.roomNumbers).join(", ")}`,
+          "success",
+        );
+      }
       setEditingBooking(null);
       setEditRoomNumber("");
+      setRoomNumberInputs({});
       if (activeDetailDate) void fetchDateBookings(activeDetailDate);
       void fetchCalendar();
       void load(true);
@@ -1048,6 +1104,7 @@ export const OwnerDashboard: React.FC = () => {
                                 onClick={() => {
                                   setEditingBooking(booking);
                                   setEditRoomNumber(assignedRoom !== "Unassigned" ? assignedRoom : "");
+                                  setRoomNumberInputs({});
                                 }}
                                 className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[11px] font-bold text-slate-700 dark:text-slate-200 hover:border-[#0A4DA6] hover:text-[#0A4DA6] transition cursor-pointer flex items-center gap-1"
                               >
@@ -1158,22 +1215,55 @@ export const OwnerDashboard: React.FC = () => {
                 </span>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-400">Room Number / Door Label</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. 101, B-204, Deluxe Suite 4"
-                  value={editRoomNumber}
-                  onChange={(e) => setEditRoomNumber(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none dark:text-white"
-                />
-              </div>
+              {(() => {
+                const categories = getBookingRoomCategories(editingBooking);
+                if (categories.length <= 1) {
+                  return (
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-400">
+                        Room Number(s) — {categories[0].units} needed
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. 101, B-204, Deluxe Suite 4"
+                        value={editRoomNumber}
+                        onChange={(e) => setEditRoomNumber(e.target.value)}
+                        className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none dark:text-white"
+                      />
+                    </div>
+                  );
+                }
+                return (
+                  <div className="space-y-3">
+                    <p className="text-[11px] text-slate-400">
+                      This booking has multiple room categories — enter room numbers separately for each.
+                    </p>
+                    {categories.map((cat) => (
+                      <div className="space-y-1" key={cat.roomId}>
+                        <label className="text-xs font-bold text-slate-400">
+                          {cat.name} — {cat.units} needed
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          placeholder={cat.units > 1 ? "e.g. 101, 102" : "e.g. 101"}
+                          value={roomNumberInputs[cat.roomId] || ""}
+                          onChange={(e) =>
+                            setRoomNumberInputs((prev) => ({ ...prev, [cat.roomId]: e.target.value }))
+                          }
+                          className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold focus:outline-none dark:text-white"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
 
             <button
               type="submit"
-              disabled={savingRoomNo || !editRoomNumber.trim()}
+              disabled={savingRoomNo}
               className="w-full py-3 bg-[#0A4DA6] text-white rounded-full font-extrabold text-xs shadow-md hover:bg-[#083b80] transition disabled:opacity-50 cursor-pointer"
             >
               {savingRoomNo ? "Saving..." : "Save Room Allocation"}

@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { MongooseModule } from "@nestjs/mongoose";
 import { leadCollectionConfig } from "../config/lead-collection.config";
 import {
+  LEAD_ATTENDANCE_MODEL,
   LEAD_CONNECTION,
   LEAD_MODEL,
   LEAD_REGION_MODEL,
@@ -10,6 +11,7 @@ import {
 import { LeadSchema } from "./persistence/lead.schema";
 import { LeadRegionSchema } from "./persistence/lead-region.schema";
 import { LeadUserSchema } from "./persistence/lead-user.schema";
+import { LeadAttendanceSchema } from "./persistence/lead-attendance.schema";
 
 @Module({
   imports: [
@@ -33,6 +35,7 @@ import { LeadUserSchema } from "./persistence/lead-user.schema";
         { name: LEAD_USER_MODEL, schema: LeadUserSchema },
         { name: LEAD_MODEL, schema: LeadSchema },
         { name: LEAD_REGION_MODEL, schema: LeadRegionSchema },
+        { name: LEAD_ATTENDANCE_MODEL, schema: LeadAttendanceSchema },
       ],
       LEAD_CONNECTION,
     ),

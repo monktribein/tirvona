@@ -164,9 +164,9 @@ export default function LeadsDashboardPage({
       </div>
 
       {filtered.length > 0 ? (
-        <div className="space-y-2">
+        <div className="space-y-3 w-full">
           {filtered.map((lead) => (
-            <div key={lead.id} className="snap-start shrink-0 w-[300px] sm:w-[360px] md:w-[380px]">
+            <div key={lead.id} className="w-full">
               <LeadCard
                 lead={lead}
                 onApprove={onApproveLead}

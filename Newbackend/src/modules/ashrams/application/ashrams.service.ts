@@ -705,6 +705,67 @@ export class AshramsService {
     throw new ForbiddenException("You do not have access to this ashram.");
   }
 
+  async pauseBooking(user: AuthenticatedUser, id: string): Promise<any> {
+    const ashram = await this.ashrams.findOne({ _id: id, deletedAt: null });
+    this.assertScope(user, ashram);
+    ashram.bookingPaused = true;
+    ashram.bookingPausedAt = new Date();
+    ashram.availabilityRequest = { pending: false, requestedAt: null, requestedBy: null };
+    await ashram.save();
+    return ashram.toObject();
+  }
+
+  async requestResume(user: AuthenticatedUser, id: string): Promise<any> {
+    const ashram = await this.ashrams.findOne({ _id: id, deletedAt: null });
+    this.assertScope(user, ashram);
+    if (!ashram.bookingPaused)
+      throw new BadRequestException("This stay is already accepting bookings.");
+    if (canManageAllAshrams(user)) {
+      ashram.bookingPaused = false;
+      ashram.bookingPausedAt = null;
+      ashram.availabilityRequest = { pending: false, requestedAt: null, requestedBy: null };
+    } else {
+      ashram.availabilityRequest = {
+        pending: true,
+        requestedAt: new Date(),
+        requestedBy: user.id,
+      };
+    }
+    await ashram.save();
+    return ashram.toObject();
+  }
+
+  async listAvailabilityRequests(user: AuthenticatedUser): Promise<any[]> {
+    if (!canManageAllAshrams(user))
+      throw new ForbiddenException("Only Super Admin can view availability requests.");
+    return this.ashrams
+      .find({ "availabilityRequest.pending": true, deletedAt: null })
+      .select("name address.city address.state ownerId bookingPaused availabilityRequest")
+      .populate("ownerId", "name email phone")
+      .sort({ "availabilityRequest.requestedAt": 1 })
+      .lean();
+  }
+
+  async decideAvailabilityRequest(
+    user: AuthenticatedUser,
+    id: string,
+    approve: boolean,
+  ): Promise<any> {
+    if (!canManageAllAshrams(user))
+      throw new ForbiddenException("Only Super Admin can decide availability requests.");
+    const ashram = await this.ashrams.findOne({ _id: id, deletedAt: null });
+    if (!ashram) throw new NotFoundException("Stay not found");
+    if (!ashram.availabilityRequest?.pending)
+      throw new BadRequestException("There is no pending availability request for this stay.");
+    if (approve) {
+      ashram.bookingPaused = false;
+      ashram.bookingPausedAt = null;
+    }
+    ashram.availabilityRequest = { pending: false, requestedAt: null, requestedBy: null };
+    await ashram.save();
+    return ashram.toObject();
+  }
+
   async create(user: AuthenticatedUser, dto: SaveAshramDto): Promise<any> {
     assertNoInlineMedia(dto);
     const { rooms = [], ...payload } = dto;

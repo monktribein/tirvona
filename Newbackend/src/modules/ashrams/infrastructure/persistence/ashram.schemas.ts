@@ -136,6 +136,13 @@ export const AshramSchema = new Schema(
       index: true,
     },
     rejectionReason: String,
+    bookingPaused: { type: Boolean, default: false, index: true },
+    bookingPausedAt: { type: Date, default: null },
+    availabilityRequest: {
+      pending: { type: Boolean, default: false },
+      requestedAt: { type: Date, default: null },
+      requestedBy: id("User"),
+    },
     inspectionDetails: {
       officerId: id("User"),
       scheduledDate: Date,
