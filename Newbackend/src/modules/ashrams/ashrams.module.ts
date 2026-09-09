@@ -17,6 +17,7 @@ import { BookingSchema } from "../bookings/infrastructure/persistence/booking.sc
 import { ParkingModule } from "../parking/parking.module";
 import { AshramSlugService } from "./application/ashram-slug.service";
 import { OfflineInventoryService } from "./application/offline-inventory.service";
+import { RoomSummaryService } from "./application/room-summary.service";
 import { OfflineInventoryController } from "./presentation/offline-inventory.controller";
 
 @Module({
@@ -42,12 +43,18 @@ import { OfflineInventoryController } from "./presentation/offline-inventory.con
     RoomsController,
     OfflineInventoryController,
   ],
-  providers: [AshramsService, AshramSlugService, OfflineInventoryService],
+  providers: [
+    AshramsService,
+    AshramSlugService,
+    OfflineInventoryService,
+    RoomSummaryService,
+  ],
   exports: [
     MongooseModule,
     AshramsService,
     AshramSlugService,
     OfflineInventoryService,
+    RoomSummaryService,
   ],
 })
 export class AshramsModule {}

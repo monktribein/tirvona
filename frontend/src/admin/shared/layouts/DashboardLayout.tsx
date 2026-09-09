@@ -50,6 +50,7 @@ import {
   type AvailabilityRequest,
 } from "../../../utils/ashramAvailabilityHelper";
 import { ashramService } from "../../../services";
+import { SectionSummaryStrip } from "../components/SectionSummary";
 
 interface NavGroup {
   groupName: string;
@@ -396,6 +397,7 @@ export const DashboardLayout: React.FC = () => {
       groupName: "Room & Inventory Management",
       icon: <Bed size={15} />,
       links: [
+        { label: "Total Rooms", path: "/admin/manage/rooms/total" },
         {
           label: "Room Category Approvals",
           path: "/admin/approvals/room-categories",
@@ -614,6 +616,10 @@ export const DashboardLayout: React.FC = () => {
       links: [
         { label: "All Leads", path: "/admin/lead-collection/leads" },
         { label: "Field Executives", path: "/admin/lead-collection/agents" },
+        {
+          label: "Movement Tracking",
+          path: "/admin/lead-collection/tracking",
+        },
       ],
     },
     {
@@ -695,6 +701,7 @@ export const DashboardLayout: React.FC = () => {
       groupName: "Room management",
       icon: <Bed size={15} />,
       links: [
+        { label: "Total Rooms", path: `${ownerBase}/total-rooms` },
         { label: "Manage Rooms", path: `${ownerBase}/rooms` },
         { label: "Offline Rooms / Inventory", path: `${ownerBase}/offline-inventory` },
         { label: "Inventory Calendar", path: `${ownerBase}/calendar` },
@@ -1441,6 +1448,7 @@ export const DashboardLayout: React.FC = () => {
         )}
 
         <main className="flex-grow p-4 lg:p-6 pb-12 lg:pb-16 overflow-y-auto min-w-0 bg-[#F0F4F9] dark:bg-[#070F1B]">
+          <SectionSummaryStrip pathname={location.pathname} />
           <Outlet />
         </main>
       </div>

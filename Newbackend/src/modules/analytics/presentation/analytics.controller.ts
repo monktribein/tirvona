@@ -5,6 +5,7 @@ import {
 } from "../../../common/decorators/current-user.decorator";
 import { Roles } from "../../../common/decorators/roles.decorator";
 import { AnalyticsService } from "../application/analytics.service";
+import { SectionSummaryService } from "../application/section-summary.service";
 import {
   AnalyticsOverviewQueryDto,
   RecentBookingsQueryDto,
@@ -22,7 +23,30 @@ const OVERSIGHT_ROLES = [
 
 @Controller("analytics")
 export class AnalyticsController {
-  constructor(private readonly service: AnalyticsService) {}
+  constructor(
+    private readonly service: AnalyticsService,
+    private readonly sections: SectionSummaryService,
+  ) {}
+
+  /**
+   * A summary block for every sidebar section the caller can see. The
+   * Executive Dashboard renders the whole set; an individual section page
+   * picks out its own key.
+   */
+  @Get("sections")
+  @Roles(
+    ...OVERSIGHT_ROLES,
+    "owner",
+    "ashram_owner",
+    "ashram_admin",
+    "stay_admin",
+    "manager",
+    "temple_owner",
+  )
+  async sectionSummaries(@CurrentUser() user: AuthenticatedUser) {
+    return { success: true, data: await this.sections.sections(user) };
+  }
+
   @Get("dashboard")
   @Roles("owner", "stay_admin", "manager", "staff", "super_admin")
   async dashboard(

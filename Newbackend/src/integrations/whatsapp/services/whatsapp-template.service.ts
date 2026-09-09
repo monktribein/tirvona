@@ -55,6 +55,9 @@ export class WhatsAppTemplateService {
           message,
           idempotencyKey: input.idempotencyKey,
           correlationId: input.correlationId,
+          // Text providers send `message`; template providers map these onto
+          // their own approved template components.
+          templateVariables: input.variables,
         });
       } catch (error) {
         const retryable =
@@ -131,6 +134,18 @@ export class WhatsAppTemplateService {
         return `Your Tirvona refund${suffix} has been updated.`;
       case WHATSAPP_TEMPLATE.CHECKIN_REMINDER:
         return `Reminder: your Tirvona check-in${suffix} is coming up.`;
+      case WHATSAPP_TEMPLATE.CHECKIN_CONFIRMED:
+        return `You are checked in for your Tirvona stay${suffix}.`;
+      case WHATSAPP_TEMPLATE.CHECKOUT_COMPLETED:
+        return `Your Tirvona stay${suffix} is complete. Thank you for staying with us.`;
+      case WHATSAPP_TEMPLATE.AARTI_CONFIRMATION:
+        return `Your Tirvona aarti pass${suffix} is confirmed.`;
+      case WHATSAPP_TEMPLATE.AARTI_CANCELLATION:
+        return `Your Tirvona aarti booking${suffix} has been cancelled.`;
+      case WHATSAPP_TEMPLATE.EVENT_REGISTRATION:
+        return `Your Tirvona event registration${suffix} is confirmed.`;
+      case WHATSAPP_TEMPLATE.EVENT_CANCELLATION:
+        return `Your Tirvona event registration${suffix} has been cancelled.`;
       case WHATSAPP_TEMPLATE.GENERAL_NOTIFICATION:
         return title
           ? `${title}${suffix}`

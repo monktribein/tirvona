@@ -111,6 +111,7 @@ interface Overview {
     label: string;
     bookings: number;
     revenue: number;
+    seats?: number;
     allTimeBookings?: number;
     allTimeRevenue?: number;
   }[];
@@ -623,15 +624,17 @@ const StatTile: React.FC<{
   caption?: React.ReactNode;
   children?: React.ReactNode;
 }> = ({ label, value, caption, children }) => (
-  <div className="flex h-full min-h-[172px] flex-col bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm">
+  // No fixed minimum height: a tile is as tall as what it holds, so the plain
+  // number tiles no longer reserve room for a chart they never render.
+  <div className="flex h-full flex-col bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
     <span className="text-[11px] font-extrabold text-gray-500 dark:text-gray-400 block tracking-wide">
       {label}
     </span>
-    <h4 className="mt-2 text-2xl font-black text-[#0B192C] dark:text-white">
+    <h4 className="mt-1.5 text-xl font-black text-[#0B192C] dark:text-white">
       {value}
     </h4>
-    {caption && <div className="mt-2 text-[10px] font-semibold">{caption}</div>}
-    {children && <div className="mt-auto pt-3">{children}</div>}
+    {caption && <div className="mt-1.5 text-[10px] font-semibold">{caption}</div>}
+    {children && <div className="mt-auto pt-2.5">{children}</div>}
   </div>
 );
 
@@ -817,7 +820,7 @@ export const AdminDashboard: React.FC = () => {
       <div
         className={`flex flex-col gap-6 transition-opacity ${refreshing ? "opacity-60" : "opacity-100"}`}
       >
-        <div className="order-2 flex flex-wrap items-center justify-end gap-3">
+        <div className="order-1 flex flex-wrap items-center justify-end gap-3">
           <div className="flex items-center gap-1.5 rounded-2xl border border-gray-200 bg-white p-1 text-xs dark:border-slate-800 dark:bg-slate-900">
             {(["daily", "weekly", "monthly", "yearly"] as const).map((tab) => (
               <button key={tab} type="button" onClick={() => setRange(tab)} className={`rounded-xl px-3 py-1.5 capitalize ${range === tab ? "bg-[#0A4DA6] text-white" : "text-gray-500 hover:text-[#0A4DA6]"}`}>{tab}</button>
@@ -973,12 +976,14 @@ export const AdminDashboard: React.FC = () => {
                   Revenue by stream
                 </h3>
                 <RankedBars
-                  rows={(overview?.modules ?? []).map((m) => ({
-                    key: m.module,
-                    label: m.label,
-                    sub: `${m.bookings} booking${m.bookings === 1 ? "" : "s"}`,
-                    value: m.revenue,
-                  }))}
+                  rows={(overview?.modules ?? [])
+                    .filter((m) => m.seats === undefined)
+                    .map((m) => ({
+                      key: m.module,
+                      label: m.label,
+                      sub: `${m.bookings} booking${m.bookings === 1 ? "" : "s"}`,
+                      value: m.revenue,
+                    }))}
                   format={formatCurrency}
                 />
                 {(overview?.modules ?? []).some(
@@ -1010,7 +1015,10 @@ export const AdminDashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="order-1 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 auto-rows-fr gap-5">
+        {/* Six across, so the twelve tiles a super admin sees land as two even
+            rows. Every step down divides twelve as well - three columns at md,
+            two on mobile - so no breakpoint leaves a part-filled row. */}
+        <div className="order-2 grid gap-4 grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
           <StatTile
             label="Booked value"
             value={formatCurrency(overview?.totals.windowGrossValue ?? 0)}
@@ -1063,18 +1071,28 @@ export const AdminDashboard: React.FC = () => {
           <StatTile label="Verified ashrams" value={formatIndianNumber(system?.ashrams?.approved ?? 0)} caption={<span className="text-gray-400">{formatIndianNumber(system?.ashrams?.pending ?? 0)} awaiting verification</span>} />
           <StatTile label="Pilgrims booked" value={formatIndianNumber(system?.users?.pilgrims ?? 0)} caption={<span className="text-gray-400">Distinct pilgrims with bookings</span>} />
           <StatTile label="Registered owners" value={formatIndianNumber(system?.users?.owners ?? 0)} caption={<span className="text-gray-400">Across authorized ashrams</span>} />
-          {(overview?.modules ?? []).map((module) => (
-            <StatTile
-              key={module.module}
-              label={`${module.label} revenue`}
-              value={formatCurrency(module.revenue ?? 0)}
-              caption={
-                <span className="text-gray-400">
-                  {formatIndianNumber(module.bookings ?? 0)} bookings in {RANGE_LABEL[range]}
-                </span>
-              }
-            />
-          ))}
+          {(overview?.modules ?? []).map((module) => {
+            // Event registration is free, so a revenue tile would report a
+            // meaningless zero. That stream reports attendance instead.
+            const isFree = module.seats !== undefined;
+            return (
+              <StatTile
+                key={module.module}
+                label={isFree ? `${module.label} seats` : `${module.label} revenue`}
+                value={
+                  isFree
+                    ? formatIndianNumber(module.seats ?? 0)
+                    : formatCurrency(module.revenue ?? 0)
+                }
+                caption={
+                  <span className="text-gray-400">
+                    {formatIndianNumber(module.bookings ?? 0)}{" "}
+                    {isFree ? "registrations" : "bookings"} in {RANGE_LABEL[range]}
+                  </span>
+                }
+              />
+            );
+          })}
         </div>
 
         <div className="order-4 grid grid-cols-1 lg:grid-cols-12 gap-6">

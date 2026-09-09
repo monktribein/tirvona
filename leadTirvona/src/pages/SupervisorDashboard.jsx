@@ -41,6 +41,7 @@ import {
 import { supervisorApi } from '../services/supervisorApi';
 import { formatDate } from '../utils/formatDate';
 import { useLanguage } from '../context/LanguageContext';
+import AgentTrackingView from '../components/AgentTrackingView';
 
 export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldPortal }) {
   const { language: selectedLanguage, setLanguage: setSelectedLanguage, t } = useLanguage();
@@ -1034,6 +1035,13 @@ export default function SupervisorDashboard({ supervisor, onLogout, onOpenFieldP
                         <span className="font-extrabold text-[#0F172A]">{agentDetail?.lastLoginAt ? formatDate(agentDetail.lastLoginAt) : 'Never'}</span>
                       </div>
                     </div>
+                  </div>
+
+                  <div className="bg-white border border-[#E2E8F0] rounded-2xl sm:rounded-3xl p-6 shadow-xs">
+                    <AgentTrackingView
+                      agentId={selectedAgentId}
+                      agentName={agentDetail?.name}
+                    />
                   </div>
 
                   <div className="bg-white border border-[#E2E8F0] rounded-2xl sm:rounded-3xl p-6 shadow-xs space-y-4">

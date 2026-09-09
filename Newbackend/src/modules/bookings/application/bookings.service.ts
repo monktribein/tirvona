@@ -43,6 +43,7 @@ import type {
 import { BookingIdentityService } from "./booking-identity.service";
 import { BookingPricingService } from "./booking-pricing.service";
 import { bookingConfirmedOutboxEvent } from "./booking-notification.factory";
+import { normalizeWhatsAppNumber } from "../../../integrations/whatsapp/utils/whatsapp-phone.util";
 
 @Injectable()
 export class BookingsService {
@@ -1149,6 +1150,36 @@ export class BookingsService {
     return row;
   }
 
+  /**
+   * The outbox row that tells a guest their stay moved to a new status. The
+   * worker loads the booking behind it, so only the identifiers are stored
+   * here; the phone falls back to the account phone when there is no walk-in
+   * contact number on the booking.
+   */
+  private stayStatusNotification(
+    row: any,
+    status: "checked_in" | "checked_out",
+  ) {
+    const checkedIn = status === "checked_in";
+    const phone = row.walkInGuest?.phone
+      ? normalizeWhatsAppNumber(String(row.walkInGuest.phone))
+      : undefined;
+    return {
+      userId: row.customerId,
+      bookingId: row._id,
+      ashramId: row.ashramId,
+      event: status,
+      title: checkedIn ? "Checked in" : "Checked out",
+      message: checkedIn
+        ? `You are checked in for booking ${row.bookingId}.`
+        : `Your stay for booking ${row.bookingId} is complete.`,
+      channel: "in_app",
+      status: "queued",
+      ...(phone ? { recipientPhone: phone } : {}),
+      meta: { correlationId: `booking:${String(row._id)}:${status}` },
+    };
+  }
+
   async checkin(
     id: string,
     user: AuthenticatedUser,
@@ -1199,6 +1230,10 @@ export class BookingsService {
             actorRole: user.role,
           },
         ],
+        { session },
+      );
+      await this.notifications.create(
+        [this.stayStatusNotification(row, "checked_in")],
         { session },
       );
       return row;
@@ -1261,6 +1296,7 @@ export class BookingsService {
         { $set: { status: "released", releasedAt: new Date() } },
         { session },
       );
+
       if (row.assignedRoomNumbers && row.assignedRoomNumbers.length > 0) {
         const assignmentDocs = await this.assignments
           .find({ bookingId: row._id, roomNumber: { $in: row.assignedRoomNumbers } })
@@ -1268,6 +1304,24 @@ export class BookingsService {
           .lean();
         const roomIdByNumber = new Map(
           assignmentDocs.map((a: any) => [a.roomNumber, String(a.roomId)]),
+        );
+      await this.notifications.create(
+        [this.stayStatusNotification(row, "checked_out")],
+        { session },
+      );
+      if (row.assignedRoomNumber)
+        await this.housekeeping.findOneAndUpdate(
+          { ashramId: row.ashramId, unitNumber: row.assignedRoomNumber },
+          {
+            $set: {
+              roomId: row.roomId,
+              bookingId: row._id,
+              status: "dirty",
+              priority: "high",
+              notes: "Checkout cleaning required",
+            },
+          },
+          { upsert: true, session },
         );
         const fallbackRoomId = this.roomUnits(row)[0]?.roomId;
         for (const roomNumber of row.assignedRoomNumbers) {

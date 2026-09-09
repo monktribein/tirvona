@@ -22,6 +22,7 @@ import {
 } from "../application/lead-users.service";
 import { LeadsService } from "../application/leads.service";
 import { LeadAttendanceService } from "../application/lead-attendance.service";
+import { LeadTrackingService } from "../application/lead-tracking.service";
 import {
   CreateLeadUserDto,
   CreateLeadRegionDto,
@@ -31,6 +32,10 @@ import {
 } from "./dtos/lead-user.dto";
 import { LeadDecisionDto, LeadQueryDto, SaveLeadDto } from "./dtos/lead.dto";
 import { AttendanceQueryDto } from "./dtos/lead-attendance.dto";
+import {
+  TrackingDayQueryDto,
+  TrackingHistoryQueryDto,
+} from "./dtos/lead-tracking.dto";
 
 @ApiTags("Lead Collection")
 @ApiBearerAuth()
@@ -42,6 +47,7 @@ export class LeadAdminController {
     private readonly leads: LeadsService,
     private readonly leadUsers: LeadUsersService,
     private readonly attendanceService: LeadAttendanceService,
+    private readonly tracking: LeadTrackingService,
   ) {}
 
   private actor(user: AuthenticatedUser): LeadAdminActor {
@@ -245,5 +251,47 @@ export class LeadAdminController {
       success: true,
       data: await this.attendanceService.getAgentAttendanceHistory(id, query),
     };
+  }
+
+  /**
+   * Movement tracking for any agent. A super admin is unrestricted, so the
+   * only lookup needed is that the agent exists.
+   */
+  @Get("agents/:agentId/tracking")
+  async agentTracking(
+    @Param("agentId") agentId: string,
+    @Query() query: TrackingDayQueryDto,
+  ) {
+    const agent = await this.leadUsers.findOne(agentId);
+
+    return {
+      success: true,
+      data: {
+        agent: {
+          id: String(agent._id),
+          name: agent.name,
+          phone: agent.phone,
+          state: agent.state,
+          district: agent.district,
+          consent: await this.tracking.getConsent(agentId),
+        },
+        day: await this.tracking.day(agentId, query.date),
+      },
+    };
+  }
+
+  @Get("agents/:agentId/tracking/history")
+  async agentTrackingHistory(
+    @Param("agentId") agentId: string,
+    @Query() query: TrackingHistoryQueryDto,
+  ) {
+    await this.leadUsers.findOne(agentId);
+    return { success: true, data: await this.tracking.history(agentId, query) };
+  }
+
+  /** Latest known position of every tracked agent, across every district. */
+  @Get("tracking/live")
+  async liveTracking() {
+    return { success: true, data: await this.tracking.liveBoard({}) };
   }
 }

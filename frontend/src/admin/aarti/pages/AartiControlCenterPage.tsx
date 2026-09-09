@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { getErrorMessage } from "../../../lib/api";
 import { EnterprisePageHeader } from "../../shared/components/EnterprisePageHeader";
+import { EnterpriseStatsCard } from "../../shared/components/EnterpriseStatsCard";
 import { aartiAdminService } from "../../../modules/aarti/services/aarti.service";
 import type {
   AartiDashboard,
@@ -27,24 +28,6 @@ import {
   formatCurrency,
   formatSchedule,
 } from "../../../modules/aarti/utils/aartiFormat";
-
-const StatCard: React.FC<{
-  label: string;
-  value: string | number;
-  hint?: string;
-  icon: React.ReactNode;
-}> = ({ label, value, hint, icon }) => (
-  <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] shadow-sm p-4">
-    <div className="flex items-center justify-between">
-      <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-        {label}
-      </span>
-      <span className="text-gray-300 dark:text-slate-700">{icon}</span>
-    </div>
-    <p className="mt-2 text-2xl font-bold text-[#0B192C] dark:text-white">{value}</p>
-    {hint ? <p className="mt-0.5 text-xs text-gray-400">{hint}</p> : null}
-  </div>
-);
 
 export const AartiControlCenterPage: React.FC = () => {
   const [dashboard, setDashboard] = useState<AartiDashboard | null>(null);
@@ -122,29 +105,29 @@ export const AartiControlCenterPage: React.FC = () => {
 
       {dashboard ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard
-            label="Live aartis"
+          <EnterpriseStatsCard
+            title="Live aartis"
             value={dashboard.sessions.approved}
-            hint={`${dashboard.sessions.pendingReview} awaiting review`}
-            icon={<Flame size={16} />}
+            description={`${dashboard.sessions.pendingReview} awaiting review`}
+            icon={<Flame size={18} />}
           />
-          <StatCard
-            label="Live poojas"
+          <EnterpriseStatsCard
+            title="Live poojas"
             value={dashboard.streams.approved}
-            hint={`${dashboard.streams.liveNow} streaming now`}
-            icon={<Radio size={16} />}
+            description={`${dashboard.streams.liveNow} streaming now`}
+            icon={<Radio size={18} />}
           />
-          <StatCard
-            label="Passes sold (30d)"
+          <EnterpriseStatsCard
+            title="Passes sold (30d)"
             value={dashboard.totals.passes ?? 0}
-            hint={`${dashboard.totals.bookings ?? 0} bookings`}
-            icon={<Ticket size={16} />}
+            description={`${dashboard.totals.bookings ?? 0} bookings`}
+            icon={<Ticket size={18} />}
           />
-          <StatCard
-            label="Gross (30d)"
+          <EnterpriseStatsCard
+            title="Gross (30d)"
             value={formatCurrency(dashboard.totals.gross ?? 0)}
-            hint={`${formatCurrency(dashboard.totals.donations ?? 0)} in donations`}
-            icon={<IndianRupee size={16} />}
+            description={`${formatCurrency(dashboard.totals.donations ?? 0)} in donations`}
+            icon={<IndianRupee size={18} />}
           />
         </div>
       ) : null}

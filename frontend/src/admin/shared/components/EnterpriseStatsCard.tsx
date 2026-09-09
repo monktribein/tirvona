@@ -26,9 +26,9 @@ export const EnterpriseStatsCard: React.FC<EnterpriseStatsCardProps> = ({
 }) => {
   const { t } = useLanguage();
   return (
-    <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 shadow-lg shadow-gray-200/40 dark:shadow-none hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 space-y-3">
+    <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 space-y-2.5">
       <div className="flex justify-between items-start">
-        <div className="w-11 h-11 rounded-2xl bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 flex items-center justify-center text-[#0A4DA6] dark:text-amber-400 shrink-0">
+        <div className="w-10 h-10 rounded-2xl bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 flex items-center justify-center text-[#0A4DA6] dark:text-amber-400 shrink-0">
           {icon}
         </div>
 
@@ -46,7 +46,7 @@ export const EnterpriseStatsCard: React.FC<EnterpriseStatsCardProps> = ({
           {t(title)}
         </span>
         <div className="flex items-baseline gap-2">
-          <span className="text-2xl sm:text-3xl font-black text-[#0B192C] dark:text-white tracking-tight">
+          <span className="text-xl sm:text-2xl font-black text-[#0B192C] dark:text-white tracking-tight">
             {typeof value === "number" ? formatIndianNumber(value) : value}
           </span>
 

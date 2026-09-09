@@ -13,6 +13,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useNotifications } from "../../contexts/NotificationContext";
 import { getErrorMessage } from "../../lib/api";
 import { payoutService } from "../../services";
+import { EnterpriseStatsCard } from "../shared/components/EnterpriseStatsCard";
 
 type Ashram = { _id: string; name: string; ashramCode?: string };
 type BankAccount = {
@@ -318,10 +319,10 @@ export const PayoutManagementPage: React.FC = () => {
       {isSuperAdmin && providerReady === false && <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-bold text-amber-800">RazorpayX payout processing is not configured. Requests remain pending; select an ashram to use the audited manual bank-transfer option.</div>}
 
       <div className="grid gap-4 md:grid-cols-4 mb-5">
-        <Stat icon={<IndianRupee size={18} />} label="Available balance" value={money(summary.available)} />
-        <Stat icon={<CreditCard size={18} />} label={`Pending (${summary.pending.count})`} value={money(summary.pending.amount)} />
-        <Stat icon={<RefreshCw size={18} />} label={`Processing (${summary.processing.count})`} value={money(summary.processing.amount)} />
-        <Stat icon={<ShieldCheck size={18} />} label={`Paid (${summary.paid.count})`} value={money(summary.paid.amount)} />
+        <EnterpriseStatsCard icon={<IndianRupee size={18} />} title="Available balance" value={money(summary.available)} />
+        <EnterpriseStatsCard icon={<CreditCard size={18} />} title={`Pending (${summary.pending.count})`} value={money(summary.pending.amount)} />
+        <EnterpriseStatsCard icon={<RefreshCw size={18} />} title={`Processing (${summary.processing.count})`} value={money(summary.processing.amount)} />
+        <EnterpriseStatsCard icon={<ShieldCheck size={18} />} title={`Paid (${summary.paid.count})`} value={money(summary.paid.amount)} />
       </div>
 
       {ashramId && (
@@ -431,7 +432,6 @@ export const PayoutManagementPage: React.FC = () => {
   );
 };
 
-const Stat = ({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) => <div className="rounded-2xl border border-orange-200 bg-white p-4"><div className="text-[#0757b5]">{icon}</div><small className="block mt-2 text-slate-500">{label}</small><b className="text-xl">{value}</b></div>;
 const Input = ({ label, value, onChange, required, type = "text" }: { label: string; value: string; onChange: (value: string) => void; required?: boolean; type?: string }) => <label className="text-xs font-bold text-slate-600">{label}<input type={type} value={value} onChange={(event) => onChange(event.target.value)} required={required} autoComplete="off" className="mt-1 block w-full rounded-xl border border-orange-200 px-3 py-2.5 text-sm font-normal text-slate-900" /></label>;
 const Badge = ({ status }: { status: string }) => <span className={`rounded-full px-2.5 py-1 text-xs font-black ${status === "paid" ? "bg-green-100 text-green-700" : status === "failed" ? "bg-red-100 text-red-700" : status === "processing" ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700"}`}>{label(status)}</span>;
 

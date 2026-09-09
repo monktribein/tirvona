@@ -119,6 +119,25 @@ export const leadApi = {
   checkOut: (data) =>
     request('/agent/attendance/check-out', { method: 'POST', body: data }),
 
+  // ── Movement tracking ──────────────────────────────────────────────────
+  getTrackingConsent: () => request('/agent/tracking/consent'),
+
+  setTrackingConsent: (granted, deviceLabel = '') =>
+    request('/agent/tracking/consent', {
+      method: 'POST',
+      body: { granted, deviceLabel }
+    }),
+
+  // Batched on purpose: a phone offline in a village queues its fixes and
+  // uploads them together once it has signal again.
+  sendTrackingFixes: (fixes) =>
+    request('/agent/tracking/fixes', { method: 'POST', body: { fixes } }),
+
+  myTrackingToday: () => request('/agent/tracking/today'),
+
+  myTrackingDay: (date) =>
+    request(`/agent/tracking/day${date ? `?date=${encodeURIComponent(date)}` : ''}`),
+
   myAttendanceHistory: (params = {}) => {
     const query = new URLSearchParams(
       Object.entries(params).filter(([, value]) => value !== '' && value != null)

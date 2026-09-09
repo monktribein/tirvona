@@ -1,50 +1,6 @@
 /* DestinationOverviewPage — page-specific styles
    All colours reference existing Tirvona CSS variables. */
 
-/* ── Hero ──────────────────────────────────────────────────────────────────── */
-.dest-hero {
-  position: relative;
-  overflow: hidden;
-  min-height: 340px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-@media (min-width: 640px) {
-  .dest-hero {
-    min-height: 420px;
-  }
-}
-
-.dest-hero__bg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.dest-hero__overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to right,
-    rgba(11, 25, 44, 0.82) 0%,
-    rgba(11, 25, 44, 0.55) 50%,
-    rgba(0, 0, 0, 0.3) 100%
-  );
-}
-
-.dark .dest-hero__overlay {
-  background: linear-gradient(
-    to right,
-    rgba(7, 15, 27, 0.92) 0%,
-    rgba(7, 15, 27, 0.65) 50%,
-    transparent 100%
-  );
-}
-
 /* ── Quick Stats ───────────────────────────────────────────────────────────── */
 .dest-stats-strip {
   display: flex;
@@ -58,6 +14,14 @@
 
 .dest-stats-strip::-webkit-scrollbar {
   display: none;
+}
+
+/* The strip no longer hangs off a banner, so once the pills fit on one line
+   they sit centred under the page heading like the rest of the site. */
+@media (min-width: 640px) {
+  .dest-stats-strip {
+    justify-content: center;
+  }
 }
 
 .dest-stat-pill {
@@ -98,6 +62,18 @@
 .dest-scroll-row > * {
   flex: 0 0 auto;
   scroll-snap-align: start;
+}
+
+/* ── Cards ──────────────────────────────────────────────────────────
+   The same box the ashram cards on the home page use. Every scroll row on this
+   page shares it so a destination's rows line up with the rest of the site
+   instead of each category running its own width. */
+.dest-card {
+  width: clamp(200px, 48vw, 220px);
+}
+
+.dest-card-media {
+  height: clamp(170px, 40vw, 190px);
 }
 
 /* ── Card image hover zoom ─────────────────────────────────────────────────── */
@@ -146,6 +122,13 @@
 .dest-section-title {
   font-family: "Kalam", cursive, sans-serif;
   color: #e58c28;
+}
+
+/* The page title stays an <h1> for search engines, but `.home-page h1` in
+   index.css sets Roboto at a higher specificity than a font utility class can
+   reach, so the global Kalam heading has to be re-asserted at that weight. */
+.home-page h1.dest-page-title {
+  font-family: "Kalam", cursive, sans-serif;
 }
 
 /* ── Plan Your Visit grid ──────────────────────────────────────────────────── */

@@ -52,6 +52,17 @@ export const supervisorApi = {
 
   getAgent: (agentId) => request(`/agents/${agentId}`),
 
+  getAgentTracking: (agentId, date) =>
+    request(
+      `/agents/${agentId}/tracking${date ? `?date=${encodeURIComponent(date)}` : ''}`,
+    ),
+
+  getAgentTrackingHistory: (agentId) =>
+    request(`/agents/${agentId}/tracking/history`),
+
+  /** Latest known position of every agent in this supervisor's district. */
+  getLiveTracking: () => request('/tracking/live'),
+
   getAgentLeads: (agentId, params = {}) => {
     const query = new URLSearchParams(
       Object.entries(params).filter(([, v]) => v !== '' && v != null),

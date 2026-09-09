@@ -94,6 +94,8 @@ export const templeService = {
 
 // ── Rooms ────────────────────────────────────────────────────────────────────
 export const roomService = {
+  summary: (params: Record<string, string> = {}) =>
+    api.get("/rooms/summary", { params }),
   create: (data: unknown) => api.post("/rooms", data),
   update: (id: string, data: unknown) => api.put(`/rooms/${id}`, data),
   remove: (id: string) => api.delete(`/rooms/${id}`),
@@ -270,6 +272,9 @@ export const analyticsService = {
   dashboard: (params: Record<string, string> = {}) =>
     api.get("/analytics/dashboard", { params }),
   system: () => api.get("/analytics/system"),
+  // The section strips are decoration around each page and already fall back
+  // to rendering nothing, so a failure here must not raise an error toast.
+  sections: () => api.get("/analytics/sections", { skipToast: true }),
   overview: (range: "daily" | "weekly" | "monthly" | "yearly" = "daily") =>
     api.get("/analytics/overview", { params: { range } }),
   recentBookings: (limit = 10) =>
