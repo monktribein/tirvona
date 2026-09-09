@@ -8,11 +8,20 @@ import { InjectModel } from "@nestjs/mongoose";
 import { Interval, SchedulerRegistry } from "@nestjs/schedule";
 import type { Queue } from "bullmq";
 import type { Model } from "mongoose";
+import { AARTI_MODEL } from "../aarti/domain/aarti.constants";
+import { EVENT_MODEL } from "../events/domain/event.constants";
 import type { NotificationJob } from "./notification.worker";
 
 const OUTBOX_POLL_NAME = "notification-outbox-poll";
 const OUTBOX_POLL_INTERVAL_MS = 5_000;
 const WHATSAPP_RECOVERY_WINDOW_MS = 60 * 60 * 1_000;
+/**
+ * Aarti and event rows were written but never dispatched before this poller
+ * existed, so a backlog of stale `queued` rows can be sitting in the database.
+ * Only rows raised inside this window are delivered; anything older is retired
+ * as `skipped` so no guest is messaged about a long-past booking.
+ */
+const ACTIVATION_WINDOW_MS = 60 * 60 * 1_000;
 
 interface EnqueueSummary {
   found: number;
@@ -32,6 +41,8 @@ export class NotificationOutboxService implements OnApplicationBootstrap {
     @InjectModel("BookingNotification") private readonly booking: Model<any>,
     @InjectModel("ParkingNotification") private readonly parking: Model<any>,
     @InjectModel("CommunityNotification") private readonly community: Model<any>,
+    @InjectModel(AARTI_MODEL.Notification) private readonly aarti: Model<any>,
+    @InjectModel(EVENT_MODEL.Notification) private readonly event: Model<any>,
     private readonly schedulerRegistry: SchedulerRegistry,
   ) {}
 
@@ -69,6 +80,8 @@ export class NotificationOutboxService implements OnApplicationBootstrap {
       const bookingWhatsAppRecovery = await this.enqueueWhatsAppRecovery();
       const parking = await this.enqueue("parking", this.parking);
       const community = await this.enqueue("community", this.community);
+      const aarti = await this.enqueue("aarti", this.aarti);
+      const eventRegistration = await this.enqueue("event", this.event);
       this.logger.log(
         JSON.stringify({
           event: "notification.outbox_poll_completed",
@@ -77,6 +90,8 @@ export class NotificationOutboxService implements OnApplicationBootstrap {
           bookingWhatsAppRecovery,
           parking,
           community,
+          aarti,
+          eventRegistration,
         }),
       );
     } catch (error) {
@@ -163,10 +178,47 @@ export class NotificationOutboxService implements OnApplicationBootstrap {
     return summary;
   }
 
+  /**
+   * Retires `queued` rows older than the activation window for a domain that
+   * was previously never dispatched, so switching the poller on cannot flush a
+   * historical backlog at guests.
+   */
+  private async retireBacklog(model: Model<any>): Promise<number> {
+    const result = await model.updateMany(
+      {
+        status: "queued",
+        createdAt: { $lt: new Date(Date.now() - ACTIVATION_WINDOW_MS) },
+      },
+      {
+        $set: {
+          status: "skipped",
+          "meta.whatsappStatus": "skipped",
+          "meta.whatsappReason": "outside_activation_window",
+        },
+      },
+    );
+    return result.modifiedCount ?? 0;
+  }
+
   private async enqueue(
-    domain: "booking" | "parking" | "community",
+    domain: "booking" | "parking" | "community" | "aarti" | "event",
     model: Model<any>,
   ): Promise<EnqueueSummary> {
+    // Aarti and event rows are newly activated, so their backlog is retired
+    // before anything is enqueued. Booking, parking and community have always
+    // been dispatched and keep draining their queue exactly as before.
+    if (domain === "aarti" || domain === "event") {
+      const retired = await this.retireBacklog(model);
+      if (retired > 0)
+        this.logger.warn(
+          JSON.stringify({
+            event: "notification.outbox_backlog_retired",
+            domain,
+            retired,
+            activationWindowMs: ACTIVATION_WINDOW_MS,
+          }),
+        );
+    }
     const rows = await model
       .find({ status: "queued" })
       .sort({ createdAt: 1 })
@@ -191,7 +243,11 @@ export class NotificationOutboxService implements OnApplicationBootstrap {
             title: row.title,
             message: row.message,
             channel: row.channel,
-            bookingId: row.bookingId ? String(row.bookingId) : undefined,
+            bookingId: row.bookingId
+              ? String(row.bookingId)
+              : row.registrationId
+                ? String(row.registrationId)
+                : undefined,
             phone: row.recipientPhone,
             correlationId: row.meta?.correlationId || jobId,
           },

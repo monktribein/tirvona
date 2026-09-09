@@ -6,6 +6,8 @@ import { BookingsModule } from "../bookings/bookings.module";
 import { ParkingModule } from "../parking/parking.module";
 import { UsersModule } from "../users/users.module";
 import { CommunityModule } from "../community/community.module";
+import { AartiModule } from "../aarti/aarti.module";
+import { EventsModule } from "../events/events.module";
 import { NotificationOutboxService } from "./notification-outbox.service";
 import { NotificationWorker } from "./notification.worker";
 import { NotificationsGateway } from "./notifications.gateway";
@@ -16,6 +18,8 @@ import { WhatsAppModule } from "../../integrations/whatsapp/whatsapp.module";
     ParkingModule,
     UsersModule,
     CommunityModule,
+    AartiModule,
+    EventsModule,
     WhatsAppModule,
     JwtModule.registerAsync({
       inject: [ConfigService],

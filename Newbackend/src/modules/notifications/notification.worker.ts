@@ -11,9 +11,11 @@ import { Resend } from "resend";
 import { ConfigService } from "@nestjs/config";
 import { NotificationsGateway } from "./notifications.gateway";
 import { PARKING_MODEL } from "../parking/domain/parking.constants";
+import { AARTI_MODEL } from "../aarti/domain/aarti.constants";
+import { EVENT_MODEL } from "../events/domain/event.constants";
 import { WhatsAppTransactionalNotificationService } from "../../integrations/whatsapp/services/whatsapp-transactional-notification.service";
 export interface NotificationJob {
-  domain: "booking" | "parking" | "community";
+  domain: "booking" | "parking" | "community" | "aarti" | "event";
   notificationId: string;
   userId: string;
   event: string;
@@ -43,6 +45,18 @@ export class NotificationWorker
     private readonly parkingBookings: Model<any>,
     @InjectModel(PARKING_MODEL.QrCode)
     private readonly parkingQrCodes: Model<any>,
+    @InjectModel(AARTI_MODEL.Notification)
+    private readonly aartiNotifications: Model<any>,
+    @InjectModel(AARTI_MODEL.Booking)
+    private readonly aartiBookings: Model<any>,
+    @InjectModel(AARTI_MODEL.QrCode)
+    private readonly aartiQrCodes: Model<any>,
+    @InjectModel(EVENT_MODEL.Notification)
+    private readonly eventNotifications: Model<any>,
+    @InjectModel(EVENT_MODEL.Registration)
+    private readonly eventRegistrations: Model<any>,
+    @InjectModel(EVENT_MODEL.QrCode)
+    private readonly eventQrCodes: Model<any>,
     private readonly gateway: NotificationsGateway,
     private readonly config: ConfigService,
     private readonly whatsapp: WhatsAppTransactionalNotificationService,
@@ -76,14 +90,24 @@ export class NotificationWorker
       ),
     );
   }
+  private modelFor(domain: NotificationJob["domain"]): Model<any> {
+    switch (domain) {
+      case "booking":
+        return this.booking;
+      case "parking":
+        return this.parking;
+      case "aarti":
+        return this.aartiNotifications;
+      case "event":
+        return this.eventNotifications;
+      default:
+        return this.community;
+    }
+  }
+
   async process(job: Job<NotificationJob>): Promise<void> {
     const data = job.data;
-    const model =
-      data.domain === "booking"
-        ? this.booking
-        : data.domain === "parking"
-          ? this.parking
-          : this.community;
+    const model = this.modelFor(data.domain);
     const correlationId =
       data.correlationId || String(job.id || data.notificationId);
     const whatsappOnly = data.deliveryScope === "whatsapp_only";
@@ -238,13 +262,20 @@ export class NotificationWorker
               correlationId,
             }),
           );
-          const bookingRef = data.bookingId || outboxRow?.bookingId;
-          const [stay, parkingPass] = await Promise.all([
+          const bookingRef =
+            data.bookingId || outboxRow?.bookingId || outboxRow?.registrationId;
+          const [stay, parkingPass, aartiPass, eventPass] = await Promise.all([
             data.domain === "booking"
               ? this.stayContext(bookingRef)
               : Promise.resolve(null),
             data.domain === "parking"
               ? this.parkingContext(bookingRef)
+              : Promise.resolve(null),
+            data.domain === "aarti"
+              ? this.aartiContext(bookingRef)
+              : Promise.resolve(null),
+            data.domain === "event"
+              ? this.eventContext(bookingRef)
               : Promise.resolve(null),
           ]);
 
@@ -256,9 +287,15 @@ export class NotificationWorker
             recipientName: user?.name,
             title: data.title,
             message: data.message,
-            reference: stay?.reference ?? parkingPass?.reference,
+            reference:
+              stay?.reference ??
+              parkingPass?.reference ??
+              aartiPass?.reference ??
+              eventPass?.reference,
             stay: stay ?? undefined,
             parking: parkingPass ?? undefined,
+            aarti: aartiPass ?? undefined,
+            eventPass: eventPass ?? undefined,
             correlationId,
           });
           if (whatsapp?.status === "accepted") {
@@ -428,6 +465,60 @@ export class NotificationWorker
         : undefined,
       amountPaid: booking.pricing?.amountPaid ?? booking.amountPaid,
       currency: booking.pricing?.currency,
+    };
+  }
+
+  /** Loads the aarti pass so the message can carry the session and gate code. */
+  private async aartiContext(bookingId: unknown): Promise<any | null> {
+    if (!bookingId) return null;
+    const booking: any = await this.aartiBookings
+      .findById(String(bookingId))
+      .select("bookingReference contactName startsAt pricing")
+      .populate("sessionId", "name")
+      .populate("customerId", "name")
+      .lean();
+    if (!booking) return null;
+    const qr: any = await this.aartiQrCodes
+      .findOne({ bookingId: booking._id })
+      .sort({ version: -1 })
+      .select("displayCode")
+      .lean();
+    return {
+      guestName: booking.contactName || booking.customerId?.name,
+      reference: booking.bookingReference,
+      sessionName: booking.sessionId?.name,
+      displayCode: qr?.displayCode,
+      scheduledAt: booking.startsAt,
+      amountPaid: booking.pricing?.amountPaid,
+      refundAmount: booking.pricing?.refundAmount,
+      currency: booking.pricing?.currency,
+    };
+  }
+
+  /** Loads the event registration so the message can carry the entry code. */
+  private async eventContext(registrationId: unknown): Promise<any | null> {
+    if (!registrationId) return null;
+    const registration: any = await this.eventRegistrations
+      .findById(String(registrationId))
+      .select("registrationReference contactName startsAt")
+      .populate("eventId", "name venue")
+      .populate("customerId", "name")
+      .lean();
+    if (!registration) return null;
+    const qr: any = await this.eventQrCodes
+      .findOne({ registrationId: registration._id })
+      .sort({ version: -1 })
+      .select("displayCode")
+      .lean();
+    return {
+      guestName: registration.contactName || registration.customerId?.name,
+      reference: registration.registrationReference,
+      eventName: registration.eventId?.name,
+      // The listing stores the venue as an object, so only its name is shown.
+      venue: registration.eventId?.venue?.name,
+      displayCode: qr?.displayCode,
+      // Registrations carry no pricing of their own, so no amount is shown.
+      startsAt: registration.startsAt,
     };
   }
 

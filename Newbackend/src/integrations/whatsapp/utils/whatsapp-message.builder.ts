@@ -7,6 +7,11 @@
  * who it is for, which ashram, the dates, and the code they need at the gate.
  */
 
+import type {
+  WhatsAppAartiContext,
+  WhatsAppEventContext,
+} from "../types/whatsapp.types";
+
 export interface WhatsAppStayContext {
   guestName?: string;
   reference?: string;
@@ -135,7 +140,9 @@ export const buildStayMessage = (
     | "payment_success"
     | "payment_failed"
     | "refund"
-    | "checkin_reminder",
+    | "checkin_reminder"
+    | "checked_in"
+    | "checked_out",
   context: WhatsAppStayContext,
   fallback: { title?: string; message?: string } = {},
 ): string => {
@@ -236,6 +243,35 @@ export const buildStayMessage = (
         paid && `*Refund amount:* ${paid}`,
       );
 
+    case "checked_in":
+      return lines(
+        "*Checked In*",
+        "",
+        greeting(context.guestName),
+        context.ashramName
+          ? `You are checked in at *${context.ashramName}*.`
+          : "You are checked in.",
+        "",
+        details,
+        "",
+        "We wish you a peaceful stay.",
+      );
+
+    case "checked_out":
+      return lines(
+        "*Checked Out*",
+        "",
+        greeting(context.guestName),
+        context.ashramName
+          ? `Your stay at *${context.ashramName}* is complete.`
+          : "Your Tirvona stay is complete.",
+        "",
+        details,
+        paid && `*Amount paid:* ${paid}`,
+        "",
+        "Thank you for staying with Tirvona. We hope to welcome you again.",
+      );
+
     case "checkin_reminder":
       return lines(
         "*Check-in Reminder*",
@@ -287,5 +323,80 @@ export const buildParkingMessage = (
     context.passUrl && `*Scan your QR pass:*\n${context.passUrl}`,
     "",
     "Show the QR pass or gate code at the entry barrier.",
+  );
+};
+
+export const buildAartiMessage = (
+  kind: "confirmed" | "cancelled",
+  context: WhatsAppAartiContext,
+  fallback: { title?: string; message?: string } = {},
+): string => {
+  const details = lines(
+    context.sessionName && `*Aarti:* ${context.sessionName}`,
+    context.reference && `*Booking ID:* ${context.reference}`,
+    formatDateTime(context.scheduledAt) &&
+      `*When:* ${formatDateTime(context.scheduledAt)}`,
+  );
+  const refund = formatMoney(context.refundAmount, context.currency);
+
+  if (kind === "cancelled")
+    return lines(
+      "*Aarti Booking Cancelled*",
+      "",
+      greeting(context.guestName),
+      details,
+      refund && `*Refund amount:* ${refund}`,
+      "",
+      fallback.message,
+    );
+
+  return lines(
+    "*Aarti Pass Confirmed*",
+    "",
+    greeting(context.guestName),
+    details,
+    formatMoney(context.amountPaid, context.currency) &&
+      `*Amount paid:* ${formatMoney(context.amountPaid, context.currency)}`,
+    "",
+    context.displayCode &&
+      `*Entry code:* ${context.displayCode}
+Show this code at the gate.`,
+  );
+};
+
+export const buildEventMessage = (
+  kind: "confirmed" | "cancelled",
+  context: WhatsAppEventContext,
+  fallback: { title?: string; message?: string } = {},
+): string => {
+  const details = lines(
+    context.eventName && `*Event:* ${context.eventName}`,
+    context.venue && `*Venue:* ${context.venue}`,
+    context.reference && `*Registration ID:* ${context.reference}`,
+    formatDateTime(context.startsAt) &&
+      `*Starts:* ${formatDateTime(context.startsAt)}`,
+  );
+
+  if (kind === "cancelled")
+    return lines(
+      "*Event Registration Cancelled*",
+      "",
+      greeting(context.guestName),
+      details,
+      "",
+      fallback.message,
+    );
+
+  return lines(
+    "*Event Pass Confirmed*",
+    "",
+    greeting(context.guestName),
+    details,
+    formatMoney(context.amountPaid, context.currency) &&
+      `*Amount paid:* ${formatMoney(context.amountPaid, context.currency)}`,
+    "",
+    context.displayCode &&
+      `*Entry code:* ${context.displayCode}
+Show this code at the venue.`,
   );
 };

@@ -73,6 +73,7 @@ const SelfBookingPage = lazy(
 const OfflineInventoryPage = lazy(
   () => import("./pages/owner/OfflineInventoryPage"),
 );
+const TotalRoomsPage = lazy(() => import("./pages/owner/TotalRoomsPage"));
 const OffersPage = lazy(() => import("./pages/OffersPage"));
 const OfferDetailPage = lazy(() => import("./pages/OfferDetailPage"));
 const MarketplaceCategoriesPage = lazy(
@@ -193,6 +194,9 @@ const RefundPoliciesPage = lazy(
 
 const LeadCollectionPage = lazy(
   () => import("./admin/leads/pages/LeadCollectionPage"),
+);
+const LeadTrackingPage = lazy(
+  () => import("./admin/leads/pages/LeadTrackingPage"),
 );
 const LeadAgentsPage = lazy(() => import("./admin/leads/pages/LeadAgentsPage"));
 const TempleSearchPage = lazy(() => import("./pages/temples/TempleSearchPage"));
@@ -750,6 +754,9 @@ const AppContent: React.FC = () => {
             <Route path="/owner/payouts" element={<PayoutManagementPage />} />
             <Route path="/ashram-admin/payouts" element={<PayoutManagementPage />} />
             <Route path="/ashram-owner/payouts" element={<PayoutManagementPage />} />
+            <Route path="/owner/total-rooms" element={<TotalRoomsPage />} />
+            <Route path="/ashram-admin/total-rooms" element={<TotalRoomsPage />} />
+            <Route path="/ashram-owner/total-rooms" element={<TotalRoomsPage />} />
             <Route path="/owner/offline-inventory" element={<OfflineInventoryPage />} />
             <Route path="/ashram-admin/offline-inventory" element={<OfflineInventoryPage />} />
             <Route path="/ashram-owner/offline-inventory" element={<OfflineInventoryPage />} />
@@ -909,6 +916,10 @@ const AppContent: React.FC = () => {
           >
             <Route path="/admin/audit-logs" element={<AuditLogsPage />} />
             <Route
+              path="/admin/manage/rooms/total"
+              element={<TotalRoomsPage />}
+            />
+            <Route
               path="/admin/offline-inventory"
               element={<OfflineInventoryPage />}
             />
@@ -916,6 +927,10 @@ const AppContent: React.FC = () => {
             <Route
               path="/admin/lead-collection/leads"
               element={<LeadCollectionPage />}
+            />
+            <Route
+              path="/admin/lead-collection/tracking"
+              element={<LeadTrackingPage />}
             />
             <Route
               path="/admin/lead-collection/agents"

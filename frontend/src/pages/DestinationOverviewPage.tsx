@@ -72,10 +72,7 @@ const tabConfig: { key: InventoryTab; label: string; icon: React.ElementType }[]
 ];
 
 // ─── Stay / Ashram Card ──────────────────────────────────────────────────────
-const StayCard: React.FC<{
-  ashram: any;
-  destinationCenter?: { lat: number; lng: number } | null;
-}> = ({ ashram, destinationCenter }) => {
+const StayCard: React.FC<{ ashram: any }> = ({ ashram }) => {
   const navigate = useNavigate();
 
   const img =
@@ -90,6 +87,7 @@ const StayCard: React.FC<{
     typeof ashram.rating === "number"
       ? ashram.rating
       : ashram.rating?.average || 0;
+  const ratingCount = Number(ashram.rating?.count ?? 0);
 
   const city = ashram.address?.city || "";
   const state = ashram.address?.state || "";
@@ -99,24 +97,6 @@ const StayCard: React.FC<{
     ashram.startingPrice ||
     ashram.minPrice ||
     0;
-
-  const isVerified = Boolean(
-    ashram.status === "approved" ||
-      ashram.isVerified ||
-      ashram.verified,
-  );
-
-  const coords = useMemo(() => extractCoordinates(ashram), [ashram]);
-
-  const dist = useMemo(() => {
-    if (!destinationCenter || !coords) return null;
-    return haversineDistance(
-      destinationCenter.lat,
-      destinationCenter.lng,
-      coords.lat,
-      coords.lng,
-    );
-  }, [coords, destinationCenter]);
 
   const typeLabel =
     ashram.ashramType === "dharamshala"
@@ -128,11 +108,10 @@ const StayCard: React.FC<{
   return (
     <div
       onClick={() => navigate(ashramUrl(ashram))}
-      className="group cursor-pointer bg-white dark:bg-[#0B192C] rounded-3xl overflow-hidden border border-gray-100 dark:border-slate-800 transition-all duration-300 hover:-translate-y-1 flex flex-col hover:shadow-lg"
-      style={{ width: "clamp(260px, 42vw, 310px)" }}
+      className="dest-card group cursor-pointer bg-white dark:bg-[#0B192C] rounded-3xl overflow-hidden border border-gray-100 dark:border-slate-800 transition-all duration-300 hover:-translate-y-1 flex flex-col shadow-sm hover:shadow-xl"
     >
       {/* Image & Badges */}
-      <div className="dest-card-img-wrap relative h-[180px] bg-gray-100 dark:bg-slate-900">
+      <div className="dest-card-img-wrap dest-card-media relative bg-gray-100 dark:bg-slate-900">
         {img ? (
           <img
             src={img}
@@ -145,83 +124,61 @@ const StayCard: React.FC<{
             <Bed size={36} />
           </div>
         )}
-        <span className="absolute top-3 right-3 px-2.5 py-0.5 rounded-full bg-[#0B192C]/80 backdrop-blur-xs text-white text-[10px] font-extrabold tracking-wide">
+        {/* Type sits left so it does not collide with the rating badge the
+            global card carries on the right. */}
+        <span className="absolute top-3 left-3 px-2.5 py-0.5 rounded-full bg-[#0B192C]/80 backdrop-blur-xs text-white text-[10px] font-extrabold tracking-wide">
           {typeLabel}
         </span>
-      </div>
-
-      {/* Details */}
-      <div className="p-4 flex flex-col gap-1.5 flex-1">
-        <h4 className="font-extrabold text-sm text-[#0B192C] dark:text-white leading-tight line-clamp-1 group-hover:text-[#0A4DA6] transition-colors">
-          {ashram.name}
-        </h4>
-        <p className="text-[11px] text-gray-400 font-bold flex items-center gap-1">
-          <MapPin size={11} className="shrink-0 text-gray-400" />
-          {[city, state].filter(Boolean).join(", ")}
-        </p>
-
-        <div className="flex items-center justify-between mt-auto pt-2 border-t border-gray-50 dark:border-slate-800/60">
-          <div className="flex items-center gap-2.5">
-            {ratingVal > 0 ? (
-              <span className="flex items-center gap-0.5 text-xs font-extrabold text-[#E58C28]">
-                <Star size={12} className="fill-[#E58C28]" />
-                {ratingVal.toFixed(1)}
-              </span>
-            ) : (
-              <span className="flex items-center gap-0.5 text-xs font-extrabold text-[#E58C28]">
-                <Star size={12} className="fill-[#E58C28]" /> 4.8
-              </span>
-            )}
-            {dist !== null && (
-              <span className="text-[10px] text-gray-400 font-bold">
-                {dist} km
-              </span>
-            )}
-            {isVerified && (
-              <span title="Verified Ashram">
-                <ShieldCheck
-                  size={14}
-                  className="text-[#0A4DA6] dark:text-blue-400"
-                />
-              </span>
-            )}
-          </div>
-
+        {ratingCount > 0 && (
+          <span className="absolute top-3 right-3 bg-white/95 dark:bg-[#0B192C]/90 text-[#0B192C] dark:text-white text-[10px] font-extrabold px-2 py-1 rounded-full shadow-sm flex items-center gap-1 backdrop-blur-sm">
+            <Star size={11} className="text-[#D4AF37] fill-[#D4AF37]" />
+            {ratingVal}
+          </span>
+        )}
+        <div className="absolute bottom-2.5 left-2.5">
           {minPrice > 0 ? (
-            <span className="text-xs font-extrabold text-[#0B192C] dark:text-white">
-              {formatCurrency(minPrice)}
-              <span className="text-[10px] font-bold text-gray-400">
-                {" "}
-                /night
-              </span>
+            <span className="bg-[#0A4DA6] text-white text-[10px] sm:text-[11px] font-extrabold px-3 py-1 rounded-full shadow-sm">
+              {formatCurrency(minPrice)} / night
             </span>
           ) : (
-            <span className="text-[11px] font-extrabold text-[#0A4DA6] dark:text-blue-400">
+            <span className="bg-[#0A4DA6] text-white text-[10px] sm:text-[11px] font-extrabold px-3 py-1 rounded-full shadow-sm">
               Donation / Stay
             </span>
           )}
         </div>
+      </div>
 
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            navigate(ashramUrl(ashram));
-          }}
-          className="mt-2 w-full py-2 rounded-full bg-[#0A4DA6] hover:bg-[#083b80] text-white text-xs font-extrabold transition-all cursor-pointer shadow-xs"
-        >
-          View Ashram
-        </button>
+      {/* Details — the same three the global ashram card shows: name, place,
+          rating. The card itself is the link, so it carries no button. */}
+      <div className="p-4 text-center flex flex-col items-center justify-center min-h-[72px]">
+        <h4 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight line-clamp-1 text-center group-hover:text-[#0A4DA6] transition-colors">
+          {ashram.name}
+        </h4>
+        <p className="text-[11px] text-gray-400 font-bold mt-1 text-center">
+          {[city, state].filter(Boolean).join(", ")}
+        </p>
+        {ratingCount > 0 ? (
+          <div className="flex items-center justify-center gap-1 mt-1.5">
+            <Star size={11} className="text-[#D4AF37] fill-[#D4AF37]" />
+            <span className="text-[11px] font-extrabold text-[#0B192C] dark:text-white">
+              {ratingVal}
+            </span>
+            <span className="text-[10px] text-gray-400 font-semibold">
+              ({ratingCount} reviews)
+            </span>
+          </div>
+        ) : (
+          <span className="text-[10px] text-gray-400 font-semibold mt-1.5">
+            No reviews yet
+          </span>
+        )}
       </div>
     </div>
   );
 };
 
 // ─── Parking Card ────────────────────────────────────────────────────────────
-const ParkingCard: React.FC<{
-  lot: any;
-  selectedAshramCoords?: { lat: number; lng: number } | null;
-}> = ({ lot, selectedAshramCoords }) => {
+const ParkingCard: React.FC<{ lot: any }> = ({ lot }) => {
   const navigate = useNavigate();
   const name = lot.name || lot.locationName || "Tirvona Parking Facility";
   const slug = lot.slug || lot._id || "";
@@ -232,18 +189,6 @@ const ParkingCard: React.FC<{
     (Array.isArray(lot.rates) && lot.rates[0]?.amount) ||
     50;
   const available = lot.available !== false;
-
-  const coords = useMemo(() => extractCoordinates(lot), [lot]);
-
-  const dist = useMemo(() => {
-    if (!selectedAshramCoords || !coords) return null;
-    return haversineDistance(
-      selectedAshramCoords.lat,
-      selectedAshramCoords.lng,
-      coords.lat,
-      coords.lng,
-    );
-  }, [coords, selectedAshramCoords]);
 
   return (
     <div
@@ -256,34 +201,30 @@ const ParkingCard: React.FC<{
               : "/parking",
         )
       }
-      className="group cursor-pointer bg-white dark:bg-[#0B192C] rounded-3xl overflow-hidden border border-gray-100 dark:border-slate-800 transition-all duration-300 hover:-translate-y-1 flex flex-col p-5 hover:shadow-lg"
-      style={{ width: "clamp(240px, 38vw, 280px)" }}
+      className="dest-card group cursor-pointer bg-white dark:bg-[#0B192C] rounded-3xl overflow-hidden border border-gray-100 dark:border-slate-800 transition-all duration-300 hover:-translate-y-1 flex flex-col shadow-sm hover:shadow-xl"
     >
-      <div className="flex items-start gap-3 mb-3">
-        <div className="w-10 h-10 rounded-2xl bg-[rgba(10,77,166,0.1)] flex items-center justify-center shrink-0">
-          <CircleParking size={20} className="text-[#0A4DA6]" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <h4 className="font-extrabold text-sm text-[#0B192C] dark:text-white line-clamp-1 group-hover:text-[#0A4DA6] transition-colors">
-            {name}
-          </h4>
-          {city && (
-            <p className="text-[11px] text-gray-400 font-bold">{city}</p>
-          )}
-        </div>
-      </div>
-
-      <div className="flex items-center gap-2 mb-3 flex-wrap">
-        {dist !== null && (
-          <span className="text-[10px] text-gray-500 font-bold bg-gray-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">
-            {dist} km away
+      {/* A lot has no photograph, so the icon fills the same media well the
+          other cards use and keeps every row the same height. */}
+      <div className="dest-card-media relative bg-gray-100 dark:bg-slate-900 flex items-center justify-center">
+        <CircleParking size={44} className="text-[#0A4DA6]/40" />
+        <div className="absolute bottom-2.5 left-2.5">
+          <span className="bg-[#0A4DA6] text-white text-[10px] sm:text-[11px] font-extrabold px-3 py-1 rounded-full shadow-sm">
+            {formatCurrency(price)} / hr
           </span>
-        )}
+        </div>
       </div>
 
-      <div className="flex items-center justify-between mb-3 mt-auto">
+      <div className="p-4 text-center flex flex-col items-center justify-center min-h-[72px]">
+        <h4 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight line-clamp-1 text-center group-hover:text-[#0A4DA6] transition-colors">
+          {name}
+        </h4>
+        {city && (
+          <p className="text-[11px] text-gray-400 font-bold mt-1 text-center">
+            {city}
+          </p>
+        )}
         <span
-          className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full ${
+          className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full mt-1.5 ${
             available
               ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400"
               : "bg-red-50 text-red-500"
@@ -291,18 +232,7 @@ const ParkingCard: React.FC<{
         >
           {available ? "Spaces Available" : "Full"}
         </span>
-        <span className="text-xs font-extrabold text-[#0B192C] dark:text-white">
-          {formatCurrency(price)}
-          <span className="text-[10px] font-bold text-gray-400"> /hr</span>
-        </span>
       </div>
-
-      <button
-        type="button"
-        className="w-full py-2 rounded-full bg-[#0A4DA6] hover:bg-[#083b80] text-white text-xs font-extrabold transition-all cursor-pointer shadow-xs"
-      >
-        View Parking
-      </button>
     </div>
   );
 };
@@ -319,17 +249,17 @@ const PrasadCard: React.FC<{ product: any }> = ({ product }) => {
   const ratingVal =
     typeof product.rating === "number"
       ? product.rating
-      : product.rating?.average || 4.9;
+      : product.rating?.average || 0;
+  const ratingCount = Number(product.rating?.count ?? 0);
 
   return (
     <div
       onClick={() =>
         navigate(slug ? `/marketplace/products/${slug}` : "/marketplace")
       }
-      className="group cursor-pointer bg-white dark:bg-[#0B192C] rounded-3xl overflow-hidden border border-gray-100 dark:border-slate-800 transition-all duration-300 hover:-translate-y-1 flex flex-col hover:shadow-lg"
-      style={{ width: "clamp(220px, 36vw, 260px)" }}
+      className="dest-card group cursor-pointer bg-white dark:bg-[#0B192C] rounded-3xl overflow-hidden border border-gray-100 dark:border-slate-800 transition-all duration-300 hover:-translate-y-1 flex flex-col shadow-sm hover:shadow-xl"
     >
-      <div className="dest-card-img-wrap relative h-[150px] bg-gray-100 dark:bg-slate-900">
+      <div className="dest-card-img-wrap dest-card-media relative bg-gray-100 dark:bg-slate-900">
         {img ? (
           <img
             src={img}
@@ -345,34 +275,45 @@ const PrasadCard: React.FC<{ product: any }> = ({ product }) => {
         <span className="dest-badge dest-badge--tirvona absolute top-3 left-3 shadow-xs">
           <ShieldCheck size={10} /> Certified Prasad
         </span>
+        {ratingCount > 0 && (
+          <span className="absolute top-3 right-3 bg-white/95 dark:bg-[#0B192C]/90 text-[#0B192C] dark:text-white text-[10px] font-extrabold px-2 py-1 rounded-full shadow-sm flex items-center gap-1 backdrop-blur-sm">
+            <Star size={11} className="text-[#D4AF37] fill-[#D4AF37]" />
+            {ratingVal}
+          </span>
+        )}
+        {price > 0 && (
+          <div className="absolute bottom-2.5 left-2.5">
+            <span className="bg-[#0A4DA6] text-white text-[10px] sm:text-[11px] font-extrabold px-3 py-1 rounded-full shadow-sm">
+              {formatCurrency(price)}
+            </span>
+          </div>
+        )}
       </div>
 
-      <div className="p-4 flex flex-col gap-1.5 flex-1">
-        <h4 className="font-extrabold text-sm text-[#0B192C] dark:text-white line-clamp-1 group-hover:text-[#0A4DA6] transition-colors">
+      <div className="p-4 text-center flex flex-col items-center justify-center min-h-[72px]">
+        <h4 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight line-clamp-1 text-center group-hover:text-[#0A4DA6] transition-colors">
           {product.name}
         </h4>
         {product.templeSource && (
-          <p className="text-[10px] text-gray-400 font-bold line-clamp-1">
+          <p className="text-[11px] text-gray-400 font-bold mt-1 text-center line-clamp-1">
             {product.templeSource}
           </p>
         )}
-
-        <div className="flex items-center justify-between mt-auto pt-2 border-t border-gray-50 dark:border-slate-800/60">
-          <span className="text-sm font-extrabold text-[#0B192C] dark:text-white">
-            {formatCurrency(price)}
+        {ratingCount > 0 ? (
+          <div className="flex items-center justify-center gap-1 mt-1.5">
+            <Star size={11} className="text-[#D4AF37] fill-[#D4AF37]" />
+            <span className="text-[11px] font-extrabold text-[#0B192C] dark:text-white">
+              {ratingVal}
+            </span>
+            <span className="text-[10px] text-gray-400 font-semibold">
+              ({ratingCount} reviews)
+            </span>
+          </div>
+        ) : (
+          <span className="text-[10px] text-gray-400 font-semibold mt-1.5">
+            No reviews yet
           </span>
-          <span className="flex items-center gap-0.5 text-xs font-extrabold text-[#E58C28]">
-            <Star size={11} className="fill-[#E58C28]" />
-            {ratingVal.toFixed(1)}
-          </span>
-        </div>
-
-        <button
-          type="button"
-          className="mt-2 w-full py-2 rounded-full bg-[#0A4DA6] hover:bg-[#083b80] text-white text-xs font-extrabold transition-all cursor-pointer shadow-xs"
-        >
-          View Prasad
-        </button>
+        )}
       </div>
     </div>
   );
@@ -450,10 +391,9 @@ const AttractionCard: React.FC<{
   return (
     <div
       onClick={handleClick}
-      className="group cursor-pointer bg-white dark:bg-[#0B192C] rounded-3xl overflow-hidden border border-gray-100 dark:border-slate-800 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 flex flex-col"
-      style={{ width: "clamp(240px, 40vw, 290px)" }}
+      className="dest-card group cursor-pointer bg-white dark:bg-[#0B192C] rounded-3xl overflow-hidden border border-gray-100 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col"
     >
-      <div className="dest-card-img-wrap relative bg-gray-100 dark:bg-slate-900 flex items-center justify-center h-[160px]">
+      <div className="dest-card-img-wrap dest-card-media relative bg-gray-100 dark:bg-slate-900 flex items-center justify-center">
         <img
           src={imgSrc}
           alt={place.name}
@@ -467,41 +407,23 @@ const AttractionCard: React.FC<{
         />
       </div>
 
-      <div className="flex flex-col gap-1.5 flex-1 p-4">
-        <h4 className="font-extrabold leading-tight line-clamp-1 text-[#0B192C] dark:text-white group-hover:text-[#0A4DA6] transition-colors text-sm">
+      <div className="p-4 text-center flex flex-col items-center justify-center min-h-[72px]">
+        <h4 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight line-clamp-1 text-center group-hover:text-[#0A4DA6] transition-colors">
           {place.name}
         </h4>
-        <p className="text-[10px] text-[#E58C28] font-bold">{place.category}</p>
-
-        {place.description && (
-          <p className="text-[10px] text-gray-400 font-medium line-clamp-2 leading-relaxed">
-            {place.description}
-          </p>
+        <p className="text-[11px] text-[#E58C28] font-bold mt-1 text-center">
+          {place.category}
+        </p>
+        {distanceKm != null ? (
+          <span className="flex items-center justify-center gap-1 text-[10px] text-gray-400 font-semibold mt-1.5">
+            <Navigation size={10} className="text-[#0A4DA6]" />
+            {distanceKm} km from stay
+          </span>
+        ) : (
+          <span className="text-[10px] text-gray-400 font-semibold mt-1.5">
+            Destination Landmark
+          </span>
         )}
-
-        <div className="flex items-center gap-2 mt-auto pt-2 border-t border-gray-50 dark:border-slate-800/60">
-          {distanceKm != null ? (
-            <span className="flex items-center gap-1 text-[10px] text-gray-400 font-bold">
-              <Navigation size={10} className="text-[#0A4DA6]" />
-              {distanceKm} km from stay
-            </span>
-          ) : (
-            <span className="text-[10px] text-gray-400 font-bold">
-              Destination Landmark
-            </span>
-          )}
-        </div>
-
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            handleClick();
-          }}
-          className="mt-1.5 w-full py-1.5 rounded-full text-xs font-extrabold transition-all cursor-pointer bg-[#0A4DA6] hover:bg-[#083b80] text-white shadow-xs flex items-center justify-center gap-1.5"
-        >
-          <MapPin size={12} /> Visit on Map
-        </button>
       </div>
     </div>
   );
@@ -513,8 +435,7 @@ const SkeletonCards: React.FC<{ count?: number }> = ({ count = 4 }) => (
     {Array.from({ length: count }).map((_, i) => (
       <div
         key={i}
-        className="skeleton dest-skeleton-card"
-        style={{ width: "clamp(260px, 42vw, 310px)" }}
+        className="skeleton dest-skeleton-card dest-card"
       />
     ))}
   </div>
@@ -752,11 +673,7 @@ const DestinationOverviewPage: React.FC = () => {
                     speed={25}
                     gapClass="gap-4 sm:gap-6"
                     renderItem={(a, i) => (
-                      <StayCard
-                        key={a._id || i}
-                        ashram={a}
-                        destinationCenter={destination?.coordinates}
-                      />
+                      <StayCard key={a._id || i} ashram={a} />
                     )}
                   />
                 </div>
@@ -786,11 +703,7 @@ const DestinationOverviewPage: React.FC = () => {
                 speed={25}
                 gapClass="gap-4 sm:gap-6"
                 renderItem={(p, i) => (
-                  <ParkingCard
-                    key={p._id || i}
-                    lot={p}
-                    selectedAshramCoords={selectedAshramCoords}
-                  />
+                  <ParkingCard key={p._id || i} lot={p} />
                 )}
               />
             </div>
@@ -847,74 +760,43 @@ const DestinationOverviewPage: React.FC = () => {
     parking,
     prasad,
     loading,
-    destination,
     destName,
-    selectedAshramCoords,
   ]);
 
   return (
     <div className="home-page min-h-screen pb-12">
-      {/* ═══ 1. DYNAMIC HERO ═══ */}
-      <motion.section className="dest-hero" {...fadeUp}>
-        {destination?.heroImage && (
-          <img
-            src={destination.heroImage}
-            alt={destName}
-            className="dest-hero__bg"
-            loading="eager"
-          />
-        )}
-        <div className="dest-hero__overlay" />
-
-        <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 py-16 sm:py-20 text-center flex flex-col items-center gap-5">
-          <motion.h1
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="text-4xl sm:text-5xl lg:text-6xl font-black text-white drop-shadow-lg leading-tight"
-          >
+      {/* ═══ 1. PAGE HEADER ═══ */}
+      {/* The same centred Kalam heading every other public page opens with, so
+          a destination reads as one more section of the site rather than a
+          separate landing page. */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 mb-6">
+        <motion.div
+          className="text-center space-y-2.5 max-w-3xl mx-auto py-2"
+          {...fadeUp}
+        >
+          <h1 className="dest-page-title text-2xl sm:text-4xl lg:text-5xl font-bold text-[#E58C28]">
             {destName}
-          </motion.h1>
-          <p className="text-sm sm:text-base font-bold text-white/80 flex items-center gap-1.5">
-            <MapPin size={14} className="text-[#E58C28]" />
+          </h1>
+          <div className="flex items-center justify-center gap-2.5 my-1.5">
+            <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
+            <Sparkles
+              size={14}
+              className="text-[#E58C28] fill-[#E58C28] shrink-0"
+            />
+            <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
+          </div>
+          <p className="text-xs sm:text-sm font-bold text-gray-400 flex items-center justify-center gap-1.5">
+            <MapPin size={13} className="text-[#E58C28] shrink-0" />
             {destState}, India
           </p>
-          <p className="text-sm text-white/70 font-medium max-w-xl leading-relaxed hidden sm:block">
+          <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-xl mx-auto leading-relaxed">
             {destDesc}
           </p>
-
-          <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-            <button
-              type="button"
-              onClick={() => {
-                document
-                  .getElementById("dest-available")
-                  ?.scrollIntoView({ behavior: "smooth" });
-              }}
-              className="bg-[#0A4DA6] hover:bg-[#083D85] text-white font-extrabold text-xs sm:text-sm pl-6 pr-2 py-2.5 rounded-full flex items-center gap-2.5 transition-all cursor-pointer border border-white/20 shadow-lg"
-            >
-              Explore Stays
-              <span className="w-7 h-7 rounded-full bg-white text-[#0A4DA6] flex items-center justify-center">
-                <ArrowRight size={13} className="stroke-[2.5]" />
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                document
-                  .getElementById("dest-explore")
-                  ?.scrollIntoView({ behavior: "smooth" });
-              }}
-              className="bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white font-extrabold text-xs sm:text-sm px-6 py-2.5 rounded-full flex items-center gap-2 transition-all cursor-pointer border border-white/20"
-            >
-              <Compass size={14} /> Explore Places
-            </button>
-          </div>
-        </div>
-      </motion.section>
+        </motion.div>
+      </section>
 
       {/* ═══ 2. 100% DYNAMIC QUICK STATS ═══ */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 -mt-8 relative z-20 mb-10">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 mb-10">
         <motion.div className="dest-stats-strip" {...fadeUp}>
           {[
             { label: "Ashrams", value: liveStats.ashrams, icon: Home },
@@ -944,13 +826,8 @@ const DestinationOverviewPage: React.FC = () => {
         id="dest-available"
         className="max-w-7xl mx-auto px-4 sm:px-6 mb-14"
       >
-        <SectionHeading
-          title="Available on Tirvona"
-          subtitle={`Everything you can discover and book for your stay in ${destName}.`}
-        />
-
         {/* Category Tabs */}
-        <div className="flex items-center justify-center gap-2 flex-wrap mt-6 mb-6">
+        <div className="flex items-center justify-center gap-2 flex-wrap mb-6">
           {tabConfig.map((tab) => (
             <button
               key={tab.key}
@@ -1046,39 +923,7 @@ const DestinationOverviewPage: React.FC = () => {
         </section>
       )}
 
-      {/* ═══ 6. MORE TO EXPLORE (SECONDARY / INFORMATIONAL CONTENT) ═══ */}
-      {nearbyWithDistance.filter((p) => !p.availableOnTirvona).length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 mb-14">
-          <div className="text-center space-y-1 mb-6">
-            <h3 className="text-sm sm:text-lg font-extrabold text-[#0B192C] dark:text-white">
-              More to Explore in {destName}
-            </h3>
-            <p className="text-[11px] text-gray-400 font-bold">
-              Places and landmarks not directly managed on Tirvona — provided for
-              your pilgrimage discovery.
-            </p>
-          </div>
-
-          <div className="pt-2 pb-2 mt-4">
-            <MarqueeSlider
-              key={`more-slider-${selectedAshram?._id || selectedAshramIdx}`}
-              items={nearbyWithDistance.filter((p) => !p.availableOnTirvona)}
-              speed={25}
-              gapClass="gap-4 sm:gap-6"
-              renderItem={(place) => (
-                <AttractionCard
-                  key={`more-${place.id}`}
-                  place={place}
-                  distanceKm={place.distanceKm}
-                  onSelectPlace={handleSelectPlaceOnMap}
-                />
-              )}
-            />
-          </div>
-        </section>
-      )}
-
-      {/* ═══ 7. DYNAMIC MAP ═══ */}
+      {/* ═══ 6. DYNAMIC MAP ═══ */}
       {mapCenter && (
         <section id="dest-map" className="max-w-7xl mx-auto px-4 sm:px-6 mb-14">
           <SectionHeading
@@ -1099,7 +944,7 @@ const DestinationOverviewPage: React.FC = () => {
         </section>
       )}
 
-      {/* ═══ 8. PLAN YOUR VISIT ═══ */}
+      {/* ═══ 7. PLAN YOUR VISIT ═══ */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 mb-8">
         <SectionHeading
           title={`Plan Your ${destName} Visit`}

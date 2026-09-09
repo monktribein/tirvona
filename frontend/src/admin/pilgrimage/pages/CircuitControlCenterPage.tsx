@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { getErrorMessage } from "../../../lib/api";
 import { EnterprisePageHeader } from "../../shared/components/EnterprisePageHeader";
+import { EnterpriseStatsCard } from "../../shared/components/EnterpriseStatsCard";
 import { pilgrimageAdminService } from "../../../modules/pilgrimage/services/pilgrimage.service";
 import type {
   PilgrimageCircuit,
@@ -27,28 +28,6 @@ import {
 
 const CARD =
   "bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] shadow-sm";
-
-const StatCard: React.FC<{
-  label: string;
-  value: string | number;
-  hint?: string;
-  icon: React.ReactNode;
-}> = ({ label, value, hint, icon }) => (
-  <div className={`${CARD} p-4`}>
-    <div className="flex items-center justify-between">
-      <span className="text-[10px] tracking-wider font-bold text-gray-400 uppercase">
-        {label}
-      </span>
-      <span className="text-gray-300 dark:text-slate-700">{icon}</span>
-    </div>
-    <p className="mt-2 text-2xl font-black text-[#0B192C] dark:text-white">
-      {value}
-    </p>
-    {hint ? (
-      <p className="mt-0.5 text-[10px] font-bold text-gray-400">{hint}</p>
-    ) : null}
-  </div>
-);
 
 export const CircuitControlCenterPage: React.FC = () => {
   const [dashboard, setDashboard] = useState<PilgrimageDashboard | null>(null);
@@ -112,29 +91,29 @@ export const CircuitControlCenterPage: React.FC = () => {
 
       {dashboard ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard
-            label="Live circuits"
+          <EnterpriseStatsCard
+            title="Live circuits"
             value={dashboard.circuits.approved}
-            hint={`${dashboard.circuits.pendingReview} awaiting review`}
-            icon={<Compass size={16} />}
+            description={`${dashboard.circuits.pendingReview} awaiting review`}
+            icon={<Compass size={18} />}
           />
-          <StatCard
-            label="Planner templates"
+          <EnterpriseStatsCard
+            title="Planner templates"
             value={dashboard.circuits.templates}
-            hint="Offered in the planner"
-            icon={<Route size={16} />}
+            description="Offered in the planner"
+            icon={<Route size={18} />}
           />
-          <StatCard
-            label="Drafts"
+          <EnterpriseStatsCard
+            title="Drafts"
             value={dashboard.circuits.drafts}
-            hint="Not yet submitted"
-            icon={<FileText size={16} />}
+            description="Not yet submitted"
+            icon={<FileText size={18} />}
           />
-          <StatCard
-            label="Saved itineraries"
+          <EnterpriseStatsCard
+            title="Saved itineraries"
             value={dashboard.savedItineraries}
-            hint="Built by pilgrims"
-            icon={<Eye size={16} />}
+            description="Built by pilgrims"
+            icon={<Eye size={18} />}
           />
         </div>
       ) : null}

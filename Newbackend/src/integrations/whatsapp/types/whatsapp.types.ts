@@ -20,6 +20,12 @@ export interface WhatsAppProviderRequest {
   message: string;
   idempotencyKey: string;
   correlationId?: string;
+  /**
+   * The unrendered variables behind `message`. Text providers ignore this and
+   * send `message`; template providers such as MSG91 map it onto the approved
+   * template's components.
+   */
+  templateVariables?: Readonly<Record<string, WhatsAppTemplateValue>>;
 }
 
 export interface WhatsAppProviderResult {
@@ -29,8 +35,37 @@ export interface WhatsAppProviderResult {
   reason?: string;
 }
 
+export interface WhatsAppAartiContext {
+  guestName?: string;
+  reference?: string;
+  sessionName?: string;
+  displayCode?: string;
+  scheduledAt?: Date | string;
+  amountPaid?: number;
+  refundAmount?: number;
+  currency?: string;
+}
+
+export interface WhatsAppEventContext {
+  guestName?: string;
+  reference?: string;
+  eventName?: string;
+  venue?: string;
+  displayCode?: string;
+  startsAt?: Date | string;
+  amountPaid?: number;
+  currency?: string;
+}
+
+export type WhatsAppDomain =
+  | "booking"
+  | "parking"
+  | "community"
+  | "aarti"
+  | "event";
+
 export interface WhatsAppOutboxNotification {
-  domain: "booking" | "parking" | "community";
+  domain: WhatsAppDomain;
   notificationId: string;
   event: string;
   phone: string;
@@ -45,4 +80,7 @@ export interface WhatsAppOutboxNotification {
    */
   stay?: WhatsAppStayContext;
   parking?: WhatsAppParkingContext;
+  aarti?: WhatsAppAartiContext;
+  /** Event-registration pass details; `event` above is the outbox event name. */
+  eventPass?: WhatsAppEventContext;
 }

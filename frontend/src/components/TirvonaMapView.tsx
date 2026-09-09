@@ -17,6 +17,12 @@ export interface MapMarker {
 
 export interface TirvonaMapProps {
   markers?: MapMarker[];
+  /**
+   * An ordered run of points drawn as a line, for a travelled route. Optional
+   * and additive: callers that pass only markers behave exactly as before.
+   */
+  path?: { lat: number; lng: number }[];
+  pathColour?: string;
   center?: [number, number];
   zoom?: number;
   height?: string;
@@ -84,6 +90,8 @@ const buildPopup = (marker: MapMarker) => {
 
 export const TirvonaMapView: React.FC<TirvonaMapProps> = ({
   markers = [],
+  path,
+  pathColour = "#0A4DA6",
   center,
   zoom = 14,
   height = "320px",
@@ -105,6 +113,14 @@ export const TirvonaMapView: React.FC<TirvonaMapProps> = ({
   const validMarkers = useMemo(
     () => markers.filter((m) => hasValidCoordinates(m.latitude, m.longitude)),
     [markers],
+  );
+
+  const validPath = useMemo(
+    () =>
+      (path ?? [])
+        .filter((p) => hasValidCoordinates(p.lat, p.lng))
+        .map((p) => [p.lat, p.lng] as [number, number]),
+    [path],
   );
 
   useEffect(() => {
@@ -159,6 +175,16 @@ export const TirvonaMapView: React.FC<TirvonaMapProps> = ({
 
     layer.clearLayers();
 
+    // Drawn first so the pins sit above the line rather than under it.
+    if (validPath.length > 1)
+      L.polyline(validPath, {
+        color: pathColour,
+        weight: 4,
+        opacity: 0.75,
+        lineJoin: "round",
+        lineCap: "round",
+      }).addTo(layer);
+
     let targetPin: L.Marker | null = null;
 
     validMarkers.forEach((m) => {
@@ -190,18 +216,22 @@ export const TirvonaMapView: React.FC<TirvonaMapProps> = ({
 
     if (targetPin) {
       (targetPin as L.Marker).openPopup();
-    } else if (fitToMarkers && validMarkers.length > 0) {
-      const bounds = L.latLngBounds(
-        validMarkers.map((m) => [m.latitude, m.longitude] as [number, number]),
-      );
-      map.fitBounds(bounds, {
+    } else if (fitToMarkers && (validMarkers.length > 0 || validPath.length > 0)) {
+      // The whole route has to fit, not just its endpoints.
+      const points: [number, number][] = [
+        ...validMarkers.map((m) => [m.latitude, m.longitude] as [number, number]),
+        ...validPath,
+      ];
+      map.fitBounds(L.latLngBounds(points), {
         padding: [40, 40],
-        maxZoom: validMarkers.length === 1 ? 15 : 16,
+        maxZoom: points.length === 1 ? 15 : 16,
       });
     }
   }, [
     ready,
     validMarkers,
+    validPath,
+    pathColour,
     fitToMarkers,
     draggableMarker,
     activeMarkerId,

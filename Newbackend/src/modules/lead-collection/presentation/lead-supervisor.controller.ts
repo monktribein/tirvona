@@ -16,6 +16,7 @@ import { Public } from "../../../common/decorators/public.decorator";
 import { LeadUsersService } from "../application/lead-users.service";
 import { LeadsService } from "../application/leads.service";
 import { LeadAttendanceService } from "../application/lead-attendance.service";
+import { LeadTrackingService } from "../application/lead-tracking.service";
 import type { AuthenticatedLeadUser } from "../domain/lead-collection.types";
 import { CurrentLeadAgent } from "./decorators/current-lead-agent.decorator";
 import {
@@ -26,6 +27,10 @@ import {
 } from "./dtos/lead-user.dto";
 import { LeadQueryDto, SaveLeadDto } from "./dtos/lead.dto";
 import { AttendanceQueryDto } from "./dtos/lead-attendance.dto";
+import {
+  TrackingDayQueryDto,
+  TrackingHistoryQueryDto,
+} from "./dtos/lead-tracking.dto";
 import { LeadAgentGuard } from "./guards/lead-agent.guard";
 import { LeadSupervisorGuard } from "./guards/lead-supervisor.guard";
 
@@ -39,6 +44,7 @@ export class LeadSupervisorController {
     private readonly leadUsers: LeadUsersService,
     private readonly leads: LeadsService,
     private readonly attendance: LeadAttendanceService,
+    private readonly tracking: LeadTrackingService,
   ) { }
 
   @Get("dashboard")
@@ -277,5 +283,66 @@ export class LeadSupervisorController {
       data: await this.attendance.getAgentAttendanceHistory(agentId, query),
     };
   }
-}
 
+  /**
+   * Movement tracking for one agent. `findOneInDistrict` is the authorisation
+   * gate every other agent-scoped route here uses: it throws unless the agent
+   * belongs to this supervisor's own state and district.
+   */
+  @Get("agents/:agentId/tracking")
+  async getAgentTracking(
+    @CurrentLeadAgent() supervisor: AuthenticatedLeadUser,
+    @Param("agentId") agentId: string,
+    @Query() query: TrackingDayQueryDto,
+  ) {
+    const agent = await this.leadUsers.findOneInDistrict(
+      agentId,
+      supervisor.state,
+      supervisor.district,
+    );
+
+    return {
+      success: true,
+      data: {
+        agent: {
+          id: String(agent._id),
+          name: agent.name,
+          phone: agent.phone,
+          district: agent.district,
+          consent: await this.tracking.getConsent(agentId),
+        },
+        day: await this.tracking.day(agentId, query.date),
+      },
+    };
+  }
+
+  @Get("agents/:agentId/tracking/history")
+  async getAgentTrackingHistory(
+    @CurrentLeadAgent() supervisor: AuthenticatedLeadUser,
+    @Param("agentId") agentId: string,
+    @Query() query: TrackingHistoryQueryDto,
+  ) {
+    await this.leadUsers.findOneInDistrict(
+      agentId,
+      supervisor.state,
+      supervisor.district,
+    );
+
+    return {
+      success: true,
+      data: await this.tracking.history(agentId, query),
+    };
+  }
+
+  /** Latest known position of every agent in this supervisor's district. */
+  @Get("tracking/live")
+  async liveTracking(@CurrentLeadAgent() supervisor: AuthenticatedLeadUser) {
+    return {
+      success: true,
+      data: await this.tracking.liveBoard({
+        state: supervisor.state,
+        district: supervisor.district,
+      }),
+    };
+  }
+}

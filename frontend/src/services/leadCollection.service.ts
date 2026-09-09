@@ -81,6 +81,80 @@ export interface Paged<T> {
   limit: number;
 }
 
+
+export interface TrackingPoint {
+  lat: number;
+  lng: number;
+  recordedAt: string;
+}
+
+export interface TrackingLeg {
+  kind: "move" | "stop";
+  startedAt: string;
+  endedAt: string;
+  minutes: number;
+  km: number;
+  from: { lat: number; lng: number };
+  to: { lat: number; lng: number };
+}
+
+export interface TrackingVisit {
+  lat: number;
+  lng: number;
+  arrivedAt: string;
+  leftAt: string;
+  minutes: number;
+  fixes: number;
+}
+
+export interface TrackingDay {
+  date: string;
+  fixes: number;
+  totalKm: number;
+  movingMinutes: number;
+  idleMinutes: number;
+  trackedMinutes: number;
+  startedAt: string | null;
+  endedAt: string | null;
+  startLocation: { lat: number; lng: number } | null;
+  endLocation: { lat: number; lng: number } | null;
+  latest: TrackingPoint | null;
+  route: TrackingPoint[];
+  timeline: TrackingLeg[];
+  visited: TrackingVisit[];
+}
+
+export interface TrackingAgent {
+  id: string;
+  name: string;
+  phone?: string;
+  state?: string;
+  district?: string;
+  consent: {
+    granted: boolean;
+    grantedAt: string | null;
+    revokedAt: string | null;
+    deviceLabel: string;
+  };
+}
+
+export interface TrackingLivePosition {
+  agentId: string;
+  agentName: string;
+  lat: number;
+  lng: number;
+  recordedAt: string;
+  minutesAgo: number;
+}
+
+export interface TrackingHistoryRow {
+  date: string;
+  fixes: number;
+  totalKm: number;
+  firstAt: string;
+  lastAt: string;
+}
+
 const BASE = "/lead-collection/admin";
 
 export const leadCollectionService = {
@@ -130,4 +204,21 @@ export const leadCollectionService = {
         pages: number;
       };
     }>(`${BASE}/attendance/agent/${agentId}`, { params }),
+
+  /** Movement tracking. Scope is enforced server-side by the admin guard. */
+  getAgentTracking: (agentId: string, date?: string) =>
+    api.get<{ data: { agent: TrackingAgent; day: TrackingDay } }>(
+      `${BASE}/agents/${agentId}/tracking`,
+      { params: date ? { date } : {} },
+    ),
+  getAgentTrackingHistory: (
+    agentId: string,
+    params: Record<string, string> = {},
+  ) =>
+    api.get<{ data: TrackingHistoryRow[] }>(
+      `${BASE}/agents/${agentId}/tracking/history`,
+      { params },
+    ),
+  getLiveTracking: () =>
+    api.get<{ data: TrackingLivePosition[] }>(`${BASE}/tracking/live`),
 };

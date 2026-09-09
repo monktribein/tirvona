@@ -5,6 +5,8 @@ import type { AuthenticatedUser } from "../../../common/decorators/current-user.
 import { canManageAllAshrams } from "../../../common/auth/ashram-access";
 import { resolveAshramScope } from "../../../common/auth/ashram-scope";
 import { PARKING_MODEL } from "../../parking/domain/parking.constants";
+import { AARTI_MODEL } from "../../aarti/domain/aarti.constants";
+import { EVENT_MODEL } from "../../events/domain/event.constants";
 import type { AnalyticsRange } from "../presentation/dtos/analytics.dto";
 
 const RANGE_WINDOW: Record<
@@ -75,7 +77,52 @@ export class AnalyticsService {
     @InjectModel("AuditLog") private readonly platformAudits: Model<any>,
     @InjectModel(PARKING_MODEL.Booking)
     private readonly parkingBookings: Model<any>,
+    @InjectModel(AARTI_MODEL.Booking)
+    private readonly aartiBookings: Model<any>,
+    @InjectModel(EVENT_MODEL.Registration)
+    private readonly eventRegistrations: Model<any>,
+    @InjectModel("MarketplaceOrderRecord")
+    private readonly marketplaceOrders: Model<any>,
   ) {}
+
+  /**
+   * Window totals for one of the booking products that hangs off an ashram.
+   * Cancelled rows are excluded so a module tile reads as what was actually
+   * sold, matching how the stay figures above are presented.
+   */
+  private async moduleWindow(
+    model: Model<any>,
+    filter: Record<string, any>,
+    windowStart: Date,
+    options: { revenueField?: string; grossField?: string; unitField?: string },
+  ): Promise<{ bookings: number; revenue: number; units: number }> {
+    const sum = (field?: string): any =>
+      field ? { $sum: { $ifNull: [`$${field}`, 0] } } : { $sum: 0 };
+
+    const [row] = await model.aggregate([
+      {
+        $match: {
+          ...filter,
+          status: { $nin: ["cancelled", "refunded", "expired"] },
+          createdAt: { $gte: windowStart },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          bookings: { $sum: 1 },
+          revenue: sum(options.revenueField),
+          units: sum(options.unitField),
+        },
+      },
+    ]);
+
+    return {
+      bookings: Number(row?.bookings ?? 0),
+      revenue: round2(Number(row?.revenue ?? 0)),
+      units: Number(row?.units ?? 0),
+    };
+  }
 
   private includesParking(ashramFilter: Record<string, any>): boolean {
     return Object.keys(ashramFilter).length === 0;
@@ -657,6 +704,25 @@ export class AnalyticsService {
       Number(windowTotals.nightsValue ?? 0) + Number(parkingWindow.gross ?? 0),
     );
 
+    // The sidebar carries a section for each of these, so the overview names
+    // them even at zero rather than leaving the category unaccounted for.
+    // Marketplace is platform-wide with no ashram of its own, so a
+    // jurisdiction-limited viewer does not see it, exactly as parking behaves.
+    const [aartiWindow, eventWindow, marketplaceWindow] = await Promise.all([
+      this.moduleWindow(this.aartiBookings, bookingFilter, windowStart, {
+        revenueField: "pricing.amountPaid",
+        unitField: "passCount",
+      }),
+      this.moduleWindow(this.eventRegistrations, bookingFilter, windowStart, {
+        unitField: "seats",
+      }),
+      withParking
+        ? this.moduleWindow(this.marketplaceOrders, {}, windowStart, {
+            revenueField: "pricing.amountPaid",
+          })
+        : Promise.resolve({ bookings: 0, revenue: 0, units: 0 }),
+    ]);
+
     const last = series[series.length - 1];
     const previous = series[series.length - 2];
     const comparable = Boolean(
@@ -703,6 +769,31 @@ export class AnalyticsService {
           allTimeBookings: Number(parkingAllTime.bookings ?? 0),
           allTimeRevenue: round2(Number(parkingAllTime.revenue ?? 0)),
         },
+        {
+          module: "aarti_booking",
+          label: "Aarti & live pooja",
+          bookings: aartiWindow.bookings,
+          revenue: aartiWindow.revenue,
+        },
+        {
+          // Event registration is free, so this stream reports attendance
+          // rather than money and its revenue is genuinely zero.
+          module: "event_registration",
+          label: "Events & festivals",
+          bookings: eventWindow.bookings,
+          revenue: 0,
+          seats: eventWindow.units,
+        },
+        ...(withParking
+          ? [
+              {
+                module: "marketplace_order",
+                label: "Marketplace",
+                bookings: marketplaceWindow.bookings,
+                revenue: marketplaceWindow.revenue,
+              },
+            ]
+          : []),
       ],
       totals: {
         windowBookings,

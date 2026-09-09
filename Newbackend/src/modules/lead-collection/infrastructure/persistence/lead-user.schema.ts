@@ -32,6 +32,18 @@ export const LeadUserSchema = new Schema(
       trim: true,
     },
     createdByAdminName: { type: String, immutable: true, default: "" },
+
+    /**
+     * Movement tracking is opt-in and revocable by the agent themselves.
+     * Nothing is recorded while `granted` is false, and revoking stops future
+     * collection without deleting what was already gathered.
+     */
+    trackingConsent: {
+      granted: { type: Boolean, default: false },
+      grantedAt: { type: Date, default: null },
+      revokedAt: { type: Date, default: null },
+      deviceLabel: { type: String, trim: true, default: "" },
+    },
   },
   {
     timestamps: true,

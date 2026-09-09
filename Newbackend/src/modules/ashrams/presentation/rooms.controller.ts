@@ -17,18 +17,39 @@ import {
   AuthenticatedUser,
 } from "../../../common/decorators/current-user.decorator";
 import { AshramsService } from "../application/ashrams.service";
+import { RoomSummaryService } from "../application/room-summary.service";
 import {
   CreateRoomDto,
   RoomAvailabilityDto,
   UpdateRoomDto,
 } from "./dtos/ashram.dto";
+import { RoomSummaryQueryDto } from "./dtos/room-summary.dto";
 
 @ApiTags("Rooms")
 @ApiBearerAuth()
 @Roles("owner", "stay_admin", "manager", "super_admin")
 @Controller("rooms")
 export class RoomsController {
-  constructor(private readonly service: AshramsService) {}
+  constructor(
+    private readonly service: AshramsService,
+    private readonly summaries: RoomSummaryService,
+  ) {}
+
+  /**
+   * Estate-wide room totals plus a category-by-category breakdown for one
+   * night. Declared ahead of the ":id" routes so "summary" is never read as an
+   * identifier. Scope is resolved per caller, so an owner sees only their own
+   * ashrams here while a super admin sees every one.
+   */
+  @Get("summary")
+  @Header("Cache-Control", "no-store")
+  async summary(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() query: RoomSummaryQueryDto,
+  ) {
+    return { success: true, data: await this.summaries.summary(user, query) };
+  }
+
   @Post() async create(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: CreateRoomDto,

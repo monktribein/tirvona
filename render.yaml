@@ -111,6 +111,79 @@ services:
         sync: false
       - key: AK_NEXUS_WHATSAPP_TEMPLATE_CHECKIN_REMINDER
         sync: false
+      # MSG91 WhatsApp: primary provider when enabled, AK NEXUS is the fallback.
+      - key: MSG91_WHATSAPP_ENABLED
+        value: false
+      - key: MSG91_WHATSAPP_AUTH_KEY
+        sync: false
+      - key: MSG91_WHATSAPP_INTEGRATED_NUMBER
+        sync: false
+      - key: MSG91_WHATSAPP_API_BASE_URL
+        value: https://control.msg91.com/api/v5
+      - key: MSG91_WHATSAPP_NAMESPACE
+        sync: false
+      - key: MSG91_WHATSAPP_TEMPLATE_LANGUAGE
+        value: en_GB
+      - key: MSG91_WHATSAPP_TEMPLATE_AUTH_OTP
+        value: tirvona_otp
+      - key: MSG91_WHATSAPP_TEMPLATE_AUTH_OTP_BODY_VARS
+        value: otp
+      - key: MSG91_WHATSAPP_TEMPLATE_AUTH_OTP_COPY_CODE
+        value: false
+      # Approved template names per notification type; empty means the
+      # existing REST provider keeps delivering that message.
+      - key: MSG91_WHATSAPP_TEMPLATE_BOOKING_CONFIRMATION
+        sync: false
+      - key: MSG91_WHATSAPP_TEMPLATE_BOOKING_CONFIRMATION_BODY_VARS
+        value: guest_name,ashram_name,reference,check_in,check_out,code
+      - key: MSG91_WHATSAPP_TEMPLATE_PAYMENT_SUCCESS
+        sync: false
+      - key: MSG91_WHATSAPP_TEMPLATE_PAYMENT_SUCCESS_BODY_VARS
+        value: guest_name,amount,reference
+      - key: MSG91_WHATSAPP_TEMPLATE_PAYMENT_FAILURE
+        sync: false
+      - key: MSG91_WHATSAPP_TEMPLATE_PAYMENT_FAILURE_BODY_VARS
+        value: guest_name,reference
+      - key: MSG91_WHATSAPP_TEMPLATE_CANCELLATION
+        sync: false
+      - key: MSG91_WHATSAPP_TEMPLATE_CANCELLATION_BODY_VARS
+        value: guest_name,ashram_name,reference
+      - key: MSG91_WHATSAPP_TEMPLATE_REFUND
+        sync: false
+      - key: MSG91_WHATSAPP_TEMPLATE_REFUND_BODY_VARS
+        value: guest_name,refund_amount,reference
+      - key: MSG91_WHATSAPP_TEMPLATE_CHECKIN_REMINDER
+        sync: false
+      - key: MSG91_WHATSAPP_TEMPLATE_CHECKIN_REMINDER_BODY_VARS
+        value: guest_name,ashram_name,check_in,code
+      - key: MSG91_WHATSAPP_TEMPLATE_CHECKIN_CONFIRMED
+        sync: false
+      - key: MSG91_WHATSAPP_TEMPLATE_CHECKIN_CONFIRMED_BODY_VARS
+        value: guest_name,ashram_name,room_name,check_out
+      - key: MSG91_WHATSAPP_TEMPLATE_CHECKOUT_COMPLETED
+        sync: false
+      - key: MSG91_WHATSAPP_TEMPLATE_CHECKOUT_COMPLETED_BODY_VARS
+        value: guest_name,ashram_name,reference
+      - key: MSG91_WHATSAPP_TEMPLATE_AARTI_CONFIRMATION
+        sync: false
+      - key: MSG91_WHATSAPP_TEMPLATE_AARTI_CONFIRMATION_BODY_VARS
+        value: guest_name,session_name,reference,code
+      - key: MSG91_WHATSAPP_TEMPLATE_AARTI_CANCELLATION
+        sync: false
+      - key: MSG91_WHATSAPP_TEMPLATE_AARTI_CANCELLATION_BODY_VARS
+        value: guest_name,reference
+      - key: MSG91_WHATSAPP_TEMPLATE_EVENT_REGISTRATION
+        sync: false
+      - key: MSG91_WHATSAPP_TEMPLATE_EVENT_REGISTRATION_BODY_VARS
+        value: guest_name,event_name,reference,code
+      - key: MSG91_WHATSAPP_TEMPLATE_EVENT_CANCELLATION
+        sync: false
+      - key: MSG91_WHATSAPP_TEMPLATE_EVENT_CANCELLATION_BODY_VARS
+        value: guest_name,reference
+      - key: MSG91_WHATSAPP_TEMPLATE_GENERAL_NOTIFICATION
+        sync: false
+      - key: MSG91_WHATSAPP_TEMPLATE_GENERAL_NOTIFICATION_BODY_VARS
+        value: title,message
       # Transactional email (OTP, password reset, notifications, messages).
       - key: RESEND_API_KEY
         sync: false

@@ -63,6 +63,14 @@ const worker = (
     { findById: jest.fn(() => lookupChain(null)) } as never,
     { findById: jest.fn(() => lookupChain(null)) } as never,
     { findOne: jest.fn(() => lookupChain(null)) } as never,
+    // Aarti notification rows, bookings and QR codes.
+    notificationModel() as never,
+    { findById: jest.fn(() => lookupChain(null)) } as never,
+    { findOne: jest.fn(() => lookupChain(null)) } as never,
+    // Event notification rows, registrations and QR codes.
+    notificationModel() as never,
+    { findById: jest.fn(() => lookupChain(null)) } as never,
+    { findOne: jest.fn(() => lookupChain(null)) } as never,
     gateway as never,
     { get: jest.fn() } as never,
     whatsapp as never,

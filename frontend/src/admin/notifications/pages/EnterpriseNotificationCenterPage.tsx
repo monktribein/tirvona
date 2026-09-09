@@ -1,7 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { getFormattingLocale } from "../../../utils/format";
 import {
+  AlertTriangle,
+  Bell,
   Clock,
+  CreditCard,
+  Mail,
   Search,
   Download,
   Trash2,
@@ -15,6 +19,7 @@ import { enterpriseNotificationService } from "../../../services";
 import { useNotifications } from "../../../contexts/NotificationContext";
 import { getErrorMessage } from "../../../lib/api";
 import { humanizeLabel } from "../../../utils/labels";
+import { EnterpriseStatsCard } from "../../shared/components/EnterpriseStatsCard";
 import { EnterprisePageHeader } from "../../shared";
 import { NotificationSoundSettings } from "../components/NotificationSoundSettings";
 
@@ -335,39 +340,27 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
         }
       />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
-          <span className="text-[10px] text-gray-400 font-bold block">
-            Today's Notifications
-          </span>
-          <span className="text-2xl font-black text-[#0B192C] dark:text-white mt-1 block">
-            {stats?.todaysNotifications ?? 0}
-          </span>
-        </div>
-        <div className="bg-white dark:bg-[#0B192C] border border-rose-200 dark:border-rose-950/60 p-4 rounded-2xl shadow-sm">
-          <span className="text-[10px] text-rose-500 font-bold block">
-            Critical Alerts
-          </span>
-          <span className="text-2xl font-black text-rose-600 dark:text-rose-400 mt-1 block">
-            {stats?.criticalAlerts ?? 0}
-          </span>
-        </div>
-        <div className="bg-white dark:bg-[#0B192C] border border-amber-200 dark:border-amber-950/60 p-4 rounded-2xl shadow-sm">
-          <span className="text-[10px] text-amber-500 font-bold block">
-            Unread Notifications
-          </span>
-          <span className="text-2xl font-black text-amber-600 dark:text-amber-400 mt-1 block">
-            {stats?.unreadNotifications ?? 0}
-          </span>
-        </div>
-        <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
-          <span className="text-[10px] text-gray-400 font-bold block">
-            Failed Payments
-          </span>
-          <span className="text-2xl font-black text-gray-800 dark:text-gray-200 mt-1 block">
-            {stats?.failedPayments ?? 0}
-          </span>
-        </div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <EnterpriseStatsCard
+          title="Today's Notifications"
+          value={stats?.todaysNotifications ?? 0}
+          icon={<Bell size={18} />}
+        />
+        <EnterpriseStatsCard
+          title="Critical Alerts"
+          value={stats?.criticalAlerts ?? 0}
+          icon={<AlertTriangle size={18} />}
+        />
+        <EnterpriseStatsCard
+          title="Unread Notifications"
+          value={stats?.unreadNotifications ?? 0}
+          icon={<Mail size={18} />}
+        />
+        <EnterpriseStatsCard
+          title="Failed Payments"
+          value={stats?.failedPayments ?? 0}
+          icon={<CreditCard size={18} />}
+        />
       </div>
 
       <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-4 rounded-2xl shadow-sm flex flex-col sm:flex-row justify-between items-center gap-3">

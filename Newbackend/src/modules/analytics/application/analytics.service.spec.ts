@@ -9,6 +9,9 @@ const createService = (models: {
   platformAudits?: Record<string, unknown>;
   audits?: Record<string, unknown>;
   parking?: Record<string, unknown>;
+  aarti?: Record<string, unknown>;
+  events?: Record<string, unknown>;
+  marketplace?: Record<string, unknown>;
 }) =>
   new AnalyticsService(
     (models.bookings ?? {}) as never,
@@ -18,6 +21,10 @@ const createService = (models: {
     (models.audits ?? {}) as never,
     (models.platformAudits ?? {}) as never,
     (models.parking ?? { aggregate: jest.fn().mockResolvedValue([]) }) as never,
+    (models.aarti ?? { aggregate: jest.fn().mockResolvedValue([]) }) as never,
+    (models.events ?? { aggregate: jest.fn().mockResolvedValue([]) }) as never,
+    (models.marketplace ??
+      { aggregate: jest.fn().mockResolvedValue([]) }) as never,
   );
 
 const emptyAshramFacet = [
@@ -400,22 +407,25 @@ describe("AnalyticsService parking inclusion", () => {
 
     const result = await service.overview(superAdmin, "daily");
 
-    expect(result.modules).toEqual([
-      {
-        module: "ashram_booking",
-        label: "Ashram stays",
-        bookings: 16,
-        revenue: 0,
-      },
-      {
-        module: "parking_booking",
-        label: "Parking",
-        bookings: 4,
-        revenue: 30,
-        allTimeBookings: 18,
-        allTimeRevenue: 2284,
-      },
-    ]);
+    // Asserts the stay/parking split specifically; the other product streams
+    // are covered on their own below, so new ones do not break this.
+    const byModule = Object.fromEntries(
+      result.modules.map((module: any) => [module.module, module]),
+    );
+    expect(byModule.ashram_booking).toEqual({
+      module: "ashram_booking",
+      label: "Ashram stays",
+      bookings: 16,
+      revenue: 0,
+    });
+    expect(byModule.parking_booking).toEqual({
+      module: "parking_booking",
+      label: "Parking",
+      bookings: 4,
+      revenue: 30,
+      allTimeBookings: 18,
+      allTimeRevenue: 2284,
+    });
     expect(result.totals.windowBookings).toBe(20);
     expect(result.totals.windowRevenue).toBe(30);
   });
@@ -492,5 +502,86 @@ describe("AnalyticsService parking inclusion", () => {
     expect(
       parkingAggregate.mock.calls[1][0][0].$facet.statuses[0].$match,
     ).toEqual({ createdAt: { $gte: expect.any(Date) } });
+  });
+});
+
+describe("AnalyticsService.overview module streams", () => {
+  const base = () => ({
+    bookings: {
+      aggregate: jest
+        .fn()
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([
+          { channels: [], statuses: [], window: [] },
+        ])
+        .mockResolvedValueOnce([]),
+    },
+  });
+
+  const window = (rows: unknown[]) => ({
+    aggregate: jest.fn().mockResolvedValue(rows),
+  });
+
+  it("names every sidebar product, at zero, so no category is unaccounted for", async () => {
+    const service = createService(base());
+
+    const result = await service.overview(superAdmin, "daily");
+
+    expect(result.modules.map((m: any) => m.module)).toEqual([
+      "ashram_booking",
+      "parking_booking",
+      "aarti_booking",
+      "event_registration",
+      "marketplace_order",
+    ]);
+    expect(result.modules.every((m: any) => m.revenue === 0)).toBe(true);
+  });
+
+  it("reports aarti money and marketplace money from what was actually paid", async () => {
+    const service = createService({
+      ...base(),
+      aarti: window([{ bookings: 7, revenue: 4200.456, units: 19 }]),
+      marketplace: window([{ bookings: 3, revenue: 990, units: 0 }]),
+    });
+
+    const result = await service.overview(superAdmin, "daily");
+    const byModule = Object.fromEntries(
+      result.modules.map((m: any) => [m.module, m]),
+    );
+
+    expect(byModule.aarti_booking).toMatchObject({
+      bookings: 7,
+      revenue: 4200.46,
+    });
+    expect(byModule.marketplace_order).toMatchObject({
+      bookings: 3,
+      revenue: 990,
+    });
+  });
+
+  it("reports event seats but never event revenue, since registration is free", async () => {
+    const service = createService({
+      ...base(),
+      events: window([{ bookings: 5, revenue: 0, units: 42 }]),
+    });
+
+    const result = await service.overview(superAdmin, "daily");
+    const events = result.modules.find(
+      (m: any) => m.module === "event_registration",
+    );
+
+    expect(events).toMatchObject({ bookings: 5, revenue: 0, seats: 42 });
+  });
+
+  it("excludes cancelled rows from a module stream", async () => {
+    const aarti = window([]);
+    const service = createService({ ...base(), aarti });
+
+    await service.overview(superAdmin, "daily");
+
+    const [pipeline] = aarti.aggregate.mock.calls[0];
+    expect(pipeline[0].$match.status).toEqual({
+      $nin: ["cancelled", "refunded", "expired"],
+    });
   });
 });
