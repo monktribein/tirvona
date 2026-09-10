@@ -8,8 +8,16 @@ import { Processor, WorkerHost } from "@nestjs/bullmq";
 import type { Job } from "bullmq";
 import type { Model } from "mongoose";
 import { Resend } from "resend";
+import QRCode from "qrcode";
 import { ConfigService } from "@nestjs/config";
 import { NotificationsGateway } from "./notifications.gateway";
+import {
+  renderEmail,
+  renderEmailText,
+  type EmailDetailRow,
+  type EmailTemplateInput,
+} from "./email-template";
+import { checkInQrPayload } from "../bookings/domain/booking.utils";
 import { PARKING_MODEL } from "../parking/domain/parking.constants";
 import { AARTI_MODEL } from "../aarti/domain/aarti.constants";
 import { EVENT_MODEL } from "../events/domain/event.constants";
@@ -153,19 +161,52 @@ export class NotificationWorker
       }
       const resendApiKey = this.config.get<string>("resendApiKey");
       const msg91AuthKey = this.config.get<string>("msg91AuthKey");
-      if (
+      const sendsEmail =
         !whatsappOnly &&
         (data.channel === "email" || data.channel === "in_app") &&
-        resendApiKey &&
-        user?.email
-      ) {
+        Boolean(resendApiKey) &&
+        Boolean(user?.email);
+      const sendsWhatsApp = data.channel === "in_app" || whatsappOnly;
+
+      // The booking behind the notification is loaded once and shared by both
+      // the email and the WhatsApp message, so neither refetches it.
+      const bookingRef =
+        data.bookingId || outboxRow?.bookingId || outboxRow?.registrationId;
+      const [stay, parkingPass, aartiPass, eventPass] =
+        sendsEmail || sendsWhatsApp
+          ? await Promise.all([
+              data.domain === "booking"
+                ? this.stayContext(bookingRef)
+                : Promise.resolve(null),
+              data.domain === "parking"
+                ? this.parkingContext(bookingRef)
+                : Promise.resolve(null),
+              data.domain === "aarti"
+                ? this.aartiContext(bookingRef)
+                : Promise.resolve(null),
+              data.domain === "event"
+                ? this.eventContext(bookingRef)
+                : Promise.resolve(null),
+            ])
+          : [null, null, null, null];
+
+      if (sendsEmail) {
         try {
-          const result: any = await new Resend(resendApiKey).emails.send({
+          const { input, qrToken } = this.buildEmailContent(data, user, {
+            stay,
+            parkingPass,
+            aartiPass,
+            eventPass,
+          });
+          const attachments = await this.buildQrAttachment(qrToken, input.qrCid);
+          const result: any = await new Resend(resendApiKey!).emails.send({
             from: this.config.getOrThrow<string>("resendFromEmail"),
             replyTo: this.config.get<string>("resendReplyTo"),
             to: user.email,
             subject: data.title,
-            html: `<h2>${escapeHtml(data.title)}</h2><p>${escapeHtml(data.message)}</p>`,
+            html: renderEmail(input),
+            text: renderEmailText(input),
+            ...(attachments.length ? { attachments } : {}),
           });
           providerMessageId = result.data?.id ?? "";
         } catch (error) {
@@ -262,23 +303,6 @@ export class NotificationWorker
               correlationId,
             }),
           );
-          const bookingRef =
-            data.bookingId || outboxRow?.bookingId || outboxRow?.registrationId;
-          const [stay, parkingPass, aartiPass, eventPass] = await Promise.all([
-            data.domain === "booking"
-              ? this.stayContext(bookingRef)
-              : Promise.resolve(null),
-            data.domain === "parking"
-              ? this.parkingContext(bookingRef)
-              : Promise.resolve(null),
-            data.domain === "aarti"
-              ? this.aartiContext(bookingRef)
-              : Promise.resolve(null),
-            data.domain === "event"
-              ? this.eventContext(bookingRef)
-              : Promise.resolve(null),
-          ]);
-
           const whatsapp = await this.whatsapp.sendOutboxEvent({
             domain: data.domain,
             notificationId: data.notificationId,
@@ -395,6 +419,228 @@ export class NotificationWorker
   }
 
 
+  private get siteUrl(): string {
+    return (
+      this.config.get<string>("frontendUrl") || "https://www.tirvona.com"
+    ).replace(/\/+$/, "");
+  }
+
+  /** Dates are shown in IST, which is where every destination on the platform is. */
+  private formatDateTime(value: unknown, withTime = true): string {
+    if (!value) return "";
+    const date = new Date(value as string);
+    if (Number.isNaN(date.getTime())) return "";
+    return date.toLocaleString("en-IN", {
+      timeZone: "Asia/Kolkata",
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      ...(withTime ? { hour: "2-digit", minute: "2-digit", hour12: true } : {}),
+    });
+  }
+
+  private formatMoney(amount: unknown, currency?: string): string {
+    if (amount === null || amount === undefined || amount === "") return "";
+    const value = Number(amount);
+    if (!Number.isFinite(value)) return "";
+    return `${currency === "USD" ? "$" : "₹"}${value.toLocaleString("en-IN", {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    })}`;
+  }
+
+  private rows(entries: [string, string][]): EmailDetailRow[] {
+    return entries
+      .filter(([, value]) => Boolean(value))
+      .map(([label, value]) => ({ label, value }));
+  }
+
+  /**
+   * Turns a queued notification plus its booking context into the branded
+   * email. Every domain falls back to the plain title/message, so a
+   * notification with no booking behind it still renders correctly.
+   */
+  private buildEmailContent(
+    data: NotificationJob,
+    user: any,
+    context: {
+      stay: any;
+      parkingPass: any;
+      aartiPass: any;
+      eventPass: any;
+    },
+  ): { input: EmailTemplateInput; qrToken?: string } {
+    const site = this.siteUrl;
+    const base: EmailTemplateInput = {
+      title: data.title,
+      message: data.message,
+      siteUrl: site,
+      recipientName: user?.name,
+    };
+
+    const { stay, parkingPass, aartiPass, eventPass } = context;
+
+    if (data.domain === "booking" && stay) {
+      // The same payload the counter's check-in QR endpoint renders, so a guest
+      // can be checked in from the email or from the app interchangeably.
+      const checkInToken =
+        stay.reference && stay.checkInCode
+          ? checkInQrPayload(String(stay.reference), String(stay.checkInCode))
+          : undefined;
+      return {
+        qrToken: checkInToken,
+        input: {
+          ...base,
+          recipientName: stay.guestName || user?.name,
+          reference: stay.reference,
+          highlight: stay.checkInCode
+            ? { label: "Check-in code", code: String(stay.checkInCode) }
+            : undefined,
+          qrCid: checkInToken ? "tirvona-checkin-pass" : undefined,
+          qrCaption:
+            "Show this QR code at the ashram counter, or read out the check-in code.",
+          details: this.rows([
+            ["Ashram", stay.ashramName],
+            [
+              "Location",
+              [stay.ashramCity, stay.ashramState].filter(Boolean).join(", "),
+            ],
+            ["Room", stay.roomName],
+            ["Check-in", this.formatDateTime(stay.checkInDate, false)],
+            ["Check-out", this.formatDateTime(stay.checkOutDate, false)],
+            ["Guests", stay.guestsCount ? String(stay.guestsCount) : ""],
+            ["Rooms", stay.roomsCount ? String(stay.roomsCount) : ""],
+            [
+              "Amount paid",
+              this.formatMoney(stay.amountPaid, stay.currency),
+            ],
+            ["Total", this.formatMoney(stay.totalAmount, stay.currency)],
+          ]),
+          cta: { label: "View Booking", url: `${site}/profile/bookings` },
+          note: stay.checkInCode
+            ? "Show the check-in code above at the ashram counter on arrival."
+            : undefined,
+        },
+      };
+    }
+
+    if (data.domain === "parking" && parkingPass) {
+      return {
+        qrToken: parkingPass.qrToken,
+        input: {
+          ...base,
+          reference: parkingPass.reference,
+          highlight: parkingPass.displayCode
+            ? { label: "Gate code", code: String(parkingPass.displayCode) }
+            : undefined,
+          qrCid: parkingPass.qrToken ? "tirvona-parking-pass" : undefined,
+          qrCaption: "Scan this at the parking gate, or read out the gate code.",
+          details: this.rows([
+            ["Parking", parkingPass.locationName],
+            ["City", parkingPass.locationCity],
+            ["Vehicle", parkingPass.vehicleNumber],
+            ["Vehicle type", parkingPass.vehicleType],
+            ["Entry", this.formatDateTime(parkingPass.entryAt)],
+            ["Exit", this.formatDateTime(parkingPass.exitAt)],
+            [
+              "Amount paid",
+              this.formatMoney(parkingPass.amountPaid, parkingPass.currency),
+            ],
+          ]),
+          cta: parkingPass.passUrl
+            ? { label: "View Parking Pass", url: parkingPass.passUrl }
+            : { label: "My Bookings", url: `${site}/profile/bookings` },
+        },
+      };
+    }
+
+    if (data.domain === "aarti" && aartiPass) {
+      return {
+        qrToken: aartiPass.qrToken,
+        input: {
+          ...base,
+          recipientName: aartiPass.guestName || user?.name,
+          reference: aartiPass.reference,
+          highlight: aartiPass.displayCode
+            ? { label: "Entry code", code: String(aartiPass.displayCode) }
+            : undefined,
+          qrCid: aartiPass.qrToken ? "tirvona-aarti-pass" : undefined,
+          qrCaption: "Show this QR code at the temple entry gate.",
+          details: this.rows([
+            ["Aarti", aartiPass.sessionName],
+            ["Scheduled for", this.formatDateTime(aartiPass.scheduledAt)],
+            [
+              "Amount paid",
+              this.formatMoney(aartiPass.amountPaid, aartiPass.currency),
+            ],
+            [
+              "Refund",
+              this.formatMoney(aartiPass.refundAmount, aartiPass.currency),
+            ],
+          ]),
+          cta: { label: "View Booking", url: `${site}/profile/bookings` },
+        },
+      };
+    }
+
+    if (data.domain === "event" && eventPass) {
+      return {
+        qrToken: eventPass.qrToken,
+        input: {
+          ...base,
+          recipientName: eventPass.guestName || user?.name,
+          reference: eventPass.reference,
+          highlight: eventPass.displayCode
+            ? { label: "Entry code", code: String(eventPass.displayCode) }
+            : undefined,
+          qrCid: eventPass.qrToken ? "tirvona-event-pass" : undefined,
+          qrCaption: "Show this QR code at the event entry gate.",
+          details: this.rows([
+            ["Event", eventPass.eventName],
+            ["Venue", eventPass.venue],
+            ["Starts", this.formatDateTime(eventPass.startsAt)],
+          ]),
+          cta: { label: "View Registration", url: `${site}/profile/bookings` },
+        },
+      };
+    }
+
+    return {
+      input: {
+        ...base,
+        cta: { label: "Open Tirvona", url: site },
+      },
+    };
+  }
+
+  /**
+   * Renders the pass token as a PNG and returns it as an inline attachment, so
+   * the QR shows in the body rather than only as a downloadable file. A failure
+   * here is swallowed: the email still carries the code and the pass link.
+   */
+  private async buildQrAttachment(
+    token: string | undefined,
+    contentId: string | undefined,
+  ): Promise<{ filename: string; content: Buffer; contentId: string }[]> {
+    if (!token || !contentId) return [];
+    try {
+      const content = await QRCode.toBuffer(token, {
+        width: 512,
+        margin: 2,
+        errorCorrectionLevel: "M",
+      });
+      return [{ filename: `${contentId}.png`, content, contentId }];
+    } catch (error) {
+      this.logger.warn(
+        JSON.stringify({
+          event: "notification.email_qr_render_failed",
+          errorType: (error as Error).name,
+        }),
+      );
+      return [];
+    }
+  }
+
   /**
    * Loads the stay behind a booking notification so WhatsApp can show the
    * guest name, ashram, dates and check-in code instead of a bare sentence.
@@ -447,7 +693,7 @@ export class NotificationWorker
     const qr: any = await this.parkingQrCodes
       .findOne({ bookingId: booking._id })
       .sort({ version: -1 })
-      .select("displayCode")
+      .select("displayCode +token")
       .lean();
     const siteUrl =
       this.config.get<string>("frontendUrl") || "https://www.tirvona.com";
@@ -460,6 +706,7 @@ export class NotificationWorker
       entryAt: booking.entryAt,
       exitAt: booking.exitAt,
       displayCode: qr?.displayCode,
+      qrToken: qr?.token,
       passUrl: booking.bookingReference
         ? `${siteUrl}/parking/booking/${booking.bookingReference}`
         : undefined,
@@ -481,13 +728,14 @@ export class NotificationWorker
     const qr: any = await this.aartiQrCodes
       .findOne({ bookingId: booking._id })
       .sort({ version: -1 })
-      .select("displayCode")
+      .select("displayCode +token")
       .lean();
     return {
       guestName: booking.contactName || booking.customerId?.name,
       reference: booking.bookingReference,
       sessionName: booking.sessionId?.name,
       displayCode: qr?.displayCode,
+      qrToken: qr?.token,
       scheduledAt: booking.startsAt,
       amountPaid: booking.pricing?.amountPaid,
       refundAmount: booking.pricing?.refundAmount,
@@ -508,7 +756,7 @@ export class NotificationWorker
     const qr: any = await this.eventQrCodes
       .findOne({ registrationId: registration._id })
       .sort({ version: -1 })
-      .select("displayCode")
+      .select("displayCode +token")
       .lean();
     return {
       guestName: registration.contactName || registration.customerId?.name,
@@ -517,6 +765,7 @@ export class NotificationWorker
       // The listing stores the venue as an object, so only its name is shown.
       venue: registration.eventId?.venue?.name,
       displayCode: qr?.displayCode,
+      qrToken: qr?.token,
       // Registrations carry no pricing of their own, so no amount is shown.
       startsAt: registration.startsAt,
     };
@@ -539,11 +788,3 @@ export class NotificationWorker
     );
   }
 }
-const escapeHtml = (value: string): string =>
-  value.replace(
-    /[&<>'"]/g,
-    (char) =>
-      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[
-        char
-      ]!,
-  );

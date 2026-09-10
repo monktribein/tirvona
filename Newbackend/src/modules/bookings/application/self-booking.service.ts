@@ -24,6 +24,7 @@ import {
   SELF_BOOKING_SOURCE,
   TIRVONA_BOOKING_SOURCE,
   bookingReference,
+  checkInQrPayload,
   checkinCode,
   financialReference,
   reservationReference,
@@ -243,7 +244,7 @@ export class SelfBookingService {
   async checkInQr(user: AuthenticatedUser, id: string): Promise<string> {
     const booking = await this.scopedBooking(user, id);
     return this.qr.renderSvg(
-      `TIRVONA:${booking.bookingId}:${booking.checkInCode}`,
+      checkInQrPayload(booking.bookingId, booking.checkInCode),
       { caption: String(booking.bookingId) },
     );
   }

@@ -22,6 +22,11 @@ import {
   timingSafeEqual,
 } from "node:crypto";
 import { Resend } from "resend";
+import {
+  renderEmail,
+  renderEmailText,
+  type EmailTemplateInput,
+} from "../../notifications/email-template";
 import { OAuth2Client } from "google-auth-library";
 import {
   USER_REPOSITORY,
@@ -214,7 +219,8 @@ export class AuthService {
         replyTo: this.config.get<string>("resendReplyTo"),
         to: identifier,
         subject: "Your Tirvona verification code",
-        html: `<p>Your Tirvona verification code is <strong>${code}</strong>. It expires in ${this.config.get<number>("otpExpiryMinutes") ?? 5} minutes.</p>`,
+        html: renderEmail(this.otpEmail(code)),
+        text: renderEmailText(this.otpEmail(code)),
       });
     if (
       !identifier.includes("@") &&
@@ -434,6 +440,30 @@ export class AuthService {
       .replace(/\/+$/, "");
   }
 
+  private resetEmail(name: string | undefined, resetUrl: string): EmailTemplateInput {
+    return {
+      title: "Reset your password",
+      message:
+        "We received a request to reset your Tirvona password. Use the button below to choose a new one.",
+      siteUrl: this.siteOrigin() || "https://www.tirvona.com",
+      recipientName: name,
+      cta: { label: "Reset My Password", url: resetUrl },
+      note: `This link expires in 30 minutes and can be used once. If you did not request it, you can safely ignore this email — your password stays unchanged. If the button does not work, paste this into your browser: ${resetUrl}`,
+    };
+  }
+
+  private otpEmail(code: string): EmailTemplateInput {
+    const minutes = this.config.get<number>("otpExpiryMinutes") ?? 5;
+    return {
+      title: "Your verification code",
+      message:
+        "Use the code below to finish signing in to Tirvona. Do not share it with anyone — our team will never ask you for it.",
+      siteUrl: this.siteOrigin() || "https://www.tirvona.com",
+      highlight: { label: "Verification code", code },
+      note: `This code expires in ${minutes} minutes. If you did not request it, you can safely ignore this email.`,
+    };
+  }
+
   async forgotPassword(email: string): Promise<void> {
     const user = await this.users.findByEmail(email);
     if (!user) return;
@@ -454,22 +484,8 @@ export class AuthService {
       replyTo: this.config.get<string>("resendReplyTo"),
       to: user.email,
       subject: "Reset your Tirvona password",
-      html: `<div style="font-family:Segoe UI,Helvetica,Arial,sans-serif;font-size:15px;color:#0B192C;line-height:1.6">
-  <p>Namaste${user.name ? ` ${user.name}` : ""},</p>
-  <p>We received a request to reset your Tirvona password. Click the button below to choose a new one. This link expires in 30 minutes and can be used once.</p>
-  <p style="margin:28px 0">
-    <a href="${resetUrl}" style="background:#0A4DA6;color:#ffffff;text-decoration:none;padding:13px 28px;border-radius:999px;font-weight:700;display:inline-block">Reset my password</a>
-  </p>
-  <p style="font-size:13px;color:#5b6b7f">If the button does not work, copy this link into your browser:<br><a href="${resetUrl}" style="color:#0A4DA6;word-break:break-all">${resetUrl}</a></p>
-  <p style="font-size:13px;color:#5b6b7f">If you did not request this, you can safely ignore this email — your password stays unchanged.</p>
-</div>`,
-      text: `Namaste${user.name ? ` ${user.name}` : ""},
-
-We received a request to reset your Tirvona password. Open this link within 30 minutes to choose a new one:
-
-${resetUrl}
-
-If you did not request this, you can safely ignore this email — your password stays unchanged.`,
+      html: renderEmail(this.resetEmail(user.name, resetUrl)),
+      text: renderEmailText(this.resetEmail(user.name, resetUrl)),
     });
   }
   async resetUser(token: string, password?: string): Promise<any> {
