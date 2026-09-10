@@ -18,6 +18,15 @@ export const reservationReference = (): string =>
   `RES-${randomInt(10_000_000, 99_999_999)}`;
 export const checkinCode = (): string =>
   randomInt(1_000, 10_000).toString();
+/**
+ * Payload encoded in a stay's check-in QR. Both the counter endpoint and the
+ * confirmation email render this, so the format lives here rather than being
+ * written out twice.
+ */
+export const checkInQrPayload = (
+  bookingReference: string,
+  code: string,
+): string => `TIRVONA:${bookingReference}:${code}`;
 export const financialReference = (prefix: string): string =>
   `${prefix}-${Date.now().toString(36).toUpperCase()}-${randomUUID().slice(0, 8).toUpperCase()}`;
 
