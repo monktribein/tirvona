@@ -220,6 +220,7 @@ export class ContentService {
       "destinations_banner",
       "parking_banner",
       "marketplace_banner",
+      "about_banner",
       "homepage",
     ]);
 

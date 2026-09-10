@@ -1,5 +1,6 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import api from "../lib/api";
 import {
   MapPin,
   Building2,
@@ -17,7 +18,36 @@ import {
   Sparkles,
 } from "lucide-react";
 
+const DEFAULT_HERO_IMAGE = "/aboutus.png";
+
 const AboutPage: React.FC = () => {
+  const [heroBanner, setHeroBanner] = useState<{
+    image: string;
+    title: string;
+    description: string;
+  }>({ image: "", title: "", description: "" });
+
+  useEffect(() => {
+    const fetchCms = async () => {
+      try {
+        const res = await api.get("/cms/published");
+        if (res.data?.success) {
+          const banner = res.data.data?.about_banner;
+          if (banner) {
+            setHeroBanner({
+              image: banner.bannerImage || "",
+              title: banner.title || banner.heading || "",
+              description: banner.description || banner.subtitle || "",
+            });
+          }
+        }
+      } catch (err) {
+        console.warn("CMS load error:", err);
+      }
+    };
+    fetchCms();
+  }, []);
+
   useEffect(() => {
     const originalTitle = document.title;
     document.title =
@@ -184,11 +214,17 @@ const AboutPage: React.FC = () => {
     <div className="pb-16">
       <section className="relative isolate overflow-hidden bg-[#0B192C] text-white px-4 sm:px-6">
         <img
-          src="/aboutus.png"
+          src={heroBanner.image || DEFAULT_HERO_IMAGE}
           alt=""
           aria-hidden="true"
           loading="eager"
           fetchPriority="high"
+          onError={(e) => {
+            const img = e.currentTarget;
+            if (img.src !== window.location.origin + DEFAULT_HERO_IMAGE) {
+              img.src = DEFAULT_HERO_IMAGE;
+            }
+          }}
           className="absolute inset-0 w-full h-full object-cover object-[68%_center] sm:object-center"
         />
         <div
@@ -201,13 +237,16 @@ const AboutPage: React.FC = () => {
             className="font-extrabold text-white leading-tight drop-shadow-lg"
             style={{ fontSize: "clamp(1.8rem, 6vw, 3rem)" }}
           >
-            About <span className="text-[#E58C28]">Tirvona</span>
+            {heroBanner.title || (
+              <>
+                About <span className="text-[#E58C28]">Tirvona</span>
+              </>
+            )}
           </h1>
 
           <p className="text-sm sm:text-base text-gray-200 leading-relaxed max-w-xl mx-auto drop-shadow-md">
-            Tirvona is a digital platform for sacred travel, stay management, and
-            local commerce across India's holy destinations, connecting pilgrims,
-            ashrams, and the communities around them.
+            {heroBanner.description ||
+              "Tirvona is a digital platform for sacred travel, stay management, and local commerce across India's holy destinations, connecting pilgrims, ashrams, and the communities around them."}
           </p>
 
           <div className="pt-3 flex flex-wrap justify-center items-center gap-3">

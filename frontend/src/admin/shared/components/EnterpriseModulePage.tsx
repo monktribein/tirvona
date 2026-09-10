@@ -486,6 +486,7 @@ export const EnterpriseModulePage: React.FC<{
                 "destinations_banner",
                 "parking_banner",
                 "marketplace_banner",
+                "about_banner",
                 "festival_banner",
                 "offer_banner",
                 "announcement",
