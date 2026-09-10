@@ -279,7 +279,7 @@ export const PublicLayout: React.FC = () => {
   ];
 
   const hasOverlayHero =
-    ["/", "/public"].includes(location.pathname) ||
+    ["/", "/public", "/about"].includes(location.pathname) ||
     location.pathname.startsWith("/featured-banner/");
 
   return (
@@ -1075,7 +1075,7 @@ export const PublicLayout: React.FC = () => {
                 </span>
                 <div className="flex items-center gap-2.5">
                   <a
-                    href="https://facebook.com"
+                    href="https://www.facebook.com/tirvonaofficial"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-9 h-9 rounded-xl bg-slate-900 border border-slate-800 hover:bg-[#0A4DA6] text-slate-400 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-sm group"
@@ -1090,7 +1090,7 @@ export const PublicLayout: React.FC = () => {
                   </a>
 
                   <a
-                    href="https://instagram.com"
+                    href="https://www.instagram.com/tirvonaofficial"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-9 h-9 rounded-xl bg-slate-900 border border-slate-800 hover:bg-rose-600 text-slate-400 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-sm group"
@@ -1117,7 +1117,7 @@ export const PublicLayout: React.FC = () => {
                   </a>
 
                   <a
-                    href="https://youtube.com"
+                    href="https://youtube.com/@tirvonaofficial"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-9 h-9 rounded-xl bg-slate-900 border border-slate-800 hover:bg-red-600 text-slate-400 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-sm group"

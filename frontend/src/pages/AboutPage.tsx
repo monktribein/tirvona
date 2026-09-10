@@ -8,27 +8,20 @@ import {
   HeartHandshake,
   Calendar,
   HandHeart,
-  ShieldCheck,
-  CheckCircle2,
+  Flame,
+  CircleParking,
   Target,
   Compass,
   ArrowRight,
   Mail,
-  Cpu,
-  Layers,
-  Globe,
-  Lock,
-  Zap,
-  BarChart3,
-  Users,
-  Award,
+  Sparkles,
 } from "lucide-react";
 
 const AboutPage: React.FC = () => {
   useEffect(() => {
     const originalTitle = document.title;
     document.title =
-      "About Tirvona™ | India's Digital Infrastructure for Religious Destinations";
+      "About Tirvona | India's Digital Platform for Religious Destinations";
 
     const updateOrCreateMeta = (
       attrName: string,
@@ -49,17 +42,17 @@ const AboutPage: React.FC = () => {
     updateOrCreateMeta(
       "name",
       "description",
-      "Tirvona™ is India's premier digital infrastructure for religious destinations. We empower pilgrims, ashrams, and local communities with verified stays, counter software, and sacred services."
+      "Tirvona connects pilgrims with verified ashram stays, local services, and sacred marketplaces across India's holy destinations."
     );
     updateOrCreateMeta(
       "property",
       "og:title",
-      "About Tirvona™ | India's Digital Infrastructure for Religious Destinations"
+      "About Tirvona | India's Digital Platform for Religious Destinations"
     );
     updateOrCreateMeta(
       "property",
       "og:description",
-      "Connecting Sacred Destinations. Empowering Communities. Learn about Tirvona's vision, mission, and enterprise architecture developed by Bizwoke Nova (NKtech)."
+      "Connecting sacred destinations and empowering communities. Learn about Tirvona's vision, mission, and the team behind it."
     );
     updateOrCreateMeta("property", "og:type", "website");
 
@@ -70,417 +63,348 @@ const AboutPage: React.FC = () => {
 
   const offerCards = [
     {
-      title: "Religious Destination Discovery",
+      title: "Destination Discovery",
       description:
-        "Comprehensive digital discovery for holy destinations, temple circuits, heritage details, and travel logistics across India's sacred hubs.",
+        "Holy destinations, temple circuits, and travel details in one place, with the practical information pilgrims need before setting out.",
       icon: MapPin,
     },
     {
       title: "Stay Booking",
       description:
-        "Seamless digital accommodation counter and reservation system for verified ashrams, dharamshalas, and spiritual stays with instant 6-digit check-in codes.",
+        "Reservations at verified ashrams and dharamshalas, confirmed with a 6-digit check-in code at the counter.",
       icon: Building2,
     },
     {
-      title: "Tirvona Services Exchange™",
+      title: "Services Exchange",
       description:
-        "Unified service exchange engine connecting pilgrims with verified local transport, locker rentals, parking, and essential pilgrimage logistics.",
+        "Local transport, lockers, and porters booked through the same account, from operators we have verified.",
       icon: ArrowLeftRight,
+    },
+    {
+      title: "Aarti Booking",
+      description:
+        "Reserve a place at temple aarti in advance, and follow live pooja streams when you cannot be there in person.",
+      icon: Flame,
+    },
+    {
+      title: "Parking",
+      description:
+        "Reserved parking near the ghats and temple gates, held for your arrival slot instead of circling for a space.",
+      icon: CircleParking,
     },
     {
       title: "Marketplace",
       description:
-        "Authentic marketplace for certified puja essentials, religious texts, regional handicrafts, and spiritual products directly sourced from verified vendors.",
+        "Puja essentials, religious texts, and regional handicrafts sourced directly from vendors and temple trusts.",
       icon: ShoppingBag,
     },
     {
-      title: "Seva & Workforce",
+      title: "Seva & Volunteering",
       description:
-        "Organized portal for volunteer registration, seva coordination, on-site desk management, and community service allocation.",
+        "Volunteer registration and seva coordination, so trusts can organise on-site help without paper rosters.",
       icon: HeartHandshake,
     },
     {
-      title: "Religious Events",
+      title: "Events & Darshan",
       description:
-        "Real-time event schedules, festival guides, live darshan timings, and crowd awareness alerts for major spiritual gatherings.",
+        "Festival schedules, live darshan timings, and crowd alerts for major gatherings.",
       icon: Calendar,
     },
     {
-      title: "Donations & Community Initiatives",
+      title: "Donations",
       description:
-        "Transparent digital donation channels directly empowering verified temple trusts, feeding programs (annakshetra), and local community infrastructure.",
+        "Direct, traceable donation channels for verified temple trusts and annakshetra feeding programmes.",
       icon: HandHeart,
     },
   ];
 
   const whyTirvonaPoints = [
     {
-      title: "Verified Religious Institutions",
+      title: "Verified institutions",
       description:
-        "Rigorous verification process for trusts, ashrams, and dharamshalas to guarantee authenticity, safety, and legitimacy.",
+        "Every trust, ashram, and dharamshala is checked before it goes live on the platform.",
     },
     {
-      title: "Pilgrim First Experience",
+      title: "Built for pilgrims",
       description:
-        "Designed with deep empathy for pilgrims of all ages, offering intuitive navigation, clear guidance, and compassionate service.",
+        "Simple navigation and clear guidance, designed for travellers of every age and comfort with technology.",
     },
     {
-      title: "Trusted Accommodation",
+      title: "Transparent pricing",
       description:
-        "Clean, reliable, and standardized staying options with transparent pricing and zero hidden fees at counter desks.",
+        "The rate you see is the rate at the counter. No hidden fees, no surprises on arrival.",
     },
     {
-      title: "Digital Empowerment",
+      title: "Tools for trusts",
       description:
-        "Equipping traditional trusts and local counter operators with enterprise management software and real-time operational insights.",
+        "Counter software that replaces paper registers and gives operators a live view of their rooms.",
     },
     {
-      title: "Local Communities",
+      title: "Local livelihoods",
       description:
-        "Directly integrating local drivers, guides, artisans, and small business owners into the pilgrimage ecosystem to build local wealth.",
+        "Drivers, guides, and artisans around each destination earn directly through the platform.",
     },
     {
-      title: "Secure Technology",
+      title: "Secure by default",
       description:
-        "Enterprise-grade data protection, end-to-end encryption, and RBI-compliant secure payment integrations.",
+        "Encrypted data and compliant payment integrations on every transaction.",
     },
     {
-      title: "Scalable Infrastructure",
+      title: "Ready for peak days",
       description:
-        "Built on cloud-native architecture engineered to handle immense traffic surges during major melas and festival peaks.",
+        "Infrastructure sized for the traffic surges of melas and festival seasons.",
     },
     {
-      title: "Long-term Sustainability",
+      title: "Paperless operations",
       description:
-        "Promoting paperless counters, eco-friendly destination management, and preserving sacred heritage for generations to come.",
+        "Digital counters cut waste and keep records intact for the long term.",
     },
   ];
 
-  const bizwokeNovaPillars = [
-    { name: "Technology Partner", icon: Globe },
-    { name: "Enterprise-grade Architecture", icon: Layers },
-    { name: "AI Platforms", icon: Cpu },
-    { name: "Government Digital Transformation", icon: ShieldCheck },
-    { name: "Marketplace Solutions", icon: ShoppingBag },
-    { name: "Analytics", icon: BarChart3 },
-    { name: "Security", icon: Lock },
-    { name: "Scalability", icon: Zap },
-    { name: "Performance", icon: Award },
-    { name: "User Experience", icon: Users },
-  ];
+  const SectionHeading: React.FC<{
+    title: string;
+    id?: string;
+  }> = ({ title, id }) => (
+    <div className="text-center max-w-3xl mx-auto">
+      <h2
+        id={id}
+        className="font-['Kalam'] text-2xl sm:text-4xl font-bold text-[#E58C28]"
+      >
+        {title}
+      </h2>
+      <div className="flex items-center justify-center gap-2.5 mt-1.5">
+        <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
+        <Sparkles size={14} className="text-[#E58C28] fill-[#E58C28] shrink-0" />
+        <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
+      </div>
+    </div>
+  );
 
   return (
-    <div className="min-h-screen text-slate-900 dark:text-slate-100 transition-colors duration-300">
-      <header className="bg-[#0B192C] text-white py-16 sm:py-24 px-4 sm:px-6 lg:px-8 relative overflow-hidden border-b border-slate-800">
-        <div className="absolute top-0 right-1/4 w-96 h-96 bg-[#0A4DA6]/20 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-1/3 w-80 h-80 bg-[#D4AF37]/10 rounded-full blur-3xl pointer-events-none" />
+    <div className="pb-16">
+      <section className="relative isolate overflow-hidden bg-[#0B192C] text-white px-4 sm:px-6">
+        <img
+          src="/aboutus.png"
+          alt=""
+          aria-hidden="true"
+          loading="eager"
+          fetchPriority="high"
+          className="absolute inset-0 w-full h-full object-cover object-[68%_center] sm:object-center"
+        />
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 bg-gradient-to-b from-[#0B192C]/70 via-[#0B192C]/55 to-[#0B192C]/85"
+        />
 
-        <div className="max-w-5xl mx-auto text-center relative z-10 space-y-6">
-          <div className="inline-flex items-center gap-2 text-xs font-bold tracking-widest text-[#D4AF37] bg-[#D4AF37]/10 border border-[#D4AF37]/30 rounded-full px-4 py-1.5">
-            <ShieldCheck className="w-4 h-4 text-[#D4AF37]" />
-            Enterprise Digital Infrastructure
-          </div>
-
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-tight">
-            About <span className="text-[#D4AF37]">Tirvona™</span>
+        <div className="relative max-w-3xl mx-auto text-center space-y-4 pt-28 pb-20 sm:pt-36 sm:pb-28 lg:pt-44 lg:pb-36">
+          <h1
+            className="font-extrabold text-white leading-tight drop-shadow-lg"
+            style={{ fontSize: "clamp(1.8rem, 6vw, 3rem)" }}
+          >
+            About <span className="text-[#E58C28]">Tirvona</span>
           </h1>
 
-          <p className="text-lg sm:text-xl font-semibold text-slate-200 tracking-wide max-w-3xl mx-auto">
-            India's Digital Infrastructure for Religious Destinations
+          <p className="text-sm sm:text-base text-gray-200 leading-relaxed max-w-xl mx-auto drop-shadow-md">
+            Tirvona is a digital platform for sacred travel, stay management, and
+            local commerce across India's holy destinations, connecting pilgrims,
+            ashrams, and the communities around them.
           </p>
 
-          <p className="text-sm sm:text-base text-slate-300 leading-relaxed max-w-3xl mx-auto font-normal">
-            Tirvona™ is a state-of-the-art digital ecosystem transforming sacred
-            travel, stay management, and local commerce across India's holy
-            destinations. Aligned with Digital India standards, we bridge
-            centuries of spiritual tradition with enterprise-grade cloud
-            technology.
-          </p>
-
-          <div className="pt-4 flex flex-wrap justify-center items-center gap-4">
+          <div className="pt-3 flex flex-wrap justify-center items-center gap-3">
             <Link
               to="/search"
-              className="inline-flex items-center gap-2 bg-[#D4AF37] hover:bg-[#c29f2e] text-[#0B192C] font-bold px-6 py-3.5 rounded-xl transition-all shadow-md hover:shadow-lg focus:ring-2 focus:ring-[#D4AF37] focus:ring-offset-2 focus:ring-offset-[#0B192C]"
-              aria-label="Explore Tirvona destinations"
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-[#083b80] text-white text-xs font-extrabold shadow-md transition-all"
             >
-              <span>Explore Tirvona</span>
-              <ArrowRight className="w-4 h-4" />
+              Explore Tirvona <ArrowRight size={14} />
             </Link>
 
             <Link
               to="/contact"
-              className="inline-flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-white font-semibold px-6 py-3.5 rounded-xl border border-slate-700 transition-all focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 focus:ring-offset-[#0B192C]"
-              aria-label="Contact Tirvona team"
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full border border-white/25 hover:bg-white/10 text-white text-xs font-extrabold transition-all"
             >
-              <Mail className="w-4 h-4 text-[#D4AF37]" />
-              <span>Contact Us</span>
+              <Mail size={14} className="text-[#E58C28]" />
+              Contact Us
             </Link>
           </div>
         </div>
-      </header>
+      </section>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 space-y-16 sm:space-y-24">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-16 space-y-14 sm:space-y-20">
         <section aria-labelledby="about-tirvona-heading" className="space-y-6">
-          <div className="text-center max-w-3xl mx-auto space-y-3">
-            <h2
-              id="about-tirvona-heading"
-              className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#0B192C] dark:text-white"
-            >
-              About Tirvona
-            </h2>
-            <div className="w-16 h-1 bg-[#D4AF37] mx-auto rounded-full" />
-          </div>
+          <SectionHeading
+            id="about-tirvona-heading"
+            title="Who We Are"
+          />
 
-          <div className="bg-white dark:bg-[#0B192C] border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-10 shadow-sm leading-relaxed text-slate-700 dark:text-slate-300 space-y-4 text-base sm:text-lg">
+          <div className="max-w-3xl mx-auto space-y-4 text-sm sm:text-base leading-relaxed text-[#0B192C]/80 dark:text-gray-300">
             <p>
-              Tirvona™ is India's dedicated unified digital infrastructure platform
-              engineered specifically for holy destinations, ashrams, temple trusts,
-              and spiritual travelers. By replacing outdated paper registers and unverified
-              stay counters with secure digital tools, Tirvona provides absolute transparency,
-              safety, and dignity for every pilgrim.
+              Tirvona is a unified platform built for holy destinations, ashrams,
+              temple trusts, and the people who travel to them. It replaces paper
+              registers and unverified stay counters with digital tools, so a
+              pilgrim knows what they are booking and a trust knows who has
+              arrived.
             </p>
             <p>
-              Our platform seamlessly integrates staying reservations, verified local
-              services, authentic spiritual marketplaces, seva volunteer portals, and
-              community donation channels into a unified enterprise interface. From
-              Rishikesh and Haridwar to Varanasi and Vrindavan, Tirvona empowers holy
-              destinations with world-class technology while preserving the sacred sanctity of
-              Indian pilgrimage.
+              Stay reservations, local services, the marketplace, seva
+              volunteering, and donations all run through one account. From
+              Rishikesh and Haridwar to Varanasi and Vrindavan, we bring everyday
+              technology to holy destinations without changing what makes them
+              sacred.
             </p>
           </div>
         </section>
 
-        <section aria-label="Vision and Mission" className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <article className="bg-white dark:bg-[#0B192C] border border-slate-200 dark:border-slate-800 rounded-3xl p-8 sm:p-10 shadow-sm hover:border-[#D4AF37]/50 transition-all flex flex-col justify-between space-y-6">
-            <div className="space-y-4">
-              <div className="w-14 h-14 rounded-2xl bg-[#0A4DA6]/10 dark:bg-white/5 border border-[#0A4DA6]/20 dark:border-white/10 flex items-center justify-center text-[#0A4DA6] dark:text-[#D4AF37]">
-                <Target className="w-7 h-7" />
-              </div>
-              <h2 className="text-2xl font-bold text-[#0B192C] dark:text-white">
-                Our Vision
-              </h2>
-              <p className="text-slate-600 dark:text-slate-300 leading-relaxed text-base">
-                To establish a modern, globally accessible, and digitally empowered
-                ecosystem across all sacred destinations in India, ensuring every pilgrim
-                experiences seamless, safe, and spiritually fulfilling journeys while
-                enabling local communities and traditional trusts to thrive in the digital era.
-              </p>
+        <section
+          aria-label="Vision and Mission"
+          className="grid grid-cols-1 md:grid-cols-2 gap-6"
+        >
+          <article className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-3">
+            <div className="w-11 h-11 rounded-2xl bg-[#0A4DA6]/10 dark:bg-white/5 flex items-center justify-center text-[#0A4DA6] dark:text-[#E58C28]">
+              <Target size={20} />
             </div>
+            <h2 className="text-lg font-extrabold text-[#0B192C] dark:text-white">
+              Our Vision
+            </h2>
+            <p className="text-sm text-[#0B192C]/70 dark:text-gray-300 leading-relaxed">
+              A connected ecosystem across India's sacred destinations, where
+              every pilgrim travels safely and easily, and the trusts and
+              communities that host them can thrive alongside.
+            </p>
           </article>
 
-          <article className="bg-white dark:bg-[#0B192C] border border-slate-200 dark:border-slate-800 rounded-3xl p-8 sm:p-10 shadow-sm hover:border-[#D4AF37]/50 transition-all flex flex-col justify-between space-y-6">
-            <div className="space-y-4">
-              <div className="w-14 h-14 rounded-2xl bg-[#0A4DA6]/10 dark:bg-white/5 border border-[#0A4DA6]/20 dark:border-white/10 flex items-center justify-center text-[#0A4DA6] dark:text-[#D4AF37]">
-                <Compass className="w-7 h-7" />
-              </div>
-              <h2 className="text-2xl font-bold text-[#0B192C] dark:text-white">
-                Our Mission
-              </h2>
-              <p className="text-slate-600 dark:text-slate-300 leading-relaxed text-base">
-                To build scalable, enterprise-grade technology that simplifies stay bookings,
-                digitizes trust counter operations, connects local service exchange ecosystems,
-                and fosters transparent governance across religious destinations with absolute
-                integrity and pilgrim-first commitment.
-              </p>
+          <article className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-3">
+            <div className="w-11 h-11 rounded-2xl bg-[#0A4DA6]/10 dark:bg-white/5 flex items-center justify-center text-[#0A4DA6] dark:text-[#E58C28]">
+              <Compass size={20} />
             </div>
+            <h2 className="text-lg font-extrabold text-[#0B192C] dark:text-white">
+              Our Mission
+            </h2>
+            <p className="text-sm text-[#0B192C]/70 dark:text-gray-300 leading-relaxed">
+              To simplify stay bookings, digitise counter operations, connect
+              local service providers, and keep money flowing transparently to
+              the trusts and communities it belongs to.
+            </p>
           </article>
         </section>
 
-        <section aria-labelledby="what-we-offer-heading" className="space-y-10">
-          <div className="text-center max-w-3xl mx-auto space-y-3">
-            <h2
-              id="what-we-offer-heading"
-              className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#0B192C] dark:text-white"
-            >
-              What We Offer
-            </h2>
-            <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400">
-              Comprehensive enterprise solutions for religious destination management
-            </p>
-            <div className="w-16 h-1 bg-[#D4AF37] mx-auto rounded-full" />
-          </div>
+        <section aria-labelledby="what-we-offer-heading" className="space-y-8">
+          <SectionHeading
+            id="what-we-offer-heading"
+            title="What We Do"
+          />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {offerCards.map((card, index) => {
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {offerCards.map((card) => {
               const Icon = card.icon;
               return (
                 <article
-                  key={index}
-                  className="bg-white dark:bg-[#0B192C] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-[#D4AF37]/50 transition-all flex flex-col justify-between space-y-4"
+                  key={card.title}
+                  className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all space-y-3"
                 >
-                  <div className="space-y-4">
-                    <div className="w-12 h-12 rounded-xl bg-[#0A4DA6]/10 dark:bg-slate-800 flex items-center justify-center text-[#0A4DA6] dark:text-[#D4AF37]">
-                      <Icon className="w-6 h-6" />
-                    </div>
-                    <h3 className="text-lg font-bold text-[#0B192C] dark:text-white">
-                      {card.title}
-                    </h3>
-                    <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                      {card.description}
-                    </p>
+                  <div className="w-11 h-11 rounded-xl bg-[#0A4DA6]/10 dark:bg-slate-800 flex items-center justify-center text-[#0A4DA6] dark:text-[#E58C28]">
+                    <Icon size={20} />
                   </div>
+                  <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white">
+                    {card.title}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-[#0B192C]/70 dark:text-gray-300 leading-relaxed">
+                    {card.description}
+                  </p>
                 </article>
               );
             })}
           </div>
         </section>
 
-        <section aria-labelledby="why-tirvona-heading" className="space-y-10">
-          <div className="text-center max-w-3xl mx-auto space-y-3">
-            <h2
-              id="why-tirvona-heading"
-              className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#0B192C] dark:text-white"
-            >
-              Why Tirvona
-            </h2>
-            <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400">
-              Built on trust, security, and sustainability for India's sacred ecosystem
-            </p>
-            <div className="w-16 h-1 bg-[#D4AF37] mx-auto rounded-full" />
-          </div>
+        <section aria-labelledby="why-tirvona-heading" className="space-y-8">
+          <SectionHeading
+            id="why-tirvona-heading"
+            title="Why Tirvona"
+          />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {whyTirvonaPoints.map((point, idx) => (
-              <article
-                key={idx}
-                className="bg-white dark:bg-[#0B192C] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm hover:border-[#D4AF37]/40 transition-all space-y-3"
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-6 max-w-6xl mx-auto">
+            {whyTirvonaPoints.map((point) => (
+              <div
+                key={point.title}
+                className="border-l-2 border-[#E58C28] pl-4 space-y-1.5"
               >
-                <div className="flex items-center gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-[#0A4DA6] dark:text-[#D4AF37] shrink-0" />
-                  <h3 className="font-bold text-base text-[#0B192C] dark:text-white">
-                    {point.title}
-                  </h3>
-                </div>
-                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white">
+                  {point.title}
+                </h3>
+                <p className="text-xs text-[#0B192C]/70 dark:text-gray-300 leading-relaxed">
                   {point.description}
                 </p>
-              </article>
+              </div>
             ))}
           </div>
         </section>
 
-        <section aria-labelledby="our-commitment-heading">
-          <div className="bg-gradient-to-br from-[#0B192C] via-[#0E2440] to-[#0B192C] border border-slate-800 rounded-3xl p-8 sm:p-12 text-white shadow-xl space-y-6 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-[#D4AF37]/10 rounded-full blur-3xl pointer-events-none" />
+        <section aria-labelledby="our-commitment-heading" className="space-y-6">
+          <SectionHeading
+            id="our-commitment-heading"
+            title="Our Commitment"
+          />
 
-            <div className="relative z-10 space-y-4 max-w-4xl">
-              <div className="inline-flex items-center gap-2 text-xs font-bold tracking-widest text-[#D4AF37]">
-                <ShieldCheck className="w-4 h-4" />
-                Uncompromised Standards
-              </div>
-
-              <h2
-                id="our-commitment-heading"
-                className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white"
-              >
-                Our Commitment
-              </h2>
-
-              <p className="text-base sm:text-lg text-slate-200 leading-relaxed font-normal">
-                At Tirvona™, we are committed to upholding the sacred ethos of Indian
-                pilgrimage while bringing state-of-the-art software technology to religious
-                destinations. We promise complete data privacy, transparent financial transactions
-                for trusts, non-commercialized access to holy stays, and continuous collaboration
-                with state tourism departments to ensure safety, dignity, and excellence for every visitor.
-              </p>
-            </div>
+          <div className="max-w-3xl mx-auto space-y-4 text-sm sm:text-base leading-relaxed text-[#0B192C]/80 dark:text-gray-300">
+            <p>
+              We keep pilgrim data private, we keep trust finances transparent,
+              and we keep access to holy stays uncommercialised. We work with
+              state tourism departments where it helps, and we do not list
+              anything on this platform that we have not verified ourselves.
+            </p>
           </div>
         </section>
 
         <section
           aria-labelledby="bizwoke-nova-heading"
-          className="bg-white dark:bg-[#0B192C] border border-slate-200 dark:border-slate-800 rounded-3xl p-8 sm:p-12 shadow-sm space-y-8"
+          className="max-w-3xl mx-auto text-center space-y-3"
         >
-          <div className="space-y-4 max-w-3xl">
-            <div className="inline-flex items-center gap-2 text-xs font-extrabold tracking-wider text-[#0A4DA6] dark:text-[#D4AF37] bg-[#0A4DA6]/10 dark:bg-[#D4AF37]/10 px-3.5 py-1.5 rounded-full">
-              <Building2 className="w-4 h-4" />
-              Enterprise Technology Leadership
-            </div>
-
-            <h2
-              id="bizwoke-nova-heading"
-              className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#0B192C] dark:text-white"
-            >
-              Developed & Managed by Bizwoke Nova (NKtech)
-            </h2>
-
-            <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed">
-              Tirvona™ is conceptualized, engineered, and operated by{" "}
-              <strong className="text-[#0B192C] dark:text-white font-semibold">
-                Bizwoke Nova (NKtech)
-              </strong>
-              , a premier technology firm specializing in enterprise-grade architecture, AI platform development, government digital transformation, and large-scale marketplace engineering.
-            </p>
-          </div>
-
-          <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
-            <h3 className="text-xs font-bold tracking-wider text-slate-500 dark:text-slate-400 mb-4">
-              Core Technical Capabilities & Infrastructure Architecture
-            </h3>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-              {bizwokeNovaPillars.map((pillar, idx) => {
-                const PillarIcon = pillar.icon;
-                return (
-                  <div
-                    key={idx}
-                    className="flex items-center gap-2.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold"
-                  >
-                    <PillarIcon className="w-4 h-4 text-[#0A4DA6] dark:text-[#D4AF37] shrink-0" />
-                    <span>{pillar.name}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          <h2
+            id="bizwoke-nova-heading"
+            className="text-lg sm:text-xl font-extrabold text-[#0B192C] dark:text-white"
+          >
+            Built by Bizwoke Nova (NKtech)
+          </h2>
+          <p className="text-sm text-[#0B192C]/70 dark:text-gray-300 leading-relaxed">
+            Tirvona is designed, engineered, and operated by Bizwoke Nova
+            (NKtech), a technology firm working on marketplace platforms and
+            public digital services.
+          </p>
         </section>
 
         <section
           aria-labelledby="join-transformation-heading"
-          className="bg-gradient-to-r from-[#0A4DA6] to-[#0B192C] rounded-3xl p-8 sm:p-12 text-center text-white shadow-lg space-y-6 relative overflow-hidden"
+          className="text-center space-y-4 max-w-2xl mx-auto"
         >
-          <div className="max-w-3xl mx-auto space-y-4 relative z-10">
-            <h2
-              id="join-transformation-heading"
-              className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight leading-tight"
+          <h2
+            id="join-transformation-heading"
+            className="text-xl sm:text-3xl font-extrabold text-[#0B192C] dark:text-white leading-tight"
+          >
+            Partner With Us
+          </h2>
+
+          <p className="text-sm text-[#0B192C]/70 dark:text-gray-300 leading-relaxed">
+            Ashram trust, dharamshala, local service provider, or tourism body:
+            if you serve pilgrims, there is a place for you here.
+          </p>
+
+          <div className="pt-2 flex flex-wrap justify-center items-center gap-3">
+            <Link
+              to="/partner"
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-[#083b80] text-white text-xs font-extrabold shadow-md transition-all"
             >
-              Join the Digital Transformation of Religious Destinations
-            </h2>
+              Become a Partner <ArrowRight size={14} />
+            </Link>
 
-            <p className="text-sm sm:text-base text-slate-200 max-w-2xl mx-auto leading-relaxed">
-              Whether you represent an ashram trust, dharamshala, local service provider, or government tourism body — partner with Tirvona to shape the future of sacred travel.
-            </p>
-
-            <div className="pt-4 flex flex-wrap justify-center items-center gap-4">
-              <Link
-                to="/partner"
-                className="inline-flex items-center gap-2 bg-[#D4AF37] hover:bg-[#c29f2e] text-[#0B192C] font-bold px-6 py-3.5 rounded-xl transition-all shadow-md focus:ring-2 focus:ring-[#D4AF37] focus:ring-offset-2 focus:ring-offset-[#0A4DA6]"
-                aria-label="Become a Tirvona partner"
-              >
-                <span>Become a Partner</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-
-              <Link
-                to="/contact"
-                className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white font-semibold px-6 py-3.5 rounded-xl border border-white/20 transition-all focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-[#0A4DA6]"
-                aria-label="Contact Tirvona team"
-              >
-                <Mail className="w-4 h-4 text-[#D4AF37]" />
-                <span>Contact Tirvona</span>
-              </Link>
-            </div>
+            <Link
+              to="/contact"
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full border border-[#0B192C]/15 dark:border-white/20 hover:bg-[#0B192C]/5 dark:hover:bg-white/10 text-[#0B192C] dark:text-white text-xs font-extrabold transition-all"
+            >
+              <Mail size={14} className="text-[#E58C28]" />
+              Contact Tirvona
+            </Link>
           </div>
         </section>
-
-        <footer className="pt-8 pb-12 border-t border-slate-200 dark:border-slate-800 text-center space-y-3">
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-[#0B192C] dark:text-[#D4AF37]">
-            Tirvona™
-          </h2>
-          <p className="text-base sm:text-lg font-medium text-slate-600 dark:text-slate-300">
-            Connecting Sacred Destinations. Empowering Communities.
-          </p>
-        </footer>
       </main>
     </div>
   );
