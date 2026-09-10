@@ -35,7 +35,6 @@ export interface EmailTemplateInput {
   note?: string;
 }
 
-const NAVY = "#0B192C";
 const BLUE = "#0A4DA6";
 const SAFFRON = "#E58C28";
 const INK = "#334155";
