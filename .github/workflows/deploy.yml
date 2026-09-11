@@ -35,7 +35,9 @@ jobs:
             echo "=== Backend ==="
             cd /var/www/tirvona/Newbackend
             npm ci
-            npm run build
+            npx tsc -p tsconfig.build.json --outDir dist-vps
+            mkdir -p dist-vps/modules/smart-contact/assets
+            cp -R src/modules/smart-contact/assets/* dist-vps/modules/smart-contact/assets/ || true
 
             echo "=== Frontend ==="
             cd /var/www/tirvona/frontend
@@ -43,7 +45,10 @@ jobs:
             npm run build
 
             echo "=== Restarting API ==="
-            pm2 restart tirvona-api --update-env
+            pm2 delete tirvona-api || true
+            pm2 start /var/www/tirvona/Newbackend/dist-vps/main.js --name tirvona-api --update-env
+            sleep 5
+            pm2 logs tirvona-api --lines 80 --nostream
 
             echo "=== Installing Nginx routing ==="
             # Smart Contact profiles live at /c/{slug} and /{slug} on the main
