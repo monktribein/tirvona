@@ -73,6 +73,9 @@ export interface Environment {
   otpResendCooldownSeconds: number;
   googleClientId: string;
   googleClientSecret: string;
+  firebaseProjectId: string;
+  firebaseClientEmail: string;
+  firebasePrivateKey: string;
 }
 
 export const applyDnsServersFromEnvironment = (): string[] => {
@@ -188,6 +191,9 @@ export const environment = (): Environment => ({
   ),
   googleClientId: process.env.GOOGLE_CLIENT_ID ?? "",
   googleClientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
+  firebaseProjectId: process.env.FIREBASE_PROJECT_ID ?? "",
+  firebaseClientEmail: process.env.FIREBASE_CLIENT_EMAIL ?? "",
+  firebasePrivateKey: process.env.FIREBASE_PRIVATE_KEY ?? "",
 });
 
 const requireTogether = (
@@ -278,6 +284,11 @@ export function validateEnvironment(
       throw new Error("PAYOUT_ENCRYPTION_KEY must be a base64-encoded 32-byte key");
   }
   requireTogether(input, ["MONGODB_USERNAME", "MONGODB_PASSWORD"]);
+  requireTogether(input, [
+    "FIREBASE_PROJECT_ID",
+    "FIREBASE_CLIENT_EMAIL",
+    "FIREBASE_PRIVATE_KEY",
+  ]);
   requireTogether(input, [
     "CLOUDINARY_CLOUD_NAME",
     "CLOUDINARY_API_KEY",

@@ -22,6 +22,7 @@ import {
   CreateStaffDto,
   PermissionsDto,
   PermanentDeleteDto,
+  RegisterFcmTokenDto,
   SuspendUserDto,
   UserQueryDto,
   UserStatusDto,
@@ -30,6 +31,22 @@ import {
 @Controller("users")
 export class UsersController {
   constructor(private readonly service: UsersService) {}
+  @Post("me/fcm-token")
+  async registerFcmToken(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: RegisterFcmTokenDto,
+  ) {
+    await this.service.registerFcmToken(user, dto.token);
+    return { success: true };
+  }
+  @Delete("me/fcm-token")
+  async removeFcmToken(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: RegisterFcmTokenDto,
+  ) {
+    await this.service.removeFcmToken(user, dto.token);
+    return { success: true };
+  }
   @Get("staff")
   @Roles(
     "ashram_admin",

@@ -79,6 +79,18 @@ export class UsersService {
       };
     });
   }
+  async registerFcmToken(actor: AuthenticatedUser, token: string): Promise<void> {
+    await this.users.updateOne(
+      { _id: actor.id },
+      { $addToSet: { fcmTokens: token } },
+    );
+  }
+  async removeFcmToken(actor: AuthenticatedUser, token: string): Promise<void> {
+    await this.users.updateOne(
+      { _id: actor.id },
+      { $pull: { fcmTokens: token } },
+    );
+  }
   async staff(actor: AuthenticatedUser): Promise<any[]> {
     const scope = await resolveAshramScope(actor, this.ashrams);
     const ids = isUnrestricted(scope)
