@@ -31,6 +31,6 @@ import { MarketplaceOrderController } from "./presentation/marketplace-order.con
     MarketplaceOrderService,
     { provide: COMMERCE_REPOSITORY, useClass: MongooseCommerceRepository },
   ],
-  exports: [MongooseModule],
+  exports: [MongooseModule, MarketplaceOrderService],
 })
 export class CommerceModule {}

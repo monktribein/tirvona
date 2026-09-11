@@ -1528,4 +1528,68 @@ export class BookingsService {
     });
     return row;
   }
+
+  /// Confirms a booking's payment from a verified Razorpay webhook event
+  /// (`payment.captured`), independent of any client callback.
+  ///
+  /// This exists because the client-driven path — the guest's app calling
+  /// back after Razorpay's checkout succeeds — can never fire if Android
+  /// kills the app's process while the guest is in an external UPI app
+  /// (common on low-RAM devices). Razorpay's webhook is authoritative and
+  /// server-to-server, so it confirms the booking even when the guest's
+  /// device never gets the chance to.
+  ///
+  /// Reuses [confirmPayment] itself rather than duplicating its business
+  /// logic: the per-payment signature `confirmPayment` checks is just
+  /// `HMAC(order_id|payment_id, keySecret)`, which the server can compute
+  /// for itself from the already-verified webhook payload, and the "acting
+  /// user" it needs is reconstructed from the payment record's own
+  /// `userId` (the real customer, captured when the order was created) —
+  /// not from a request principal, since a webhook has none.
+  ///
+  /// Returns `false` when no booking in this module owns [razorpayOrderId]
+  /// (the webhook belongs to a different payment flow — parking, aarti,
+  /// marketplace) so the caller can try the next one.
+  async confirmPaymentFromWebhook(
+    razorpayOrderId: string,
+    razorpayPaymentId: string,
+  ): Promise<boolean> {
+    const payment = await this.payments
+      .findOne({ "gateway.orderId": razorpayOrderId })
+      .sort({ createdAt: -1 });
+    if (!payment) return false;
+
+    const keySecret = this.config.get<string>("razorpayKeySecret");
+    if (!keySecret) return false;
+    const signature = createHmac("sha256", keySecret)
+      .update(`${razorpayOrderId}|${razorpayPaymentId}`)
+      .digest("hex");
+
+    const actingUser = {
+      _id: String(payment.userId),
+      id: String(payment.userId),
+      name: "",
+      email: "",
+      role: "customer",
+      status: "active",
+      permissions: [],
+      scopedAshramIds: [],
+      scopedTempleIds: [],
+    } as AuthenticatedUser;
+
+    try {
+      await this.confirmPayment(String(payment.bookingId), actingUser, {
+        razorpay_order_id: razorpayOrderId,
+        razorpay_payment_id: razorpayPaymentId,
+        razorpay_signature: signature,
+        method: "razorpay",
+      });
+    } catch (error) {
+      // Already confirmed (e.g. the client callback won the race) — the
+      // webhook arriving after is expected and not an error from its
+      // perspective; anything else is a real failure worth surfacing.
+      if (!(error instanceof ConflictException)) throw error;
+    }
+    return true;
+  }
 }

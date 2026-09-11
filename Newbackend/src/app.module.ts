@@ -37,6 +37,7 @@ import { TemplesModule } from "./modules/temples/temples.module";
 import { LeadCollectionModule } from "./modules/lead-collection/lead-collection.module";
 import { SmartContactModule } from "./modules/smart-contact/smart-contact.module";
 import { PayoutsModule } from "./modules/payouts/payouts.module";
+import { PaymentsModule } from "./modules/payments/payments.module";
 import { AartiModule } from "./modules/aarti/aarti.module";
 import { EventsModule } from "./modules/events/events.module";
 import { PilgrimageModule } from "./modules/pilgrimage/pilgrimage.module";
@@ -148,6 +149,7 @@ import {
     LeadCollectionModule,
     SmartContactModule,
     PayoutsModule,
+    PaymentsModule,
     AartiModule,
     EventsModule,
     PilgrimageModule,
