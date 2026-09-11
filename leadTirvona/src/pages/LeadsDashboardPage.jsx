@@ -3,7 +3,6 @@ import { Search, PlusCircle, Filter } from 'lucide-react';
 import LeadCard from '../components/LeadCard';
 import AppointmentModal from '../components/AppointmentModal';
 import DocumentCollectionModal from '../components/DocumentCollectionModal';
-import MovementTrackingPanel from '../components/MovementTrackingPanel';
 
 export default function LeadsDashboardPage({
   agent = null,
@@ -127,7 +126,6 @@ export default function LeadsDashboardPage({
         ))}
       </div>
 
-      <MovementTrackingPanel />
 
       <div className="bg-white border border-[#E2E8F0] rounded-2xl p-3.5 sm:p-5 shadow-xs space-y-3">
         <div className="relative">

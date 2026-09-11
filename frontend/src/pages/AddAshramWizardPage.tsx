@@ -4,7 +4,6 @@ import { ashramService } from "../services";
 import { formatCurrency } from "../utils/format";
 import { FileUploader } from "../components/FileUploader";
 import TirvonaMap from "../components/TirvonaMap";
-import { ImageGalleryManager } from "../admin/shared/components/ImageGalleryManager";
 import {
   ChevronRight,
   ChevronLeft,
@@ -156,6 +155,29 @@ interface FormData {
 
 const DRAFT_KEY = "tirvona_add_ashram_draft";
 
+const ALL_STEPS = [
+  { id: 1, label: "Basic Info", icon: Building2, value: 0 },
+  { id: 2, label: "Trust & Reg.", icon: ShieldCheck, value: 1 },
+  { id: 3, label: "Address & GPS", icon: MapPin, value: 2 },
+  { id: 4, label: "Contact", icon: Phone, value: 3 },
+  { id: 5, label: "Photos", icon: Image, value: 4 },
+  { id: 6, label: "About", icon: BookOpen, value: 5 },
+  { id: 7, label: "History", icon: Sparkles, value: 6 },
+  { id: 8, label: "Activities", icon: Zap, value: 7 },
+  { id: 9, label: "Amenities", icon: Layers, value: 8 },
+  { id: 10, label: "Room Categories", icon: Bed, value: 9 },
+  { id: 11, label: "Pricing", icon: DollarSign, value: 10 },
+  { id: 12, label: "Rules & Policies", icon: Info, value: 11 },
+  { id: 13, label: "Food & Prasad", icon: Utensils, value: 12 },
+  { id: 14, label: "Attractions", icon: Compass, value: 13 },
+  { id: 15, label: "Medical", icon: HeartPulse, value: 14 },
+  { id: 16, label: "Transport", icon: Bus, value: 15 },
+  { id: 17, label: "Documents", icon: FileCheck, value: 16 },
+  { id: 18, label: "Map Location", icon: Map, value: 17 },
+  { id: 19, label: "Preview", icon: Eye, value: 18 },
+  { id: 20, label: "Save Changes", icon: Save, value: 20 },
+];
+
 const BASIC_STEPS = [
   { id: 1, label: "Basic Info", icon: Building2, value: 0 },
   { id: 2, label: "Trust & Reg.", icon: ShieldCheck, value: 1 },
@@ -167,22 +189,7 @@ const BASIC_STEPS = [
   { id: 8, label: "Submit", icon: Send, value: 19 },
 ];
 
-const CONFIG_STEPS = [
-  { id: 1, label: "Images", icon: Image, value: 4 },
-  { id: 2, label: "About", icon: BookOpen, value: 5 },
-  { id: 3, label: "History", icon: Sparkles, value: 6 },
-  { id: 4, label: "Activities", icon: Zap, value: 7 },
-  { id: 5, label: "Amenities", icon: Layers, value: 8 },
-  { id: 6, label: "Room Categories", icon: Bed, value: 9 },
-  { id: 7, label: "Pricing", icon: DollarSign, value: 10 },
-  { id: 8, label: "Rules & Policies", icon: Info, value: 11 },
-  { id: 9, label: "Food & Prasad", icon: Utensils, value: 12 },
-  { id: 10, label: "Attractions", icon: Compass, value: 13 },
-  { id: 11, label: "Medical", icon: HeartPulse, value: 14 },
-  { id: 12, label: "Transport", icon: Bus, value: 15 },
-  { id: 13, label: "Preview", icon: Eye, value: 18 },
-  { id: 14, label: "Save Changes", icon: Save, value: 20 },
-];
+const CONFIG_STEPS = ALL_STEPS;
 
 const AMENITY_PRESETS = [
   "WiFi",
@@ -416,7 +423,7 @@ const AddAshramWizardPage: React.FC = () => {
   const STEPS = editId ? CONFIG_STEPS : BASIC_STEPS;
 
   const [step, setStep] = useState(0); // 0-indexed
-  const [maxStep, setMaxStep] = useState(0);
+  const [maxStep, setMaxStep] = useState(editId ? 99 : 0);
 
   useEffect(() => {
     setMaxStep((prev) => Math.max(prev, step));
@@ -452,6 +459,7 @@ const AddAshramWizardPage: React.FC = () => {
               name: ashram.name || "",
               tagline: ashram.tagline || "",
               ashramType: normalizeAshramType(ashram.ashramType),
+              languages: ashram.languages || (Array.isArray(ashram.primaryLanguages) ? ashram.primaryLanguages.join(", ") : ""),
               description: ashram.description || "",
               history: ashram.history || "",
               foundedBy: ashram.foundedBy || "",
@@ -482,11 +490,16 @@ const AddAshramWizardPage: React.FC = () => {
               registeredBy: ashram.trust?.registeredBy || "",
               coverImageUrl: ashram.images?.[0] || "",
               galleryUrls: ashram.images?.slice(1) || [],
-              amenities: ashram.amenities || [],
-              activities: ashram.activities || [],
+              amenities: Array.isArray(ashram.amenities) ? ashram.amenities : [],
+              activities: Array.isArray(ashram.activities) ? ashram.activities : [],
               dailySchedule: ashram.dailySchedule || "",
               specialEvents: ashram.specialEvents || "",
-              rules: ashram.rules || [],
+              rooms: Array.isArray(ashram.rooms) ? ashram.rooms : [],
+              totalCapacity: ashram.pricing?.totalCapacity?.toString() || "",
+              lowestNightPrice: ashram.pricing?.lowestNightPrice?.toString() || "",
+              peakSeasonMultiplier: ashram.pricing?.peakSeasonMultiplier?.toString() || "1.5",
+              donationInfo: ashram.pricing?.donationInfo || "",
+              rules: Array.isArray(ashram.rules) ? ashram.rules : [],
               checkInTime: ashram.policies?.checkInTime || "",
               checkOutTime: ashram.policies?.checkOutTime || "",
               minStay: ashram.policies?.minStay?.toString() || "1",
@@ -498,7 +511,7 @@ const AddAshramWizardPage: React.FC = () => {
               dinnerTime: ashram.food?.mealTimings?.dinner || "",
               prasadDetails: ashram.food?.prasadDetails || "",
               specialDiet: ashram.food?.specialDiet || "",
-              nearbyAttractions: ashram.nearbyAttractions || [],
+              nearbyAttractions: Array.isArray(ashram.nearbyAttractions) ? ashram.nearbyAttractions : [],
               nearestHospital: ashram.medical?.nearestHospital || "",
               hospitalDistance: ashram.medical?.hospitalDistance || "",
               emergencyPhone: ashram.medical?.emergencyPhone || "",
@@ -641,6 +654,10 @@ const AddAshramWizardPage: React.FC = () => {
       name: formData.name,
       tagline: formData.tagline,
       ashramType: formData.ashramType,
+      languages: formData.languages,
+      primaryLanguages: formData.languages
+        ? formData.languages.split(",").map((s) => s.trim()).filter(Boolean)
+        : [],
       description: formData.description,
       history: formData.history,
       foundedBy: formData.foundedBy,
