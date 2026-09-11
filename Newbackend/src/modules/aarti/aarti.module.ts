@@ -87,6 +87,7 @@ const schemas = [
     AartiAccessService,
     AartiCapabilityGuard,
     AartiPricingService,
+    AartiBookingService,
     AARTI_REPOSITORY,
   ],
 })

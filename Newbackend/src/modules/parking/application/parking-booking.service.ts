@@ -713,4 +713,49 @@ export class ParkingBookingService {
     );
     return { review, rating };
   }
+
+  /// Confirms a parking booking's payment from a verified Razorpay webhook
+  /// event, independent of any client callback — see the equivalent method
+  /// on `BookingsService` for the full rationale (low-RAM devices losing
+  /// the in-app callback when Android kills the process during a UPI-app
+  /// redirect). Returns `false` when this module doesn't own the order.
+  async confirmPaymentFromWebhook(
+    razorpayOrderId: string,
+    razorpayPaymentId: string,
+  ): Promise<boolean> {
+    const payment = await this.payments
+      .findOne({ "gateway.orderId": razorpayOrderId })
+      .sort({ createdAt: -1 });
+    if (!payment) return false;
+
+    const keySecret = this.config.get<string>("razorpayKeySecret");
+    if (!keySecret) return false;
+    const signature = createHmac("sha256", keySecret)
+      .update(`${razorpayOrderId}|${razorpayPaymentId}`)
+      .digest("hex");
+
+    const actingUser = {
+      _id: String(payment.userId),
+      id: String(payment.userId),
+      name: "",
+      email: "",
+      role: "customer",
+      status: "active",
+      permissions: [],
+      scopedAshramIds: [],
+      scopedTempleIds: [],
+    } as AuthenticatedUser;
+
+    try {
+      await this.confirmPayment(String(payment.bookingId), actingUser, {
+        razorpay_order_id: razorpayOrderId,
+        razorpay_payment_id: razorpayPaymentId,
+        razorpay_signature: signature,
+        method: "razorpay",
+      });
+    } catch (error) {
+      if (!(error instanceof ConflictException)) throw error;
+    }
+    return true;
+  }
 }

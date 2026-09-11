@@ -97,6 +97,7 @@ const tenantSchemas = [
     ParkingAccessService,
     ParkingCapabilityGuard,
     ParkingPricingService,
+    ParkingBookingService,
     PARKING_REPOSITORY,
   ],
 })
