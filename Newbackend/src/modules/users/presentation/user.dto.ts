@@ -104,3 +104,6 @@ export class BulkDeleteUsersDto {
   @IsMongoId({ each: true })
   ids: string[];
 }
+export class RegisterFcmTokenDto {
+  @IsString() @MinLength(10) token: string;
+}

@@ -11,6 +11,7 @@ import { Resend } from "resend";
 import QRCode from "qrcode";
 import { ConfigService } from "@nestjs/config";
 import { NotificationsGateway } from "./notifications.gateway";
+import { FcmService } from "./fcm/fcm.service";
 import {
   renderEmail,
   renderEmailText,
@@ -66,6 +67,7 @@ export class NotificationWorker
     @InjectModel(EVENT_MODEL.QrCode)
     private readonly eventQrCodes: Model<any>,
     private readonly gateway: NotificationsGateway,
+    private readonly fcm: FcmService,
     private readonly config: ConfigService,
     private readonly whatsapp: WhatsAppTransactionalNotificationService,
   ) {
@@ -157,6 +159,16 @@ export class NotificationWorker
         } catch (error) {
           deferredDeliveryError = error;
           this.logChannelFailure(data, correlationId, "socket");
+        }
+        if (data.channel === "push") {
+          try {
+            await this.fcm.sendToUser(data.userId, {
+              title: data.title,
+              body: data.message,
+            });
+          } catch {
+            this.logChannelFailure(data, correlationId, "push");
+          }
         }
       }
       const resendApiKey = this.config.get<string>("resendApiKey");
@@ -774,7 +786,7 @@ export class NotificationWorker
   private logChannelFailure(
     data: NotificationJob,
     correlationId: string,
-    channel: "socket" | "email",
+    channel: "socket" | "email" | "push",
   ): void {
     this.logger.error(
       JSON.stringify({

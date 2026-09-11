@@ -2,25 +2,41 @@ import { Module } from "@nestjs/common";
 import { BullModule } from "@nestjs/bullmq";
 import { ConfigService } from "@nestjs/config";
 import { JwtModule } from "@nestjs/jwt";
+import { MongooseModule } from "@nestjs/mongoose";
 import { BookingsModule } from "../bookings/bookings.module";
 import { ParkingModule } from "../parking/parking.module";
 import { UsersModule } from "../users/users.module";
+import { AshramsModule } from "../ashrams/ashrams.module";
 import { CommunityModule } from "../community/community.module";
 import { AartiModule } from "../aarti/aarti.module";
 import { EventsModule } from "../events/events.module";
 import { NotificationOutboxService } from "./notification-outbox.service";
 import { NotificationWorker } from "./notification.worker";
 import { NotificationsGateway } from "./notifications.gateway";
+import { NotificationsController } from "./presentation/notifications.controller";
+import { NotificationsAdminService } from "./application/notifications-admin.service";
+import { UserInboxService } from "./application/user-inbox.service";
+import { AudienceResolverService } from "./fcm/audience-resolver.service";
+import { FcmService } from "./fcm/fcm.service";
+import {
+  PushCampaignSchema,
+  UserNotificationSchema,
+} from "./infrastructure/persistence/push-notification.schemas";
 import { WhatsAppModule } from "../../integrations/whatsapp/whatsapp.module";
 @Module({
   imports: [
     BookingsModule,
     ParkingModule,
     UsersModule,
+    AshramsModule,
     CommunityModule,
     AartiModule,
     EventsModule,
     WhatsAppModule,
+    MongooseModule.forFeature([
+      { name: "PushCampaign", schema: PushCampaignSchema },
+      { name: "UserNotification", schema: UserNotificationSchema },
+    ]),
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
@@ -51,11 +67,16 @@ import { WhatsAppModule } from "../../integrations/whatsapp/whatsapp.module";
     }),
     BullModule.registerQueue({ name: "notifications" }),
   ],
+  controllers: [NotificationsController],
   providers: [
     NotificationsGateway,
     NotificationOutboxService,
     NotificationWorker,
+    FcmService,
+    AudienceResolverService,
+    UserInboxService,
+    NotificationsAdminService,
   ],
-  exports: [NotificationsGateway],
+  exports: [NotificationsGateway, FcmService],
 })
 export class NotificationsModule {}

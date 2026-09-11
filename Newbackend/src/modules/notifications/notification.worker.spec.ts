@@ -72,6 +72,7 @@ const worker = (
     { findById: jest.fn(() => lookupChain(null)) } as never,
     { findOne: jest.fn(() => lookupChain(null)) } as never,
     gateway as never,
+    { sendToUser: jest.fn().mockResolvedValue({ successCount: 0, failureCount: 0 }) } as never,
     { get: jest.fn() } as never,
     whatsapp as never,
   );

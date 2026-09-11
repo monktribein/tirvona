@@ -68,6 +68,7 @@ export class User {
   @Prop({ default: false }) isSuspended: boolean;
   @Prop({ default: "" }) suspensionReason: string;
   @Prop({ type: [String], default: [] }) permissions: string[];
+  @Prop({ type: [String], default: [] }) fcmTokens: string[];
   @Prop({ type: SchemaTypes.ObjectId, ref: "Ashram", default: null })
   employerAshramId?: Types.ObjectId;
   @Prop({ type: [SchemaTypes.ObjectId], ref: "Ashram", default: [] })
