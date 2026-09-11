@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, MapPin, Clock, CheckCircle2, LogOut, Navigation, AlertCircle, Calendar, ShieldCheck, Loader2 } from 'lucide-react';
 import { useGeolocation } from '../hooks/useGeolocation';
+import { useMovementTracker } from '../hooks/useMovementTracker';
 import { buildGoogleMapsUrl } from '../utils/formatDate';
 import { useLanguage } from '../context/LanguageContext';
 import { leadApi } from '../services/leadApi';
@@ -8,6 +9,7 @@ import { leadApi } from '../services/leadApi';
 export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpdated }) {
   const { t } = useLanguage();
   const { isCapturing, gpsError, captureCurrentLocation } = useGeolocation();
+  const { updateConsent } = useMovementTracker();
   const [attendance, setAttendance] = useState({
     checkedIn: false,
     checkInTime: null,
@@ -147,6 +149,8 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
         setAttendance(record);
         setStatusMsg('✅ Check-In Attendance Saved to Server with GPS Location!');
         if (onAttendanceUpdated) onAttendanceUpdated(record);
+        // Auto-start movement tracking on check-in
+        try { await updateConsent(true); } catch { /* non-blocking */ }
       } catch (err) {
         console.error('[AttendanceModal] check-in failed:', err);
         setStatusMsg('❌ Check-in failed. Please try again.');
@@ -181,6 +185,8 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
         setAttendance(record);
         setStatusMsg('✅ Check-Out Saved to Server with GPS Location!');
         if (onAttendanceUpdated) onAttendanceUpdated(record);
+        // Auto-stop movement tracking on check-out
+        try { await updateConsent(false); } catch { /* non-blocking */ }
       } catch (err) {
         console.error('[AttendanceModal] check-out failed:', err);
         setStatusMsg('❌ Check-out failed. Please try again.');
