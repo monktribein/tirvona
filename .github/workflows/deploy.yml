@@ -46,7 +46,7 @@ jobs:
 
             echo "=== Restarting API ==="
             pm2 delete tirvona-api || true
-            pm2 start /var/www/tirvona/Newbackend/dist-vps/main.js --name tirvona-api --update-env
+            pm2 start /var/www/tirvona/Newbackend/dist-vps/main.js --name tirvona-api --cwd /var/www/tirvona/Newbackend --update-env
             sleep 5
             pm2 logs tirvona-api --lines 80 --nostream
 
