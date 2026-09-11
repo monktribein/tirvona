@@ -20,6 +20,7 @@ export default function LeadsDashboardPage({
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [interestFilter, setInterestFilter] = useState('ALL');
+  const [cityFilter, setCityFilter] = useState('ALL');
   const [selectedLeadForAppointment, setSelectedLeadForAppointment] = useState(null);
   const [selectedLeadForDocs, setSelectedLeadForDocs] = useState(null);
 
@@ -40,6 +41,16 @@ export default function LeadsDashboardPage({
   const approvedCount    = useMemo(() => scopedLeads.filter((l) => l.status === 'approved' || l.status === 'converted').length, [scopedLeads]);
   const appointmentCount = useMemo(() => scopedLeads.filter((l) => Boolean(l.meeting?.requested && l.meeting?.time)).length, [scopedLeads]);
 
+  // Distinct cities present in the current leads (e.g. Mathura, Vrindavan)
+  const cityOptions = useMemo(() => {
+    const cities = new Set();
+    scopedLeads.forEach((lead) => {
+      const city = (lead.location?.city || '').trim();
+      if (city) cities.add(city);
+    });
+    return Array.from(cities).sort((a, b) => a.localeCompare(b));
+  }, [scopedLeads]);
+
   const filtered = useMemo(() => {
     return scopedLeads
       .filter((lead) => {
@@ -50,7 +61,8 @@ export default function LeadsDashboardPage({
           || (lead.contact?.ownerName || '').toLowerCase().includes(q);
         const matchStatus = statusFilter === 'ALL' || lead.status === statusFilter;
         const matchInterest = interestFilter === 'ALL' || lead.interest === interestFilter;
-        return matchSearch && matchStatus && matchInterest;
+        const matchCity = cityFilter === 'ALL' || lead.location?.city === cityFilter;
+        return matchSearch && matchStatus && matchInterest && matchCity;
       })
       .sort((a, b) => {
         const aSaved = a.documentChecklist?.items || {};
@@ -71,7 +83,7 @@ export default function LeadsDashboardPage({
 
         return bTime - aTime;
       });
-  }, [scopedLeads, searchQuery, statusFilter, interestFilter]);
+  }, [scopedLeads, searchQuery, statusFilter, interestFilter, cityFilter]);
 
   const inputClass = "w-full min-h-[44px] px-3.5 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-xs sm:text-sm font-medium text-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/20 focus:border-[#0A4DA6] transition-all placeholder:text-[#94A3B8]";
 
@@ -129,7 +141,22 @@ export default function LeadsDashboardPage({
           />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {/* City Filter */}
+          <div className="flex items-center gap-2">
+            <Filter size={15} className="text-[#64748B] shrink-0" />
+            <select
+              value={cityFilter}
+              onChange={(e) => setCityFilter(e.target.value)}
+              className={inputClass}
+            >
+              <option value="ALL">All Cities</option>
+              {cityOptions.map((city) => (
+                <option key={city} value={city}>{city}</option>
+              ))}
+            </select>
+          </div>
+
           {/* Status Filter */}
           <div className="flex items-center gap-2">
             <Filter size={15} className="text-[#64748B] shrink-0" />
@@ -188,7 +215,7 @@ export default function LeadsDashboardPage({
             No leads match your current search query or filter selections.
           </p>
           <button
-            onClick={() => { setSearchQuery(''); setStatusFilter('ALL'); setInterestFilter('ALL'); }}
+            onClick={() => { setSearchQuery(''); setStatusFilter('ALL'); setInterestFilter('ALL'); setCityFilter('ALL'); }}
             className="px-5 py-2.5 min-h-[44px] bg-[#0A4DA6] text-white font-extrabold text-xs rounded-full shadow-sm hover:bg-[#083D85] transition-all inline-block cursor-pointer"
           >
             Clear Search Filters

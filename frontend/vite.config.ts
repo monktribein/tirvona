@@ -7,6 +7,7 @@ export default defineConfig(() => {
   return {
     plugins: [react()],
     resolve: {
+      preserveSymlinks: true,
       alias: {
         "@": path.resolve(__dirname, "./src"),
         "lucide-react": path.resolve(

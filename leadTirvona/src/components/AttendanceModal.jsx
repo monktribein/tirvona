@@ -31,8 +31,8 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
         .then((data) => {
           if (!isMounted || !data) return;
           if (data.checkedIn) {
-            setAttendance({
-              checkedIn: true,
+            const record = {
+              checkedIn: !data.checkedOut,
               checkInTime: data.checkInTime ? new Date(data.checkInTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : null,
               checkInCoords: data.checkInLocation ? { lat: data.checkInLocation.latitude, lng: data.checkInLocation.longitude } : null,
               checkInAddress: data.checkInLocation?.address || '',
@@ -40,7 +40,9 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
               checkOutTime: data.checkOutTime ? new Date(data.checkOutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : null,
               checkOutCoords: data.checkOutLocation ? { lat: data.checkOutLocation.latitude, lng: data.checkOutLocation.longitude } : null,
               checkOutAddress: data.checkOutLocation?.address || '',
-            });
+            };
+            setAttendance(record);
+            if (onAttendanceUpdated) onAttendanceUpdated(record);
           }
         })
         .catch((err) => {
@@ -71,6 +73,24 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
         }
       };
     }
+  }, [isOpen]);
+
+  // Trap the mobile back gesture: closes the modal instead of leaving the app.
+  React.useEffect(() => {
+    if (!isOpen) return;
+    let closedByBackGesture = false;
+    window.history.pushState({ leadTirvonaModal: 'attendance' }, '');
+    const onPopState = () => {
+      closedByBackGesture = true;
+      onClose();
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => {
+      window.removeEventListener('popstate', onPopState);
+      if (!closedByBackGesture && window.history.state?.leadTirvonaModal === 'attendance') {
+        window.history.back();
+      }
+    };
   }, [isOpen]);
 
   if (!isOpen) return null;
@@ -106,24 +126,30 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
       setSubmitting(true);
       try {
         const res = await leadApi.checkIn({
-          latitude: coords.lat,
-          longitude: coords.lng,
-          accuracy: coords.accuracy || 10,
+          coords: {
+            lat: coords.lat,
+            lng: coords.lng,
+            accuracy: coords.accuracy || 10,
+          },
           address: coords.address || `${user?.district || 'Field'}, Uttar Pradesh`
         });
         const nowFormatted = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         const record = {
-          ...attendance,
           checkedIn: true,
           checkInTime: nowFormatted,
           checkInCoords: coords,
           checkInAddress: coords.address || '',
+          checkedOut: false,
+          checkOutTime: null,
+          checkOutCoords: null,
+          checkOutAddress: '',
         };
         setAttendance(record);
         setStatusMsg('✅ Check-In Attendance Saved to Server with GPS Location!');
         if (onAttendanceUpdated) onAttendanceUpdated(record);
       } catch (err) {
-        setStatusMsg(`❌ Check-in failed: ${err.message || 'Server error'}`);
+        console.error('[AttendanceModal] check-in failed:', err);
+        setStatusMsg('❌ Check-in failed. Please try again.');
       } finally {
         setSubmitting(false);
       }
@@ -136,14 +162,17 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
       setSubmitting(true);
       try {
         const res = await leadApi.checkOut({
-          latitude: coords.lat,
-          longitude: coords.lng,
-          accuracy: coords.accuracy || 10,
+          coords: {
+            lat: coords.lat,
+            lng: coords.lng,
+            accuracy: coords.accuracy || 10,
+          },
           address: coords.address || `${user?.district || 'Field'}, Uttar Pradesh`
         });
         const nowFormatted = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         const record = {
           ...attendance,
+          checkedIn: false,
           checkedOut: true,
           checkOutTime: nowFormatted,
           checkOutCoords: coords,
@@ -153,7 +182,8 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
         setStatusMsg('✅ Check-Out Saved to Server with GPS Location!');
         if (onAttendanceUpdated) onAttendanceUpdated(record);
       } catch (err) {
-        setStatusMsg(`❌ Check-out failed: ${err.message || 'Server error'}`);
+        console.error('[AttendanceModal] check-out failed:', err);
+        setStatusMsg('❌ Check-out failed. Please try again.');
       } finally {
         setSubmitting(false);
       }
@@ -280,9 +310,9 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
               <span className="flex items-center gap-1 text-[#0A4DA6]">
                 <Clock size={13} /> {t('Check-In Status')}
               </span>
-              <span>{attendance.checkedIn ? 'COMPLETED' : 'PENDING'}</span>
+              <span>{attendance.checkInTime ? 'COMPLETED' : 'PENDING'}</span>
             </div>
-            {attendance.checkedIn ? (
+            {attendance.checkInTime ? (
               <div className="text-[11px] text-[#64748B] space-y-0.5 pt-1 border-t border-[#E2E8F0]">
                 <p><strong className="text-[#0F172A]">Time:</strong> {attendance.checkInTime}</p>
                 <p><strong className="text-[#0F172A]">Geotag GPS:</strong> Lat {attendance.checkInCoords?.lat}, Lng {attendance.checkInCoords?.lng}</p>
@@ -302,9 +332,9 @@ export default function AttendanceModal({ isOpen, onClose, user, onAttendanceUpd
               <span className="flex items-center gap-1 text-[#0B192C]">
                 <Clock size={13} /> {t('Check-Out Status')}
               </span>
-              <span>{attendance.checkedOut ? 'COMPLETED' : 'PENDING'}</span>
+              <span>{attendance.checkOutTime ? 'COMPLETED' : 'PENDING'}</span>
             </div>
-            {attendance.checkedOut ? (
+            {attendance.checkOutTime ? (
               <div className="text-[11px] text-[#64748B] space-y-0.5 pt-1 border-t border-[#E2E8F0]">
                 <p><strong className="text-[#0F172A]">Time:</strong> {attendance.checkOutTime}</p>
                 <p><strong className="text-[#0F172A]">Geotag GPS:</strong> Lat {attendance.checkOutCoords?.lat}, Lng {attendance.checkOutCoords?.lng}</p>

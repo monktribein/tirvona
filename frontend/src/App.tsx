@@ -205,6 +205,7 @@ const TempleManagementPage = lazy(() => import("./admin/temples/pages/TempleMana
 const AddEditTemplePage = lazy(() => import("./admin/temples/pages/AddEditTemplePage"));
 const TempleOwnerDashboard = lazy(() => import("./pages/temple-owner/TempleOwnerDashboard"));
 
+
 const SmartContactProfilesPage = lazy(
   () => import("./admin/smart-contact/pages/SmartContactProfilesPage"),
 );
@@ -709,6 +710,8 @@ const AppContent: React.FC = () => {
             <Route path="/temple-owner/dashboard" element={<TempleOwnerDashboard />} />
             <Route path="/admin/temples/:id/edit" element={<AddEditTemplePage />} />
           </Route>
+
+
 
           <Route
             element={

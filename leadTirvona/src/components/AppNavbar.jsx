@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { PlusCircle, LayoutDashboard, Building2, Menu, X, UserCheck, MapPin, ArrowLeft, FileCheck } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { PlusCircle, LayoutDashboard, Building2, Menu, X, UserCheck, MapPin, ArrowLeft, FileCheck, LogOut, ChevronDown } from 'lucide-react';
 import LoginModal from './LoginModal';
 import AttendanceModal from './AttendanceModal';
 import { useLanguage } from '../context/LanguageContext';
@@ -22,7 +22,20 @@ export default function AppNavbar({
   const [showHeader, setShowHeader] = useState(true);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isAttendanceModalOpen, setIsAttendanceModalOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef(null);
   const user = agent;
+
+  useEffect(() => {
+    if (!userMenuOpen) return;
+    const onClickOutside = (e) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target)) {
+        setUserMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener('mousedown', onClickOutside);
+  }, [userMenuOpen]);
 
   useEffect(() => {
     let lastScrollY = window.scrollY;
@@ -61,6 +74,7 @@ export default function AppNavbar({
   const handleLogout = () => {
     onLogout();
     setMobileMenuOpen(false);
+    setUserMenuOpen(false);
   };
 
   return (
@@ -182,26 +196,45 @@ export default function AppNavbar({
                     <button
                       onClick={() => setIsAttendanceModalOpen(true)}
                       className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1 sm:py-1.5 text-[11px] sm:text-xs font-semibold text-[#0B192C] hover:text-[#0A4DA6] hover:bg-slate-50 border border-gray-200 rounded-full transition-colors cursor-pointer shadow-2xs"
-                      title={t('Attendance')}
+                      title={attendanceState?.checkedIn ? t('Check Out') : t('Check In')}
                     >
                       <MapPin size={12} className="text-[#0A4DA6] sm:w-[13px] sm:h-[13px]" />
-                      <span>{t('Attendance')}</span>
+                      <span>{attendanceState?.checkedIn ? t('Check Out') : t('Check In')}</span>
                       {attendanceState?.checkedIn && (
                         <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-500 animate-pulse" />
                       )}
                     </button>
                   )}
 
-                  <button
-                    onClick={handleLogout}
-                    className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 sm:py-1.5 text-[11px] sm:text-xs font-bold text-[#0A4DA6] bg-blue-50/70 hover:bg-blue-100/70 border border-blue-200/80 rounded-full transition-colors cursor-pointer"
-                    title={t('Sign Out')}
-                  >
-                    <div className="w-5 h-5 rounded-full bg-[#0A4DA6] text-white flex items-center justify-center text-[10px] font-black shrink-0">
-                      {user.name?.slice(0, 1).toUpperCase() || 'U'}
-                    </div>
-                    <span className="hidden sm:inline">{user.name?.split(' ')[0] || 'User'}</span>
-                  </button>
+                  <div className="relative" ref={userMenuRef}>
+                    <button
+                      onClick={() => setUserMenuOpen((open) => !open)}
+                      className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 sm:py-1.5 text-[11px] sm:text-xs font-bold text-[#0A4DA6] bg-blue-50/70 hover:bg-blue-100/70 border border-blue-200/80 rounded-full transition-colors cursor-pointer"
+                      title={user.name || 'User'}
+                    >
+                      <div className="w-5 h-5 rounded-full bg-[#0A4DA6] text-white flex items-center justify-center text-[10px] font-black shrink-0">
+                        {user.name?.slice(0, 1).toUpperCase() || 'U'}
+                      </div>
+                      <span className="hidden sm:inline">{user.name?.split(' ')[0] || 'User'}</span>
+                      <ChevronDown size={12} className={`transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    {userMenuOpen && (
+                      <div className="absolute right-0 top-[calc(100%+8px)] w-48 bg-white border border-gray-200 rounded-xl shadow-lg py-1.5 z-50 animate-fadeIn">
+                        <div className="px-3.5 py-2 border-b border-gray-100">
+                          <p className="text-xs font-extrabold text-[#0F172A] truncate">{user.name}</p>
+                          <p className="text-[11px] text-[#64748B]">{user.phone}</p>
+                        </div>
+                        <button
+                          onClick={handleLogout}
+                          className="w-full flex items-center gap-2 px-3.5 py-2 text-xs font-bold text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                        >
+                          <LogOut size={14} />
+                          <span>{t('Sign Out')}</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </>
               ) : (
                 <button
@@ -321,7 +354,7 @@ export default function AppNavbar({
                         className="w-full flex items-center justify-center gap-2 p-2.5 rounded-xl border border-gray-200 text-xs font-bold text-[#0B192C] hover:bg-slate-50"
                       >
                         <MapPin size={14} className="text-[#0A4DA6]" />
-                        <span>Attendance Check-In</span>
+                        <span>{attendanceState?.checkedIn ? t('Check Out') : t('Check In')}</span>
                       </button>
                     )}
                     <button

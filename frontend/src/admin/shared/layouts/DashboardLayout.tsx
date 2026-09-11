@@ -44,6 +44,7 @@ import {
   CheckCircle2,
   Clock,
   Send,
+  BookOpen,
 } from "lucide-react";
 import {
   checkAshramBookingAvailable,
@@ -771,7 +772,32 @@ export const DashboardLayout: React.FC = () => {
     },
   ];
 
-
+  // ── Pandit / Provider sidebar ───────────────────────────────────────────────
+  const panditProviderGroups: NavGroup[] = [
+    {
+      groupName: "Provider Profile",
+      icon: <Users size={15} />,
+      links: [
+        { label: "Provider Dashboard", path: "/provider/dashboard" },
+        { label: "My Profile", path: "/provider/profile" },
+      ],
+    },
+    {
+      groupName: "Offerings",
+      icon: <BookOpen size={15} />,
+      links: [{ label: "My Offerings", path: "/provider/offerings" }],
+    },
+    {
+      groupName: "Verification",
+      icon: <FileCheck size={15} />,
+      links: [{ label: "Verification Status", path: "/provider/verification" }],
+    },
+    {
+      groupName: "Availability",
+      icon: <Calendar size={15} />,
+      links: [{ label: "Availability & Blocks", path: "/provider/availability" }],
+    },
+  ];
 
   const templeOwnerGroups: NavGroup[] = [
     {
@@ -876,6 +902,31 @@ export const DashboardLayout: React.FC = () => {
           icon: <LayoutDashboard size={16} className="text-[#E58C28]" />,
         },
         groups: templeOwnerGroups,
+      };
+    }
+    // ── Pandit / Provider role ────────────────────────────────────────────
+    if (
+      ["provider", "pandit_provider", "pandit", "purohit", "acharya"].includes(
+        user?.role || "",
+      )
+    ) {
+      return {
+        topLink: {
+          label: "Provider Dashboard",
+          path: "/provider/dashboard",
+          icon: <LayoutDashboard size={16} className="text-[#E58C28]" />,
+        },
+        groups: panditProviderGroups,
+      };
+    }
+    if (user?.role === "verification_reviewer") {
+      return {
+        topLink: {
+          label: "Verification Queue",
+          path: "/admin/verifications",
+          icon: <FileCheck size={16} className="text-[#E58C28]" />,
+        },
+        groups: [],
       };
     }
     if (user?.role === "manager") {
