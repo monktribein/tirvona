@@ -17,8 +17,9 @@ const buildGoogleMapsUrl = (lat?: number | null, lng?: number | null) => {
 };
 
 const getTodayDateString = () => {
-  const now = new Date();
-  return now.toISOString().slice(0, 10); // YYYY-MM-DD
+  // Keyed in IST so the attendance day rolls over at local midnight,
+  // not UTC midnight (which would flip "today" at 5:30am IST).
+  return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }); // YYYY-MM-DD
 };
 
 const formatTimeInIST = (date: Date) => {
@@ -50,48 +51,61 @@ export class LeadAttendanceService {
     const agentIdObj = this.objectId(agent.id);
 
     const existing = await this.attendanceModel.findOne({
-      $or: [{ agentId: agent.id }, { agentId: agentIdObj }, { userId: agent.id }, { userId: agentIdObj }],
+      $or: [{ agentId: agent.id }, { agentId: agentIdObj }],
       date: today,
     });
 
-    if (existing && existing.checkedIn) {
+    if (existing && existing.checkedIn && !existing.checkedOut) {
       return {
         message: "Already checked in today",
         record: existing,
       };
     }
 
-    const doc = await this.attendanceModel.findOneAndUpdate(
-      {
-        $or: [{ agentId: agent.id }, { agentId: agentIdObj }, { userId: agent.id }, { userId: agentIdObj }],
+    const update = {
+      $set: {
+        agentId: agent.id,
+        agentName: agent.name,
+        agentPhone: agent.phone,
+        role: agent.role,
+        state: agent.state,
+        district: agent.district,
         date: today,
-      },
-      {
-        $set: {
-          agentId: agent.id,
-          userId: agent.id,
-          agentName: agent.name,
-          agentPhone: agent.phone,
-          role: agent.role,
-          state: agent.state,
-          district: agent.district,
-          date: today,
-          checkedIn: true,
-          checkInTime: now,
-          checkInFormattedTime: formatted,
-          checkInCoords: {
-            lat,
-            lng,
-            accuracy,
-          },
-          checkInAddress: dto.address || `${agent.district || 'Mathura'}, ${agent.state || 'Uttar Pradesh'}`,
-          checkInMapsUrl: mapsUrl,
-          status: "checked_in",
-          notes: dto.notes || "",
+        checkedIn: true,
+        checkedOut: false,
+        checkInTime: now,
+        checkInFormattedTime: formatted,
+        checkInCoords: {
+          lat,
+          lng,
+          accuracy,
         },
+        checkInAddress: dto.address || `${agent.district || 'Mathura'}, ${agent.state || 'Uttar Pradesh'}`,
+        checkInMapsUrl: mapsUrl,
+        checkOutTime: null,
+        checkOutFormattedTime: "",
+        status: "checked_in",
+        notes: dto.notes || "",
       },
-      { upsert: true, new: true },
-    );
+    };
+    const filter = {
+      $or: [{ agentId: agent.id }, { agentId: agentIdObj }],
+      date: today,
+    };
+
+    let doc;
+    try {
+      doc = await this.attendanceModel.findOneAndUpdate(filter, update, {
+        upsert: true,
+        new: true,
+      });
+    } catch (err: any) {
+      if (err?.code === 11000) {
+        doc = await this.attendanceModel.findOneAndUpdate(filter, update, { new: true });
+      } else {
+        throw err;
+      }
+    }
 
     return {
       message: "Check-in recorded successfully",
@@ -111,7 +125,7 @@ export class LeadAttendanceService {
     const agentIdObj = this.objectId(agent.id);
 
     const record = await this.attendanceModel.findOne({
-      $or: [{ agentId: agent.id }, { agentId: agentIdObj }, { userId: agent.id }, { userId: agentIdObj }],
+      $or: [{ agentId: agent.id }, { agentId: agentIdObj }],
       date: today,
     });
 
@@ -129,7 +143,7 @@ export class LeadAttendanceService {
 
     const updated = await this.attendanceModel.findOneAndUpdate(
       {
-        $or: [{ agentId: agent.id }, { agentId: agentIdObj }, { userId: agent.id }, { userId: agentIdObj }],
+        $or: [{ agentId: agent.id }, { agentId: agentIdObj }],
         date: today,
       },
       {
@@ -163,7 +177,7 @@ export class LeadAttendanceService {
     const today = getTodayDateString();
     const agentIdObj = this.objectId(agentId);
     const record = await this.attendanceModel.findOne({
-      $or: [{ agentId }, { agentId: agentIdObj }, { userId: agentId }, { userId: agentIdObj }],
+      $or: [{ agentId }, { agentId: agentIdObj }],
       date: today,
     }).lean();
     return record || null;
@@ -175,12 +189,7 @@ export class LeadAttendanceService {
 
     const agentIdObj = this.objectId(agentId);
     const filter: Record<string, any> = {
-      $or: [
-        { agentId: agentId },
-        { agentId: agentIdObj },
-        { userId: agentId },
-        { userId: agentIdObj },
-      ],
+      $or: [{ agentId: agentId }, { agentId: agentIdObj }],
     };
     if (query?.date) filter.date = query.date;
     if (query?.startDate || query?.endDate) {
@@ -312,7 +321,7 @@ export class LeadAttendanceService {
       { $match: { checkedIn: true } },
       {
         $group: {
-          _id: { $ifNull: ["$agentId", "$userId"] },
+          _id: "$agentId",
           daysPresent: { $sum: 1 },
           totalMinutes: { $sum: "$totalWorkingMinutes" },
           lastAttendanceDate: { $max: "$date" },
@@ -333,7 +342,7 @@ export class LeadAttendanceService {
 
     const todayMap: Record<string, any> = {};
     for (const log of todayLogs) {
-      const aId = log.agentId || log.userId;
+      const aId = log.agentId;
       if (aId) {
         todayMap[String(aId)] = log;
       }

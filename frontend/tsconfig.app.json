@@ -23,12 +23,11 @@
     "noFallthroughCasesInSwitch": true,
 
     /* Path Aliases */
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
+      "@pandit/*": ["./src/features/pandit/*"],
       "lucide-react": ["./src/design-system/icons/lucide-material-compat.tsx"]
-    },
-    "ignoreDeprecations": "6.0"
+    }
   },
   "include": ["src"]
 }

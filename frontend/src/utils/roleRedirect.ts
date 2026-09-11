@@ -94,6 +94,17 @@ export const getRoleDefaultDashboard = (
     case "guard":
       return "/parking/dashboard";
 
+    // ── Pandit / Provider roles ────────────────────────────────────────────
+    case "provider":
+    case "pandit_provider":
+    case "pandit":
+    case "purohit":
+    case "acharya":
+      return "/provider/dashboard";
+
+    case "verification_reviewer":
+      return "/admin/verifications";
+
     case "offer_manager":
       return "/owner/offers";
 
@@ -148,6 +159,9 @@ export const normalizeRole = (role?: string): string => {
   if (["marketplace_manager"].includes(r)) return "marketplace_manager";
   if (["support", "support_executive"].includes(r)) return "support";
   if (["customer", "pilgrim"].includes(r)) return "customer";
+  // Pandit / Provider roles
+  if (["provider", "pandit_provider", "pandit", "purohit", "acharya"].includes(r))
+    return "provider";
   return r;
 };
 

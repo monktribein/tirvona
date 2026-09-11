@@ -16,6 +16,7 @@ export default function App() {
   const [attendanceState, setAttendanceState] = useState(null);
   const [supervisorMode, setSupervisorMode] = useState('console'); // 'console' | 'field_portal'
   const [editingLeadData, setEditingLeadData] = useState(null);
+  const isPopNavigation = React.useRef(false);
 
   const { agent, checking, isSignedIn, login, logout } = useLeadAuth();
   const {
@@ -31,12 +32,29 @@ export default function App() {
     refreshAll
   } = useLeadStorage(isSignedIn);
 
+  useEffect(() => {
+    if (agent?.role === 'field_agent' || agent?.role === 'field_executive') {
+      leadApi.getTodayAttendance()
+        .then((data) => {
+          if (!data) return;
+          setAttendanceState({
+            checkedIn: !!data.checkedIn && !data.checkedOut,
+            checkInTime: data.checkInTime || null,
+            checkedOut: !!data.checkedOut,
+            checkOutTime: data.checkOutTime || null,
+          });
+        })
+        .catch((err) => console.warn('Could not fetch initial attendance:', err));
+    } else {
+      setAttendanceState(null);
+    }
+  }, [agent]);
+
   const handlePageChange = (page) => {
     if (page !== 'create') {
       setEditingLeadData(null);
     }
     setActivePage(page);
-    if (page !== 'create') setEditingLead(null);
     if (window.lenisInstance) {
       window.lenisInstance.scrollTo(0, { duration: 1.2 });
     } else {
@@ -45,7 +63,7 @@ export default function App() {
   };
 
   const handleEditLead = (lead) => {
-    setEditingLead(lead);
+    setEditingLeadData(lead);
     setActivePage('create');
     if (window.lenisInstance) {
       window.lenisInstance.scrollTo(0, { duration: 1.2 });
@@ -53,6 +71,34 @@ export default function App() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
+
+  // Trap the mobile/Android back gesture inside the app instead of letting
+  // it exit to the browser: every in-app page change pushes a history entry,
+  // and popping it just navigates back within the SPA.
+  useEffect(() => {
+    if (!window.history.state || window.history.state.leadTirvonaPage === undefined) {
+      window.history.replaceState({ leadTirvonaPage: activePage }, '');
+    }
+
+    const onPopState = (event) => {
+      const page = event.state?.leadTirvonaPage || 'dashboard';
+      isPopNavigation.current = true;
+      if (page !== 'create') setEditingLeadData(null);
+      setActivePage(page);
+    };
+
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
+  useEffect(() => {
+    if (isPopNavigation.current) {
+      isPopNavigation.current = false;
+      return;
+    }
+    if (window.history.state?.leadTirvonaPage === activePage) return;
+    window.history.pushState({ leadTirvonaPage: activePage }, '');
+  }, [activePage]);
 
   // Default landing page on initial sign in
   useEffect(() => {

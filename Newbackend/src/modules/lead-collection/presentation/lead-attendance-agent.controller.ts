@@ -1,7 +1,9 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
+  HttpException,
   Post,
   Query,
   UseGuards,
@@ -32,10 +34,16 @@ export class LeadAttendanceAgentController {
     @CurrentLeadAgent() agent: AuthenticatedLeadUser,
     @Body() dto: MarkCheckInDto,
   ) {
-    return {
-      success: true,
-      data: await this.attendanceService.markCheckIn(agent, dto),
-    };
+    try {
+      return {
+        success: true,
+        data: await this.attendanceService.markCheckIn(agent, dto),
+      };
+    } catch (err: any) {
+      if (err instanceof HttpException) throw err;
+      console.error("[check-in] failed", err);
+      throw new BadRequestException("Check-in failed. Please try again.");
+    }
   }
 
   @Post("check-out")
@@ -43,10 +51,16 @@ export class LeadAttendanceAgentController {
     @CurrentLeadAgent() agent: AuthenticatedLeadUser,
     @Body() dto: MarkCheckOutDto,
   ) {
-    return {
-      success: true,
-      data: await this.attendanceService.markCheckOut(agent, dto),
-    };
+    try {
+      return {
+        success: true,
+        data: await this.attendanceService.markCheckOut(agent, dto),
+      };
+    } catch (err: any) {
+      if (err instanceof HttpException) throw err;
+      console.error("[check-out] failed", err);
+      throw new BadRequestException("Check-out failed. Please try again.");
+    }
   }
 
   @Get("today")
