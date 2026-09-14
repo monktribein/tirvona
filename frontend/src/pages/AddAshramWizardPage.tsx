@@ -2402,7 +2402,7 @@ const AddAshramWizardPage: React.FC = () => {
                       </div>
                       <div className="flex flex-col sm:items-end">
                         <span className="text-xs text-gray-400 font-bold tracking-wider">
-                          Bed Rate
+                          Room Rate
                         </span>
                         <span className="text-sm font-extrabold text-[#0B192C] dark:text-white">
                           {formatCurrency(r.basePrice)} / night

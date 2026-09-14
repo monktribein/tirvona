@@ -37,6 +37,7 @@ import {
   ArrowRight,
   Sparkles,
 } from "lucide-react";
+import { getAllDestinations } from "../data/destinationData";
 import { checkAshramBookingAvailable } from "../utils/ashramAvailabilityHelper";
 
 export const SearchPage: React.FC = () => {
@@ -198,6 +199,44 @@ export const SearchPage: React.FC = () => {
     coordinates?.latitude,
     coordinates?.longitude,
   ]);
+
+  // Only show Destination Guide banner when the searched keyword is a valid City/Destination
+  const destinationGuide = React.useMemo(() => {
+    if (!rawDestination) return null;
+    const queryClean = rawDestination.toLowerCase().trim();
+    const queryNorm = queryClean.replace(/[^a-z0-9]/g, "");
+    if (!queryNorm) return null;
+
+    // 1. Check seed curated destinations
+    const seed = getAllDestinations().find((d) => {
+      const dSlugNorm = d.slug.toLowerCase().replace(/[^a-z0-9]/g, "");
+      const dNameNorm = d.name.toLowerCase().replace(/[^a-z0-9]/g, "");
+      return dSlugNorm === queryNorm || dNameNorm === queryNorm;
+    });
+    if (seed) {
+      return {
+        name: seed.name,
+        slug: seed.slug,
+      };
+    }
+
+    // 2. Check if the query strictly matches any verified city name in allAshrams
+    const matchingCity = allAshrams.find((a) => {
+      const city = a.address?.city;
+      if (!city) return false;
+      return city.toLowerCase().trim().replace(/[^a-z0-9]/g, "") === queryNorm;
+    });
+    if (matchingCity?.address?.city) {
+      const cityName = matchingCity.address.city.trim();
+      return {
+        name: cityName,
+        slug: cityName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, ""),
+      };
+    }
+
+    // If the query is an ashram name, temple name, or keyword, do NOT render a destination guide banner
+    return null;
+  }, [rawDestination, allAshrams]);
 
   const fetchAshrams = async () => {
     setLoading(true);
@@ -707,7 +746,7 @@ export const SearchPage: React.FC = () => {
             count={results.length}
           />
 
-          {rawDestination && !loading && (
+          {destinationGuide && !loading && (
             <div className="bg-gradient-to-r from-[#0A4DA6]/10 via-[#E58C28]/10 to-transparent border border-[rgba(229,140,40,0.35)] rounded-2xl px-3.5 py-2 sm:px-4 sm:py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shadow-2xs">
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
@@ -715,18 +754,18 @@ export const SearchPage: React.FC = () => {
                     <Sparkles size={10} className="text-[#E58C28]" /> Destination Guide
                   </span>
                   <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white">
-                    {toTitleCase(rawDestination)} Overview
+                    {destinationGuide.name} Overview
                   </h3>
                 </div>
                 <p className="text-[11px] text-gray-500 dark:text-gray-400 font-medium line-clamp-1">
-                  Plan your visit with complete ashrams, parking, prasad, and sacred temples in {toTitleCase(rawDestination)}.
+                  Plan your visit with complete ashrams, parking, prasad, and sacred temples in {destinationGuide.name}.
                 </p>
               </div>
               <Link
-                to={`/destination/${rawDestination.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")}`}
+                to={`/destination/${destinationGuide.slug}`}
                 className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#0A4DA6] hover:bg-[#083b80] text-white text-[11px] font-extrabold transition-all shrink-0 shadow-xs"
               >
-                Explore {toTitleCase(rawDestination)} <ArrowRight size={12} />
+                Explore {destinationGuide.name} <ArrowRight size={12} />
               </Link>
             </div>
           )}

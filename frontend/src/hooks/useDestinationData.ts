@@ -12,6 +12,7 @@ import { marketplaceService } from "../services/marketplace.service";
 import api from "../lib/api";
 import { extractCoordinates } from "../utils/geo";
 import { toTitleCase } from "../utils/textCase";
+import { ashramUrl } from "../lib/urls";
 
 export interface DestinationInventory {
   destination: Destination | null;
@@ -21,6 +22,7 @@ export interface DestinationInventory {
   attractions: NearbyPlace[];
   loading: boolean;
   error: string;
+  redirectUrl?: string | null;
   /** Live stat counts derived strictly from live data */
   liveStats: {
     ashrams: number;
@@ -56,6 +58,7 @@ export function useDestinationData(slug: string): DestinationInventory {
   const [attractions, setAttractions] = useState<NearbyPlace[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [redirectUrl, setRedirectUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (!cleanSlug) {
@@ -142,8 +145,30 @@ export function useDestinationData(slug: string): DestinationInventory {
           }
         }
 
+        // Helper for strict destination city matching
+        const normSlug = cleanSlug.toLowerCase().replace(/[^a-z0-9]/g, "");
+        const normInitialCity = initialCityName.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+        const isStrictCityMatch = (city?: string, district?: string) => {
+          const c = String(city || "").trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+          const d = String(district || "").trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+          if (c) {
+            return c === normSlug || c === normInitialCity;
+          }
+          if (d) {
+            return d === normSlug || d === normInitialCity;
+          }
+          return false;
+        };
+
+        // Filter ashrams strictly to this specific destination city
+        const strictlyMatchedAshrams = rawAshrams.filter((a) =>
+          isStrictCityMatch(a.address?.city, a.address?.district),
+        );
+        const finalAshrams = strictlyMatchedAshrams;
+
         // Prioritize ashrams whose address.city strictly matches this destination
-        rawAshrams.sort((a, b) => {
+        finalAshrams.sort((a, b) => {
           const aCity = String(a.address?.city || "").toLowerCase().trim();
           const bCity = String(b.address?.city || "").toLowerCase().trim();
           const aMatch = aCity === cleanSlug || aCity === initialCityName.toLowerCase() ? 1 : 0;
@@ -151,14 +176,25 @@ export function useDestinationData(slug: string): DestinationInventory {
           return bMatch - aMatch;
         });
 
+        // If cleanSlug is NOT a known city, but matches an ashram's slug or name, redirect to that ashram
+        const matchingAshramBySlug = rawAshrams.find(
+          (a) =>
+            a.slug === cleanSlug ||
+            (a.name && a.name.toLowerCase().replace(/[^a-z0-9]/g, "") === normSlug),
+        );
+        if (!seedDest && finalAshrams.length === 0 && matchingAshramBySlug) {
+          setRedirectUrl(ashramUrl(matchingAshramBySlug));
+          return;
+        }
+
         // Derive state, coordinates, and hero from matching ashrams
-        if (rawAshrams.length > 0) {
+        if (finalAshrams.length > 0) {
           const matchingAshram =
-            rawAshrams.find(
+            finalAshrams.find(
               (a) =>
                 String(a.address?.city || "").toLowerCase().trim() === cleanSlug ||
                 String(a.address?.city || "").toLowerCase().trim() === initialCityName.toLowerCase(),
-            ) || rawAshrams[0];
+            ) || finalAshrams[0];
 
           if (matchingAshram.address?.city && matchingAshram.address.city.toLowerCase().trim() === cleanSlug) {
             resolvedCityName = matchingAshram.address.city;
@@ -169,7 +205,7 @@ export function useDestinationData(slug: string): DestinationInventory {
 
           // Find first ashram with real coordinates
           if (!resolvedCoords || (resolvedCoords.lat === 0 && resolvedCoords.lng === 0)) {
-            for (const a of rawAshrams) {
+            for (const a of finalAshrams) {
               const c = extractCoordinates(a);
               if (c) {
                 resolvedCoords = c;
@@ -294,8 +330,15 @@ export function useDestinationData(slug: string): DestinationInventory {
         addParking(parkingCityRes);
         addParking(parkingDestRes);
 
-        // Also check if any ashrams have on-premise parking add-ons or facilities
-        rawAshrams.forEach((a: any) => {
+        // Filter public parking to this destination city
+        const strictlyMatchedParking = dynamicParking.filter((p) => {
+          const pCity = p.address?.city || p.locationName || p.city;
+          const pDist = p.address?.district;
+          return isStrictCityMatch(pCity, pDist);
+        });
+
+        // Also check if any ashrams in this destination have on-premise parking add-ons or facilities
+        finalAshrams.forEach((a: any) => {
           const hasParkingAddon = Array.isArray(a.addOnServices) && a.addOnServices.some(
             (srv: any) => /parking/i.test(srv.name || ""),
           );
@@ -304,7 +347,7 @@ export function useDestinationData(slug: string): DestinationInventory {
             if (!seenParkingIds.has(parkId)) {
               seenParkingIds.add(parkId);
               const addon = a.addOnServices?.find((srv: any) => /parking/i.test(srv.name || ""));
-              dynamicParking.push({
+              strictlyMatchedParking.push({
                 _id: parkId,
                 name: `${a.name} On-Premise Parking`,
                 locationName: a.address?.city || resolvedCityName,
@@ -383,8 +426,8 @@ export function useDestinationData(slug: string): DestinationInventory {
         finalDest.nearbyPlaces = dynamicAttractions;
 
         setDestination(finalDest);
-        setAshrams(rawAshrams);
-        setParking(dynamicParking);
+        setAshrams(finalAshrams);
+        setParking(strictlyMatchedParking);
         setPrasad(dynamicPrasad);
         setAttractions(dynamicAttractions);
       } catch (err: any) {
@@ -430,6 +473,7 @@ export function useDestinationData(slug: string): DestinationInventory {
     attractions,
     loading,
     error,
+    redirectUrl,
     liveStats,
   };
 }

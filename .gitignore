@@ -4,6 +4,7 @@
 # Production builds
 **/dist/
 **/build/
+**/.next/
 
 # Local configuration / secrets
 **/.env
