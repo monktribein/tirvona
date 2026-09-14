@@ -40,6 +40,7 @@ const build = () => {
     {} as never,
     ashrams as never,
     {} as never,
+    {} as never,
     config(),
   );
   return { service, find };

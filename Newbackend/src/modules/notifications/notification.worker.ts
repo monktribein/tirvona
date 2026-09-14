@@ -35,6 +35,9 @@ export interface NotificationJob {
   phone?: string;
   correlationId?: string;
   deliveryScope?: "all" | "whatsapp_only";
+  pushEnabled?: boolean;
+  imageUrl?: string;
+  data?: Record<string, string>;
 }
 @Processor("notifications")
 @Injectable()
@@ -160,11 +163,18 @@ export class NotificationWorker
           deferredDeliveryError = error;
           this.logChannelFailure(data, correlationId, "socket");
         }
-        if (data.channel === "push") {
+        if (data.channel === "push" || data.pushEnabled) {
           try {
             await this.fcm.sendToUser(data.userId, {
               title: data.title,
               body: data.message,
+              imageUrl: data.imageUrl,
+              data: {
+                type: data.event,
+                domain: data.domain,
+                bookingId: data.bookingId ?? "",
+                ...(data.data ?? {}),
+              },
             });
           } catch {
             this.logChannelFailure(data, correlationId, "push");
