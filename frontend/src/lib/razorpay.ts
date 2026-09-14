@@ -37,6 +37,7 @@ export interface RazorpayResult {
 export const openRazorpayCheckout = (
   order: RazorpayOrder,
   prefill: { name?: string; email?: string; contact?: string },
+  options?: { name?: string; description?: string; image?: string },
 ): Promise<RazorpayResult> => {
   return loadRazorpayScript()
     .then((ok) => {
@@ -50,8 +51,9 @@ export const openRazorpayCheckout = (
           amount: order.amount,
           currency: order.currency,
           order_id: order.orderId,
-          name: "Tirvona (Ashray Bharat)",
-          description: "Secure Tirvona Payment",
+          name: options?.name || (order as any).name || "Tirvona",
+          description: options?.description || (order as any).description || "Secure Tirvona Payment",
+          image: options?.image || "/logo.png",
           prefill,
           theme: { color: "#0A4DA6" },
           handler: (response: RazorpayResult) => resolve(response),
@@ -63,7 +65,7 @@ export const openRazorpayCheckout = (
           reject(
             new Error(
               resp?.error?.description ||
-                "Payment failed. Your booking was not confirmed.",
+              "Payment failed. Your booking was not confirmed.",
             ),
           ),
         );

@@ -475,8 +475,15 @@ const DestinationOverviewPage: React.FC = () => {
     attractions,
     loading,
     error: _error,
+    redirectUrl,
     liveStats,
   } = useDestinationData(resolvedSlug);
+
+  React.useEffect(() => {
+    if (redirectUrl) {
+      navigate(redirectUrl, { replace: true });
+    }
+  }, [redirectUrl, navigate]);
 
   const [activeTab, setActiveTab] = useState<InventoryTab>("ashrams");
   const [stayFilter, setStayFilter] = useState<StayFilter>("all");

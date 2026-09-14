@@ -38,7 +38,8 @@ const UNIT_MAP: Record<string, string> = {
   night: "रात",
   nights: "रातें",
   "bed per night": "बिस्तर प्रति रात",
-  "bed rate": "बिस्तर दर",
+  "bed rate": "कमरा दर",
+  "room rate": "कमरा दर",
   day: "दिन",
   days: "दिन",
   meal: "भोजन",
@@ -109,7 +110,7 @@ const translateDynamicHindi = (text: string): string => {
     return `${hindiNumber(match[1])} कमरे, ${hindiNumber(match[2])} अतिथि`;
   }
 
-  match = text.match(/^(.+?)\s*\/\s*(night|bed per night|bed rate|day|meal|person|transfer|month|year|box)$/i);
+  match = text.match(/^(.+?)\s*\/\s*(night|bed per night|bed rate|room rate|day|meal|person|transfer|month|year|box)$/i);
   if (match) {
     const base = match[1].trim();
     const unitKey = match[2].toLowerCase();

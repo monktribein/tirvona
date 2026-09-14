@@ -1568,7 +1568,7 @@ export const AshramDetailPage: React.FC = () => {
                     </div>
                     <div className="flex flex-col sm:items-end text-left sm:text-right shrink-0 pt-2 sm:pt-0">
                       <span className="text-[10px] text-gray-400 font-bold tracking-wider uppercase">
-                        Bed Rate
+                        Room Rate
                       </span>
                       {isDeal && discountedPrice < r.basePrice ? (
                         <div className="flex flex-col sm:items-end">
