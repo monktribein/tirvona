@@ -6,6 +6,8 @@ import { AkNexusWhatsAppClient } from "./providers/ak-nexus/ak-nexus-whatsapp.cl
 import { AkNexusWhatsAppProvider } from "./providers/ak-nexus/ak-nexus-whatsapp.provider";
 import { Msg91WhatsAppClient } from "./providers/msg91/msg91-whatsapp.client";
 import { Msg91WhatsAppProvider } from "./providers/msg91/msg91-whatsapp.provider";
+import { MetaCloudWhatsAppClient } from "./providers/meta-cloud/meta-cloud-whatsapp.client";
+import { MetaCloudWhatsAppProvider } from "./providers/meta-cloud/meta-cloud-whatsapp.provider";
 import { WhatsAppProviderRouter } from "./providers/whatsapp-provider.router";
 import { WhatsAppOtpService } from "./services/whatsapp-otp.service";
 import { WhatsAppTemplateService } from "./services/whatsapp-template.service";
@@ -18,9 +20,11 @@ import { WhatsAppTransactionalNotificationService } from "./services/whatsapp-tr
     AkNexusWhatsAppProvider,
     Msg91WhatsAppClient,
     Msg91WhatsAppProvider,
+    MetaCloudWhatsAppClient,
+    MetaCloudWhatsAppProvider,
     WhatsAppProviderRouter,
-    // The router picks MSG91 first and falls back to AK NEXUS. Both providers
-    // stay independently resolvable for the flows and tests that use them.
+    // Meta Cloud handles the approved authentication template first. Existing
+    // MSG91 and AK NEXUS delivery remains available as the fallback chain.
     { provide: WHATSAPP_PROVIDER, useExisting: WhatsAppProviderRouter },
     WhatsAppTemplateService,
     WhatsAppOtpService,

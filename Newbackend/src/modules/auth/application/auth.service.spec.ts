@@ -14,7 +14,10 @@ const testConfig = () =>
 
 describe("AuthService OTP challenge contracts", () => {
   const createService = () => {
-    const challenges = { create: jest.fn().mockResolvedValue({}) };
+    const challenges = {
+      create: jest.fn().mockResolvedValue({}),
+      findOne: jest.fn(),
+    };
     const whatsapp = {
       sendAuthenticationOtp: jest
         .fn()
@@ -36,8 +39,10 @@ describe("AuthService OTP challenge contracts", () => {
           identifier: string,
           payload: Record<string, unknown>,
         ) => Promise<Record<string, unknown>>;
+        resend: (token: string) => Promise<Record<string, unknown>>;
       },
       whatsapp,
+      challenges,
     };
   };
 
@@ -75,6 +80,25 @@ describe("AuthService OTP challenge contracts", () => {
     });
   });
 
+  it("stores only a keyed OTP digest and never returns the OTP", async () => {
+    const { service, whatsapp, challenges } = createService();
+    const response = await service.createChallenge(
+      "phone_login",
+      "+919876543210",
+      {},
+    );
+    const deliveredCode = whatsapp.sendAuthenticationOtp.mock.calls[0][0].code;
+    const stored = challenges.create.mock.calls[0][0];
+
+    expect(stored.codeHash).toMatch(/^[a-f0-9]{64}$/);
+    expect(stored.codeHash).not.toBe(deliveredCode);
+    expect(stored.maxAttempts).toBe(5);
+    expect(stored.expiresAt).toBeInstanceOf(Date);
+    expect(stored.resendAvailableAt).toBeInstanceOf(Date);
+    expect(response).not.toHaveProperty("otp");
+    expect(response).not.toHaveProperty("code");
+  });
+
   it("does not report a mobile OTP as sent when the provider skips it", async () => {
     const { service, whatsapp } = createService();
     whatsapp.sendAuthenticationOtp.mockResolvedValue({
@@ -90,6 +114,52 @@ describe("AuthService OTP challenge contracts", () => {
         code: "WHATSAPP_OTP_DELIVERY_FAILED",
       }),
     });
+  });
+
+  it("enforces resend cooldown before creating another challenge", async () => {
+    const { service, challenges, whatsapp } = createService();
+    const old = {
+      purpose: "phone_login",
+      identifier: "+919876543210",
+      payload: {},
+      resendAvailableAt: new Date(Date.now() + 30_000),
+      consumedAt: null,
+      save: jest.fn(),
+    };
+    challenges.findOne.mockReturnValue({
+      select: jest.fn().mockResolvedValue(old),
+    });
+
+    await expect(service.resend("existing-token")).rejects.toThrow(
+      "Please wait before requesting another OTP",
+    );
+    expect(old.save).not.toHaveBeenCalled();
+    expect(challenges.create).not.toHaveBeenCalled();
+    expect(whatsapp.sendAuthenticationOtp).not.toHaveBeenCalled();
+  });
+
+  it("consumes the old challenge and sends a fresh OTP after cooldown", async () => {
+    const { service, challenges, whatsapp } = createService();
+    const old = {
+      purpose: "phone_login",
+      identifier: "+919876543210",
+      payload: {},
+      resendAvailableAt: new Date(Date.now() - 1_000),
+      consumedAt: null as Date | null,
+      save: jest.fn().mockResolvedValue(undefined),
+    };
+    challenges.findOne.mockReturnValue({
+      select: jest.fn().mockResolvedValue(old),
+    });
+
+    await expect(service.resend("existing-token")).resolves.toMatchObject({
+      otpToken: expect.any(String),
+      resendAfter: 30,
+    });
+    expect(old.consumedAt).toBeInstanceOf(Date);
+    expect(old.save).toHaveBeenCalledTimes(1);
+    expect(challenges.create).toHaveBeenCalledTimes(1);
+    expect(whatsapp.sendAuthenticationOtp).toHaveBeenCalledTimes(1);
   });
 
   it("finds a domestic stored phone when login submits country-code digits", async () => {
