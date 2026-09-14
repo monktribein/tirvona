@@ -353,8 +353,21 @@ export class ParkingBookingService {
     user: AuthenticatedUser,
     dto: ConfirmParkingPaymentDto,
   ): Promise<any> {
-    if (!this.verifyRazorpay(dto))
+    if (!this.verifyRazorpay(dto)) {
+      await this.notifications.create({
+        userId: user.id,
+        bookingId: id,
+        event: "payment_failed",
+        title: "Payment failed",
+        message: "Your recent payment for parking failed. Tap to retry.",
+        channel: "in_app",
+        status: "queued",
+        pushEnabled: true,
+        data: { bookingId: String(id) },
+        meta: { correlationId: `parking:${id}:payment_failed` },
+      });
       throw new ParkingException("Payment signature verification failed.", 400);
+    }
     const result = await this.transactions.run(async (session) => {
       const booking = await this.bookings
         .findOne({ _id: id, customerId: user.id })
@@ -469,9 +482,11 @@ export class ParkingBookingService {
             bookingId: booking._id,
             event: "booking_confirmed",
             title: "Parking Confirmed",
-            message: `Your parking booking ${booking.bookingReference} is confirmed.`,
+            message: `Your parking booking ${booking.bookingReference} is confirmed. Scan this gate code at the entrance.`,
             channel: "in_app",
             status: "queued",
+            pushEnabled: true,
+            data: { displayCode: String(pass.displayCode) },
             meta: {
               bookingReference: booking.bookingReference,
               displayCode: pass.displayCode,

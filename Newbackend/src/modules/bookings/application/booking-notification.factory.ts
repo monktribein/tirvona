@@ -38,6 +38,8 @@ export const bookingConfirmedOutboxEvent = (
     recipientPhone: input.customerPhone
       ? normalizeWhatsAppNumber(input.customerPhone)
       : undefined,
+    pushEnabled: true,
+    data: { ashramId: String(input.booking.ashramId) },
     meta: {
       correlationId,
       paymentId: String(input.payment._id),

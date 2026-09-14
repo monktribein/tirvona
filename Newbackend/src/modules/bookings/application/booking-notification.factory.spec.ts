@@ -24,6 +24,8 @@ describe("bookingConfirmedOutboxEvent", () => {
       title: "Booking confirmed",
       message: "Your booking TIR-1001 is confirmed.",
       recipientPhone: "919936968762",
+      pushEnabled: true,
+      data: { ashramId: "ashram-1" },
       meta: {
         correlationId: "booking:booking-1:confirmed",
         paymentId: "payment-1",

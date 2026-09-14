@@ -250,6 +250,9 @@ export class NotificationOutboxService implements OnApplicationBootstrap {
                 : undefined,
             phone: row.recipientPhone,
             correlationId: row.meta?.correlationId || jobId,
+            pushEnabled: row.pushEnabled ?? false,
+            imageUrl: row.imageUrl,
+            data: row.data,
           },
           {
             jobId,

@@ -35,6 +35,8 @@ export class RefundsService {
     @InjectModel("RefundAuditLog") private readonly audit: Model<any>,
     @InjectModel("Booking") private readonly bookings: Model<any>,
     @InjectModel("Ashram") private readonly ashrams: Model<any>,
+    @InjectModel("BookingNotification")
+    private readonly notifications: Model<any>,
     private readonly policies: RefundPolicyService,
     private readonly config: ConfigService,
   ) { }
@@ -281,6 +283,28 @@ export class RefundsService {
     return { ...request, history, transactions };
   }
 
+  private async notifyCustomer(
+    request: any,
+    event: string,
+    title: string,
+    message: string,
+    data?: Record<string, string>,
+  ): Promise<void> {
+    await this.notifications.create({
+      userId: request.customerId,
+      bookingId: request.sourceId,
+      ashramId: request.ashramId,
+      event,
+      title,
+      message,
+      channel: "in_app",
+      status: "queued",
+      pushEnabled: true,
+      data,
+      meta: { correlationId: `refund:${String(request._id)}:${event}` },
+    });
+  }
+
   async review(user: AuthenticatedUser, id: string, note: string): Promise<any> {
     if (!this.canReview(user))
       throw new ForbiddenException("Not authorized to review refunds");
@@ -331,6 +355,13 @@ export class RefundsService {
     request.approvedAt = request.approvedAt ?? new Date();
     await request.save();
     await this.log("REFUND_APPROVED", user, request._id, { after: { amount } });
+    await this.notifyCustomer(
+      request,
+      "refund_approved",
+      "Refund approved",
+      `Your refund of ₹${amount} has been approved and is being processed.`,
+      { amount: String(amount) },
+    );
     return this.get(user, id);
   }
 
@@ -433,6 +464,12 @@ export class RefundsService {
       await this.log("REFUND_FAILED", user, request._id, {
         after: { reason: transaction.failureReason },
       });
+      await this.notifyCustomer(
+        request,
+        "refund_failed",
+        "Refund failed",
+        "We couldn't process your refund. Our support team has been notified.",
+      );
       throw new BadRequestException(
         "The original payment has no gateway reference, so it cannot be refunded automatically",
       );
@@ -466,6 +503,12 @@ export class RefundsService {
       await this.log("REFUND_FAILED", user, request._id, {
         after: { reason: transaction.failureReason, attempt },
       });
+      await this.notifyCustomer(
+        request,
+        "refund_failed",
+        "Refund failed",
+        "We couldn't process your refund. Our support team has been notified.",
+      );
       throw new BadRequestException(transaction.failureReason);
     }
   }
@@ -494,6 +537,13 @@ export class RefundsService {
       },
     );
     await this.log("REFUND_SETTLED", user, request._id, { after: { amount } });
+    await this.notifyCustomer(
+      request,
+      "refund_completed",
+      "Refund completed",
+      `Your refund of ₹${amount} has been credited.`,
+      { amount: String(amount) },
+    );
     return this.requests.findById(request._id).lean();
   }
 
