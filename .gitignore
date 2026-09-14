@@ -4,7 +4,6 @@
 # Production builds
 **/dist/
 **/build/
-**/.next/
 
 # Local configuration / secrets
 **/.env
@@ -23,3 +22,7 @@ pnpm-debug.log*
 # System files
 .DS_Store
 Thumbs.db
+
+# Ignored workspaces
+pandit/
+
