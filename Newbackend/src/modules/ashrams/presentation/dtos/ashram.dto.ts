@@ -105,6 +105,7 @@ export class CreateRoomDto {
   @Type(() => Number) @IsNumber() @Min(0) basePrice: number;
   @IsOptional() @IsArray() amenities?: string[];
   @IsOptional() @IsArray() images?: string[];
+  @IsOptional() @IsString() @MaxLength(2000) description?: string;
 }
 
 export class UpdateRoomDto extends PartialType(CreateRoomDto) {

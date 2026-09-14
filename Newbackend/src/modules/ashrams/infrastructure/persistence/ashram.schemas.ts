@@ -195,6 +195,7 @@ export const RoomSchema = new Schema(
     capacity: { type: Number, required: true, min: 1 },
     totalInventory: { type: Number, required: true, min: 0 },
     basePrice: { type: Number, required: true, min: 0 },
+    description: { type: String, trim: true, maxlength: 2000 },
     amenities: [String],
     images: [String],
     pricingRules: [

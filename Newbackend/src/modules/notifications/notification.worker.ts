@@ -325,6 +325,22 @@ export class NotificationWorker
               correlationId,
             }),
           );
+          const bookingRef =
+            data.bookingId || outboxRow?.bookingId || outboxRow?.registrationId;
+          const [stay, parkingPass, aartiPass, eventPass] = await Promise.all([
+            data.domain === "booking"
+              ? this.stayContext(bookingRef)
+              : Promise.resolve(null),
+            data.domain === "parking"
+              ? this.parkingContext(bookingRef)
+              : Promise.resolve(null),
+            data.domain === "aarti"
+              ? this.aartiContext(bookingRef)
+              : Promise.resolve(null),
+            data.domain === "event"
+              ? this.eventContext(bookingRef)
+              : Promise.resolve(null),
+          ]);
           const whatsapp = await this.whatsapp.sendOutboxEvent({
             domain: data.domain,
             notificationId: data.notificationId,
@@ -751,6 +767,7 @@ export class NotificationWorker
       .findOne({ bookingId: booking._id })
       .sort({ version: -1 })
       .select("displayCode +token")
+      .select("displayCode")
       .lean();
     return {
       guestName: booking.contactName || booking.customerId?.name,
@@ -779,6 +796,8 @@ export class NotificationWorker
       .findOne({ registrationId: registration._id })
       .sort({ version: -1 })
       .select("displayCode +token")
+
+      .select("displayCode")
       .lean();
     return {
       guestName: registration.contactName || registration.customerId?.name,

@@ -74,6 +74,47 @@ describe("production environment validation", () => {
       }),
     ).toThrow("CORS_ORIGINS");
   });
+
+  it("requires all Meta WhatsApp settings when any one is configured", () => {
+    expect(() =>
+      validateEnvironment({
+        ...productionEnvironment(),
+        WHATSAPP_ACCESS_TOKEN: "test-token",
+      }),
+    ).toThrow("WHATSAPP_ACCESS_TOKEN, WHATSAPP_PHONE_NUMBER_ID");
+  });
+
+  it("accepts a complete Meta WhatsApp Cloud API configuration", () => {
+    expect(
+      validateEnvironment({
+        ...productionEnvironment(),
+        WHATSAPP_ACCESS_TOKEN: "test-token",
+        WHATSAPP_PHONE_NUMBER_ID: "123456789",
+        WHATSAPP_BUSINESS_ACCOUNT_ID: "987654321",
+        WHATSAPP_API_VERSION: "v23.0",
+      }),
+    ).toBeDefined();
+  });
+
+  it("rejects malformed Meta API versions and identifiers", () => {
+    const complete = {
+      ...productionEnvironment(),
+      WHATSAPP_ACCESS_TOKEN: "test-token",
+      WHATSAPP_PHONE_NUMBER_ID: "123456789",
+      WHATSAPP_BUSINESS_ACCOUNT_ID: "987654321",
+      WHATSAPP_API_VERSION: "23",
+    };
+    expect(() => validateEnvironment(complete)).toThrow(
+      "WHATSAPP_API_VERSION",
+    );
+    expect(() =>
+      validateEnvironment({
+        ...complete,
+        WHATSAPP_API_VERSION: "v23.0",
+        WHATSAPP_PHONE_NUMBER_ID: "not-an-id",
+      }),
+    ).toThrow("WHATSAPP_PHONE_NUMBER_ID");
+  });
 });
 
 describe("DNS bootstrap", () => {

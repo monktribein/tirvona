@@ -8,12 +8,19 @@ import {
   Trash2,
   Loader2,
   Building2,
+  ImagePlus,
+  Clock,
+  Save,
 } from "lucide-react";
 import { useNotifications } from "../contexts/NotificationContext";
-import { ashramService, roomService } from "../services";
+import { ashramService, roomService, uploadService } from "../services";
 import { formatCurrency } from "../utils/format";
 import { getErrorMessage } from "../lib/api";
 import { useAshramSelection, ALL_ASHRAMS } from "../hooks/useAshramSelection";
+
+const DEFAULT_CHECK_IN = "12:00";
+const DEFAULT_CHECK_OUT = "11:00";
+const CLOCK_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 export const ManageRoomsPage: React.FC = () => {
   const { addNotification } = useNotifications();
@@ -34,6 +41,20 @@ export const ManageRoomsPage: React.FC = () => {
   const [basePrice, setBasePrice] = useState("800");
   const [amenities, setAmenities] = useState("Attached Bath, WiFi, Cooler");
   const [status, setStatus] = useState("active");
+  const [description, setDescription] = useState("");
+  const [images, setImages] = useState<string[]>([]);
+  const [uploadingImages, setUploadingImages] = useState(false);
+
+  // Check-in / check-out times are ashram-level policies. The whole policies
+  // object is kept per ashram because the ashram update replaces it wholesale,
+  // so saving the times must carry cancellation and stay rules along.
+  const [policiesByAshram, setPoliciesByAshram] = useState<Record<string, any>>({});
+  const [timesAshramId, setTimesAshramId] = useState("");
+  const [checkInTime, setCheckInTime] = useState(DEFAULT_CHECK_IN);
+  const [checkOutTime, setCheckOutTime] = useState(DEFAULT_CHECK_OUT);
+  const [savingTimes, setSavingTimes] = useState(false);
+  const [rulesByAshram, setRulesByAshram] = useState<Record<string, string[]>>({});
+  const [rulesText, setRulesText] = useState("");
 
   const notifyRef = useRef(addNotification);
   notifyRef.current = addNotification;
@@ -66,6 +87,8 @@ export const ManageRoomsPage: React.FC = () => {
         targets.map((a: any) => ashramService.getManagedById(a._id)),
       );
       const merged: any[] = [];
+      const policies: Record<string, any> = {};
+      const rules: Record<string, string[]> = {};
       let failures = 0;
       results.forEach((result, index) => {
         if (result.status !== "fulfilled" || !result.value.data?.success) {
@@ -73,6 +96,13 @@ export const ManageRoomsPage: React.FC = () => {
           return;
         }
         const owner = targets[index];
+        policies[String(owner._id)] =
+          result.value.data.data.ashram?.policies ?? {};
+        rules[String(owner._id)] = Array.isArray(
+          result.value.data.data.ashram?.rules,
+        )
+          ? result.value.data.data.ashram.rules
+          : [];
         (result.value.data.data.rooms || []).forEach((room: any) =>
           merged.push({
             ...room,
@@ -82,6 +112,8 @@ export const ManageRoomsPage: React.FC = () => {
         );
       });
       setRooms(merged);
+      setPoliciesByAshram((prev) => ({ ...prev, ...policies }));
+      setRulesByAshram((prev) => ({ ...prev, ...rules }));
       if (failures > 0)
         notifyRef.current(
           "Load Failed",
@@ -110,6 +142,75 @@ export const ManageRoomsPage: React.FC = () => {
     fetchRooms();
   }, [selectedAshramId, fetchRooms]);
 
+  const timesTargetId =
+    selectedAshramId && selectedAshramId !== ALL_ASHRAMS
+      ? selectedAshramId
+      : timesAshramId || myAshrams[0]?._id || "";
+  const timesTargetPolicies = policiesByAshram[timesTargetId];
+  const timesTargetRules = rulesByAshram[timesTargetId];
+  // Saving before the current policies load would overwrite them with blanks.
+  const timesReady = Boolean(timesTargetId) && timesTargetPolicies !== undefined;
+
+  useEffect(() => {
+    if (!timesTargetId) return;
+    setCheckInTime(timesTargetPolicies?.checkInTime || DEFAULT_CHECK_IN);
+    setCheckOutTime(timesTargetPolicies?.checkOutTime || DEFAULT_CHECK_OUT);
+    setRulesText((timesTargetRules ?? []).join("\n"));
+  }, [timesTargetId, timesTargetPolicies, timesTargetRules]);
+
+  const handleSaveTimes = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!timesReady) return;
+    if (!CLOCK_PATTERN.test(checkInTime) || !CLOCK_PATTERN.test(checkOutTime)) {
+      addNotification(
+        "Validation Error",
+        "Enter both a check-in and a check-out time.",
+        "error",
+      );
+      return;
+    }
+    setSavingTimes(true);
+    try {
+      const policies = {
+        ...(policiesByAshram[timesTargetId] || {}),
+        checkInTime,
+        checkOutTime,
+      };
+      // One guideline per line; list markers typed by habit are dropped.
+      const ruleList = rulesText
+        .split("\n")
+        .map((line) => line.replace(/^\s*(?:[-*•]|\d+[.)])\s*/, "").trim())
+        .filter(Boolean);
+      const res = await ashramService.update(timesTargetId, {
+        policies,
+        rules: ruleList,
+      });
+      setPoliciesByAshram((prev) => ({
+        ...prev,
+        [timesTargetId]: res.data?.data?.policies ?? policies,
+      }));
+      setRulesByAshram((prev) => ({
+        ...prev,
+        [timesTargetId]: Array.isArray(res.data?.data?.rules)
+          ? res.data.data.rules
+          : ruleList,
+      }));
+      addNotification(
+        "Rules & Policies Updated",
+        "Pilgrims now see the updated guidelines and timings on your listing.",
+        "success",
+      );
+    } catch (err) {
+      addNotification(
+        "Save Failed",
+        getErrorMessage(err, "Could not update rules and policies."),
+        "error",
+      );
+    } finally {
+      setSavingTimes(false);
+    }
+  };
+
   const openCreate = () => {
     setEditRoomId(null);
     setFormAshramId(
@@ -125,6 +226,8 @@ export const ManageRoomsPage: React.FC = () => {
     setBasePrice("800");
     setAmenities("Attached Bath, WiFi, Cooler");
     setStatus("active");
+    setDescription("");
+    setImages([]);
     setShowCreate(true);
   };
 
@@ -139,6 +242,12 @@ export const ManageRoomsPage: React.FC = () => {
     setBasePrice(String(room.basePrice ?? 0));
     setAmenities((room.amenities || []).join(", "));
     setStatus(room.status === "under_maintenance" ? "under_maintenance" : "active");
+    setDescription(room.description || "");
+    setImages(
+      Array.isArray(room.images)
+        ? room.images.filter((src: unknown) => typeof src === "string" && src)
+        : [],
+    );
     setShowCreate(true);
   };
 
@@ -146,6 +255,22 @@ export const ManageRoomsPage: React.FC = () => {
     e.preventDefault();
     if (!name.trim()) {
       addNotification("Validation Error", "Give the room category a name.", "error");
+      return;
+    }
+    if (uploadingImages) {
+      addNotification(
+        "Upload In Progress",
+        "Wait for the room photos to finish uploading.",
+        "error",
+      );
+      return;
+    }
+    if (images.length === 0) {
+      addNotification(
+        "Room Photos Required",
+        "Add at least one photo so pilgrims can see the room before booking.",
+        "error",
+      );
       return;
     }
     const amenityList = amenities
@@ -164,6 +289,8 @@ export const ManageRoomsPage: React.FC = () => {
           totalInventory: parseInt(totalInventory),
           basePrice: parseFloat(basePrice),
           amenities: amenityList,
+          description: description.trim(),
+          images,
           status,
         });
         addNotification(
@@ -181,6 +308,8 @@ export const ManageRoomsPage: React.FC = () => {
           totalInventory: parseInt(totalInventory),
           basePrice: parseFloat(basePrice),
           amenities: amenityList,
+          description: description.trim(),
+          images,
         });
         addNotification(
           "Room Category Added",
@@ -212,6 +341,46 @@ export const ManageRoomsPage: React.FC = () => {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleAddImages = async (fileList: FileList | null) => {
+    const files = Array.from(fileList ?? []);
+    if (!files.length) return;
+    const nonImage = files.find((file) => !file.type.startsWith("image/"));
+    if (nonImage) {
+      addNotification(
+        "Upload Failed",
+        `${nonImage.name} is not an image. Use JPG, PNG or WEBP photos.`,
+        "error",
+      );
+      return;
+    }
+    setUploadingImages(true);
+    let uploaded = 0;
+    try {
+      for (const file of files) {
+        const url = await uploadService.file(file, "rooms");
+        uploaded += 1;
+        setImages((prev) => (prev.includes(url) ? prev : [...prev, url]));
+      }
+    } catch (err: any) {
+      // uploadService raises plain Errors for size limits; show those as-is.
+      addNotification(
+        "Upload Failed",
+        err?.isAxiosError || !err?.message
+          ? getErrorMessage(err, "Could not upload this photo.")
+          : err.message,
+        "error",
+      );
+    } finally {
+      setUploadingImages(false);
+    }
+    if (uploaded > 0)
+      addNotification(
+        "Photos Added",
+        `${uploaded} room photo${uploaded === 1 ? "" : "s"} uploaded.`,
+        "success",
+      );
   };
 
   const handleDelete = async (room: any) => {
@@ -279,6 +448,109 @@ export const ManageRoomsPage: React.FC = () => {
         )}
       </div>
 
+      {myAshrams.length > 0 && (
+        <form
+          onSubmit={handleSaveTimes}
+          className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-4 sm:p-6 rounded-[24px] shadow-sm space-y-4"
+        >
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h2 className="text-base font-extrabold text-[#0B192C] dark:text-white flex items-center gap-1.5">
+                <Clock size={16} className="text-[#0A4DA6]" /> Rules &amp;
+                Policies
+              </h2>
+              <p className="text-xs text-gray-400 font-semibold mt-1">
+                Guest guidelines and check-in / check-out timings shown to
+                pilgrims on your ashram page.
+              </p>
+            </div>
+            {selectedAshramId === ALL_ASHRAMS && myAshrams.length > 1 && (
+              <select
+                id="timings-ashram"
+                aria-label="Ashram for rules and policies"
+                value={timesTargetId}
+                onChange={(e) => setTimesAshramId(e.target.value)}
+                className="px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-full text-xs font-bold focus:outline-none cursor-pointer"
+              >
+                {myAshrams.map((a) => (
+                  <option key={a._id} value={a._id}>
+                    {a.name}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_14rem] gap-4 items-start">
+            <div className="space-y-1">
+              <label
+                htmlFor="guest-guidelines"
+                className="text-[10px] font-bold text-gray-400 block"
+              >
+                Guidelines for Guests (one per line)
+              </label>
+              <textarea
+                id="guest-guidelines"
+                rows={5}
+                placeholder={"Strictly satvik vegetarian meals served.\nNo entry inside campus after 9:30 PM.\nModest clothing is mandatory."}
+                value={rulesText}
+                onChange={(e) => setRulesText(e.target.value)}
+                className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none resize-y"
+              />
+            </div>
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <label
+                  htmlFor="check-in-time"
+                  className="text-[10px] font-bold text-gray-400 block"
+                >
+                  Check-in Time
+                </label>
+                <input
+                  id="check-in-time"
+                  type="time"
+                  required
+                  value={checkInTime}
+                  onChange={(e) => setCheckInTime(e.target.value)}
+                  className="w-full px-3.5 py-2 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-full text-xs font-bold focus:outline-none"
+                />
+              </div>
+              <div className="space-y-1">
+                <label
+                  htmlFor="check-out-time"
+                  className="text-[10px] font-bold text-gray-400 block"
+                >
+                  Check-out Time
+                </label>
+                <input
+                  id="check-out-time"
+                  type="time"
+                  required
+                  value={checkOutTime}
+                  onChange={(e) => setCheckOutTime(e.target.value)}
+                  className="w-full px-3.5 py-2 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-full text-xs font-bold focus:outline-none"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              disabled={!timesReady || savingTimes}
+              className="shrink-0 px-5 py-2.5 bg-[#0A4DA6] text-white text-xs font-bold rounded-full hover:bg-opacity-95 shadow flex items-center gap-1.5 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {savingTimes ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <Save size={14} />
+              )}
+              {savingTimes ? "Saving..." : "Save Rules & Policies"}
+            </button>
+          </div>
+        </form>
+      )}
+
       {loadingAshrams || loading ? (
         <div className="h-40 bg-gray-50 border border-gray-100 rounded-[24px] animate-pulse" />
       ) : rooms.length === 0 ? (
@@ -305,6 +577,21 @@ export const ManageRoomsPage: React.FC = () => {
                   </h3>
                   <span className="text-[9px] font-bold text-gray-400">
                     {room.type.replace("_", " ")} • {room.acType}
+                  </span>
+                  {room.description && (
+                    <p className="text-[10px] text-gray-500 font-semibold mt-1 line-clamp-2 max-w-sm">
+                      {room.description}
+                    </p>
+                  )}
+                  <span
+                    className={`mt-1 flex items-center gap-1 text-[9px] font-bold ${
+                      room.images?.length ? "text-gray-400" : "text-amber-600"
+                    }`}
+                  >
+                    <ImagePlus size={10} />
+                    {room.images?.length
+                      ? `${room.images.length} photo${room.images.length === 1 ? "" : "s"}`
+                      : "No photos yet"}
                   </span>
                   {selectedAshramId === ALL_ASHRAMS && room.ashramName && (
                     <span className="mt-1 flex items-center gap-1 text-[9px] font-bold text-[#0A4DA6]">
@@ -528,6 +815,106 @@ export const ManageRoomsPage: React.FC = () => {
                 />
               </div>
 
+              <div className="space-y-1 md:col-span-2">
+                <div className="flex items-center justify-between gap-2">
+                  <label
+                    htmlFor="room-description"
+                    className="text-xs font-bold text-gray-400"
+                  >
+                    Room Description
+                  </label>
+                  <span className="text-[10px] font-bold text-gray-400">
+                    {description.length}/2000
+                  </span>
+                </div>
+                <textarea
+                  id="room-description"
+                  rows={3}
+                  maxLength={2000}
+                  placeholder="e.g. Spacious room facing the Ganga with two single beds, attached Indian-style bathroom and hot water from 5 AM."
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none resize-y"
+                />
+              </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <div className="flex items-center justify-between gap-2">
+                  <label className="text-xs font-bold text-gray-400">
+                    Room Photos <span className="text-rose-500">*</span>
+                  </label>
+                  <span
+                    className={`text-[10px] font-bold ${images.length > 0 ? "text-emerald-600" : "text-amber-600"}`}
+                  >
+                    {images.length > 0
+                      ? `${images.length} photo${images.length === 1 ? "" : "s"} added`
+                      : "At least 1 photo required"}
+                  </span>
+                </div>
+                <label
+                  className={`w-full py-4 px-6 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center gap-1.5 transition-all ${
+                    uploadingImages
+                      ? "border-gray-200 dark:border-slate-700 cursor-wait"
+                      : "border-[#0A4DA6]/40 hover:border-[#0A4DA6] bg-blue-50/40 dark:bg-slate-800/40 cursor-pointer"
+                  }`}
+                >
+                  {uploadingImages ? (
+                    <span className="flex items-center gap-2 text-[#0A4DA6] font-bold text-xs">
+                      <Loader2 size={16} className="animate-spin" /> Uploading
+                      photos...
+                    </span>
+                  ) : (
+                    <>
+                      <ImagePlus size={20} className="text-[#0A4DA6]" />
+                      <span className="text-xs font-extrabold text-[#0B192C] dark:text-white">
+                        Upload room photos
+                      </span>
+                      <span className="text-[10px] text-gray-400 font-semibold text-center">
+                        Show the bed, bathroom and facilities pilgrims will get.
+                        JPG, PNG or WEBP under 10 MB each.
+                      </span>
+                    </>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    disabled={uploadingImages}
+                    onChange={(e) => {
+                      void handleAddImages(e.target.files);
+                      e.target.value = "";
+                    }}
+                    className="hidden"
+                  />
+                </label>
+                {images.length > 0 && (
+                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                    {images.map((src, idx) => (
+                      <div
+                        key={`${src}_${idx}`}
+                        className="relative group aspect-[4/3] rounded-xl overflow-hidden border border-gray-100 dark:border-slate-800 bg-gray-100 dark:bg-slate-900"
+                      >
+                        <img
+                          src={src}
+                          alt={`Room photo ${idx + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setImages((prev) => prev.filter((_, i) => i !== idx))
+                          }
+                          aria-label={`Remove room photo ${idx + 1}`}
+                          className="absolute top-1 right-1 p-1 rounded-full bg-black/60 text-white hover:bg-rose-600 transition-colors"
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               {editRoomId && (
                 <div className="space-y-1">
                   <label
@@ -554,7 +941,7 @@ export const ManageRoomsPage: React.FC = () => {
 
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || uploadingImages}
               className="w-full py-3 bg-[#0A4DA6] disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-full font-extrabold text-xs shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
             >
               {submitting && <Loader2 size={13} className="animate-spin" />}

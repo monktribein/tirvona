@@ -81,6 +81,21 @@ import {
 } from "../services/volunteer.service";
 import { useProfileAutoFill } from "../hooks/useProfileAutoFill";
 
+/**
+ * Renders an owner-set "HH:MM" policy time as "12:00 PM". Values that already
+ * carry AM/PM are shown as written; anything unset or unreadable falls back.
+ */
+const formatPolicyClock = (clock: unknown, fallback: string): string => {
+  const text = String(clock ?? "").trim();
+  if (!text) return fallback;
+  if (/\b(am|pm)\b/i.test(text)) return text;
+  const match = /^(\d{1,2}):(\d{2})/.exec(text);
+  if (!match || Number(match[1]) > 23) return fallback;
+  const hours = Number(match[1]);
+  const suffix = hours >= 12 ? "PM" : "AM";
+  return `${hours % 12 === 0 ? 12 : hours % 12}:${match[2]} ${suffix}`;
+};
+
 export const AshramDetailPage: React.FC = () => {
   const { id, city, ashramSlug } = useParams();
   const location = useLocation();
@@ -123,6 +138,12 @@ export const AshramDetailPage: React.FC = () => {
   // the persisted ashram id once the canonical listing has loaded.
   const currentAshramId = String(ashram?._id ?? id ?? "");
   const [rooms, setRooms] = useState<any[]>([]);
+  const [expandedRoomId, setExpandedRoomId] = useState<string | null>(null);
+  const [roomPhotoViewer, setRoomPhotoViewer] = useState<{
+    name: string;
+    images: string[];
+    index: number;
+  } | null>(null);
   const [volunteerJobs, setVolunteerJobs] = useState<VolunteerJobItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [detailError, setDetailError] = useState("");
@@ -499,6 +520,24 @@ export const AshramDetailPage: React.FC = () => {
     setCouponMsg("");
     setTimerActive(false);
   };
+
+  useEffect(() => {
+    if (!roomPhotoViewer) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setRoomPhotoViewer(null);
+      if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+        const step = e.key === "ArrowRight" ? 1 : -1;
+        setRoomPhotoViewer((viewer) =>
+          viewer && {
+            ...viewer,
+            index: (viewer.index + step + viewer.images.length) % viewer.images.length,
+          },
+        );
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [roomPhotoViewer]);
 
   const nextImage = () => {
     const n = (ashram?.images || []).length;
@@ -1528,11 +1567,24 @@ export const AshramDetailPage: React.FC = () => {
                   1,
                   Number(searchState.rooms) || roomsCount || 1,
                 );
+                const roomImages: string[] = Array.isArray(r.images)
+                  ? r.images.filter(
+                      (src: unknown) => typeof src === "string" && src.trim(),
+                    )
+                  : [];
+                const isExpanded =
+                  expandedRoomId === String(r._id) && roomImages.length > 0;
+                const toggleRoomPhotos = () =>
+                  setExpandedRoomId((current) =>
+                    current === String(r._id) ? null : String(r._id),
+                  );
 
                 return (
                   <div
                     key={r._id}
-                    className={`p-4 sm:p-5 border rounded-[20px] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-all relative overflow-hidden ${
+                    onClick={roomImages.length > 0 ? toggleRoomPhotos : undefined}
+                    aria-expanded={roomImages.length > 0 ? isExpanded : undefined}
+                    className={`p-4 sm:p-5 border rounded-[20px] transition-all relative overflow-hidden ${roomImages.length > 0 ? "cursor-pointer" : ""} ${
                       selectedQty > 0
                         ? "border-[#0A4DA6] bg-[#0A4DA6]/5 shadow-sm ring-1 ring-[#0A4DA6]/30"
                         : "border-gray-100 dark:border-slate-800 hover:bg-gray-50/50 dark:hover:bg-slate-800/10"
@@ -1546,6 +1598,7 @@ export const AshramDetailPage: React.FC = () => {
                         </span>
                       </div>
                     )}
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div className="space-y-1.5 min-w-0 pr-4 sm:pr-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-xs font-extrabold text-[#0B192C] dark:text-white">
@@ -1586,7 +1639,10 @@ export const AshramDetailPage: React.FC = () => {
                         </span>
                       )}
                       
-                      <div className="flex items-center gap-3 mt-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-full p-1 shadow-sm">
+                      <div
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex items-center gap-3 mt-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-full p-1 shadow-sm cursor-default"
+                      >
                         <button
                           onClick={() => handleUpdateRoomQty(r._id, -1)}
                           className="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-rose-600 transition-colors disabled:opacity-30"
@@ -1612,11 +1668,121 @@ export const AshramDetailPage: React.FC = () => {
                         </button>
                       </div>
                     </div>
+                    </div>
+                    {isExpanded && (
+                      <div
+                        onClick={(e) => e.stopPropagation()}
+                        className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-800 space-y-3 cursor-default"
+                      >
+                        <div className="flex gap-2.5 overflow-x-auto snap-x snap-mandatory pb-2">
+                          {roomImages.map((src, idx) => (
+                            <button
+                              type="button"
+                              key={`${src}_${idx}`}
+                              onClick={() =>
+                                setRoomPhotoViewer({
+                                  name: r.name,
+                                  images: roomImages,
+                                  index: idx,
+                                })
+                              }
+                              aria-label={`Open ${r.name} photo ${idx + 1}`}
+                              className="group relative shrink-0 snap-start w-44 sm:w-56 aspect-[4/3] rounded-xl overflow-hidden border border-gray-100 dark:border-slate-800 bg-gray-100 dark:bg-slate-900"
+                            >
+                              <img
+                                src={src}
+                                alt={`${r.name} photo ${idx + 1}`}
+                                loading="lazy"
+                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                              />
+                              <span className="absolute bottom-1.5 right-1.5 p-1 rounded-full bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Maximize2 size={11} />
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                        {Array.isArray(r.amenities) && r.amenities.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5">
+                            {r.amenities.map((amenity: string, idx: number) => (
+                              <span
+                                key={`${amenity}_${idx}`}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50 text-[10px] font-bold text-emerald-700 dark:text-emerald-400"
+                              >
+                                <CheckCircle size={10} /> {amenity}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 );
               })}
             </div>
           </div>
+
+          {roomPhotoViewer && (
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-label={`${roomPhotoViewer.name} photos`}
+              onClick={() => setRoomPhotoViewer(null)}
+              className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
+            >
+              <button
+                type="button"
+                onClick={() => setRoomPhotoViewer(null)}
+                aria-label="Close photos"
+                className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white"
+              >
+                <X size={20} />
+              </button>
+              {roomPhotoViewer.images.length > 1 && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setRoomPhotoViewer((v) =>
+                      v && { ...v, index: (v.index - 1 + v.images.length) % v.images.length },
+                    );
+                  }}
+                  aria-label="Previous photo"
+                  className="absolute left-3 sm:left-6 p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white"
+                >
+                  <ChevronLeft size={22} />
+                </button>
+              )}
+              <div
+                className="max-w-5xl w-full flex flex-col items-center gap-3"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <img
+                  src={roomPhotoViewer.images[roomPhotoViewer.index]}
+                  alt={`${roomPhotoViewer.name} photo ${roomPhotoViewer.index + 1}`}
+                  className="max-h-[78vh] w-auto max-w-full rounded-2xl object-contain shadow-2xl"
+                />
+                <p className="text-xs font-bold text-white/80">
+                  {roomPhotoViewer.name} · {roomPhotoViewer.index + 1} /{" "}
+                  {roomPhotoViewer.images.length}
+                </p>
+              </div>
+              {roomPhotoViewer.images.length > 1 && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setRoomPhotoViewer((v) =>
+                      v && { ...v, index: (v.index + 1) % v.images.length },
+                    );
+                  }}
+                  aria-label="Next photo"
+                  className="absolute right-3 sm:right-6 p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white"
+                >
+                  <ChevronRight size={22} />
+                </button>
+              )}
+            </div>
+          )}
 
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-5 shadow-sm">
             <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white border-b border-gray-50 dark:border-slate-850 pb-3">
@@ -1639,14 +1805,17 @@ export const AshramDetailPage: React.FC = () => {
                 </h4>
                 <div className="space-y-1.5 text-gray-500">
                   <p>
-                    <strong>Check-in Time:</strong> 12:00 PM
+                    <strong>Check-in Time:</strong> {formatPolicyClock(ashram.policies?.checkInTime, "12:00 PM")}
                   </p>
                   <p>
-                    <strong>Check-out Time:</strong> 11:00 AM
+                    <strong>Check-out Time:</strong> {formatPolicyClock(ashram.policies?.checkOutTime, "11:00 AM")}
                   </p>
                   <p>
                     <strong>Nearby Attractions:</strong>{" "}
-                    {ashram.nearbyAttractions?.join(", ") || "Temples & Ghats"}
+                    {(Array.isArray(ashram.nearbyAttractions) ? ashram.nearbyAttractions : [])
+                      .map((a: any) => (typeof a === "string" ? a : a?.name))
+                      .filter(Boolean)
+                      .join(", ") || "Temples & Ghats"}
                   </p>
                 </div>
               </div>

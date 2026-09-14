@@ -919,6 +919,10 @@ const AppContent: React.FC = () => {
           >
             <Route path="/admin/audit-logs" element={<AuditLogsPage />} />
             <Route
+              path="/admin/manage/rooms/details"
+              element={<ManageRoomsPage />}
+            />
+            <Route
               path="/admin/manage/rooms/total"
               element={<TotalRoomsPage />}
             />

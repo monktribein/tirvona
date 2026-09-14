@@ -1326,7 +1326,6 @@ export class BookingsService {
         { $set: { status: "released", releasedAt: new Date() } },
         { session },
       );
-
       if (row.assignedRoomNumbers && row.assignedRoomNumbers.length > 0) {
         const assignmentDocs = await this.assignments
           .find({ bookingId: row._id, roomNumber: { $in: row.assignedRoomNumbers } })
@@ -1335,6 +1334,7 @@ export class BookingsService {
         const roomIdByNumber = new Map(
           assignmentDocs.map((a: any) => [a.roomNumber, String(a.roomId)]),
         );
+
       await this.notifications.create(
         [this.stayStatusNotification(row, "checked_out")],
         { session },

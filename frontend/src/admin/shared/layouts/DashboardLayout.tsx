@@ -404,6 +404,10 @@ export const DashboardLayout: React.FC = () => {
           path: "/admin/approvals/room-categories",
         },
         { label: "Room Categories", path: "/admin/manage/rooms/all" },
+        {
+          label: "Room Photos & Policies",
+          path: "/admin/manage/rooms/details",
+        },
         { label: "Room Availability", path: "/admin/manage/rooms/availability" },
         { label: "Room Pricing", path: "/admin/manage/rooms/pricing" },
         { label: "Room Inventory", path: "/admin/manage/rooms/inventory" },

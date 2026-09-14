@@ -80,6 +80,13 @@ export const AK_NEXUS_PROVIDER_NAME = "ak_nexus" as const;
 
 export const MSG91_PROVIDER_NAME = "msg91" as const;
 
+export const META_CLOUD_PROVIDER_NAME = "meta_cloud" as const;
+
+/** Approved Meta Authentication template used for Tirvona login codes. */
+export const META_AUTH_OTP_TEMPLATE = "tirvona_authetication" as const;
+
+export const META_AUTH_OTP_LANGUAGE = "en" as const;
+
 /** Default approved MSG91 WhatsApp template for authentication codes. */
 export const MSG91_DEFAULT_AUTH_OTP_TEMPLATE = "tirvona_otp" as const;
 

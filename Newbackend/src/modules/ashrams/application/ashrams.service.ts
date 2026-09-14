@@ -949,6 +949,7 @@ export class AshramsService {
   }
 
   async createRoom(user: AuthenticatedUser, dto: CreateRoomDto): Promise<any> {
+    assertNoInlineMedia(dto);
     const ashram = await this.ashrams.findById(dto.ashramId);
     if (!ashram) throw new NotFoundException("Stay not found");
     this.assertScope(user, ashram);
@@ -959,6 +960,7 @@ export class AshramsService {
     id: string,
     dto: Partial<CreateRoomDto>,
   ): Promise<any> {
+    assertNoInlineMedia(dto);
     const room = await this.rooms.findOne({ _id: id, deletedAt: null });
     if (!room) throw new NotFoundException("Room not found");
     const ashram = await this.ashrams.findById(room.ashramId);

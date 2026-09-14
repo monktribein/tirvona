@@ -285,6 +285,24 @@ export function validateEnvironment(
   }
   requireTogether(input, ["MONGODB_USERNAME", "MONGODB_PASSWORD"]);
   requireTogether(input, [
+    "WHATSAPP_ACCESS_TOKEN",
+    "WHATSAPP_PHONE_NUMBER_ID",
+    "WHATSAPP_BUSINESS_ACCOUNT_ID",
+    "WHATSAPP_API_VERSION",
+  ]);
+  if (
+    input.WHATSAPP_API_VERSION &&
+    !/^v\d+\.\d+$/.test(String(input.WHATSAPP_API_VERSION).trim())
+  )
+    throw new Error("WHATSAPP_API_VERSION must use Meta's vN.N format");
+  for (const name of [
+    "WHATSAPP_PHONE_NUMBER_ID",
+    "WHATSAPP_BUSINESS_ACCOUNT_ID",
+  ]) {
+    if (input[name] && !/^\d+$/.test(String(input[name]).trim()))
+      throw new Error(`${name} must contain digits only`);
+  }
+  requireTogether(input, [
     "FIREBASE_PROJECT_ID",
     "FIREBASE_CLIENT_EMAIL",
     "FIREBASE_PRIVATE_KEY",

@@ -1,6 +1,8 @@
 import { registerAs } from "@nestjs/config";
 import {
   AK_NEXUS_PROVIDER_NAME,
+  META_AUTH_OTP_LANGUAGE,
+  META_AUTH_OTP_TEMPLATE,
   MSG91_DEFAULT_AUTH_OTP_TEMPLATE,
   MSG91_DEFAULT_TEMPLATE_LANGUAGE,
   WHATSAPP_TEMPLATE,
@@ -24,6 +26,8 @@ const INTERNAL_DEFAULTS = {
   msg91ApiBaseUrl: "https://control.msg91.com/api/v5",
   msg91SendPath: "whatsapp/whatsapp-outbound-message/bulk/",
   msg91TimeoutMs: 10_000,
+  metaGraphBaseUrl: "https://graph.facebook.com",
+  metaTimeoutMs: 10_000,
 } as const;
 
 /**
@@ -199,6 +203,19 @@ export const whatsappConfig = registerAs("whatsapp", () => ({
       MSG91_DEFAULT_TEMPLATE_LANGUAGE,
     timeoutMs: INTERNAL_DEFAULTS.msg91TimeoutMs,
     templates: msg91Templates(),
+  },
+  metaCloud: {
+    graphBaseUrl: INTERNAL_DEFAULTS.metaGraphBaseUrl,
+    apiVersion: process.env.WHATSAPP_API_VERSION?.trim() ?? "",
+    accessToken: process.env.WHATSAPP_ACCESS_TOKEN?.trim() ?? "",
+    phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID?.trim() ?? "",
+    businessAccountId:
+      process.env.WHATSAPP_BUSINESS_ACCOUNT_ID?.trim() ?? "",
+    timeoutMs: INTERNAL_DEFAULTS.metaTimeoutMs,
+    authTemplate: {
+      name: META_AUTH_OTP_TEMPLATE,
+      language: META_AUTH_OTP_LANGUAGE,
+    },
   },
   templates: {
     [WHATSAPP_TEMPLATE.AUTH_OTP]: template(
