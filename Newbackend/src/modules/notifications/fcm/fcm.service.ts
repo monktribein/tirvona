@@ -82,14 +82,9 @@ export class FcmService implements OnModuleInit {
           notification: {
             title: input.title,
             body: input.body,
+            ...(input.imageUrl ? { imageUrl: input.imageUrl } : {}),
           },
           data: input.data ?? {},
-          android: {
-            notification: input.imageUrl ? { imageUrl: input.imageUrl } : undefined,
-          },
-          apns: {
-            fcmOptions: input.imageUrl ? { imageUrl: input.imageUrl } : undefined,
-          },
         });
         successCount += response.successCount;
         failureCount += response.failureCount;

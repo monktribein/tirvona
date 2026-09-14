@@ -14,6 +14,7 @@ import { ParkingPricingService } from "./application/parking-pricing.service";
 import { ParkingScanService } from "./application/parking-scan.service";
 import { ParkingReportService } from "./application/parking-report.service";
 import { ParkingManagementService } from "./application/parking-management.service";
+import { ParkingExpiryAlertService } from "./application/parking-expiry-alert.service";
 import { ParkingCapabilityGuard } from "./presentation/guards/parking-capability.guard";
 import { ParkingPublicController } from "./presentation/controllers/parking-public.controller";
 import { ParkingBookingController } from "./presentation/controllers/parking-booking.controller";
@@ -90,6 +91,7 @@ const tenantSchemas = [
     ParkingScanService,
     ParkingReportService,
     ParkingManagementService,
+    ParkingExpiryAlertService,
     { provide: PARKING_REPOSITORY, useClass: MongooseParkingRepository },
   ],
   exports: [

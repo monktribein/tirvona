@@ -11,6 +11,7 @@ import { QrService } from "../smart-contact/application/qr.service";
 import { OffersService } from "./application/offers.service";
 import { ReviewsService } from "./application/reviews.service";
 import { BookingMaintenanceService } from "./application/booking-maintenance.service";
+import { BookingCheckinReminderService } from "./application/booking-checkin-reminder.service";
 import { BookingFinanceService } from "./application/booking-finance.service";
 import { BookingIdentityService } from "./application/booking-identity.service";
 import { BookingFinanceController } from "./presentation/booking-finance.controller";
@@ -110,6 +111,7 @@ const models = [
     OffersService,
     ReviewsService,
     BookingMaintenanceService,
+    BookingCheckinReminderService,
     BookingFinanceService,
     MongooseBookingRepository,
     { provide: BOOKING_REPOSITORY, useExisting: MongooseBookingRepository },

@@ -127,6 +127,9 @@ export const BookingNotificationSchema = new Schema(
     sentAt: Date,
     readAt: Date,
     meta: { type: SchemaTypes.Mixed, default: {} },
+    pushEnabled: { type: Boolean, default: false },
+    imageUrl: String,
+    data: { type: Map, of: String },
   },
   opts("booking_notifications"),
 );

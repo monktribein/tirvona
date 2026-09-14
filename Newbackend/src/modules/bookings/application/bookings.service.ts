@@ -518,6 +518,18 @@ export class BookingsService {
         },
         { upsert: true },
       );
+      await this.notifications.create({
+        userId: user.id,
+        bookingId: id,
+        event: "payment_failed",
+        title: "Payment failed",
+        message: "Your recent payment for the ashram booking failed. Tap to retry.",
+        channel: "in_app",
+        status: "queued",
+        pushEnabled: true,
+        data: { bookingId: String(id) },
+        meta: { correlationId: `booking:${id}:payment_failed` },
+      });
       throw new BadRequestException("Payment signature verification failed");
     }
     return this.transactions.run(async (session) => {
@@ -1147,6 +1159,24 @@ export class BookingsService {
 
     row.assignedRoomNumbers = roomNumbers;
     await row.save();
+
+    await this.notifications.create({
+      userId: row.customerId,
+      bookingId: row._id,
+      ashramId: row.ashramId,
+      event: "room_assigned",
+      title: "Room assigned",
+      message:
+        roomNumbers.length === 1
+          ? `You have been allocated Room ${roomNumbers[0]}. Enjoy your stay!`
+          : `You have been allocated rooms ${roomNumbers.join(", ")}. Enjoy your stay!`,
+      channel: "in_app",
+      status: "queued",
+      pushEnabled: true,
+      data: { roomNumbers: roomNumbers.join(",") },
+      meta: { correlationId: `booking:${String(row._id)}:room_assigned` },
+    });
+
     return row;
   }
 
@@ -1493,6 +1523,8 @@ export class BookingsService {
               event: "booking_cancelled",
               title: "Booking cancelled",
               message: `${existing.bookingId} was cancelled. Refund due: ₹${refundAmount}.`,
+              pushEnabled: true,
+              data: { refundAmount: String(refundAmount) },
             },
           ],
           { session },

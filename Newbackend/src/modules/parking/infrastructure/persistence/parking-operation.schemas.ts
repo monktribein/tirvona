@@ -104,6 +104,7 @@ export const ParkingBookingSchema = new Schema(
     ],
     notes: String,
     source: { type: String, enum: ["web", "app", "counter"], default: "web" },
+    expiryAlertSentAt: Date,
   },
   opts("parking_bookings"),
 );
@@ -250,6 +251,9 @@ export const ParkingNotificationSchema = new Schema(
     sentAt: Date,
     readAt: Date,
     meta: { type: SchemaTypes.Mixed, default: {} },
+    pushEnabled: { type: Boolean, default: false },
+    imageUrl: String,
+    data: { type: Map, of: String },
   },
   opts("parking_notifications"),
 );
