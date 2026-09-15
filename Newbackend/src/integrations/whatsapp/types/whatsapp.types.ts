@@ -33,6 +33,26 @@ export interface WhatsAppProviderRequest {
    * provider ignores it.
    */
   metaEvent?: MetaTransactionalEvent;
+  /**
+   * An image sent as a separate message after the template is accepted, e.g.
+   * the parking pass QR. Meta Cloud only; other providers ignore it.
+   */
+  followUpImage?: WhatsAppFollowUpImage;
+}
+
+export interface WhatsAppFollowUpImage {
+  /** Image bytes. Never logged. */
+  data: Buffer;
+  mimeType: "image/png";
+  filename: string;
+  /** Free text shown under the image. Never logged. */
+  caption?: string;
+}
+
+export interface WhatsAppFollowUpResult {
+  status: "accepted" | "skipped" | "failed" | "unconfirmed";
+  providerMessageId?: string;
+  reason?: string;
 }
 
 export interface WhatsAppProviderResult {
@@ -40,6 +60,8 @@ export interface WhatsAppProviderResult {
   provider: string;
   providerMessageId?: string;
   reason?: string;
+  /** Outcome of `followUpImage`, when one was requested. */
+  followUp?: WhatsAppFollowUpResult;
 }
 
 export interface WhatsAppAartiContext {
@@ -102,4 +124,9 @@ export interface WhatsAppOutboxNotification {
   data?: Readonly<Record<string, string>>;
   /** When the outbox row was written, i.e. when the transition happened. */
   occurredAt?: Date | string;
+  /**
+   * PNG of the parking pass QR, rendered from the stored credential. Sent as a
+   * follow-up image after the parking confirmation template.
+   */
+  parkingQrImage?: Buffer;
 }

@@ -14,6 +14,7 @@ import {
   WHATSAPP_TEMPLATE,
 } from "../constants/whatsapp.constants";
 import type {
+  WhatsAppFollowUpImage,
   WhatsAppOutboxNotification,
   WhatsAppProviderResult,
   WhatsAppTemplateKey,
@@ -25,9 +26,11 @@ import {
   WHATSAPP_TEST_MODE_BLOCK_REASON,
 } from "../utils/whatsapp-test-recipients.util";
 import {
+  META_TRANSACTIONAL_EVENT,
   metaTransactionalEventFor,
   whatsappSuppressionReasonFor,
   WHATSAPP_BOOKING_TYPE_LABEL,
+  type MetaTransactionalEvent,
 } from "../constants/whatsapp-meta-templates.constants";
 import {
   buildAartiMessage,
@@ -410,6 +413,36 @@ export class WhatsAppTransactionalNotificationService implements OnModuleInit {
     return variables;
   }
 
+  /**
+   * The parking pass QR sent after the parking confirmation template. Only the
+   * confirmation carries it, and only when the worker rendered it from the
+   * stored credential.
+   */
+  private parkingQrFollowUp(
+    notification: WhatsAppOutboxNotification,
+    metaEvent: MetaTransactionalEvent | undefined,
+  ): WhatsAppFollowUpImage | undefined {
+    if (
+      metaEvent !== META_TRANSACTIONAL_EVENT.PARKING_CONFIRMED ||
+      !notification.parkingQrImage?.length
+    )
+      return undefined;
+    const reference = notification.parking?.reference;
+    const gateCode = notification.parking?.displayCode;
+    return {
+      data: notification.parkingQrImage,
+      mimeType: "image/png",
+      filename: `tirvona-parking-pass${reference ? `-${reference}` : ""}.png`,
+      caption: [
+        `Tirvona parking pass${reference ? ` ${reference}` : ""}`,
+        "Show this QR code at the parking entry gate.",
+        gateCode ? `Gate code: ${gateCode}` : "",
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    };
+  }
+
   /** The refund state a guest reads, derived from the transition itself. */
   private refundStatus(
     notification: WhatsAppOutboxNotification,
@@ -449,6 +482,7 @@ export class WhatsAppTransactionalNotificationService implements OnModuleInit {
       notification.domain,
       notification.event,
     );
+    const followUpImage = this.parkingQrFollowUp(notification, metaEvent);
     // The composed body is the whole message, so no separate title is passed
     // or the renderer would print the heading twice.
     const body = this.composeBody(notification);
@@ -459,6 +493,7 @@ export class WhatsAppTransactionalNotificationService implements OnModuleInit {
       idempotencyKey: `${notification.domain}:${notification.notificationId}:whatsapp`,
       correlationId: notification.correlationId,
       ...(metaEvent ? { metaEvent } : {}),
+      ...(followUpImage ? { followUpImage } : {}),
     });
   }
 

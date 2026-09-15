@@ -9,6 +9,7 @@ import {
 import { WhatsAppIntegrationError } from "../errors/whatsapp.errors";
 import type { WhatsAppProvider } from "../providers/whatsapp-provider.interface";
 import type {
+  WhatsAppFollowUpImage,
   WhatsAppProviderResult,
   WhatsAppTemplateKey,
   WhatsAppTemplateValue,
@@ -24,6 +25,8 @@ export interface SendTemplateInput {
   correlationId?: string;
   /** Logical transactional event, letting Meta Cloud pick an approved template. */
   metaEvent?: MetaTransactionalEvent;
+  /** Image sent after the template is accepted (Meta Cloud only). */
+  followUpImage?: WhatsAppFollowUpImage;
 }
 
 @Injectable()
@@ -62,6 +65,9 @@ export class WhatsAppTemplateService {
           // their own approved template components.
           templateVariables: input.variables,
           ...(input.metaEvent ? { metaEvent: input.metaEvent } : {}),
+          ...(input.followUpImage
+            ? { followUpImage: input.followUpImage }
+            : {}),
         });
       } catch (error) {
         const retryable =

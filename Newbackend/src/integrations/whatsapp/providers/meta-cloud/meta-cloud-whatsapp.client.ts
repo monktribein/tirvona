@@ -7,6 +7,7 @@ import {
   WhatsAppIntegrationError,
 } from "../../errors/whatsapp.errors";
 import type {
+  WhatsAppFollowUpImage,
   WhatsAppProviderRequest,
   WhatsAppProviderResult,
 } from "../../types/whatsapp.types";
@@ -48,6 +49,8 @@ export interface MetaTransactionalTemplate {
   parameterFormat: "positional" | "named";
   /** Ordered body parameters, already flattened and never empty. */
   parameters: ReadonlyArray<{ name: string; text: string }>;
+  /** Uploaded media id for a template approved with an image header. */
+  headerImageId?: string;
 }
 
 export interface MetaTransactionalTemplatePayload {
@@ -58,14 +61,20 @@ export interface MetaTransactionalTemplatePayload {
   template: {
     name: string;
     language: { code: string };
-    components: Array<{
-      type: "body";
-      parameters: Array<{
-        type: "text";
-        text: string;
-        parameter_name?: string;
-      }>;
-    }>;
+    components: Array<
+      | {
+          type: "body";
+          parameters: Array<{
+            type: "text";
+            text: string;
+            parameter_name?: string;
+          }>;
+        }
+      | {
+          type: "header";
+          parameters: Array<{ type: "image"; image: { id: string } }>;
+        }
+    >;
   };
 }
 
@@ -291,20 +300,35 @@ export class MetaCloudWhatsAppClient {
       template: {
         name: template.name,
         language: { code: template.language },
-        components: template.parameters.length
-          ? [
-              {
-                type: "body",
-                parameters: template.parameters.map((parameter) => ({
-                  type: "text" as const,
-                  text: parameter.text,
-                  ...(template.parameterFormat === "named"
-                    ? { parameter_name: parameter.name }
-                    : {}),
-                })),
-              },
-            ]
-          : [],
+        components: [
+          ...(template.headerImageId
+            ? [
+                {
+                  type: "header" as const,
+                  parameters: [
+                    {
+                      type: "image" as const,
+                      image: { id: template.headerImageId },
+                    },
+                  ],
+                },
+              ]
+            : []),
+          ...(template.parameters.length
+            ? [
+                {
+                  type: "body" as const,
+                  parameters: template.parameters.map((parameter) => ({
+                    type: "text" as const,
+                    text: parameter.text,
+                    ...(template.parameterFormat === "named"
+                      ? { parameter_name: parameter.name }
+                      : {}),
+                  })),
+                },
+              ]
+            : []),
+        ],
       },
     };
     // Parameter values carry guest details, so only their count is logged.
@@ -316,6 +340,8 @@ export class MetaCloudWhatsAppClient {
       templateName: template.name,
       templateLanguage: template.language,
       parameterCount: template.parameters.length,
+      // Whether an image header is attached; the media id is never logged.
+      headerImage: Boolean(template.headerImageId),
       maskedNumber: maskWhatsAppNumber(number),
       numberLength: number.length,
     } as const;
@@ -397,6 +423,213 @@ export class MetaCloudWhatsAppClient {
             : timedOut
               ? "timeout_unconfirmed"
               : "unconfirmed",
+        }),
+      );
+      if (neverSent)
+        throw new WhatsAppIntegrationError(
+          "Meta WhatsApp request failed before reaching Meta",
+          "PROVIDER_UNAVAILABLE",
+          true,
+          undefined,
+          { cause: error },
+        );
+      throw new WhatsAppDeliveryUnconfirmedError(META_CLOUD_PROVIDER_NAME, {
+        cause: error,
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  /**
+   * Uploads image bytes to the Cloud API and returns the media id. Uploading
+   * sends nothing to the guest, so a failed upload is safe to report as an
+   * ordinary error. The bytes and the returned id are never logged.
+   */
+  async uploadMedia(
+    request: Pick<WhatsAppProviderRequest, "correlationId" | "idempotencyKey">,
+    image: WhatsAppFollowUpImage,
+  ): Promise<string> {
+    const { graphBaseUrl, apiVersion, accessToken, phoneNumberId, businessAccountId, timeoutMs } =
+      this.config.metaCloud;
+    if (!apiVersion || !accessToken || !phoneNumberId || !businessAccountId)
+      throw new WhatsAppIntegrationError(
+        "Meta WhatsApp Cloud API configuration is incomplete",
+        "CONFIGURATION_INVALID",
+      );
+    const diagnostics = {
+      provider: META_CLOUD_PROVIDER_NAME,
+      requestId: request.correlationId || request.idempotencyKey,
+      mimeType: image.mimeType,
+      bytes: image.data.length,
+    } as const;
+    const form = new FormData();
+    form.append("messaging_product", "whatsapp");
+    form.append("type", image.mimeType);
+    form.append(
+      "file",
+      new Blob([new Uint8Array(image.data)], { type: image.mimeType }),
+      image.filename,
+    );
+
+    const abort = new AbortController();
+    const timeout = setTimeout(() => abort.abort(), timeoutMs);
+    try {
+      const response = await fetch(
+        `${graphBaseUrl}/${apiVersion}/${phoneNumberId}/media`,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${accessToken}`, accept: "application/json" },
+          body: form,
+          signal: abort.signal,
+        },
+      );
+      const body = (await response.json().catch(() => ({}))) as { id?: unknown };
+      if (!response.ok) {
+        const error = this.classify(response.status);
+        this.logger.warn(
+          JSON.stringify({
+            event: "whatsapp.media_upload",
+            ...diagnostics,
+            httpStatus: response.status,
+            providerStatus: "rejected",
+            code: error.code,
+          }),
+        );
+        throw error;
+      }
+      if (typeof body.id !== "string" || !body.id)
+        throw new WhatsAppIntegrationError(
+          "Meta did not return a media id for the uploaded image",
+          "PROVIDER_REJECTED",
+        );
+      this.logger.log(
+        JSON.stringify({
+          event: "whatsapp.media_upload",
+          ...diagnostics,
+          httpStatus: response.status,
+          providerStatus: "accepted",
+        }),
+      );
+      return body.id;
+    } catch (error) {
+      if (error instanceof WhatsAppIntegrationError) throw error;
+      this.logger.error(
+        JSON.stringify({
+          event: "whatsapp.media_upload",
+          ...diagnostics,
+          httpStatus: null,
+          providerStatus: abort.signal.aborted ? "timeout" : "network_error",
+        }),
+      );
+      throw new WhatsAppIntegrationError(
+        "Meta media upload failed",
+        abort.signal.aborted ? "PROVIDER_TIMEOUT" : "PROVIDER_UNAVAILABLE",
+        true,
+        undefined,
+        { cause: error },
+      );
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  /**
+   * Sends an uploaded image as a standalone message. Meta delivers a
+   * non-template message only inside the 24-hour customer service window; a
+   * send outside it is still accepted here and fails later on Meta's side.
+   * A request left without a response raises WhatsAppDeliveryUnconfirmedError.
+   */
+  async sendImageMessage(
+    request: WhatsAppProviderRequest,
+    mediaId: string,
+    caption?: string,
+  ): Promise<WhatsAppProviderResult> {
+    const { graphBaseUrl, apiVersion, accessToken, phoneNumberId, businessAccountId, timeoutMs } =
+      this.config.metaCloud;
+    if (!apiVersion || !accessToken || !phoneNumberId || !businessAccountId)
+      throw new WhatsAppIntegrationError(
+        "Meta WhatsApp Cloud API configuration is incomplete",
+        "CONFIGURATION_INVALID",
+      );
+    const number = normalizeWhatsAppNumber(request.to);
+    if (!number)
+      throw new WhatsAppIntegrationError(
+        "WhatsApp recipient number is invalid",
+        "INVALID_RECIPIENT",
+      );
+    const payload = {
+      messaging_product: "whatsapp",
+      recipient_type: "individual",
+      to: number,
+      type: "image",
+      image: { id: mediaId, ...(caption ? { caption } : {}) },
+    };
+    // The caption carries booking details and the media id reaches the QR, so
+    // neither is logged.
+    const diagnostics = {
+      provider: META_CLOUD_PROVIDER_NAME,
+      requestId: request.correlationId || request.idempotencyKey,
+      messageKind: "follow_up_image",
+      maskedNumber: maskWhatsAppNumber(number),
+    } as const;
+
+    const abort = new AbortController();
+    const timeout = setTimeout(() => abort.abort(), timeoutMs);
+    try {
+      const response = await fetch(
+        `${graphBaseUrl}/${apiVersion}/${phoneNumberId}/messages`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "content-type": "application/json",
+            accept: "application/json",
+          },
+          body: JSON.stringify(payload),
+          signal: abort.signal,
+        },
+      );
+      const body = (await response.json().catch(() => ({}))) as MetaCloudResponse;
+      if (!response.ok) {
+        const error = this.classify(response.status);
+        this.logger.warn(
+          JSON.stringify({
+            event: "whatsapp.provider_response",
+            ...diagnostics,
+            httpStatus: response.status,
+            providerStatus: error.retryable ? "transient_error" : "rejected",
+            code: error.code,
+          }),
+        );
+        throw error;
+      }
+      const messageId = body.messages?.[0]?.id;
+      this.logger.log(
+        JSON.stringify({
+          event: "whatsapp.provider_accepted",
+          ...diagnostics,
+          httpStatus: response.status,
+          providerStatus: "accepted",
+        }),
+      );
+      return {
+        status: "accepted",
+        provider: META_CLOUD_PROVIDER_NAME,
+        providerMessageId: typeof messageId === "string" ? messageId : undefined,
+      };
+    } catch (error) {
+      if (error instanceof WhatsAppIntegrationError) throw error;
+      const timedOut = abort.signal.aborted;
+      const causeCode = (error as { cause?: { code?: unknown } } | undefined)?.cause?.code;
+      const neverSent =
+        !timedOut && typeof causeCode === "string" && NOT_SENT_CAUSES.has(causeCode);
+      this.logger.error(
+        JSON.stringify({
+          event: "whatsapp.provider_error",
+          ...diagnostics,
+          httpStatus: null,
+          providerStatus: neverSent ? "network_error" : "unconfirmed",
         }),
       );
       if (neverSent)
