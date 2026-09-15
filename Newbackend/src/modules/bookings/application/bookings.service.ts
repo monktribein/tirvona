@@ -38,6 +38,7 @@ import type {
   CheckoutDto,
   ConfirmBookingPaymentDto,
   CreateBookingDto,
+  ManualConfirmBookingDto,
   UpdateBookingStatusDto,
 } from "../presentation/dtos/booking.dto";
 import { BookingIdentityService } from "./booking-identity.service";
@@ -878,6 +879,313 @@ export class BookingsService {
     });
   }
 
+  async manualConfirm(
+    id: string,
+    user: AuthenticatedUser,
+    dto: ManualConfirmBookingDto,
+  ): Promise<any> {
+    return this.transactions.run(async (session) => {
+      const booking = await this.bookings
+        .findOne({ _id: id })
+        .session(session);
+      if (!booking) throw new NotFoundException("Booking not found");
+      await this.assertCanManage(user, booking);
+
+      if (booking.paymentStatus === "fully_paid")
+        throw new ConflictException("Booking is already paid");
+
+      const holdLapsed =
+        booking.status !== "pending" ||
+        (booking.reservationExpiresAt &&
+          booking.reservationExpiresAt < new Date());
+
+      if (holdLapsed) {
+        if (["cancelled", "refunded"].includes(booking.status))
+          throw new BadRequestException(
+            "This booking was cancelled; cannot confirm payment",
+          );
+        for (const room of this.roomUnits(booking))
+          await this.repository.holdInventory({
+            ashramId: String(booking.ashramId),
+            roomId: room.roomId,
+            dates: booking.occupiedDates,
+            count: room.units,
+            capacity: room.units,
+            session,
+          });
+      }
+
+      for (const room of this.roomUnits(booking))
+        await this.repository.confirmInventory({
+          roomId: room.roomId,
+          dates: booking.occupiedDates,
+          count: room.units,
+          session,
+        });
+
+      await this.inventoryHolds.updateMany(
+        { bookingId: booking._id, state: "held" },
+        {
+          $set: {
+            state: "confirmed",
+            confirmedAt: new Date(),
+            expiresAt: null,
+          },
+        },
+        { session },
+      );
+
+      let payment = await this.payments
+        .findOne({ bookingId: booking._id, status: "pending" })
+        .sort({ createdAt: -1 })
+        .session(session);
+
+      if (!payment)
+        [payment] = await this.payments.create(
+          [
+            {
+              bookingId: booking._id,
+              userId: user.id,
+              ashramId: booking.ashramId,
+              amount: booking.pricing.totalAmount,
+              method: dto.paymentMode,
+              status: "pending",
+            },
+          ],
+          { session },
+        );
+
+      payment.status = "success";
+      payment.paidAt = new Date();
+      payment.transactionId =
+        dto.transactionReference ?? financialReference("BKPAY");
+      payment.method = dto.paymentMode;
+      payment.gateway = {
+        provider: "manual",
+        note: dto.note,
+      };
+      await payment.save({ session });
+
+      const ashram = await this.ashrams
+        .findById(booking.ashramId)
+        .session(session);
+      const policy = await this.pricing["policies"]
+        .findOne({
+          $or: [
+            { scope: "ashram", ashramId: booking.ashramId },
+            { scope: "platform" },
+          ],
+          isActive: true,
+        })
+        .sort({ scope: 1 })
+        .lean();
+      const platform = await this.settings.findOne({ key: "main" }).lean();
+      const percent = Number(
+        policy?.platformCommissionPercent ??
+          platform?.bookingCommissionPercent ??
+          10,
+      );
+      const commissionAmount =
+        Math.round(((booking.pricing.totalAmount * percent) / 100) * 100) / 100;
+
+      booking.status = "confirmed";
+      booking.paymentStatus = "fully_paid";
+      booking.gatewayStatus = "success";
+      booking.paymentMode = dto.paymentMode;
+      booking.pricing.amountPaid = booking.pricing.totalAmount;
+      booking.reservationExpiresAt = null;
+      await booking.save({ session });
+
+      let customerPhone = "";
+      if (booking.customerId) {
+         const customer = await this.bookings.db.model("User").findById(booking.customerId).session(session);
+         customerPhone = customer?.phone || "";
+      } else if (booking.walkInGuest) {
+         customerPhone = booking.walkInGuest.phone;
+      }
+
+      const confirmedNotification = bookingConfirmedOutboxEvent({
+        userId: booking.customerId || user.id,
+        customerPhone: customerPhone,
+        booking,
+        payment,
+      });
+
+      const [transaction] = await this.financialTransactions.create(
+        [
+          {
+            bookingId: booking._id,
+            paymentId: payment._id,
+            ashramId: booking.ashramId,
+            ownerId: ashram.ownerId,
+            type: "booking",
+            direction: "credit",
+            amount: booking.pricing.totalAmount,
+            reference: financialReference("BKTXN"),
+            description: `Manual booking payment for ${booking.bookingId}`,
+            recordedBy: user.id,
+          },
+        ],
+        { session },
+      );
+
+      await Promise.all([
+        this.ledger.create(
+          [
+            {
+              account: "booking_clearing",
+              bookingId: booking._id,
+              ashramId: booking.ashramId,
+              ownerId: ashram.ownerId,
+              transactionId: transaction._id,
+              debit: 0,
+              credit: booking.pricing.totalAmount,
+              reference: transaction.reference,
+            },
+          ],
+          { session },
+        ),
+        this.commissions.create(
+          [
+            {
+              bookingId: booking._id,
+              ashramId: booking.ashramId,
+              ownerId: ashram.ownerId,
+              grossAmount: booking.pricing.totalAmount,
+              commissionPercent: percent,
+              commissionAmount,
+              ownerEarning: booking.pricing.totalAmount - commissionAmount,
+              settlementStatus: "pending",
+            },
+          ],
+          { session },
+        ),
+        this.history.create(
+          [
+            {
+              bookingId: booking._id,
+              fromStatus: "pending",
+              toStatus: "confirmed",
+              note: `Payment manually confirmed (${dto.paymentMode})`,
+              actorId: user.id,
+              actorRole: user.role,
+            },
+          ],
+          { session },
+        ),
+        this.notifications.create(
+          [confirmedNotification],
+          { session },
+        ),
+        this.audits.create(
+          [
+            {
+              userId: user.id,
+              action: "BOOKING_PAYMENT_MANUAL_SUCCESS",
+              bookingId: booking._id,
+              ashramId: booking.ashramId,
+              details: {
+                paymentId: payment._id,
+                transactionId: payment.transactionId,
+                paymentMode: dto.paymentMode,
+                note: dto.note,
+              },
+            },
+          ],
+          { session },
+        ),
+        this.redemptions.updateOne(
+          { bookingId: booking._id, status: "reserved" },
+          { $set: { status: "redeemed", redeemedAt: new Date() } },
+          { session },
+        ),
+      ]);
+
+      const gstPercent = Number(
+        booking.pricing.gstPercent ?? PLATFORM_FEE_GST_PERCENT,
+      );
+      const invoiceNo = financialReference("INV");
+      const [invoice] = await this.invoices.create(
+        [
+          {
+            invoiceNumber: invoiceNo,
+            bookingId: booking._id,
+            customerId: booking.customerId,
+            ashramId: booking.ashramId,
+            lineItems: [
+              {
+                description: "Ashram stay and selected services",
+                quantity: 1,
+                unitAmount: booking.pricing.originalAmount,
+                totalAmount: booking.pricing.originalAmount,
+                taxRate: 0,
+                taxAmount: 0,
+              },
+              ...(booking.pricing.platformFee > 0
+                ? [
+                    {
+                      description: "Tirvona platform fee",
+                      quantity: 1,
+                      unitAmount: booking.pricing.platformFee,
+                      totalAmount: booking.pricing.platformFee,
+                      taxRate: gstPercent,
+                      taxAmount: booking.pricing.gstAmount,
+                    },
+                  ]
+                : []),
+            ],
+            subtotal: roundMoney(
+              booking.pricing.originalAmount + booking.pricing.platformFee,
+            ),
+            taxAmount: booking.pricing.gstAmount,
+            discountAmount: booking.pricing.discountAmount,
+            donationAmount: booking.pricing.donationAmount,
+            totalAmount: booking.pricing.totalAmount,
+          },
+        ],
+        { session },
+      );
+
+      await Promise.all([
+        this.receipts.create(
+          [
+            {
+              receiptNumber: financialReference("RCT"),
+              bookingId: booking._id,
+              paymentId: payment._id,
+              amount: payment.amount,
+              method: payment.method,
+            },
+          ],
+          { session },
+        ),
+        this.taxes.create(
+          [
+            {
+              bookingId: booking._id,
+              invoiceId: invoice._id,
+              ashramId: booking.ashramId,
+              taxableAmount:
+                booking.pricing.gstTaxableAmount ??
+                booking.pricing.platformFee ??
+                0,
+              gstPercent,
+              cgst: roundMoney(booking.pricing.gstAmount / 2),
+              sgst: roundMoney(
+                booking.pricing.gstAmount - roundMoney(booking.pricing.gstAmount / 2),
+              ),
+              igst: 0,
+              totalTax: booking.pricing.gstAmount,
+              taxPeriod: new Date().toISOString().slice(0, 7),
+            },
+          ],
+          { session },
+        ),
+      ]);
+      return { booking, payment, invoice };
+    });
+  }
+
   async historyFor(userId: string): Promise<any[]> {
     return this.bookings
       .find({ customerId: userId })
@@ -939,6 +1247,42 @@ export class BookingsService {
         { checkInDate: { $lte: start }, checkOutDate: { $gt: start } },
       ];
     }
+    const page = Math.max(1, Number(query?.page) || 1);
+    const limit = Math.min(100, Math.max(1, Number(query?.limit) || 20));
+
+    return this.bookings
+      .find(filter)
+      .populate("customerId", "name email phone")
+      .populate("ashramId", "name address")
+      .populate("rooms.roomId", "name type acType")
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .lean();
+  }
+
+  async paymentPendingList(
+    user: AuthenticatedUser,
+    query: BookingDashboardQueryDto,
+  ): Promise<any> {
+    const scope = await this.scopedAshrams(user);
+    if (query.ashramId && scope !== null && !scope.includes(query.ashramId))
+      throw new ForbiddenException("You do not have access to this ashram.");
+    const filter: any = {
+      deletedAt: null,
+      status: "pending",
+      paymentStatus: "pending",
+      ...(query.ashramId
+        ? { ashramId: query.ashramId }
+        : scope === null
+          ? {}
+          : { ashramId: { $in: scope } }),
+    };
+    if (query.search)
+      filter.$or = [
+        { bookingId: new RegExp(query.search, "i") },
+        { reservationNumber: new RegExp(query.search, "i") },
+      ];
     const page = Math.max(1, Number(query?.page) || 1);
     const limit = Math.min(100, Math.max(1, Number(query?.limit) || 20));
 

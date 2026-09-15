@@ -956,7 +956,7 @@ export const AdminDashboard: React.FC = () => {
               <QuickPill
                 icon={<Building2 size={18} />}
                 tone="bg-pink-100 text-pink-600"
-                label="Registered owners"
+                label="Registered Owners to Register Stays"
                 value={formatIndianNumber(system?.users?.owners ?? 0)}
               />
             </div>
@@ -1070,7 +1070,7 @@ export const AdminDashboard: React.FC = () => {
 
           <StatTile label="Verified ashrams" value={formatIndianNumber(system?.ashrams?.approved ?? 0)} caption={<span className="text-gray-400">{formatIndianNumber(system?.ashrams?.pending ?? 0)} awaiting verification</span>} />
           <StatTile label="Pilgrims booked" value={formatIndianNumber(system?.users?.pilgrims ?? 0)} caption={<span className="text-gray-400">Distinct pilgrims with bookings</span>} />
-          <StatTile label="Registered owners" value={formatIndianNumber(system?.users?.owners ?? 0)} caption={<span className="text-gray-400">Across authorized ashrams</span>} />
+          <StatTile label="Registered Owners to Register Stays" value={formatIndianNumber(system?.users?.owners ?? 0)} caption={<span className="text-gray-400">Across authorized ashrams</span>} />
           {(overview?.modules ?? []).map((module) => {
             // Event registration is free, so a revenue tile would report a
             // meaningless zero. That stream reports attendance instead.

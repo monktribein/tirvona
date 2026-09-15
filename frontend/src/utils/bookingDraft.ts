@@ -15,7 +15,7 @@ export interface BookingDraftPayload {
     meals: boolean;
     parking: boolean;
     locker: boolean;
-    donation: number;
+    donation?: number;
   };
   couponCode?: string;
   appliedDiscount?: number;

@@ -120,7 +120,7 @@ const PartnerPage: React.FC = () => {
             href="#register-form"
             className="inline-flex items-center gap-2 min-h-[48px] px-8 py-3 bg-[#D4AF37] text-[#0B192C] font-extrabold text-sm rounded-full shadow-lg"
           >
-            Register Your Ashram <ArrowRight size={15} />
+            Register Owners to Register Stays <ArrowRight size={15} />
           </a>
         </div>
       </section>
@@ -231,7 +231,7 @@ const PartnerPage: React.FC = () => {
               className="font-extrabold text-[#0B192C] dark:text-white"
               style={{ fontSize: "clamp(1.1rem, 4vw, 1.4rem)" }}
             >
-              Register Your Ashram
+              Register Owners to Register Stays
             </h2>
             <p className="text-xs text-gray-500">
               Our team will contact you within 24 hours to begin the

@@ -154,6 +154,10 @@ export const bookingService = {
   history: () => api.get("/bookings/history"),
   dashboard: (params: Record<string, string> = {}) =>
     api.get("/bookings/dashboard", { params }),
+  paymentPending: (params: Record<string, string> = {}) =>
+    api.get("/bookings/payment-pending", { params }),
+  manualConfirm: (id: string, data: unknown) =>
+    api.post(`/bookings/${id}/manual-confirm`, data),
   checkin: (id: string, checkInCode: string) =>
     api.post(`/bookings/${id}/checkin`, { checkInCode }),
   checkout: (id: string) => api.post(`/bookings/${id}/checkout`, {}),

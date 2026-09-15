@@ -66,6 +66,7 @@ import {
   Mail,
   Globe,
   Bed,
+  BedDouble,
   CheckCircle,
   Award,
   X,
@@ -272,7 +273,6 @@ export const AshramDetailPage: React.FC = () => {
   const [meals, setMeals] = useState(false);
   const [parking, setParking] = useState(false);
   const [locker, setLocker] = useState(false);
-  const [donation, setDonation] = useState("");
 
   const [adults, setAdults] = useState(initialAdults);
   const [children, setChildren] = useState(initialChildren);
@@ -429,11 +429,6 @@ export const AshramDetailPage: React.FC = () => {
         if (s.meals || s.meals?.ordered) setMeals(true);
         if (s.parking || s.parking?.ordered) setParking(true);
         if (s.locker || s.locker?.ordered) setLocker(true);
-        if (s.donation) {
-          const donVal =
-            typeof s.donation === "object" ? s.donation.amount : s.donation;
-          setDonation(donVal ? donVal.toString() : "");
-        }
 
         if (pb.couponCode) {
           setCouponCode(pb.couponCode);
@@ -464,7 +459,6 @@ export const AshramDetailPage: React.FC = () => {
     setMeals(false);
     setParking(false);
     setLocker(false);
-    setDonation("");
     setCouponCode("");
     setAppliedDiscount(0);
     setAppliedOfferData(null);
@@ -609,7 +603,7 @@ export const AshramDetailPage: React.FC = () => {
     const qty = addOnQuantities[item._id] || 0;
     if (qty > 0) {
       let itemTotal = item.price * qty;
-      if (item.unit === "per_day") {
+      if (item.unit === "per_day" || item.unit === "per_night" || item.unit === "per_bed") {
         itemTotal = item.price * qty * daysCount;
       } else if (item.unit === "per_person") {
         itemTotal = item.price * qty * (adults + children);
@@ -633,8 +627,7 @@ export const AshramDetailPage: React.FC = () => {
   const lockerCalc = locker ? 50 * daysCount : 0;
   const legacyServicesCalc = prasadCalc + mealsCalc + parkingCalc + lockerCalc;
   const servicesCalc = dynamicAddOnsCalc + legacyServicesCalc;
-  const donationCalc = parseFloat(donation) || 0;
-  const subtotalCalc = basePriceCalc + servicesCalc + donationCalc;
+  const subtotalCalc = basePriceCalc + servicesCalc;
 
   const [reservationSeconds, setReservationSeconds] = useState<number>(600);
   const [timerActive, setTimerActive] = useState<boolean>(false);
@@ -791,7 +784,6 @@ export const AshramDetailPage: React.FC = () => {
             meals: { ordered: meals },
             parking: { ordered: parking },
             locker: { ordered: locker },
-            donation: { amount: parseFloat(donation) || 0 },
             selectedAddOns: activeAddOnsList,
           },
           ...(appliedPromo ? { promoCode: appliedPromo } : {}),
@@ -819,7 +811,6 @@ export const AshramDetailPage: React.FC = () => {
     meals,
     parking,
     locker,
-    donation,
     appliedPromo,
     JSON.stringify(addOnQuantities),
   ]);
@@ -964,7 +955,6 @@ export const AshramDetailPage: React.FC = () => {
           meals,
           parking,
           locker,
-          donation: parseFloat(donation) || 0,
         },
         couponCode,
         appliedDiscount,
@@ -992,7 +982,6 @@ export const AshramDetailPage: React.FC = () => {
     checkOut,
     children,
     couponCode,
-    donation,
     locker,
     meals,
     parking,
@@ -1029,7 +1018,6 @@ export const AshramDetailPage: React.FC = () => {
           meals,
           parking,
           locker,
-          donation: parseFloat(donation) || 0,
         },
         couponCode,
         appliedDiscount,
@@ -1072,7 +1060,6 @@ export const AshramDetailPage: React.FC = () => {
         meals: { ordered: meals },
         parking: { ordered: parking },
         locker: { ordered: locker },
-        donation: { amount: parseFloat(donation) || 0 },
       },
       promoCode: couponCode ? couponCode.trim().toUpperCase() : undefined,
       appliedOfferId: appliedOfferData?.offerId || undefined,
@@ -2004,10 +1991,17 @@ export const AshramDetailPage: React.FC = () => {
                             >
                               <div className="space-y-0.5 flex-1 min-w-0">
                                 <div className="flex items-center gap-1.5">
-                                  <Sparkles
-                                    size={13}
-                                    className="text-[#0A4DA6] shrink-0"
-                                  />
+                                  {item.category === "bed" || /bed/i.test(item.name || "") ? (
+                                    <BedDouble
+                                      size={14}
+                                      className="text-[#0A4DA6] shrink-0"
+                                    />
+                                  ) : (
+                                    <Sparkles
+                                      size={13}
+                                      className="text-[#0A4DA6] shrink-0"
+                                    />
+                                  )}
                                   <span className="font-extrabold text-[#0B192C] dark:text-white truncate">
                                     {item.name}
                                   </span>
@@ -2066,20 +2060,6 @@ export const AshramDetailPage: React.FC = () => {
                         })}
                     </div>
                   )}
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-gray-400 flex items-center gap-1">
-                    Stay Donation (₹){" "}
-                    <Heart size={10} className="text-danger fill-danger" />
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="e.g. 500"
-                    value={donation}
-                    onChange={(e) => setDonation(e.target.value)}
-                    className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs font-semibold"
-                  />
                 </div>
 
                 {(offersLoading || availableOffers.length > 0) && (
@@ -2354,13 +2334,6 @@ export const AshramDetailPage: React.FC = () => {
                     <div className="flex justify-between text-gray-600 dark:text-gray-300">
                       <span>Add-on Services:</span>
                       <span>{formatCurrency(servicesShownCalc)}</span>
-                    </div>
-                  )}
-
-                  {donationCalc > 0 && (
-                    <div className="flex justify-between text-gray-600 dark:text-gray-300">
-                      <span>Stay Donation:</span>
-                      <span>{formatCurrency(donationCalc)}</span>
                     </div>
                   )}
 

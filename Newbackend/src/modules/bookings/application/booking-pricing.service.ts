@@ -167,7 +167,7 @@ export class BookingPricingService {
         addon.maxQuantity ?? 10,
       );
       const multiplier =
-        addon.unit === "per_day"
+        addon.unit === "per_day" || addon.unit === "per_bed" || addon.unit === "per_night"
           ? dates.length
           : addon.unit === "per_person"
             ? dto.guestsCount
@@ -193,7 +193,7 @@ export class BookingPricingService {
     const services: any = {
       selectedAddOns: selected,
       donation: {
-        amount: Math.max(0, Number(dto.services?.donation?.amount) || 0),
+        amount: 0,
       },
     };
     for (const key of Object.keys(defaults) as (keyof typeof defaults)[]) {
@@ -202,8 +202,8 @@ export class BookingPricingService {
       services[key] = { ordered, price };
       servicesPrice += price;
     }
-    const donationAmount = services.donation.amount;
-    const originalAmount = basePrice + servicesPrice + donationAmount;
+    const donationAmount = 0;
+    const originalAmount = basePrice + servicesPrice;
     const extraGuestAmount =
       Math.max(0, dto.guestsCount - 2) * 200 * dates.length;
 
