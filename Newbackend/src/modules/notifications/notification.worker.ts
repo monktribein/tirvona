@@ -716,8 +716,12 @@ export class NotificationWorker
     if (!bookingId) return null;
     const booking: any = await this.bookings
       .findById(String(bookingId))
+      // `checkInCode` is a normally selected field, so it is listed plainly. A
+      // "+checkInCode" prefix only forces in fields marked select:false; on this
+      // field Mongoose drops it from an inclusive projection, which sent "-"
+      // instead of the stored code the check-in QR and counter use.
       .select(
-        "+checkInCode bookingId checkInDate checkOutDate guestsCount roomsBookedCount pricing walkInGuest reservationExpiresAt checkedInAt checkedOutAt assignedRoomNumbers cancellation rooms",
+        "checkInCode bookingId checkInDate checkOutDate guestsCount roomsBookedCount pricing walkInGuest reservationExpiresAt checkedInAt checkedOutAt assignedRoomNumbers cancellation rooms",
       )
       .populate("ashramId", "name address")
       .populate("rooms.roomId", "name type")
