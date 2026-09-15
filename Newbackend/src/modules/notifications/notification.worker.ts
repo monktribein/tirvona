@@ -717,10 +717,10 @@ export class NotificationWorker
     const booking: any = await this.bookings
       .findById(String(bookingId))
       .select(
-        "+checkInCode bookingId checkInDate checkOutDate guestsCount roomsBookedCount pricing walkInGuest reservationExpiresAt checkedInAt checkedOutAt assignedRoomNumbers cancellation",
+        "+checkInCode bookingId checkInDate checkOutDate guestsCount roomsBookedCount pricing walkInGuest reservationExpiresAt checkedInAt checkedOutAt assignedRoomNumbers cancellation rooms",
       )
       .populate("ashramId", "name address")
-      .populate("roomId", "name type")
+      .populate("rooms.roomId", "name type")
       .populate("customerId", "name")
       .lean();
     if (!booking) return null;
@@ -730,7 +730,15 @@ export class NotificationWorker
       ashramName: booking.ashramId?.name,
       ashramCity: booking.ashramId?.address?.city,
       ashramState: booking.ashramId?.address?.state,
-      roomName: booking.roomId?.name,
+      // A stay can book several room categories; each name is shown once.
+      roomName:
+        Array.from(
+          new Set(
+            (booking.rooms ?? [])
+              .map((room: any) => room?.roomId?.name)
+              .filter(Boolean),
+          ),
+        ).join(", ") || undefined,
       checkInDate: booking.checkInDate,
       checkOutDate: booking.checkOutDate,
       guestsCount: booking.guestsCount,
