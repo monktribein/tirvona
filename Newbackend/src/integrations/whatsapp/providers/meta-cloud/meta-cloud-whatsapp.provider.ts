@@ -5,8 +5,12 @@ import {
   META_CLOUD_PROVIDER_NAME,
   WHATSAPP_TEMPLATE,
 } from "../../constants/whatsapp.constants";
-import { WhatsAppIntegrationError } from "../../errors/whatsapp.errors";
+import {
+  WhatsAppDeliveryUnconfirmedError,
+  WhatsAppIntegrationError,
+} from "../../errors/whatsapp.errors";
 import type {
+  WhatsAppFollowUpResult,
   WhatsAppProviderRequest,
   WhatsAppProviderResult,
   WhatsAppTemplateKey,
@@ -66,12 +70,15 @@ export class MetaCloudWhatsAppProvider implements WhatsAppProvider {
    * logical event and that event must have an approved template configured.
    */
   supportsTransactional(request: WhatsAppProviderRequest): boolean {
+    const template = request.metaEvent
+      ? this.transactionalTemplateFor(request.metaEvent)
+      : undefined;
     return (
       request.messageType !== WHATSAPP_TEMPLATE.AUTH_OTP &&
-      Boolean(
-        request.metaEvent &&
-          this.transactionalTemplateFor(request.metaEvent)?.name,
-      )
+      Boolean(template?.name) &&
+      // A template approved with an image header cannot be sent without one,
+      // so such a message keeps its existing delivery path instead.
+      (!template?.headerImage || Boolean(request.followUpImage))
     );
   }
 
@@ -106,7 +113,7 @@ export class MetaCloudWhatsAppProvider implements WhatsAppProvider {
         reason: "dry_run",
       };
     }
-    return this.client.sendTransactionalTemplate(request, {
+    const base = {
       name: template.name,
       language: template.language,
       parameterFormat: this.config.metaCloud.parameterFormat ?? "positional",
@@ -114,7 +121,84 @@ export class MetaCloudWhatsAppProvider implements WhatsAppProvider {
         name,
         text: metaParameterText(request.templateVariables?.[name]),
       })),
-    });
+    } as const;
+
+    if (template.headerImage) {
+      if (!request.followUpImage)
+        throw new WhatsAppIntegrationError(
+          "Meta template needs a header image that this notification does not carry",
+          "TEMPLATE_UNCONFIGURED",
+        );
+      // The image travels inside the approved template, so it reaches the
+      // guest outside the 24-hour window. It is uploaded before anything is
+      // sent, so a failed upload leaves no message behind and is safe to retry.
+      const headerImageId = await this.client.uploadMedia(
+        request,
+        request.followUpImage,
+      );
+      const result = await this.client.sendTransactionalTemplate(request, {
+        ...base,
+        headerImageId,
+      });
+      return result.status === "accepted"
+        ? { ...result, followUp: { status: "accepted", reason: "template_header" } }
+        : result;
+    }
+
+    const result = await this.client.sendTransactionalTemplate(request, base);
+    if (result.status !== "accepted" || !request.followUpImage) return result;
+    return { ...result, followUp: await this.sendFollowUpImage(request) };
+  }
+
+  /**
+   * Uploads and sends the follow-up image once the template is accepted. It
+   * never throws: the template is already on its way, and an error here would
+   * make the job retry and deliver the template a second time. The outcome is
+   * returned for the worker to record instead.
+   */
+  private async sendFollowUpImage(
+    request: WhatsAppProviderRequest,
+  ): Promise<WhatsAppFollowUpResult> {
+    const image = request.followUpImage;
+    if (!image) return { status: "skipped", reason: "no_image" };
+    let outcome: WhatsAppFollowUpResult;
+    try {
+      const mediaId = await this.client.uploadMedia(request, image);
+      const sent = await this.client.sendImageMessage(
+        request,
+        mediaId,
+        image.caption,
+      );
+      outcome = {
+        status: "accepted",
+        ...(sent.providerMessageId
+          ? { providerMessageId: sent.providerMessageId }
+          : {}),
+      };
+    } catch (error) {
+      outcome =
+        error instanceof WhatsAppDeliveryUnconfirmedError
+          ? { status: "unconfirmed", reason: "image_response_unconfirmed" }
+          : {
+              status: "failed",
+              reason:
+                error instanceof WhatsAppIntegrationError
+                  ? error.code
+                  : "UNEXPECTED",
+            };
+    }
+    this.logger.log(
+      JSON.stringify({
+        event: "whatsapp.follow_up_image_result",
+        provider: META_CLOUD_PROVIDER_NAME,
+        messageType: request.messageType,
+        metaEvent: request.metaEvent,
+        requestId: request.correlationId || request.idempotencyKey,
+        status: outcome.status,
+        reason: outcome.reason,
+      }),
+    );
+    return outcome;
   }
 
   async sendMessage(

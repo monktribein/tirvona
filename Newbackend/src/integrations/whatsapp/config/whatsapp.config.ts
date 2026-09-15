@@ -166,6 +166,12 @@ export interface MetaTransactionalTemplateConfig {
   name: string;
   language: string;
   bodyVariables: readonly string[];
+  /**
+   * The approved template has an IMAGE header (e.g. the parking pass QR). Set
+   * with `WHATSAPP_META_TEMPLATE_<EVENT>_HEADER_IMAGE=true` only once such a
+   * template is approved; the image then travels inside the template itself.
+   */
+  headerImage: boolean;
 }
 
 /**
@@ -193,6 +199,7 @@ const metaTransactionalTemplates = (): Record<
             process.env[`${prefix}_BODY_VARS`],
             META_TRANSACTIONAL_TEMPLATE_SPEC[event].bodyVariables,
           ),
+          headerImage: bool(process.env[`${prefix}_HEADER_IMAGE`], false),
         },
       ];
     }),

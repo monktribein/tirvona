@@ -338,6 +338,21 @@ export class NotificationWorker
           );
           // The booking context loaded above is reused rather than refetched.
           let whatsappUnconfirmed = false;
+          // A parking confirmation also carries the pass QR, drawn from the
+          // stored credential exactly as the pass page draws it. Nothing is
+          // re-issued or re-sealed, and a revoked pass is never sent.
+          const parkingQrImage =
+            data.domain === "parking" &&
+            data.event === "booking_confirmed" &&
+            parkingPass?.qrToken &&
+            ["active", "used"].includes(String(parkingPass.qrStatus))
+              ? (
+                  await this.buildQrAttachment(
+                    parkingPass.qrToken,
+                    "tirvona-parking-pass",
+                  )
+                )[0]?.content
+              : undefined;
           const whatsapp = await this.whatsapp
             .sendOutboxEvent({
               domain: data.domain,
@@ -357,6 +372,7 @@ export class NotificationWorker
               aarti: aartiPass ?? undefined,
               eventPass: eventPass ?? undefined,
               ...(data.data ? { data: data.data } : {}),
+              ...(parkingQrImage ? { parkingQrImage } : {}),
               ...(outboxRow?.createdAt
                 ? { occurredAt: outboxRow.createdAt }
                 : {}),
@@ -406,6 +422,22 @@ export class NotificationWorker
                           whatsappProviderMessageId,
                       }
                     : {}),
+                  // The follow-up QR image is recorded on its own; it is never
+                  // retried, so a retry cannot resend the template.
+                  ...(whatsapp.followUp
+                    ? {
+                        "meta.whatsappQrStatus": whatsapp.followUp.status,
+                        ...(whatsapp.followUp.reason
+                          ? { "meta.whatsappQrReason": whatsapp.followUp.reason }
+                          : {}),
+                        ...(whatsapp.followUp.providerMessageId
+                          ? {
+                              "meta.whatsappQrProviderMessageId":
+                                whatsapp.followUp.providerMessageId,
+                            }
+                          : {}),
+                      }
+                    : {}),
                 },
               },
             );
@@ -432,6 +464,7 @@ export class NotificationWorker
                 ? "unconfirmed"
                 : whatsapp?.status || "not_handled",
               reason: whatsapp?.reason,
+              qrFollowUp: whatsapp?.followUp?.status,
             }),
           );
         }
@@ -778,7 +811,7 @@ export class NotificationWorker
     const qr: any = await this.parkingQrCodes
       .findOne({ bookingId: booking._id })
       .sort({ version: -1 })
-      .select("displayCode +token")
+      .select("displayCode status +token")
       .lean();
     const siteUrl =
       this.config.get<string>("frontendUrl") || "https://www.tirvona.com";
@@ -792,6 +825,7 @@ export class NotificationWorker
       exitAt: booking.exitAt,
       displayCode: qr?.displayCode,
       qrToken: qr?.token,
+      qrStatus: qr?.status,
       passUrl: booking.bookingReference
         ? `${siteUrl}/parking/booking/${booking.bookingReference}`
         : undefined,
