@@ -1,4 +1,5 @@
 import type { WHATSAPP_TEMPLATE } from "../constants/whatsapp.constants";
+import type { MetaTransactionalEvent } from "../constants/whatsapp-meta-templates.constants";
 import type {
   WhatsAppParkingContext,
   WhatsAppStayContext,
@@ -26,6 +27,12 @@ export interface WhatsAppProviderRequest {
    * template's components.
    */
   templateVariables?: Readonly<Record<string, WhatsAppTemplateValue>>;
+  /**
+   * The logical transactional event behind the message. Meta Cloud sends it
+   * only once an approved template is configured for this event; every other
+   * provider ignores it.
+   */
+  metaEvent?: MetaTransactionalEvent;
 }
 
 export interface WhatsAppProviderResult {
@@ -44,6 +51,10 @@ export interface WhatsAppAartiContext {
   amountPaid?: number;
   refundAmount?: number;
   currency?: string;
+  contactPhone?: string;
+  passCount?: number;
+  checkedInAt?: Date | string;
+  checkedInCount?: number;
 }
 
 export interface WhatsAppEventContext {
@@ -55,6 +66,10 @@ export interface WhatsAppEventContext {
   startsAt?: Date | string;
   amountPaid?: number;
   currency?: string;
+  seats?: number;
+  contactPhone?: string;
+  checkedInAt?: Date | string;
+  checkedInCount?: number;
 }
 
 export type WhatsAppDomain =
@@ -83,4 +98,8 @@ export interface WhatsAppOutboxNotification {
   aarti?: WhatsAppAartiContext;
   /** Event-registration pass details; `event` above is the outbox event name. */
   eventPass?: WhatsAppEventContext;
+  /** String payload stored on the outbox row, e.g. refund amount and number. */
+  data?: Readonly<Record<string, string>>;
+  /** When the outbox row was written, i.e. when the transition happened. */
+  occurredAt?: Date | string;
 }

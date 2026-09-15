@@ -11,6 +11,7 @@ import type { Model } from "mongoose";
 import { AARTI_MODEL } from "../aarti/domain/aarti.constants";
 import { EVENT_MODEL } from "../events/domain/event.constants";
 import type { NotificationJob } from "./notification.worker";
+import { WHATSAPP_TEST_MODE_BLOCK_REASON } from "../../integrations/whatsapp/utils/whatsapp-test-recipients.util";
 
 const OUTBOX_POLL_NAME = "notification-outbox-poll";
 const OUTBOX_POLL_INTERVAL_MS = 5_000;
@@ -113,7 +114,11 @@ export class NotificationOutboxService implements OnApplicationBootstrap {
         status: "sent",
         event: "booking_confirmed",
         recipientPhone: { $exists: true, $ne: "" },
-        "meta.whatsappStatus": { $ne: "sent" },
+        // An unconfirmed send may already be on the guest's phone.
+        "meta.whatsappStatus": { $nin: ["sent", "unconfirmed"] },
+        // Blocked by WhatsApp test mode: never delivered later, so turning
+        // test mode off cannot release a backlog to real customers.
+        "meta.whatsappReason": { $ne: WHATSAPP_TEST_MODE_BLOCK_REASON },
         createdAt: {
           $gte: new Date(Date.now() - WHATSAPP_RECOVERY_WINDOW_MS),
         },
@@ -159,7 +164,10 @@ export class NotificationOutboxService implements OnApplicationBootstrap {
         summary.alreadyRegistered += 1;
       }
       await this.booking.updateOne(
-        { _id: row._id, "meta.whatsappStatus": { $ne: "sent" } },
+        {
+          _id: row._id,
+          "meta.whatsappStatus": { $nin: ["sent", "unconfirmed"] },
+        },
         { $set: { "meta.whatsappRecoveryJobId": jobId } },
       );
       this.logger.log(
