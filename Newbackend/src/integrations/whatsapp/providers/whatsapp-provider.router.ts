@@ -6,6 +6,7 @@ import {
 } from "../constants/whatsapp.constants";
 import {
   WhatsAppAllProvidersFailedError,
+  WhatsAppDeliveryUnconfirmedError,
   WhatsAppIntegrationError,
 } from "../errors/whatsapp.errors";
 import type {
@@ -21,8 +22,11 @@ type LogContext = { messageType: string; requestId: string };
 
 /**
  * Routes OTPs through Meta Cloud first while preserving MSG91 and AK NEXUS as
- * fallbacks. Non-OTP notifications follow the original MSG91 -> AK NEXUS path.
- * Each provider is attempted at most once per service-level retry.
+ * fallbacks. A transactional notification goes through Meta Cloud first only
+ * when its approved template is configured; otherwise, and after a definite
+ * Meta rejection, it follows the original MSG91 -> AK NEXUS path. A send whose
+ * outcome Meta never confirmed stops without any fallback. Each provider is
+ * attempted at most once per service-level retry.
  */
 @Injectable()
 export class WhatsAppProviderRouter implements WhatsAppProvider {
@@ -104,8 +108,11 @@ export class WhatsAppProviderRouter implements WhatsAppProvider {
       // fallback provider from sending the same OTP a second time.
       return result;
     } catch (error) {
-      failures.push({ provider, error });
       this.logFailure(provider, error, context);
+      // The provider may already have delivered this message; a fallback
+      // provider would risk a second copy on the guest's phone.
+      if (error instanceof WhatsAppDeliveryUnconfirmedError) throw error;
+      failures.push({ provider, error });
       return undefined;
     }
   }
@@ -122,7 +129,10 @@ export class WhatsAppProviderRouter implements WhatsAppProvider {
       );
       return false;
     }
-    if (!this.metaCloud.supports(request.messageType)) {
+    if (
+      !this.metaCloud.supports(request.messageType) &&
+      !this.metaCloud.supportsTransactional(request)
+    ) {
       this.logSkipped(
         META_CLOUD_PROVIDER_NAME,
         "Meta Cloud does not handle this message type",

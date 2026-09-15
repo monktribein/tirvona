@@ -219,6 +219,7 @@ export const AartiNotificationSchema = new Schema(
         "aarti_reminder",
         "cancellation",
         "refund",
+        "checked_in",
         "stream_live",
       ],
       required: true,

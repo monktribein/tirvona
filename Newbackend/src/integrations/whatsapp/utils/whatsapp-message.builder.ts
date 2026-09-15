@@ -27,6 +27,12 @@ export interface WhatsAppStayContext {
   amountPaid?: number;
   totalAmount?: number;
   currency?: string;
+  contactPhone?: string;
+  reservationExpiresAt?: Date | string;
+  checkedInAt?: Date | string;
+  checkedOutAt?: Date | string;
+  roomNumbers?: string[];
+  refundAmount?: number;
 }
 
 export interface WhatsAppParkingContext {
@@ -41,6 +47,12 @@ export interface WhatsAppParkingContext {
   passUrl?: string;
   amountPaid?: number;
   currency?: string;
+  driverPhone?: string;
+  slotNumber?: string;
+  checkedInAt?: Date | string;
+  checkedOutAt?: Date | string;
+  overstayAmount?: number;
+  refundAmount?: number;
 }
 
 const TIME_ZONE = "Asia/Kolkata";
@@ -292,7 +304,13 @@ export const buildStayMessage = (
 };
 
 export const buildParkingMessage = (
-  kind: "confirmed" | "cancelled" | "reminder",
+  kind:
+    | "confirmed"
+    | "cancelled"
+    | "reminder"
+    | "checked_in"
+    | "checked_out"
+    | "expired",
   context: WhatsAppParkingContext,
   fallback: { title?: string; message?: string } = {},
 ): string => {
@@ -312,6 +330,41 @@ export const buildParkingMessage = (
   if (kind === "cancelled")
     return lines("*Parking Cancelled*", "", details, "", fallback.message);
 
+  if (kind === "checked_in")
+    return lines(
+      "*Parking Entry Recorded*",
+      "",
+      details,
+      context.slotNumber && `*Bay:* ${context.slotNumber}`,
+      formatDateTime(context.checkedInAt) &&
+        `*Entered:* ${formatDateTime(context.checkedInAt)}`,
+      "",
+      "Keep your QR pass or gate code ready for exit.",
+    );
+
+  if (kind === "checked_out") {
+    const overstay = formatMoney(context.overstayAmount, context.currency);
+    return lines(
+      "*Parking Exit Recorded*",
+      "",
+      details,
+      formatDateTime(context.checkedOutAt) &&
+        `*Exited:* ${formatDateTime(context.checkedOutAt)}`,
+      context.overstayAmount ? `*Overstay charge:* ${overstay}` : "",
+      "",
+      "Thank you for parking with Tirvona.",
+    );
+  }
+
+  if (kind === "expired")
+    return lines(
+      "*Parking Reservation Expired*",
+      "",
+      details,
+      "",
+      fallback.message,
+    );
+
   return lines(
     kind === "reminder" ? "*Parking Reminder*" : "*Parking Confirmed*",
     "",
@@ -327,7 +380,7 @@ export const buildParkingMessage = (
 };
 
 export const buildAartiMessage = (
-  kind: "confirmed" | "cancelled",
+  kind: "confirmed" | "cancelled" | "checked_in",
   context: WhatsAppAartiContext,
   fallback: { title?: string; message?: string } = {},
 ): string => {
@@ -338,6 +391,19 @@ export const buildAartiMessage = (
       `*When:* ${formatDateTime(context.scheduledAt)}`,
   );
   const refund = formatMoney(context.refundAmount, context.currency);
+
+  if (kind === "checked_in")
+    return lines(
+      "*Aarti Check-in Recorded*",
+      "",
+      greeting(context.guestName),
+      details,
+      context.checkedInCount
+        ? `*Devotees admitted:* ${context.checkedInCount}`
+        : "",
+      formatDateTime(context.checkedInAt) &&
+        `*Checked in:* ${formatDateTime(context.checkedInAt)}`,
+    );
 
   if (kind === "cancelled")
     return lines(

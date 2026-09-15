@@ -485,6 +485,7 @@ export class ParkingBookingService {
             message: `Your parking booking ${booking.bookingReference} is confirmed. Scan this gate code at the entrance.`,
             channel: "in_app",
             status: "queued",
+            recipientPhone: booking.driverPhone || "",
             pushEnabled: true,
             data: { displayCode: String(pass.displayCode) },
             meta: {
@@ -673,6 +674,28 @@ export class ParkingBookingService {
           { session },
         );
       }
+      // Mirrors the aarti cancellation row: `refund` when money is returned.
+      await this.notifications.create(
+        [
+          {
+            userId: row.customerId,
+            bookingId: row._id,
+            event: refund.refundAmount ? "refund" : "cancellation",
+            title: "Parking Booking Cancelled",
+            message: refund.refundAmount
+              ? `Parking booking ${row.bookingReference} was cancelled. ₹${refund.refundAmount} will be refunded.`
+              : `Parking booking ${row.bookingReference} was cancelled.`,
+            channel: "in_app",
+            status: "queued",
+            recipientPhone: row.driverPhone || "",
+            meta: {
+              bookingReference: row.bookingReference,
+              correlationId: `parking:${String(row._id)}:cancelled`,
+            },
+          },
+        ],
+        { session },
+      );
       return row;
     });
     return { booking, refund };

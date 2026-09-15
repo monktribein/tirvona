@@ -2,7 +2,10 @@ import { Inject, Injectable, Logger } from "@nestjs/common";
 import type { ConfigType } from "@nestjs/config";
 import { whatsappConfig } from "../../config/whatsapp.config";
 import { META_CLOUD_PROVIDER_NAME } from "../../constants/whatsapp.constants";
-import { WhatsAppIntegrationError } from "../../errors/whatsapp.errors";
+import {
+  WhatsAppDeliveryUnconfirmedError,
+  WhatsAppIntegrationError,
+} from "../../errors/whatsapp.errors";
 import type {
   WhatsAppProviderRequest,
   WhatsAppProviderResult,
@@ -38,6 +41,47 @@ export interface MetaAuthenticationTemplatePayload {
     >;
   };
 }
+
+export interface MetaTransactionalTemplate {
+  name: string;
+  language: string;
+  parameterFormat: "positional" | "named";
+  /** Ordered body parameters, already flattened and never empty. */
+  parameters: ReadonlyArray<{ name: string; text: string }>;
+}
+
+export interface MetaTransactionalTemplatePayload {
+  messaging_product: "whatsapp";
+  recipient_type: "individual";
+  to: string;
+  type: "template";
+  template: {
+    name: string;
+    language: { code: string };
+    components: Array<{
+      type: "body";
+      parameters: Array<{
+        type: "text";
+        text: string;
+        parameter_name?: string;
+      }>;
+    }>;
+  };
+}
+
+/**
+ * Connection failures that prove the request never reached Meta, so trying
+ * again cannot duplicate a message. Any other failure without a response is
+ * ambiguous: Meta may have accepted the message before the connection died.
+ */
+const NOT_SENT_CAUSES = new Set([
+  "ECONNREFUSED",
+  "ENOTFOUND",
+  "EAI_AGAIN",
+  "ENETUNREACH",
+  "EHOSTUNREACH",
+  "UND_ERR_CONNECT_TIMEOUT",
+]);
 
 /** HTTP transport for Meta's WhatsApp Cloud API. */
 @Injectable()
@@ -196,6 +240,176 @@ export class MetaCloudWhatsAppClient {
         undefined,
         { cause: error },
       );
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  /**
+   * Sends one approved transactional template. Kept apart from the
+   * authentication request so the working OTP path is left exactly as it is.
+   *
+   * A request that leaves without a confirming response raises
+   * WhatsAppDeliveryUnconfirmedError instead of a retryable error, because
+   * Meta may already have delivered it.
+   */
+  async sendTransactionalTemplate(
+    request: WhatsAppProviderRequest,
+    template: MetaTransactionalTemplate,
+  ): Promise<WhatsAppProviderResult> {
+    const {
+      graphBaseUrl,
+      apiVersion,
+      accessToken,
+      phoneNumberId,
+      businessAccountId,
+      timeoutMs,
+    } = this.config.metaCloud;
+    if (!apiVersion || !accessToken || !phoneNumberId || !businessAccountId)
+      throw new WhatsAppIntegrationError(
+        "Meta WhatsApp Cloud API configuration is incomplete",
+        "CONFIGURATION_INVALID",
+      );
+    const number = normalizeWhatsAppNumber(request.to);
+    if (!number)
+      throw new WhatsAppIntegrationError(
+        "WhatsApp recipient number is invalid",
+        "INVALID_RECIPIENT",
+      );
+    if (!template.name)
+      throw new WhatsAppIntegrationError(
+        "Meta transactional template is not configured",
+        "TEMPLATE_UNCONFIGURED",
+      );
+
+    const endpoint = `${graphBaseUrl}/${apiVersion}/${phoneNumberId}/messages`;
+    const payload: MetaTransactionalTemplatePayload = {
+      messaging_product: "whatsapp",
+      recipient_type: "individual",
+      to: number,
+      type: "template",
+      template: {
+        name: template.name,
+        language: { code: template.language },
+        components: template.parameters.length
+          ? [
+              {
+                type: "body",
+                parameters: template.parameters.map((parameter) => ({
+                  type: "text" as const,
+                  text: parameter.text,
+                  ...(template.parameterFormat === "named"
+                    ? { parameter_name: parameter.name }
+                    : {}),
+                })),
+              },
+            ]
+          : [],
+      },
+    };
+    // Parameter values carry guest details, so only their count is logged.
+    const diagnostics = {
+      provider: META_CLOUD_PROVIDER_NAME,
+      requestId: request.correlationId || request.idempotencyKey,
+      method: "POST",
+      metaEvent: request.metaEvent,
+      templateName: template.name,
+      templateLanguage: template.language,
+      parameterCount: template.parameters.length,
+      maskedNumber: maskWhatsAppNumber(number),
+      numberLength: number.length,
+    } as const;
+
+    this.logger.log(
+      JSON.stringify({
+        event: "whatsapp.provider_request",
+        ...diagnostics,
+        providerStatus: "pending",
+      }),
+    );
+
+    const abort = new AbortController();
+    const timeout = setTimeout(() => abort.abort(), timeoutMs);
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "content-type": "application/json",
+          accept: "application/json",
+        },
+        body: JSON.stringify(payload),
+        signal: abort.signal,
+      });
+      const responseText = await response.text();
+      let providerResponse: MetaCloudResponse = {};
+      try {
+        providerResponse = JSON.parse(responseText) as MetaCloudResponse;
+      } catch {
+        providerResponse = {};
+      }
+
+      if (!response.ok) {
+        const error = this.classify(response.status);
+        this.logger.warn(
+          JSON.stringify({
+            event: "whatsapp.provider_response",
+            ...diagnostics,
+            httpStatus: response.status,
+            providerStatus: error.retryable ? "transient_error" : "rejected",
+            code: error.code,
+          }),
+        );
+        throw error;
+      }
+
+      const messageId = providerResponse.messages?.[0]?.id;
+      this.logger.log(
+        JSON.stringify({
+          event: "whatsapp.provider_accepted",
+          ...diagnostics,
+          httpStatus: response.status,
+          providerStatus: "accepted",
+        }),
+      );
+      return {
+        status: "accepted",
+        provider: META_CLOUD_PROVIDER_NAME,
+        providerMessageId:
+          typeof messageId === "string" ? messageId : undefined,
+      };
+    } catch (error) {
+      if (error instanceof WhatsAppIntegrationError) throw error;
+      const timedOut = abort.signal.aborted;
+      const causeCode = (error as { cause?: { code?: unknown } } | undefined)
+        ?.cause?.code;
+      const neverSent =
+        !timedOut &&
+        typeof causeCode === "string" &&
+        NOT_SENT_CAUSES.has(causeCode);
+      this.logger.error(
+        JSON.stringify({
+          event: "whatsapp.provider_error",
+          ...diagnostics,
+          httpStatus: null,
+          providerStatus: neverSent
+            ? "network_error"
+            : timedOut
+              ? "timeout_unconfirmed"
+              : "unconfirmed",
+        }),
+      );
+      if (neverSent)
+        throw new WhatsAppIntegrationError(
+          "Meta WhatsApp request failed before reaching Meta",
+          "PROVIDER_UNAVAILABLE",
+          true,
+          undefined,
+          { cause: error },
+        );
+      throw new WhatsAppDeliveryUnconfirmedError(META_CLOUD_PROVIDER_NAME, {
+        cause: error,
+      });
     } finally {
       clearTimeout(timeout);
     }

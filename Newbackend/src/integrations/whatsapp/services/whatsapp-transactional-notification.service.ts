@@ -1,4 +1,12 @@
-import { Injectable } from "@nestjs/common";
+import {
+  Inject,
+  Injectable,
+  Logger,
+  Optional,
+  type OnModuleInit,
+} from "@nestjs/common";
+import type { ConfigType } from "@nestjs/config";
+import { whatsappConfig } from "../config/whatsapp.config";
 import {
   WHATSAPP_DOMAIN_EVENT_TEMPLATE,
   WHATSAPP_OUTBOX_EVENT_TEMPLATE,
@@ -13,15 +21,35 @@ import type {
 } from "../types/whatsapp.types";
 import { WhatsAppTemplateService } from "./whatsapp-template.service";
 import {
+  isAllowedTestRecipient,
+  WHATSAPP_TEST_MODE_BLOCK_REASON,
+} from "../utils/whatsapp-test-recipients.util";
+import {
+  metaTransactionalEventFor,
+  whatsappSuppressionReasonFor,
+  WHATSAPP_BOOKING_TYPE_LABEL,
+} from "../constants/whatsapp-meta-templates.constants";
+import {
   buildAartiMessage,
   buildEventMessage,
   buildParkingMessage,
   buildStayMessage,
+  formatDate,
   formatDateTime,
   formatMoney,
 } from "../utils/whatsapp-message.builder";
 
 type StayMessageKind = Parameters<typeof buildStayMessage>[0];
+
+/** First value that reads as a finite number; outbox data stores strings. */
+const numberOr = (...values: unknown[]): number | undefined => {
+  for (const value of values) {
+    if (value === undefined || value === null || value === "") continue;
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return undefined;
+};
 
 interface TransactionalInput {
   phone: string;
@@ -36,8 +64,43 @@ interface TransactionalInput {
 }
 
 @Injectable()
-export class WhatsAppTransactionalNotificationService {
-  constructor(private readonly templates: WhatsAppTemplateService) {}
+export class WhatsAppTransactionalNotificationService implements OnModuleInit {
+  private readonly logger = new Logger(
+    WhatsAppTransactionalNotificationService.name,
+  );
+
+  constructor(
+    private readonly templates: WhatsAppTemplateService,
+    @Optional()
+    @Inject(whatsappConfig.KEY)
+    private readonly config?: ConfigType<typeof whatsappConfig>,
+  ) {}
+
+  onModuleInit(): void {
+    if (!this.config?.testMode) return;
+    // Only the count is logged; the allow-listed numbers themselves are not.
+    this.logger.warn(
+      JSON.stringify({
+        event: "whatsapp.test_mode_enabled",
+        scope: "transactional_notifications",
+        allowedRecipients: this.config.testRecipients.length,
+      }),
+    );
+  }
+
+  /**
+   * In test mode a transactional message may only reach an allow-listed
+   * number, whichever provider would carry it. Returns the skip result for a
+   * blocked recipient, or null when the send may proceed.
+   */
+  private testModeBlock(phone: string): WhatsAppProviderResult | null {
+    if (isAllowedTestRecipient(this.config, phone)) return null;
+    return {
+      status: "skipped",
+      provider: "none",
+      reason: WHATSAPP_TEST_MODE_BLOCK_REASON,
+    };
+  }
 
   sendBookingConfirmation(input: TransactionalInput) {
     return this.send(WHATSAPP_TEMPLATE.BOOKING_CONFIRMATION, input);
@@ -94,23 +157,33 @@ export class WhatsAppTransactionalNotificationService {
 
     if (notification.parking) {
       const key = notification.event.toLowerCase();
-      const kind = key.includes("cancel")
-        ? "cancelled"
-        : key.includes("remind")
-          ? "reminder"
-          : "confirmed";
+      const kind =
+        key === "checked_in"
+          ? "checked_in"
+          : key === "checked_out"
+            ? "checked_out"
+            : key === "expired" || key === "no_show"
+              ? "expired"
+              : key.includes("cancel") || key === "refund"
+                ? "cancelled"
+                : key.includes("remind")
+                  ? "reminder"
+                  : "confirmed";
       return buildParkingMessage(kind, notification.parking, fallback);
     }
 
-    if (notification.aarti)
+    if (notification.aarti) {
+      const key = notification.event.toLowerCase();
       return buildAartiMessage(
-        notification.event.toLowerCase().includes("cancel") ||
-          notification.event.toLowerCase().includes("refund")
-          ? "cancelled"
-          : "confirmed",
+        key === "checked_in"
+          ? "checked_in"
+          : key.includes("cancel") || key.includes("refund")
+            ? "cancelled"
+            : "confirmed",
         notification.aarti,
         fallback,
       );
+    }
 
     if (notification.eventPass)
       return buildEventMessage(
@@ -221,13 +294,158 @@ export class WhatsAppTransactionalNotificationService {
       set("check_in", formatDateTime(eventPass.startsAt));
       set("amount", formatMoney(eventPass.amountPaid, currency));
     }
+
+    // Named fields for Meta's approved transactional templates. The keys above
+    // keep their meaning for MSG91 and the text provider.
+    const { data, occurredAt } = notification;
+    const refundAmount = data?.refundAmount ?? data?.amount;
+    set("booking_type", WHATSAPP_BOOKING_TYPE_LABEL[notification.domain]);
+    set(
+      "customer_name",
+      stay?.guestName ??
+        aarti?.guestName ??
+        eventPass?.guestName ??
+        notification.recipientName,
+    );
+    set("refund_status", this.refundStatus(notification));
+    set("payment_reference", data?.refundNumber);
+    set("expiry_time", formatDateTime(occurredAt));
+    if (stay) {
+      set("property_name", stay.ashramName);
+      set("check_in_date", formatDate(stay.checkInDate));
+      set("check_out_date", formatDate(stay.checkOutDate));
+      set("amount_paid", formatMoney(stay.amountPaid, currency));
+      if (stay.totalAmount !== undefined)
+        set(
+          "amount_due",
+          formatMoney(
+            Math.max(0, stay.totalAmount - (stay.amountPaid ?? 0)),
+            currency,
+          ),
+        );
+      set("payment_deadline", formatDateTime(stay.reservationExpiresAt));
+      set("check_in_code", stay.checkInCode);
+      set("check_in_time", formatDateTime(stay.checkedInAt ?? occurredAt));
+      set("check_out_time", formatDateTime(stay.checkedOutAt ?? occurredAt));
+      set(
+        "service_details",
+        stay.roomNumbers?.length
+          ? `Room ${stay.roomNumbers.join(", ")}`
+          : stay.roomName,
+      );
+      if (stay.amountPaid)
+        set(
+          "settlement_details",
+          `Amount paid ${formatMoney(stay.amountPaid, currency)}`,
+        );
+      set(
+        "refund_amount",
+        formatMoney(numberOr(refundAmount, stay.refundAmount), currency),
+      );
+    }
+    if (parking) {
+      set(
+        "parking_location",
+        [parking.locationName, parking.locationCity].filter(Boolean).join(", "),
+      );
+      set("entry_time", formatDateTime(parking.entryAt));
+      set("exit_time", formatDateTime(parking.exitAt));
+      set("amount_paid", formatMoney(parking.amountPaid, currency));
+      set("gate_code", parking.displayCode);
+      set("check_in_time", formatDateTime(parking.checkedInAt ?? occurredAt));
+      set(
+        "check_out_time",
+        formatDateTime(parking.checkedOutAt ?? occurredAt),
+      );
+      set(
+        "service_details",
+        [
+          parking.slotNumber && `Bay ${parking.slotNumber}`,
+          parking.locationName,
+          parking.vehicleNumber && `Vehicle ${parking.vehicleNumber}`,
+        ]
+          .filter(Boolean)
+          .join(", "),
+      );
+      set(
+        "settlement_details",
+        parking.overstayAmount
+          ? `Overstay charge ${formatMoney(parking.overstayAmount, currency)}`
+          : "No overstay charges",
+      );
+      set(
+        "refund_amount",
+        formatMoney(numberOr(refundAmount, parking.refundAmount), currency),
+      );
+    }
+    if (aarti) {
+      set("service_name", aarti.sessionName);
+      set("scheduled_at", formatDateTime(aarti.scheduledAt));
+      set("devotees", aarti.passCount);
+      set("amount_paid", formatMoney(aarti.amountPaid, currency));
+      set("entry_code", aarti.displayCode);
+      set("check_in_time", formatDateTime(aarti.checkedInAt ?? occurredAt));
+      set(
+        "service_details",
+        aarti.checkedInCount
+          ? `${aarti.checkedInCount} devotee(s) admitted`
+          : aarti.sessionName,
+      );
+      set(
+        "refund_amount",
+        formatMoney(numberOr(refundAmount, aarti.refundAmount), currency),
+      );
+    }
+    if (eventPass) {
+      set("event_name", eventPass.eventName);
+      set("start_time", formatDateTime(eventPass.startsAt));
+      set("venue", eventPass.venue);
+      set("seats", eventPass.seats);
+      set("entry_code", eventPass.displayCode);
+      set(
+        "check_in_time",
+        formatDateTime(eventPass.checkedInAt ?? occurredAt),
+      );
+    }
     return variables;
   }
 
-  sendOutboxEvent(
+  /** The refund state a guest reads, derived from the transition itself. */
+  private refundStatus(
+    notification: WhatsAppOutboxNotification,
+  ): string | undefined {
+    const key = notification.event.toLowerCase();
+    if (key === "refund_approved") return "Approved";
+    if (key === "refund_failed") return "Failed";
+    if (key === "refund_completed") return "Completed";
+    if (!key.includes("cancel") && key !== "refund") return undefined;
+    // Event registrations take no payment, so nothing is refundable.
+    if (notification.domain === "event") return "Not applicable";
+    const amount = numberOr(
+      notification.data?.refundAmount,
+      notification.stay?.refundAmount,
+      notification.parking?.refundAmount,
+      notification.aarti?.refundAmount,
+    );
+    return amount && amount > 0 ? "Refund initiated" : "No refund due";
+  }
+
+  async sendOutboxEvent(
     notification: WhatsAppOutboxNotification,
   ): Promise<WhatsAppProviderResult | null> {
+    const suppressed = whatsappSuppressionReasonFor(
+      notification.domain,
+      notification.event,
+    );
+    if (suppressed)
+      return { status: "skipped", provider: "none", reason: suppressed };
+    const blocked = this.testModeBlock(notification.phone);
+    if (blocked) return blocked;
     const templateKey = this.templateKeyFor(
+      notification.domain,
+      notification.event,
+    );
+    const metaEvent = metaTransactionalEventFor(
       notification.domain,
       notification.event,
     );
@@ -240,6 +458,7 @@ export class WhatsAppTransactionalNotificationService {
       variables: this.outboxVariables(notification, body),
       idempotencyKey: `${notification.domain}:${notification.notificationId}:whatsapp`,
       correlationId: notification.correlationId,
+      ...(metaEvent ? { metaEvent } : {}),
     });
   }
 
@@ -247,6 +466,8 @@ export class WhatsAppTransactionalNotificationService {
     templateKey: WhatsAppTemplateKey,
     input: TransactionalInput,
   ): Promise<WhatsAppProviderResult> {
+    const blocked = this.testModeBlock(input.phone);
+    if (blocked) return Promise.resolve(blocked);
     const variables: Record<string, WhatsAppTemplateValue> = {};
     if (input.recipientName) variables.recipient_name = input.recipientName;
     if (input.reference) variables.reference = input.reference;
