@@ -23,6 +23,7 @@ import { PARKING_MODEL } from "../parking/domain/parking.constants";
 import { AARTI_MODEL } from "../aarti/domain/aarti.constants";
 import { EVENT_MODEL } from "../events/domain/event.constants";
 import { WhatsAppTransactionalNotificationService } from "../../integrations/whatsapp/services/whatsapp-transactional-notification.service";
+import { WhatsAppDeliveryUnconfirmedError } from "../../integrations/whatsapp/errors/whatsapp.errors";
 export interface NotificationJob {
   domain: "booking" | "parking" | "community" | "aarti" | "event";
   notificationId: string;
@@ -140,7 +141,7 @@ export class NotificationWorker
     try {
       const outboxRow = await model
         .findById(data.notificationId)
-        .select("meta recipientPhone bookingId")
+        .select("meta recipientPhone bookingId registrationId createdAt")
         .lean();
       const user = await this.users
         .findById(data.userId)
@@ -285,8 +286,18 @@ export class NotificationWorker
       }
       if (data.channel === "in_app" || whatsappOnly) {
         const whatsappStatus = outboxRow?.meta?.whatsappStatus;
-        const phone = data.phone || outboxRow?.recipientPhone || user?.phone;
-        if (whatsappStatus === "sent") {
+        // The booking's own contact (walk-in guest, driver, aarti or event
+        // contact) wins over the account phone, which is used only when the
+        // booking carries no contact number of its own.
+        const domainPhone =
+          stay?.contactPhone ||
+          parkingPass?.driverPhone ||
+          aartiPass?.contactPhone ||
+          eventPass?.contactPhone;
+        const phone =
+          data.phone || outboxRow?.recipientPhone || domainPhone || user?.phone;
+        // An unconfirmed send may already be on the guest's phone.
+        if (whatsappStatus === "sent" || whatsappStatus === "unconfirmed") {
           this.logger.log(
             JSON.stringify({
               event: "notification.whatsapp_duplicate_skipped",
@@ -325,42 +336,58 @@ export class NotificationWorker
               correlationId,
             }),
           );
-          const bookingRef =
-            data.bookingId || outboxRow?.bookingId || outboxRow?.registrationId;
-          const [stay, parkingPass, aartiPass, eventPass] = await Promise.all([
-            data.domain === "booking"
-              ? this.stayContext(bookingRef)
-              : Promise.resolve(null),
-            data.domain === "parking"
-              ? this.parkingContext(bookingRef)
-              : Promise.resolve(null),
-            data.domain === "aarti"
-              ? this.aartiContext(bookingRef)
-              : Promise.resolve(null),
-            data.domain === "event"
-              ? this.eventContext(bookingRef)
-              : Promise.resolve(null),
-          ]);
-          const whatsapp = await this.whatsapp.sendOutboxEvent({
-            domain: data.domain,
-            notificationId: data.notificationId,
-            event: data.event,
-            phone,
-            recipientName: user?.name,
-            title: data.title,
-            message: data.message,
-            reference:
-              stay?.reference ??
-              parkingPass?.reference ??
-              aartiPass?.reference ??
-              eventPass?.reference,
-            stay: stay ?? undefined,
-            parking: parkingPass ?? undefined,
-            aarti: aartiPass ?? undefined,
-            eventPass: eventPass ?? undefined,
-            correlationId,
-          });
-          if (whatsapp?.status === "accepted") {
+          // The booking context loaded above is reused rather than refetched.
+          let whatsappUnconfirmed = false;
+          const whatsapp = await this.whatsapp
+            .sendOutboxEvent({
+              domain: data.domain,
+              notificationId: data.notificationId,
+              event: data.event,
+              phone,
+              recipientName: user?.name,
+              title: data.title,
+              message: data.message,
+              reference:
+                stay?.reference ??
+                parkingPass?.reference ??
+                aartiPass?.reference ??
+                eventPass?.reference,
+              stay: stay ?? undefined,
+              parking: parkingPass ?? undefined,
+              aarti: aartiPass ?? undefined,
+              eventPass: eventPass ?? undefined,
+              ...(data.data ? { data: data.data } : {}),
+              ...(outboxRow?.createdAt
+                ? { occurredAt: outboxRow.createdAt }
+                : {}),
+              correlationId,
+            })
+            .catch((error: unknown) => {
+              // Meta may already have delivered this. A job retry or a failed
+              // status would invite a second copy, so it is recorded as
+              // unconfirmed and never resent automatically.
+              if (!(error instanceof WhatsAppDeliveryUnconfirmedError))
+                throw error;
+              whatsappUnconfirmed = true;
+              return null;
+            });
+          if (whatsappUnconfirmed) {
+            whatsappAccepted = true;
+            await model.updateOne(
+              {
+                _id: data.notificationId,
+                "meta.whatsappStatus": { $ne: "sent" },
+              },
+              {
+                $set: {
+                  "meta.whatsappStatus": "unconfirmed",
+                  "meta.whatsappReason": "provider_response_unconfirmed",
+                  "meta.whatsappUnconfirmedAt": new Date(),
+                  "meta.whatsappIdempotencyKey": `${data.domain}:${data.notificationId}:whatsapp`,
+                },
+              },
+            );
+          } else if (whatsapp?.status === "accepted") {
             whatsappAccepted = true;
             whatsappProviderMessageId = whatsapp.providerMessageId ?? "";
             await model.updateOne(
@@ -401,7 +428,9 @@ export class NotificationWorker
               eventType: data.event,
               notificationId: data.notificationId,
               correlationId,
-              providerStatus: whatsapp?.status || "not_handled",
+              providerStatus: whatsappUnconfirmed
+                ? "unconfirmed"
+                : whatsapp?.status || "not_handled",
               reason: whatsapp?.reason,
             }),
           );
@@ -688,7 +717,7 @@ export class NotificationWorker
     const booking: any = await this.bookings
       .findById(String(bookingId))
       .select(
-        "+checkInCode bookingId checkInDate checkOutDate guestsCount roomsBookedCount pricing walkInGuest",
+        "+checkInCode bookingId checkInDate checkOutDate guestsCount roomsBookedCount pricing walkInGuest reservationExpiresAt checkedInAt checkedOutAt assignedRoomNumbers cancellation",
       )
       .populate("ashramId", "name address")
       .populate("roomId", "name type")
@@ -710,6 +739,12 @@ export class NotificationWorker
       amountPaid: booking.pricing?.amountPaid,
       totalAmount: booking.pricing?.totalAmount,
       currency: booking.pricing?.currency,
+      contactPhone: booking.walkInGuest?.phone || undefined,
+      reservationExpiresAt: booking.reservationExpiresAt,
+      checkedInAt: booking.checkedInAt,
+      checkedOutAt: booking.checkedOutAt,
+      roomNumbers: booking.assignedRoomNumbers,
+      refundAmount: booking.cancellation?.refundAmount,
     };
   }
 
@@ -723,7 +758,7 @@ export class NotificationWorker
     const booking: any = await this.parkingBookings
       .findById(String(bookingId))
       .select(
-        "bookingReference vehicleNumber vehicleType entryAt exitAt pricing amountPaid",
+        "bookingReference vehicleNumber vehicleType entryAt exitAt pricing amountPaid driverPhone checkedInAt checkedOutAt assignedSlotNumber cancellation",
       )
       .populate("locationId", "name address")
       .lean();
@@ -750,6 +785,13 @@ export class NotificationWorker
         : undefined,
       amountPaid: booking.pricing?.amountPaid ?? booking.amountPaid,
       currency: booking.pricing?.currency,
+      driverPhone: booking.driverPhone || undefined,
+      slotNumber: booking.assignedSlotNumber || undefined,
+      checkedInAt: booking.checkedInAt,
+      checkedOutAt: booking.checkedOutAt,
+      overstayAmount: booking.pricing?.overstayAmount,
+      refundAmount:
+        booking.cancellation?.refundAmount ?? booking.pricing?.refundAmount,
     };
   }
 
@@ -758,7 +800,9 @@ export class NotificationWorker
     if (!bookingId) return null;
     const booking: any = await this.aartiBookings
       .findById(String(bookingId))
-      .select("bookingReference contactName startsAt pricing")
+      .select(
+        "bookingReference contactName contactPhone startsAt pricing passCount checkedInAt checkedInCount",
+      )
       .populate("sessionId", "name")
       .populate("customerId", "name")
       .lean();
@@ -767,7 +811,6 @@ export class NotificationWorker
       .findOne({ bookingId: booking._id })
       .sort({ version: -1 })
       .select("displayCode +token")
-      .select("displayCode")
       .lean();
     return {
       guestName: booking.contactName || booking.customerId?.name,
@@ -779,6 +822,10 @@ export class NotificationWorker
       amountPaid: booking.pricing?.amountPaid,
       refundAmount: booking.pricing?.refundAmount,
       currency: booking.pricing?.currency,
+      contactPhone: booking.contactPhone || undefined,
+      passCount: booking.passCount,
+      checkedInAt: booking.checkedInAt,
+      checkedInCount: booking.checkedInCount,
     };
   }
 
@@ -787,7 +834,9 @@ export class NotificationWorker
     if (!registrationId) return null;
     const registration: any = await this.eventRegistrations
       .findById(String(registrationId))
-      .select("registrationReference contactName startsAt")
+      .select(
+        "registrationReference contactName contactPhone startsAt seats checkedInAt checkedInCount",
+      )
       .populate("eventId", "name venue")
       .populate("customerId", "name")
       .lean();
@@ -796,8 +845,6 @@ export class NotificationWorker
       .findOne({ registrationId: registration._id })
       .sort({ version: -1 })
       .select("displayCode +token")
-
-      .select("displayCode")
       .lean();
     return {
       guestName: registration.contactName || registration.customerId?.name,
@@ -809,6 +856,10 @@ export class NotificationWorker
       qrToken: qr?.token,
       // Registrations carry no pricing of their own, so no amount is shown.
       startsAt: registration.startsAt,
+      seats: registration.seats,
+      contactPhone: registration.contactPhone || undefined,
+      checkedInAt: registration.checkedInAt,
+      checkedInCount: registration.checkedInCount,
     };
   }
 

@@ -229,6 +229,10 @@ export const ParkingNotificationSchema = new Schema(
         "exit_reminder",
         "cancellation",
         "refund",
+        "checked_in",
+        "checked_out",
+        "expired",
+        "no_show",
       ],
       required: true,
       index: true,
@@ -246,6 +250,9 @@ export const ParkingNotificationSchema = new Schema(
       default: "queued",
       index: true,
     },
+    // The driver's phone, so WhatsApp reaches the vehicle's contact rather
+    // than whichever account happened to make the booking.
+    recipientPhone: { type: String, default: "" },
     deliveryError: String,
     providerMessageId: String,
     sentAt: Date,

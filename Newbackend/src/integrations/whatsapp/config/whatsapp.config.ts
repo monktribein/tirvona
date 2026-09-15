@@ -11,6 +11,13 @@ import type {
   WhatsAppTemplateDefinition,
   WhatsAppTemplateKey,
 } from "../types/whatsapp.types";
+import { parseTestRecipients } from "../utils/whatsapp-test-recipients.util";
+import {
+  META_TRANSACTIONAL_DEFAULT_LANGUAGE,
+  META_TRANSACTIONAL_EVENT,
+  META_TRANSACTIONAL_TEMPLATE_SPEC,
+  type MetaTransactionalEvent,
+} from "../constants/whatsapp-meta-templates.constants";
 
 const bool = (value: string | undefined, fallback: boolean): boolean =>
   value === undefined ? fallback : value.toLowerCase() === "true";
@@ -155,6 +162,42 @@ const msg91Templates = (): Record<WhatsAppTemplateKey, Msg91TemplateConfig> =>
     ]),
   ) as Record<WhatsAppTemplateKey, Msg91TemplateConfig>;
 
+export interface MetaTransactionalTemplateConfig {
+  name: string;
+  language: string;
+  bodyVariables: readonly string[];
+}
+
+/**
+ * Builds the Meta template entry for each logical transactional event, read
+ * from `WHATSAPP_META_TEMPLATE_<EVENT>` (plus optional `_LANGUAGE` and
+ * `_BODY_VARS`). The name has no default on purpose: until an approved name is
+ * configured the entry stays empty, Meta Cloud treats the event as unsupported,
+ * and the message keeps its existing MSG91 / AK NEXUS delivery path.
+ */
+const metaTransactionalTemplates = (): Record<
+  MetaTransactionalEvent,
+  MetaTransactionalTemplateConfig
+> =>
+  Object.fromEntries(
+    Object.values(META_TRANSACTIONAL_EVENT).map((event) => {
+      const prefix = `WHATSAPP_META_TEMPLATE_${event.toUpperCase()}`;
+      return [
+        event,
+        {
+          name: process.env[prefix]?.trim() ?? "",
+          language:
+            process.env[`${prefix}_LANGUAGE`]?.trim() ||
+            META_TRANSACTIONAL_DEFAULT_LANGUAGE,
+          bodyVariables: bodyVars(
+            process.env[`${prefix}_BODY_VARS`],
+            META_TRANSACTIONAL_TEMPLATE_SPEC[event].bodyVariables,
+          ),
+        },
+      ];
+    }),
+  ) as Record<MetaTransactionalEvent, MetaTransactionalTemplateConfig>;
+
 const template = (name: string | undefined): WhatsAppTemplateDefinition => ({
   name: name?.trim() ?? "",
   language: INTERNAL_DEFAULTS.templateLanguage,
@@ -166,6 +209,11 @@ export const whatsappConfig = registerAs("whatsapp", () => ({
     process.env.WHATSAPP_DRY_RUN,
     process.env.NODE_ENV !== "production",
   ),
+  // Controlled real-message testing. With test mode on, transactional
+  // notifications reach only WHATSAPP_TEST_RECIPIENTS; OTP is not restricted.
+  // Off unless explicitly "true", so production is never left restricted.
+  testMode: bool(process.env.WHATSAPP_TEST_MODE, false),
+  testRecipients: parseTestRecipients(process.env.WHATSAPP_TEST_RECIPIENTS),
   provider: INTERNAL_DEFAULTS.provider,
   retry: {
     maxAttempts: INTERNAL_DEFAULTS.retryMaxAttempts,
@@ -216,6 +264,14 @@ export const whatsappConfig = registerAs("whatsapp", () => ({
       name: META_AUTH_OTP_TEMPLATE,
       language: META_AUTH_OTP_LANGUAGE,
     },
+    // Approved templates use positional `{{1}}` placeholders unless they were
+    // created with named parameters.
+    parameterFormat:
+      process.env.WHATSAPP_META_TEMPLATE_PARAMETER_FORMAT?.trim().toLowerCase() ===
+      "named"
+        ? ("named" as const)
+        : ("positional" as const),
+    transactionalTemplates: metaTransactionalTemplates(),
   },
   templates: {
     [WHATSAPP_TEMPLATE.AUTH_OTP]: template(

@@ -32,7 +32,7 @@ export class ParkingExpiryAlertService {
         exitAt: { $gte: windowStart, $lte: windowEnd },
         expiryAlertSentAt: null,
       })
-      .select("_id customerId bookingReference")
+      .select("_id customerId bookingReference driverPhone")
       .limit(200)
       .lean();
 
@@ -47,6 +47,7 @@ export class ParkingExpiryAlertService {
         userId: booking.customerId,
         bookingId: booking._id,
         event: "exit_reminder",
+        recipientPhone: booking.driverPhone || "",
         title: "Parking expiring soon",
         message: "Your parking pass expires in 15 minutes. Tap here to extend it.",
         channel: "in_app",
