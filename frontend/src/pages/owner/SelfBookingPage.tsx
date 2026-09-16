@@ -651,9 +651,23 @@ export const SelfBookingPage: React.FC = () => {
                         {room.availableCount <= 0 ? "Full" : `${room.availableCount} available`}
                       </p>
                       {room.basePrice > 0 && (
-                        <p className="text-[11px] font-black text-[#0B192C] dark:text-white">
-                          ₹{room.basePrice}<span className="font-bold text-gray-400"> /night</span>
-                        </p>
+                        <div className="text-right">
+                          {room.isDiscountActive && room.discountPercent > 0 ? (
+                            <>
+                              <span className="text-[10px] text-gray-400 line-through mr-1 font-bold">
+                                ₹{room.basePrice}
+                              </span>
+                              <span className="text-[11px] font-black text-emerald-600 dark:text-emerald-400">
+                                ₹{room.sellingPrice || room.basePrice}
+                              </span>
+                            </>
+                          ) : (
+                            <span className="text-[11px] font-black text-[#0B192C] dark:text-white">
+                              ₹{room.basePrice}
+                            </span>
+                          )}
+                          <span className="font-bold text-gray-400 text-[10px]"> /night</span>
+                        </div>
                       )}
                     </div>
                     <div className="flex items-center mt-2 space-x-2">

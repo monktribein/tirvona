@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ashramService } from "../services";
 
 export const ALL_ASHRAMS = "all";
@@ -75,10 +75,13 @@ export function useAshramSelection({
     }
   }, [selectedAshramId, storageKey]);
 
-  const targetAshrams: any[] =
-    selectedAshramId === ALL_ASHRAMS
-      ? ashrams
-      : ashrams.filter((a: any) => a._id === selectedAshramId);
+  const targetAshrams: any[] = useMemo(
+    () =>
+      selectedAshramId === ALL_ASHRAMS
+        ? ashrams
+        : ashrams.filter((a: any) => a._id === selectedAshramId),
+    [ashrams, selectedAshramId],
+  );
 
   return {
     ashrams,

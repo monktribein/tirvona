@@ -166,6 +166,10 @@ export class SelfBookingService {
           totalInventory: Number(room.totalInventory ?? 0),
           availableCount: free.length ? Math.min(...free) : 0,
           basePrice: Number(room.basePrice ?? room.pricePerNight ?? 0),
+          discountPercent: Number(room.discountPercent ?? 0),
+          discountAmount: Number(room.discountAmount ?? 0),
+          sellingPrice: Number(room.sellingPrice ?? room.basePrice ?? room.pricePerNight ?? 0),
+          isDiscountActive: Boolean(room.isDiscountActive ?? true),
           nights: nights.length,
         };
       }),
@@ -328,6 +332,20 @@ export class SelfBookingService {
 
       const guest = await this.resolveWalkInGuest(dto, session);
 
+      const roomsWithSnapshot = rooms.map((r) => {
+        const snapshot = quote.roomsSnapshot?.find(
+          (s: any) => String(s.roomId) === String(r.roomId),
+        );
+        return {
+          roomId: r.roomId,
+          units: r.units,
+          mrp: snapshot?.mrp ?? 0,
+          discountPercentage: snapshot?.discountPercentage ?? 0,
+          discountAmount: snapshot?.discountAmount ?? 0,
+          sellingPrice: snapshot?.sellingPrice ?? 0,
+        };
+      });
+
       const [booking] = await this.bookings.create(
         [
           {
@@ -335,7 +353,7 @@ export class SelfBookingService {
             reservationNumber: reservationReference(),
             customerId: guest._id,
             ashramId: dto.ashramId,
-            rooms: rooms.map((r) => ({ roomId: r.roomId, units: r.units })),
+            rooms: roomsWithSnapshot,
             roomId: rooms[0]?.roomId,
             bookingSource: isSelf
               ? SELF_BOOKING_SOURCE

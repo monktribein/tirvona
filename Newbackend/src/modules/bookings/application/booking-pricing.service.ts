@@ -122,6 +122,7 @@ export class BookingPricingService {
       ]);
 
     let basePrice = 0;
+    let totalRoomMrp = 0;
     for (const date of dates) {
       const dateString = date.toISOString().slice(0, 10);
       for (const reqRoom of rawRooms) {
@@ -141,14 +142,56 @@ export class BookingPricingService {
           (r: any) =>
             date >= new Date(r.startDate) && date <= new Date(r.endDate),
         );
+
+        const mrp = Number(room.basePrice) || 0;
+        const isRateDiscountActive =
+          room.isDiscountActive !== false && (Number(room.discountPercent) || 0) > 0;
+        const discountPercentage = isRateDiscountActive
+          ? Math.min(90, Math.max(0, Number(room.discountPercent) || 0))
+          : 0;
+        const discountAmount = isRateDiscountActive
+          ? roundMoney((mrp * discountPercentage) / 100)
+          : 0;
+        const effectiveSellingPrice = isRateDiscountActive
+          ? Math.max(0, roundMoney(mrp - discountAmount))
+          : mrp;
+
         const daily =
           dayAvailability?.customPrice ??
           rule?.overridePrice ??
           embedded?.overridePrice ??
-          room.basePrice * (rule?.multiplier ?? embedded?.multiplier ?? 1);
+          effectiveSellingPrice * (rule?.multiplier ?? embedded?.multiplier ?? 1);
         basePrice += daily * reqRoom.units;
+        totalRoomMrp += mrp * reqRoom.units;
       }
     }
+    const totalRoomSavings = Math.max(0, roundMoney(totalRoomMrp - basePrice));
+
+    const roomsSnapshot = rawRooms.map((reqRoom) => {
+      const room = roomMap.get(String(reqRoom.roomId));
+      const mrp = Number(room.basePrice) || 0;
+      const isRateDiscountActive =
+        room.isDiscountActive !== false && (Number(room.discountPercent) || 0) > 0;
+      const discountPercentage = isRateDiscountActive
+        ? Math.min(90, Math.max(0, Number(room.discountPercent) || 0))
+        : 0;
+      const discountAmount = isRateDiscountActive
+        ? roundMoney((mrp * discountPercentage) / 100)
+        : 0;
+      const effectiveSellingPrice = isRateDiscountActive
+        ? Math.max(0, roundMoney(mrp - discountAmount))
+        : mrp;
+      return {
+        roomId: String(room._id),
+        roomName: room.name,
+        units: reqRoom.units,
+        mrp,
+        discountPercentage,
+        discountAmount,
+        sellingPrice: effectiveSellingPrice,
+        totalPrice: effectiveSellingPrice * reqRoom.units * dates.length,
+      };
+    });
     const selected: any[] = [];
     let servicesPrice = 0;
     const requested = Array.isArray(dto.services?.selectedAddOns)
@@ -306,12 +349,16 @@ export class BookingPricingService {
     return {
       room: dbRooms[0],
       rooms: dbRooms,
+      roomsSnapshot,
       dates,
       coupon,
       services,
       policy,
       pricing: {
         basePrice,
+        roomMrp: totalRoomMrp,
+        roomDiscountAmount: totalRoomSavings,
+        effectiveRoomPrice: basePrice,
         servicesPrice,
         donationAmount,
         extraGuestAmount,
@@ -325,13 +372,15 @@ export class BookingPricingService {
         platformFee,
         originalAmount,
         finalAmount: totalAmount,
-        totalSavings: discountAmount,
+        totalSavings: roundMoney(discountAmount + totalRoomSavings),
         totalAmount,
         amountPaid: 0,
         currency: "INR",
       },
       paymentSummary: {
         originalStayCost: basePrice,
+        roomMrp: totalRoomMrp,
+        roomDiscount: totalRoomSavings,
         extraGuestAmount,
         mealAmount: services.meals.price,
         servicesPrice,
@@ -342,7 +391,7 @@ export class BookingPricingService {
         gstTaxableAmount: platformFee,
         gstNote: "GST is charged on the platform fee only.",
         platformFee,
-        totalSavings: discountAmount,
+        totalSavings: roundMoney(discountAmount + totalRoomSavings),
         finalPayableAmount: totalAmount,
       },
     };

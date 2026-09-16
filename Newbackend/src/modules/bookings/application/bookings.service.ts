@@ -289,6 +289,20 @@ export class BookingsService {
         session,
       );
       const totalUnits = normalizedRooms.reduce((sum, r) => sum + r.units, 0);
+      const roomsWithSnapshot = normalizedRooms.map((reqRoom) => {
+        const snapshot = quote.roomsSnapshot?.find(
+          (s: any) => String(s.roomId) === String(reqRoom.roomId),
+        );
+        return {
+          roomId: reqRoom.roomId,
+          units: reqRoom.units,
+          mrp: snapshot?.mrp ?? 0,
+          discountPercentage: snapshot?.discountPercentage ?? 0,
+          discountAmount: snapshot?.discountAmount ?? 0,
+          sellingPrice: snapshot?.sellingPrice ?? 0,
+        };
+      });
+
       const [created] = await this.bookings.create(
         [
           {
@@ -297,7 +311,7 @@ export class BookingsService {
             identityCode,
             customerId: user.id,
             ashramId: dto.ashramId,
-            rooms: normalizedRooms,
+            rooms: roomsWithSnapshot,
             roomsBookedCount: totalUnits,
             checkInDate: new Date(dto.checkInDate),
             checkOutDate: new Date(dto.checkOutDate),

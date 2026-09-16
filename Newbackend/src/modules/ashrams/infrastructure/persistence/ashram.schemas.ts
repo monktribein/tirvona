@@ -196,6 +196,10 @@ export const RoomSchema = new Schema(
     capacity: { type: Number, required: true, min: 1 },
     totalInventory: { type: Number, required: true, min: 0 },
     basePrice: { type: Number, required: true, min: 0 },
+    discountPercent: { type: Number, default: 0, min: 0, max: 90 },
+    discountAmount: { type: Number, default: 0, min: 0 },
+    sellingPrice: { type: Number, min: 0 },
+    isDiscountActive: { type: Boolean, default: true },
     description: { type: String, trim: true, maxlength: 2000 },
     amenities: [String],
     images: [String],
@@ -219,6 +223,33 @@ export const RoomSchema = new Schema(
 );
 RoomSchema.index({ ashramId: 1, status: 1 });
 RoomSchema.index({ type: 1 });
+
+export const RoomRateSchema = new Schema(
+  {
+    ashramId: id("Ashram", true),
+    roomId: id("Room", true),
+    mrp: { type: Number, required: true, min: 0 },
+    discountPercent: { type: Number, required: true, min: 0, max: 90, default: 0 },
+    discountAmount: { type: Number, required: true, min: 0, default: 0 },
+    sellingPrice: { type: Number, required: true, min: 0 },
+    isDiscountActive: { type: Boolean, default: true },
+    isActive: { type: Boolean, default: true },
+    pricingType: {
+      type: String,
+      enum: ["standard", "seasonal", "weekend"],
+      default: "standard",
+    },
+    validFrom: Date,
+    validUntil: Date,
+    daysOfWeek: [Number],
+    notes: String,
+    createdBy: id("User"),
+    updatedBy: id("User"),
+  },
+  opts("room_rates"),
+);
+RoomRateSchema.index({ roomId: 1 }, { unique: true });
+RoomRateSchema.index({ ashramId: 1, isDiscountActive: 1 });
 
 export const BookingInventorySchema = new Schema(
   {

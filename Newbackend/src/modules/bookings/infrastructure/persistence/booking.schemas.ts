@@ -46,6 +46,10 @@ export const BookingSchema = new Schema(
       {
         roomId: id("Room", true),
         units: { type: Number, required: true, min: 1 },
+        mrp: { type: Number },
+        discountPercentage: { type: Number, default: 0 },
+        discountAmount: { type: Number, default: 0 },
+        sellingPrice: { type: Number },
       },
     ],
     checkInDate: { type: Date, required: true },
@@ -89,6 +93,9 @@ export const BookingSchema = new Schema(
     },
     pricing: {
       basePrice: { type: Number, required: true },
+      roomMrp: { type: Number },
+      roomDiscountAmount: { type: Number, default: 0 },
+      effectiveRoomPrice: { type: Number },
       servicesPrice: { type: Number, default: 0 },
       donationAmount: { type: Number, default: 0 },
       extraGuestAmount: { type: Number, default: 0 },

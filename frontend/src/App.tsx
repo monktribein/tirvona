@@ -57,6 +57,9 @@ const OwnerVisitorArticlesPage = lazy(
   () => import("./admin/content/OwnerVisitorArticlesPage"),
 );
 const OwnerAddOnsPage = lazy(() => import("./pages/owner/OwnerAddOnsPage"));
+const RateManagementPage = lazy(
+  () => import("./pages/owner/RateManagementPage"),
+);
 const OwnerBookingCenterPage = lazy(
   () => import("./pages/OwnerBookingCenterPage"),
 );
@@ -682,6 +685,13 @@ const AppContent: React.FC = () => {
             <Route path="/owner/rooms" element={<ManageRoomsPage />} />
             <Route path="/ashram-admin/rooms" element={<ManageRoomsPage />} />
             <Route path="/ashram-owner/rooms" element={<ManageRoomsPage />} />
+            <Route path="/owner/rates" element={<RateManagementPage />} />
+            <Route path="/ashram-admin/rates" element={<RateManagementPage />} />
+            <Route path="/ashram-owner/rates" element={<RateManagementPage />} />
+            <Route
+              path="/admin/manage/rooms/rates"
+              element={<RateManagementPage />}
+            />
             <Route path="/owner/calendar" element={<InventoryCalendarPage />} />
             <Route path="/ashram-admin/calendar" element={<InventoryCalendarPage />} />
             <Route path="/ashram-owner/calendar" element={<InventoryCalendarPage />} />

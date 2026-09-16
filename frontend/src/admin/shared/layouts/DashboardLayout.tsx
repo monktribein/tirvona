@@ -413,6 +413,7 @@ export const DashboardLayout: React.FC = () => {
           path: "/admin/manage/rooms/details",
         },
         { label: "Room Availability", path: "/admin/manage/rooms/availability" },
+        { label: "Rate Management", path: "/admin/manage/rooms/rates" },
         { label: "Room Pricing", path: "/admin/manage/rooms/pricing" },
         { label: "Room Inventory", path: "/admin/manage/rooms/inventory" },
         { label: "Offline Rooms (read-only)", path: "/admin/offline-inventory" },
@@ -716,6 +717,7 @@ export const DashboardLayout: React.FC = () => {
       links: [
         { label: "Total Rooms", path: `${ownerBase}/total-rooms` },
         { label: "Manage Rooms", path: `${ownerBase}/rooms` },
+        { label: "Rate Management", path: `${ownerBase}/rates` },
         { label: "Offline Rooms / Inventory", path: `${ownerBase}/offline-inventory` },
         { label: "Inventory Calendar", path: `${ownerBase}/calendar` },
       ],

@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  Optional,
 } from "@nestjs/common";
 import { randomUUID } from "node:crypto";
 import { InjectModel } from "@nestjs/mongoose";
@@ -104,6 +105,7 @@ export class AshramsService {
     @InjectModel(PARKING_MODEL.Partner) readonly parkingPartners: Model<any>,
     @InjectModel(PARKING_MODEL.Staff) readonly parkingStaff: Model<any>,
     private readonly slugs: AshramSlugService,
+    @Optional() @InjectModel("RoomRate") readonly roomRates?: Model<any>,
   ) { }
 
   private async parkingEligibleAshrams(
@@ -575,13 +577,19 @@ export class AshramsService {
           status: "active",
           deletedAt: null,
         })
-        .select("ashramId basePrice")
+        .select("ashramId basePrice sellingPrice discountPercent isDiscountActive")
         .lean();
       const cheapest = new Map<string, number>();
       for (const room of rooms as any[]) {
         const key = String(room.ashramId);
         const prior = cheapest.get(key) ?? Infinity;
-        cheapest.set(key, Math.min(prior, room.basePrice));
+        const mrp = Number(room.basePrice) || 0;
+        const active =
+          room.isDiscountActive !== false && (Number(room.discountPercent) || 0) > 0;
+        const discountPercent = active ? Math.min(90, Math.max(0, Number(room.discountPercent) || 0)) : 0;
+        const discountAmount = active ? round2((mrp * discountPercent) / 100) : 0;
+        const effectivePrice = active ? Math.max(0, round2(mrp - discountAmount)) : mrp;
+        cheapest.set(key, Math.min(prior, effectivePrice));
       }
       for (const a of missingPrice as any[]) {
         const price = cheapest.get(String(a._id));
@@ -627,6 +635,21 @@ export class AshramsService {
         .lean(),
       this.addons.find({ ashramId: id, enabled: true }).lean(),
     ]);
+    const mappedRooms = (rooms as any[]).map((r) => {
+      const mrp = round2(Number(r.basePrice) || 0);
+      const isDiscountActive = r.isDiscountActive ?? true;
+      const discountPercent = isDiscountActive ? Math.min(90, Math.max(0, Number(r.discountPercent) || 0)) : 0;
+      const discountAmount = discountPercent > 0 ? round2((mrp * discountPercent) / 100) : 0;
+      const sellingPrice = discountPercent > 0 ? Math.max(0, round2(mrp - discountAmount)) : mrp;
+      return {
+        ...r,
+        basePrice: mrp,
+        discountPercent,
+        discountAmount,
+        sellingPrice,
+        isDiscountActive,
+      };
+    });
     return {
       ashram: {
         ...ashram,
@@ -634,7 +657,7 @@ export class AshramsService {
           ? managedAddOns
           : (ashram.addOnServices ?? []),
       },
-      rooms,
+      rooms: mappedRooms,
     };
   }
 
@@ -953,7 +976,27 @@ export class AshramsService {
     const ashram = await this.ashrams.findById(dto.ashramId);
     if (!ashram) throw new NotFoundException("Stay not found");
     this.assertScope(user, ashram);
-    return this.rooms.create(dto);
+    const basePrice = round2(Number(dto.basePrice) || 0);
+    const created = await this.rooms.create({
+      ...dto,
+      basePrice,
+      discountPercent: 0,
+      discountAmount: 0,
+      sellingPrice: basePrice,
+      isDiscountActive: true,
+    });
+    if (this.roomRates) {
+      await this.roomRates.create({
+        ashramId: ashram._id,
+        roomId: created._id,
+        mrp: basePrice,
+        discountPercent: 0,
+        discountAmount: 0,
+        sellingPrice: basePrice,
+        isDiscountActive: true,
+      });
+    }
+    return created;
   }
   async updateRoom(
     user: AuthenticatedUser,
@@ -971,6 +1014,45 @@ export class AshramsService {
     const patch = Object.fromEntries(
       Object.entries(received).filter(([, value]) => value !== undefined),
     ) as Partial<CreateRoomDto>;
+
+    if (patch.basePrice !== undefined) {
+      const newMrp = round2(Number(patch.basePrice) || 0);
+      patch.basePrice = newMrp;
+      const isDiscountActive = room.isDiscountActive ?? true;
+      const discountPercent = isDiscountActive
+        ? Math.min(90, Math.max(0, Number(room.discountPercent) || 0))
+        : 0;
+      const discountAmount = discountPercent > 0
+        ? round2((newMrp * discountPercent) / 100)
+        : 0;
+      const sellingPrice = discountPercent > 0
+        ? Math.max(0, round2(newMrp - discountAmount))
+        : newMrp;
+      (patch as any).discountAmount = discountAmount;
+      (patch as any).sellingPrice = sellingPrice;
+
+      if (this.roomRates) {
+        await this.roomRates.findOneAndUpdate(
+          { roomId: room._id },
+          {
+            $set: {
+              mrp: newMrp,
+              discountAmount,
+              sellingPrice,
+              updatedAt: new Date(),
+            },
+            $setOnInsert: {
+              ashramId: room.ashramId,
+              discountPercent,
+              isDiscountActive,
+              currency: "INR",
+              createdAt: new Date(),
+            },
+          },
+          { upsert: true },
+        );
+      }
+    }
 
     if (patch.totalInventory !== undefined) {
       const inventoryDays = await this.inventory

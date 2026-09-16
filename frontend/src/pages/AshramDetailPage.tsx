@@ -73,6 +73,7 @@ import {
   Maximize2,
   Trash2,
   Edit3,
+  Tag,
 } from "lucide-react";
 import { checkAshramBookingAvailable } from "../utils/ashramAvailabilityHelper";
 
@@ -589,10 +590,30 @@ export const AshramDetailPage: React.FC = () => {
   };
 
   const daysCount = calculateDays();
-  const basePriceCalc = Object.entries(selectedRooms).reduce((acc, [roomId, qty]) => {
-    const r = rooms.find((room) => String(room._id) === roomId);
-    return acc + (r?.basePrice || 0) * qty * daysCount;
-  }, 0);
+  const roomRateCalc = Object.entries(selectedRooms).reduce(
+    (acc, [roomId, qty]) => {
+      const r = rooms.find((room) => String(room._id) === roomId);
+      const mrp = Number(r?.basePrice) || 0;
+      const active =
+        r?.isDiscountActive !== false && (Number(r?.discountPercent) || 0) > 0;
+      const sellingPrice =
+        active && r?.sellingPrice != null
+          ? Number(r.sellingPrice)
+          : active
+            ? Math.max(0, mrp - (Number(r?.discountAmount) || 0))
+            : mrp;
+      const discount = active ? Math.max(0, mrp - sellingPrice) : 0;
+      return {
+        mrpTotal: acc.mrpTotal + mrp * qty * daysCount,
+        sellingTotal: acc.sellingTotal + sellingPrice * qty * daysCount,
+        savingsTotal: acc.savingsTotal + discount * qty * daysCount,
+      };
+    },
+    { mrpTotal: 0, sellingTotal: 0, savingsTotal: 0 },
+  );
+  const basePriceCalc = roomRateCalc.sellingTotal;
+  const roomMrpCalc = roomRateCalc.mrpTotal;
+  const roomDiscountCalc = roomRateCalc.savingsTotal;
 
   let dynamicAddOnsCalc = 0;
   const activeAddOnsList: any[] = [];
@@ -736,13 +757,15 @@ export const AshramDetailPage: React.FC = () => {
   );
 
   const q = serverQuote?.pricing;
-  const stayCostCalc = q ? q.basePrice : basePriceCalc;
+  const roomSavingsShownCalc = q ? (q.roomDiscountAmount ?? roomDiscountCalc) : roomDiscountCalc;
+  const roomMrpShownCalc = q ? (q.roomMrp ?? roomMrpCalc) : roomMrpCalc;
+  const stayCostCalc = roomSavingsShownCalc > 0 ? roomMrpShownCalc : (q ? q.basePrice : basePriceCalc);
   const servicesShownCalc = q ? q.servicesPrice : servicesCalc;
   const extraGuestShownCalc = q ? q.extraGuestAmount : extraGuestCalc;
   const platformFeeShownCalc = q ? q.platformFee : platformFeeCalc;
   const gstShownCalc = q ? q.gstAmount : gstCalc;
   const discountCalc = q ? q.discountAmount : localDiscountCalc;
-  const totalSavingsCalc = roundMoney(discountCalc + loyaltyCalc);
+  const totalSavingsCalc = roundMoney(discountCalc + loyaltyCalc + roomSavingsShownCalc);
   const finalPayableCalc = Math.max(
     0,
     roundMoney(
@@ -1524,24 +1547,41 @@ export const AshramDetailPage: React.FC = () => {
                   (o: any) => isLastMinuteOffer(o) && isTargetRoomMatch(o),
                 );
 
-                let discountedPrice = r.basePrice;
-                let discountPercent = 0;
-                const isDeal = Boolean(roomDeal);
+                const mrp = Number(r.basePrice) || 0;
+                const hasRateDiscount =
+                  r.isDiscountActive !== false && (Number(r.discountPercent) || 0) > 0;
+                const rateSellingPrice =
+                  hasRateDiscount && r.sellingPrice != null
+                    ? Number(r.sellingPrice)
+                    : hasRateDiscount
+                      ? Math.max(0, mrp - (Number(r.discountAmount) || 0))
+                      : mrp;
 
-                if (isDeal && roomDeal) {
+                let discountedPrice = hasRateDiscount ? rateSellingPrice : mrp;
+                let discountPercent = hasRateDiscount ? Number(r.discountPercent) : 0;
+                let isDeal = Boolean(roomDeal) || hasRateDiscount;
+
+                if (roomDeal) {
                   if (roomDeal.discountType === "Percentage") {
-                    discountPercent = Math.min(100, Math.max(1, Number(roomDeal.discountValue) || 0));
-                    discountedPrice = Math.max(
+                    const promoPercent = Math.min(100, Math.max(1, Number(roomDeal.discountValue) || 0));
+                    const promoPrice = Math.max(
                       0,
-                      Math.round(r.basePrice * (1 - discountPercent / 100)),
+                      Math.round(mrp * (1 - promoPercent / 100)),
                     );
+                    if (promoPrice < discountedPrice) {
+                      discountedPrice = promoPrice;
+                      discountPercent = promoPercent;
+                    }
                   } else if (roomDeal.discountType === "Flat Amount") {
                     const flatVal = Number(roomDeal.discountValue) || 0;
-                    discountedPrice = Math.max(0, r.basePrice - flatVal);
-                    discountPercent =
-                      r.basePrice > 0
-                        ? Math.min(100, Math.round(((r.basePrice - discountedPrice) / r.basePrice) * 100))
-                        : 0;
+                    const promoPrice = Math.max(0, mrp - flatVal);
+                    if (promoPrice < discountedPrice) {
+                      discountedPrice = promoPrice;
+                      discountPercent =
+                        mrp > 0
+                          ? Math.min(100, Math.round(((mrp - discountedPrice) / mrp) * 100))
+                          : 0;
+                    }
                   }
                 }
 
@@ -1577,11 +1617,11 @@ export const AshramDetailPage: React.FC = () => {
                         : "border-gray-100 dark:border-slate-800 hover:bg-gray-50/50 dark:hover:bg-slate-800/10"
                     }`}
                   >
-                    {isDeal && (
+                    {isDeal && discountPercent > 0 && (
                       <div className="absolute top-0 right-0">
                         <span className="text-[9px] font-black uppercase px-3 py-1 rounded-bl-xl shadow-sm flex items-center gap-1 bg-gradient-to-r from-rose-600 to-amber-500 text-white">
                           <Sparkles size={10} />
-                          ⚡ Last Minute Deal &bull; {discountPercent}% OFF
+                          {roomDeal ? "⚡ Last Minute Deal" : "⚡ Special Rate"} &bull; {discountPercent}% OFF
                         </span>
                       </div>
                     )}
@@ -2322,6 +2362,16 @@ export const AshramDetailPage: React.FC = () => {
                     </span>
                     <span>{formatCurrency(stayCostCalc)}</span>
                   </div>
+
+                  {roomSavingsShownCalc > 0 && (
+                    <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-extrabold">
+                      <span className="flex items-center gap-1">
+                        <Tag size={12} />
+                        Special Rate Discount:
+                      </span>
+                      <span>-{formatCurrency(roomSavingsShownCalc)}</span>
+                    </div>
+                  )}
 
                   {extraGuestShownCalc > 0 && (
                     <div className="flex justify-between text-gray-600 dark:text-gray-300">
