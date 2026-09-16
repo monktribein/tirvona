@@ -1,4 +1,4 @@
-import { ForbiddenException, NotFoundException } from "@nestjs/common";
+import { ForbiddenException } from "@nestjs/common";
 import { RoomRatesService } from "./room-rates.service";
 
 describe("RoomRatesService", () => {

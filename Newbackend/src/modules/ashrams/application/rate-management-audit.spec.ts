@@ -1,10 +1,8 @@
 import {
-  BadRequestException,
   ForbiddenException,
 } from "@nestjs/common";
 import { RoomRatesService } from "./room-rates.service";
-import { UpsertRoomRateDto, BulkRoomRatesDto, ToggleRateDiscountDto } from "../presentation/dtos/room-rate.dto";
-import { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
+import { UpsertRoomRateDto, type BulkRoomRatesDto } from "../presentation/dtos/room-rate.dto";
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
 
@@ -16,13 +14,6 @@ describe("Rate Management Final Deep Audit", () => {
     email: "owner.a@example.com",
     role: "owner",
     scopedAshramIds: ["507f1f77bcf86cd799439011"],
-  } as any;
-
-  const mockOwnerB = {
-    id: "user-owner-b",
-    email: "owner.b@example.com",
-    role: "owner",
-    scopedAshramIds: ["507f1f77bcf86cd799439012"],
   } as any;
 
   const mockSuperAdmin = {
