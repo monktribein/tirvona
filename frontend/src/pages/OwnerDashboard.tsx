@@ -399,8 +399,17 @@ export const OwnerDashboard: React.FC = () => {
   // Handle Daily Override Submission
   const handleOverrideSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const roomIdToUse = selectedRoomId || myRooms[0]?._id;
+    if (!roomIdToUse) {
+      notifyRef.current(
+        "Selection Required",
+        "Please select a room category to adjust daily rate.",
+        "error",
+      );
+      return;
+    }
     try {
-      const res = await roomService.setAvailability(selectedRoomId, {
+      const res = await roomService.setAvailability(roomIdToUse, {
         date: targetDate,
         customPrice: parseFloat(customPrice) || undefined,
         maintenanceCount: parseInt(maintenanceCount) || 0,
@@ -949,6 +958,10 @@ export const OwnerDashboard: React.FC = () => {
                   onClick={() => {
                     setTargetDate(activeDetailDate);
                     setCustomPrice(activeDateMeta?.price?.toString() || "");
+                    setMaintenanceCount(activeDateMeta?.maintenance?.toString() || "0");
+                    if (!selectedRoomId && myRooms.length > 0) {
+                      setSelectedRoomId(myRooms[0]._id);
+                    }
                     setShowOverride(true);
                   }}
                   className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-[#0A4DA6] hover:text-[#0A4DA6] transition cursor-pointer flex items-center gap-1.5 shadow-2xs"
@@ -1539,6 +1552,23 @@ export const OwnerDashboard: React.FC = () => {
             </div>
 
             <div className="space-y-3">
+              {myRooms.length > 1 && (
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-400">Room Category</label>
+                  <select
+                    value={selectedRoomId || myRooms[0]?._id}
+                    onChange={(e) => setSelectedRoomId(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
+                  >
+                    {myRooms.map((room) => (
+                      <option key={room._id} value={room._id}>
+                        {room.ashramName ? `${room.name} — ${room.ashramName}` : room.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-400">Selected Date</label>
                 <input

@@ -14,6 +14,7 @@ import {
   AlertTriangle,
   CheckCircle,
   Trash2,
+  AlertCircle,
 } from "lucide-react";
 
 export const CustomerDashboard: React.FC = () => {
@@ -206,6 +207,32 @@ export const CustomerDashboard: React.FC = () => {
                     </span>
                   </div>
                 </div>
+
+                {isPending && b.paymentStatus === "pending" && (
+                  <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/30 rounded-2xl flex flex-col gap-2">
+                    <div className="flex items-start gap-2">
+                      <div className="p-1 bg-amber-100 dark:bg-amber-900/50 rounded-full text-amber-600 dark:text-amber-500 mt-0.5">
+                        <AlertCircle size={14} />
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-amber-800 dark:text-amber-400 font-extrabold block tracking-wider">
+                          Payment Incomplete
+                        </span>
+                        <span className="text-[10px] text-amber-700/80 dark:text-amber-500/80 leading-normal">
+                          Your booking is awaiting payment. Please complete payment to secure your reservation.
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 justify-end">
+                      <Link
+                        to={`/ashram/${b.ashramId?._id || b.ashramId}`}
+                        className="px-3.5 py-1.5 bg-amber-500 text-white border border-amber-600 rounded-full text-[10px] font-bold shadow-sm"
+                      >
+                        Retry Payment
+                      </Link>
+                    </div>
+                  </div>
+                )}
 
                 {isConfirmed && (
                   <div className="p-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 rounded-2xl flex items-center justify-between">

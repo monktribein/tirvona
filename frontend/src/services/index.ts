@@ -109,6 +109,29 @@ export const roomService = {
     }),
 };
 
+export const rateService = {
+  getByStay: (ashramId: string) => api.get(`/room-rates/stay/${ashramId}`),
+  getByRoom: (roomId: string) => api.get(`/room-rates/room/${roomId}`),
+  upsert: (data: {
+    ashramId: string;
+    roomId: string;
+    mrp: number;
+    discountPercent: number;
+    isDiscountActive?: boolean;
+    notes?: string;
+  }) => api.post("/room-rates", data),
+  toggleDiscount: (roomId: string, isDiscountActive: boolean) =>
+    api.patch(`/room-rates/${roomId}/toggle-discount`, { isDiscountActive }),
+  bulkUpdate: (data: {
+    ashramId: string;
+    roomIds: string[];
+    discountPercent: number;
+    isDiscountActive?: boolean;
+  }) => api.post("/room-rates/bulk", data),
+  effectiveRate: (roomId: string) =>
+    api.get(`/room-rates/effective/${roomId}`),
+};
+
 export const offlineInventoryService = {
   rooms: (params: Record<string, string> = {}) =>
     api.get("/offline-inventory/rooms", { params }),
@@ -164,6 +187,10 @@ export const bookingService = {
   history: () => api.get("/bookings/history"),
   dashboard: (params: Record<string, string> = {}) =>
     api.get("/bookings/dashboard", { params }),
+  paymentPending: (params: Record<string, string> = {}) =>
+    api.get("/bookings/payment-pending", { params }),
+  manualConfirm: (id: string, data: unknown) =>
+    api.post(`/bookings/${id}/manual-confirm`, data),
   checkin: (id: string, checkInCode: string) =>
     api.post(`/bookings/${id}/checkin`, { checkInCode }),
   checkout: (id: string) => api.post(`/bookings/${id}/checkout`, {}),

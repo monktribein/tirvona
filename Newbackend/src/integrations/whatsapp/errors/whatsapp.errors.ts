@@ -7,7 +7,8 @@ export type WhatsAppErrorCode =
   | "PROVIDER_REJECTED"
   | "PROVIDER_TIMEOUT"
   | "PROVIDER_RATE_LIMITED"
-  | "PROVIDER_UNAVAILABLE";
+  | "PROVIDER_UNAVAILABLE"
+  | "DELIVERY_UNCONFIRMED";
 
 export class WhatsAppIntegrationError extends Error {
   constructor(
@@ -40,5 +41,28 @@ export class WhatsAppAllProvidersFailedError extends WhatsAppIntegrationError {
       { cause: lastError },
     );
     this.name = "WhatsAppAllProvidersFailedError";
+  }
+}
+
+/**
+ * Raised when a transactional request left for the provider but no response
+ * confirmed it: a timeout or a connection dropped after sending. The provider
+ * may already have delivered the message, so it is neither retried nor handed
+ * to a fallback provider, either of which could put a second copy on the
+ * guest's phone.
+ */
+export class WhatsAppDeliveryUnconfirmedError extends WhatsAppIntegrationError {
+  constructor(
+    readonly provider: string,
+    options?: ErrorOptions,
+  ) {
+    super(
+      "WhatsApp delivery could not be confirmed",
+      "DELIVERY_UNCONFIRMED",
+      false,
+      undefined,
+      options,
+    );
+    this.name = "WhatsAppDeliveryUnconfirmedError";
   }
 }

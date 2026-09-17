@@ -66,12 +66,14 @@ import {
   Mail,
   Globe,
   Bed,
+  BedDouble,
   CheckCircle,
   Award,
   X,
   Maximize2,
   Trash2,
   Edit3,
+  Tag,
 } from "lucide-react";
 import { checkAshramBookingAvailable } from "../utils/ashramAvailabilityHelper";
 
@@ -91,6 +93,21 @@ import {
   trackBookingFailed,
   trackClickCall,
 } from "../lib/analytics";
+
+/**
+ * Renders an owner-set "HH:MM" policy time as "12:00 PM". Values that already
+ * carry AM/PM are shown as written; anything unset or unreadable falls back.
+ */
+const formatPolicyClock = (clock: unknown, fallback: string): string => {
+  const text = String(clock ?? "").trim();
+  if (!text) return fallback;
+  if (/\b(am|pm)\b/i.test(text)) return text;
+  const match = /^(\d{1,2}):(\d{2})/.exec(text);
+  if (!match || Number(match[1]) > 23) return fallback;
+  const hours = Number(match[1]);
+  const suffix = hours >= 12 ? "PM" : "AM";
+  return `${hours % 12 === 0 ? 12 : hours % 12}:${match[2]} ${suffix}`;
+};
 
 export const AshramDetailPage: React.FC = () => {
   const { id, city, ashramSlug } = useParams();
@@ -134,6 +151,12 @@ export const AshramDetailPage: React.FC = () => {
   // the persisted ashram id once the canonical listing has loaded.
   const currentAshramId = String(ashram?._id ?? id ?? "");
   const [rooms, setRooms] = useState<any[]>([]);
+  const [expandedRoomId, setExpandedRoomId] = useState<string | null>(null);
+  const [roomPhotoViewer, setRoomPhotoViewer] = useState<{
+    name: string;
+    images: string[];
+    index: number;
+  } | null>(null);
   const [volunteerJobs, setVolunteerJobs] = useState<VolunteerJobItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [detailError, setDetailError] = useState("");
@@ -274,7 +297,6 @@ export const AshramDetailPage: React.FC = () => {
   const [meals, setMeals] = useState(false);
   const [parking, setParking] = useState(false);
   const [locker, setLocker] = useState(false);
-  const [donation, setDonation] = useState("");
 
   const [adults, setAdults] = useState(initialAdults);
   const [children, setChildren] = useState(initialChildren);
@@ -431,11 +453,6 @@ export const AshramDetailPage: React.FC = () => {
         if (s.meals || s.meals?.ordered) setMeals(true);
         if (s.parking || s.parking?.ordered) setParking(true);
         if (s.locker || s.locker?.ordered) setLocker(true);
-        if (s.donation) {
-          const donVal =
-            typeof s.donation === "object" ? s.donation.amount : s.donation;
-          setDonation(donVal ? donVal.toString() : "");
-        }
 
         if (pb.couponCode) {
           setCouponCode(pb.couponCode);
@@ -466,7 +483,6 @@ export const AshramDetailPage: React.FC = () => {
     setMeals(false);
     setParking(false);
     setLocker(false);
-    setDonation("");
     setCouponCode("");
     setAppliedDiscount(0);
     setAppliedOfferData(null);
@@ -522,6 +538,24 @@ export const AshramDetailPage: React.FC = () => {
     setCouponMsg("");
     setTimerActive(false);
   };
+
+  useEffect(() => {
+    if (!roomPhotoViewer) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setRoomPhotoViewer(null);
+      if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+        const step = e.key === "ArrowRight" ? 1 : -1;
+        setRoomPhotoViewer((viewer) =>
+          viewer && {
+            ...viewer,
+            index: (viewer.index + step + viewer.images.length) % viewer.images.length,
+          },
+        );
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [roomPhotoViewer]);
 
   const nextImage = () => {
     const n = (ashram?.images || []).length;
@@ -579,10 +613,30 @@ export const AshramDetailPage: React.FC = () => {
   };
 
   const daysCount = calculateDays();
-  const basePriceCalc = Object.entries(selectedRooms).reduce((acc, [roomId, qty]) => {
-    const r = rooms.find((room) => String(room._id) === roomId);
-    return acc + (r?.basePrice || 0) * qty * daysCount;
-  }, 0);
+  const roomRateCalc = Object.entries(selectedRooms).reduce(
+    (acc, [roomId, qty]) => {
+      const r = rooms.find((room) => String(room._id) === roomId);
+      const mrp = Number(r?.basePrice) || 0;
+      const active =
+        r?.isDiscountActive !== false && (Number(r?.discountPercent) || 0) > 0;
+      const sellingPrice =
+        active && r?.sellingPrice != null
+          ? Number(r.sellingPrice)
+          : active
+            ? Math.max(0, mrp - (Number(r?.discountAmount) || 0))
+            : mrp;
+      const discount = active ? Math.max(0, mrp - sellingPrice) : 0;
+      return {
+        mrpTotal: acc.mrpTotal + mrp * qty * daysCount,
+        sellingTotal: acc.sellingTotal + sellingPrice * qty * daysCount,
+        savingsTotal: acc.savingsTotal + discount * qty * daysCount,
+      };
+    },
+    { mrpTotal: 0, sellingTotal: 0, savingsTotal: 0 },
+  );
+  const basePriceCalc = roomRateCalc.sellingTotal;
+  const roomMrpCalc = roomRateCalc.mrpTotal;
+  const roomDiscountCalc = roomRateCalc.savingsTotal;
 
   let dynamicAddOnsCalc = 0;
   const activeAddOnsList: any[] = [];
@@ -593,7 +647,7 @@ export const AshramDetailPage: React.FC = () => {
     const qty = addOnQuantities[item._id] || 0;
     if (qty > 0) {
       let itemTotal = item.price * qty;
-      if (item.unit === "per_day") {
+      if (item.unit === "per_day" || item.unit === "per_night" || item.unit === "per_bed") {
         itemTotal = item.price * qty * daysCount;
       } else if (item.unit === "per_person") {
         itemTotal = item.price * qty * (adults + children);
@@ -617,8 +671,7 @@ export const AshramDetailPage: React.FC = () => {
   const lockerCalc = locker ? 50 * daysCount : 0;
   const legacyServicesCalc = prasadCalc + mealsCalc + parkingCalc + lockerCalc;
   const servicesCalc = dynamicAddOnsCalc + legacyServicesCalc;
-  const donationCalc = parseFloat(donation) || 0;
-  const subtotalCalc = basePriceCalc + servicesCalc + donationCalc;
+  const subtotalCalc = basePriceCalc + servicesCalc;
 
   const [reservationSeconds, setReservationSeconds] = useState<number>(600);
   const [timerActive, setTimerActive] = useState<boolean>(false);
@@ -727,13 +780,15 @@ export const AshramDetailPage: React.FC = () => {
   );
 
   const q = serverQuote?.pricing;
-  const stayCostCalc = q ? q.basePrice : basePriceCalc;
+  const roomSavingsShownCalc = q ? (q.roomDiscountAmount ?? roomDiscountCalc) : roomDiscountCalc;
+  const roomMrpShownCalc = q ? (q.roomMrp ?? roomMrpCalc) : roomMrpCalc;
+  const stayCostCalc = roomSavingsShownCalc > 0 ? roomMrpShownCalc : (q ? q.basePrice : basePriceCalc);
   const servicesShownCalc = q ? q.servicesPrice : servicesCalc;
   const extraGuestShownCalc = q ? q.extraGuestAmount : extraGuestCalc;
   const platformFeeShownCalc = q ? q.platformFee : platformFeeCalc;
   const gstShownCalc = q ? q.gstAmount : gstCalc;
   const discountCalc = q ? q.discountAmount : localDiscountCalc;
-  const totalSavingsCalc = roundMoney(discountCalc + loyaltyCalc);
+  const totalSavingsCalc = roundMoney(discountCalc + loyaltyCalc + roomSavingsShownCalc);
   const finalPayableCalc = Math.max(
     0,
     roundMoney(
@@ -775,7 +830,6 @@ export const AshramDetailPage: React.FC = () => {
             meals: { ordered: meals },
             parking: { ordered: parking },
             locker: { ordered: locker },
-            donation: { amount: parseFloat(donation) || 0 },
             selectedAddOns: activeAddOnsList,
           },
           ...(appliedPromo ? { promoCode: appliedPromo } : {}),
@@ -803,7 +857,6 @@ export const AshramDetailPage: React.FC = () => {
     meals,
     parking,
     locker,
-    donation,
     appliedPromo,
     JSON.stringify(addOnQuantities),
   ]);
@@ -953,7 +1006,6 @@ export const AshramDetailPage: React.FC = () => {
           meals,
           parking,
           locker,
-          donation: parseFloat(donation) || 0,
         },
         couponCode,
         appliedDiscount,
@@ -981,7 +1033,6 @@ export const AshramDetailPage: React.FC = () => {
     checkOut,
     children,
     couponCode,
-    donation,
     locker,
     meals,
     parking,
@@ -1026,7 +1077,6 @@ export const AshramDetailPage: React.FC = () => {
           meals,
           parking,
           locker,
-          donation: parseFloat(donation) || 0,
         },
         couponCode,
         appliedDiscount,
@@ -1089,7 +1139,6 @@ export const AshramDetailPage: React.FC = () => {
         meals: { ordered: meals },
         parking: { ordered: parking },
         locker: { ordered: locker },
-        donation: { amount: parseFloat(donation) || 0 },
       },
       promoCode: couponCode ? couponCode.trim().toUpperCase() : undefined,
       appliedOfferId: appliedOfferData?.offerId || undefined,
@@ -1596,24 +1645,41 @@ export const AshramDetailPage: React.FC = () => {
                   (o: any) => isLastMinuteOffer(o) && isTargetRoomMatch(o),
                 );
 
-                let discountedPrice = r.basePrice;
-                let discountPercent = 0;
-                const isDeal = Boolean(roomDeal);
+                const mrp = Number(r.basePrice) || 0;
+                const hasRateDiscount =
+                  r.isDiscountActive !== false && (Number(r.discountPercent) || 0) > 0;
+                const rateSellingPrice =
+                  hasRateDiscount && r.sellingPrice != null
+                    ? Number(r.sellingPrice)
+                    : hasRateDiscount
+                      ? Math.max(0, mrp - (Number(r.discountAmount) || 0))
+                      : mrp;
 
-                if (isDeal && roomDeal) {
+                let discountedPrice = hasRateDiscount ? rateSellingPrice : mrp;
+                let discountPercent = hasRateDiscount ? Number(r.discountPercent) : 0;
+                let isDeal = Boolean(roomDeal) || hasRateDiscount;
+
+                if (roomDeal) {
                   if (roomDeal.discountType === "Percentage") {
-                    discountPercent = Math.min(100, Math.max(1, Number(roomDeal.discountValue) || 0));
-                    discountedPrice = Math.max(
+                    const promoPercent = Math.min(100, Math.max(1, Number(roomDeal.discountValue) || 0));
+                    const promoPrice = Math.max(
                       0,
-                      Math.round(r.basePrice * (1 - discountPercent / 100)),
+                      Math.round(mrp * (1 - promoPercent / 100)),
                     );
+                    if (promoPrice < discountedPrice) {
+                      discountedPrice = promoPrice;
+                      discountPercent = promoPercent;
+                    }
                   } else if (roomDeal.discountType === "Flat Amount") {
                     const flatVal = Number(roomDeal.discountValue) || 0;
-                    discountedPrice = Math.max(0, r.basePrice - flatVal);
-                    discountPercent =
-                      r.basePrice > 0
-                        ? Math.min(100, Math.round(((r.basePrice - discountedPrice) / r.basePrice) * 100))
-                        : 0;
+                    const promoPrice = Math.max(0, mrp - flatVal);
+                    if (promoPrice < discountedPrice) {
+                      discountedPrice = promoPrice;
+                      discountPercent =
+                        mrp > 0
+                          ? Math.min(100, Math.round(((mrp - discountedPrice) / mrp) * 100))
+                          : 0;
+                    }
                   }
                 }
 
@@ -1626,24 +1692,38 @@ export const AshramDetailPage: React.FC = () => {
                   1,
                   Number(searchState.rooms) || roomsCount || 1,
                 );
+                const roomImages: string[] = Array.isArray(r.images)
+                  ? r.images.filter(
+                      (src: unknown) => typeof src === "string" && src.trim(),
+                    )
+                  : [];
+                const isExpanded =
+                  expandedRoomId === String(r._id) && roomImages.length > 0;
+                const toggleRoomPhotos = () =>
+                  setExpandedRoomId((current) =>
+                    current === String(r._id) ? null : String(r._id),
+                  );
 
                 return (
                   <div
                     key={r._id}
-                    className={`p-4 sm:p-5 border rounded-[20px] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-all relative overflow-hidden ${
+                    onClick={roomImages.length > 0 ? toggleRoomPhotos : undefined}
+                    aria-expanded={roomImages.length > 0 ? isExpanded : undefined}
+                    className={`p-4 sm:p-5 border rounded-[20px] transition-all relative overflow-hidden ${roomImages.length > 0 ? "cursor-pointer" : ""} ${
                       selectedQty > 0
                         ? "border-[#0A4DA6] bg-[#0A4DA6]/5 shadow-sm ring-1 ring-[#0A4DA6]/30"
                         : "border-gray-100 dark:border-slate-800 hover:bg-gray-50/50 dark:hover:bg-slate-800/10"
                     }`}
                   >
-                    {isDeal && (
+                    {isDeal && discountPercent > 0 && (
                       <div className="absolute top-0 right-0">
                         <span className="text-[9px] font-black uppercase px-3 py-1 rounded-bl-xl shadow-sm flex items-center gap-1 bg-gradient-to-r from-rose-600 to-amber-500 text-white">
                           <Sparkles size={10} />
-                          ⚡ Last Minute Deal &bull; {discountPercent}% OFF
+                          {roomDeal ? "⚡ Last Minute Deal" : "⚡ Special Rate"} &bull; {discountPercent}% OFF
                         </span>
                       </div>
                     )}
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div className="space-y-1.5 min-w-0 pr-4 sm:pr-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-xs font-extrabold text-[#0B192C] dark:text-white">
@@ -1684,7 +1764,10 @@ export const AshramDetailPage: React.FC = () => {
                         </span>
                       )}
                       
-                      <div className="flex items-center gap-3 mt-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-full p-1 shadow-sm">
+                      <div
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex items-center gap-3 mt-3 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-full p-1 shadow-sm cursor-default"
+                      >
                         <button
                           onClick={() => handleUpdateRoomQty(r._id, -1)}
                           className="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-rose-600 transition-colors disabled:opacity-30"
@@ -1710,11 +1793,121 @@ export const AshramDetailPage: React.FC = () => {
                         </button>
                       </div>
                     </div>
+                    </div>
+                    {isExpanded && (
+                      <div
+                        onClick={(e) => e.stopPropagation()}
+                        className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-800 space-y-3 cursor-default"
+                      >
+                        <div className="flex gap-2.5 overflow-x-auto snap-x snap-mandatory pb-2">
+                          {roomImages.map((src, idx) => (
+                            <button
+                              type="button"
+                              key={`${src}_${idx}`}
+                              onClick={() =>
+                                setRoomPhotoViewer({
+                                  name: r.name,
+                                  images: roomImages,
+                                  index: idx,
+                                })
+                              }
+                              aria-label={`Open ${r.name} photo ${idx + 1}`}
+                              className="group relative shrink-0 snap-start w-44 sm:w-56 aspect-[4/3] rounded-xl overflow-hidden border border-gray-100 dark:border-slate-800 bg-gray-100 dark:bg-slate-900"
+                            >
+                              <img
+                                src={src}
+                                alt={`${r.name} photo ${idx + 1}`}
+                                loading="lazy"
+                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                              />
+                              <span className="absolute bottom-1.5 right-1.5 p-1 rounded-full bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Maximize2 size={11} />
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                        {Array.isArray(r.amenities) && r.amenities.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5">
+                            {r.amenities.map((amenity: string, idx: number) => (
+                              <span
+                                key={`${amenity}_${idx}`}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50 text-[10px] font-bold text-emerald-700 dark:text-emerald-400"
+                              >
+                                <CheckCircle size={10} /> {amenity}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 );
               })}
             </div>
           </div>
+
+          {roomPhotoViewer && (
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-label={`${roomPhotoViewer.name} photos`}
+              onClick={() => setRoomPhotoViewer(null)}
+              className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
+            >
+              <button
+                type="button"
+                onClick={() => setRoomPhotoViewer(null)}
+                aria-label="Close photos"
+                className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white"
+              >
+                <X size={20} />
+              </button>
+              {roomPhotoViewer.images.length > 1 && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setRoomPhotoViewer((v) =>
+                      v && { ...v, index: (v.index - 1 + v.images.length) % v.images.length },
+                    );
+                  }}
+                  aria-label="Previous photo"
+                  className="absolute left-3 sm:left-6 p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white"
+                >
+                  <ChevronLeft size={22} />
+                </button>
+              )}
+              <div
+                className="max-w-5xl w-full flex flex-col items-center gap-3"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <img
+                  src={roomPhotoViewer.images[roomPhotoViewer.index]}
+                  alt={`${roomPhotoViewer.name} photo ${roomPhotoViewer.index + 1}`}
+                  className="max-h-[78vh] w-auto max-w-full rounded-2xl object-contain shadow-2xl"
+                />
+                <p className="text-xs font-bold text-white/80">
+                  {roomPhotoViewer.name} · {roomPhotoViewer.index + 1} /{" "}
+                  {roomPhotoViewer.images.length}
+                </p>
+              </div>
+              {roomPhotoViewer.images.length > 1 && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setRoomPhotoViewer((v) =>
+                      v && { ...v, index: (v.index + 1) % v.images.length },
+                    );
+                  }}
+                  aria-label="Next photo"
+                  className="absolute right-3 sm:right-6 p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white"
+                >
+                  <ChevronRight size={22} />
+                </button>
+              )}
+            </div>
+          )}
 
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-5 shadow-sm">
             <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white border-b border-gray-50 dark:border-slate-850 pb-3">
@@ -1737,14 +1930,17 @@ export const AshramDetailPage: React.FC = () => {
                 </h4>
                 <div className="space-y-1.5 text-gray-500">
                   <p>
-                    <strong>Check-in Time:</strong> 12:00 PM
+                    <strong>Check-in Time:</strong> {formatPolicyClock(ashram.policies?.checkInTime, "12:00 PM")}
                   </p>
                   <p>
-                    <strong>Check-out Time:</strong> 11:00 AM
+                    <strong>Check-out Time:</strong> {formatPolicyClock(ashram.policies?.checkOutTime, "11:00 AM")}
                   </p>
                   <p>
                     <strong>Nearby Attractions:</strong>{" "}
-                    {ashram.nearbyAttractions?.join(", ") || "Temples & Ghats"}
+                    {(Array.isArray(ashram.nearbyAttractions) ? ashram.nearbyAttractions : [])
+                      .map((a: any) => (typeof a === "string" ? a : a?.name))
+                      .filter(Boolean)
+                      .join(", ") || "Temples & Ghats"}
                   </p>
                 </div>
               </div>
@@ -1933,10 +2129,17 @@ export const AshramDetailPage: React.FC = () => {
                             >
                               <div className="space-y-0.5 flex-1 min-w-0">
                                 <div className="flex items-center gap-1.5">
-                                  <Sparkles
-                                    size={13}
-                                    className="text-[#0A4DA6] shrink-0"
-                                  />
+                                  {item.category === "bed" || /bed/i.test(item.name || "") ? (
+                                    <BedDouble
+                                      size={14}
+                                      className="text-[#0A4DA6] shrink-0"
+                                    />
+                                  ) : (
+                                    <Sparkles
+                                      size={13}
+                                      className="text-[#0A4DA6] shrink-0"
+                                    />
+                                  )}
                                   <span className="font-extrabold text-[#0B192C] dark:text-white truncate">
                                     {item.name}
                                   </span>
@@ -1995,20 +2198,6 @@ export const AshramDetailPage: React.FC = () => {
                         })}
                     </div>
                   )}
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-gray-400 flex items-center gap-1">
-                    Stay Donation (₹){" "}
-                    <Heart size={10} className="text-danger fill-danger" />
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="e.g. 500"
-                    value={donation}
-                    onChange={(e) => setDonation(e.target.value)}
-                    className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs font-semibold"
-                  />
                 </div>
 
                 {(offersLoading || availableOffers.length > 0) && (
@@ -2272,6 +2461,16 @@ export const AshramDetailPage: React.FC = () => {
                     <span>{formatCurrency(stayCostCalc)}</span>
                   </div>
 
+                  {roomSavingsShownCalc > 0 && (
+                    <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-extrabold">
+                      <span className="flex items-center gap-1">
+                        <Tag size={12} />
+                        Special Rate Discount:
+                      </span>
+                      <span>-{formatCurrency(roomSavingsShownCalc)}</span>
+                    </div>
+                  )}
+
                   {extraGuestShownCalc > 0 && (
                     <div className="flex justify-between text-gray-600 dark:text-gray-300">
                       <span>Extra Guest Charges:</span>
@@ -2283,13 +2482,6 @@ export const AshramDetailPage: React.FC = () => {
                     <div className="flex justify-between text-gray-600 dark:text-gray-300">
                       <span>Add-on Services:</span>
                       <span>{formatCurrency(servicesShownCalc)}</span>
-                    </div>
-                  )}
-
-                  {donationCalc > 0 && (
-                    <div className="flex justify-between text-gray-600 dark:text-gray-300">
-                      <span>Stay Donation:</span>
-                      <span>{formatCurrency(donationCalc)}</span>
                     </div>
                   )}
 

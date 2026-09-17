@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import type { Model } from "mongoose";
 import { TransactionService } from "../../../common/database/transaction.service";
@@ -21,8 +21,23 @@ interface ScanOutcome {
   booking?: any;
 }
 
+/** Outbox row for admitted devotees; the worker loads the pass behind it. */
+const aartiCheckedInNotification = (booking: any) => ({
+  userId: booking.customerId,
+  bookingId: booking._id,
+  event: "checked_in",
+  title: "Aarti check-in recorded",
+  message: `${booking.checkedInCount} devotee(s) admitted for ${booking.bookingReference}.`,
+  channel: "in_app",
+  status: "queued",
+  recipientPhone: booking.contactPhone || "",
+  meta: { correlationId: `aarti:${String(booking._id)}:checked_in` },
+});
+
 @Injectable()
 export class AartiScanService {
+  private readonly logger = new Logger(AartiScanService.name);
+
   constructor(
     private readonly transactions: TransactionService,
     private readonly pricing: AartiPricingService,
@@ -30,6 +45,8 @@ export class AartiScanService {
     @InjectModel(AARTI_MODEL.QrCode) private readonly qrCodes: Model<any>,
     @InjectModel(AARTI_MODEL.ScanLog) private readonly scanLogs: Model<any>,
     @InjectModel(AARTI_MODEL.Session) private readonly sessions: Model<any>,
+    @InjectModel(AARTI_MODEL.Notification)
+    private readonly notifications: Model<any>,
   ) {}
 
   private async log(input: Record<string, unknown>): Promise<void> {
@@ -161,6 +178,9 @@ export class AartiScanService {
         updatedBy: user.id,
       });
       await row.save({ session: txSession });
+      await this.notifications.create([aartiCheckedInNotification(row)], {
+        session: txSession,
+      });
       await this.qrCodes.updateOne(
         { _id: pass._id },
         {
@@ -223,6 +243,19 @@ export class AartiScanService {
       updatedBy: user.id,
     });
     await booking.save();
+    // Manual check-in runs without a transaction and the admission already
+    // stands, so a failed notification write is logged, not surfaced.
+    await this.notifications
+      .create(aartiCheckedInNotification(booking))
+      .catch((error: unknown) =>
+        this.logger.error(
+          JSON.stringify({
+            event: "aarti.checkin_notification_failed",
+            bookingId: String(booking._id),
+            errorType: error instanceof Error ? error.name : "UnknownError",
+          }),
+        ),
+      );
     await this.log({
       bookingId: booking._id,
       sessionId: booking.sessionId,

@@ -3,6 +3,7 @@ import { MongooseModule } from "@nestjs/mongoose";
 import { AshramsService } from "./application/ashrams.service";
 import { AshramsController } from "./presentation/ashrams.controller";
 import { RoomsController } from "./presentation/rooms.controller";
+import { RoomRatesController } from "./presentation/room-rates.controller";
 import {
   AshramSchema,
   BookingAddonSchema,
@@ -12,21 +13,26 @@ import {
   InventoryReturnRequestSchema,
   OfflineInventoryTransferSchema,
   OfflineRoomSchema,
+  RoomRateSchema,
   RoomSchema,
 } from "./infrastructure/persistence/ashram.schemas";
 import { BookingSchema } from "../bookings/infrastructure/persistence/booking.schemas";
 import { ParkingModule } from "../parking/parking.module";
+import { AuditModule } from "../audit/audit.module";
 import { AshramSlugService } from "./application/ashram-slug.service";
 import { OfflineInventoryService } from "./application/offline-inventory.service";
 import { RoomSummaryService } from "./application/room-summary.service";
+import { RoomRatesService } from "./application/room-rates.service";
 import { OfflineInventoryController } from "./presentation/offline-inventory.controller";
 
 @Module({
   imports: [
     ParkingModule,
+    AuditModule,
     MongooseModule.forFeature([
       { name: "Ashram", schema: AshramSchema },
       { name: "Room", schema: RoomSchema },
+      { name: "RoomRate", schema: RoomRateSchema },
       { name: "Booking", schema: BookingSchema },
       { name: "BookingInventory", schema: BookingInventorySchema },
       { name: "BookingPricing", schema: BookingPricingSchema },
@@ -46,6 +52,7 @@ import { OfflineInventoryController } from "./presentation/offline-inventory.con
   controllers: [
     AshramsController,
     RoomsController,
+    RoomRatesController,
     OfflineInventoryController,
   ],
   providers: [
@@ -53,6 +60,7 @@ import { OfflineInventoryController } from "./presentation/offline-inventory.con
     AshramSlugService,
     OfflineInventoryService,
     RoomSummaryService,
+    RoomRatesService,
   ],
   exports: [
     MongooseModule,
@@ -60,6 +68,7 @@ import { OfflineInventoryController } from "./presentation/offline-inventory.con
     AshramSlugService,
     OfflineInventoryService,
     RoomSummaryService,
+    RoomRatesService,
   ],
 })
 export class AshramsModule {}

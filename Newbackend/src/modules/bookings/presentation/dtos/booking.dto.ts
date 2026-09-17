@@ -54,6 +54,13 @@ export class ConfirmBookingPaymentDto {
   @IsOptional() @IsString() transactionId?: string;
 }
 
+export class ManualConfirmBookingDto {
+  @IsIn(["cash", "upi", "net_banking", "cards", "offline"])
+  paymentMode: string;
+  @IsOptional() @IsString() transactionReference?: string;
+  @IsOptional() @IsString() note?: string;
+}
+
 export class BookingDashboardQueryDto {
   @IsOptional() @IsString() status?: string;
   @IsOptional() @IsString() paymentStatus?: string;

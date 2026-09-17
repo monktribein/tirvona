@@ -26,6 +26,7 @@ import {
   CheckoutDto,
   ConfirmBookingPaymentDto,
   CreateBookingDto,
+  ManualConfirmBookingDto,
   UpdateBookingStatusDto,
 } from "./dtos/booking.dto";
 
@@ -92,6 +93,44 @@ export class BookingsController {
       payment: result.payment,
       invoice: result.invoice,
     };
+  }
+  @Post(":id/manual-confirm")
+  @Roles(
+    "owner",
+    "ashram_owner",
+    "stay_admin",
+    "manager",
+    "super_admin",
+  )
+  @HttpCode(200)
+  async manualConfirm(
+    @Param("id") id: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: ManualConfirmBookingDto,
+  ) {
+    const result = await this.service.manualConfirm(id, user, dto);
+    return {
+      success: true,
+      message: "Booking confirmed manually",
+      data: result.booking,
+      payment: result.payment,
+      invoice: result.invoice,
+    };
+  }
+  @Get("payment-pending")
+  @Roles(
+    "owner",
+    "ashram_owner",
+    "ashram_admin",
+    "stay_admin",
+    "manager",
+    "super_admin",
+  )
+  async paymentPending(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() query: BookingDashboardQueryDto,
+  ) {
+    return { success: true, data: await this.service.paymentPendingList(user, query) };
   }
   @Get("history") @Roles("customer") async history(
     @CurrentUser() user: AuthenticatedUser,

@@ -160,7 +160,7 @@ export const ManageAshramsPage: React.FC = () => {
             onClick={() => navigate(`${consoleBase}/ashrams/add`)}
             className="px-6 py-3 bg-[#0A4DA6] text-white font-extrabold text-xs rounded-full shadow-md"
           >
-            Register Stay Now
+            Register Owners to Register Stays
           </button>
         </div>
       ) : (

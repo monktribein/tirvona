@@ -677,6 +677,24 @@ export class ParkingManagementService {
           { new: true, session },
         );
         if (!booking) return;
+        await this.notifications.create(
+          [
+            {
+              userId: booking.customerId,
+              bookingId: booking._id,
+              event: "expired",
+              title: "Parking reservation expired",
+              message: `The payment hold for ${booking.bookingReference} expired and the space was released.`,
+              channel: "in_app",
+              status: "queued",
+              recipientPhone: booking.driverPhone || "",
+              meta: {
+                correlationId: `parking:${String(booking._id)}:expired`,
+              },
+            },
+          ],
+          { session },
+        );
         const units = Math.max(
           1,
           Math.ceil(
@@ -722,6 +740,24 @@ export class ParkingManagementService {
           { new: true, session },
         );
         if (!booking) return;
+        await this.notifications.create(
+          [
+            {
+              userId: booking.customerId,
+              bookingId: booking._id,
+              event: "no_show",
+              title: "Parking booking marked no-show",
+              message: `No arrival was recorded for ${booking.bookingReference} before the arrival window closed.`,
+              channel: "in_app",
+              status: "queued",
+              recipientPhone: booking.driverPhone || "",
+              meta: {
+                correlationId: `parking:${String(booking._id)}:no_show`,
+              },
+            },
+          ],
+          { session },
+        );
         const units = Math.max(
           1,
           Math.ceil(

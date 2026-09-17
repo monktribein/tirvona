@@ -77,9 +77,10 @@ export class SaveAddOnDto {
   @IsString() @MinLength(2) @MaxLength(120) name: string;
   @Type(() => Number) @IsNumber() @Min(0) price: number;
   @IsOptional()
-  @IsIn(["per_day", "per_meal", "per_person", "one_time", "per_box"])
+  @IsIn(["per_day", "per_meal", "per_person", "one_time", "per_box", "per_bed", "per_night"])
   unit?: string;
   @IsOptional() @IsString() @MaxLength(60) unitLabel?: string;
+  @IsOptional() @IsString() @MaxLength(60) category?: string;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100)
   maxQuantity?: number;
   @IsOptional() @IsBoolean() enabled?: boolean;
@@ -105,6 +106,7 @@ export class CreateRoomDto {
   @Type(() => Number) @IsNumber() @Min(0) basePrice: number;
   @IsOptional() @IsArray() amenities?: string[];
   @IsOptional() @IsArray() images?: string[];
+  @IsOptional() @IsString() @MaxLength(2000) description?: string;
 }
 
 export class UpdateRoomDto extends PartialType(CreateRoomDto) {

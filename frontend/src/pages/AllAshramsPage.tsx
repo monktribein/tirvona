@@ -196,7 +196,7 @@ export const AllAshramsPage: React.FC = () => {
     <div className="space-y-8">
       <div className="text-center space-y-2.5 max-w-3xl mx-auto py-2">
         <p className="font-['Kalam'] text-2xl sm:text-4xl lg:text-5xl font-bold text-[#E58C28]">
-          Registered Stays &amp; Dharamshalas
+          Registered Owners to Register Stays
         </p>
         <div className="flex items-center justify-center gap-2.5 my-1.5">
           <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
@@ -207,8 +207,7 @@ export const AllAshramsPage: React.FC = () => {
           <div className="h-[1.5px] w-12 sm:w-24 bg-[#E58C28] rounded-full" />
         </div>
         <p className="text-xs sm:text-sm font-bold text-[#0B192C] dark:text-gray-200 max-w-xl mx-auto leading-relaxed">
-          Inspect, manage, and edit details for all {ashrams.length} registered
-          stay accommodations across India.
+          Inspect, manage, and edit details for all {ashrams.length} registered owners to register stays across India.
         </p>
       </div>
 

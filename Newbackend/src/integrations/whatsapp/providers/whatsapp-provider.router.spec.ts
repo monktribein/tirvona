@@ -19,6 +19,15 @@ const msg91Stub = (overrides: Partial<Record<string, unknown>> = {}) => ({
   ...overrides,
 });
 
+const metaCloudStub = (overrides: Partial<Record<string, unknown>> = {}) => ({
+  isAvailable: jest.fn().mockReturnValue(false),
+  supports: jest.fn().mockReturnValue(true),
+  sendMessage: jest
+    .fn()
+    .mockResolvedValue({ status: "accepted", provider: "meta_cloud" }),
+  ...overrides,
+});
+
 const akNexusStub = () => ({
   sendMessage: jest
     .fn()
@@ -28,9 +37,52 @@ const akNexusStub = () => ({
 const routerWith = (
   msg91: ReturnType<typeof msg91Stub>,
   akNexus: ReturnType<typeof akNexusStub>,
-) => new WhatsAppProviderRouter(msg91 as never, akNexus as never);
+  metaCloud: ReturnType<typeof metaCloudStub> = metaCloudStub(),
+) =>
+  new WhatsAppProviderRouter(
+    metaCloud as never,
+    msg91 as never,
+    akNexus as never,
+  );
 
 describe("WhatsAppProviderRouter", () => {
+  it("uses Meta Cloud first for authentication OTPs", async () => {
+    const metaCloud = metaCloudStub({
+      isAvailable: jest.fn().mockReturnValue(true),
+    });
+    const msg91 = msg91Stub();
+    const akNexus = akNexusStub();
+
+    await expect(
+      routerWith(msg91, akNexus, metaCloud).sendMessage(request),
+    ).resolves.toMatchObject({ provider: "meta_cloud", status: "accepted" });
+    expect(metaCloud.sendMessage).toHaveBeenCalledWith(request);
+    expect(msg91.sendMessage).not.toHaveBeenCalled();
+    expect(akNexus.sendMessage).not.toHaveBeenCalled();
+  });
+
+  it("preserves MSG91 fallback when Meta Cloud fails", async () => {
+    const metaCloud = metaCloudStub({
+      isAvailable: jest.fn().mockReturnValue(true),
+      sendMessage: jest
+        .fn()
+        .mockRejectedValue(
+          new WhatsAppIntegrationError(
+            "Meta unavailable",
+            "PROVIDER_UNAVAILABLE",
+            true,
+          ),
+        ),
+    });
+    const msg91 = msg91Stub();
+
+    await expect(
+      routerWith(msg91, akNexusStub(), metaCloud).sendMessage(request),
+    ).resolves.toMatchObject({ provider: "msg91" });
+    expect(metaCloud.sendMessage).toHaveBeenCalledTimes(1);
+    expect(msg91.sendMessage).toHaveBeenCalledTimes(1);
+  });
+
   it("uses MSG91 and never calls the fallback when MSG91 succeeds", async () => {
     const msg91 = msg91Stub();
     const akNexus = akNexusStub();

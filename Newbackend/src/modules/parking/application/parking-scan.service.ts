@@ -26,6 +26,26 @@ import {
 } from "../domain/parking.repository";
 import { Inject } from "@nestjs/common";
 
+/** Outbox row for a gate transition; the worker loads the booking behind it. */
+const parkingGateNotification = (
+  booking: any,
+  event: "checked_in" | "checked_out",
+) => ({
+  userId: booking.customerId,
+  bookingId: booking._id,
+  event,
+  title:
+    event === "checked_in" ? "Parking entry recorded" : "Parking exit recorded",
+  message:
+    event === "checked_in"
+      ? `Vehicle ${booking.vehicleNumber} entered the parking for ${booking.bookingReference}.`
+      : `Vehicle ${booking.vehicleNumber} exited the parking for ${booking.bookingReference}.`,
+  channel: "in_app",
+  status: "queued",
+  recipientPhone: booking.driverPhone || "",
+  meta: { correlationId: `parking:${String(booking._id)}:${event}` },
+});
+
 @Injectable()
 export class ParkingScanService {
   constructor(
@@ -41,6 +61,8 @@ export class ParkingScanService {
     @InjectModel(PARKING_MODEL.Payment) private readonly payments: Model<any>,
     @InjectModel(PARKING_MODEL.Transaction) private readonly ledger: Model<any>,
     @InjectModel(PARKING_MODEL.Staff) private readonly staff: Model<any>,
+    @InjectModel(PARKING_MODEL.Notification)
+    private readonly notifications: Model<any>,
   ) {}
 
   private async log(
@@ -227,6 +249,10 @@ export class ParkingScanService {
         updatedBy: user.id,
       });
       await booking.save({ session });
+      await this.notifications.create(
+        [parkingGateNotification(booking, "checked_in")],
+        { session },
+      );
       qr.entryScannedAt = new Date();
       qr.scanCount += 1;
       await qr.save({ session });
@@ -357,6 +383,10 @@ export class ParkingScanService {
         updatedBy: user.id,
       });
       await booking.save({ session });
+      await this.notifications.create(
+        [parkingGateNotification(booking, "checked_out")],
+        { session },
+      );
       if (booking.assignedSlotId)
         await this.slots.updateOne(
           { _id: booking.assignedSlotId },

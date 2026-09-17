@@ -203,7 +203,7 @@ export class AshramsController {
     const data = await this.service.listAddOns(id);
     return { success: true, count: data.length, data };
   }
-  @Post(":id/add-ons") @Roles("owner", "stay_admin", "manager") async createAddon(
+  @Post(":id/add-ons") @Roles("owner", "stay_admin", "manager", "super_admin") async createAddon(
     @CurrentUser() user: AuthenticatedUser,
     @Param("id") id: string,
     @Body(addOnBody) body: SaveAddOnDto,
@@ -211,7 +211,7 @@ export class AshramsController {
     const data = await this.service.createAddOn(user, id, body);
     return { success: true, message: "Add-on saved.", count: data.length, data };
   }
-  @Put(":id/add-ons/:addonId") @Roles("owner", "stay_admin", "manager") async updateAddon(
+  @Put(":id/add-ons/:addonId") @Roles("owner", "stay_admin", "manager", "super_admin") async updateAddon(
     @CurrentUser() user: AuthenticatedUser,
     @Param("id") id: string,
     @Param("addonId") addonId: string,
@@ -225,7 +225,7 @@ export class AshramsController {
       data,
     };
   }
-  @Delete(":id/add-ons/:addonId") @Roles("owner", "stay_admin", "manager") async deleteAddon(
+  @Delete(":id/add-ons/:addonId") @Roles("owner", "stay_admin", "manager", "super_admin") async deleteAddon(
     @CurrentUser() user: AuthenticatedUser,
     @Param("id") id: string,
     @Param("addonId") addonId: string,

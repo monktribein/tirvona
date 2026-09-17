@@ -34,6 +34,7 @@ html[lang="hi"] .tracking-widest {
   --border: rgba(229, 140, 40, 0.35);
   --input: #F8FAFC;
   --ring: rgba(10, 77, 166, 0.2);
+  --font-sans: "Plus Jakarta Sans", "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 .dark {
@@ -59,6 +60,7 @@ html[lang="hi"] .tracking-widest {
   --border: rgba(229, 140, 40, 0.35);
   --input: #1E293B;
   --ring: rgba(10, 77, 166, 0.3);
+  --font-sans: "Plus Jakarta Sans", "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 html {
@@ -71,24 +73,18 @@ html {
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans);
+  font-family: var(--font-sans, "Plus Jakarta Sans", "Inter", system-ui, sans-serif);
   transition: background-color 0.3s ease, color 0.3s ease;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: auto;
 }
 
-.dashboard-shell,
-.dashboard-shell h1,
-.dashboard-shell h2,
-.dashboard-shell h3,
-.dashboard-shell h4,
-.dashboard-shell h5,
-.dashboard-shell h6,
-.dashboard-shell input,
-.dashboard-shell select,
-.dashboard-shell textarea,
-.dashboard-shell button {
-  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+.dashboard-shell {
+  font-family: "Plus Jakarta Sans", "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.dashboard-shell *:not(.material-symbols-rounded):not(.lucide) {
+  font-family: inherit;
 }
 
 .dashboard-shell .material-symbols-rounded.sidebar-material-icon {

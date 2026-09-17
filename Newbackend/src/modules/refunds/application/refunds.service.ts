@@ -360,7 +360,11 @@ export class RefundsService {
       "refund_approved",
       "Refund approved",
       `Your refund of ₹${amount} has been approved and is being processed.`,
-      { amount: String(amount) },
+      {
+        amount: String(amount),
+        refundNumber: String(request.refundNumber ?? ""),
+        refundStatus: "approved",
+      },
     );
     return this.get(user, id);
   }
@@ -469,6 +473,10 @@ export class RefundsService {
         "refund_failed",
         "Refund failed",
         "We couldn't process your refund. Our support team has been notified.",
+        {
+          refundNumber: String(request.refundNumber ?? ""),
+          refundStatus: "failed",
+        },
       );
       throw new BadRequestException(
         "The original payment has no gateway reference, so it cannot be refunded automatically",
@@ -508,6 +516,10 @@ export class RefundsService {
         "refund_failed",
         "Refund failed",
         "We couldn't process your refund. Our support team has been notified.",
+        {
+          refundNumber: String(request.refundNumber ?? ""),
+          refundStatus: "failed",
+        },
       );
       throw new BadRequestException(transaction.failureReason);
     }
@@ -542,7 +554,11 @@ export class RefundsService {
       "refund_completed",
       "Refund completed",
       `Your refund of ₹${amount} has been credited.`,
-      { amount: String(amount) },
+      {
+        amount: String(amount),
+        refundNumber: String(request.refundNumber ?? ""),
+        refundStatus: "completed",
+      },
     );
     return this.requests.findById(request._id).lean();
   }

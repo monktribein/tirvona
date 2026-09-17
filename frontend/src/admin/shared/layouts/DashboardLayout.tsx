@@ -392,6 +392,10 @@ export const DashboardLayout: React.FC = () => {
         { label: "Pending Verification", path: "/admin/verifications" },
         { label: "Approved Stays", path: "/admin/manage/ashrams/approved" },
         { label: "Rejected Stays", path: "/admin/manage/ashrams/rejected" },
+        {
+          label: "Add-On Services (Dynamic Pricing)",
+          path: "/admin/manage/ashrams/add-ons",
+        },
       ],
     },
     {
@@ -404,7 +408,12 @@ export const DashboardLayout: React.FC = () => {
           path: "/admin/approvals/room-categories",
         },
         { label: "Room Categories", path: "/admin/manage/rooms/all" },
+        {
+          label: "Room Photos & Policies",
+          path: "/admin/manage/rooms/details",
+        },
         { label: "Room Availability", path: "/admin/manage/rooms/availability" },
+        { label: "Rate Management", path: "/admin/manage/rooms/rates" },
         { label: "Room Pricing", path: "/admin/manage/rooms/pricing" },
         { label: "Room Return Requests", path: "/admin/offline-inventory?tab=returns" },
         { label: "Offline Inventory", path: "/admin/offline-inventory" },
@@ -423,6 +432,7 @@ export const DashboardLayout: React.FC = () => {
       links: [
         { label: "All Bookings", path: "/admin/manage/bookings/all" },
         { label: "Check-in / Check-out Desk", path: "/admin/bookings/front-desk" },
+        { label: "Payment Pending", path: "/admin/manage/bookings/payment-pending" },
         { label: "Pending Bookings", path: "/admin/manage/bookings/pending" },
         {
           label: "Confirmed Bookings",
@@ -695,7 +705,10 @@ export const DashboardLayout: React.FC = () => {
       icon: <Building size={15} />,
       links: [
         { label: "Manage Stays", path: `${ownerBase}/ashrams` },
-        { label: "Add-On Services", path: `${ownerBase}/add-ons` },
+        {
+          label: "Add-On Services (Dynamic Pricing)",
+          path: `${ownerBase}/add-ons`,
+        },
       ],
     },
     {
@@ -704,6 +717,7 @@ export const DashboardLayout: React.FC = () => {
       links: [
         { label: "Total Rooms", path: `${ownerBase}/total-rooms` },
         { label: "Manage Rooms", path: `${ownerBase}/rooms` },
+        { label: "Rate Management", path: `${ownerBase}/rates` },
         { label: "Offline Rooms / Inventory", path: `${ownerBase}/offline-inventory` },
         { label: "Inventory Calendar", path: `${ownerBase}/calendar` },
       ],
@@ -734,6 +748,7 @@ export const DashboardLayout: React.FC = () => {
         { label: "Check-in & Check-out", path: `${ownerBase}/check-in-out` },
         { label: "Self Booking", path: `${ownerBase}/self-booking` },
         { label: "Tirvona Booking", path: `${ownerBase}/tirvona-booking` },
+        { label: "Payment Pending", path: `${ownerBase}/payment-pending` },
         { label: "Payments", path: `${ownerBase}/payments` },
         { label: "Tirvona Account", path: `${ownerBase}/payouts` },
       ],

@@ -79,6 +79,9 @@ const OwnerVisitorArticlesPage = lazy(
   () => import("./admin/content/OwnerVisitorArticlesPage"),
 );
 const OwnerAddOnsPage = lazy(() => import("./pages/owner/OwnerAddOnsPage"));
+const RateManagementPage = lazy(
+  () => import("./pages/owner/RateManagementPage"),
+);
 const OwnerBookingCenterPage = lazy(
   () => import("./pages/OwnerBookingCenterPage"),
 );
@@ -87,6 +90,9 @@ const PayoutManagementPage = lazy(
 );
 const OwnerParkingSetupPage = lazy(
   () => import("./pages/owner/OwnerParkingSetupPage"),
+);
+const PremMandirStaysPage = lazy(
+  () => import("./pages/PremMandirStaysPage"),
 );
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 const SelfBookingPage = lazy(
@@ -168,6 +174,8 @@ const ParkingRoleDashboardPage = lazy(
 const AdminDashboard = lazy(
   () => import("./admin/dashboard/pages/AdminDashboard"),
 );
+const OwnerPendingPaymentsPage = lazy(() => import("./pages/owner/OwnerPendingPaymentsPage"));
+const AdminPendingPaymentsPage = lazy(() => import("./pages/admin/AdminPendingPaymentsPage"));
 const VerificationQueuePage = lazy(
   () => import("./admin/ashrams/pages/VerificationQueuePage"),
 );
@@ -438,6 +446,15 @@ const AppContent: React.FC = () => {
             <Route path="/public" element={<HomePage />} />
             <Route path="/featured-banner/:bannerSlug" element={<BannerDetailPage />} />
             <Route path="/search" element={<SearchPage />} />
+            {/* Stays Near Prem Mandir, Vrindavan landing page */}
+            <Route
+              path="/Stays-near-prem-mandir-vrindavan"
+              element={<PremMandirStaysPage />}
+            />
+            <Route
+              path="/stays-near-prem-mandir-vrindavan"
+              element={<PremMandirStaysPage />}
+            />
             {/* canonical, id-free */}
             {/* city listing: /ashrams/haridwar */}
             <Route path="/ashrams" element={<SearchPage />} />
@@ -730,6 +747,13 @@ const AppContent: React.FC = () => {
             <Route path="/owner/rooms" element={<ManageRoomsPage />} />
             <Route path="/ashram-admin/rooms" element={<ManageRoomsPage />} />
             <Route path="/ashram-owner/rooms" element={<ManageRoomsPage />} />
+            <Route path="/owner/rates" element={<RateManagementPage />} />
+            <Route path="/ashram-admin/rates" element={<RateManagementPage />} />
+            <Route path="/ashram-owner/rates" element={<RateManagementPage />} />
+            <Route
+              path="/admin/manage/rooms/rates"
+              element={<RateManagementPage />}
+            />
             <Route path="/owner/calendar" element={<InventoryCalendarPage />} />
             <Route path="/ashram-admin/calendar" element={<InventoryCalendarPage />} />
             <Route path="/ashram-owner/calendar" element={<InventoryCalendarPage />} />
@@ -816,6 +840,9 @@ const AppContent: React.FC = () => {
             <Route path="/ashram-owner/bookings" element={<OwnerBookingCenterPage key="ashram-owner-bookings" initialView="bookings" />} />
             <Route path="/ashram-admin/payments" element={<OwnerBookingCenterPage key="ashram-admin-payments" initialView="payments" />} />
             <Route path="/ashram-owner/payments" element={<OwnerBookingCenterPage key="ashram-owner-payments" initialView="payments" />} />
+            <Route path="/owner/payment-pending" element={<OwnerPendingPaymentsPage />} />
+            <Route path="/ashram-admin/payment-pending" element={<OwnerPendingPaymentsPage />} />
+            <Route path="/ashram-owner/payment-pending" element={<OwnerPendingPaymentsPage />} />
             <Route path="/owner/payouts" element={<PayoutManagementPage />} />
             <Route path="/ashram-admin/payouts" element={<PayoutManagementPage />} />
             <Route path="/ashram-owner/payouts" element={<PayoutManagementPage />} />
@@ -981,6 +1008,10 @@ const AppContent: React.FC = () => {
           >
             <Route path="/admin/audit-logs" element={<AuditLogsPage />} />
             <Route
+              path="/admin/manage/rooms/details"
+              element={<ManageRoomsPage />}
+            />
+            <Route
               path="/admin/manage/rooms/total"
               element={<TotalRoomsPage />}
             />
@@ -1110,6 +1141,10 @@ const AppContent: React.FC = () => {
             <Route path="/admin/manage/users/content-managers" element={<Navigate to="/admin/users" replace />} />
             <Route path="/admin/manage/users/staff" element={<Navigate to="/admin/users" replace />} />
             <Route path="/admin/manage/users/roles" element={<Navigate to="/admin/users" replace />} />
+            <Route
+              path="/admin/manage/bookings/payment-pending"
+              element={<AdminPendingPaymentsPage />}
+            />
             <Route
               path="/admin/manage/:moduleKey/:subKey?"
               element={<EnterpriseModulePage />}
