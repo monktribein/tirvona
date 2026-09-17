@@ -91,9 +91,6 @@ const PayoutManagementPage = lazy(
 const OwnerParkingSetupPage = lazy(
   () => import("./pages/owner/OwnerParkingSetupPage"),
 );
-const PremMandirStaysPage = lazy(
-  () => import("./pages/PremMandirStaysPage"),
-);
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 const SelfBookingPage = lazy(
   () => import("./pages/owner/SelfBookingPage"),
