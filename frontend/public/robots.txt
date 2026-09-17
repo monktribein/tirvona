@@ -1,0 +1,89 @@
+# Tirvona Robots.txt
+# https://www.tirvona.com
+
+User-agent: *
+
+# Public Crawlable Sections
+Allow: /
+Allow: /ashrams
+Allow: /ashrams/*
+Allow: /stays
+Allow: /stays/*
+Allow: /destinations
+Allow: /destinations/*
+Allow: /stays-near-prem-mandir-vrindavan
+Allow: /Stays-near-prem-mandir-vrindavan
+Allow: /stays-in-vrindavan
+Allow: /stays-near-banke-bihari-vrindavan
+Allow: /stays-near-iskcon-vrindavan
+Allow: /budget-stays-in-vrindavan
+Allow: /family-stays-in-vrindavan
+Allow: /temples
+Allow: /temples/*
+Allow: /aarti
+Allow: /aarti/*
+Allow: /live-pooja
+Allow: /live-pooja/*
+Allow: /circuits
+Allow: /circuits/*
+Allow: /pilgrimage-circuits
+Allow: /marketplace
+Allow: /marketplace/*
+Allow: /books
+Allow: /puja-items
+Allow: /handicrafts
+Allow: /religious-products
+Allow: /events
+Allow: /events/*
+Allow: /about
+Allow: /contact
+Allow: /faq
+Allow: /help
+Allow: /terms
+Allow: /privacy
+Allow: /refund-policy
+Allow: /cancellation-policy
+Allow: /stay-policies
+Allow: /govt-guidelines
+Allow: /local-guides
+Allow: /travel-guides
+Allow: /transport
+Allow: /restaurants
+Allow: /shops
+Allow: /services
+Allow: /careers
+Allow: /partner
+Allow: /volunteer
+
+# Disallow Private Portals, Auth, Administration, Staff and Sensitive Workflows
+Disallow: /admin/
+Disallow: /admin/*
+Disallow: /ashram-admin/
+Disallow: /ashram-admin/*
+Disallow: /ashram-owner/
+Disallow: /ashram-owner/*
+Disallow: /stay-admin/
+Disallow: /stay-admin/*
+Disallow: /stay-owner/
+Disallow: /stay-owner/*
+Disallow: /temple-owner/
+Disallow: /temple-owner/*
+Disallow: /owner/
+Disallow: /owner/*
+Disallow: /staff/
+Disallow: /staff/*
+Disallow: /login
+Disallow: /register
+Disallow: /reset-password
+Disallow: /profile
+Disallow: /dashboard
+Disallow: /booking/
+Disallow: /booking/*
+Disallow: /api/
+Disallow: /api/*
+Disallow: /smart-contact.html
+Disallow: /index.html
+
+# Canonical Host and Sitemap
+Host: https://www.tirvona.com
+Sitemap: https://www.tirvona.com/sitemap.xml

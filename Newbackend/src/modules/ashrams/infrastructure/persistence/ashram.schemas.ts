@@ -362,3 +362,47 @@ export const OfflineInventoryTransferSchema = new Schema(
 );
 OfflineInventoryTransferSchema.index({ ashramId: 1, createdAt: -1 });
 OfflineInventoryTransferSchema.index({ offlineRoomId: 1, createdAt: -1 });
+
+export const RETURN_REQUEST_STATUSES = [
+  "pending",
+  "approved",
+  "rejected",
+  "cancelled",
+] as const;
+
+export const InventoryReturnRequestSchema = new Schema(
+  {
+    reference: { type: String, required: true, unique: true },
+    ashramId: id("Ashram", true),
+    offlineRoomId: id("OfflineRoom", true),
+    roomId: id("Room", true),
+    units: { type: Number, required: true, min: 1 },
+    fromDate: { type: Date, required: true },
+    toDate: { type: Date, required: true },
+    datesCovered: { type: Number, default: 0 },
+    reason: { type: String, default: "" },
+    status: {
+      type: String,
+      enum: RETURN_REQUEST_STATUSES,
+      default: "pending",
+      index: true,
+    },
+    requestedBy: id("User", true),
+    requestedByRole: String,
+    decidedBy: id("User"),
+    decidedByRole: String,
+    decidedAt: Date,
+    rejectionReason: { type: String, default: "" },
+    onlineInventoryBefore: Number,
+    offlineAvailableBefore: Number,
+    onlineInventoryAfter: Number,
+    offlineAvailableAfter: Number,
+  },
+  opts("inventory_return_requests"),
+);
+InventoryReturnRequestSchema.index({
+  ashramId: 1,
+  status: 1,
+  createdAt: -1,
+});
+InventoryReturnRequestSchema.index({ offlineRoomId: 1, createdAt: -1 });

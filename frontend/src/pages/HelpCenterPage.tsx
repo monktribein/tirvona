@@ -218,6 +218,11 @@ const HelpCenterPage: React.FC = () => {
             </a>
             <a
               href="tel:+917836055511"
+              onClick={() => {
+                import("../lib/analytics").then(({ trackClickCall }) => {
+                  trackClickCall({ page_type: "help_center" });
+                });
+              }}
               className="min-h-[44px] px-6 py-2.5 bg-white/20 border border-white/30 text-white font-extrabold text-sm rounded-full flex items-center justify-center"
             >
               Call +91 78360 55511

@@ -37,6 +37,7 @@ export class UpdateOfflineRoomDto {
 }
 
 export class TransferOfflineInventoryDto {
+  @IsOptional() @IsMongoId() roomId?: string;
   @Type(() => Number) @IsInt() @Min(1) @Max(1000) units: number;
   @IsString() @IsNotEmpty() fromDate: string;
   @IsString() @IsNotEmpty() toDate: string;
@@ -48,3 +49,34 @@ export class OfflineTransferHistoryQueryDto {
   @IsOptional() @IsMongoId() offlineRoomId?: string;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(200) limit = 50;
 }
+
+export class RequestReturnDto {
+  @Type(() => Number) @IsInt() @Min(1) @Max(1000) units: number;
+  @IsString() @IsNotEmpty() fromDate: string;
+  @IsString() @IsNotEmpty() toDate: string;
+  @IsOptional() @IsString() reason?: string;
+}
+
+export class DecideReturnRequestDto {
+  @IsIn(["approve", "reject"]) action: "approve" | "reject";
+  @IsOptional() @IsString() rejectionReason?: string;
+}
+
+export class DirectReturnRequestDto {
+  @IsMongoId() ashramId: string;
+  @IsMongoId() roomId: string;
+  @Type(() => Number) @IsInt() @Min(1) @Max(1000) units: number;
+  @IsString() @IsNotEmpty() fromDate: string;
+  @IsString() @IsNotEmpty() toDate: string;
+  @IsOptional() @IsString() reason?: string;
+}
+
+export class ReturnRequestQueryDto {
+  @IsOptional() @IsMongoId() ashramId?: string;
+  @IsOptional() @IsMongoId() offlineRoomId?: string;
+  @IsOptional()
+  @IsIn(["pending", "approved", "rejected", "cancelled", "all"])
+  status?: string;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(200) limit = 50;
+}
+

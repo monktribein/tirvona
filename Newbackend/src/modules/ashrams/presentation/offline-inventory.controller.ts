@@ -16,8 +16,12 @@ import {
 import { Roles } from "../../../common/decorators/roles.decorator";
 import { OfflineInventoryService } from "../application/offline-inventory.service";
 import {
+  DecideReturnRequestDto,
+  DirectReturnRequestDto,
   OfflineRoomQueryDto,
   OfflineTransferHistoryQueryDto,
+  RequestReturnDto,
+  ReturnRequestQueryDto,
   SaveOfflineRoomDto,
   TransferOfflineInventoryDto,
   UpdateOfflineRoomDto,
@@ -33,6 +37,8 @@ const VIEW_ROLES = [
 ] as const;
 
 const MANAGE_ROLES = ["ashram_owner", "owner", "manager"] as const;
+
+const ADMIN_ROLES = ["super_admin", "ashram_admin", "stay_admin"] as const;
 
 @ApiTags("Offline Inventory")
 @ApiBearerAuth()
@@ -125,4 +131,75 @@ export class OfflineInventoryController {
       data: result,
     };
   }
+
+  // ── Return Requests ─────────────────────────────────────────────────────
+
+  @Post("rooms/:id/return-request")
+  @Roles(...MANAGE_ROLES)
+  async requestReturn(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("id") id: string,
+    @Body() dto: RequestReturnDto,
+  ) {
+    const data = await this.service.requestReturnFromTirvona(user, id, dto);
+    return {
+      success: true,
+      message: "Return request submitted. Awaiting admin approval.",
+      data,
+    };
+  }
+
+  @Post("direct-return-request")
+  @Roles(...MANAGE_ROLES)
+  async requestDirectReturn(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: DirectReturnRequestDto,
+  ) {
+    const data = await this.service.requestDirectReturnFromTirvona(user, dto);
+    return {
+      success: true,
+      message: "Return request submitted directly to Tirvona. Awaiting admin approval.",
+      data,
+    };
+  }
+
+  @Get("return-requests")
+  @Roles(...VIEW_ROLES)
+  async returnRequests(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() query: ReturnRequestQueryDto,
+  ) {
+    const data = await this.service.listReturnRequests(user, query);
+    return { success: true, count: data.length, data };
+  }
+
+  @Put("return-requests/:id/decide")
+  @Roles(...ADMIN_ROLES)
+  async decideReturnRequest(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("id") id: string,
+    @Body() dto: DecideReturnRequestDto,
+  ) {
+    const result = await this.service.decideReturnRequest(user, id, dto);
+    return {
+      success: true,
+      message: `Return request ${dto.action === "approve" ? "approved" : "rejected"}.`,
+      data: result,
+    };
+  }
+
+  @Post("return-requests/:id/cancel")
+  @Roles(...MANAGE_ROLES, ...ADMIN_ROLES)
+  async cancelReturnRequest(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("id") id: string,
+  ) {
+    const data = await this.service.cancelReturnRequest(user, id);
+    return {
+      success: true,
+      message: "Return request cancelled.",
+      data,
+    };
+  }
 }
+

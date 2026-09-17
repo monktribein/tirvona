@@ -28,6 +28,7 @@ import {
 import { useLanguage } from "../contexts/LanguageContext";
 import { useAutoScroll } from "../hooks/useAutoScroll";
 import HomeAartiSections from "../modules/aarti/components/HomeAartiSections";
+import { trackViewHome, trackSearchStay } from "../lib/analytics";
 import {
   Search,
   MapPin,
@@ -112,6 +113,7 @@ export const HomePage: React.FC = () => {
   const [destinationsData, setDestinationsData] = useState<any[]>([]);
 
   useEffect(() => {
+    trackViewHome();
     fetchStays();
     fetchOffers();
     fetchFeedbacks();
@@ -590,6 +592,14 @@ export const HomePage: React.FC = () => {
       destination,
       checkIn,
       checkOut,
+    });
+
+    trackSearchStay({
+      destination: destination.trim(),
+      check_in: checkIn,
+      check_out: checkOut,
+      guests: totalGuests,
+      rooms: searchState.rooms,
     });
 
     const params = new URLSearchParams();

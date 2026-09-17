@@ -34,6 +34,32 @@
           "value": "public, max-age=31536000, immutable"
         }
       ]
+    },
+    {
+      "source": "/robots.txt",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/plain; charset=utf-8"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400"
+        }
+      ]
+    },
+    {
+      "source": "/sitemap.xml",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/xml; charset=utf-8"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400"
+        }
+      ]
     }
   ],
   "rewrites": [
@@ -42,11 +68,23 @@
       "destination": "/index.html"
     },
     {
-      "source": "/:page(aarti|about|admin|ashram|ashrams|ashram-admin|ashram-owner|blog|booking|books|cancellation-policy|careers|circuits|contact|cookie-policy|dashboard|destination|destinations|events|faq|featured-banner|govt-guidelines|handicrafts|help|live-pooja|local|local-guides|login|marketplace|offers|owner|owner-guide|parking|partner|pilgrimage-circuits|pooja|press|privacy|profile|provider|public|puja-items|refund-policy|register|religious-products|reset-password|restaurants|search|services|shops|staff|stay|stay-admin|stay-owner|stay-policies|stays|support|temples|temple-owner|terms|transport|travel-guides|video|volunteer)",
+      "source": "/robots.txt",
+      "destination": "/robots.txt"
+    },
+    {
+      "source": "/sitemap.xml",
+      "destination": "/sitemap.xml"
+    },
+    {
+      "source": "/favicon.ico",
+      "destination": "/favicon.ico"
+    },
+    {
+      "source": "/:page(aarti|about|admin|ashram|ashrams|ashram-admin|ashram-owner|blog|booking|books|budget-stays-in-vrindavan|cancellation-policy|careers|circuits|contact|cookie-policy|dashboard|destination|destinations|events|family-stays-in-vrindavan|faq|featured-banner|govt-guidelines|handicrafts|help|live-pooja|local|local-guides|login|marketplace|offers|owner|owner-guide|parking|partner|pilgrimage-circuits|pooja|press|privacy|profile|provider|public|puja-items|refund-policy|register|religious-products|reset-password|restaurants|search|services|shops|staff|stay|stay-admin|stay-owner|stay-policies|stays|stays-in-vrindavan|Stays-near-prem-mandir-vrindavan|stays-near-prem-mandir-vrindavan|stays-near-banke-bihari-vrindavan|stays-near-iskcon-vrindavan|support|temples|temple-owner|terms|transport|travel-guides|video|volunteer)",
       "destination": "/index.html"
     },
     {
-      "source": "/:page(aarti|about|admin|ashram|ashrams|ashram-admin|ashram-owner|blog|booking|books|cancellation-policy|careers|circuits|contact|cookie-policy|dashboard|destination|destinations|events|faq|featured-banner|govt-guidelines|handicrafts|help|live-pooja|local|local-guides|login|marketplace|offers|owner|owner-guide|parking|partner|pilgrimage-circuits|pooja|press|privacy|profile|provider|public|puja-items|refund-policy|register|religious-products|reset-password|restaurants|search|services|shops|staff|stay|stay-admin|stay-owner|stay-policies|stays|support|temples|temple-owner|terms|transport|travel-guides|video|volunteer)/:rest*",
+      "source": "/:page(aarti|about|admin|ashram|ashrams|ashram-admin|ashram-owner|blog|booking|books|budget-stays-in-vrindavan|cancellation-policy|careers|circuits|contact|cookie-policy|dashboard|destination|destinations|events|family-stays-in-vrindavan|faq|featured-banner|govt-guidelines|handicrafts|help|live-pooja|local|local-guides|login|marketplace|offers|owner|owner-guide|parking|partner|pilgrimage-circuits|pooja|press|privacy|profile|provider|public|puja-items|refund-policy|register|religious-products|reset-password|restaurants|search|services|shops|staff|stay|stay-admin|stay-owner|stay-policies|stays|stays-in-vrindavan|Stays-near-prem-mandir-vrindavan|stays-near-prem-mandir-vrindavan|stays-near-banke-bihari-vrindavan|stays-near-iskcon-vrindavan|support|temples|temple-owner|terms|transport|travel-guides|video|volunteer)/:rest*",
       "destination": "/index.html"
     },
     {

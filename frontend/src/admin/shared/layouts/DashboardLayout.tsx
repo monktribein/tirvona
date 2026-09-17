@@ -406,8 +406,8 @@ export const DashboardLayout: React.FC = () => {
         { label: "Room Categories", path: "/admin/manage/rooms/all" },
         { label: "Room Availability", path: "/admin/manage/rooms/availability" },
         { label: "Room Pricing", path: "/admin/manage/rooms/pricing" },
-        { label: "Room Inventory", path: "/admin/manage/rooms/inventory" },
-        { label: "Offline Rooms (read-only)", path: "/admin/offline-inventory" },
+        { label: "Room Return Requests", path: "/admin/offline-inventory?tab=returns" },
+        { label: "Offline Inventory", path: "/admin/offline-inventory" },
       ],
     },
     {

@@ -9,6 +9,7 @@ import {
   BookingInventorySchema,
   BookingPricingSchema,
   HousekeepingUnitSchema,
+  InventoryReturnRequestSchema,
   OfflineInventoryTransferSchema,
   OfflineRoomSchema,
   RoomSchema,
@@ -35,6 +36,10 @@ import { OfflineInventoryController } from "./presentation/offline-inventory.con
       {
         name: "OfflineInventoryTransfer",
         schema: OfflineInventoryTransferSchema,
+      },
+      {
+        name: "InventoryReturnRequest",
+        schema: InventoryReturnRequestSchema,
       },
     ]),
   ],

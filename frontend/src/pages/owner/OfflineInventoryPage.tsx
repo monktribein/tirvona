@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useState } from "react";
 import {
+  ArrowDownLeft,
   BedDouble,
+  Check,
   Eye,
   Loader2,
   Pencil,
@@ -8,13 +10,14 @@ import {
   RefreshCw,
   Trash2,
   X,
+  XCircle,
 } from "lucide-react";
 import { ashramService, offlineInventoryService } from "../../services";
 import { getErrorMessage } from "../../lib/api";
 import { useNotifications } from "../../contexts/NotificationContext";
 import { EnterprisePageHeader } from "../../admin/shared/components/EnterprisePageHeader";
 
-type Tab = "rooms" | "history";
+type Tab = "rooms" | "history" | "returns";
 
 const getList = (response: any): any[] => {
   const value = response?.data?.data ?? response?.data ?? [];
@@ -37,12 +40,27 @@ const emptyRoom = {
   notes: "",
 };
 
+const STATUS_BADGE: Record<string, string> = {
+  pending:
+    "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400",
+  approved:
+    "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400",
+  rejected: "bg-rose-100 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400",
+  cancelled:
+    "bg-gray-200 text-gray-600 dark:bg-slate-800 dark:text-gray-400",
+};
+
 export const OfflineInventoryPage: React.FC = () => {
   const { addNotification } = useNotifications();
-  const [tab, setTab] = useState<Tab>("rooms");
+  const [tab, setTab] = useState<Tab>(() => {
+    const params = new URLSearchParams(window.location.search);
+    const qTab = params.get("tab");
+    return qTab === "returns" || qTab === "history" ? qTab : "rooms";
+  });
   const [canManage, setCanManage] = useState(false);
   const [rooms, setRooms] = useState<any[]>([]);
   const [transfers, setTransfers] = useState<any[]>([]);
+  const [returnReqs, setReturnReqs] = useState<any[]>([]);
   const [summary, setSummary] = useState<any | null>(null);
   const [ashrams, setAshrams] = useState<any[]>([]);
   const [roomTypes, setRoomTypes] = useState<any[]>([]);
@@ -52,7 +70,9 @@ export const OfflineInventoryPage: React.FC = () => {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<any | null>(null);
   const [form, setForm] = useState(emptyRoom);
-  const [transferRoomCategories, setTransferRoomCategories] = useState<any[]>([]);
+  const [transferRoomCategories, setTransferRoomCategories] = useState<any[]>(
+    [],
+  );
   const [transferTarget, setTransferTarget] = useState<any | null>(null);
   const [transferForm, setTransferForm] = useState({
     roomId: "",
@@ -61,6 +81,107 @@ export const OfflineInventoryPage: React.FC = () => {
     toDate: inDays(7),
     reason: "",
   });
+
+  // ── Return request state ────────────────────────────────────────────────
+  const [returnTarget, setReturnTarget] = useState<any | null>(null);
+  const [returnForm, setReturnForm] = useState({
+    units: "1",
+    fromDate: today(),
+    toDate: inDays(7),
+    reason: "",
+  });
+  const [decideTarget, setDecideTarget] = useState<any | null>(null);
+  const [decideAction, setDecideAction] = useState<"approve" | "reject">(
+    "approve",
+  );
+  const [decideReason, setDecideReason] = useState("");
+
+  // ── Direct return from online inventory state ───────────────────────────
+  const [directReturnOpen, setDirectReturnOpen] = useState(false);
+  const [directReturnForm, setDirectReturnForm] = useState({
+    ashramId: "",
+    roomId: "",
+    units: "1",
+    fromDate: today(),
+    toDate: inDays(3),
+    reason: "",
+  });
+  const [directRoomCategories, setDirectRoomCategories] = useState<any[]>([]);
+
+  const openDirectReturnModal = async (initialAshramId?: string, initialRoomId?: string) => {
+    const aid = initialAshramId || (ashrams.length > 0 ? getId(ashrams[0]) : "");
+    setDirectReturnForm({
+      ashramId: aid,
+      roomId: initialRoomId || "",
+      units: "1",
+      fromDate: today(),
+      toDate: inDays(3),
+      reason: "",
+    });
+    setDirectReturnOpen(true);
+    if (aid) {
+      try {
+        const res = await ashramService.getManagedById(aid);
+        const categories = res.data?.data?.rooms || [];
+        setDirectRoomCategories(categories);
+        if (categories.length > 0 && !initialRoomId) {
+          setDirectReturnForm((c) => ({ ...c, roomId: getId(categories[0]) }));
+        }
+      } catch {
+        setDirectRoomCategories([]);
+      }
+    }
+  };
+
+  const handleDirectAshramChange = async (aid: string) => {
+    setDirectReturnForm((c) => ({ ...c, ashramId: aid, roomId: "" }));
+    if (aid) {
+      try {
+        const res = await ashramService.getManagedById(aid);
+        const categories = res.data?.data?.rooms || [];
+        setDirectRoomCategories(categories);
+        if (categories.length > 0) {
+          setDirectReturnForm((c) => ({ ...c, roomId: getId(categories[0]) }));
+        }
+      } catch {
+        setDirectRoomCategories([]);
+      }
+    } else {
+      setDirectRoomCategories([]);
+    }
+  };
+
+  const submitDirectReturnRequest = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!directReturnForm.ashramId || !directReturnForm.roomId) return;
+    setSaving(true);
+    try {
+      await offlineInventoryService.requestDirectReturn({
+        ashramId: directReturnForm.ashramId,
+        roomId: directReturnForm.roomId,
+        units: Number(directReturnForm.units),
+        fromDate: directReturnForm.fromDate,
+        toDate: directReturnForm.toDate,
+        reason: directReturnForm.reason || undefined,
+      });
+      addNotification(
+        "Return Request Submitted",
+        `Requested ${directReturnForm.units} unit(s) from Tirvona online inventory. Awaiting admin approval.`,
+        "success",
+      );
+      setDirectReturnOpen(false);
+      await load();
+      setTab("returns");
+    } catch (error) {
+      addNotification(
+        "Return Request Failed",
+        getErrorMessage(error, "Could not submit return request."),
+        "error",
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const openTransferModal = async (row: any) => {
     setTransferTarget(row);
@@ -90,21 +211,33 @@ export const OfflineInventoryPage: React.FC = () => {
     }
   };
 
+  const openReturnModal = (row: any) => {
+    setReturnTarget(row);
+    setReturnForm({
+      units: "1",
+      fromDate: today(),
+      toDate: inDays(7),
+      reason: "",
+    });
+  };
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [roomsRes, transfersRes, summaryRes, ashramsRes] =
+      const [roomsRes, transfersRes, summaryRes, ashramsRes, returnsRes] =
         await Promise.all([
           offlineInventoryService.rooms(),
           offlineInventoryService.transfers(),
           offlineInventoryService.summary(),
           ashramService.myListings(),
+          offlineInventoryService.returnRequests(),
         ]);
       setRooms(getList(roomsRes));
       setCanManage(Boolean(roomsRes.data?.canManage));
       setTransfers(getList(transfersRes));
       setSummary(summaryRes.data?.data ?? null);
       setAshrams(getList(ashramsRes));
+      setReturnReqs(getList(returnsRes));
     } catch (error) {
       addNotification(
         "Offline Inventory Unavailable",
@@ -249,10 +382,92 @@ export const OfflineInventoryPage: React.FC = () => {
     }
   };
 
+  // ── Return request handlers ─────────────────────────────────────────────
+
+  const submitReturnRequest = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!returnTarget) return;
+    setSaving(true);
+    try {
+      await offlineInventoryService.requestReturn(getId(returnTarget), {
+        units: Number(returnForm.units),
+        fromDate: returnForm.fromDate,
+        toDate: returnForm.toDate,
+        reason: returnForm.reason || undefined,
+      });
+      addNotification(
+        "Return Request Submitted",
+        `Requested ${returnForm.units} unit(s) back from Tirvona. Awaiting admin approval.`,
+        "success",
+      );
+      setReturnTarget(null);
+      await load();
+    } catch (error) {
+      addNotification(
+        "Request Failed",
+        getErrorMessage(error, "Could not submit return request."),
+        "error",
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const cancelReturn = async (row: any) => {
+    if (!window.confirm(`Cancel return request ${row.reference}?`)) return;
+    try {
+      await offlineInventoryService.cancelReturnRequest(getId(row));
+      addNotification(
+        "Request Cancelled",
+        `${row.reference} has been cancelled.`,
+        "success",
+      );
+      await load();
+    } catch (error) {
+      addNotification(
+        "Not Cancelled",
+        getErrorMessage(error, "Could not cancel this request."),
+        "error",
+      );
+    }
+  };
+
+  const submitDecision = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!decideTarget) return;
+    setSaving(true);
+    try {
+      await offlineInventoryService.decideReturnRequest(getId(decideTarget), {
+        action: decideAction,
+        rejectionReason: decideAction === "reject" ? decideReason : undefined,
+      });
+      addNotification(
+        decideAction === "approve"
+          ? "Request Approved"
+          : "Request Rejected",
+        `${decideTarget.reference} has been ${decideAction === "approve" ? "approved" : "rejected"}.`,
+        "success",
+      );
+      setDecideTarget(null);
+      setDecideReason("");
+      await load();
+    } catch (error) {
+      addNotification(
+        "Decision Failed",
+        getErrorMessage(error, "Could not process this decision."),
+        "error",
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const field =
     "w-full px-3.5 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:border-[#0A4DA6]";
   const card =
     "bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px]";
+
+  const pendingReturns = returnReqs.filter((r) => r.status === "pending").length;
 
   return (
     <div className="space-y-6 w-full text-left">
@@ -276,12 +491,20 @@ export const OfflineInventoryPage: React.FC = () => {
             Refresh
           </button>
           {canManage && (
-            <button
-              onClick={() => openForm()}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-[#0A4DA6] text-white text-xs font-extrabold"
-            >
-              <Plus size={14} /> Add offline room
-            </button>
+            <>
+              <button
+                onClick={() => openDirectReturnModal()}
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full border-2 border-[#0A4DA6] text-[#0A4DA6] dark:text-blue-400 bg-white dark:bg-[#0B192C] hover:bg-blue-50 dark:hover:bg-blue-950/40 text-xs font-extrabold shadow-sm transition"
+              >
+                <ArrowDownLeft size={14} /> Request rooms from Tirvona
+              </button>
+              <button
+                onClick={() => openForm()}
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-[#083D84] text-white text-xs font-extrabold shadow-sm transition"
+              >
+                <Plus size={14} /> Add offline room
+              </button>
+            </>
           )}
           </>
         }
@@ -312,6 +535,10 @@ export const OfflineInventoryPage: React.FC = () => {
           [
             ["rooms", `Offline rooms (${rooms.length})`],
             ["history", `Transfer history (${transfers.length})`],
+            [
+              "returns",
+              `Return requests (${returnReqs.length})${pendingReturns > 0 ? ` · ${pendingReturns} pending` : ""}`,
+            ],
           ] as [Tab, string][]
         ).map(([key, label]) => (
           <button
@@ -333,6 +560,7 @@ export const OfflineInventoryPage: React.FC = () => {
           <Loader2 size={22} className="animate-spin text-[#0A4DA6]" />
         </div>
       ) : tab === "rooms" ? (
+        /* ─── Rooms tab ──────────────────────────────────────────────────── */
         <div className={`${card} overflow-hidden`}>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
@@ -390,6 +618,15 @@ export const OfflineInventoryPage: React.FC = () => {
                             Transfer to Tirvona
                           </button>
                           <button
+                            onClick={() => openReturnModal(row)}
+                            disabled={
+                              !row.transferredUnits || row.transferredUnits <= 0
+                            }
+                            className="px-2.5 py-1.5 rounded-lg border border-[#0A4DA6] text-[#0A4DA6] dark:text-blue-400 bg-blue-50/60 dark:bg-blue-950/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 text-[10px] font-extrabold disabled:opacity-40 transition"
+                          >
+                            Request rooms back
+                          </button>
+                          <button
                             onClick={() => openForm(row)}
                             className="p-1.5 rounded-lg border border-gray-200 dark:border-slate-700"
                           >
@@ -416,7 +653,25 @@ export const OfflineInventoryPage: React.FC = () => {
                       colSpan={8}
                       className="py-12 text-center text-xs font-bold text-gray-400"
                     >
-                      No offline rooms yet.
+                      <p className="mb-2">No offline rooms yet.</p>
+                      {canManage && (
+                        <div className="flex justify-center items-center gap-2 mt-3">
+                          <button
+                            type="button"
+                            onClick={() => openDirectReturnModal()}
+                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border-2 border-[#0A4DA6] text-[#0A4DA6] dark:text-blue-400 bg-white dark:bg-[#0B192C] hover:bg-blue-50 dark:hover:bg-blue-950/40 text-xs font-extrabold shadow-sm transition"
+                          >
+                            <ArrowDownLeft size={14} /> Request rooms from Tirvona
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => openForm()}
+                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#0A4DA6] hover:bg-[#083D84] text-white text-xs font-extrabold transition"
+                          >
+                            <Plus size={14} /> Add offline room
+                          </button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 )}
@@ -424,7 +679,8 @@ export const OfflineInventoryPage: React.FC = () => {
             </table>
           </div>
         </div>
-      ) : (
+      ) : tab === "history" ? (
+        /* ─── Transfer history tab ───────────────────────────────────────── */
         <div className={`${card} overflow-hidden`}>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[880px] text-left">
@@ -489,8 +745,130 @@ export const OfflineInventoryPage: React.FC = () => {
             </table>
           </div>
         </div>
+      ) : (
+        /* ─── Return requests tab ────────────────────────────────────────── */
+        <div className={`${card} overflow-hidden`}>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[960px] text-left">
+              <thead className="bg-gray-50 dark:bg-slate-900/60">
+                <tr className="text-[10px] uppercase font-black text-gray-400">
+                  <th className="py-3 px-4">Reference</th>
+                  <th className="py-3 px-4">Offline room</th>
+                  <th className="py-3 px-4">Units</th>
+                  <th className="py-3 px-4">Dates</th>
+                  <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4">Requested by</th>
+                  <th className="py-3 px-4">Reason</th>
+                  <th className="py-3 px-4">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
+                {returnReqs.map((row) => (
+                  <tr key={getId(row)} className="text-xs">
+                    <td className="py-3.5 px-4 font-extrabold text-[#0B192C] dark:text-white">
+                      {row.reference}
+                    </td>
+                    <td className="py-3.5 px-4">
+                      {row.offlineRoomId?.label || "—"}
+                      <span className="block text-[10px] text-gray-400">
+                        {row.roomId?.name || ""}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4 font-black text-amber-600">
+                      −{row.units}
+                    </td>
+                    <td className="py-3.5 px-4">
+                      {new Date(row.fromDate).toLocaleDateString()} –{" "}
+                      {new Date(row.toDate).toLocaleDateString()}
+                      <span className="block text-[10px] text-gray-400">
+                        {row.datesCovered} night(s)
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <span
+                        className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase ${
+                          STATUS_BADGE[row.status] ?? STATUS_BADGE.cancelled
+                        }`}
+                      >
+                        {row.status}
+                      </span>
+                      {row.status === "rejected" && row.rejectionReason && (
+                        <span className="block text-[10px] text-rose-500 mt-0.5">
+                          {row.rejectionReason}
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-3.5 px-4">
+                      {row.requestedBy?.name || "—"}
+                      <span className="block text-[10px] text-gray-400">
+                        {row.requestedByRole}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4 text-gray-500 max-w-[180px] truncate">
+                      {row.reason || "—"}
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <div className="flex flex-wrap gap-1.5">
+                        {row.status === "pending" && !canManage && (
+                          <>
+                            <button
+                              onClick={() => {
+                                setDecideTarget(row);
+                                setDecideAction("approve");
+                                setDecideReason("");
+                              }}
+                              className="px-2.5 py-1.5 rounded-lg bg-emerald-600 text-white text-[10px] font-extrabold"
+                            >
+                              <Check size={10} className="inline -mt-0.5 mr-0.5" /> Approve
+                            </button>
+                            <button
+                              onClick={() => {
+                                setDecideTarget(row);
+                                setDecideAction("reject");
+                                setDecideReason("");
+                              }}
+                              className="px-2.5 py-1.5 rounded-lg bg-rose-600 text-white text-[10px] font-extrabold"
+                            >
+                              <XCircle size={10} className="inline -mt-0.5 mr-0.5" /> Reject
+                            </button>
+                          </>
+                        )}
+                        {row.status === "pending" && canManage && (
+                          <button
+                            onClick={() => cancelReturn(row)}
+                            className="px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-slate-700 text-[10px] font-extrabold text-gray-600 dark:text-gray-300"
+                          >
+                            Cancel
+                          </button>
+                        )}
+                        {row.status !== "pending" && (
+                          <span className="text-[10px] font-bold text-gray-400">
+                            {row.decidedBy?.name
+                              ? `by ${row.decidedBy.name}`
+                              : "—"}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {!returnReqs.length && (
+                  <tr>
+                    <td
+                      colSpan={8}
+                      className="py-12 text-center text-xs font-bold text-gray-400"
+                    >
+                      No return requests yet.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
       )}
 
+      {/* ─── Add / Edit offline room modal ──────────────────────────────── */}
       {formOpen && canManage && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center">
           <form
@@ -601,6 +979,7 @@ export const OfflineInventoryPage: React.FC = () => {
         </div>
       )}
 
+      {/* ─── Transfer to Tirvona modal ──────────────────────────────────── */}
       {transferTarget && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center">
           <form
@@ -704,6 +1083,334 @@ export const OfflineInventoryPage: React.FC = () => {
                 <Loader2 size={15} className="animate-spin mx-auto" />
               ) : (
                 "Move into Tirvona inventory"
+              )}
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* ─── Request rooms back modal ───────────────────────────────────── */}
+      {returnTarget && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center">
+          <form
+            onSubmit={submitReturnRequest}
+            className="w-full max-w-lg bg-white dark:bg-[#0B192C] rounded-[28px] p-5 sm:p-7 space-y-4"
+          >
+            <div className="flex justify-between items-start">
+              <div>
+                <h2 className="font-black text-lg text-[#0B192C] dark:text-white">
+                  <ArrowDownLeft
+                    size={18}
+                    className="inline -mt-0.5 mr-1 text-amber-600"
+                  />
+                  Request Rooms Back
+                </h2>
+                <p className="text-xs text-gray-400 mt-1">
+                  {returnTarget.label} · {returnTarget.transferredUnits || 0}{" "}
+                  unit(s) currently with Tirvona
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setReturnTarget(null)}
+                className="p-2 text-gray-400"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <input
+                required
+                type="number"
+                min={1}
+                max={returnTarget.transferredUnits || 1}
+                value={returnForm.units}
+                onChange={(e) =>
+                  setReturnForm((c) => ({ ...c, units: e.target.value }))
+                }
+                placeholder="Units to request back"
+                className={field}
+              />
+              <input
+                required
+                type="date"
+                value={returnForm.fromDate}
+                onChange={(e) =>
+                  setReturnForm((c) => ({ ...c, fromDate: e.target.value }))
+                }
+                className={field}
+              />
+              <input
+                required
+                type="date"
+                value={returnForm.toDate}
+                onChange={(e) =>
+                  setReturnForm((c) => ({ ...c, toDate: e.target.value }))
+                }
+                className={field}
+              />
+              <input
+                value={returnForm.reason}
+                onChange={(e) =>
+                  setReturnForm((c) => ({ ...c, reason: e.target.value }))
+                }
+                placeholder="Reason (optional)"
+                className={field}
+              />
+            </div>
+            <p className="text-[11px] text-gray-400">
+              This sends a request to the Super Admin. Once approved, the selected
+              units are removed from Tirvona online inventory for the specified
+              date range and returned to your offline pool.
+            </p>
+            <button
+              disabled={saving}
+              className="w-full py-3 rounded-full bg-[#0A4DA6] hover:bg-[#083D84] text-white text-xs font-extrabold disabled:opacity-60 transition shadow-sm"
+            >
+              {saving ? (
+                <Loader2 size={15} className="animate-spin mx-auto" />
+              ) : (
+                "Submit return request"
+              )}
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* ─── Admin approve / reject modal ───────────────────────────────── */}
+      {decideTarget && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center">
+          <form
+            onSubmit={submitDecision}
+            className="w-full max-w-md bg-white dark:bg-[#0B192C] rounded-[28px] p-5 sm:p-7 space-y-4"
+          >
+            <div className="flex justify-between items-start">
+              <div>
+                <h2 className="font-black text-lg text-[#0B192C] dark:text-white">
+                  {decideAction === "approve"
+                    ? "Approve Return Request"
+                    : "Reject Return Request"}
+                </h2>
+                <p className="text-xs text-gray-400 mt-1">
+                  {decideTarget.reference} · {decideTarget.units} unit(s) ·{" "}
+                  {decideTarget.offlineRoomId?.label || "—"}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDecideTarget(null)}
+                className="p-2 text-gray-400"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {decideAction === "approve" ? (
+              <div className="rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 p-4 text-xs text-emerald-800 dark:text-emerald-300">
+                <p className="font-bold mb-1">Confirm approval</p>
+                <p>
+                  This will remove {decideTarget.units} unit(s) from Tirvona
+                  online inventory for{" "}
+                  {new Date(decideTarget.fromDate).toLocaleDateString()} –{" "}
+                  {new Date(decideTarget.toDate).toLocaleDateString()} (
+                  {decideTarget.datesCovered} night(s)) and return them to the
+                  owner's offline pool.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className="rounded-xl bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-800 p-4 text-xs text-rose-800 dark:text-rose-300">
+                  <p className="font-bold">This request will be rejected.</p>
+                </div>
+                <textarea
+                  rows={3}
+                  required
+                  value={decideReason}
+                  onChange={(e) => setDecideReason(e.target.value)}
+                  placeholder="Reason for rejection (required)"
+                  className={field}
+                />
+              </div>
+            )}
+
+            <button
+              disabled={saving}
+              className={`w-full py-3 rounded-full text-white text-xs font-extrabold disabled:opacity-60 ${
+                decideAction === "approve" ? "bg-emerald-600" : "bg-rose-600"
+              }`}
+            >
+              {saving ? (
+                <Loader2 size={15} className="animate-spin mx-auto" />
+              ) : decideAction === "approve" ? (
+                "Confirm approval"
+              ) : (
+                "Reject request"
+              )}
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* ─── Direct Request rooms from Tirvona modal ───────────────────── */}
+      {directReturnOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center">
+          <form
+            onSubmit={submitDirectReturnRequest}
+            className="w-full max-w-lg bg-white dark:bg-[#0B192C] rounded-[28px] p-5 sm:p-7 space-y-4 shadow-2xl"
+          >
+            <div className="flex justify-between items-start">
+              <div>
+                <h2 className="font-black text-lg text-[#0B192C] dark:text-white flex items-center gap-1.5">
+                  <ArrowDownLeft size={18} className="text-amber-600" />
+                  Request Rooms From Tirvona
+                </h2>
+                <p className="text-xs text-gray-400 mt-1">
+                  Reclaim rooms directly from Tirvona online inventory for a temporary date range.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDirectReturnOpen(false)}
+                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-[11px] font-bold text-gray-600 dark:text-gray-300 mb-1">
+                  Stay / Property
+                </label>
+                <select
+                  required
+                  value={directReturnForm.ashramId}
+                  onChange={(e) => handleDirectAshramChange(e.target.value)}
+                  className={field}
+                >
+                  <option value="">Select Stay / Property</option>
+                  {ashrams.map((a) => (
+                    <option key={getId(a)} value={getId(a)}>
+                      {a.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-gray-600 dark:text-gray-300 mb-1">
+                  Room Category (Online on Tirvona)
+                </label>
+                <select
+                  required
+                  value={directReturnForm.roomId}
+                  onChange={(e) =>
+                    setDirectReturnForm((c) => ({ ...c, roomId: e.target.value }))
+                  }
+                  className={field}
+                >
+                  <option value="">Select Room Category</option>
+                  {directRoomCategories.map((cat) => (
+                    <option key={getId(cat)} value={getId(cat)}>
+                      {cat.name} ({cat.totalInventory ?? cat.totalRooms ?? 0} total rooms)
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-gray-600 dark:text-gray-300 mb-1">
+                    Rooms to request back
+                  </label>
+                  <input
+                    required
+                    type="number"
+                    min={1}
+                    max={
+                      directRoomCategories.find(
+                        (c) => getId(c) === directReturnForm.roomId,
+                      )?.totalInventory ?? 100
+                    }
+                    value={directReturnForm.units}
+                    onChange={(e) =>
+                      setDirectReturnForm((c) => ({
+                        ...c,
+                        units: e.target.value,
+                      }))
+                    }
+                    placeholder="e.g. 10"
+                    className={field}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-gray-600 dark:text-gray-300 mb-1">
+                    Reason (optional)
+                  </label>
+                  <input
+                    value={directReturnForm.reason}
+                    onChange={(e) =>
+                      setDirectReturnForm((c) => ({
+                        ...c,
+                        reason: e.target.value,
+                      }))
+                    }
+                    placeholder="e.g. Wedding walk-ins"
+                    className={field}
+                  />
+                </div>
+              </div>
+
+              <div className="grid sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-gray-600 dark:text-gray-300 mb-1">
+                    From Date
+                  </label>
+                  <input
+                    required
+                    type="date"
+                    value={directReturnForm.fromDate}
+                    onChange={(e) =>
+                      setDirectReturnForm((c) => ({
+                        ...c,
+                        fromDate: e.target.value,
+                      }))
+                    }
+                    className={field}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-gray-600 dark:text-gray-300 mb-1">
+                    To Date
+                  </label>
+                  <input
+                    required
+                    type="date"
+                    value={directReturnForm.toDate}
+                    onChange={(e) =>
+                      setDirectReturnForm((c) => ({
+                        ...c,
+                        toDate: e.target.value,
+                      }))
+                    }
+                    className={field}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-xl bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/40 p-3 text-[11px] text-blue-900 dark:text-blue-300">
+              This request will be sent to the Super Admin for approval. Once approved, the selected rooms will be deducted from Tirvona's online availability for the chosen dates and allocated to your offline inventory.
+            </div>
+
+            <button
+              disabled={saving || !directReturnForm.ashramId || !directReturnForm.roomId}
+              className="w-full py-3 rounded-full bg-[#0A4DA6] hover:bg-[#083D84] text-white text-xs font-extrabold disabled:opacity-60 transition shadow-sm"
+            >
+              {saving ? (
+                <Loader2 size={15} className="animate-spin mx-auto" />
+              ) : (
+                "Submit Request to Tirvona"
               )}
             </button>
           </form>
