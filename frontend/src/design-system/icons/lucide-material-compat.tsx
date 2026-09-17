@@ -69,6 +69,7 @@ export const AlertCircle = materialIcon("error");
 export const AlertTriangle = materialIcon("warning");
 export const Ambulance = materialIcon("ambulance");
 export const Archive = materialIcon("archive");
+export const ArrowDownLeft = materialIcon("south_west");
 export const ArrowDownRight = materialIcon("south_east");
 export const ArrowLeft = materialIcon("arrow_back");
 export const ArrowLeftRight = materialIcon("sync_alt");

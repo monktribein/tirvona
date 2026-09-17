@@ -68,7 +68,9 @@ const build = (opts: { room?: any; ownedAshrams?: string[] } = {}) => {
     transactions as never,
     offlineRooms as never,
     transfers as never,
+    { find: jest.fn(() => chain([])), findOne: jest.fn(), findById: jest.fn(), create: jest.fn(async (d: any[]) => d) } as never,
     inventory as never,
+    { find: jest.fn(() => chain([])) } as never,
     ashrams as never,
     rooms as never,
   );

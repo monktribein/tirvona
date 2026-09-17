@@ -26,7 +26,9 @@ async function bootstrap(): Promise<void> {
   app.enableShutdownHooks();
   const config = app.get(ConfigService);
   if (isProduction) app.useLogger(app.get(Logger));
-  app.setGlobalPrefix("api");
+  app.setGlobalPrefix("api", {
+    exclude: ["robots.txt"],
+  });
   app.enableVersioning({
     type: VersioningType.URI,
     defaultVersion: VERSION_NEUTRAL,

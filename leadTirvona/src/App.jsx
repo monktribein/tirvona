@@ -177,7 +177,7 @@ export default function App() {
         />
         <footer className="mt-auto text-center py-4 px-6 border-t border-[#E2E8F0] bg-white flex items-center justify-center">
           <a
-            href="https://tirvona.com"
+            href="https://www.tirvona.com"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 text-sm font-extrabold text-[#0B192C] hover:text-[#0A4DA6] transition-colors group"
@@ -290,7 +290,7 @@ export default function App() {
 
       <footer className="mt-auto text-center py-4 px-6 border-t border-[#E2E8F0] bg-white flex items-center justify-center">
         <a
-          href="https://tirvona.com"
+          href="https://www.tirvona.com"
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-2 text-sm font-extrabold text-[#0B192C] hover:text-[#0A4DA6] transition-colors group"

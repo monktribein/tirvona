@@ -91,7 +91,7 @@ export default function AppNavbar({
           <div className="bg-white/95 backdrop-blur-md border border-gray-200/80 rounded-full px-5 sm:px-8 py-2.5 flex items-center justify-between gap-6 w-full shadow-[0_2px_20px_-4px_rgba(0,0,0,0.06)]">
             
             <div className="flex items-center shrink-0">
-              <a href="https://tirvona.com" target="_blank" rel="noopener noreferrer" className="flex items-center">
+              <a href="https://www.tirvona.com" target="_blank" rel="noopener noreferrer" className="flex items-center">
                 <img
                   src="/logo.png"
                   alt="Tirvona"

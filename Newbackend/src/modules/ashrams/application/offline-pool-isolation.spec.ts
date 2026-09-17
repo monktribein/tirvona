@@ -76,7 +76,9 @@ const build = () => {
       })),
     } as never,
     { find: jest.fn(() => chain([])), create: jest.fn(async (d: any[]) => d) } as never,
+    { find: jest.fn(() => chain([])), findOne: jest.fn(), findById: jest.fn(), create: jest.fn(async (d: any[]) => d) } as never,
     inventoryModel as never,
+    { find: jest.fn(() => chain([])) } as never,
     { find: jest.fn(() => chain([])) } as never,
     roomModel as never,
   );

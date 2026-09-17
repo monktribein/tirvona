@@ -39,6 +39,7 @@ import {
 } from "lucide-react";
 import { getAllDestinations } from "../data/destinationData";
 import { checkAshramBookingAvailable } from "../utils/ashramAvailabilityHelper";
+import { trackViewSearchResults, trackSearchStay } from "../lib/analytics";
 
 export const SearchPage: React.FC = () => {
   const { language, t } = useLanguage();
@@ -298,6 +299,13 @@ export const SearchPage: React.FC = () => {
 
         setResults(fetchedData);
         setDiscovery(res.data.discovery ?? null);
+        trackViewSearchResults({
+          destination: searchKey,
+          check_in: checkInQuery || checkIn,
+          check_out: checkOutQuery || checkOut,
+          guests: guestsQuery ? Number(guestsQuery) : totalGuests,
+          results_count: fetchedData.length,
+        });
       }
     } catch (err) {
       console.error("Search API error:", err);
@@ -314,6 +322,13 @@ export const SearchPage: React.FC = () => {
       destination,
       checkIn,
       checkOut,
+    });
+    trackSearchStay({
+      destination: destination.trim(),
+      check_in: checkIn,
+      check_out: checkOut,
+      guests: totalGuests,
+      rooms: searchState.rooms,
     });
     const params: Record<string, string> = {};
     if (destination) params.destination = destination;

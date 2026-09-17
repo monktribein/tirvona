@@ -884,6 +884,11 @@ export const PublicLayout: React.FC = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <a
                       href="tel:+917836055511"
+                      onClick={() => {
+                        import("../lib/analytics").then(({ trackClickCall }) => {
+                          trackClickCall({ page_type: "footer" });
+                        });
+                      }}
                       className="px-3 py-2 rounded-xl bg-white/5 hover:bg-[#E58C28]/20 border border-white/10 text-xs font-extrabold text-white flex items-center gap-2 transition-colors"
                     >
                       <PhoneCall

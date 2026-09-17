@@ -147,6 +147,16 @@ export const offlineInventoryService = {
   remove: (id: string) => api.delete(`/offline-inventory/rooms/${id}`),
   transfer: (id: string, data: unknown) =>
     api.post(`/offline-inventory/rooms/${id}/transfer`, data),
+  requestReturn: (id: string, data: unknown) =>
+    api.post(`/offline-inventory/rooms/${id}/return-request`, data),
+  requestDirectReturn: (data: unknown) =>
+    api.post("/offline-inventory/direct-return-request", data),
+  returnRequests: (params: Record<string, string> = {}) =>
+    api.get("/offline-inventory/return-requests", { params }),
+  decideReturnRequest: (id: string, data: unknown) =>
+    api.put(`/offline-inventory/return-requests/${id}/decide`, data),
+  cancelReturnRequest: (id: string) =>
+    api.post(`/offline-inventory/return-requests/${id}/cancel`, {}),
 };
 
 export const selfBookingService = {

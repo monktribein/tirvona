@@ -8,6 +8,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { useProfileAutoFill } from "../hooks/useProfileAutoFill";
+import { trackClickCall } from "../lib/analytics";
 
 const ContactPage: React.FC = () => {
   const autoFill = useProfileAutoFill();
@@ -180,12 +181,14 @@ const ContactPage: React.FC = () => {
                 icon: <Phone size={18} className="text-[#0A4DA6]" />,
                 label: "Phone",
                 val: "+91 78360 55511",
+                href: "tel:+917836055511",
                 sub: "Mon–Sun, 9am–9pm IST",
               },
               {
                 icon: <Mail size={18} className="text-[#0A4DA6]" />,
                 label: "Email",
                 val: "info@nktech.in",
+                href: "mailto:info@nktech.in",
                 sub: "Reply within 2 hours",
               },
               {
@@ -211,9 +214,23 @@ const ContactPage: React.FC = () => {
                 <p className="text-[10px] font-extrabold tracking-wider text-gray-400">
                   {c.label}
                 </p>
-                <p className="text-sm font-extrabold text-[#0B192C] dark:text-white">
-                  {c.val}
-                </p>
+                {c.href ? (
+                  <a
+                    href={c.href}
+                    onClick={() => {
+                      if (c.href.startsWith("tel:")) {
+                        trackClickCall({ page_type: "contact" });
+                      }
+                    }}
+                    className="text-sm font-extrabold text-[#0B192C] dark:text-white hover:text-[#0A4DA6] transition-colors block"
+                  >
+                    {c.val}
+                  </a>
+                ) : (
+                  <p className="text-sm font-extrabold text-[#0B192C] dark:text-white">
+                    {c.val}
+                  </p>
+                )}
                 <p className="text-[10px] text-gray-400">{c.sub}</p>
               </div>
             ))}
@@ -238,10 +255,14 @@ const ContactPage: React.FC = () => {
                   />
                   {o.address}
                 </p>
-                <p className="text-xs text-gray-500 flex items-center gap-1.5">
+                <a
+                  href={`tel:${o.phone.replace(/[^0-9+]/g, "")}`}
+                  onClick={() => trackClickCall({ page_type: "contact" })}
+                  className="text-xs text-gray-500 hover:text-[#0A4DA6] flex items-center gap-1.5 transition-colors"
+                >
                   <Phone size={10} className="text-[#0A4DA6]" />
                   {o.phone}
-                </p>
+                </a>
                 <p className="text-xs text-gray-500 flex items-center gap-1.5">
                   <Mail size={10} className="text-[#0A4DA6]" />
                   {o.email}

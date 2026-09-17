@@ -18,8 +18,12 @@ import {
 import { canManageAllAshrams } from "../../../common/auth/ashram-access";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import type {
+  DecideReturnRequestDto,
+  DirectReturnRequestDto,
   OfflineRoomQueryDto,
   OfflineTransferHistoryQueryDto,
+  RequestReturnDto,
+  ReturnRequestQueryDto,
   SaveOfflineRoomDto,
   TransferOfflineInventoryDto,
   UpdateOfflineRoomDto,
@@ -48,6 +52,11 @@ const midnight = (value: string): Date => {
 export const offlineTransferReference = (): string =>
   `OFT-${new Date().getFullYear()}-${randomBytes(4).toString("hex").toUpperCase()}`;
 
+export const returnRequestReference = (): string =>
+  `IRR-${new Date().getFullYear()}-${randomBytes(4).toString("hex").toUpperCase()}`;
+
+const ADMIN_ROLES = ["super_admin", "ashram_admin", "stay_admin"];
+
 @Injectable()
 export class OfflineInventoryService {
   private readonly logger = new Logger(OfflineInventoryService.name);
@@ -57,7 +66,10 @@ export class OfflineInventoryService {
     @InjectModel("OfflineRoom") private readonly offlineRooms: Model<any>,
     @InjectModel("OfflineInventoryTransfer")
     private readonly transfers: Model<any>,
+    @InjectModel("InventoryReturnRequest")
+    private readonly returnRequests: Model<any>,
     @InjectModel("BookingInventory") private readonly inventory: Model<any>,
+    @InjectModel("Booking") private readonly bookings: Model<any>,
     @InjectModel("Ashram") private readonly ashrams: Model<any>,
     @InjectModel("Room") private readonly rooms: Model<any>,
   ) {}
@@ -258,17 +270,18 @@ export class OfflineInventoryService {
     if (dates.length > 180)
       throw new BadRequestException("A transfer may span at most 180 nights");
 
-    const room = await this.rooms.findById(row.roomId).lean();
+    const targetRoomId = dto.roomId || row.roomId;
+    const room = await this.rooms.findById(targetRoomId).lean();
     if (!room) throw new NotFoundException("Room type not found");
 
     return this.transactions.run(async (session) => {
       for (const date of dates) {
         await this.inventory.updateOne(
-          { roomId: row.roomId, date },
+          { roomId: targetRoomId, date },
           {
             $setOnInsert: {
               ashramId: row.ashramId,
-              roomId: row.roomId,
+              roomId: targetRoomId,
               date,
               totalInventory: Number((room as any).totalInventory ?? 0),
               heldCount: 0,
@@ -279,7 +292,7 @@ export class OfflineInventoryService {
           { upsert: true, session },
         );
         await this.inventory.updateOne(
-          { roomId: row.roomId, date },
+          { roomId: targetRoomId, date },
           {
             $inc: {
               totalInventory: dto.units,
@@ -292,6 +305,9 @@ export class OfflineInventoryService {
 
       const before = available;
       row.transferredUnits = Number(row.transferredUnits ?? 0) + dto.units;
+      if (dto.roomId && String(row.roomId) !== String(dto.roomId)) {
+        row.roomId = dto.roomId;
+      }
       row.updatedBy = user.id;
       await row.save({ session });
       const after = this.available(row);
@@ -302,7 +318,7 @@ export class OfflineInventoryService {
             reference: offlineTransferReference(),
             ashramId: row.ashramId,
             offlineRoomId: row._id,
-            roomId: row.roomId,
+            roomId: targetRoomId,
             units: dto.units,
             fromDate: from,
             toDate: to,
@@ -354,5 +370,383 @@ export class OfflineInventoryService {
       .sort({ createdAt: -1 })
       .limit(query.limit ?? 50)
       .lean();
+  }
+
+  // ── Return Requests ───────────────────────────────────────────────────────
+
+  async requestReturnFromTirvona(
+    user: AuthenticatedUser,
+    id: string,
+    dto: RequestReturnDto,
+  ): Promise<any> {
+    this.assertCanManage(user);
+    const scope = await this.scope(user);
+    const row = await this.ownedRoom(user, id, scope);
+
+    const transferred = Number(row.transferredUnits ?? 0);
+    if (dto.units > transferred)
+      throw new BadRequestException(
+        `Only ${transferred} unit(s) are currently held by Tirvona and can be requested back`,
+      );
+
+    const from = midnight(dto.fromDate);
+    const to = midnight(dto.toDate);
+    if (to < from)
+      throw new BadRequestException("The end date must not precede the start date");
+    const dates = eachNight(from, to);
+    if (dates.length > 180)
+      throw new BadRequestException("A return request may span at most 180 nights");
+
+    // Block if there is already a pending request for this offline room
+    const existingPending = await this.returnRequests.findOne({
+      offlineRoomId: row._id,
+      status: "pending",
+    });
+    if (existingPending)
+      throw new BadRequestException(
+        `A pending return request (${existingPending.reference}) already exists for this offline room. Cancel or wait for it to be decided before creating another.`,
+      );
+
+    // Guard: ensure removing these units won't violate existing bookings
+    for (const date of dates) {
+      const inv = await this.inventory
+        .findOne({ roomId: row.roomId, date })
+        .lean();
+      if (inv) {
+        const committed =
+          Number(inv.heldCount ?? 0) + Number(inv.bookedCount ?? 0);
+        const afterRemoval = Number(inv.totalInventory ?? 0) - dto.units;
+        if (afterRemoval < committed)
+          throw new BadRequestException(
+            `Cannot reclaim ${dto.units} unit(s) on ${date.toISOString().slice(0, 10)}: ` +
+              `${committed} unit(s) are already committed to confirmed or held bookings ` +
+              `(current online inventory: ${inv.totalInventory}).`,
+          );
+      }
+    }
+
+    const offlineAvailableBefore = this.available(row);
+
+    const [request] = await this.returnRequests.create([
+      {
+        reference: returnRequestReference(),
+        ashramId: row.ashramId,
+        offlineRoomId: row._id,
+        roomId: row.roomId,
+        units: dto.units,
+        fromDate: from,
+        toDate: to,
+        datesCovered: dates.length,
+        reason: dto.reason ?? "",
+        status: "pending",
+        requestedBy: user.id,
+        requestedByRole: user.role,
+        offlineAvailableBefore,
+      },
+    ]);
+
+    this.logger.log(
+      JSON.stringify({
+        event: "inventory.return_request_created",
+        reference: request.reference,
+        ashramId: String(row.ashramId),
+        offlineRoomId: String(row._id),
+        units: dto.units,
+        nights: dates.length,
+        actorId: user.id,
+      }),
+    );
+
+    return request.toObject();
+  }
+
+  async requestDirectReturnFromTirvona(
+    user: AuthenticatedUser,
+    dto: DirectReturnRequestDto,
+  ): Promise<any> {
+    this.assertCanManage(user);
+    const scope = await this.scope(user);
+    assertAshramInScope(scope, dto.ashramId);
+
+    const room = await this.rooms.findOne({
+      _id: dto.roomId,
+      ashramId: dto.ashramId,
+    });
+    if (!room)
+      throw new NotFoundException("Room category not found for this property");
+
+    const totalRooms = Number(room.totalInventory ?? room.totalRooms ?? 0);
+    if (dto.units > totalRooms) {
+      throw new BadRequestException(
+        `Requested units (${dto.units}) exceeds total registered rooms for ${room.name} (${totalRooms})`,
+      );
+    }
+
+    const from = midnight(dto.fromDate);
+    const to = midnight(dto.toDate);
+    if (to < from)
+      throw new BadRequestException("The end date must not precede the start date");
+    const dates = eachNight(from, to);
+    if (dates.length > 180)
+      throw new BadRequestException("A return request may span at most 180 nights");
+
+    // Guard: ensure removing these units from Tirvona online won't violate existing guest bookings
+    for (const date of dates) {
+      const inv = await this.inventory
+        .findOne({ roomId: dto.roomId, date })
+        .lean();
+      if (inv) {
+        const committed =
+          Number(inv.heldCount ?? 0) + Number(inv.bookedCount ?? 0);
+        const afterRemoval = Number(inv.totalInventory ?? totalRooms) - dto.units;
+        if (afterRemoval < committed)
+          throw new BadRequestException(
+            `Cannot reclaim ${dto.units} unit(s) on ${date.toISOString().slice(0, 10)}: ` +
+              `${committed} unit(s) are already committed to confirmed or held bookings ` +
+              `(current online inventory: ${inv.totalInventory}).`,
+          );
+      }
+    }
+
+    // Find or create an offline pool for this category so returned units have an offline home
+    let offlineRoom = await this.offlineRooms.findOne({
+      ashramId: dto.ashramId,
+      roomId: dto.roomId,
+      status: "active",
+    });
+
+    if (!offlineRoom) {
+      const [created] = await this.offlineRooms.create([
+        {
+          ashramId: dto.ashramId,
+          roomId: dto.roomId,
+          label: `${room.name} (Tirvona Return Hold)`,
+          totalUnits: dto.units,
+          availableUnits: 0,
+          blockedUnits: 0,
+          transferredUnits: dto.units,
+          status: "active",
+          createdBy: user.id,
+        },
+      ]);
+      offlineRoom = created;
+    } else {
+      offlineRoom.transferredUnits =
+        Number(offlineRoom.transferredUnits ?? 0) + dto.units;
+      offlineRoom.totalUnits =
+        Number(offlineRoom.totalUnits ?? 0) + dto.units;
+      await offlineRoom.save();
+    }
+
+    const offlineAvailableBefore = this.available(offlineRoom);
+
+    const [request] = await this.returnRequests.create([
+      {
+        reference: returnRequestReference(),
+        ashramId: dto.ashramId,
+        offlineRoomId: offlineRoom._id,
+        roomId: dto.roomId,
+        units: dto.units,
+        fromDate: from,
+        toDate: to,
+        datesCovered: dates.length,
+        reason: dto.reason ?? "",
+        status: "pending",
+        requestedBy: user.id,
+        requestedByRole: user.role,
+        offlineAvailableBefore,
+      },
+    ]);
+
+    this.logger.log(
+      JSON.stringify({
+        event: "inventory.direct_return_request_created",
+        reference: request.reference,
+        ashramId: dto.ashramId,
+        roomId: dto.roomId,
+        units: dto.units,
+        nights: dates.length,
+        actorId: user.id,
+      }),
+    );
+
+    return request.toObject();
+  }
+
+  async listReturnRequests(
+    user: AuthenticatedUser,
+    query: ReturnRequestQueryDto,
+  ): Promise<any[]> {
+    const scope = await this.scope(user);
+    if (query.ashramId) assertAshramInScope(scope, query.ashramId);
+
+    const filter: Record<string, unknown> = {};
+    if (query.ashramId) filter.ashramId = query.ashramId;
+    else if (!isUnrestricted(scope)) filter.ashramId = { $in: scope };
+    if (query.offlineRoomId) filter.offlineRoomId = query.offlineRoomId;
+    if (query.status && query.status !== "all") filter.status = query.status;
+
+    return this.returnRequests
+      .find(filter)
+      .populate("offlineRoomId", "label")
+      .populate("roomId", "name type")
+      .populate("ashramId", "name")
+      .populate("requestedBy", "name email")
+      .populate("decidedBy", "name email")
+      .sort({ createdAt: -1 })
+      .limit(query.limit ?? 50)
+      .lean();
+  }
+
+  async decideReturnRequest(
+    user: AuthenticatedUser,
+    requestId: string,
+    dto: DecideReturnRequestDto,
+  ): Promise<any> {
+    if (!ADMIN_ROLES.includes(user.role) && !canManageAllAshrams(user))
+      throw new ForbiddenException(
+        "Only Super Admin or Ashram Admin may approve or reject return requests.",
+      );
+
+    const request = await this.returnRequests.findById(requestId);
+    if (!request) throw new NotFoundException("Return request not found");
+    if (request.status !== "pending")
+      throw new BadRequestException(
+        `This request has already been ${request.status}`,
+      );
+
+    if (dto.action === "reject") {
+      request.status = "rejected";
+      request.rejectionReason = dto.rejectionReason ?? "";
+      request.decidedBy = user.id;
+      request.decidedByRole = user.role;
+      request.decidedAt = new Date();
+      await request.save();
+
+      this.logger.log(
+        JSON.stringify({
+          event: "inventory.return_request_rejected",
+          reference: request.reference,
+          actorId: user.id,
+        }),
+      );
+
+      return request.toObject();
+    }
+
+    // action === "approve"
+    const row = await this.offlineRooms.findById(request.offlineRoomId);
+    if (!row) throw new NotFoundException("Offline room no longer exists");
+
+    const from = new Date(request.fromDate);
+    const to = new Date(request.toDate);
+    const dates = eachNight(from, to);
+
+    // Re-validate against current bookings
+    for (const date of dates) {
+      const inv = await this.inventory
+        .findOne({ roomId: request.roomId, date })
+        .lean();
+      if (inv) {
+        const committed =
+          Number(inv.heldCount ?? 0) + Number(inv.bookedCount ?? 0);
+        const afterRemoval = Number(inv.totalInventory ?? 0) - request.units;
+        if (afterRemoval < committed)
+          throw new BadRequestException(
+            `Cannot approve: ${committed} unit(s) are committed on ${date.toISOString().slice(0, 10)} ` +
+              `and removing ${request.units} would violate availability (current: ${inv.totalInventory}).`,
+          );
+      }
+    }
+
+    return this.transactions.run(async (session) => {
+      // Decrement online inventory for each date
+      for (const date of dates) {
+        await this.inventory.updateOne(
+          { roomId: request.roomId, date },
+          {
+            $inc: {
+              totalInventory: -request.units,
+              transferredFromOfflineCount: -request.units,
+            },
+          },
+          { session },
+        );
+      }
+
+      // Decrement transferredUnits on the offline room
+      const beforeAvailable = this.available(row);
+      row.transferredUnits = Math.max(
+        0,
+        Number(row.transferredUnits ?? 0) - request.units,
+      );
+      row.updatedBy = user.id;
+      await row.save({ session });
+      const afterAvailable = this.available(row);
+
+      // Update the request
+      request.status = "approved";
+      request.decidedBy = user.id;
+      request.decidedByRole = user.role;
+      request.decidedAt = new Date();
+      request.offlineAvailableAfter = afterAvailable;
+      request.onlineInventoryBefore = beforeAvailable;
+      request.onlineInventoryAfter = afterAvailable;
+      await request.save({ session });
+
+      this.logger.log(
+        JSON.stringify({
+          event: "inventory.return_request_approved",
+          reference: request.reference,
+          ashramId: String(request.ashramId),
+          units: request.units,
+          nights: dates.length,
+          actorId: user.id,
+        }),
+      );
+
+      return {
+        request: request.toObject(),
+        offlineRoom: this.decorate(row.toObject()),
+      };
+    });
+  }
+
+  async cancelReturnRequest(
+    user: AuthenticatedUser,
+    requestId: string,
+  ): Promise<any> {
+    const request = await this.returnRequests.findById(requestId);
+    if (!request) throw new NotFoundException("Return request not found");
+
+    if (request.status !== "pending")
+      throw new BadRequestException(
+        `Only pending requests can be cancelled. This request is ${request.status}.`,
+      );
+
+    // Only the original requester or an admin can cancel
+    const isRequester = String(request.requestedBy) === String(user.id);
+    const isAdmin =
+      ADMIN_ROLES.includes(user.role) || canManageAllAshrams(user);
+    if (!isRequester && !isAdmin)
+      throw new ForbiddenException(
+        "You can only cancel your own pending return requests.",
+      );
+
+    request.status = "cancelled";
+    request.decidedBy = user.id;
+    request.decidedByRole = user.role;
+    request.decidedAt = new Date();
+    await request.save();
+
+    this.logger.log(
+      JSON.stringify({
+        event: "inventory.return_request_cancelled",
+        reference: request.reference,
+        actorId: user.id,
+      }),
+    );
+
+    return request.toObject();
   }
 }

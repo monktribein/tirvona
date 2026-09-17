@@ -98,7 +98,7 @@ export const LocalHubEnterpriseDrawer: React.FC<
         gst: 5,
         phone: "+91 98765 00000",
         email: "info@tirvona.com",
-        website: "https://tirvona.com",
+        website: "https://www.tirvona.com",
         openingHours: "06:00 AM",
         closingHours: "09:00 PM",
         weeklyOff: "None",

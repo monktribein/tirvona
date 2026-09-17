@@ -82,6 +82,17 @@ import {
   type VolunteerJobItem,
 } from "../services/volunteer.service";
 import { useProfileAutoFill } from "../hooks/useProfileAutoFill";
+import {
+  trackViewProperty,
+  trackSelectRoom,
+  trackClickBookNow,
+  trackBeginCheckout,
+  trackAddGuestDetails,
+  trackBeginPayment,
+  trackPurchase,
+  trackBookingFailed,
+  trackClickCall,
+} from "../lib/analytics";
 
 /**
  * Renders an owner-set "HH:MM" policy time as "12:00 PM". Values that already
@@ -182,6 +193,18 @@ export const AshramDetailPage: React.FC = () => {
         delete newMap[roomId];
       } else {
         newMap[roomId] = next;
+        if (delta > 0) {
+          const roomObj = rooms.find((r) => String(r._id) === roomId);
+          trackSelectRoom({
+            property_id: currentAshramId || String(ashram?._id || ""),
+            property_name: ashram?.name,
+            room_id: roomId,
+            room_name: roomObj?.name,
+            room_nights: calculateDays(),
+            room_value: (roomObj?.basePrice || 0) * next * calculateDays(),
+            currency: "INR",
+          });
+        }
       }
       return newMap;
     });
@@ -854,6 +877,11 @@ export const AshramDetailPage: React.FC = () => {
 
         setAshram(detailAshram);
         setRooms(detailRooms);
+        trackViewProperty({
+          property_id: String(detailAshram._id),
+          property_name: detailAshram.name,
+          destination: detailAshram.address?.city || city,
+        });
 
         if (id) {
           fetchReviews(id);
@@ -1022,6 +1050,14 @@ export const AshramDetailPage: React.FC = () => {
     setBookingError("");
     setBookingSuccess(null);
 
+    // 1. click_book_now event
+    trackClickBookNow({
+      property_id: currentAshramId || String(ashram?._id || ""),
+      property_name: ashram?.name,
+      room_id: firstSelectedRoomId,
+      room_name: firstSelectedRoom?.name,
+    });
+
     if (!user) {
       const currentUrl = window.location.pathname + window.location.search;
       const draftPayload: BookingDraftPayload = {
@@ -1069,6 +1105,26 @@ export const AshramDetailPage: React.FC = () => {
       return;
     }
 
+    // 2. begin_checkout event
+    trackBeginCheckout({
+      property_id: currentAshramId || String(ashram?._id || ""),
+      property_name: ashram?.name,
+      destination: ashram?.address?.city || city,
+      check_in: checkIn,
+      check_out: checkOut,
+      room_nights: daysCount,
+      booking_value: finalPayableCalc,
+      currency: "INR",
+    });
+
+    // 3. add_guest_details event (NON-PII ONLY)
+    trackAddGuestDetails({
+      property_id: currentAshramId || String(ashram?._id || ""),
+      property_name: ashram?.name,
+      destination: ashram?.address?.city || city,
+      guests_count: adults + children,
+    });
+
     const payload = {
       ashramId: ashram._id,
       rooms: Object.entries(selectedRooms).map(([roomId, units]) => ({ roomId, units })),
@@ -1089,12 +1145,24 @@ export const AshramDetailPage: React.FC = () => {
     };
 
     setPaying(true);
+    let currentHeldBookingId = "";
     try {
       const res = await bookingService.create(payload);
       if (!res.data.success || !res.data.data?._id)
         throw new Error("Could not create a secure reservation hold.");
 
       const heldBooking = res.data.data;
+      currentHeldBookingId = String(heldBooking._id || heldBooking.bookingId || "");
+
+      // 4. begin_payment event
+      trackBeginPayment({
+        booking_id: heldBooking.bookingId || heldBooking._id,
+        property_id: currentAshramId || String(ashram?._id || ""),
+        property_name: ashram?.name,
+        booking_value: heldBooking.pricing?.totalAmount || finalPayableCalc,
+        currency: "INR",
+      });
+
       const orderRes = await bookingService.createPaymentOrder(heldBooking._id);
       if (orderRes.data.demo)
         throw new Error("Razorpay is not configured. Real payment is required.");
@@ -1107,9 +1175,32 @@ export const AshramDetailPage: React.FC = () => {
       const paymentRes = await bookingService.pay(heldBooking._id, paymentResult);
       if (!paymentRes.data.success) throw new Error("Payment verification failed.");
 
+      const confirmedBooking = paymentRes.data.data;
       clearBookingDraft();
-      setBookingSuccess(paymentRes.data.data);
+      setBookingSuccess(confirmedBooking);
+
+      // 5. purchase event (CONFIRMED BOOKING ONLY with deduplication)
+      trackPurchase({
+        booking_id: confirmedBooking.bookingId || confirmedBooking._id,
+        property_id: String(ashram._id),
+        property_name: ashram.name,
+        destination: ashram.address?.city || city,
+        check_in: confirmedBooking.checkInDate || checkIn,
+        check_out: confirmedBooking.checkOutDate || checkOut,
+        room_nights: daysCount,
+        booking_value: confirmedBooking.pricing?.totalAmount || finalPayableCalc,
+        platform_revenue: confirmedBooking.pricing?.platformFee ?? 0,
+        currency: "INR",
+      });
     } catch (err) {
+      // 6. booking_failed event
+      trackBookingFailed({
+        booking_id: currentHeldBookingId,
+        property_id: currentAshramId || String(ashram?._id || ""),
+        property_name: ashram?.name,
+        failure_stage: "payment_execution",
+        currency: "INR",
+      });
       setBookingError(
         getErrorMessage(err, "Payment could not be completed. Your booking was not confirmed."),
       );
@@ -1290,6 +1381,13 @@ export const AshramDetailPage: React.FC = () => {
               return (
                 <a
                   href={`tel:${rawPhone}`}
+                  onClick={() =>
+                    trackClickCall({
+                      page_type: "property_detail",
+                      property_id: String(ashram._id),
+                      property_name: ashram.name,
+                    })
+                  }
                   className="flex items-center gap-1.5 hover:text-[#0A4DA6] transition-colors shrink-0"
                 >
                   <Phone size={13} className="text-[#0A4DA6] shrink-0" />

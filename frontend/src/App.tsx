@@ -20,6 +20,7 @@ import PublicLayout from "./layouts/PublicLayout";
 import DashboardLayout from "./layouts/DashboardLayout";
 import PageLoader from "./components/PageLoader";
 import AuthReturnRestorer from "./components/AuthReturnRestorer";
+import { trackPageView } from "./lib/analytics";
 
 const HomePage = lazy(() => import("./pages/HomePage"));
 const BannerDetailPage = lazy(() => import("./pages/BannerDetailPage"));
@@ -35,6 +36,27 @@ const PartnerPage = lazy(() => import("./pages/PartnerPage"));
 const PressPage = lazy(() => import("./pages/PressPage"));
 const HelpCenterPage = lazy(() => import("./pages/HelpCenterPage"));
 const ContactPage = lazy(() => import("./pages/ContactPage"));
+const StaysNearPremMandirVrindavanPage = lazy(
+  () => import("./pages/StaysNearPremMandirVrindavanPage"),
+);
+const VrindavanStaysPage = lazy(
+  () => import("./seo/VrindavanStaysPage"),
+);
+const BankeBihariStaysPage = lazy(
+  () => import("./seo/BankeBihariStaysPage"),
+);
+const PremMandirStaysPage = lazy(
+  () => import("./seo/PremMandirStaysPage"),
+);
+const IskconStaysPage = lazy(
+  () => import("./seo/IskconStaysPage"),
+);
+const BudgetStaysPage = lazy(
+  () => import("./seo/BudgetStaysPage"),
+);
+const FamilyStaysPage = lazy(
+  () => import("./seo/FamilyStaysPage"),
+);
 import {
   CancellationPolicyPage,
   GovtGuidelinesPage,
@@ -68,9 +90,6 @@ const PayoutManagementPage = lazy(
 );
 const OwnerParkingSetupPage = lazy(
   () => import("./pages/owner/OwnerParkingSetupPage"),
-);
-const PremMandirStaysPage = lazy(
-  () => import("./pages/PremMandirStaysPage"),
 );
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 const SelfBookingPage = lazy(
@@ -389,6 +408,17 @@ const ScrollToTop: React.FC = () => {
   return null;
 };
 
+const PageViewTracker: React.FC = () => {
+  const location = useLocation();
+
+  useEffect(() => {
+    const fullPath = location.pathname + location.search + location.hash;
+    trackPageView(fullPath);
+  }, [location.pathname, location.search, location.hash]);
+
+  return null;
+};
+
 const AppContent: React.FC = () => {
   useCurrency();
   useLanguage();
@@ -404,6 +434,7 @@ const AppContent: React.FC = () => {
   return (
     <BrowserRouter>
       <ScrollToTop />
+      <PageViewTracker />
       <AuthReturnRestorer />
       <Suspense fallback={<PageLoader />}>
         <Routes>
@@ -424,6 +455,8 @@ const AppContent: React.FC = () => {
             {/* canonical, id-free */}
             {/* city listing: /ashrams/haridwar */}
             <Route path="/ashrams" element={<SearchPage />} />
+            <Route path="/ashrams/vrindavan" element={<VrindavanStaysPage />} />
+            <Route path="/stays-in-vrindavan" element={<VrindavanStaysPage />} />
             <Route path="/ashrams/:city" element={<SearchPage />} />
             <Route path="/ashrams/:city/:ashramSlug" element={<AshramDetailPage />} />
             <Route path="/ashrams/:city/:ashramSlug/book" element={<AshramDetailPage />} />
@@ -432,6 +465,32 @@ const AppContent: React.FC = () => {
             <Route path="/ashram/:id" element={<AshramDetailPage />} />
             <Route path="/stay/:id" element={<AshramDetailPage />} />
             <Route path="/stays" element={<SearchPage />} />
+
+            {/* Dedicated 6 SEO Landing Pages */}
+            <Route
+              path="/stays-near-banke-bihari-vrindavan"
+              element={<BankeBihariStaysPage />}
+            />
+            <Route
+              path="/Stays-near-prem-mandir-vrindavan"
+              element={<PremMandirStaysPage />}
+            />
+            <Route
+              path="/stays-near-prem-mandir-vrindavan"
+              element={<PremMandirStaysPage />}
+            />
+            <Route
+              path="/stays-near-iskcon-vrindavan"
+              element={<IskconStaysPage />}
+            />
+            <Route
+              path="/budget-stays-in-vrindavan"
+              element={<BudgetStaysPage />}
+            />
+            <Route
+              path="/family-stays-in-vrindavan"
+              element={<FamilyStaysPage />}
+            />
             <Route path="/temples" element={<TempleSearchPage />} />
             <Route path="/temples/:slug" element={<TempleDetailPage />} />
             <Route path="/faq" element={<FaqPage />} />
