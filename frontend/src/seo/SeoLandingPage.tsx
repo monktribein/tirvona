@@ -33,7 +33,6 @@ import {
   trackSearchStay,
   trackViewSearchResults,
   trackClickBookNow,
-  trackViewProperty,
 } from "../lib/analytics";
 import type { SeoLandingConfig } from "./seoLandingConfigs";
 import { TEMPLE_COORDS } from "./seoLandingConfigs";
@@ -131,6 +130,7 @@ export const SeoLandingPage: React.FC<SeoLandingPageProps> = ({ config }) => {
   const [guests, setGuests] = useState<number>(searchState.adults || 2);
   const [showGuestPicker, setShowGuestPicker] = useState(false);
   const guestPickerRef = useRef<HTMLDivElement>(null);
+  const lastTrackedConfigRef = useRef<string>("");
 
   // Filter States
   const [activeFilterTab, setActiveFilterTab] = useState<string>("all");
@@ -247,13 +247,16 @@ export const SeoLandingPage: React.FC<SeoLandingPageProps> = ({ config }) => {
 
         setStays(approved);
 
-        trackViewSearchResults({
-          destination: config.h1,
-          check_in: checkIn,
-          check_out: checkOut,
-          guests,
-          results_count: approved.length,
-        });
+        if (lastTrackedConfigRef.current !== config.id) {
+          lastTrackedConfigRef.current = config.id;
+          trackViewSearchResults({
+            destination: config.h1,
+            check_in: checkIn,
+            check_out: checkOut,
+            guests,
+            results_count: approved.length,
+          });
+        }
       } catch (err: any) {
         if (isMounted) {
           console.warn("Failed to load dynamic stays:", err);
@@ -315,11 +318,6 @@ export const SeoLandingPage: React.FC<SeoLandingPageProps> = ({ config }) => {
   const getBookUrl = (stay: any) => ashramBookUrl(stay, getStayQuery());
 
   const handleNavigateDetails = (stay: any) => {
-    trackViewProperty({
-      property_id: String(stay._id || ""),
-      property_name: stay.name,
-      destination: stay.address?.city || "Vrindavan",
-    });
     navigate(getDetailsUrl(stay));
   };
 

@@ -4,8 +4,6 @@
 
 export const GOOGLE_ADS_ID: string = "AW-18454245978";
 export const GA4_MEASUREMENT_ID: string = "G-57XM8N389";
-// Also support any secondary stream ID if needed
-export const GA4_BACKUP_MEASUREMENT_ID: string = "G-5S7XM8N389";
 
 declare global {
   interface Window {
@@ -40,24 +38,17 @@ export function trackEvent(eventName: string, params: Record<string, unknown> = 
 
   const payload = cleanParams(params);
 
-  // Send event to GA4 primary and secondary measurement IDs
+  // Send event solely to the authoritative GA4 measurement ID
   window.gtag("event", eventName, {
     ...payload,
     send_to: GA4_MEASUREMENT_ID,
   });
-
-  if (GA4_BACKUP_MEASUREMENT_ID && GA4_BACKUP_MEASUREMENT_ID !== GA4_MEASUREMENT_ID) {
-    window.gtag("event", eventName, {
-      ...payload,
-      send_to: GA4_BACKUP_MEASUREMENT_ID,
-    });
-  }
 }
 
 /**
  * Tracks a SPA page view across configured Google properties (Google Ads & GA4).
  *
- * @param path The path including pathname, search query, and hash
+ * @param path The path including pathname and search query (excluding hash)
  * @param title Optional page title
  */
 export function trackPageView(path: string, title?: string): void {
@@ -83,15 +74,6 @@ export function trackPageView(path: string, title?: string): void {
     page_location: pageLocation,
     send_to: GA4_MEASUREMENT_ID,
   });
-
-  if (GA4_BACKUP_MEASUREMENT_ID && GA4_BACKUP_MEASUREMENT_ID !== GA4_MEASUREMENT_ID) {
-    window.gtag("event", "page_view", {
-      page_path: path,
-      page_title: pageTitle,
-      page_location: pageLocation,
-      send_to: GA4_BACKUP_MEASUREMENT_ID,
-    });
-  }
 }
 
 // -------------------------------------------------------------

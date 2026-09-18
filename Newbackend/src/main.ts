@@ -27,7 +27,7 @@ async function bootstrap(): Promise<void> {
   const config = app.get(ConfigService);
   if (isProduction) app.useLogger(app.get(Logger));
   app.setGlobalPrefix("api", {
-    exclude: ["robots.txt"],
+    exclude: ["robots.txt", "sitemap.xml"],
   });
   app.enableVersioning({
     type: VersioningType.URI,

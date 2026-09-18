@@ -6,9 +6,10 @@ import {
   Clock,
   CheckCircle,
   ArrowRight,
+  MessageSquare,
 } from "lucide-react";
 import { useProfileAutoFill } from "../hooks/useProfileAutoFill";
-import { trackClickCall } from "../lib/analytics";
+import { trackClickCall, trackClickWhatsApp } from "../lib/analytics";
 
 const ContactPage: React.FC = () => {
   const autoFill = useProfileAutoFill();
@@ -185,6 +186,13 @@ const ContactPage: React.FC = () => {
                 sub: "Mon–Sun, 9am–9pm IST",
               },
               {
+                icon: <MessageSquare size={18} className="text-emerald-500" />,
+                label: "WhatsApp Support",
+                val: "+91 78360 55511",
+                href: "https://wa.me/917836055511?text=Hello%20Tirvona%20Support",
+                sub: "Instant chat support",
+              },
+              {
                 icon: <Mail size={18} className="text-[#0A4DA6]" />,
                 label: "Email",
                 val: "info@nktech.in",
@@ -217,9 +225,13 @@ const ContactPage: React.FC = () => {
                 {c.href ? (
                   <a
                     href={c.href}
+                    target={c.href.startsWith("http") ? "_blank" : undefined}
+                    rel={c.href.startsWith("http") ? "noopener noreferrer" : undefined}
                     onClick={() => {
                       if (c.href.startsWith("tel:")) {
                         trackClickCall({ page_type: "contact" });
+                      } else if (c.href.includes("wa.me")) {
+                        trackClickWhatsApp({ page_type: "contact" });
                       }
                     }}
                     className="text-sm font-extrabold text-[#0B192C] dark:text-white hover:text-[#0A4DA6] transition-colors block"

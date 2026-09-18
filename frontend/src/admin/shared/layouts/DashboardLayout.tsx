@@ -1166,8 +1166,8 @@ export const DashboardLayout: React.FC = () => {
   const renderSidebarContent = (isMobile = false) => (
     <>
       {isMobile && (
-        <div className="p-4 border-b border-blue-100 dark:border-slate-800 flex items-center gap-3 bg-[#F8FAFC] dark:bg-[#0B192C]">
-          <div className="p-2 bg-white rounded-xl border border-blue-100 shadow-sm">
+        <div className="p-4 pt-[max(1rem,env(safe-area-inset-top))] pr-14 border-b border-blue-100 dark:border-slate-800 flex items-center gap-3 bg-[#F8FAFC] dark:bg-[#0B192C]">
+          <div className="p-2 bg-white rounded-xl border border-blue-100 shadow-sm shrink-0">
             <img
               src="/logo/logo.png"
               alt="Tirvona"
@@ -1377,8 +1377,8 @@ export const DashboardLayout: React.FC = () => {
   );
 
   return (
-    <div className="dashboard-shell flex min-h-screen flex-col bg-[#F0F4F9] text-left text-[#0B192C] dark:bg-[#070F1B] dark:text-white">
-      <header className="sticky top-0 z-30 flex h-[72px] w-full items-center justify-between gap-3 border-b border-blue-100 bg-white px-3 shadow-sm sm:px-5 lg:gap-6 lg:px-7 dark:border-slate-800 dark:bg-[#0B192C]">
+    <div className="dashboard-shell flex min-h-screen min-h-[100dvh] flex-col bg-[#F0F4F9] text-left text-[#0B192C] dark:bg-[#070F1B] dark:text-white">
+      <header className="sticky top-0 z-30 flex min-h-[64px] sm:min-h-[72px] pt-[env(safe-area-inset-top)] w-full items-center justify-between gap-2 sm:gap-3 border-b border-blue-100 bg-white px-3 shadow-sm sm:px-5 lg:gap-6 lg:px-7 dark:border-slate-800 dark:bg-[#0B192C]">
         <div className="flex items-center gap-3 shrink-0">
           {!isParkingGuardOnly && (
             <button
@@ -1500,10 +1500,10 @@ export const DashboardLayout: React.FC = () => {
               className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
               onClick={() => setSidebarOpen(false)}
             />
-            <aside className="relative flex flex-col w-72 max-w-[85vw] bg-white dark:bg-[#0B192C] text-[#0B192C] dark:text-white border-r border-blue-100 dark:border-slate-800 shadow-2xl h-full z-10">
+            <aside className="relative flex flex-col w-72 max-w-[85vw] bg-white dark:bg-[#0B192C] text-[#0B192C] dark:text-white border-r border-blue-100 dark:border-slate-800 shadow-2xl h-[100vh] h-[100dvh] pb-[env(safe-area-inset-bottom)] z-10 overflow-hidden">
               <button
                 onClick={() => setSidebarOpen(false)}
-                className="absolute top-4 right-4 p-2 text-slate-500 hover:text-slate-800 rounded-full hover:bg-slate-100 transition-colors z-20"
+                className="absolute top-[max(0.85rem,calc(0.5rem+env(safe-area-inset-top)))] right-3 p-2 text-slate-500 hover:text-slate-800 dark:hover:text-white rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors z-20"
                 aria-label={t("Close menu")}
               >
                 <X size={20} />
@@ -1513,7 +1513,7 @@ export const DashboardLayout: React.FC = () => {
           </div>
         )}
 
-        <main className="flex-grow p-4 lg:p-6 pb-12 lg:pb-16 overflow-y-auto min-w-0 bg-[#F0F4F9] dark:bg-[#070F1B]">
+        <main className="flex-grow p-3 sm:p-4 lg:p-6 pb-[calc(3.5rem+env(safe-area-inset-bottom))] lg:pb-16 overflow-y-auto min-w-0 bg-[#F0F4F9] dark:bg-[#070F1B]">
           <SectionSummaryStrip pathname={location.pathname} />
           <Outlet />
         </main>

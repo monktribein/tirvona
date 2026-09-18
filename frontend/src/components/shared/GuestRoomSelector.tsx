@@ -96,8 +96,8 @@ export const GuestRoomSelector: React.FC<GuestRoomSelectorProps> = ({ values, on
             transition={{ duration: 0.15, ease: "easeOut" }}
             className={`absolute top-full bg-white dark:bg-[#0B192C] overflow-hidden text-xs ${
               pill
-                ? "left-0 right-0 mt-3 w-full max-w-none border border-gray-200 dark:border-slate-800 rounded-2xl shadow-xl z-50"
-                : "right-0 mt-4 w-[340px] max-w-[calc(100vw-2rem)] border border-slate-100 dark:border-slate-800 rounded-[28px] shadow-2xl shadow-[#0B192C]/15 z-[80]"
+                ? "left-0 sm:left-auto right-0 mt-3 w-full sm:w-[340px] max-w-[calc(100vw-2rem)] border border-gray-200 dark:border-slate-800 rounded-2xl shadow-xl z-50"
+                : "left-0 sm:left-auto right-0 mt-4 w-full sm:w-[340px] max-w-[calc(100vw-2rem)] border border-slate-100 dark:border-slate-800 rounded-[28px] shadow-2xl shadow-[#0B192C]/15 z-[80]"
             }`}
           >
             <div className="px-5 pt-5 pb-3">

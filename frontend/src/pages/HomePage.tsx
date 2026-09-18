@@ -1038,11 +1038,11 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 -mt-20 sm:-mt-24 lg:-mt-24 z-30 relative mb-12 sm:mb-16 lg:mb-20">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 -mt-14 sm:-mt-20 lg:-mt-24 z-30 relative mb-12 sm:mb-16 lg:mb-20">
         <div className="flex justify-center mb-4 sm:mb-5">
           <div
             className="inline-flex max-w-full overflow-x-auto scrollbar-none items-center gap-1.5 p-1.5 rounded-full bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 shadow-lg shadow-[#0B192C]/10"
-            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            style={{ scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch" }}
           >
             {[
               {
@@ -1111,7 +1111,7 @@ export const HomePage: React.FC = () => {
                     value={destination}
                     onChange={handleInputChange}
                     onFocus={() => setShowSuggestions(true)}
-                    className="w-full bg-transparent border-none p-0 text-xs sm:text-sm font-bold focus:outline-none text-[#0B192C] dark:text-white placeholder:text-gray-400 truncate"
+                    className="w-full bg-transparent border-none p-0 text-base sm:text-sm font-bold focus:outline-none text-[#0B192C] dark:text-white placeholder:text-gray-400 truncate"
                   />
                 </div>
               </div>
@@ -1173,7 +1173,7 @@ export const HomePage: React.FC = () => {
           <div
             ref={setServiceStrip}
             className="flex flex-nowrap items-center justify-between gap-1 sm:gap-1.5 overflow-x-auto scrollbar-none py-0.5 w-full"
-            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            style={{ scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch" }}
           >
             {serviceIcons.map((item, i) => {
               const IconComponent = item.icon;

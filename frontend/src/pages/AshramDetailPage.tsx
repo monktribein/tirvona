@@ -74,6 +74,7 @@ import {
   Trash2,
   Edit3,
   Tag,
+  MessageSquare,
 } from "lucide-react";
 import { checkAshramBookingAvailable } from "../utils/ashramAvailabilityHelper";
 
@@ -92,6 +93,7 @@ import {
   trackPurchase,
   trackBookingFailed,
   trackClickCall,
+  trackClickWhatsApp,
 } from "../lib/analytics";
 
 /**
@@ -165,11 +167,22 @@ export const AshramDetailPage: React.FC = () => {
   // address once the listing has loaded. The /book route renders this same
   // page, so it keeps its own canonical rather than being redirected away.
   const isBookingRoute = location.pathname.endsWith("/book");
+  const fallbackSlugPath =
+    city && ashramSlug
+      ? `/ashrams/${city}/${ashramSlug}${isBookingRoute ? "/book" : ""}`
+      : null;
+
   useCanonicalUrl({
     canonicalPath: ashram
       ? `${ashramUrl(ashram)}${isBookingRoute ? "/book" : ""}`
-      : null,
-    title: ashram ? `${ashram.name} · Tirvona` : undefined,
+      : fallbackSlugPath,
+    title: ashram
+      ? `${ashram.name} · Tirvona`
+      : ashramSlug
+      ? `${ashramSlug
+          .replace(/-/g, " ")
+          .replace(/\b\w/g, (l) => l.toUpperCase())} | Tirvona`
+      : undefined,
     description: ashram?.description?.slice(0, 160),
     image: ashram?.images?.[0] || ashram?.coverImage,
   });
@@ -178,7 +191,49 @@ export const AshramDetailPage: React.FC = () => {
   const [checkOut, setCheckOut] = useState(validInitialCheckOut);
   const [selectedRooms, setSelectedRooms] = useState<Record<string, number>>({});
   const [roomsCount, setRoomsCount] = useState(initialRooms);
-  
+
+  const lastTrackedPropertyIdRef = useRef<string | null>(null);
+  const lastSelectedRoomIdRef = useRef<string | null>(null);
+  const bookNowClickedRef = useRef(false);
+  const lastTrackedGuestCountRef = useRef<number | null>(null);
+  const hasTrackedSpecialRequestsRef = useRef(false);
+
+  const calculateDays = () => {
+    if (!checkIn || !checkOut) return 1;
+    const start = new Date(checkIn).getTime();
+    const end = new Date(checkOut).getTime();
+    const diff = Math.ceil((end - start) / (1000 * 3600 * 24));
+    return diff > 0 ? diff : 1;
+  };
+
+  const trackRoomSelection = (roomId: string, qty: number = 1) => {
+    if (lastSelectedRoomIdRef.current === roomId) return;
+    lastSelectedRoomIdRef.current = roomId;
+    const roomObj = rooms.find((r) => String(r._id) === roomId);
+    if (!roomObj) return;
+    trackSelectRoom({
+      property_id: currentAshramId || String(ashram?._id || ""),
+      property_name: ashram?.name,
+      room_id: roomId,
+      room_name: roomObj.name,
+      room_nights: calculateDays(),
+      room_value: (roomObj.basePrice || 0) * Math.max(1, qty) * calculateDays(),
+      currency: "INR",
+    });
+  };
+
+  const handleBookNowClick = () => {
+    if (!bookNowClickedRef.current) {
+      bookNowClickedRef.current = true;
+      trackClickBookNow({
+        property_id: currentAshramId || String(ashram?._id || ""),
+        property_name: ashram?.name,
+        room_id: firstSelectedRoomId,
+        room_name: firstSelectedRoom?.name,
+      });
+    }
+  };
+
   const handleUpdateRoomQty = (roomId: string, delta: number) => {
     setSelectedRooms((prev) => {
       const current = prev[roomId] || 0;
@@ -194,16 +249,7 @@ export const AshramDetailPage: React.FC = () => {
       } else {
         newMap[roomId] = next;
         if (delta > 0) {
-          const roomObj = rooms.find((r) => String(r._id) === roomId);
-          trackSelectRoom({
-            property_id: currentAshramId || String(ashram?._id || ""),
-            property_name: ashram?.name,
-            room_id: roomId,
-            room_name: roomObj?.name,
-            room_nights: calculateDays(),
-            room_value: (roomObj?.basePrice || 0) * next * calculateDays(),
-            currency: "INR",
-          });
+          trackRoomSelection(roomId, next);
         }
       }
       return newMap;
@@ -461,12 +507,14 @@ export const AshramDetailPage: React.FC = () => {
         if (pb.appliedDiscount) setAppliedDiscount(pb.appliedDiscount);
         if (pb.specialRequests) setSpecialRequests(pb.specialRequests);
 
-        if (pb.rooms) {
+        if (pb.rooms && pb.rooms.length > 0) {
           const restoredRooms: Record<string, number> = {};
           pb.rooms.forEach((r: any) => { restoredRooms[r.roomId] = r.units; });
           setSelectedRooms(restoredRooms);
+          trackRoomSelection(pb.rooms[0].roomId, pb.rooms[0].units);
         } else if (rooms.length > 0 && pb.roomId) {
           setSelectedRooms({ [pb.roomId]: 1 });
+          trackRoomSelection(pb.roomId, 1);
         }
 
         setRestoredNotice(true);
@@ -602,14 +650,6 @@ export const AshramDetailPage: React.FC = () => {
       const next = Math.max(0, Math.min(maxQty, current + delta));
       return { ...prev, [serviceId]: next };
     });
-  };
-
-  const calculateDays = () => {
-    if (!checkIn || !checkOut) return 1;
-    const start = new Date(checkIn).getTime();
-    const end = new Date(checkOut).getTime();
-    const diff = Math.ceil((end - start) / (1000 * 3600 * 24));
-    return diff > 0 ? diff : 1;
   };
 
   const daysCount = calculateDays();
@@ -877,11 +917,14 @@ export const AshramDetailPage: React.FC = () => {
 
         setAshram(detailAshram);
         setRooms(detailRooms);
-        trackViewProperty({
-          property_id: String(detailAshram._id),
-          property_name: detailAshram.name,
-          destination: detailAshram.address?.city || city,
-        });
+        if (lastTrackedPropertyIdRef.current !== String(detailAshram._id)) {
+          lastTrackedPropertyIdRef.current = String(detailAshram._id);
+          trackViewProperty({
+            property_id: String(detailAshram._id),
+            property_name: detailAshram.name,
+            destination: detailAshram.address?.city || city,
+          });
+        }
 
         if (id) {
           fetchReviews(id);
@@ -1050,13 +1093,10 @@ export const AshramDetailPage: React.FC = () => {
     setBookingError("");
     setBookingSuccess(null);
 
-    // 1. click_book_now event
-    trackClickBookNow({
-      property_id: currentAshramId || String(ashram?._id || ""),
-      property_name: ashram?.name,
-      room_id: firstSelectedRoomId,
-      room_name: firstSelectedRoom?.name,
-    });
+    // If room wasn't explicitly selected earlier, track selection before checkout
+    if (firstSelectedRoomId && !lastSelectedRoomIdRef.current) {
+      trackRoomSelection(firstSelectedRoomId, selectedRooms[firstSelectedRoomId] || 1);
+    }
 
     if (!user) {
       const currentUrl = window.location.pathname + window.location.search;
@@ -1105,7 +1145,7 @@ export const AshramDetailPage: React.FC = () => {
       return;
     }
 
-    // 2. begin_checkout event
+    // 2. begin_checkout event (checkout begins)
     trackBeginCheckout({
       property_id: currentAshramId || String(ashram?._id || ""),
       property_name: ashram?.name,
@@ -1115,14 +1155,6 @@ export const AshramDetailPage: React.FC = () => {
       room_nights: daysCount,
       booking_value: finalPayableCalc,
       currency: "INR",
-    });
-
-    // 3. add_guest_details event (NON-PII ONLY)
-    trackAddGuestDetails({
-      property_id: currentAshramId || String(ashram?._id || ""),
-      property_name: ashram?.name,
-      destination: ashram?.address?.city || city,
-      guests_count: adults + children,
     });
 
     const payload = {
@@ -1327,7 +1359,7 @@ export const AshramDetailPage: React.FC = () => {
   })();
 
   return (
-    <div className="max-w-7xl mx-auto px-6 pt-2 pb-16 space-y-10">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-2 pb-24 lg:pb-16 space-y-10">
       <div className="border-b border-gray-100 dark:border-slate-800 pb-5">
         <div className="max-w-3xl md:max-w-4xl mx-auto flex flex-col items-center text-center space-y-3.5 px-2">
           <div className="flex items-center justify-center gap-2">
@@ -1379,20 +1411,46 @@ export const AshramDetailPage: React.FC = () => {
                   ? `+91 ${digits.slice(0, 5)} ${digits.slice(5)}`
                   : rawPhone;
               return (
-                <a
-                  href={`tel:${rawPhone}`}
-                  onClick={() =>
-                    trackClickCall({
-                      page_type: "property_detail",
-                      property_id: String(ashram._id),
-                      property_name: ashram.name,
-                    })
-                  }
-                  className="flex items-center gap-1.5 hover:text-[#0A4DA6] transition-colors shrink-0"
-                >
-                  <Phone size={13} className="text-[#0A4DA6] shrink-0" />
-                  <span>{formatted}</span>
-                </a>
+                <>
+                  <a
+                    href={`tel:${rawPhone}`}
+                    onClick={() =>
+                      trackClickCall({
+                        page_type: "property_detail",
+                        property_id: String(ashram._id),
+                        property_name: ashram.name,
+                      })
+                    }
+                    className="flex items-center gap-1.5 hover:text-[#0A4DA6] transition-colors shrink-0"
+                  >
+                    <Phone size={13} className="text-[#0A4DA6] shrink-0" />
+                    <span>{formatted}</span>
+                  </a>
+
+                  {digits.length >= 10 && (
+                    <>
+                      <span className="hidden sm:inline text-gray-300 dark:text-slate-700 font-black">
+                        •
+                      </span>
+                      <a
+                        href={`https://wa.me/${digits.length === 10 ? `91${digits}` : digits}?text=${encodeURIComponent(`Hi, I am inquiring about booking a stay at ${ashram.name} on Tirvona.`)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() =>
+                          trackClickWhatsApp({
+                            page_type: "property_detail",
+                            property_id: String(ashram._id),
+                            property_name: ashram.name,
+                          })
+                        }
+                        className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 transition-colors shrink-0 font-extrabold"
+                      >
+                        <MessageSquare size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                        <span>WhatsApp</span>
+                      </a>
+                    </>
+                  )}
+                </>
               );
             })()}
 
@@ -1433,6 +1491,23 @@ export const AshramDetailPage: React.FC = () => {
                 </a>
               </>
             )}
+          </div>
+
+          <div className="pt-1 hidden sm:block">
+            <button
+              type="button"
+              onClick={() => {
+                handleBookNowClick();
+                const el = document.getElementById("booking-engine");
+                if (el) {
+                  el.scrollIntoView({ behavior: "smooth", block: "start" });
+                }
+              }}
+              className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-[#0A4DA6] hover:bg-[#083b80] text-white text-xs font-black shadow-md hover:shadow-lg transition-all cursor-pointer active:scale-95"
+            >
+              <span>Book Stay Now</span>
+              <ArrowRight size={13} />
+            </button>
           </div>
         </div>
       </div>
@@ -1699,10 +1774,12 @@ export const AshramDetailPage: React.FC = () => {
                   : [];
                 const isExpanded =
                   expandedRoomId === String(r._id) && roomImages.length > 0;
-                const toggleRoomPhotos = () =>
+                const toggleRoomPhotos = () => {
+                  trackRoomSelection(String(r._id), selectedQty || 1);
                   setExpandedRoomId((current) =>
                     current === String(r._id) ? null : String(r._id),
                   );
+                };
 
                 return (
                   <div
@@ -2019,7 +2096,7 @@ export const AshramDetailPage: React.FC = () => {
         </div>
 
         <div className="space-y-6">
-          <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 shadow-sm space-y-6 relative overflow-visible z-40">
+          <div id="booking-engine" className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-4 sm:p-6 shadow-sm space-y-6 relative overflow-visible z-40">
             <div className="absolute top-0 inset-x-0 h-1 bg-[#0A4DA6]" />
             <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white">
               Stay Booking Engine
@@ -2099,7 +2176,21 @@ export const AshramDetailPage: React.FC = () => {
                   <label className="text-[10px] font-extrabold tracking-wider text-gray-400">
                     Guests & Rooms
                   </label>
-                  <GuestRoomSelector compact />
+                  <GuestRoomSelector
+                    compact
+                    onChange={(val) => {
+                      const totalGuests = (val.adults || 0) + (val.children || 0);
+                      if (lastTrackedGuestCountRef.current !== totalGuests) {
+                        lastTrackedGuestCountRef.current = totalGuests;
+                        trackAddGuestDetails({
+                          property_id: currentAshramId || String(ashram?._id || ""),
+                          property_name: ashram?.name,
+                          destination: ashram?.address?.city || city,
+                          guests_count: totalGuests,
+                        });
+                      }
+                    }}
+                  />
                 </div>
 
                 <div className="pt-3 border-t border-gray-100 dark:border-slate-800 space-y-3">
@@ -2379,7 +2470,7 @@ export const AshramDetailPage: React.FC = () => {
                       placeholder="e.g. KUMBH2026"
                       value={couponCode}
                       onChange={(e) => setCouponCode(e.target.value)}
-                      className="flex-1 p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs font-semibold"
+                      className="flex-1 p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-base sm:text-xs font-semibold"
                     />
                     <button
                       type="button"
@@ -2448,7 +2539,18 @@ export const AshramDetailPage: React.FC = () => {
                     placeholder="e.g. Ground floor room preferred..."
                     value={specialRequests}
                     onChange={(e) => setSpecialRequests(e.target.value)}
-                    className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs font-medium focus:outline-none resize-none"
+                    onBlur={() => {
+                      if (specialRequests.trim() && !hasTrackedSpecialRequestsRef.current) {
+                        hasTrackedSpecialRequestsRef.current = true;
+                        trackAddGuestDetails({
+                          property_id: currentAshramId || String(ashram?._id || ""),
+                          property_name: ashram?.name,
+                          destination: ashram?.address?.city || city,
+                          guests_count: adults + children,
+                        });
+                      }
+                    }}
+                    className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-base sm:text-xs font-medium focus:outline-none resize-none"
                   />
                 </div>
 
@@ -2777,6 +2879,33 @@ export const AshramDetailPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Mobile Sticky Booking Bar */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-[#0B192C]/95 backdrop-blur-md border-t border-gray-200 dark:border-slate-800 px-4 py-2.5 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-lg flex items-center justify-between gap-3">
+        <div>
+          <span className="text-[10px] text-gray-400 font-bold block uppercase tracking-wider">
+            From
+          </span>
+          <span className="text-sm font-black text-[#0A4DA6] dark:text-blue-400">
+            {formatCurrency(firstSelectedRoom?.basePrice || (ashram as any)?.lowestNightPrice || 150)}
+            <span className="text-[10px] text-gray-500 font-normal"> / night</span>
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            handleBookNowClick();
+            const el = document.getElementById("booking-engine");
+            if (el) {
+              el.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+          }}
+          className="px-5 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-[#083b80] text-white text-xs font-extrabold shadow-md cursor-pointer flex items-center gap-1.5 active:scale-95 transition-all"
+        >
+          <span>Book Now</span>
+          <ArrowRight size={13} />
+        </button>
+      </div>
     </div>
   );
 };

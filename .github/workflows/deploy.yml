@@ -60,6 +60,11 @@ jobs:
               /var/www/tirvona/deploy/nginx/tirvona-web.conf \
               /etc/nginx/snippets/tirvona-web.conf
 
+            # Canonical non-WWW to WWW 301 permanent redirect configuration snippet
+            sudo install -D -m 0644 \
+              /var/www/tirvona/deploy/nginx/tirvona-redirect-nonwww.conf \
+              /etc/nginx/snippets/tirvona-redirect-nonwww.conf
+
             # Raises the request-body cap on api.tirvona.com. nginx defaults to
             # 1 MB, while the API accepts 10 MB images and 100 MB video, so
             # every upload over 1 MB was rejected with a 413 before reaching
@@ -171,6 +176,24 @@ jobs:
               echo ""
             else
               echo "=== Uploads over 1 MB reach the API (probe returned $PROBE) ==="
+            fi
+
+            echo "=== Canonical WWW 301 Redirect Check ==="
+            NONWWW_STATUS=$(curl -sS -o /dev/null -w "%{http_code}" https://tirvona.com/ || echo "000")
+            NONWWW_LOC=$(curl -sS -I https://tirvona.com/ | grep -i '^location:' | tr -d '\r\n' || echo "")
+            if [ "$NONWWW_STATUS" = "301" ] && echo "$NONWWW_LOC" | grep -q "https://www.tirvona.com/"; then
+              echo "=== Canonical 301 redirect is ACTIVE (Status: $NONWWW_STATUS, $NONWWW_LOC) ==="
+            else
+              echo ""
+              echo "############################################################"
+              echo "# WARNING: Non-WWW redirect is NOT active yet."
+              echo "# Observed status: $NONWWW_STATUS ($NONWWW_LOC)"
+              echo "#"
+              echo "# Ensure include /etc/nginx/snippets/tirvona-web.conf;"
+              echo "# is inside the server block for tirvona.com / www.tirvona.com,"
+              echo "# then run: sudo nginx -t && sudo systemctl reload nginx"
+              echo "############################################################"
+              echo ""
             fi
 
             echo "================================"

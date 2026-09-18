@@ -210,46 +210,52 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
 
       <AnimatePresence>
         {open && (
-          <motion.div
-            initial={{ opacity: 0, y: 12, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 8, scale: 0.985 }}
-            transition={{ type: "spring", stiffness: 420, damping: 32 }}
-            className={`absolute ${align === "right" ? "right-0" : "left-0"} top-full mt-4 w-[min(720px,calc(100vw-2rem))] bg-white dark:bg-[#0B192C] rounded-[28px] border border-slate-100 dark:border-slate-800 shadow-2xl shadow-[#0B192C]/15 z-[80] overflow-hidden`}
-          >
-            <div className="px-5 sm:px-7 pt-5 pb-3 flex items-center justify-between border-b border-slate-100 dark:border-slate-800">
-              <div>
-                <p className="text-sm font-extrabold text-[#0B192C] dark:text-white">Choose your sacred stay</p>
-                <p className="text-[10px] font-semibold text-slate-400 mt-0.5">{selectingEnd ? "Now select your check-out date" : "Select check-in to begin"}</p>
+          <>
+            <div
+              className="fixed inset-0 bg-black/40 backdrop-blur-xs z-[90] sm:hidden"
+              onClick={() => setOpen(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, y: 12, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 8, scale: 0.985 }}
+              transition={{ type: "spring", stiffness: 420, damping: 32 }}
+              className={`fixed sm:absolute inset-x-2 sm:inset-x-auto ${align === "right" ? "sm:right-0" : "sm:left-0"} top-1/2 -translate-y-1/2 sm:translate-y-0 sm:top-full mt-0 sm:mt-4 w-auto sm:w-[min(720px,calc(100vw-2rem))] max-w-[calc(100vw-1rem)] mx-auto bg-white dark:bg-[#0B192C] rounded-[28px] border border-slate-100 dark:border-slate-800 shadow-2xl shadow-[#0B192C]/25 z-[95] overflow-hidden`}
+            >
+              <div className="px-5 sm:px-7 pt-5 pb-3 flex items-center justify-between border-b border-slate-100 dark:border-slate-800">
+                <div>
+                  <p className="text-sm font-extrabold text-[#0B192C] dark:text-white">Choose your sacred stay</p>
+                  <p className="text-[10px] font-semibold text-slate-400 mt-0.5">{selectingEnd ? "Now select your check-out date" : "Select check-in to begin"}</p>
+                </div>
               </div>
-            </div>
 
-            <div className="p-4 sm:p-6 flex gap-7">
-              {renderMonth(view, 0)}
-              <div className="hidden sm:block w-px bg-slate-100 dark:bg-slate-800" />
-              <div className="hidden sm:block flex-1 min-w-0">
-                {renderMonth(new Date(view.getFullYear(), view.getMonth() + 1, 1), 1)}
+              <div className="p-4 sm:p-6 flex gap-7">
+                {renderMonth(view, 0)}
+                <div className="hidden sm:block w-px bg-slate-100 dark:bg-slate-800" />
+                <div className="hidden sm:block flex-1 min-w-0">
+                  {renderMonth(new Date(view.getFullYear(), view.getMonth() + 1, 1), 1)}
+                </div>
               </div>
-            </div>
 
-            <div className="flex items-center justify-between border-t border-slate-100 px-5 py-3 dark:border-slate-800 sm:px-7">
-              <button
-                type="button"
-                onClick={() => onChange("", "")}
-                className="rounded-full px-4 py-2 text-xs font-medium text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
-              >
-                Clear
-              </button>
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                className="rounded-full bg-[#0A4DA6] px-6 py-2 text-xs font-medium text-white hover:bg-[#083D85]"
-              >
-                Done
-              </button>
-            </div>
+              <div className="flex items-center justify-between border-t border-slate-100 px-5 py-3.5 dark:border-slate-800 sm:px-7">
+                <button
+                  type="button"
+                  onClick={() => onChange("", "")}
+                  className="rounded-full px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                >
+                  Clear
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  className="rounded-full bg-[#0A4DA6] px-6 py-2.5 text-xs font-bold text-white hover:bg-[#083D85] cursor-pointer shadow-sm active:scale-95"
+                >
+                  Done
+                </button>
+              </div>
 
-          </motion.div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </div>

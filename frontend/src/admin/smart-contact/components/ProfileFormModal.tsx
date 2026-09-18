@@ -243,7 +243,7 @@ export const ProfileFormModal: React.FC<{
           >
             <div className="flex items-center gap-2">
               <span className="text-[11px] font-bold text-gray-400 shrink-0">
-                tirvona.com/c/
+                www.tirvona.com/c/
               </span>
               <input
                 className={`${inputClass} ${slugLocked ? "opacity-60" : ""}`}
