@@ -11,7 +11,8 @@ import { InjectModel } from "@nestjs/mongoose";
 import type { Model } from "mongoose";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import { canManageAllAshrams } from "../../../common/auth/ashram-access";
-import { citySlug } from "../../../common/slug/slug.util";
+import { citySlug, slugify } from "../../../common/slug/slug.util";
+import { isObjectIdLike } from "../../urls/application/url-resolver.service";
 import { AshramSlugService } from "./ashram-slug.service";
 import {
   assignedAshramIds,
@@ -625,15 +626,21 @@ export class AshramsService {
   }
 
   async detail(id: string): Promise<any> {
-    const ashram = await this.ashrams
-      .findOne({ _id: id, status: "approved", deletedAt: null })
-      .lean();
+    const isId = isObjectIdLike(id);
+    const ashram = isId
+      ? await this.ashrams
+          .findOne({ _id: id, status: "approved", deletedAt: null })
+          .lean()
+      : await this.ashrams
+          .findOne({ slug: slugify(id), status: "approved", deletedAt: null })
+          .lean();
     if (!ashram) throw new NotFoundException("Stay not found");
+    const ashramId = String(ashram._id);
     const [rooms, managedAddOns] = await Promise.all([
       this.rooms
-        .find({ ashramId: id, status: "active", deletedAt: null })
+        .find({ ashramId, status: "active", deletedAt: null })
         .lean(),
-      this.addons.find({ ashramId: id, enabled: true }).lean(),
+      this.addons.find({ ashramId, enabled: true }).lean(),
     ]);
     const mappedRooms = (rooms as any[]).map((r) => {
       const mrp = round2(Number(r.basePrice) || 0);

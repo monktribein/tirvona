@@ -70,6 +70,7 @@ import {
   CheckCircle,
   Award,
   X,
+  XCircle,
   Maximize2,
   Trash2,
   Edit3,
@@ -1327,19 +1328,39 @@ export const AshramDetailPage: React.FC = () => {
 
   if (!ashram) {
     return (
-      <div className="max-w-3xl mx-auto px-6 py-20 text-center space-y-4">
-        <h2 className="text-2xl font-extrabold text-[#0B192C] dark:text-white">
-          Stay unavailable
+      <div className="min-h-[60vh] max-w-lg mx-auto px-4 py-16 flex flex-col items-center justify-center text-center space-y-4">
+        <div className="w-16 h-16 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 flex items-center justify-center text-rose-600 dark:text-rose-400 mb-1">
+          <XCircle size={32} />
+        </div>
+        <div className="inline-block px-3 py-1 rounded-full bg-rose-600 text-white text-[11px] font-black uppercase tracking-wider shadow-sm">
+          Not Available
+        </div>
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-[#0B192C] dark:text-white">
+          Stay Currently Unavailable
         </h2>
-        <p className="text-sm text-gray-500">
-          {detailError || "The requested stay could not be found."}
+        <p className="text-xs sm:text-sm text-gray-500 max-w-md leading-relaxed">
+          {detailError &&
+          !detailError.includes("_id") &&
+          !detailError.includes("format") &&
+          !detailError.includes("Cast to ObjectId")
+            ? detailError
+            : "This stay is temporarily not accepting online bookings or is not available. Please explore our other verified ashrams and accommodations."}
         </p>
-        <Link
-          to="/search"
-          className="inline-flex px-5 py-2.5 rounded-full bg-[#0A4DA6] text-white text-xs font-bold"
-        >
-          Browse available stays
-        </Link>
+        <div className="pt-2 flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+          <Link
+            to="/search"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-[#0A4DA6] text-white text-xs font-black shadow-md hover:bg-[#083b80] transition-colors"
+          >
+            Explore Other Stays
+          </Link>
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="w-full sm:w-auto inline-flex items-center justify-center px-5 py-3 rounded-full border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-300 text-xs font-bold hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+          >
+            Go Back
+          </button>
+        </div>
       </div>
     );
   }
@@ -1359,10 +1380,10 @@ export const AshramDetailPage: React.FC = () => {
   })();
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-2 pb-24 lg:pb-16 space-y-10">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-2 pb-24 lg:pb-16 space-y-6 sm:space-y-10">
       <div className="border-b border-gray-100 dark:border-slate-800 pb-5">
-        <div className="max-w-3xl md:max-w-4xl mx-auto flex flex-col items-center text-center space-y-3.5 px-2">
-          <div className="flex items-center justify-center gap-2">
+        <div className="max-w-3xl md:max-w-4xl mx-auto flex flex-col items-center text-center space-y-3 px-2">
+          <div className="flex items-center justify-center gap-2 flex-wrap">
             <VerifiedBadge
               isVerified={ashram.isVerified ?? ashram.status === "approved"}
               text="Tirvona Verified"
@@ -1373,11 +1394,23 @@ export const AshramDetailPage: React.FC = () => {
                 .filter(Boolean)
                 .join(", ")}
             </span>
+            {!checkAshramBookingAvailable(ashram) && (
+              <span className="px-2.5 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-black uppercase tracking-wider shadow-sm">
+                Not Available
+              </span>
+            )}
           </div>
 
-          <h2 className="text-3xl md:text-5xl font-extrabold text-[#0B192C] dark:text-white leading-tight">
+          <h2 className="text-2xl sm:text-3xl md:text-5xl font-extrabold text-[#0B192C] dark:text-white leading-tight">
             {ashram.name}
           </h2>
+
+          {!checkAshramBookingAvailable(ashram) && (
+            <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/60 text-xs font-black uppercase tracking-wider">
+              <XCircle size={14} className="shrink-0" />
+              <span>Online Booking Currently Not Available</span>
+            </div>
+          )}
           <div className="text-xs font-bold text-gray-600 dark:text-gray-300 flex flex-col sm:flex-row sm:flex-wrap items-center justify-center gap-y-2 sm:gap-x-2.5 leading-relaxed">
             <span className="flex items-start gap-1.5">
               <MapPin size={14} className="text-[#0A4DA6] shrink-0 mt-[3px]" />
@@ -1542,6 +1575,12 @@ export const AshramDetailPage: React.FC = () => {
           {galleryImages.length > 1 && (
             <div className="absolute top-4 left-4 px-2.5 py-1 rounded-full bg-black/45 text-white text-[10px] font-bold backdrop-blur-sm">
               {activeImageIndex + 1} / {galleryImages.length}
+            </div>
+          )}
+          {!checkAshramBookingAvailable(ashram) && (
+            <div className="absolute top-4 right-4 z-20 px-3 py-1 rounded-full bg-rose-600 text-white text-[11px] font-black uppercase tracking-wider shadow-lg flex items-center gap-1.5">
+              <XCircle size={13} className="shrink-0" />
+              <span>Not Available</span>
             </div>
           )}
           <div className="absolute bottom-4 right-4 px-3 py-1.5 rounded-full bg-black/50 text-white text-[11px] font-bold flex items-center gap-1.5 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity">

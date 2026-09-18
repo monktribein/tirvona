@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { ashramUrl } from "../lib/urls";
+import { checkAshramBookingAvailable } from "../utils/ashramAvailabilityHelper";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import api from "../lib/api";
@@ -953,7 +954,7 @@ export const HomePage: React.FC = () => {
 
   return (
     <div className="home-page pb-16 lg:pb-24 overflow-x-hidden">
-      <section className="relative pt-28 sm:pt-36 lg:pt-40 pb-40 sm:pb-52 lg:pb-60 min-h-[580px] sm:min-h-[640px] lg:min-h-[720px] flex items-center overflow-hidden rounded-b-[36px] sm:rounded-b-[48px] shadow-xl bg-gradient-to-br from-[#0B192C] via-[#0D233E] to-[#0B192C]">
+      <section className="relative pt-24 sm:pt-36 lg:pt-40 pb-36 sm:pb-52 lg:pb-60 min-h-[520px] sm:min-h-[640px] lg:min-h-[720px] flex items-center overflow-hidden rounded-b-[36px] sm:rounded-b-[48px] shadow-xl bg-gradient-to-br from-[#0B192C] via-[#0D233E] to-[#0B192C]">
         <div className="absolute inset-0 z-0">
           {activeHeroBg ? (
             <img
@@ -972,7 +973,7 @@ export const HomePage: React.FC = () => {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
-              className="text-3xl sm:text-4xl md:text-5xl lg:text-[54px] xl:text-[62px] font-bold text-white drop-shadow-md leading-[1.25]"
+              className="text-2xl sm:text-4xl md:text-5xl lg:text-[54px] xl:text-[62px] font-bold text-white drop-shadow-md leading-[1.25]"
               style={{
                 fontFamily: "'Kalam', cursive, sans-serif",
                 letterSpacing: "0.01em",
@@ -993,7 +994,7 @@ export const HomePage: React.FC = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2, duration: 0.5 }}
-              className="text-[#E2E8F0] dark:text-[#6B6B6B] text-sm sm:text-base leading-relaxed max-w-2xl mx-auto text-center drop-shadow-xs"
+              className="text-[#E2E8F0] dark:text-[#6B6B6B] text-xs sm:text-base leading-relaxed max-w-2xl mx-auto text-center drop-shadow-xs px-2"
               style={{
                 fontFamily:
                   "Satoshi, 'General Sans', Manrope, Inter, sans-serif",
@@ -1094,7 +1095,7 @@ export const HomePage: React.FC = () => {
         <div className="relative isolate overflow-visible bg-white dark:bg-[#0B192C] rounded-[28px] lg:rounded-full shadow-2xl shadow-[#0B192C]/10 border border-gray-200 dark:border-slate-800/80 p-1.5 sm:p-2">
           <form
             onSubmit={handleSearch}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.55fr_1.35fr_1.15fr_auto] gap-1 lg:gap-0 items-center"
+            className="grid grid-cols-1 lg:grid-cols-[1.55fr_1.35fr_1.15fr_auto] gap-1 lg:gap-0 items-center"
           >
             <div
               className="group cursor-pointer rounded-2xl lg:rounded-full px-5 py-3 bg-white dark:bg-[#0B192C] hover:bg-gray-50/80 dark:hover:bg-slate-800/50 hover:shadow-lg transition-all flex flex-col justify-center min-h-[64px] lg:border-r border-gray-200/80 dark:border-slate-800/80 relative min-w-0 z-10 focus-within:z-[90]"
@@ -1191,7 +1192,7 @@ export const HomePage: React.FC = () => {
                       navigate(`${item.target}?category=${item.category}`);
                     }
                   }}
-                  className="flex-1 min-w-[78px] sm:min-w-[88px] lg:min-w-0 flex flex-col items-center justify-center gap-1.5 py-2.5 sm:py-3 px-1 text-center rounded-2xl transition-all cursor-pointer group shrink-0 lg:shrink hover:bg-blue-50/60 dark:hover:bg-slate-800/60"
+                  className="flex-1 min-w-[64px] sm:min-w-[88px] lg:min-w-0 flex flex-col items-center justify-center gap-1.5 py-2 sm:py-3 px-1 text-center rounded-2xl transition-all cursor-pointer group shrink-0 lg:shrink hover:bg-blue-50/60 dark:hover:bg-slate-800/60"
                 >
                   <div
                     className={`p-2 sm:p-2.5 rounded-full transition-all ${
@@ -1740,6 +1741,7 @@ export const HomePage: React.FC = () => {
                   queryParts.push(`promoCode=${ashramDeal.promoCode}`);
                 }
                 const queryString = queryParts.length > 0 ? `?${queryParts.join("&")}` : "";
+                const isAvailable = checkAshramBookingAvailable(ashram);
 
                 return (
                   <div
@@ -1759,7 +1761,7 @@ export const HomePage: React.FC = () => {
                             "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E"
                           }
                           alt={ashram.name}
-                          className="w-full h-full object-cover"
+                          className={`w-full h-full object-cover ${!isAvailable ? "grayscale-[20%]" : ""}`}
                           loading="lazy"
                           onError={(e) => {
                             e.currentTarget.onerror = null;
@@ -1767,6 +1769,14 @@ export const HomePage: React.FC = () => {
                               "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E";
                           }}
                         />
+
+                        {!isAvailable && (
+                          <div className="absolute top-2.5 right-2.5 z-10">
+                            <span className="text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-md bg-rose-600 text-white">
+                              Not Available
+                            </span>
+                          </div>
+                        )}
 
                         {ashramDeal && (
                           <div className="absolute top-2.5 inset-x-2.5 flex items-center justify-between pointer-events-none z-10">

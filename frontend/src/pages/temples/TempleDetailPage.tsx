@@ -5,6 +5,7 @@ import {
   Building2, MapPin, Clock, Info, Navigation, BookOpen, Flame, Calendar, ArrowLeft, Image as ImageIcon, Map 
 } from "lucide-react";
 import TirvonaMap from "../../components/TirvonaMap";
+import { checkAshramBookingAvailable } from "../../utils/ashramAvailabilityHelper";
 
 export default function TempleDetailPage() {
   const { slug } = useParams();
@@ -265,42 +266,42 @@ export default function TempleDetailPage() {
       {previewId && <div className="bg-amber-100 px-4 py-2 text-center text-sm font-semibold text-amber-900">Preview mode: this temple is not visible to the public until published.</div>}
       <nav className="mx-auto flex max-w-7xl items-center gap-2 px-4 pt-5 text-sm text-gray-500 sm:px-6" aria-label="Breadcrumb"><Link to="/" className="hover:text-[#E58C28]">Home</Link><span>/</span><Link to="/temples" className="hover:text-[#E58C28]">Temples</Link><span>/</span><span className="truncate text-gray-900">{temple.name}</span></nav>
       {/* Hero Section */}
-      <div className="relative pt-12 pb-16 bg-gradient-to-br from-[#0B192C] via-[#0D233E] to-[#0B192C] rounded-b-3xl shadow-lg">
+      <div className="relative pt-6 sm:pt-12 pb-8 sm:pb-16 bg-gradient-to-br from-[#0B192C] via-[#0D233E] to-[#0B192C] rounded-b-2xl sm:rounded-b-3xl shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 relative">
           <button 
             onClick={() => navigate(-1)}
-            className="mb-6 w-10 h-10 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white transition-colors cursor-pointer"
+            className="mb-4 sm:mb-6 w-9 h-9 sm:w-10 sm:h-10 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white transition-colors cursor-pointer"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
 
           <div>
-            <div className="flex items-center gap-2 flex-wrap mb-3">
-              {temple.isVerified && <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-3 py-1 text-xs font-bold">✓ Verified Temple</span>}
+            <div className="flex items-center gap-2 flex-wrap mb-2.5 sm:mb-3">
+              {temple.isVerified && <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-2.5 py-0.5 sm:px-3 sm:py-1 text-[11px] sm:text-xs font-bold">✓ Verified Temple</span>}
               {temple.deity && (
-                <span className="inline-block bg-[#E58C28] text-white text-xs font-bold px-3 py-1 rounded-full shadow-sm">
+                <span className="inline-block bg-[#E58C28] text-white text-[11px] sm:text-xs font-bold px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full shadow-sm">
                   Dedicated to {temple.deity}
                 </span>
               )}
             </div>
             <h1 
-              className="text-3xl sm:text-5xl font-bold text-white mb-3 leading-tight"
+              className="text-2xl sm:text-4xl lg:text-5xl font-bold text-white mb-2 sm:mb-3 leading-tight"
               style={{ fontFamily: "'Kalam', cursive, sans-serif" }}
             >
               {temple.name}
             </h1>
-            {locationLabel && <p className="text-base sm:text-lg text-slate-200 flex items-center gap-2 font-medium"><MapPin className="w-5 h-5 text-[#E58C28]" /> {locationLabel}</p>}
-            {temple.shortDescription && <p className="mt-3 max-w-3xl text-sm sm:text-base text-slate-300 leading-relaxed">{temple.shortDescription}</p>}
+            {locationLabel && <p className="text-sm sm:text-lg text-slate-200 flex items-center gap-2 font-medium"><MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-[#E58C28]" /> {locationLabel}</p>}
+            {temple.shortDescription && <p className="mt-2.5 max-w-3xl text-xs sm:text-base text-slate-300 leading-relaxed">{temple.shortDescription}</p>}
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-8 flex flex-col lg:flex-row gap-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-6 sm:mt-8 flex flex-col lg:flex-row gap-6 sm:gap-8">
         {/* Main Content */}
-        <div className="flex-1 space-y-8">
+        <div className="flex-1 space-y-6 sm:space-y-8">
           
           {/* Quick Info Bar */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-wrap gap-8">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 flex flex-wrap gap-4 sm:gap-8">
             {temple.establishedYear && (
               <div>
                 <p className="text-sm font-bold tracking-wider text-gray-400 uppercase mb-1">Established</p>
@@ -341,14 +342,14 @@ export default function TempleDetailPage() {
               </div>
               <div className="space-y-4">
                 {temple.timings.map((day: any, idx: number) => (
-                  <div key={idx} className="flex flex-col sm:flex-row sm:items-center gap-4 py-4 border-b border-gray-50 last:border-0 last:pb-0">
-                    <span className={`w-32 font-bold ${day.dayOfWeek === currentDay ? "text-[#E58C28]" : "text-gray-900"}`}>{day.dayOfWeek}{day.dayOfWeek === currentDay ? " · Today" : ""}</span>
+                  <div key={idx} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 py-3 sm:py-4 border-b border-gray-50 last:border-0 last:pb-0">
+                    <span className={`w-full sm:w-32 font-bold ${day.dayOfWeek === currentDay ? "text-[#E58C28]" : "text-gray-900"}`}>{day.dayOfWeek}{day.dayOfWeek === currentDay ? " · Today" : ""}</span>
                     <div className="flex-1 space-y-2">
                       {day.timeSlots?.map((slot: any, sIdx: number) => (
-                        <div key={sIdx} className="flex items-center gap-2 text-gray-600 bg-gray-50 px-4 py-2 rounded-lg">
-                          <span className="font-medium min-w-[120px]">{slot.title || "Temple hours"}</span>
+                        <div key={sIdx} className="flex items-center gap-2 text-gray-600 bg-gray-50 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm">
+                          <span className="font-medium min-w-[90px] sm:min-w-[120px]">{slot.title || "Temple hours"}</span>
                           <span className="text-gray-400">|</span>
-                          <span className="text-gray-900 font-medium">{slot.isClosed ? "Closed" : slot.isOpen24Hours ? "24 Hours" : `${slot.startTime || ""} - ${slot.endTime || ""}`}</span>
+                          <span className="text-gray-900 font-medium truncate">{slot.isClosed ? "Closed" : slot.isOpen24Hours ? "24 Hours" : `${slot.startTime || ""} - ${slot.endTime || ""}`}</span>
                         </div>
                       ))}
                     </div>
@@ -528,9 +529,9 @@ export default function TempleDetailPage() {
 
       {/* Nearby Places Section — computed live from this temple's coordinates */}
       {hasNearbyEntities && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-16">
-          <h2 className="text-2xl font-bold text-gray-900 mb-8">Nearby Tirvona Places</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-12 sm:mt-16">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6 sm:mb-8">Nearby Tirvona Places</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-8 sm:gap-x-8 sm:gap-y-10">
             {[
               { key: "temples", label: "Other Temples", color: "text-indigo-600", to: (r: any) => `/temples/${r.slug}`, img: (r: any) => r.media?.coverImage },
               { key: "ashrams", label: "Ashrams / Stays", color: "text-[#E58C28]", to: (r: any) => `/ashram/${r.slug || r._id}`, img: (r: any) => r.images?.[0] },
@@ -542,26 +543,45 @@ export default function TempleDetailPage() {
               if (!rows.length) return null;
               return (
                 <div key={group.key}>
-                  <h3 className={`text-lg font-bold text-gray-900 mb-4 flex items-center gap-2`}>
+                  <h3 className={`text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2`}>
                     <Building2 className={`w-5 h-5 ${group.color}`} /> {group.label}
                   </h3>
-                  <div className="space-y-4">
+                  <div className="space-y-3 sm:space-y-4">
                     {rows.map((r: any) => {
                       const target = group.to(r);
                       const image = group.img(r);
                       const meta = [r.address?.city || r.city, r.distanceKm !== undefined ? `${r.distanceKm} km` : ""].filter(Boolean).join(" · ");
+                      const isStay = group.key === "ashrams" || group.key === "homestays";
+                      const isAvailable = !isStay || checkAshramBookingAvailable(r);
                       return (
                         <div
                           key={r._id}
                           onClick={() => { if (target && target !== "#") navigate(target); }}
-                          className={`bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 transition-shadow ${target && target !== "#" ? "cursor-pointer hover:shadow-md" : ""}`}
+                          className={`bg-white p-3.5 sm:p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-3 sm:gap-4 transition-all ${
+                            target && target !== "#" ? "cursor-pointer hover:shadow-md" : ""
+                          } ${!isAvailable ? "opacity-90 border-rose-100" : ""}`}
                         >
-                          <div className="w-16 h-16 bg-gray-100 rounded-xl overflow-hidden shrink-0 flex items-center justify-center">
-                            {image ? <img src={image} alt={r.name || r.title} className="w-full h-full object-cover" /> : <Building2 className="w-6 h-6 text-gray-300" />}
+                          <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gray-100 rounded-xl overflow-hidden shrink-0 flex items-center justify-center relative">
+                            {image ? (
+                              <img
+                                src={image}
+                                alt={r.name || r.title}
+                                className={`w-full h-full object-cover ${!isAvailable ? "grayscale-[20%]" : ""}`}
+                              />
+                            ) : (
+                              <Building2 className="w-6 h-6 text-gray-300" />
+                            )}
                           </div>
-                          <div className="min-w-0">
-                            <h4 className="font-bold text-gray-900 line-clamp-1">{r.name || r.title}</h4>
-                            {meta && <p className="text-sm text-gray-500">{meta}</p>}
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h4 className="font-bold text-sm sm:text-base text-gray-900 line-clamp-1">{r.name || r.title}</h4>
+                              {!isAvailable && (
+                                <span className="px-2 py-0.5 rounded-full bg-rose-600 text-white text-[9px] font-black uppercase tracking-wider shrink-0">
+                                  Not Available
+                                </span>
+                              )}
+                            </div>
+                            {meta && <p className="text-xs sm:text-sm text-gray-500 mt-0.5 truncate">{meta}</p>}
                           </div>
                         </div>
                       );

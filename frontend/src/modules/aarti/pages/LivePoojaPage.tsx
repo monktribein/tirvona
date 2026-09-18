@@ -112,7 +112,7 @@ const Rail: React.FC<{
         {icon}
         {title}
       </h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {streams.map((stream, index) => (
           <motion.div
             key={stream._id}
@@ -200,7 +200,7 @@ export const LivePoojaPage: React.FC = () => {
     <div className="pb-16 lg:pb-24 overflow-x-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6">
         <div className="text-center space-y-2 max-w-3xl mx-auto py-2">
-          <p className="font-['Kalam'] text-base sm:text-4xl font-bold text-[#E58C28]">
+          <p className="font-['Kalam'] text-2xl sm:text-4xl font-bold text-[#E58C28]">
             Live Pooja Darshan
           </p>
           <div className="flex items-center justify-center gap-2.5 my-1.5">
@@ -330,7 +330,8 @@ export const LivePoojaPage: React.FC = () => {
         ) : (
           <>
             {selected ? (
-              <div className="grid lg:grid-cols-[2fr_1fr] gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6">
+                {/* Video player — always on top on mobile */}
                 <div className="rounded-[24px] overflow-hidden border border-gray-100 dark:border-slate-800 bg-black shadow-sm">
                   <div className="aspect-video w-full">
                     {selected.embedUrl ? (
@@ -351,9 +352,10 @@ export const LivePoojaPage: React.FC = () => {
                   </div>
                 </div>
 
-                <aside className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 shadow-sm space-y-3">
+                {/* Stream info sidebar — stacks below on mobile */}
+                <aside className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-4 sm:p-5 shadow-sm space-y-3">
                   <div className="flex items-start justify-between gap-3">
-                    <h2 className="font-extrabold text-lg text-[#0B192C] dark:text-white leading-snug">
+                    <h2 className="font-extrabold text-base sm:text-lg text-[#0B192C] dark:text-white leading-snug">
                       {selected.title}
                     </h2>
                     {selected.isLiveNow ? <LiveBadge className="shrink-0" /> : null}

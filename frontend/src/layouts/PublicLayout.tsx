@@ -624,14 +624,16 @@ export const PublicLayout: React.FC = () => {
         </div>
       </header>
 
+      {/* Backdrop — z-[62] so it covers page content but sits below the drawer */}
       <div
-        className={`lg:hidden fixed inset-0 z-50 transition-opacity duration-300 ${drawerOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
+        className={`lg:hidden fixed inset-0 z-[62] transition-opacity duration-300 ${drawerOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
         style={{ background: "rgba(0,0,0,0.55)" }}
         onClick={() => setDrawerOpen(false)}
       />
 
+      {/* Drawer panel — z-[65] so it sits above the backdrop */}
       <div
-        className={`lg:hidden fixed top-0 right-0 h-[100vh] h-[100dvh] w-[85vw] max-w-[320px] bg-white dark:bg-[#0B192C] z-50 flex flex-col shadow-2xl transition-transform duration-300 ease-out ${drawerOpen ? "translate-x-0" : "translate-x-full"}`}
+        className={`lg:hidden fixed top-0 right-0 h-[100vh] h-[100dvh] w-[85vw] max-w-[320px] bg-white dark:bg-[#0B192C] z-[65] flex flex-col shadow-2xl transition-transform duration-300 ease-out ${drawerOpen ? "translate-x-0" : "translate-x-full"}`}
       >
         <div className="flex items-center justify-between px-5 py-4 pt-[max(1rem,calc(0.75rem+env(safe-area-inset-top)))] border-b border-gray-100 dark:border-slate-800">
           <Link
@@ -658,7 +660,7 @@ export const PublicLayout: React.FC = () => {
           </button>
         </div>
 
-        <div className="flex-grow overflow-y-auto px-5 py-4 space-y-1">
+        <div className="flex-grow ios-drawer-scroll overflow-y-auto px-5 py-4 space-y-1">
           {user && (
             <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-slate-900 rounded-2xl mb-4">
               <div className="w-10 h-10 rounded-full bg-primary/10 text-primary border border-primary/20 flex items-center justify-center font-black text-sm flex-shrink-0">

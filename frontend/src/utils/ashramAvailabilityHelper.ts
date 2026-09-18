@@ -24,6 +24,15 @@ export interface AvailabilityRequest {
 export const checkAshramBookingAvailable = (ashram: any): boolean => {
   if (!ashram) return true;
   if (ashram.bookingPaused === true) return false;
+  if (ashram.isAvailable === false) return false;
+  if (ashram.available === false) return false;
+  if (ashram.bookingAvailable === false) return false;
+  if (
+    typeof ashram.status === "string" &&
+    ["inactive", "paused", "disabled", "rejected"].includes(ashram.status.toLowerCase())
+  ) {
+    return false;
+  }
   if (ashram.discovery?.bookingAvailability?.checkedForDates) {
     return Boolean(ashram.discovery.bookingAvailability.available);
   }
