@@ -30,6 +30,7 @@ import {
   Sparkles,
   PhoneCall,
   Package,
+  MessageSquare,
 } from "lucide-react";
 
 const FooterAccordion: React.FC<{
@@ -283,9 +284,9 @@ export const PublicLayout: React.FC = () => {
     location.pathname.startsWith("/featured-banner/");
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50/70 dark:bg-[#070F1B] text-foreground transition-colors duration-300">
+    <div className="min-h-screen min-h-[100dvh] flex flex-col bg-gray-50/70 dark:bg-[#070F1B] text-foreground transition-colors duration-300">
       <header
-        className={`sticky top-0 z-50 pt-3 pb-3 ${hasOverlayHero ? "-mb-20 lg:-mb-24" : "mb-0"} pointer-events-none transform-gpu transition-all duration-300 ease-out will-change-transform ${navbarVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"}`}
+        className={`sticky top-0 z-50 pt-[calc(0.5rem+env(safe-area-inset-top))] pb-3 ${hasOverlayHero ? "-mb-20 lg:-mb-24" : "mb-0"} pointer-events-none transform-gpu transition-all duration-300 ease-out will-change-transform ${navbarVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"}`}
         aria-hidden={!navbarVisible}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pointer-events-auto">
@@ -630,9 +631,9 @@ export const PublicLayout: React.FC = () => {
       />
 
       <div
-        className={`lg:hidden fixed top-0 right-0 h-full w-[85vw] max-w-[320px] bg-white dark:bg-[#0B192C] z-50 flex flex-col shadow-2xl transition-transform duration-300 ease-out ${drawerOpen ? "translate-x-0" : "translate-x-full"}`}
+        className={`lg:hidden fixed top-0 right-0 h-[100vh] h-[100dvh] w-[85vw] max-w-[320px] bg-white dark:bg-[#0B192C] z-50 flex flex-col shadow-2xl transition-transform duration-300 ease-out ${drawerOpen ? "translate-x-0" : "translate-x-full"}`}
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-slate-800">
+        <div className="flex items-center justify-between px-5 py-4 pt-[max(1rem,calc(0.75rem+env(safe-area-inset-top)))] border-b border-gray-100 dark:border-slate-800">
           <Link
             to="/"
             onClick={() => setDrawerOpen(false)}
@@ -806,7 +807,7 @@ export const PublicLayout: React.FC = () => {
           </div>
         </div>
 
-        <div className="px-5 py-4 border-t border-gray-100 dark:border-slate-800 space-y-3">
+        <div className="px-5 py-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] border-t border-gray-100 dark:border-slate-800 space-y-3">
           {user ? (
             <button
               onClick={handleLogout}
@@ -903,6 +904,20 @@ export const PublicLayout: React.FC = () => {
                     >
                       <Mail size={13} className="text-[#E58C28] shrink-0" />
                       <span className="truncate">Email Support</span>
+                    </a>
+                    <a
+                      href="https://wa.me/917836055511?text=Hello%20Tirvona%20Support"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => {
+                        import("../lib/analytics").then(({ trackClickWhatsApp }) => {
+                          trackClickWhatsApp({ page_type: "footer" });
+                        });
+                      }}
+                      className="px-3 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-xs font-extrabold text-emerald-400 flex items-center gap-2 transition-colors sm:col-span-2"
+                    >
+                      <MessageSquare size={13} className="text-emerald-400 shrink-0" />
+                      <span className="truncate">WhatsApp Support (+91 78360 55511)</span>
                     </a>
                   </div>
                 </div>

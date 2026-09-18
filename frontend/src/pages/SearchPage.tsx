@@ -108,6 +108,15 @@ export const SearchPage: React.FC = () => {
   const [acFilter, setAcFilter] = useState(false);
   const [foodFilter, setFoodFilter] = useState(false);
   const [parkingFilter, setParkingFilter] = useState(false);
+  const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+
+  const activeFilterCount =
+    (ashramFilter ? 1 : 0) +
+    (dharamshalaFilter ? 1 : 0) +
+    (homestayFilter ? 1 : 0) +
+    (acFilter ? 1 : 0) +
+    (foodFilter ? 1 : 0) +
+    (parkingFilter ? 1 : 0);
 
   const [showMapGrid, setShowMapGrid] = useState(false);
   const [selectedMapAshram, setSelectedMapAshram] = useState<any>(null);
@@ -116,6 +125,7 @@ export const SearchPage: React.FC = () => {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [allAshrams, setAllAshrams] = useState<any[]>([]);
   const autocompleteRef = useRef<HTMLDivElement>(null);
+  const lastTrackedSearchFingerprintRef = useRef<string>("");
 
   useEffect(() => {
     const loadAll = async () => {
@@ -299,13 +309,18 @@ export const SearchPage: React.FC = () => {
 
         setResults(fetchedData);
         setDiscovery(res.data.discovery ?? null);
-        trackViewSearchResults({
-          destination: searchKey,
-          check_in: checkInQuery || checkIn,
-          check_out: checkOutQuery || checkOut,
-          guests: guestsQuery ? Number(guestsQuery) : totalGuests,
-          results_count: fetchedData.length,
-        });
+
+        const currentSearchFingerprint = `${searchKey.trim().toLowerCase()}|${checkInQuery || checkIn}|${checkOutQuery || checkOut}|${guestsQuery ? Number(guestsQuery) : totalGuests}`;
+        if (lastTrackedSearchFingerprintRef.current !== currentSearchFingerprint) {
+          lastTrackedSearchFingerprintRef.current = currentSearchFingerprint;
+          trackViewSearchResults({
+            destination: searchKey,
+            check_in: checkInQuery || checkIn,
+            check_out: checkOutQuery || checkOut,
+            guests: guestsQuery ? Number(guestsQuery) : totalGuests,
+            results_count: fetchedData.length,
+          });
+        }
       }
     } catch (err) {
       console.error("Search API error:", err);
@@ -318,6 +333,7 @@ export const SearchPage: React.FC = () => {
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    lastTrackedSearchFingerprintRef.current = "";
     updateBookingSearch({
       destination,
       checkIn,
@@ -521,7 +537,7 @@ export const SearchPage: React.FC = () => {
                 onChange={handleInputChange}
                 onFocus={() => setShowSuggestions(true)}
                 placeholder={t("Search destinations")}
-                className="w-full bg-transparent border-0 p-0 text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 focus:outline-none"
+                className="w-full bg-transparent border-0 p-0 text-base sm:text-sm font-semibold text-slate-700 dark:text-slate-200 focus:outline-none"
               />
             </div>
 
@@ -610,8 +626,23 @@ export const SearchPage: React.FC = () => {
         </div>
       )}
 
+      {/* Mobile Filter Button Bar */}
+      <div className="lg:hidden flex items-center justify-between gap-3 bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 p-2.5 px-4 rounded-2xl shadow-xs">
+        <button
+          type="button"
+          onClick={() => setMobileFilterOpen(true)}
+          className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-blue-50 dark:bg-slate-800 text-[#0A4DA6] dark:text-blue-400 font-bold text-xs rounded-full cursor-pointer hover:bg-blue-100 transition-colors"
+        >
+          <Filter size={13} />
+          <span>Filters {activeFilterCount > 0 && `(${activeFilterCount})`}</span>
+        </button>
+        <span className="text-xs font-bold text-gray-500">
+          {results.length} stay{results.length === 1 ? "" : "s"} found
+        </span>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
-        <aside className="space-y-6 lg:sticky lg:top-20">
+        <aside className="hidden lg:block space-y-6 lg:sticky lg:top-20">
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[28px] shadow-sm space-y-6">
             <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white flex items-center gap-2 border-b border-gray-50 dark:border-slate-850 pb-3">
               <Filter size={16} className="text-[#0A4DA6]" /> Filters
@@ -1211,6 +1242,137 @@ export const SearchPage: React.FC = () => {
             );
           })()}
       </AnimatePresence>
+
+      {/* Mobile Filter Drawer */}
+      {mobileFilterOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden flex justify-end">
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs"
+            onClick={() => setMobileFilterOpen(false)}
+          />
+          <div className="relative w-full max-w-sm bg-white dark:bg-[#0B192C] h-[100vh] h-[100dvh] flex flex-col z-10 shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 pt-[max(1rem,calc(0.75rem+env(safe-area-inset-top)))] border-b border-gray-100 dark:border-slate-800">
+              <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white flex items-center gap-2">
+                <Filter size={16} className="text-[#0A4DA6]" /> Filters {activeFilterCount > 0 && `(${activeFilterCount})`}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setMobileFilterOpen(false)}
+                className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-500 cursor-pointer"
+                aria-label="Close filters"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-5 space-y-6">
+              <div className="space-y-4">
+                <h4 className="text-[10px] uppercase font-extrabold text-gray-400 tracking-wider">
+                  Stay Type
+                </h4>
+                <div className="space-y-3.5">
+                  <label className="flex items-center gap-3 text-xs font-semibold cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={ashramFilter}
+                      onChange={() => setAshramFilter(!ashramFilter)}
+                      className="rounded border-gray-200 dark:border-slate-700 text-[#0A4DA6] focus:ring-[#0A4DA6]/20 cursor-pointer w-4 h-4"
+                    />
+                    <span className="flex items-center gap-1.5 text-[#0B192C] dark:text-gray-200">
+                      <Building2 size={14} className="text-gray-400" /> Ashram
+                    </span>
+                  </label>
+                  <label className="flex items-center gap-3 text-xs font-semibold cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={dharamshalaFilter}
+                      onChange={() => setDharamshalaFilter(!dharamshalaFilter)}
+                      className="rounded border-gray-200 dark:border-slate-700 text-[#0A4DA6] focus:ring-[#0A4DA6]/20 cursor-pointer w-4 h-4"
+                    />
+                    <span className="flex items-center gap-1.5 text-[#0B192C] dark:text-gray-200">
+                      <Landmark size={14} className="text-gray-400" /> Dharamshala
+                    </span>
+                  </label>
+                  <label className="flex items-center gap-3 text-xs font-semibold cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={homestayFilter}
+                      onChange={() => setHomestayFilter(!homestayFilter)}
+                      className="rounded border-gray-200 dark:border-slate-700 text-[#0A4DA6] focus:ring-[#0A4DA6]/20 cursor-pointer w-4 h-4"
+                    />
+                    <span className="flex items-center gap-1.5 text-[#0B192C] dark:text-gray-200">
+                      <Home size={14} className="text-gray-400" /> Homestay
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="space-y-4 pt-4 border-t border-gray-50 dark:border-slate-850">
+                <h4 className="text-[10px] uppercase font-extrabold text-gray-400 tracking-wider">
+                  Facilities
+                </h4>
+                <div className="space-y-3.5">
+                  <label className="flex items-center gap-3 text-xs font-semibold cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={acFilter}
+                      onChange={() => setAcFilter(!acFilter)}
+                      className="rounded border-gray-200 dark:border-slate-700 text-[#0A4DA6] focus:ring-[#0A4DA6]/20 cursor-pointer w-4 h-4"
+                    />
+                    <span className="flex items-center gap-1.5 text-[#0B192C] dark:text-gray-200">
+                      <Wifi size={14} className="text-gray-400" /> AC Rooms
+                    </span>
+                  </label>
+                  <label className="flex items-center gap-3 text-xs font-semibold cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={foodFilter}
+                      onChange={() => setFoodFilter(!foodFilter)}
+                      className="rounded border-gray-200 dark:border-slate-700 text-[#0A4DA6] focus:ring-[#0A4DA6]/20 cursor-pointer w-4 h-4"
+                    />
+                    <span className="flex items-center gap-1.5 text-[#0B192C] dark:text-gray-200">
+                      <UtensilsCrossed size={14} className="text-gray-400" /> Pure Vegetarian Food
+                    </span>
+                  </label>
+                  <label className="flex items-center gap-3 text-xs font-semibold cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={parkingFilter}
+                      onChange={() => setParkingFilter(!parkingFilter)}
+                      className="rounded border-gray-200 dark:border-slate-700 text-[#0A4DA6] focus:ring-[#0A4DA6]/20 cursor-pointer w-4 h-4"
+                    />
+                    <span className="flex items-center gap-1.5 text-[#0B192C] dark:text-gray-200">
+                      <Car size={14} className="text-gray-400" /> Parking
+                    </span>
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div className="p-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))] border-t border-gray-100 dark:border-slate-800 flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setAshramFilter(false);
+                  setDharamshalaFilter(false);
+                  setHomestayFilter(false);
+                  setAcFilter(false);
+                  setFoodFilter(false);
+                  setParkingFilter(false);
+                }}
+                className="flex-1 py-2.5 rounded-full border border-gray-200 dark:border-slate-700 text-xs font-bold text-gray-600 dark:text-gray-300 cursor-pointer"
+              >
+                Reset
+              </button>
+              <button
+                type="button"
+                onClick={() => setMobileFilterOpen(false)}
+                className="flex-1 py-2.5 rounded-full bg-[#0A4DA6] text-white text-xs font-extrabold shadow-sm cursor-pointer"
+              >
+                Apply Filters
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

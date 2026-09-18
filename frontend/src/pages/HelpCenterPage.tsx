@@ -217,6 +217,19 @@ const HelpCenterPage: React.FC = () => {
               Email Support
             </a>
             <a
+              href="https://wa.me/917836055511?text=Hello%20Tirvona%20Support,%20I%20need%20help%20with%20my%20booking"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => {
+                import("../lib/analytics").then(({ trackClickWhatsApp }) => {
+                  trackClickWhatsApp({ page_type: "help_center" });
+                });
+              }}
+              className="min-h-[44px] px-6 py-2.5 bg-[#25D366] hover:bg-[#20ba59] text-white font-extrabold text-sm rounded-full flex items-center justify-center transition-colors"
+            >
+              WhatsApp Support
+            </a>
+            <a
               href="tel:+917836055511"
               onClick={() => {
                 import("../lib/analytics").then(({ trackClickCall }) => {

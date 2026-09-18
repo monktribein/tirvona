@@ -428,7 +428,7 @@ const TrendTable: React.FC<{
   const value = (n: number) =>
     spec.money ? formatCurrency(n) : formatIndianNumber(n);
   return (
-    <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-slate-800 max-h-64 overflow-y-auto overscroll-contain">
+    <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-slate-800 max-h-64 overflow-y-auto overscroll-contain" style={{ WebkitOverflowScrolling: "touch" }}>
       <table className="w-full text-left text-xs">
         <thead className="bg-gray-50 dark:bg-slate-900 text-gray-600 dark:text-gray-300 font-extrabold text-[10px] sticky top-0">
           <tr>
@@ -644,17 +644,17 @@ const QuickPill: React.FC<{
   label: string;
   value: string;
 }> = ({ icon, tone, label, value }) => (
-  <div className="flex items-center gap-3 p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800">
+  <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800">
     <div
       className={`w-9 h-9 rounded-full ${tone} flex items-center justify-center shrink-0`}
     >
       {icon}
     </div>
-    <div className="min-w-0">
-      <span className="text-[10px] text-gray-500 font-semibold block leading-tight">
+    <div className="min-w-0 flex-1">
+      <span className="text-[10px] text-gray-500 font-semibold block leading-tight truncate">
         {label}
       </span>
-      <span className="text-xs font-black text-[#0B192C] dark:text-white tabular-nums">
+      <span className="text-xs font-black text-[#0B192C] dark:text-white tabular-nums block truncate">
         {value}
       </span>
     </div>
@@ -820,13 +820,13 @@ export const AdminDashboard: React.FC = () => {
       <div
         className={`flex flex-col gap-6 transition-opacity ${refreshing ? "opacity-60" : "opacity-100"}`}
       >
-        <div className="order-1 flex flex-wrap items-center justify-end gap-3">
-          <div className="flex items-center gap-1.5 rounded-2xl border border-gray-200 bg-white p-1 text-xs dark:border-slate-800 dark:bg-slate-900">
+        <div className="order-1 flex flex-wrap items-center justify-between sm:justify-end gap-2 sm:gap-3">
+          <div className="flex items-center gap-1 overflow-x-auto max-w-full rounded-2xl border border-gray-200 bg-white p-1 text-xs dark:border-slate-800 dark:bg-slate-900">
             {(["daily", "weekly", "monthly", "yearly"] as const).map((tab) => (
-              <button key={tab} type="button" onClick={() => setRange(tab)} className={`rounded-xl px-3 py-1.5 capitalize ${range === tab ? "bg-[#0A4DA6] text-white" : "text-gray-500 hover:text-[#0A4DA6]"}`}>{tab}</button>
+              <button key={tab} type="button" onClick={() => setRange(tab)} className={`rounded-xl px-2.5 sm:px-3 py-1.5 capitalize text-[11px] sm:text-xs font-bold ${range === tab ? "bg-[#0A4DA6] text-white" : "text-gray-500 hover:text-[#0A4DA6]"}`}>{tab}</button>
             ))}
           </div>
-          <button type="button" onClick={() => load(range, false)} className="rounded-2xl border border-gray-200 bg-white p-2.5 text-gray-500 dark:border-slate-800 dark:bg-slate-900" title="Refresh analytics">
+          <button type="button" onClick={() => load(range, false)} className="rounded-2xl border border-gray-200 bg-white p-2.5 text-gray-500 dark:border-slate-800 dark:bg-slate-900 cursor-pointer" title="Refresh analytics">
             <RefreshCw size={16} className={refreshing ? "animate-spin text-[#0A4DA6]" : ""} />
           </button>
         </div>
@@ -934,7 +934,7 @@ export const AdminDashboard: React.FC = () => {
               />
             )}
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-gray-200 dark:border-slate-800">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 pt-4 border-t border-gray-200 dark:border-slate-800">
               <QuickPill
                 icon={<Building2 size={18} />}
                 tone="bg-blue-100 text-blue-600"

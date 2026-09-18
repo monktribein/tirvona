@@ -51,7 +51,9 @@ export default function TempleDetailPage() {
     setName("twitter:title", temple.seo?.twitterTitle || temple.seo?.ogTitle || title);
     setName("twitter:description", temple.seo?.twitterDescription || temple.seo?.ogDescription || description);
     if (temple.seo?.twitterImage || ogImage) setName("twitter:image", temple.seo?.twitterImage || ogImage);
-    const canonical = temple.seo?.canonicalUrl || `${window.location.origin}/temples/${temple.slug}`;
+    const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+    const siteOrigin = isLocal ? window.location.origin : "https://www.tirvona.com";
+    const canonical = temple.seo?.canonicalUrl || `${siteOrigin}/temples/${temple.slug}`;
     let link = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
     if (!link) { link = document.createElement("link"); link.rel = "canonical"; document.head.appendChild(link); }
     link.href = canonical;
@@ -92,8 +94,8 @@ export default function TempleDetailPage() {
         "@context": "https://schema.org",
         "@type": "BreadcrumbList",
         itemListElement: [
-          { "@type": "ListItem", position: 1, name: "Home", item: window.location.origin + "/" },
-          { "@type": "ListItem", position: 2, name: "Temples", item: window.location.origin + "/temples" },
+          { "@type": "ListItem", position: 1, name: "Home", item: `${siteOrigin}/` },
+          { "@type": "ListItem", position: 2, name: "Temples", item: `${siteOrigin}/temples` },
           { "@type": "ListItem", position: 3, name: temple.name, item: canonical },
         ],
       },

@@ -81,6 +81,8 @@ Disallow: /booking/
 Disallow: /booking/*
 Disallow: /api/
 Disallow: /api/*
+Disallow: /c/
+Disallow: /c/*
 Disallow: /smart-contact.html
 Disallow: /index.html
 

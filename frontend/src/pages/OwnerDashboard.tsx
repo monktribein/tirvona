@@ -62,13 +62,13 @@ const tones = [
 const MetricCard: React.FC<{
   label: string; value: string; detail: string; icon: React.ReactNode; tone: string;
 }> = ({ label, value, detail, icon, tone }) => (
-  <article className={`relative min-h-28 overflow-hidden rounded-2xl bg-gradient-to-br ${tone} p-4 text-white shadow-sm transition-transform hover:-translate-y-0.5`}>
-    <div className="absolute -right-5 -top-5 h-24 w-24 rounded-full bg-white/10" />
-    <div className="relative flex items-start justify-between gap-3">
-      <div>
-        <p className="text-[11px] font-medium text-white/80">{label}</p>
-        <strong className="mt-2 block text-2xl font-bold tabular-nums tracking-tight">{value}</strong>
-        <span className="mt-1 block text-[10px] text-white/75">{detail}</span>
+  <article className={`relative min-h-28 overflow-hidden rounded-2xl bg-gradient-to-br ${tone} p-3.5 sm:p-4 text-white shadow-sm transition-transform hover:-translate-y-0.5`}>
+    <div className="absolute -right-5 -top-5 h-24 w-24 rounded-full bg-white/10 pointer-events-none" />
+    <div className="relative flex items-start justify-between gap-2.5">
+      <div className="min-w-0 flex-1">
+        <p className="text-[11px] font-medium text-white/80 truncate">{label}</p>
+        <strong className="mt-1.5 block text-xl sm:text-2xl font-bold tabular-nums tracking-tight truncate">{value}</strong>
+        <span className="mt-1 block text-[10px] text-white/75 truncate">{detail}</span>
       </div>
       <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white/15 backdrop-blur-xs">{icon}</span>
     </div>
@@ -696,7 +696,7 @@ export const OwnerDashboard: React.FC = () => {
             <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} /> Refresh data
           </button>
         </div>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {cards.map((card, index) => <MetricCard key={card.label} {...card} tone={tones[index % tones.length]} />)}
         </div>
       </section>
@@ -838,6 +838,7 @@ export const OwnerDashboard: React.FC = () => {
             <div
               ref={calendarScrollRef}
               className="flex items-stretch gap-2.5 overflow-x-auto pb-2 pt-1 scroll-smooth scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-700"
+              style={{ WebkitOverflowScrolling: "touch" }}
             >
               {fifteenDays.map((day) => {
                 const isToday = day.isToday;
@@ -909,7 +910,7 @@ export const OwnerDashboard: React.FC = () => {
       {/* DATE BOOKINGS DETAIL MODAL / DRAWER */}
       {activeDetailDate && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
-          <div className="bg-white dark:bg-[#0B192C] border border-slate-200 dark:border-slate-800 max-w-4xl w-full rounded-3xl p-5 sm:p-6 space-y-5 shadow-2xl my-auto max-h-[92vh] flex flex-col">
+          <div className="bg-white dark:bg-[#0B192C] border border-slate-200 dark:border-slate-800 max-w-4xl w-full rounded-3xl p-4 sm:p-6 space-y-4 sm:space-y-5 shadow-2xl my-auto max-h-[90vh] max-h-[90dvh] flex flex-col pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
             {/* MODAL HEADER */}
             <div className="flex items-start justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4 shrink-0">
               <div className="space-y-1">
@@ -1196,13 +1197,13 @@ export const OwnerDashboard: React.FC = () => {
 
       {/* ASSIGN / EDIT ROOM NUMBER MODAL */}
       {editingBooking && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-60 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-60 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
           <form
             onSubmit={(e) => {
               e.preventDefault();
               void handleSaveRoomNumber(editingBooking._id);
             }}
-            className="bg-white dark:bg-[#0B192C] border border-slate-200 dark:border-slate-800 max-w-sm w-full rounded-3xl p-6 space-y-4 shadow-2xl"
+            className="bg-white dark:bg-[#0B192C] border border-slate-200 dark:border-slate-800 max-w-md w-full rounded-3xl p-5 sm:p-6 space-y-4 shadow-2xl my-auto max-h-[90vh] max-h-[90dvh] overflow-y-auto pb-[calc(1rem+env(safe-area-inset-bottom))]"
           >
             <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
               <h3 className="font-extrabold text-sm text-slate-900 dark:text-white flex items-center gap-2">
@@ -1287,10 +1288,10 @@ export const OwnerDashboard: React.FC = () => {
 
       {/* ASHRAM CANCELLATION MODAL WITH 100% REFUND POLICY NOTICE */}
       {cancellingBooking && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-60 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-60 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
           <form
             onSubmit={handleCancelBookingSubmit}
-            className="bg-white dark:bg-[#0B192C] border border-slate-200 dark:border-slate-800 max-w-md w-full rounded-3xl p-6 space-y-4 shadow-2xl"
+            className="bg-white dark:bg-[#0B192C] border border-slate-200 dark:border-slate-800 max-w-md w-full rounded-3xl p-5 sm:p-6 space-y-4 shadow-2xl my-auto max-h-[90vh] max-h-[90dvh] overflow-y-auto pb-[calc(1rem+env(safe-area-inset-bottom))]"
           >
             <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
               <h3 className="font-extrabold text-sm text-rose-600 flex items-center gap-2">
@@ -1533,10 +1534,10 @@ export const OwnerDashboard: React.FC = () => {
 
       {/* OVERRIDE DAILY RATE & MAINTENANCE MODAL */}
       {showOverride && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-60 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-60 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
           <form
             onSubmit={handleOverrideSubmit}
-            className="bg-white dark:bg-[#0B192C] border border-slate-200 dark:border-slate-800 max-w-md w-full rounded-3xl p-6 space-y-4 shadow-2xl"
+            className="bg-white dark:bg-[#0B192C] border border-slate-200 dark:border-slate-800 max-w-md w-full rounded-3xl p-5 sm:p-6 space-y-4 shadow-2xl my-auto max-h-[90vh] max-h-[90dvh] overflow-y-auto pb-[calc(1rem+env(safe-area-inset-bottom))]"
           >
             <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
               <h3 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">

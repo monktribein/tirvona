@@ -21,6 +21,7 @@ import DashboardLayout from "./layouts/DashboardLayout";
 import PageLoader from "./components/PageLoader";
 import AuthReturnRestorer from "./components/AuthReturnRestorer";
 import { trackPageView } from "./lib/analytics";
+import { CanonicalUrlTracker } from "./lib/useCanonicalUrl";
 
 const HomePage = lazy(() => import("./pages/HomePage"));
 const BannerDetailPage = lazy(() => import("./pages/BannerDetailPage"));
@@ -412,9 +413,9 @@ const PageViewTracker: React.FC = () => {
   const location = useLocation();
 
   useEffect(() => {
-    const fullPath = location.pathname + location.search + location.hash;
+    const fullPath = location.pathname + location.search;
     trackPageView(fullPath);
-  }, [location.pathname, location.search, location.hash]);
+  }, [location.pathname, location.search]);
 
   return null;
 };
@@ -434,6 +435,7 @@ const AppContent: React.FC = () => {
   return (
     <BrowserRouter>
       <ScrollToTop />
+      <CanonicalUrlTracker />
       <PageViewTracker />
       <AuthReturnRestorer />
       <Suspense fallback={<PageLoader />}>

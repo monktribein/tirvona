@@ -79,10 +79,10 @@ export const CartDrawer: React.FC = () => {
       aria-label="Shopping cart"
     >
       <aside
-        className="w-full max-w-md h-full bg-white dark:bg-[#0B192C] shadow-2xl flex flex-col"
+        className="w-full max-w-md h-[100vh] h-[100dvh] bg-white dark:bg-[#0B192C] shadow-2xl flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <header className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-slate-800">
+        <header className="flex items-center justify-between p-4 pt-[max(1rem,calc(0.75rem+env(safe-area-inset-top)))] border-b border-gray-200 dark:border-slate-800">
           <h2 className="text-base font-black text-[#0B192C] dark:text-white flex items-center gap-2">
             <ShoppingBag size={18} className="text-[#0A4DA6]" />
             Your cart
@@ -181,7 +181,7 @@ export const CartDrawer: React.FC = () => {
               ))}
             </div>
 
-            <footer className="p-4 border-t border-gray-200 dark:border-slate-800 space-y-3">
+            <footer className="p-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))] border-t border-gray-200 dark:border-slate-800 space-y-3">
               <div className="flex items-center justify-between text-sm">
                 <span className="font-bold text-gray-600 dark:text-gray-300">
                   Subtotal
