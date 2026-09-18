@@ -22,6 +22,7 @@ import {
 import { useCanonicalUrl } from "../lib/useCanonicalUrl";
 import { ashramService } from "../services";
 import { ashramUrl, ashramBookUrl } from "../lib/urls";
+import { checkAshramBookingAvailable } from "../utils/ashramAvailabilityHelper";
 import {
   useBookingSearch,
   getTodayYMD,
@@ -785,6 +786,7 @@ export const SeoLandingPage: React.FC<SeoLandingPageProps> = ({ config }) => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredStays.map((stay) => {
+                const isAvailable = checkAshramBookingAvailable(stay);
                 const price = stay.calculatedPrice;
                 const primaryImage =
                   (Array.isArray(stay.images) && stay.images[0]) ||
@@ -808,7 +810,9 @@ export const SeoLandingPage: React.FC<SeoLandingPageProps> = ({ config }) => {
                           src={primaryImage}
                           alt={stay.name}
                           loading="lazy"
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${
+                            !isAvailable ? "grayscale-[20%]" : ""
+                          }`}
                           onError={(e) => {
                             e.currentTarget.onerror = null;
                             e.currentTarget.src =
@@ -816,6 +820,12 @@ export const SeoLandingPage: React.FC<SeoLandingPageProps> = ({ config }) => {
                           }}
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 pointer-events-none" />
+
+                        {!isAvailable && (
+                          <div className="absolute top-3 left-3 bg-rose-600 text-white px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shadow-md z-10">
+                            Not Available
+                          </div>
+                        )}
 
                         {/* Top-Right Badge: Legitimate Tirvona Trusted */}
                         {stay.isVerified && (
@@ -901,10 +911,17 @@ export const SeoLandingPage: React.FC<SeoLandingPageProps> = ({ config }) => {
                       </button>
                       <button
                         type="button"
-                        onClick={(e) => handleNavigateBooking(stay, e)}
-                        className="w-full py-2 px-3 rounded-xl bg-[#0A4DA6] hover:bg-[#083D85] text-white font-black text-xs transition-colors cursor-pointer text-center shadow-xs"
+                        disabled={!isAvailable}
+                        onClick={(e) => {
+                          if (isAvailable) handleNavigateBooking(stay, e);
+                        }}
+                        className={`w-full py-2 px-3 rounded-xl font-black text-xs transition-colors text-center shadow-xs ${
+                          !isAvailable
+                            ? "bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-400 cursor-not-allowed"
+                            : "bg-[#0A4DA6] hover:bg-[#083D85] text-white cursor-pointer"
+                        }`}
                       >
-                        Book Now
+                        {isAvailable ? "Book Now" : "Not Available"}
                       </button>
                     </div>
                   </article>

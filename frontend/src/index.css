@@ -551,3 +551,24 @@ label {
   touch-action: manipulation;
 }
 
+/* Temple Detail & Ashram Detail iPhone adjustments */
+@media (max-width: 480px) {
+  /* Prevent horizontal scroll bleed on mobile */
+  .ashram-detail-page,
+  .temple-detail-page {
+    overflow-x: hidden;
+  }
+
+  /* Guest room selector popup on mobile */
+  [data-guest-selector-panel] {
+    max-width: calc(100vw - 2rem) !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+  }
+
+  /* Room category cards padding on iPhone */
+  .room-category-card {
+    padding: 0.875rem !important;
+  }
+}
+

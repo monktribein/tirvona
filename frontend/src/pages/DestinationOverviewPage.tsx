@@ -24,6 +24,7 @@ import {
 import { formatCurrency } from "../utils/format";
 import { toTitleCase } from "../utils/textCase";
 import { ashramUrl } from "../lib/urls";
+import { checkAshramBookingAvailable } from "../utils/ashramAvailabilityHelper";
 import { TirvonaMapView, type MapMarker } from "../components/TirvonaMapView";
 import type { NearbyPlace } from "../data/destinationData";
 import { MarqueeSlider } from "../components/shared/MarqueeSlider";
@@ -105,10 +106,16 @@ const StayCard: React.FC<{ ashram: any }> = ({ ashram }) => {
         ? "Guest House"
         : "Ashram";
 
+  const isAvailable = checkAshramBookingAvailable(ashram);
+
   return (
     <div
       onClick={() => navigate(ashramUrl(ashram))}
-      className="dest-card group cursor-pointer bg-white dark:bg-[#0B192C] rounded-3xl overflow-hidden border border-gray-100 dark:border-slate-800 transition-all duration-300 hover:-translate-y-1 flex flex-col shadow-sm hover:shadow-xl"
+      className={`dest-card group cursor-pointer bg-white dark:bg-[#0B192C] rounded-3xl overflow-hidden border transition-all duration-300 hover:-translate-y-1 flex flex-col shadow-sm hover:shadow-xl ${
+        !isAvailable
+          ? "border-rose-200 dark:border-rose-900/50 opacity-90"
+          : "border-gray-100 dark:border-slate-800"
+      }`}
     >
       {/* Image & Badges */}
       <div className="dest-card-img-wrap dest-card-media relative bg-gray-100 dark:bg-slate-900">
@@ -116,7 +123,7 @@ const StayCard: React.FC<{ ashram: any }> = ({ ashram }) => {
           <img
             src={img}
             alt={ashram.name}
-            className="w-full h-full object-cover"
+            className={`w-full h-full object-cover ${!isAvailable ? "grayscale-[20%]" : ""}`}
             loading="lazy"
           />
         ) : (
@@ -129,14 +136,22 @@ const StayCard: React.FC<{ ashram: any }> = ({ ashram }) => {
         <span className="absolute top-3 left-3 px-2.5 py-0.5 rounded-full bg-[#0B192C]/80 backdrop-blur-xs text-white text-[10px] font-extrabold tracking-wide">
           {typeLabel}
         </span>
-        {ratingCount > 0 && (
+        {!isAvailable ? (
+          <span className="absolute top-3 right-3 bg-rose-600 text-white text-[10px] font-black uppercase px-2.5 py-1 rounded-full shadow-md">
+            Not Available
+          </span>
+        ) : ratingCount > 0 ? (
           <span className="absolute top-3 right-3 bg-white/95 dark:bg-[#0B192C]/90 text-[#0B192C] dark:text-white text-[10px] font-extrabold px-2 py-1 rounded-full shadow-sm flex items-center gap-1 backdrop-blur-sm">
             <Star size={11} className="text-[#D4AF37] fill-[#D4AF37]" />
             {ratingVal}
           </span>
-        )}
+        ) : null}
         <div className="absolute bottom-2.5 left-2.5">
-          {minPrice > 0 ? (
+          {!isAvailable ? (
+            <span className="bg-rose-600 text-white text-[10px] sm:text-[11px] font-extrabold px-3 py-1 rounded-full shadow-sm">
+              Not Available
+            </span>
+          ) : minPrice > 0 ? (
             <span className="bg-[#0A4DA6] text-white text-[10px] sm:text-[11px] font-extrabold px-3 py-1 rounded-full shadow-sm">
               {formatCurrency(minPrice)} / night
             </span>

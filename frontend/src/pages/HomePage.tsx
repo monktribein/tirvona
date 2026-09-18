@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { ashramUrl } from "../lib/urls";
+import { checkAshramBookingAvailable } from "../utils/ashramAvailabilityHelper";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import api from "../lib/api";
@@ -1740,6 +1741,7 @@ export const HomePage: React.FC = () => {
                   queryParts.push(`promoCode=${ashramDeal.promoCode}`);
                 }
                 const queryString = queryParts.length > 0 ? `?${queryParts.join("&")}` : "";
+                const isAvailable = checkAshramBookingAvailable(ashram);
 
                 return (
                   <div
@@ -1759,7 +1761,7 @@ export const HomePage: React.FC = () => {
                             "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E"
                           }
                           alt={ashram.name}
-                          className="w-full h-full object-cover"
+                          className={`w-full h-full object-cover ${!isAvailable ? "grayscale-[20%]" : ""}`}
                           loading="lazy"
                           onError={(e) => {
                             e.currentTarget.onerror = null;
@@ -1767,6 +1769,14 @@ export const HomePage: React.FC = () => {
                               "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E";
                           }}
                         />
+
+                        {!isAvailable && (
+                          <div className="absolute top-2.5 right-2.5 z-10">
+                            <span className="text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-md bg-rose-600 text-white">
+                              Not Available
+                            </span>
+                          </div>
+                        )}
 
                         {ashramDeal && (
                           <div className="absolute top-2.5 inset-x-2.5 flex items-center justify-between pointer-events-none z-10">
