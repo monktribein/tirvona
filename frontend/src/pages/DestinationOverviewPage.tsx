@@ -833,8 +833,8 @@ const DestinationOverviewPage: React.FC = () => {
         id="dest-available"
         className="max-w-7xl mx-auto px-4 sm:px-6 mb-14"
       >
-        {/* Category Tabs */}
-        <div className="flex items-center justify-center gap-2 flex-wrap mb-6">
+        {/* Category Tabs — scrolls horizontally on mobile (390 px iPhones) */}
+        <div className="dest-tab-strip mb-6">
           {tabConfig.map((tab) => (
             <button
               key={tab.key}

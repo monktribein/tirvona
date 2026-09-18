@@ -518,13 +518,14 @@ export const SearchPage: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2 pb-12 space-y-4">
-      <div className="relative z-[100] isolate overflow-visible bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 p-1 sm:p-1.5 rounded-2xl lg:rounded-full shadow-md shadow-[#0B192C]/5 shrink-0">
+      {/* Search bar — z-[60] on mobile so it doesn't clash with the nav drawer (z-50) */}
+      <div className="relative z-[60] lg:z-[100] isolate overflow-visible bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 p-1 sm:p-1.5 rounded-2xl lg:rounded-full shadow-md shadow-[#0B192C]/5 shrink-0">
         <form
           onSubmit={handleSearchSubmit}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.45fr_1.35fr_1.15fr_auto] gap-1 lg:gap-0 items-center"
+          className="grid grid-cols-1 lg:grid-cols-[1.45fr_1.35fr_1.15fr_auto] gap-1 lg:gap-0 items-center"
         >
           <div
-            className="flex flex-col justify-center text-left relative min-h-[46px] px-4 py-1.5 rounded-xl lg:rounded-full lg:border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0B192C] hover:bg-slate-50 dark:hover:bg-slate-900/60 hover:shadow-sm z-10 focus-within:z-[90]"
+            className="flex flex-col justify-center text-left relative min-h-[46px] px-4 py-2 rounded-xl lg:rounded-full lg:border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0B192C] hover:bg-slate-50 dark:hover:bg-slate-900/60 hover:shadow-sm z-10 focus-within:z-[90]"
             ref={autocompleteRef}
           >
             <label className="text-[10px] font-extrabold text-[#0B192C] dark:text-white uppercase tracking-wider">
@@ -537,7 +538,7 @@ export const SearchPage: React.FC = () => {
                 onChange={handleInputChange}
                 onFocus={() => setShowSuggestions(true)}
                 placeholder={t("Search destinations")}
-                className="w-full bg-transparent border-0 p-0 text-base sm:text-sm font-semibold text-slate-700 dark:text-slate-200 focus:outline-none"
+                className="w-full bg-transparent border-0 p-0 text-[16px] sm:text-sm font-semibold text-slate-700 dark:text-slate-200 focus:outline-none"
               />
             </div>
 
@@ -565,7 +566,7 @@ export const SearchPage: React.FC = () => {
             </AnimatePresence>
           </div>
 
-          <div className="relative rounded-xl lg:rounded-full px-4 py-1.5 min-h-[46px] flex items-center lg:border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0B192C] hover:bg-slate-50 dark:hover:bg-slate-900/60 hover:shadow-sm z-10 focus-within:z-[90]">
+          <div className="relative rounded-xl lg:rounded-full px-4 py-2 min-h-[46px] flex items-center lg:border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0B192C] hover:bg-slate-50 dark:hover:bg-slate-900/60 hover:shadow-sm z-10 focus-within:z-[90]">
             <DateRangePicker
               checkIn={checkIn}
               checkOut={checkOut}
@@ -579,13 +580,13 @@ export const SearchPage: React.FC = () => {
             />
           </div>
 
-          <div className="relative rounded-xl lg:rounded-full px-4 py-1.5 min-h-[46px] flex items-center bg-white dark:bg-[#0B192C] hover:bg-slate-50 dark:hover:bg-slate-900/60 hover:shadow-sm z-10 focus-within:z-[90]">
+          <div className="relative rounded-xl lg:rounded-full px-4 py-2 min-h-[46px] flex items-center bg-white dark:bg-[#0B192C] hover:bg-slate-50 dark:hover:bg-slate-900/60 hover:shadow-sm z-10 focus-within:z-[90]">
             <GuestRoomSelector compact pill />
           </div>
 
           <button
             type="submit"
-            className="w-full lg:w-auto h-10 lg:h-11 px-5 bg-[#0A4DA6] hover:bg-opacity-95 text-white font-extrabold rounded-xl lg:rounded-full text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-sm shadow-[#0A4DA6]/10"
+            className="w-full lg:w-auto h-11 px-5 bg-[#0A4DA6] hover:bg-opacity-95 text-white font-extrabold rounded-xl lg:rounded-full text-sm flex items-center justify-center gap-1.5 cursor-pointer shadow-sm shadow-[#0A4DA6]/10"
           >
             <Search size={13} /> Modify Search
           </button>

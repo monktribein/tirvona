@@ -496,4 +496,58 @@ textarea,
   -webkit-overflow-scrolling: touch;
 }
 
+/* ==========================================================================
+   iPhone-Specific Page Fixes
+   ========================================================================== */
+
+/* Service icon strip labels — prevent text overflow on 390px iPhones */
+@media (max-width: 430px) {
+  .home-page .service-icon-label {
+    font-size: 9px;
+    line-height: 1.2;
+  }
+}
+
+/* Ensure search/date picker popovers don't go off-screen on narrow iPhones */
+@media (max-width: 480px) {
+  /* DateRangePicker calendar panel — clamp to viewport */
+  [data-date-picker-panel],
+  .date-picker-panel {
+    max-width: calc(100vw - 2rem) !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+  }
+
+  /* Blog / article grid — force single column on iPhone */
+  .home-page .blog-grid,
+  .home-page [class*="grid-cols-2"]:not(.no-mobile-stack) {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Hero search tabs — ensure they don't wrap awkwardly */
+  .home-page .search-tab-strip {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .home-page .search-tab-strip::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Fix iOS rubber-band overscroll on full-height drawers */
+.ios-drawer-scroll {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+
+/* Prevent tap zoom on double-tap for interactive elements */
+button,
+a,
+[role="button"],
+label {
+  touch-action: manipulation;
+}
 
