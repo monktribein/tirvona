@@ -137,7 +137,11 @@ export class SelfBookingService {
     const nights = eachNight(start, end);
 
     const rooms = await this.rooms
-      .find({ ashramId: query.ashramId, status: "active", deletedAt: null })
+      .find({
+        ashramId: query.ashramId,
+        status: { $ne: "inactive" },
+        deletedAt: null,
+      })
       .lean();
 
     return Promise.all(

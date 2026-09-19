@@ -32,7 +32,11 @@ import {
   AlertCircle,
   Copy,
   CheckCheck,
-  Plus
+  Plus,
+  Bell,
+  Send,
+  MessageSquare,
+  Trash2
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -165,6 +169,130 @@ export const ReceptionCheckinPage: React.FC<ReceptionCheckinPageProps> = ({ init
     paymentReference: '',
     specialRequests: ''
   });
+
+  // =========================================================================
+  // NOTICES & ALERTS STATE
+  // =========================================================================
+  interface FrontDeskNotice {
+    id: string;
+    title: string;
+    category: 'handover' | 'notice' | 'maintenance' | 'guest';
+    priority: 'normal' | 'high' | 'urgent';
+    message: string;
+    author: string;
+    createdAt: string;
+    acknowledged: boolean;
+  }
+
+  const [notices, setNotices] = useState<FrontDeskNotice[]>(() => {
+    try {
+      const saved = localStorage.getItem('tirvona_reception_notices');
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch {
+      // ignore
+    }
+    return [
+      {
+        id: 'n-1',
+        title: 'Shift Handover: Early Morning Darshan Arrivals',
+        category: 'handover',
+        priority: 'high',
+        message: 'Expected VIP pilgrim arrivals tomorrow morning at 7:00 AM. Ensure Deluxe rooms on 1st floor are cleaned, inspected, and key tags are kept ready at the desk.',
+        author: 'Reception Shift Lead',
+        createdAt: new Date(Date.now() - 3600000 * 2).toISOString(),
+        acknowledged: false,
+      },
+      {
+        id: 'n-2',
+        title: 'Mandatory Aadhaar & Govt Photo ID Verification',
+        category: 'notice',
+        priority: 'urgent',
+        message: 'All guests checking in must provide Aadhaar or Govt ID. Record the last 4 digits in the Check-in verification modal before issuing physical keys.',
+        author: 'Stay Management',
+        createdAt: new Date(Date.now() - 3600000 * 6).toISOString(),
+        acknowledged: false,
+      },
+      {
+        id: 'n-3',
+        title: 'Water Geyser & AC Maintenance Completed',
+        category: 'maintenance',
+        priority: 'normal',
+        message: 'Facility maintenance has inspected and certified hot water geysers and AC units across all floors. All active rooms are fully ready for guest check-in.',
+        author: 'Maintenance Desk',
+        createdAt: new Date(Date.now() - 3600000 * 20).toISOString(),
+        acknowledged: true,
+      },
+      {
+        id: 'n-4',
+        title: 'Late Checkout Policy Reminder',
+        category: 'guest',
+        priority: 'normal',
+        message: 'Standard checkout time is 11:00 AM. In-house guests requesting checkout past 1:00 PM must be approved and billed under incidental charges.',
+        author: 'Front Office Manager',
+        createdAt: new Date(Date.now() - 3600000 * 30).toISOString(),
+        acknowledged: true,
+      }
+    ];
+  });
+
+  const [showNewNoticeModal, setShowNewNoticeModal] = useState(false);
+  const [noticeCategoryFilter, setNoticeCategoryFilter] = useState<'all' | 'urgent' | 'handover' | 'notice' | 'maintenance'>('all');
+  const [newNoticeForm, setNewNoticeForm] = useState({
+    title: '',
+    category: 'handover' as 'handover' | 'notice' | 'maintenance' | 'guest',
+    priority: 'normal' as 'normal' | 'high' | 'urgent',
+    message: '',
+    author: user?.name || 'Reception Desk'
+  });
+
+  // Persist notices
+  useEffect(() => {
+    try {
+      localStorage.setItem('tirvona_reception_notices', JSON.stringify(notices));
+    } catch {
+      // ignore
+    }
+  }, [notices]);
+
+  const toggleAcknowledgeNotice = (id: string) => {
+    setNotices(prev =>
+      prev.map(n => (n.id === id ? { ...n, acknowledged: !n.acknowledged } : n))
+    );
+  };
+
+  const deleteNotice = (id: string) => {
+    setNotices(prev => prev.filter(n => n.id !== id));
+  };
+
+  const handleCreateNotice = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newNoticeForm.title.trim() || !newNoticeForm.message.trim()) return;
+
+    const newNotice: FrontDeskNotice = {
+      id: `n-${Date.now()}`,
+      title: newNoticeForm.title.trim(),
+      category: newNoticeForm.category,
+      priority: newNoticeForm.priority,
+      message: newNoticeForm.message.trim(),
+      author: newNoticeForm.author.trim() || user?.name || 'Reception Staff',
+      createdAt: new Date().toISOString(),
+      acknowledged: false,
+    };
+
+    setNotices(prev => [newNotice, ...prev]);
+    setShowNewNoticeModal(false);
+    setNewNoticeForm({
+      title: '',
+      category: 'handover',
+      priority: 'normal',
+      message: '',
+      author: user?.name || 'Reception Desk'
+    });
+    setActionSuccess('Front desk notice posted successfully.');
+    setTimeout(() => setActionSuccess(null), 3000);
+  };
 
   // Load frontdesk data
   const loadData = async (isManualRefresh = false) => {
@@ -304,6 +432,27 @@ export const ReceptionCheckinPage: React.FC<ReceptionCheckinPageProps> = ({ init
   const inHouseList = useMemo(() => {
     return bookings.filter(b => b.status === 'checked_in');
   }, [bookings]);
+
+  // Operational system alerts
+  const unpaidArrivalsList = useMemo(() => {
+    return bookings.filter(b => {
+      const total = b.pricing?.totalAmount ?? b.totalAmount ?? 0;
+      const paid = b.pricing?.amountPaid ?? b.paidAmount ?? 0;
+      return (total - paid) > 0 && (b.status === 'confirmed' || b.status === 'payment_pending');
+    });
+  }, [bookings]);
+
+  const activeNoticesList = useMemo(() => {
+    return notices.filter(n => {
+      if (noticeCategoryFilter === 'all') return true;
+      if (noticeCategoryFilter === 'urgent') return n.priority === 'urgent' || n.priority === 'high';
+      return n.category === noticeCategoryFilter;
+    });
+  }, [notices, noticeCategoryFilter]);
+
+  const unacknowledgedCount = useMemo(() => {
+    return notices.filter(n => !n.acknowledged).length;
+  }, [notices]);
 
   // Handlers for New Walk-In Booking
   const fetchAvailableCategories = async (checkIn: string, checkOut: string) => {
@@ -677,107 +826,105 @@ export const ReceptionCheckinPage: React.FC<ReceptionCheckinPageProps> = ({ init
       )}
 
       {/* =========================================================================
-          CIRCLE STYLE METRIC CARDS (Matches Image 3 Aesthetic with Circular Badges)
+          ELEGANT FRONT DESK METRIC CARDS (Clean, High-Readability Tirvona Design)
           ========================================================================= */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         {/* 1. Collected / Today's Revenue */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 to-blue-700 text-white p-5 shadow-lg shadow-blue-600/15 flex flex-col justify-between group hover:shadow-xl transition-all duration-300">
+        <div className="relative overflow-hidden rounded-2xl bg-white border border-slate-200/90 p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col justify-between group">
+          <div className="h-1.5 w-full bg-gradient-to-r from-blue-600 to-indigo-600 absolute top-0 left-0" />
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-blue-100/90">Collected Revenue</p>
-              <h3 className="text-2xl lg:text-3xl font-black mt-2 tracking-tight">₹{summary.todayRevenue.toLocaleString()}</h3>
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Collected Revenue</p>
+              <h3 className="text-2xl lg:text-3xl font-black text-slate-900 mt-2 tracking-tight">₹{summary.todayRevenue.toLocaleString()}</h3>
             </div>
-            {/* Circle Badge */}
-            <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white shadow-inner flex-shrink-0 group-hover:scale-110 transition-transform">
-              <IndianRupee className="w-6 h-6" />
+            <div className="w-11 h-11 rounded-xl bg-blue-50 border border-blue-100/80 flex items-center justify-center text-blue-600 shadow-sm flex-shrink-0 group-hover:scale-105 transition-transform">
+              <IndianRupee className="w-5 h-5" />
             </div>
           </div>
-          <div className="mt-4 pt-3 border-t border-white/15 flex items-center justify-between text-xs text-blue-100">
-            <span>Pending: ₹{summary.pendingPayments.toLocaleString()}</span>
-            <span className="font-medium bg-white/20 px-2 py-0.5 rounded-full text-[10px]">Desk Total</span>
+          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600">
+            <span>Pending: <strong className="text-rose-600">₹{summary.pendingPayments.toLocaleString()}</strong></span>
+            <span className="font-semibold bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full text-[10px]">Desk Total</span>
           </div>
-          {/* Subtle Background Decorative Circle */}
-          <div className="absolute -right-6 -bottom-6 w-28 h-28 rounded-full bg-white/5 pointer-events-none" />
         </div>
 
         {/* 2. Today's Arrivals */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white p-5 shadow-lg shadow-emerald-600/15 flex flex-col justify-between group hover:shadow-xl transition-all duration-300">
+        <div className="relative overflow-hidden rounded-2xl bg-white border border-slate-200/90 p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col justify-between group">
+          <div className="h-1.5 w-full bg-gradient-to-r from-emerald-500 to-teal-500 absolute top-0 left-0" />
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-emerald-100/90">Today's Arrivals</p>
-              <h3 className="text-2xl lg:text-3xl font-black mt-2 tracking-tight">{summary.arrivalsToday}</h3>
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Today's Arrivals</p>
+              <h3 className="text-2xl lg:text-3xl font-black text-slate-900 mt-2 tracking-tight">{summary.arrivalsToday}</h3>
             </div>
-            <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white shadow-inner flex-shrink-0 group-hover:scale-110 transition-transform">
-              <LogIn className="w-6 h-6" />
+            <div className="w-11 h-11 rounded-xl bg-emerald-50 border border-emerald-100/80 flex items-center justify-center text-emerald-600 shadow-sm flex-shrink-0 group-hover:scale-105 transition-transform">
+              <LogIn className="w-5 h-5" />
             </div>
           </div>
-          <div className="mt-4 pt-3 border-t border-white/15 flex items-center justify-between text-xs text-emerald-100">
-            <span>Pending Check-in: {summary.pendingCheckins}</span>
-            <button onClick={() => setTab('arrivals')} className="hover:underline flex items-center font-medium">
-              View <ChevronRight className="w-3 h-3 ml-0.5" />
+          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600">
+            <span>Pending Check-in: <strong className="text-slate-800">{summary.pendingCheckins}</strong></span>
+            <button onClick={() => setTab('arrivals')} className="text-emerald-600 hover:text-emerald-700 hover:underline flex items-center font-bold">
+              View <ChevronRight className="w-3.5 h-3.5 ml-0.5" />
             </button>
           </div>
-          <div className="absolute -right-6 -bottom-6 w-28 h-28 rounded-full bg-white/5 pointer-events-none" />
         </div>
 
         {/* 3. Today's Departures */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-rose-500 to-rose-600 text-white p-5 shadow-lg shadow-rose-600/15 flex flex-col justify-between group hover:shadow-xl transition-all duration-300">
+        <div className="relative overflow-hidden rounded-2xl bg-white border border-slate-200/90 p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col justify-between group">
+          <div className="h-1.5 w-full bg-gradient-to-r from-rose-500 to-pink-500 absolute top-0 left-0" />
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-rose-100/90">Departures Today</p>
-              <h3 className="text-2xl lg:text-3xl font-black mt-2 tracking-tight">{summary.departuresToday}</h3>
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Departures Today</p>
+              <h3 className="text-2xl lg:text-3xl font-black text-slate-900 mt-2 tracking-tight">{summary.departuresToday}</h3>
             </div>
-            <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white shadow-inner flex-shrink-0 group-hover:scale-110 transition-transform">
-              <LogOut className="w-6 h-6" />
+            <div className="w-11 h-11 rounded-xl bg-rose-50 border border-rose-100/80 flex items-center justify-center text-rose-600 shadow-sm flex-shrink-0 group-hover:scale-105 transition-transform">
+              <LogOut className="w-5 h-5" />
             </div>
           </div>
-          <div className="mt-4 pt-3 border-t border-white/15 flex items-center justify-between text-xs text-rose-100">
-            <span>Pending Check-out: {summary.pendingCheckouts}</span>
-            <button onClick={() => setTab('departures')} className="hover:underline flex items-center font-medium">
-              View <ChevronRight className="w-3 h-3 ml-0.5" />
+          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600">
+            <span>Pending Check-out: <strong className="text-slate-800">{summary.pendingCheckouts}</strong></span>
+            <button onClick={() => setTab('departures')} className="text-rose-600 hover:text-rose-700 hover:underline flex items-center font-bold">
+              View <ChevronRight className="w-3.5 h-3.5 ml-0.5" />
             </button>
           </div>
-          <div className="absolute -right-6 -bottom-6 w-28 h-28 rounded-full bg-white/5 pointer-events-none" />
         </div>
 
         {/* 4. Current In-House Guests */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-600 to-purple-700 text-white p-5 shadow-lg shadow-purple-600/15 flex flex-col justify-between group hover:shadow-xl transition-all duration-300">
+        <div className="relative overflow-hidden rounded-2xl bg-white border border-slate-200/90 p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col justify-between group">
+          <div className="h-1.5 w-full bg-gradient-to-r from-violet-600 to-purple-600 absolute top-0 left-0" />
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-purple-100/90">In-House Guests</p>
-              <h3 className="text-2xl lg:text-3xl font-black mt-2 tracking-tight">{summary.inHouseGuests}</h3>
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">In-House Guests</p>
+              <h3 className="text-2xl lg:text-3xl font-black text-slate-900 mt-2 tracking-tight">{summary.inHouseGuests}</h3>
             </div>
-            <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white shadow-inner flex-shrink-0 group-hover:scale-110 transition-transform">
-              <Users className="w-6 h-6" />
+            <div className="w-11 h-11 rounded-xl bg-purple-50 border border-purple-100/80 flex items-center justify-center text-purple-600 shadow-sm flex-shrink-0 group-hover:scale-105 transition-transform">
+              <Users className="w-5 h-5" />
             </div>
           </div>
-          <div className="mt-4 pt-3 border-t border-white/15 flex items-center justify-between text-xs text-purple-100">
-            <span>Occupied Rooms: {summary.occupiedRooms}</span>
-            <button onClick={() => setTab('in-house')} className="hover:underline flex items-center font-medium">
-              Manage <ChevronRight className="w-3 h-3 ml-0.5" />
+          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600">
+            <span>Occupied Rooms: <strong className="text-slate-800">{summary.occupiedRooms}</strong></span>
+            <button onClick={() => setTab('in-house')} className="text-purple-600 hover:text-purple-700 hover:underline flex items-center font-bold">
+              Manage <ChevronRight className="w-3.5 h-3.5 ml-0.5" />
             </button>
           </div>
-          <div className="absolute -right-6 -bottom-6 w-28 h-28 rounded-full bg-white/5 pointer-events-none" />
         </div>
 
         {/* 5. Free / Available Rooms */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 text-white p-5 shadow-lg shadow-amber-600/15 flex flex-col justify-between group hover:shadow-xl transition-all duration-300">
+        <div className="relative overflow-hidden rounded-2xl bg-white border border-slate-200/90 p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col justify-between group">
+          <div className="h-1.5 w-full bg-gradient-to-r from-amber-500 to-orange-500 absolute top-0 left-0" />
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-amber-100/90">Available Rooms</p>
-              <h3 className="text-2xl lg:text-3xl font-black mt-2 tracking-tight">{summary.availableRooms}</h3>
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Available Rooms</p>
+              <h3 className="text-2xl lg:text-3xl font-black text-slate-900 mt-2 tracking-tight">{summary.availableRooms}</h3>
             </div>
-            <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white shadow-inner flex-shrink-0 group-hover:scale-110 transition-transform">
-              <BedDouble className="w-6 h-6" />
+            <div className="w-11 h-11 rounded-xl bg-amber-50 border border-amber-100/80 flex items-center justify-center text-amber-600 shadow-sm flex-shrink-0 group-hover:scale-105 transition-transform">
+              <BedDouble className="w-5 h-5" />
             </div>
           </div>
-          <div className="mt-4 pt-3 border-t border-white/15 flex items-center justify-between text-xs text-amber-100">
-            <span>Cleaning / Maint: {summary.cleaningRooms + (summary.maintenanceRooms || 0)}</span>
-            <button onClick={() => setTab('rooms')} className="hover:underline flex items-center font-medium">
-              Inventory <ChevronRight className="w-3 h-3 ml-0.5" />
+          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600">
+            <span>Cleaning / Maint: <strong className="text-slate-800">{summary.cleaningRooms + (summary.maintenanceRooms || 0)}</strong></span>
+            <button onClick={() => setTab('rooms')} className="text-amber-600 hover:text-amber-700 hover:underline flex items-center font-bold">
+              Inventory <ChevronRight className="w-3.5 h-3.5 ml-0.5" />
             </button>
           </div>
-          <div className="absolute -right-6 -bottom-6 w-28 h-28 rounded-full bg-white/5 pointer-events-none" />
         </div>
       </div>
 
@@ -793,7 +940,8 @@ export const ReceptionCheckinPage: React.FC<ReceptionCheckinPageProps> = ({ init
               { id: 'departures', label: `Departures (${departuresList.length})`, icon: LogOut },
               { id: 'in-house', label: `In-House (${inHouseList.length})`, icon: Users },
               { id: 'bookings', label: `All Bookings (${bookings.length})`, icon: Calendar },
-              { id: 'rooms', label: `Room Status (${rooms.length})`, icon: BedDouble }
+              { id: 'rooms', label: `Room Status (${rooms.length})`, icon: BedDouble },
+              { id: 'notifications', label: 'Notices & Alerts', icon: Bell, count: unacknowledgedCount + unpaidArrivalsList.length }
             ].map(tab => {
               const Icon = tab.icon;
               const isActive = currentTab === tab.id;
@@ -809,6 +957,13 @@ export const ReceptionCheckinPage: React.FC<ReceptionCheckinPageProps> = ({ init
                 >
                   <Icon className={`w-4 h-4 ${isActive ? 'text-indigo-600' : 'text-slate-400'}`} />
                   <span>{tab.label}</span>
+                  {tab.count !== undefined && tab.count > 0 && (
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                      isActive ? 'bg-indigo-600 text-white' : 'bg-rose-500 text-white animate-pulse'
+                    }`}>
+                      {tab.count}
+                    </span>
+                  )}
                 </button>
               );
             })}
@@ -861,13 +1016,244 @@ export const ReceptionCheckinPage: React.FC<ReceptionCheckinPageProps> = ({ init
               <h4 className="text-base font-semibold text-slate-700">Loading operational records...</h4>
               <p className="text-sm text-slate-400 mt-1">Connecting to front desk repository</p>
             </div>
+          ) : currentTab === 'notifications' ? (
+            // ================= NOTICES & ALERTS CENTER =================
+            <div className="space-y-6">
+              {/* Notices Header & Quick Action */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-slate-900 to-indigo-950 p-6 rounded-2xl text-white shadow-md">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Bell className="w-5 h-5 text-indigo-400" />
+                    <h3 className="text-xl font-black tracking-tight">Front Desk Notices & Shift Alerts</h3>
+                  </div>
+                  <p className="text-xs text-slate-300 mt-1 max-w-xl">
+                    Internal shift handover notes, management circulars, and live operational alerts for front office staff.
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => setShowNewNoticeModal(true)}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-600/30 transition active:scale-95 self-start sm:self-center"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>+ Post Desk Notice</span>
+                </button>
+              </div>
+
+              {/* Notice Filter Tabs */}
+              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+                {[
+                  { id: 'all', label: 'All Notices' },
+                  { id: 'urgent', label: '🚨 Urgent / High Priority' },
+                  { id: 'handover', label: '📋 Shift Handover' },
+                  { id: 'notice', label: '📢 Management Circulars' },
+                  { id: 'maintenance', label: '🛠️ Housekeeping & Maintenance' }
+                ].map(fTab => (
+                  <button
+                    key={fTab.id}
+                    onClick={() => setNoticeCategoryFilter(fTab.id as any)}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold border transition whitespace-nowrap ${
+                      noticeCategoryFilter === fTab.id
+                        ? 'bg-slate-900 text-white border-slate-900 shadow-sm'
+                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                    }`}
+                  >
+                    {fTab.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Live System Operational Alerts */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-amber-500" />
+                  <span>Live Operational Duty Alerts ({unpaidArrivalsList.length + departuresList.length})</span>
+                </h4>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {/* Unpaid arrivals alert */}
+                  {unpaidArrivalsList.length > 0 ? (
+                    <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200/90 flex items-start gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center text-amber-700 flex-shrink-0 font-bold">
+                        ₹
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <h5 className="text-sm font-bold text-slate-900">Pending Payment Arrivals</h5>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-200 text-amber-900 uppercase">
+                            {unpaidArrivalsList.length} Guests
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-600 mt-1">
+                          {unpaidArrivalsList.length} incoming guest(s) have unpaid balances due for counter collection upon arrival.
+                        </p>
+                        <div className="mt-2 flex items-center gap-2">
+                          <button
+                            onClick={() => setTab('arrivals')}
+                            className="text-xs font-bold text-amber-800 hover:underline flex items-center gap-1"
+                          >
+                            <span>Review Pending Arrivals</span>
+                            <ArrowRight className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200/80 flex items-center gap-3 text-emerald-800 text-xs font-medium">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+                      <span>All arrival bookings have completed advance settlements. No overdue check-in payments.</span>
+                    </div>
+                  )}
+
+                  {/* Today's Departures Alert */}
+                  {departuresList.length > 0 ? (
+                    <div className="p-4 rounded-2xl bg-blue-50/80 border border-blue-200/90 flex items-start gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center text-blue-700 flex-shrink-0">
+                        <LogOut className="w-4 h-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <h5 className="text-sm font-bold text-slate-900">Check-Outs Due Today</h5>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-200 text-blue-900 uppercase">
+                            {departuresList.length} Pending
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-600 mt-1">
+                          {departuresList.length} in-house guest(s) scheduled for departure today. Settle final bills and collect keys.
+                        </p>
+                        <div className="mt-2 flex items-center gap-2">
+                          <button
+                            onClick={() => setTab('departures')}
+                            className="text-xs font-bold text-blue-800 hover:underline flex items-center gap-1"
+                          >
+                            <span>Process Check-Outs</span>
+                            <ArrowRight className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-center gap-3 text-slate-600 text-xs font-medium">
+                      <Clock className="w-5 h-5 text-slate-400 flex-shrink-0" />
+                      <span>No pending departures scheduled for remainder of today's duty shift.</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Notices List */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                    Shift Log & Notice Board ({activeNoticesList.length})
+                  </h4>
+                  <span className="text-xs text-slate-400">
+                    Unread / Pending: <strong className="text-slate-700">{unacknowledgedCount}</strong>
+                  </span>
+                </div>
+
+                {activeNoticesList.length === 0 ? (
+                  <div className="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                    <Bell className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+                    <p className="text-sm font-semibold text-slate-700">No notices in this category</p>
+                    <p className="text-xs text-slate-400 mt-0.5">Click "+ Post Desk Notice" to add an update for your team.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-3">
+                    {activeNoticesList.map(notice => {
+                      const isUrgent = notice.priority === 'urgent' || notice.priority === 'high';
+                      return (
+                        <div
+                          key={notice.id}
+                          className={`p-5 rounded-2xl border transition-all ${
+                            notice.acknowledged
+                              ? 'bg-slate-50/60 border-slate-200/80 opacity-75'
+                              : isUrgent
+                              ? 'bg-rose-50/40 border-rose-200/90 shadow-sm'
+                              : 'bg-white border-slate-200/90 shadow-sm'
+                          }`}
+                        >
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span
+                                className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                                  notice.priority === 'urgent'
+                                    ? 'bg-rose-100 text-rose-800 border border-rose-200'
+                                    : notice.priority === 'high'
+                                    ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                                    : 'bg-slate-100 text-slate-700 border border-slate-200'
+                                }`}
+                              >
+                                {notice.priority}
+                              </span>
+
+                              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100 capitalize">
+                                {notice.category === 'handover' ? 'Shift Handover' : notice.category}
+                              </span>
+
+                              <h4 className={`text-base font-bold ${notice.acknowledged ? 'text-slate-500 line-through' : 'text-slate-900'}`}>
+                                {notice.title}
+                              </h4>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => toggleAcknowledgeNotice(notice.id)}
+                                className={`px-3 py-1 rounded-xl text-xs font-bold flex items-center gap-1.5 transition ${
+                                  notice.acknowledged
+                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                                }`}
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                                <span>{notice.acknowledged ? 'Acknowledged' : 'Mark as Read'}</span>
+                              </button>
+
+                              <button
+                                onClick={() => deleteNotice(notice.id)}
+                                className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition"
+                                title="Remove notice"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+
+                          <p className="text-sm text-slate-700 mt-2 leading-relaxed">
+                            {notice.message}
+                          </p>
+
+                          <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
+                            <span>Posted by: <strong className="text-slate-600 font-semibold">{notice.author}</strong></span>
+                            <span>{new Date(notice.createdAt).toLocaleString()}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
           ) : currentTab === 'rooms' ? (
             // ================= ROOM INVENTORY TAB =================
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-base font-bold text-slate-800">Room Status & Live Inventory</h3>
-                <span className="text-xs text-slate-500">Total Rooms: {rooms.length}</span>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-4 bg-slate-50 border border-slate-200 rounded-2xl">
+                <div>
+                  <h3 className="text-base font-black text-slate-800">Stay Room Categories & Live Inventory</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Physical rooms and category breakdown configured for {assignedAshram?.name || 'Hotel Krishna Anandam'}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3 text-xs">
+                  <span className="px-3 py-1 bg-white border border-slate-200 rounded-xl font-bold text-slate-700">
+                    {rooms.length} Categories
+                  </span>
+                  <span className="px-3 py-1 bg-white border border-slate-200 rounded-xl font-bold text-indigo-700">
+                    {rooms.reduce((acc, r) => acc + (Number(r.totalInventory) || 1), 0)} Total Rooms
+                  </span>
+                </div>
               </div>
+
               {rooms.length === 0 ? (
                 <div className="text-center py-16 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
                   <BedDouble className="w-12 h-12 text-slate-300 mx-auto mb-3" />
@@ -877,39 +1263,56 @@ export const ReceptionCheckinPage: React.FC<ReceptionCheckinPageProps> = ({ init
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   {rooms.map(room => {
-                    const isAvailable = room.status === 'available';
-                    const isOccupied = room.status === 'occupied';
-                    const isCleaning = room.status === 'cleaning' || room.status === 'maintenance';
+                    const roomName = room.name || room.roomNumber || 'Room Category';
+                    const categoryType = room.type?.replace('_', ' ') || 'Private Room';
+                    const inventoryCount = Number(room.totalInventory ?? 1);
+                    const price = room.sellingPrice || room.basePrice || room.pricePerNight || 0;
+                    const capacity = room.capacity || 2;
+                    const amenities = Array.isArray(room.amenities) ? room.amenities : [];
 
                     return (
                       <div
                         key={room._id}
-                        className={`p-4 rounded-2xl border transition-all ${
-                          isAvailable
-                            ? 'bg-emerald-50/40 border-emerald-200/80 hover:border-emerald-300'
-                            : isOccupied
-                            ? 'bg-rose-50/40 border-rose-200/80 hover:border-rose-300'
-                            : 'bg-amber-50/40 border-amber-200/80 hover:border-amber-300'
-                        }`}
+                        className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between"
                       >
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-lg font-black text-slate-800">
-                            Room {room.roomNumber || room.name}
-                          </span>
-                          <span
-                            className={`px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${
-                              isAvailable
-                                ? 'bg-emerald-100 text-emerald-800'
-                                : isOccupied
-                                ? 'bg-rose-100 text-rose-800'
-                                : 'bg-amber-100 text-amber-800'
-                            }`}
-                          >
-                            {room.status || 'Available'}
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-base font-black text-slate-900 tracking-tight">
+                              {roomName}
+                            </span>
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200">
+                              Active & Live
+                            </span>
+                          </div>
+
+                          <div className="text-xs text-slate-500 font-medium space-y-1 mb-3">
+                            <p className="capitalize text-indigo-600 font-semibold">{categoryType} {room.acType ? `• ${room.acType}` : ''}</p>
+                            <p>Max Capacity: <strong className="text-slate-700">{capacity} Guests</strong></p>
+                            <p>Total Inventory: <strong className="text-slate-800 font-bold">{inventoryCount} Rooms</strong></p>
+                          </div>
+
+                          {amenities.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mb-3">
+                              {amenities.slice(0, 3).map((am: string, i: number) => (
+                                <span key={i} className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-medium">
+                                  {am}
+                                </span>
+                              ))}
+                              {amenities.length > 3 && (
+                                <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-md">
+                                  +{amenities.length - 3}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="pt-3 border-t border-slate-100 flex items-center justify-between mt-2">
+                          <span className="text-sm font-black text-slate-900">₹{price.toLocaleString()} <span className="text-[10px] text-slate-400 font-normal">/ night</span></span>
+                          <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
+                            Ready
                           </span>
                         </div>
-                        <p className="text-xs text-slate-500 font-medium">{room.roomType || 'Standard'} • Capacity: {room.capacity || 2}</p>
-                        <p className="text-xs font-bold text-slate-700 mt-2">₹{room.pricePerNight || room.basePrice || 0} / night</p>
                       </div>
                     );
                   })}
@@ -1161,6 +1564,38 @@ export const ReceptionCheckinPage: React.FC<ReceptionCheckinPageProps> = ({ init
             </div>
 
             <form onSubmit={handleConfirmCheckin} className="p-6 space-y-4">
+              {/* Pre-Booked Room Category Information */}
+              {(() => {
+                const bookedCategory =
+                  checkinBooking.rooms?.[0]?.roomId?.name ||
+                  checkinBooking.rooms?.[0]?.name ||
+                  checkinBooking.roomType ||
+                  checkinBooking.roomName ||
+                  'Deluxe';
+                const bookedRooms = checkinBooking.roomsBookedCount || checkinBooking.rooms?.length || 1;
+                const totalGuests = checkinBooking.numberOfGuests || checkinBooking.adults || 1;
+
+                return (
+                  <div className="p-4 bg-emerald-50/80 border border-emerald-200/90 rounded-2xl flex items-center justify-between">
+                    <div>
+                      <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800">
+                        Guest Pre-Booked Room Category
+                      </span>
+                      <h4 className="text-base font-black text-slate-900 mt-0.5 flex items-center gap-2">
+                        <span>{bookedCategory} Room</span>
+                        <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                          {bookedRooms} Room{bookedRooms > 1 ? 's' : ''} • {totalGuests} Guest{totalGuests > 1 ? 's' : ''}
+                        </span>
+                      </h4>
+                      <p className="text-xs text-slate-500 mt-1">Category confirmed during reservation. Assign the physical room number below.</p>
+                    </div>
+                    <div className="w-11 h-11 rounded-xl bg-emerald-100/80 flex items-center justify-center text-emerald-700 flex-shrink-0">
+                      <BedDouble className="w-5 h-5" />
+                    </div>
+                  </div>
+                );
+              })()}
+
               <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-1.5">
                 <div className="flex justify-between">
                   <span className="text-slate-500">Booking Reference:</span>
@@ -1206,46 +1641,40 @@ export const ReceptionCheckinPage: React.FC<ReceptionCheckinPageProps> = ({ init
                 </p>
               </div>
 
-              {/* Room Assignment */}
+              {/* Physical Room Number Assignment */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Assign Room Number *
-                </label>
-                {availableRoomNumbersList.length > 0 ? (
-                  <select
-                    value={selectedRoomNumber}
-                    onChange={e => setSelectedRoomNumber(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                  >
-                    <option value="">-- Select Available Room --</option>
-                    {availableRoomNumbersList.map(r => (
-                      <option key={r._id} value={r.roomNumber || r.name}>
-                        Room {r.roomNumber || r.name} ({r.roomType || 'Standard'}) - Available
-                      </option>
-                    ))}
-                  </select>
-                ) : rooms.length > 0 ? (
-                  <select
-                    value={selectedRoomNumber}
-                    onChange={e => setSelectedRoomNumber(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                  >
-                    <option value="">-- Select Room --</option>
-                    {rooms.map(r => (
-                      <option key={r._id} value={r.roomNumber || r.name}>
-                        Room {r.roomNumber || r.name} ({r.roomType || 'Standard'}) - {r.status || 'Available'}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <input
-                    type="text"
-                    value={selectedRoomNumber}
-                    onChange={e => setSelectedRoomNumber(e.target.value)}
-                    placeholder="e.g. 101, 102"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                  />
-                )}
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                    Assign Physical Room Number *
+                  </label>
+                  <span className="text-[11px] text-slate-400">e.g. 101, 102, 204</span>
+                </div>
+                <input
+                  type="text"
+                  required
+                  value={selectedRoomNumber}
+                  onChange={e => setSelectedRoomNumber(e.target.value)}
+                  placeholder="Enter physical room number (e.g. 101, 102, 204)"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
+                />
+                {/* Quick Select Suggestion Pills */}
+                <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                  <span className="text-[11px] font-medium text-slate-400 mr-1">Quick Suggestions:</span>
+                  {['101', '102', '103', '104', '105', '201', '202', '203', '204', '205'].map(num => (
+                    <button
+                      key={num}
+                      type="button"
+                      onClick={() => setSelectedRoomNumber(num)}
+                      className={`px-2.5 py-1 text-xs font-bold rounded-lg border transition active:scale-95 ${
+                        selectedRoomNumber === num
+                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                          : 'bg-white text-slate-700 border-slate-200 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200'
+                      }`}
+                    >
+                      Room {num}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* Aadhaar / ID Verification */}
@@ -2108,6 +2537,126 @@ export const ReceptionCheckinPage: React.FC<ReceptionCheckinPageProps> = ({ init
                 )}
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          POST NEW NOTICE / SHIFT HANDOVER MODAL
+          ========================================================================= */}
+      {showNewNoticeModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95">
+            <div className="p-6 bg-gradient-to-r from-slate-900 to-indigo-950 text-white flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center">
+                  <Bell className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold">Post Front Desk Notice</h3>
+                  <p className="text-xs text-indigo-200">Broadcast shift handover or operational advisory</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowNewNoticeModal(false)}
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateNotice} className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Notice Title *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={newNoticeForm.title}
+                  onChange={e => setNewNoticeForm(prev => ({ ...prev, title: e.target.value }))}
+                  placeholder="e.g. VIP Morning Arrival / Room 102 Handover"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-semibold text-slate-800"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Category
+                  </label>
+                  <select
+                    value={newNoticeForm.category}
+                    onChange={e => setNewNoticeForm(prev => ({ ...prev, category: e.target.value as any }))}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-medium text-slate-800"
+                  >
+                    <option value="handover">Shift Handover</option>
+                    <option value="notice">Management Notice</option>
+                    <option value="maintenance">Maintenance / Cleaning</option>
+                    <option value="guest">Guest Special Request</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Priority
+                  </label>
+                  <select
+                    value={newNoticeForm.priority}
+                    onChange={e => setNewNoticeForm(prev => ({ ...prev, priority: e.target.value as any }))}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-medium text-slate-800"
+                  >
+                    <option value="normal">Normal</option>
+                    <option value="high">High</option>
+                    <option value="urgent">Urgent</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Notice / Handover Details *
+                </label>
+                <textarea
+                  required
+                  rows={4}
+                  value={newNoticeForm.message}
+                  onChange={e => setNewNoticeForm(prev => ({ ...prev, message: e.target.value }))}
+                  placeholder="Write clear instructions, room handover details, or alerts for other front desk team members..."
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 resize-none text-slate-800"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Author / Reception Staff Name
+                </label>
+                <input
+                  type="text"
+                  value={newNoticeForm.author}
+                  onChange={e => setNewNoticeForm(prev => ({ ...prev, author: e.target.value }))}
+                  placeholder="e.g. Reception Staff"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-slate-800"
+                />
+              </div>
+
+              <div className="pt-3 flex items-center justify-end gap-3 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setShowNewNoticeModal(false)}
+                  className="px-4 py-2.5 rounded-xl text-slate-600 text-sm font-semibold hover:bg-slate-100 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold shadow-md shadow-indigo-600/25 transition active:scale-95 flex items-center gap-2"
+                >
+                  <Send className="w-4 h-4" />
+                  <span>Post Notice</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
