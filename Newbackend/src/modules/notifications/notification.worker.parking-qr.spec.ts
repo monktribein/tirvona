@@ -1,6 +1,5 @@
 import { Logger } from "@nestjs/common";
 import { Test, type TestingModule } from "@nestjs/testing";
-// @ts-expect-error jsqr does not ship TS declarations
 import jsQR from "jsqr";
 import { WhatsAppTransactionalNotificationService } from "../../integrations/whatsapp/services/whatsapp-transactional-notification.service";
 import { WhatsAppModule } from "../../integrations/whatsapp/whatsapp.module";
