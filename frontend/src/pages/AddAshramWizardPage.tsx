@@ -38,6 +38,9 @@ import {
   GripVertical,
   CheckCircle,
   Zap,
+  KeyRound,
+  Copy,
+  EyeOff,
 } from "lucide-react";
 
 interface RoomCategory {
@@ -151,6 +154,12 @@ interface FormData {
   uploadNotes: string;
 
   mapEmbedUrl: string;
+
+  ownerEmail?: string;
+  ownerPassword?: string;
+  ownerConfirmPassword?: string;
+  ownerName?: string;
+  ownerPhone?: string;
 }
 
 const DRAFT_KEY = "tirvona_add_ashram_draft";
@@ -325,6 +334,11 @@ const defaultFormData: FormData = {
   landOwnershipUrl: "",
   uploadNotes: "",
   mapEmbedUrl: "",
+  ownerEmail: "",
+  ownerPassword: "",
+  ownerConfirmPassword: "",
+  ownerName: "",
+  ownerPhone: "",
 };
 
 const uid = () => Math.random().toString(36).slice(2, 9);
@@ -446,6 +460,7 @@ const AddAshramWizardPage: React.FC = () => {
   const [newActivity, setNewActivity] = useState("");
   const [newRule, setNewRule] = useState("");
   const [newGalleryUrl, setNewGalleryUrl] = useState("");
+  const [showOwnerPassword, setShowOwnerPassword] = useState(false);
 
   useEffect(() => {
     if (editId) {
@@ -621,6 +636,18 @@ const AddAshramWizardPage: React.FC = () => {
     if (editId && !formData.description.trim())
       e.description = "Description is required";
 
+    if (formData.ownerPassword) {
+      if (formData.ownerPassword.length < 6) {
+        e.ownerPassword = "Password must be at least 6 characters";
+      }
+      if (formData.ownerPassword !== formData.ownerConfirmPassword) {
+        e.ownerConfirmPassword = "Passwords do not match";
+      }
+      if (!formData.ownerEmail?.trim()) {
+        e.ownerEmail = "Owner login email is required when setting a password";
+      }
+    }
+
     if (Object.keys(e).length > 0) {
       setErrors(e);
       const findStepIndex = (val: number) =>
@@ -658,6 +685,10 @@ const AddAshramWizardPage: React.FC = () => {
       primaryLanguages: formData.languages
         ? formData.languages.split(",").map((s) => s.trim()).filter(Boolean)
         : [],
+      ownerEmail: formData.ownerEmail?.trim() || undefined,
+      ownerPassword: formData.ownerPassword?.trim() || undefined,
+      ownerName: formData.ownerName?.trim() || undefined,
+      ownerPhone: formData.ownerPhone?.trim() || undefined,
       description: formData.description,
       history: formData.history,
       foundedBy: formData.foundedBy,
@@ -1173,6 +1204,102 @@ const AddAshramWizardPage: React.FC = () => {
                     onChange={(e) => set("youtube", e.target.value)}
                   />
                 </Field>
+              </div>
+            </div>
+
+            <div className="p-5 bg-gradient-to-br from-indigo-50/70 to-blue-50/70 dark:from-slate-900 dark:to-indigo-950/20 border border-indigo-200/60 dark:border-indigo-800/40 rounded-2xl space-y-4 shadow-sm">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-indigo-100 dark:border-indigo-900/50 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-[#0A4DA6] text-white flex items-center justify-center font-bold shadow-sm">
+                    <KeyRound size={16} />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-extrabold text-[#0B192C] dark:text-white flex items-center gap-2">
+                      Stay Owner Portal Credentials (Login Account)
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 text-[10px] font-bold">
+                        Direct Portal Access
+                      </span>
+                    </h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      These credentials allow the Stay Owner to log in at Tirvona's main login page and access the Stay Owner Dashboard.
+                    </p>
+                  </div>
+                </div>
+                {formData.email && !formData.ownerEmail && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      set("ownerEmail", formData.email);
+                      if (formData.phone && !formData.ownerPhone) set("ownerPhone", formData.phone);
+                      if (formData.registeredBy && !formData.ownerName) set("ownerName", formData.registeredBy);
+                    }}
+                    className="text-[11px] font-bold text-[#0A4DA6] hover:underline flex items-center gap-1 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-indigo-200 dark:border-indigo-800 shadow-2xs self-start sm:self-auto"
+                  >
+                    <Copy size={12} /> Auto-fill from Contact
+                  </button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Field label="Owner Portal Email" hint="Used to log in to the Stay Owner Dashboard">
+                  <Input
+                    type="email"
+                    placeholder="e.g. owner@krishnaanandam.com"
+                    value={formData.ownerEmail || ""}
+                    onChange={(e) => set("ownerEmail", e.target.value)}
+                  />
+                  <ErrMsg field="ownerEmail" />
+                </Field>
+
+                <Field label="Owner Full Name / Contact Person" hint="Name displayed on the portal header">
+                  <Input
+                    placeholder="e.g. Rajesh Sharma"
+                    value={formData.ownerName || ""}
+                    onChange={(e) => set("ownerName", e.target.value)}
+                  />
+                </Field>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Field label="Owner Mobile Phone" hint="Used for login and emergency alerts">
+                  <Input
+                    type="tel"
+                    placeholder="e.g. +91 98765 43210"
+                    value={formData.ownerPhone || ""}
+                    onChange={(e) => set("ownerPhone", e.target.value)}
+                  />
+                </Field>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Field label="Create Password" hint="Minimum 6 characters">
+                    <div className="relative">
+                      <Input
+                        type={showOwnerPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        value={formData.ownerPassword || ""}
+                        onChange={(e) => set("ownerPassword", e.target.value)}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowOwnerPassword((p) => !p)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        {showOwnerPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                      </button>
+                    </div>
+                    <ErrMsg field="ownerPassword" />
+                  </Field>
+
+                  <Field label="Confirm Password">
+                    <Input
+                      type={showOwnerPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={formData.ownerConfirmPassword || ""}
+                      onChange={(e) => set("ownerConfirmPassword", e.target.value)}
+                    />
+                    <ErrMsg field="ownerConfirmPassword" />
+                  </Field>
+                </div>
               </div>
             </div>
           </div>
@@ -2525,6 +2652,20 @@ const AddAshramWizardPage: React.FC = () => {
                   Officer will review and conduct a physical inspection within
                   7–10 working days.
                 </p>
+
+                {formData.ownerEmail && (
+                  <div className="p-4 bg-indigo-50/80 dark:bg-slate-800 border border-indigo-200 dark:border-slate-700 rounded-2xl text-left max-w-md w-full space-y-2 text-xs">
+                    <div className="flex items-center gap-2 font-bold text-[#0A4DA6] text-sm">
+                      <KeyRound size={16} /> Stay Owner Portal Account Ready
+                    </div>
+                    <div className="text-gray-600 dark:text-gray-300">
+                      <strong>Login Email:</strong> {formData.ownerEmail}
+                    </div>
+                    <div className="text-gray-500">
+                      The Stay Owner can now log in at <strong>tirvona.com/login</strong> using this email and password to access their Stay Owner Dashboard.
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="flex gap-3 pt-4">
                 <button
@@ -2611,6 +2752,92 @@ const AddAshramWizardPage: React.FC = () => {
                 ? `${requiredDone}/${totalRequired} required sections completed. Ready for submission.`
                 : `Only ${requiredDone}/${totalRequired} required sections completed. Please fill all required fields before submitting.`}
             </div>
+
+            {formData.ownerEmail && formData.ownerPassword ? (
+              <div className="p-4 rounded-2xl border bg-indigo-50/60 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-800/40 text-xs flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-[#0A4DA6] text-white flex items-center justify-center font-bold">
+                    <KeyRound size={16} />
+                  </div>
+                  <div>
+                    <p className="font-bold text-[#0B192C] dark:text-white">Stay Owner Portal Account Ready</p>
+                    <p className="text-gray-500 text-[11px]">Login Email: <strong className="text-[#0A4DA6]">{formData.ownerEmail}</strong> (Password configured)</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setStep(STEPS.findIndex((s) => s.value === 3))}
+                  className="text-[11px] font-bold text-[#0A4DA6] hover:underline"
+                >
+                  Edit Credentials
+                </button>
+              </div>
+            ) : (
+              <div className="p-4 rounded-2xl border bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:bg-slate-900/50 border-blue-200 dark:border-slate-700 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-xs font-bold text-[#0A4DA6]">
+                    <KeyRound size={15} /> Stay Owner Portal Access (Dashboard Login)
+                  </div>
+                  {formData.email && !formData.ownerEmail && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        set("ownerEmail", formData.email);
+                        if (formData.phone && !formData.ownerPhone) set("ownerPhone", formData.phone);
+                        if (formData.registeredBy && !formData.ownerName) set("ownerName", formData.registeredBy);
+                      }}
+                      className="text-[10px] font-bold text-[#0A4DA6] hover:underline flex items-center gap-1"
+                    >
+                      <Copy size={11} /> Use Contact Info
+                    </button>
+                  )}
+                </div>
+                <p className="text-[11px] text-gray-500">
+                  Set credentials for the Stay Owner to log in at Tirvona's main login page and manage this property directly.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="text-[10px] font-bold text-gray-500">Owner Email</label>
+                    <Input
+                      type="email"
+                      placeholder="owner@hotel.com"
+                      value={formData.ownerEmail || ""}
+                      onChange={(e) => set("ownerEmail", e.target.value)}
+                    />
+                    <ErrMsg field="ownerEmail" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-gray-500">Password (min 6 chars)</label>
+                    <div className="relative">
+                      <Input
+                        type={showOwnerPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        value={formData.ownerPassword || ""}
+                        onChange={(e) => set("ownerPassword", e.target.value)}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowOwnerPassword((p) => !p)}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        {showOwnerPassword ? <EyeOff size={13} /> : <Eye size={13} />}
+                      </button>
+                    </div>
+                    <ErrMsg field="ownerPassword" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-gray-500">Confirm Password</label>
+                    <Input
+                      type={showOwnerPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={formData.ownerConfirmPassword || ""}
+                      onChange={(e) => set("ownerConfirmPassword", e.target.value)}
+                    />
+                    <ErrMsg field="ownerConfirmPassword" />
+                  </div>
+                </div>
+              </div>
+            )}
 
             {submitError && (
               <div className="p-4 bg-danger/10 border border-danger/20 rounded-2xl text-danger text-sm font-semibold flex items-start gap-2">

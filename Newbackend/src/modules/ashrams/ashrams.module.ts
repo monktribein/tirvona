@@ -17,6 +17,7 @@ import {
   RoomSchema,
 } from "./infrastructure/persistence/ashram.schemas";
 import { BookingSchema } from "../bookings/infrastructure/persistence/booking.schemas";
+import { UserSchema } from "../users/infrastructure/persistence/user.schema";
 import { ParkingModule } from "../parking/parking.module";
 import { AuditModule } from "../audit/audit.module";
 import { AshramSlugService } from "./application/ashram-slug.service";
@@ -47,6 +48,7 @@ import { OfflineInventoryController } from "./presentation/offline-inventory.con
         name: "InventoryReturnRequest",
         schema: InventoryReturnRequestSchema,
       },
+      { name: "User", schema: UserSchema },
     ]),
   ],
   controllers: [

@@ -47,7 +47,7 @@ export class AshramsController {
   }
   @Get("my-listings/all")
   @ApiBearerAuth()
-  @Roles("owner", "stay_admin", "manager", "offer_manager", "super_admin")
+  @Roles("owner", "stay_admin", "manager", "reception", "offer_manager", "super_admin")
   async mine(@CurrentUser() user: AuthenticatedUser) {
     const data = await this.service.listForUser(user);
     return { success: true, count: data.length, data };
@@ -90,7 +90,7 @@ export class AshramsController {
   }
   @Get("manage/:id")
   @ApiBearerAuth()
-  @Roles("owner", "stay_admin", "manager", "super_admin")
+  @Roles("owner", "stay_admin", "manager", "reception", "super_admin")
   async managedDetail(
     @CurrentUser() user: AuthenticatedUser,
     @Param("id") id: string,

@@ -356,10 +356,10 @@ export const RefundRequestsPage: React.FC = () => {
             <select
               value={ashram}
               onChange={(e) => setAshram(e.target.value)}
-              aria-label="Filter by ashram"
+              aria-label="Filter by stay"
               className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-[#0B192C] dark:text-white cursor-pointer focus:outline-none focus:border-[#0A4DA6]"
             >
-              <option value="">All ashrams</option>
+              <option value="">All stays</option>
               {ashramOptions.map((name) => (
                 <option key={name} value={name}>
                   {name}
@@ -381,7 +381,7 @@ export const RefundRequestsPage: React.FC = () => {
             <select
               value={days}
               onChange={(e) => setDays(e.target.value)}
-              aria-label="Filter by date"
+              aria-label="Filter by created date"
               className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-[#0B192C] dark:text-white cursor-pointer focus:outline-none focus:border-[#0A4DA6]"
             >
               {DATE_RANGES.map((r) => (
@@ -396,7 +396,7 @@ export const RefundRequestsPage: React.FC = () => {
         {refining && (
           <p className="text-[11px] text-gray-500 font-semibold">
             Showing {visible.length} of {rows.length} loaded on this page.
-            Ashram, amount and date narrow the current page; status and module
+            Stay, amount and date narrow the current page; status and module
             query the server.
             <button
               onClick={() => {
@@ -445,7 +445,7 @@ export const RefundRequestsPage: React.FC = () => {
           <p className="text-xs text-gray-400 max-w-sm mx-auto">
             {rows.length === 0
               ? "Requests appear here as pilgrims claim refunds against bookings, orders and parking."
-              : "Try widening the amount, date or ashram filter."}
+              : "Try widening the amount, date or stay filter."}
           </p>
         </div>
       ) : (

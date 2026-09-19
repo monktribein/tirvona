@@ -78,7 +78,7 @@ export const CircuitControlCenterPage: React.FC = () => {
     <div className="space-y-6">
       <EnterprisePageHeader
         title="Pilgrimage Control Center"
-        subtitle="Every circuit on the platform, across all ashrams. Approvals live under Circuit Approvals."
+        subtitle="Every circuit on the platform, across all stays. Approvals live under Circuit Approvals."
         icon={<Compass size={22} />}
         badgeText="Super Admin"
       />

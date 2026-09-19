@@ -9,6 +9,7 @@ import type { Model } from "mongoose";
 import { TransactionService } from "../../../common/database/transaction.service";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
 import { canManageAllAshrams, isAshramOwner } from "../../../common/auth/ashram-access";
+import { resolveAshramScope, isUnrestricted } from "../../../common/auth/ashram-scope";
 import { financialReference } from "../domain/booking.utils";
 import type {
   CompleteSettlementDto,
@@ -46,14 +47,13 @@ export class BookingFinanceService {
   ): Promise<string[] | null> {
     if (user.role === "finance_manager" || canManageAllAshrams(user))
       return requested ? [requested] : null;
-    if (!isAshramOwner(user))
-      throw new ForbiddenException("An owner scope is required");
-    const owned = (await this.ashrams.distinct("_id", { ownerId: user.id })).map(
-      String,
-    );
-    if (requested && !owned.includes(requested))
+    const scope = await resolveAshramScope(user, this.ashrams);
+    if (isUnrestricted(scope)) return requested ? [requested] : null;
+    if (!scope || !scope.length)
+      throw new ForbiddenException("An authorized ashram scope is required");
+    if (requested && !scope.includes(requested))
       throw new ForbiddenException("You do not manage that ashram");
-    return requested ? [requested] : owned;
+    return requested ? [requested] : scope;
   }
   async summary(
     user: AuthenticatedUser,

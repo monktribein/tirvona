@@ -163,7 +163,7 @@ export const OwnerGuestsPage: React.FC = () => {
               onChange={(event) => setSelectedAshram(event.target.value)}
               className="px-3 py-2.5 rounded-xl bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 text-xs font-semibold focus:outline-none"
             >
-              <option value="all">All my ashrams</option>
+              <option value="all">All my stays</option>
               {ashramOptions.map(([id, name]) => (
                 <option key={id} value={id}>{name}</option>
               ))}

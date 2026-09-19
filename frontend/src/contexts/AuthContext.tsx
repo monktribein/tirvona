@@ -14,6 +14,14 @@ interface User {
   state?: string;
   permissions?: string[];
   parkingRoles?: string[];
+  employerAshramId?: string;
+  scopedAshramIds?: string[];
+  employerAshram?: {
+    _id: string;
+    name: string;
+    city?: string;
+    state?: string;
+  };
 }
 
 export interface OtpChallenge {

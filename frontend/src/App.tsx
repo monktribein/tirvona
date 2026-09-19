@@ -910,6 +910,14 @@ const AppContent: React.FC = () => {
             }
           >
             <Route path="/staff/reception" element={<ReceptionCheckinPage />} />
+            <Route path="/staff/arrivals" element={<ReceptionCheckinPage initialTab="arrivals" />} />
+            <Route path="/staff/departures" element={<ReceptionCheckinPage initialTab="departures" />} />
+            <Route path="/staff/in-house" element={<ReceptionCheckinPage initialTab="in-house" />} />
+            <Route path="/staff/bookings" element={<ReceptionCheckinPage initialTab="bookings" />} />
+            <Route path="/staff/rooms" element={<ReceptionCheckinPage initialTab="rooms" />} />
+            <Route path="/staff/guests" element={<ReceptionCheckinPage initialTab="guests" />} />
+            <Route path="/staff/payments" element={<ReceptionCheckinPage initialTab="payments" />} />
+            <Route path="/staff/notifications" element={<ReceptionCheckinPage initialTab="notifications" />} />
             <Route path="/staff/self-booking" element={<SelfBookingPage />} />
             <Route path="/staff/tirvona-booking" element={<SelfBookingPage />} />
             <Route path="/staff/walk-in-booking" element={<SelfBookingPage />} />

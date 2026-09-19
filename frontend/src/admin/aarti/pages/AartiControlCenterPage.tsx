@@ -92,7 +92,7 @@ export const AartiControlCenterPage: React.FC = () => {
     <div className="space-y-6">
       <EnterprisePageHeader
         title="Aarti Control Center"
-        subtitle="Every aarti and live pooja on the platform, across all ashrams. Approvals live under Aarti Approvals."
+        subtitle="Every aarti and live pooja on the platform, across all stays. Approvals live under Aarti Approvals."
         icon={<Flame size={22} />}
         badgeText="Super Admin"
       />

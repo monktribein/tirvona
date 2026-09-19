@@ -21,6 +21,8 @@ export const AshramSchema = new Schema(
     name: { type: String, required: true, trim: true },
     tagline: String,
     ashramType: String,
+    languages: String,
+    primaryLanguages: [String],
     establishedYear: String,
     foundedBy: String,
     description: { type: String, required: true },

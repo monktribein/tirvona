@@ -75,7 +75,7 @@ export const EventControlCenterPage: React.FC = () => {
     <div className="space-y-6">
       <EnterprisePageHeader
         title="Events Control Center"
-        subtitle="Every festival on the platform, across all ashrams. Approvals live under Event Approvals."
+        subtitle="Every festival on the platform, across all stays. Approvals live under Event Approvals."
         icon={<CalendarDays size={22} />}
         badgeText="Super Admin"
       />
