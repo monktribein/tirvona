@@ -830,7 +830,7 @@ export class AshramsService {
 
     if (ownerEmail && String(ownerEmail).trim() && this.userModel) {
       const email = String(ownerEmail).trim().toLowerCase();
-      let ownerUser = await this.userModel.findOne({ email }).select("+passwordHash");
+      const ownerUser = await this.userModel.findOne({ email }).select("+passwordHash");
 
       if (ownerUser) {
         if (ownerPassword && String(ownerPassword).trim()) {
