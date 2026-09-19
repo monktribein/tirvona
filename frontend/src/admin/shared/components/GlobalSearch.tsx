@@ -225,7 +225,7 @@ export const GlobalSearch: React.FC<{ links: SearchableLink[] }> = ({
         }}
         onFocus={() => setOpen(true)}
         onKeyDown={onKeyDown}
-        placeholder={t("Search pages, ashrams, bookings, users...")}
+        placeholder={t("Search pages, stays, bookings, users...")}
         aria-label={t("Global Search")}
         aria-expanded={showPanel}
         role="combobox"

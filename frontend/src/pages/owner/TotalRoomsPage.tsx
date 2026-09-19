@@ -130,14 +130,13 @@ export const TotalRoomsPage: React.FC = () => {
     () =>
       totals
         ? ([
-            ["Total rooms", totals.totalRooms, "Online plus offline units"],
+            ["Total rooms", totals.totalRooms, "Tirvona plus offline units"],
             [
               "Registered rooms",
               totals.registeredRooms,
               "Units on room categories",
             ],
-            ["Room categories", totals.roomCategories, "Distinct categories"],
-            ["Online rooms", totals.onlineRooms, "Sellable on this night"],
+            ["Tirvona rooms", totals.onlineRooms, "Sellable on this night"],
             ["Offline rooms", totals.offlineRooms, "Held back for the desk"],
             ["Available rooms", totals.availableRooms, "Free to sell tonight"],
             ["Booked rooms", totals.bookedRooms, "Reserved for this night"],
@@ -174,9 +173,9 @@ export const TotalRoomsPage: React.FC = () => {
             value={filters.ashramId}
             onChange={(event) => set({ ashramId: event.target.value })}
             className={field}
-            aria-label="Ashram"
+            aria-label="Stay"
           >
-            <option value="">All my ashrams</option>
+            <option value="">All my stays</option>
             {summary.filters.ashrams.map((ashram) => (
               <option key={ashram.id} value={ashram.id}>
                 {ashram.name}
@@ -233,7 +232,7 @@ export const TotalRoomsPage: React.FC = () => {
       </div>
 
       {totals && (
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-3 gap-3">
           {tiles.map(([label, value, hint]) => (
             <div key={label} className={`${card} p-4`}>
               <p className="text-[10px] uppercase font-black text-gray-400">
@@ -276,10 +275,10 @@ export const TotalRoomsPage: React.FC = () => {
               <thead className="bg-gray-50 dark:bg-slate-900/60 text-[10px] uppercase font-black text-gray-400">
                 <tr>
                   <th className="px-4 py-3">Room category</th>
-                  {showAshramColumn && <th className="px-4 py-3">Ashram</th>}
+                  {showAshramColumn && <th className="px-4 py-3">Stay</th>}
                   <th className="px-4 py-3">Type</th>
                   <th className="px-4 py-3 text-right">Registered</th>
-                  <th className="px-4 py-3 text-right">Online</th>
+                  <th className="px-4 py-3 text-right">Tirvona</th>
                   <th className="px-4 py-3 text-right">Booked</th>
                   <th className="px-4 py-3 text-right">Held</th>
                   <th className="px-4 py-3 text-right">Occupied</th>

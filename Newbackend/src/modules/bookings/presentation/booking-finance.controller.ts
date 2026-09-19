@@ -19,6 +19,7 @@ export class BookingFinanceController {
     "ashram_owner",
     "ashram_admin",
     "stay_admin",
+    "reception",
     "finance_manager",
     "super_admin",
   )
@@ -38,6 +39,7 @@ export class BookingFinanceController {
     "ashram_owner",
     "ashram_admin",
     "stay_admin",
+    "reception",
     "finance_manager",
     "super_admin",
   )

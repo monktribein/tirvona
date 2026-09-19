@@ -394,12 +394,12 @@ export const InventoryCalendarPage: React.FC = () => {
               <select
                 value={selectedAshramId}
                 onChange={(e) => setSelectedAshramId(e.target.value)}
-                aria-label="Active ashram"
+                aria-label="Active stay"
                 className="p-2 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs font-extrabold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6]"
               >
                 {myAshrams.length > 1 && (
                   <option value={ALL_ASHRAMS}>
-                    All Ashrams ({myAshrams.length})
+                    All Stays ({myAshrams.length})
                   </option>
                 )}
                 {myAshrams.map((ashram) => (

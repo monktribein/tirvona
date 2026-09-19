@@ -96,11 +96,11 @@ const ALL_ROLES = [
   { id: "state_admin", label: "State Admin" },
   { id: "govt_admin", label: "Government Admin" },
   { id: "district_officer", label: "District Officer" },
-  { id: "ashram_admin", label: "Ashram Admin (All Ashrams)" },
-  { id: "ashram_owner", label: "Ashram Owner (Assigned Ashrams Only)" },
-  { id: "manager", label: "Ashram Manager" },
-  { id: "reception", label: "Ashram Reception" },
-  { id: "housekeeping", label: "Ashram Housekeeping" },
+  { id: "ashram_admin", label: "Stay Admin (All Stays)" },
+  { id: "ashram_owner", label: "Stay Owner (Assigned Stays Only)" },
+  { id: "manager", label: "Stay Manager" },
+  { id: "reception", label: "Stay Reception" },
+  { id: "housekeeping", label: "Stay Housekeeping" },
   { id: "temple_owner", label: "Temple Owner (Assigned Temple Only)" },
   { id: "offer_manager", label: "Offer Manager" },
   { id: "blog_manager", label: "Blog Manager" },
@@ -118,7 +118,7 @@ const ALL_PERMISSIONS = [
   "ashrams.manage_all",
   "Can Create Users",
   "Can Delete Users",
-  "Can Approve Ashrams",
+  "Can Approve Stays",
   "Can Manage Blogs",
   "Can Manage Offers",
   "Can Manage Banners",
@@ -331,8 +331,8 @@ export const UserManagementPage: React.FC = () => {
       !newAccountData.assignedAshramId
     ) {
       addNotification(
-        "Ashram Required",
-        "Select the ashram this account will be assigned to.",
+        "Stay Required",
+        "Select the stay this account will be assigned to.",
         "error",
       );
       return;
@@ -1091,23 +1091,23 @@ export const UserManagementPage: React.FC = () => {
               </label>
               {needsAssignedAshram && (
                 <div className="space-y-1 md:col-span-2">
-                  <p className="font-bold text-gray-700 dark:text-gray-300">Assign Ashram *</p>
-                  <p className="text-[11px] font-normal text-gray-500">This account will be scoped to the selected ashram and will only access that ashram's data.</p>
+                  <p className="font-bold text-gray-700 dark:text-gray-300">Assign Stay *</p>
+                  <p className="text-[11px] font-normal text-gray-500">This account will be scoped to the selected stay and will only access that stay's data.</p>
                   <div className="relative">
                     <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                     <input
                       type="search"
                       value={ashramSearch}
                       onChange={(e) => setAshramSearch(e.target.value)}
-                      placeholder="Search approved ashrams by name, city or state"
+                      placeholder="Search approved stays by name, city or state"
                       className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 pl-9 font-normal focus:border-[#0A4DA6] focus:outline-none dark:border-slate-800 dark:bg-slate-900"
                     />
                   </div>
                   <div className="mt-2 max-h-56 overflow-y-auto rounded-xl border border-gray-200 dark:border-slate-800">
                     {loadingAshrams ? (
-                      <p className="p-3 text-xs text-gray-500">Loading ashrams…</p>
+                      <p className="p-3 text-xs text-gray-500">Loading stays…</p>
                     ) : ashramOptions.length === 0 ? (
-                      <p className="p-3 text-xs text-gray-500">{ashramSearch.trim() ? "No approved ashram matches that search." : "No approved ashrams are available to assign."}</p>
+                      <p className="p-3 text-xs text-gray-500">{ashramSearch.trim() ? "No approved stay matches that search." : "No approved stays are available to assign."}</p>
                     ) : (
                       ashramOptions.map((ashram) => {
                         const selected = newAccountData.assignedAshramId === ashram._id;
@@ -1128,7 +1128,7 @@ export const UserManagementPage: React.FC = () => {
                       })
                     )}
                   </div>
-                  {!newAccountData.assignedAshramId && <p className="text-[11px] font-normal text-red-500">Select the ashram this account will access before creating it.</p>}
+                  {!newAccountData.assignedAshramId && <p className="text-[11px] font-normal text-red-500">Select the stay this account will access before creating it.</p>}
                 </div>
               )}
               {needsAssignedTemple && (
@@ -2036,7 +2036,7 @@ export const UserManagementPage: React.FC = () => {
                       : "",
                   },
                   {
-                    label: "Assigned Ashram",
+                    label: "Assigned Stay",
                     value:
                       viewingUser.assignedAshram?.name ||
                       (typeof viewingUser.assignedAshram === "string"

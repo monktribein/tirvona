@@ -187,13 +187,29 @@ export const bookingService = {
   history: () => api.get("/bookings/history"),
   dashboard: (params: Record<string, string> = {}) =>
     api.get("/bookings/dashboard", { params }),
+  frontdeskSummary: (paramsOrAshramId: string | Record<string, string> = {}) =>
+    api.get("/bookings/frontdesk-summary", {
+      params:
+        typeof paramsOrAshramId === "string"
+          ? (paramsOrAshramId ? { ashramId: paramsOrAshramId } : {})
+          : paramsOrAshramId,
+    }),
   paymentPending: (params: Record<string, string> = {}) =>
     api.get("/bookings/payment-pending", { params }),
   manualConfirm: (id: string, data: unknown) =>
     api.post(`/bookings/${id}/manual-confirm`, data),
-  checkin: (id: string, checkInCode: string) =>
-    api.post(`/bookings/${id}/checkin`, { checkInCode }),
-  checkout: (id: string) => api.post(`/bookings/${id}/checkout`, {}),
+  checkin: (
+    id: string,
+    payload: string | { checkInCode: string; roomNumbers?: string[]; notes?: string },
+  ) =>
+    api.post(
+      `/bookings/${id}/checkin`,
+      typeof payload === "string" ? { checkInCode: payload } : payload,
+    ),
+  checkout: (
+    id: string,
+    data: { notes?: string; additionalCharges?: number; damages?: any[] } = {},
+  ) => api.post(`/bookings/${id}/checkout`, data),
   cancel: (id: string, reason: string) =>
     api.post(`/bookings/${id}/cancel`, { reason }),
   assignRoomNumber: (

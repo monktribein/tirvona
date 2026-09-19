@@ -26,7 +26,7 @@ import { CouponVoucherCard } from "../../components/CouponVoucherCard";
 export const TARGET_ROUTES = [
   { value: "all", label: "All Routes (Global)" },
   { value: "homepage", label: "Homepage (Exclusive Offers)" },
-  { value: "stays", label: "Ashram Stays" },
+  { value: "stays", label: "Stays" },
   { value: "darshan", label: "Darshan & Seva" },
   { value: "services", label: "Tirvona Services" },
   { value: "marketplace", label: "Marketplace" },
@@ -159,7 +159,7 @@ export const AdminOffersPage: React.FC = () => {
         setDestinationAshrams([]);
         addNotification(
           "Error",
-          getErrorMessage(err, `Could not load ashrams in ${city}`),
+          getErrorMessage(err, `Could not load stays in ${city}`),
           "error",
         );
       } finally {
@@ -349,16 +349,16 @@ export const AdminOffersPage: React.FC = () => {
     }
     if (!isPlatformAdmin && !formData.ashramId) {
       addNotification(
-        "Validation Error",
-        "Select which of your ashrams this coupon applies to",
+        "Validation",
+        "Select which of your stays this coupon applies to",
         "error",
       );
       return;
     }
     if (formData.destination && !formData.ashramId) {
       addNotification(
-        "Validation Error",
-        `Select which ashram in ${formData.destination} this coupon applies to, or clear the destination to make it platform-wide`,
+        "Validation",
+        `Select which stay in ${formData.destination} this coupon applies to, or clear the destination to make it platform-wide`,
         "error",
       );
       return;
@@ -508,7 +508,7 @@ export const AdminOffersPage: React.FC = () => {
               <Tag size={12} />{" "}
               {isPlatformAdmin
                 ? "Super Admin Offers & Deals Module"
-                : "Ashram Offers & Deals"}
+                : "Stay Offers & Deals"}
             </span>
           </div>
           <h1 className="text-2xl font-extrabold text-[#0B192C] dark:text-white">
@@ -517,7 +517,7 @@ export const AdminOffersPage: React.FC = () => {
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
             {isPlatformAdmin
               ? "Create, schedule, and assign promotional offers and flash room deals across Homepage, Stays, and Services."
-              : "Create promotional coupon vouchers and publish urgent Last Minute room deals for your ashrams."}
+              : "Create promotional coupon vouchers and publish urgent Last Minute room deals for your stays."}
           </p>
         </div>
 
@@ -684,7 +684,7 @@ export const AdminOffersPage: React.FC = () => {
                           }`}
                         >
                           <MapPin size={9} />
-                          {offer.ashramId?.name || "All ashrams"}
+                          {offer.ashramId?.name || "All stays"}
                         </span>
 
                         {isExpired ? (
@@ -876,10 +876,10 @@ export const AdminOffersPage: React.FC = () => {
                   <div className="sm:col-span-2 flex items-center gap-2 flex-wrap">
                     <MapPin size={14} className="text-[#0A4DA6]" />
                     <p className="text-[11px] font-extrabold text-[#0B192C] dark:text-white">
-                      Applies To Ashram &amp; Target Room Category
+                      Applies To Stay &amp; Target Room Category
                     </p>
                     <span className="text-[10px] font-semibold text-gray-400">
-                      Select which ashram and specific room category this deal applies to
+                      Select which stay and specific room category this deal applies to
                     </span>
                   </div>
 
@@ -906,7 +906,7 @@ export const AdminOffersPage: React.FC = () => {
 
                   <div className={isPlatformAdmin ? "" : "sm:col-span-2"}>
                     <label className="text-[11px] font-extrabold text-gray-700 dark:text-gray-300 block mb-1">
-                      Ashram <span className="text-rose-500">*</span>
+                      Stay <span className="text-rose-500">*</span>
                     </label>
                     <select
                       value={formData.ashramId}
@@ -914,7 +914,7 @@ export const AdminOffersPage: React.FC = () => {
                         const ashramId = e.target.value;
                         setFormData((prev: any) => ({ ...prev, ashramId, roomId: "" }));
                         if (ashramId) {
-                          ashramService.getManagedById(ashramId)
+                           ashramService.getManagedById(ashramId)
                             .then((res) => {
                               if (res.data?.success && res.data.data?.rooms) {
                                 setAvailableRooms(res.data.data.rooms);
@@ -929,7 +929,7 @@ export const AdminOffersPage: React.FC = () => {
                       }}
                       className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 text-xs font-bold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6] cursor-pointer"
                     >
-                      <option value="">Select an Ashram</option>
+                      <option value="">Select a Stay</option>
                       {(destinationAshrams.length > 0 ? destinationAshrams : myAshrams).map((a) => (
                         <option key={a._id} value={a._id}>
                           {a.name} ({a.address?.city || ""})
@@ -948,7 +948,7 @@ export const AdminOffersPage: React.FC = () => {
                       disabled={!formData.ashramId}
                       className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 text-xs font-bold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6] cursor-pointer disabled:opacity-50"
                     >
-                      <option value="">All Room Categories (Whole Ashram)</option>
+                      <option value="">All Room Categories (Whole Stay)</option>
                       {availableRooms.map((r: any) => (
                         <option key={r._id} value={r._id}>
                           {r.name} (Base Tariff: ₹{r.basePrice || 0}/night)
@@ -963,10 +963,10 @@ export const AdminOffersPage: React.FC = () => {
                       <span className="font-black">
                         {destinationAshrams.find(
                           (a) => a._id === formData.ashramId,
-                        )?.name || "the selected ashram"}
+                        )?.name || "the selected stay"}
                       </span>
                       . Clicking the offer takes visitors straight to that
-                      ashram with the code already applied.
+                      stay with the code already applied.
                     </p>
                   )}
                 </div>
@@ -1296,8 +1296,8 @@ export const AdminOffersPage: React.FC = () => {
                     : "—",
                 },
                 {
-                  label: "Ashram",
-                  value: viewOffer.ashramId?.name || "All ashrams",
+                  label: "Stay",
+                  value: viewOffer.ashramId?.name || "All stays",
                 },
               ].map((cell) => (
                 <div

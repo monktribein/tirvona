@@ -215,10 +215,14 @@ export const DashboardLayout: React.FC = () => {
   const [requestFeedbackMsg, setRequestFeedbackMsg] = useState("");
   const [pendingSuperAdminRequests, setPendingSuperAdminRequests] = useState<AvailabilityRequest[]>([]);
 
-  // Load owner's stays if stay owner / admin
-  const isStayOwnerOrAdmin = ["ashram_owner", "owner", "ashram_admin", "stay_admin"].includes(
-    String(user?.role || ""),
-  );
+  // Load owner's stays if stay owner / admin / reception
+  const isStayOwnerOrAdmin = [
+    "ashram_owner",
+    "owner",
+    "ashram_admin",
+    "stay_admin",
+    "reception",
+  ].includes(String(user?.role || ""));
   const isSuperAdmin = user?.role === "super_admin";
 
   const refreshOwnerStays = React.useCallback(async () => {
@@ -407,7 +411,6 @@ export const DashboardLayout: React.FC = () => {
           label: "Room Category Approvals",
           path: "/admin/approvals/room-categories",
         },
-        { label: "Room Categories", path: "/admin/manage/rooms/all" },
         {
           label: "Room Photos & Policies",
           path: "/admin/manage/rooms/details",
@@ -985,15 +988,34 @@ export const DashboardLayout: React.FC = () => {
         topLink: {
           label: "Reception Desk",
           path: "/staff/reception",
-          icon: <ClipboardList size={16} className="text-[#E58C28]" />,
+          icon: <LayoutDashboard size={16} className="text-[#E58C28]" />,
         },
         groups: [
           {
-            groupName: "Front desk",
+            groupName: "Front Desk Operations",
+            icon: <ClipboardList size={15} />,
+            links: [
+              { label: "Today's Arrivals", path: "/staff/arrivals" },
+              { label: "Today's Departures", path: "/staff/departures" },
+              { label: "In-House Guests", path: "/staff/in-house" },
+              { label: "Bookings", path: "/staff/bookings" },
+            ],
+          },
+          {
+            groupName: "Property & Inventory",
+            icon: <Bed size={15} />,
+            links: [
+              { label: "Rooms & Status", path: "/staff/rooms" },
+              { label: "Guest Directory", path: "/staff/guests" },
+            ],
+          },
+          {
+            groupName: "Counter Services",
             icon: <Calendar size={15} />,
             links: [
-              { label: "Self Booking", path: "/staff/self-booking" },
-              { label: "Tirvona Booking", path: "/staff/tirvona-booking" },
+              { label: "Walk-in Booking", path: "/staff/self-booking" },
+              { label: "Payments & Cash Desk", path: "/staff/payments" },
+              { label: "Notices & Alerts", path: "/staff/notifications" },
             ],
           },
         ],
@@ -1282,8 +1304,30 @@ export const DashboardLayout: React.FC = () => {
         </div>
       </nav>
 
+      {/* Assigned Property Info Card for Reception Staff */}
+      {user?.role === "reception" && (user?.employerAshram || selectedOwnerAshram || ownerAshrams[0]) && (
+        <div className="p-3 border-t border-blue-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50">
+          <div className="p-3 bg-white dark:bg-[#0B192C] border border-blue-100 dark:border-slate-800 rounded-2xl shadow-xs space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+                Assigned Stay
+              </span>
+              <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-50 text-emerald-600 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400">
+                Front Desk Live
+              </span>
+            </div>
+            <p className="text-[11px] font-extrabold text-[#0B192C] dark:text-white truncate">
+              {user?.employerAshram?.name || selectedOwnerAshram?.name || ownerAshrams[0]?.name || "Assigned Stay"}
+            </p>
+            <p className="text-[10px] text-slate-400 font-medium truncate">
+              {user?.employerAshram?.city || selectedOwnerAshram?.address?.city || ownerAshrams[0]?.address?.city || "Active Desk"}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Stay Owner Availability Control Widget in Sidebar */}
-      {isStayOwnerOrAdmin && ownerAshrams.length > 0 && selectedOwnerAshram && (
+      {user?.role !== "reception" && isStayOwnerOrAdmin && ownerAshrams.length > 0 && selectedOwnerAshram && (
         <div className="p-3 border-t border-blue-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50">
           <div className="p-3 bg-white dark:bg-[#0B192C] border border-blue-100 dark:border-slate-800 rounded-2xl shadow-xs space-y-2.5">
             <div className="flex items-center justify-between">

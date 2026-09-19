@@ -401,12 +401,12 @@ export const OwnerAddOnsPage: React.FC = () => {
               <select
                 value={selectedAshramId}
                 onChange={(e) => setSelectedAshramId(e.target.value)}
-                aria-label="Select ashram"
+                aria-label="Select stay"
                 className="bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-bold text-[#0B192C] dark:text-white focus:outline-none cursor-pointer"
               >
                 {myAshrams.length > 1 && (
                   <option value={ALL_ASHRAMS}>
-                    All Ashrams ({myAshrams.length})
+                    All Stays ({myAshrams.length})
                   </option>
                 )}
                 {myAshrams.map((a) => (

@@ -7,6 +7,7 @@ import {
   Optional,
 } from "@nestjs/common";
 import { randomUUID } from "node:crypto";
+import bcrypt from "bcryptjs";
 import { InjectModel } from "@nestjs/mongoose";
 import type { Model } from "mongoose";
 import type { AuthenticatedUser } from "../../../common/decorators/current-user.decorator";
@@ -107,6 +108,7 @@ export class AshramsService {
     @InjectModel(PARKING_MODEL.Staff) readonly parkingStaff: Model<any>,
     private readonly slugs: AshramSlugService,
     @Optional() @InjectModel("RoomRate") readonly roomRates?: Model<any>,
+    @Optional() @InjectModel("User") readonly userModel?: Model<any>,
   ) { }
 
   private async parkingEligibleAshrams(
@@ -798,7 +800,14 @@ export class AshramsService {
 
   async create(user: AuthenticatedUser, dto: SaveAshramDto): Promise<any> {
     assertNoInlineMedia(dto);
-    const { rooms = [], ...payload } = dto;
+    const {
+      rooms = [],
+      ownerEmail,
+      ownerPassword,
+      ownerName,
+      ownerPhone,
+      ...payload
+    } = dto;
     payload.address = normalizeAshramAddress(payload.address, payload as any);
     assertCompleteAddress(payload.address);
     const legalIdentifiers = [
@@ -816,6 +825,52 @@ export class AshramsService {
           `${field === "trust.panNo" ? "PAN" : "Trust registration number"} is already registered`,
         );
     }
+
+    let targetOwnerId = user.id;
+
+    if (ownerEmail && String(ownerEmail).trim() && this.userModel) {
+      const email = String(ownerEmail).trim().toLowerCase();
+      const ownerUser = await this.userModel.findOne({ email }).select("+passwordHash");
+
+      if (ownerUser) {
+        if (ownerPassword && String(ownerPassword).trim()) {
+          ownerUser.passwordHash = await bcrypt.hash(String(ownerPassword).trim(), 12);
+          ownerUser.tokenVersion = Number(ownerUser.tokenVersion ?? 0) + 1;
+        }
+        if (!["super_admin", "ashram_admin"].includes(ownerUser.role)) {
+          ownerUser.role = "ashram_owner";
+        }
+        ownerUser.status = "active";
+        ownerUser.isVerified = true;
+        await ownerUser.save();
+        targetOwnerId = ownerUser._id.toString();
+      } else {
+        if (!ownerPassword || !String(ownerPassword).trim()) {
+          throw new BadRequestException("Password is required to create the Stay Owner account.");
+        }
+        const name =
+          String(ownerName ?? "").trim() ||
+          payload.trust?.registeredBy ||
+          payload.name ||
+          "Stay Owner";
+        const phone =
+          String(ownerPhone ?? "").trim() ||
+          payload.contact?.phone ||
+          `+91${Math.floor(1000000000 + Math.random() * 9000000000)}`;
+
+        const createdUser = await this.userModel.create({
+          name,
+          email,
+          phone,
+          passwordHash: await bcrypt.hash(String(ownerPassword).trim(), 12),
+          role: "ashram_owner",
+          status: "active",
+          isVerified: true,
+        });
+        targetOwnerId = createdUser._id.toString();
+      }
+    }
+
     const suffix = randomUUID().replace(/-/g, "").slice(0, 8).toUpperCase();
     const city = citySlug(payload.address?.city ?? "") || "india";
     const ashram = await this.ashrams.create({
@@ -823,13 +878,23 @@ export class AshramsService {
       description:
         payload.description?.trim() ||
         "Spiritual Ashram lodging & accommodation.",
-      ownerId: user.id,
+      ownerId: targetOwnerId,
       createdBy: user.id,
       ashramCode: `ASH-${suffix}`,
       citySlug: city,
       slug: await this.slugs.allocate(payload.name, city),
       status: "pending_docs",
     });
+
+    if (this.userModel && targetOwnerId) {
+      await this.userModel.updateOne(
+        { _id: targetOwnerId },
+        {
+          $addToSet: { scopedAshramIds: ashram._id.toString() },
+          $set: { employerAshramId: ashram._id },
+        },
+      );
+    }
     const validTypes = ["dormitory", "private_room", "family_room", "hall"];
     const roomDocs = rooms
       .filter((room: any) => room?.name?.trim())

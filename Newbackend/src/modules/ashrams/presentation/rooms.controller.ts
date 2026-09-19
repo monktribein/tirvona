@@ -27,7 +27,7 @@ import { RoomSummaryQueryDto } from "./dtos/room-summary.dto";
 
 @ApiTags("Rooms")
 @ApiBearerAuth()
-@Roles("owner", "stay_admin", "manager", "super_admin")
+@Roles("owner", "stay_admin", "manager", "reception", "super_admin")
 @Controller("rooms")
 export class RoomsController {
   constructor(
@@ -50,13 +50,17 @@ export class RoomsController {
     return { success: true, data: await this.summaries.summary(user, query) };
   }
 
-  @Post() async create(
+  @Post()
+  @Roles("owner", "stay_admin", "manager", "super_admin")
+  async create(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: CreateRoomDto,
   ) {
     return { success: true, data: await this.service.createRoom(user, dto) };
   }
-  @Put(":id") async update(
+  @Put(":id")
+  @Roles("owner", "stay_admin", "manager", "super_admin")
+  async update(
     @CurrentUser() user: AuthenticatedUser,
     @Param("id") id: string,
     @Body() dto: UpdateRoomDto,
@@ -67,7 +71,9 @@ export class RoomsController {
       data: await this.service.updateRoom(user, id, dto),
     };
   }
-  @Delete(":id") async remove(
+  @Delete(":id")
+  @Roles("owner", "stay_admin", "manager", "super_admin")
+  async remove(
     @CurrentUser() user: AuthenticatedUser,
     @Param("id") id: string,
   ) {
@@ -77,7 +83,9 @@ export class RoomsController {
       data: await this.service.deleteRoom(user, id),
     };
   }
-  @Post(":id/availability") async availability(
+  @Post(":id/availability")
+  @Roles("owner", "stay_admin", "manager", "super_admin")
+  async availability(
     @CurrentUser() user: AuthenticatedUser,
     @Param("id") id: string,
     @Body() dto: RoomAvailabilityDto,

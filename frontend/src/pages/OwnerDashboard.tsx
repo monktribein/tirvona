@@ -727,14 +727,14 @@ export const OwnerDashboard: React.FC = () => {
             {/* Ashram Selector */}
             {myAshrams.length > 0 && (
               <div className="flex items-center gap-1.5">
-                <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Ashram</label>
+                <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Stay</label>
                 <select
                   value={selectedAshramId}
                   onChange={(e) => setSelectedAshramId(e.target.value)}
                   className="p-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none"
                 >
                   {myAshrams.length > 1 && (
-                    <option value={ALL_ASHRAMS}>All Ashrams ({myAshrams.length})</option>
+                    <option value={ALL_ASHRAMS}>All Stays ({myAshrams.length})</option>
                   )}
                   {myAshrams.map((a) => (
                     <option key={a._id} value={a._id}>{a.name}</option>

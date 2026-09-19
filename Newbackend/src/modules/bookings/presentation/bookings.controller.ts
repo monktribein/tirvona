@@ -100,6 +100,7 @@ export class BookingsController {
     "ashram_owner",
     "stay_admin",
     "manager",
+    "reception",
     "super_admin",
   )
   @HttpCode(200)
@@ -124,6 +125,7 @@ export class BookingsController {
     "ashram_admin",
     "stay_admin",
     "manager",
+    "reception",
     "super_admin",
   )
   async paymentPending(
@@ -136,6 +138,25 @@ export class BookingsController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return { success: true, data: await this.service.historyFor(user.id) };
+  }
+  @Get("frontdesk-summary")
+  @Roles(
+    "owner",
+    "ashram_owner",
+    "ashram_admin",
+    "stay_admin",
+    "manager",
+    "reception",
+    "super_admin",
+  )
+  async frontdeskSummary(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query("ashramId") ashramId?: string,
+  ) {
+    return {
+      success: true,
+      data: await this.service.frontdeskSummary(user, ashramId),
+    };
   }
   @Get("dashboard")
   @Roles(

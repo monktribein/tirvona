@@ -300,7 +300,7 @@ export const OwnerBookingCenterPage: React.FC<OwnerBookingCenterPageProps> = ({
               onChange={(event) => setAshramId(event.target.value)}
               className="px-3 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:outline-none"
             >
-              <option value="">All my ashrams</option>
+              <option value="">All my stays</option>
               {ashrams.map((ashram) => (
                 <option key={ashram._id} value={ashram._id}>{ashram.name}</option>
               ))}

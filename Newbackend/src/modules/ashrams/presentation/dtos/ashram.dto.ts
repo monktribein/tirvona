@@ -52,6 +52,8 @@ export class SaveAshramDto {
   @IsOptional() @IsString() history?: string;
   @IsOptional() @IsString() foundedBy?: string;
   @IsOptional() @IsString() establishedYear?: string;
+  @IsOptional() @IsString() languages?: string;
+  @IsOptional() @IsArray() primaryLanguages?: string[];
   @IsObject() address: Record<string, any>;
   @IsObject() contact: Record<string, any>;
   @IsObject() trust: Record<string, any>;
@@ -69,6 +71,10 @@ export class SaveAshramDto {
   @IsOptional() @IsObject() medical?: Record<string, any>;
   @IsOptional() @IsObject() transport?: Record<string, any>;
   @IsOptional() @IsObject() documents?: Record<string, any>;
+  @IsOptional() @IsString() ownerEmail?: string;
+  @IsOptional() @IsString() ownerPassword?: string;
+  @IsOptional() @IsString() ownerName?: string;
+  @IsOptional() @IsString() ownerPhone?: string;
 }
 
 export class UpdateAshramDto extends PartialType(SaveAshramDto) {}

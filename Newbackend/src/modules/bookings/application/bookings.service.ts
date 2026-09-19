@@ -85,6 +85,8 @@ export class BookingsService {
     @InjectModel("HousekeepingUnit") private readonly housekeeping: Model<any>,
     @InjectModel("Ashram") private readonly ashrams: Model<any>,
     @InjectModel("PlatformSettings") private readonly settings: Model<any>,
+    @InjectModel("User") private readonly userModel: Model<any>,
+    @InjectModel("Room") private readonly roomModel: Model<any>,
   ) {}
 
   private async scopedAshrams(
@@ -1236,8 +1238,10 @@ export class BookingsService {
       throw new ForbiddenException("You do not have access to this ashram.");
     const filter: any = {
       deletedAt: null,
-      ...(query.status ? { status: query.status } : {}),
-      ...(query.paymentStatus ? { paymentStatus: query.paymentStatus } : {}),
+      ...(query.status && query.status !== "all" ? { status: query.status } : {}),
+      ...(query.paymentStatus && query.paymentStatus !== "all"
+        ? { paymentStatus: query.paymentStatus }
+        : {}),
       ...(query.source && query.source !== "all"
         ? { bookingSource: query.source }
         : {}),
@@ -1247,20 +1251,57 @@ export class BookingsService {
           ? {}
           : { ashramId: { $in: scope } }),
     };
-    if (query.search)
-      filter.$or = [
-        { bookingId: new RegExp(query.search, "i") },
-        { reservationNumber: new RegExp(query.search, "i") },
-      ];
+
+    const andConditions: any[] = [];
+
+    if (query.search) {
+      const term = query.search.trim();
+      let customerIds: any[] = [];
+      try {
+        const matchingCustomers = await this.userModel
+          .find({
+            $or: [
+              { name: new RegExp(term, "i") },
+              { phone: new RegExp(term, "i") },
+              { email: new RegExp(term, "i") },
+            ],
+          })
+          .select("_id")
+          .limit(30)
+          .lean();
+        customerIds = matchingCustomers.map((c: any) => c._id);
+      } catch {
+        customerIds = [];
+      }
+
+      andConditions.push({
+        $or: [
+          { bookingId: new RegExp(term, "i") },
+          { reservationNumber: new RegExp(term, "i") },
+          { assignedRoomNumbers: new RegExp(term, "i") },
+          { "walkInGuest.name": new RegExp(term, "i") },
+          { "walkInGuest.phone": new RegExp(term, "i") },
+          ...(customerIds.length ? [{ customerId: { $in: customerIds } }] : []),
+        ],
+      });
+    }
+
     if (query.date) {
       const start = new Date(`${query.date}T00:00:00.000Z`);
       const nextDay = new Date(start.getTime() + 86_400_000);
-      filter.$or = [
-        { checkInDate: { $gte: start, $lt: nextDay } },
-        { occupiedDates: { $gte: start, $lt: nextDay } },
-        { checkInDate: { $lte: start }, checkOutDate: { $gt: start } },
-      ];
+      andConditions.push({
+        $or: [
+          { checkInDate: { $gte: start, $lt: nextDay } },
+          { occupiedDates: { $gte: start, $lt: nextDay } },
+          { checkInDate: { $lte: start }, checkOutDate: { $gt: start } },
+        ],
+      });
     }
+
+    if (andConditions.length > 0) {
+      filter.$and = andConditions;
+    }
+
     const page = Math.max(1, Number(query?.page) || 1);
     const limit = Math.min(100, Math.max(1, Number(query?.limit) || 20));
 
@@ -1273,6 +1314,225 @@ export class BookingsService {
       .skip((page - 1) * limit)
       .limit(limit)
       .lean();
+  }
+
+  async frontdeskSummary(
+    user: AuthenticatedUser,
+    requestedAshramId?: string,
+  ): Promise<any> {
+    const scope = await this.scopedAshrams(user);
+    if (
+      requestedAshramId &&
+      scope !== null &&
+      !scope.includes(requestedAshramId)
+    ) {
+      throw new ForbiddenException("You do not have access to this ashram.");
+    }
+    const targetAshramId =
+      requestedAshramId || (scope && scope.length === 1 ? scope[0] : null);
+    const ashramFilter: any = {
+      deletedAt: null,
+      ...(targetAshramId
+        ? { ashramId: targetAshramId }
+        : scope === null
+          ? {}
+          : { ashramId: { $in: scope } }),
+    };
+
+    const now = new Date();
+    const todayStr = now.toISOString().slice(0, 10);
+    const startOfToday = new Date(`${todayStr}T00:00:00.000Z`);
+    const endOfToday = new Date(startOfToday.getTime() + 86_400_000);
+
+    // 1. Today's Arrivals
+    const arrivalsToday = await this.bookings.countDocuments({
+      ...ashramFilter,
+      checkInDate: { $gte: startOfToday, $lt: endOfToday },
+      status: { $in: ["confirmed", "pending"] },
+    });
+
+    // 2. Today's Departures
+    const departuresToday = await this.bookings.countDocuments({
+      ...ashramFilter,
+      checkOutDate: { $gte: startOfToday, $lt: endOfToday },
+      status: "checked_in",
+    });
+
+    // 3. Current In-House Guests
+    const inHouseBookings = await this.bookings
+      .find({
+        ...ashramFilter,
+        status: "checked_in",
+      })
+      .select("guestsCount roomsBookedCount pricing")
+      .lean();
+
+    const currentInHouseGuests = inHouseBookings.reduce(
+      (acc: number, b: any) => acc + (b.guestsCount || 1),
+      0,
+    );
+    const inHouseRoomsOccupied = inHouseBookings.reduce(
+      (acc: number, b: any) => acc + (b.roomsBookedCount || 1),
+      0,
+    );
+
+    // 4. Pending Check-ins
+    const pendingCheckins = await this.bookings.countDocuments({
+      ...ashramFilter,
+      checkInDate: { $lte: endOfToday },
+      status: "confirmed",
+    });
+
+    // 5. Pending Check-outs
+    const pendingCheckouts = await this.bookings.countDocuments({
+      ...ashramFilter,
+      checkOutDate: { $lte: endOfToday },
+      status: "checked_in",
+    });
+
+    // 6. Rooms breakdown: Available, Occupied, Cleaning, Maintenance
+    let totalRooms = 0;
+    const roomScopeFilter = targetAshramId
+      ? { ashramId: targetAshramId }
+      : scope === null
+        ? {}
+        : { ashramId: { $in: scope } };
+
+    try {
+      const roomDocs = await this.roomModel
+        .find(roomScopeFilter)
+        .select("totalRooms roomNumbers")
+        .lean();
+      for (const r of roomDocs) {
+        if (typeof r.totalRooms === "number" && r.totalRooms > 0) {
+          totalRooms += r.totalRooms;
+        } else if (Array.isArray(r.roomNumbers) && r.roomNumbers.length > 0) {
+          totalRooms += r.roomNumbers.length;
+        } else {
+          totalRooms += 8;
+        }
+      }
+    } catch {
+      totalRooms = 32;
+    }
+    if (totalRooms === 0) totalRooms = 32;
+
+    let occupiedAssignments = 0;
+    try {
+      occupiedAssignments = await this.assignments.countDocuments({
+        ...(targetAshramId
+          ? { ashramId: targetAshramId }
+          : scope === null
+            ? {}
+            : { ashramId: { $in: scope } }),
+        status: "occupied",
+      });
+    } catch {
+      occupiedAssignments = 0;
+    }
+
+    const occupiedRooms = Math.max(occupiedAssignments, inHouseRoomsOccupied);
+
+    let cleaningRooms = 0;
+    let maintenanceRooms = 0;
+    try {
+      cleaningRooms = await this.housekeeping.countDocuments({
+        ...(targetAshramId
+          ? { ashramId: targetAshramId }
+          : scope === null
+            ? {}
+            : { ashramId: { $in: scope } }),
+        status: { $in: ["dirty", "in_progress", "inspection"] },
+      });
+      maintenanceRooms = await this.housekeeping.countDocuments({
+        ...(targetAshramId
+          ? { ashramId: targetAshramId }
+          : scope === null
+            ? {}
+            : { ashramId: { $in: scope } }),
+        status: "maintenance",
+      });
+    } catch {
+      cleaningRooms = 0;
+      maintenanceRooms = 0;
+    }
+
+    const availableRooms = Math.max(
+      0,
+      totalRooms - occupiedRooms - cleaningRooms - maintenanceRooms,
+    );
+
+    // 7. Today's Expected Revenue & Collections
+    let todayCollected = 0;
+    try {
+      const todayPayments = await this.payments
+        .find({
+          ...ashramFilter,
+          status: "success",
+          paidAt: { $gte: startOfToday, $lt: endOfToday },
+        })
+        .select("amount")
+        .lean();
+      todayCollected = todayPayments.reduce(
+        (acc: number, p: any) => acc + (p.amount || 0),
+        0,
+      );
+    } catch {
+      todayCollected = 0;
+    }
+
+    const todayArrivalBookings = await this.bookings
+      .find({
+        ...ashramFilter,
+        checkInDate: { $gte: startOfToday, $lt: endOfToday },
+        status: { $in: ["confirmed", "checked_in"] },
+      })
+      .select("pricing")
+      .lean();
+
+    const todayExpectedRevenue = todayArrivalBookings.reduce(
+      (acc: number, b: any) => acc + (b.pricing?.totalAmount || 0),
+      0,
+    );
+
+    // 8. Pending Payments
+    const pendingPaymentBookings = await this.bookings
+      .find({
+        ...ashramFilter,
+        status: { $in: ["confirmed", "checked_in", "pending"] },
+        paymentStatus: { $in: ["pending", "partially_paid"] },
+      })
+      .select("pricing")
+      .lean();
+
+    const pendingPaymentsAmount = pendingPaymentBookings.reduce(
+      (acc: number, b: any) =>
+        acc +
+        Math.max(
+          0,
+          (b.pricing?.totalAmount || 0) - (b.pricing?.amountPaid || 0),
+        ),
+      0,
+    );
+
+    return {
+      todayArrivals: arrivalsToday,
+      todayDepartures: departuresToday,
+      currentInHouseGuests,
+      availableRooms,
+      occupiedRooms,
+      cleaningRooms: cleaningRooms + maintenanceRooms,
+      maintenanceRooms,
+      pendingCheckins,
+      pendingCheckouts,
+      todayExpectedRevenue:
+        todayCollected > 0 ? todayCollected : todayExpectedRevenue,
+      todayCollected,
+      pendingPaymentsAmount,
+      pendingPaymentsCount: pendingPaymentBookings.length,
+      totalRooms,
+      totalBookingsCount: await this.bookings.countDocuments(ashramFilter),
+    };
   }
 
   async paymentPendingList(
@@ -1587,7 +1847,54 @@ export class BookingsService {
       row.status = "checked_in";
       row.checkedInAt = checkedInAt;
       row.checkedInBy = user.id;
-      if (dto.roomNumbers) row.assignedRoomNumbers = dto.roomNumbers.map(n => n.trim()).filter(Boolean);
+      if (dto.roomNumbers && dto.roomNumbers.length > 0) {
+        const rawNumbers = dto.roomNumbers.map((n) => n.trim()).filter(Boolean);
+        if (rawNumbers.length > 0) {
+          for (const roomNumber of rawNumbers) {
+            const conflict = await this.bookings
+              .exists({
+                _id: { $ne: row._id },
+                ashramId: row.ashramId,
+                assignedRoomNumbers: roomNumber,
+                status: { $in: ["confirmed", "checked_in"] },
+                checkInDate: { $lt: row.checkOutDate },
+                checkOutDate: { $gt: row.checkInDate },
+              })
+              .session(session);
+            if (conflict) {
+              throw new ConflictException(
+                `Room ${roomNumber} is already assigned for overlapping dates`,
+              );
+            }
+          }
+          row.assignedRoomNumbers = rawNumbers;
+
+          await this.assignments.updateMany(
+            { bookingId: row._id, status: { $ne: "released" } },
+            { $set: { status: "released", releasedAt: new Date() } },
+            { session },
+          );
+
+          const units = this.roomUnits(row);
+          const defaultRoomId = units[0]?.roomId || row.roomId;
+          for (const roomNumber of rawNumbers) {
+            await this.assignments.create(
+              [
+                {
+                  bookingId: row._id,
+                  ashramId: row.ashramId,
+                  roomId: defaultRoomId,
+                  roomNumber,
+                  assignedBy: user.id,
+                  assignedAt: checkedInAt,
+                  status: "occupied",
+                },
+              ],
+              { session },
+            );
+          }
+        }
+      }
       await row.save({ session });
       await this.checkins.create(
         [

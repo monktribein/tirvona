@@ -425,11 +425,11 @@ export const ManageRoomsPage: React.FC = () => {
               <select
                 value={selectedAshramId}
                 onChange={(e) => setSelectedAshramId(e.target.value)}
-                aria-label="Select ashram"
+                aria-label="Select stay"
                 className="px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-full text-xs font-bold focus:outline-none cursor-pointer"
               >
                 <option value={ALL_ASHRAMS}>
-                  All Ashrams ({myAshrams.length})
+                  All Stays ({myAshrams.length})
                 </option>
                 {myAshrams.map((a) => (
                   <option key={a._id} value={a._id}>

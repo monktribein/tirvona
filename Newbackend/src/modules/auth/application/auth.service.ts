@@ -151,6 +151,22 @@ export class AuthService {
       sub: user._id.toString(),
       tv: user.tokenVersion ?? 0,
     });
+    const rawEmployer = user.employerAshramId as any;
+    const employerAshramId = rawEmployer?._id
+      ? String(rawEmployer._id)
+      : rawEmployer
+        ? String(rawEmployer)
+        : null;
+    const employerAshram =
+      rawEmployer && typeof rawEmployer === "object" && rawEmployer.name
+        ? {
+            _id: String(rawEmployer._id),
+            name: rawEmployer.name,
+            city: rawEmployer.address?.city ?? rawEmployer.city ?? "",
+            state: rawEmployer.address?.state ?? rawEmployer.state ?? "",
+          }
+        : undefined;
+
     return {
       id: user._id,
       _id: user._id,
@@ -161,6 +177,9 @@ export class AuthService {
       status: user.status,
       isVerified: user.isVerified,
       permissions: user.permissions ?? [],
+      employerAshramId,
+      scopedAshramIds: (user.scopedAshramIds ?? []).map(String),
+      employerAshram,
       parkingRoles: parkingRoles ?? (await this.activeParkingRoles(user._id)),
       token,
     };

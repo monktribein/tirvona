@@ -307,7 +307,7 @@ export const PayoutManagementPage: React.FC = () => {
         </div>
         <div className="flex gap-2">
           <select value={ashramId} onChange={(event) => { setAshramId(event.target.value); setPage(1); }} className="rounded-xl border border-orange-200 bg-white px-4 py-2 text-sm font-bold">
-            <option value="">All Ashrams</option>
+            <option value="">All Stays</option>
             {ashrams.map((item) => <option key={item._id} value={item._id}>{item.name}</option>)}
           </select>
           <button onClick={() => void load()} className="rounded-xl bg-[#0757b5] px-4 py-2 text-white flex items-center gap-2"><RefreshCw size={15} className={loading ? "animate-spin" : ""} /> Refresh</button>
@@ -316,7 +316,7 @@ export const PayoutManagementPage: React.FC = () => {
 
       {error && <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-bold text-red-700">{error}</div>}
       {notice && <div className="mb-4 rounded-xl border border-green-200 bg-green-50 p-3 text-sm font-bold text-green-700">{notice}</div>}
-      {isSuperAdmin && providerReady === false && <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-bold text-amber-800">RazorpayX payout processing is not configured. Requests remain pending; select an ashram to use the audited manual bank-transfer option.</div>}
+      {isSuperAdmin && providerReady === false && <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-bold text-amber-800">RazorpayX payout processing is not configured. Requests remain pending; select a stay to use the audited manual bank-transfer option.</div>}
 
       <div className="grid gap-4 md:grid-cols-4 mb-5">
         <EnterpriseStatsCard icon={<IndianRupee size={18} />} title="Available balance" value={money(summary.available)} />
@@ -329,7 +329,7 @@ export const PayoutManagementPage: React.FC = () => {
         <section className={`grid gap-5 mb-5 ${isSuperAdmin ? "" : "lg:grid-cols-[1fr_1.4fr]"}`}>
           <div className="rounded-3xl border border-orange-200 bg-white p-5">
             <h2 className="font-black flex items-center gap-2"><Building2 size={18} /> Beneficiary account</h2>
-            <p className="text-xs text-slate-500 mt-1">{selectedAshram?.name}. The encrypted account is shared with your other authorized ashrams under the same legal owner.</p>
+            <p className="text-xs text-slate-500 mt-1">{selectedAshram?.name}. The encrypted account is shared with your other authorized stays under the same legal owner.</p>
             {bank ? <div className="mt-4 rounded-2xl bg-slate-50 p-4 text-sm"><b className="block">{bank.accountHolderName}</b><span>{bank.maskedAccountNumber} · {bank.maskedIfsc}</span><small className="block text-slate-500 mt-1">Updated {new Date(bank.updatedAt).toLocaleString("en-IN")}</small></div> : <p className="mt-4 text-sm text-amber-700">No payout bank account configured.</p>}
             {!isSuperAdmin && <button disabled={!bank || summary.available <= 0 || Boolean(working)} onClick={() => void requestPayout()} className="mt-4 w-full rounded-xl bg-[#0757b5] px-4 py-3 font-bold text-white disabled:opacity-40 flex items-center justify-center gap-2"><Send size={16} /> Request full payout {summary.available > 0 ? money(summary.available) : ""}</button>}
           </div>
@@ -352,13 +352,13 @@ export const PayoutManagementPage: React.FC = () => {
       {!ashramId && (
         <section className="rounded-3xl border border-orange-200 bg-white p-5 mb-5">
           <div>
-            <h2 className="font-black flex items-center gap-2"><Building2 size={18} /> All Ashrams payout coverage</h2>
-            <p className="text-xs text-slate-500 mt-1">Read-only overview. Owners and admins must select one authorized ashram to create its payout request.</p>
+            <h2 className="font-black flex items-center gap-2"><Building2 size={18} /> All Stays payout coverage</h2>
+            <p className="text-xs text-slate-500 mt-1">Read-only overview. Owners and admins must select one authorized stay to create its payout request.</p>
           </div>
           <div className="mt-4 overflow-x-auto rounded-2xl border border-slate-100">
             <table className="w-full min-w-[640px] text-sm">
-              <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500"><tr><th className="px-4 py-3">Ashram</th><th className="px-4 py-3">Account holder</th><th className="px-4 py-3">Bank account</th><th className="px-4 py-3">Status</th></tr></thead>
-              <tbody>{bankCoverage.length === 0 ? <tr><td colSpan={4} className="p-8 text-center text-slate-400">No authorized ashrams found.</td></tr> : bankCoverage.map((item) => <tr key={item.ashram._id} className="border-t border-slate-100"><td className="px-4 py-3 font-bold">{item.ashram.name}</td><td className="px-4 py-3">{item.bankAccount?.accountHolderName || "—"}</td><td className="px-4 py-3">{item.bankAccount ? `${item.bankAccount.maskedAccountNumber} · ${item.bankAccount.maskedIfsc}` : "Not configured"}</td><td className="px-4 py-3"><span className={`rounded-full px-2.5 py-1 text-xs font-black ${item.bankAccount ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>{item.bankAccount ? "Ready" : "Account required"}</span></td></tr>)}</tbody>
+              <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500"><tr><th className="px-4 py-3">Stay</th><th className="px-4 py-3">Account holder</th><th className="px-4 py-3">Bank account</th><th className="px-4 py-3">Status</th></tr></thead>
+              <tbody>{bankCoverage.length === 0 ? <tr><td colSpan={4} className="p-8 text-center text-slate-400">No authorized stays found.</td></tr> : bankCoverage.map((item) => <tr key={item.ashram._id} className="border-t border-slate-100"><td className="px-4 py-3 font-bold">{item.ashram.name}</td><td className="px-4 py-3">{item.bankAccount?.accountHolderName || "—"}</td><td className="px-4 py-3">{item.bankAccount ? `${item.bankAccount.maskedAccountNumber} · ${item.bankAccount.maskedIfsc}` : "Not configured"}</td><td className="px-4 py-3"><span className={`rounded-full px-2.5 py-1 text-xs font-black ${item.bankAccount ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>{item.bankAccount ? "Ready" : "Account required"}</span></td></tr>)}</tbody>
             </table>
           </div>
         </section>
