@@ -19,6 +19,18 @@ const ALWAYS_AVAILABLE = [
   "Laxmi Bhawan",
   "Sukhram Dham",
   "Sukhram Dham (A)",
+  "Hotel Sharda Palace",
+  "Girraj Stay Inn",
+  "Radha Palace",
+  "Shri Prakash Dham",
+  "Satya Nikunj Inn",
+  "Hotel Krishna Anandam",
+  "Hotel Shakun Palace",
+  "Prem Mandir Dharamshala",
+  "Shri Hari Singh Dham",
+  "Kripa Hotel",
+  "The Vrind Orchid Hotel",
+  "Comfort INN Braj",
 ];
 
 const ensureSrvResolvable = async (uri) => {
