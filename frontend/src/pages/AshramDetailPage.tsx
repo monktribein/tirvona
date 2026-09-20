@@ -49,6 +49,7 @@ import { DateRangePicker } from "../components/DateRangePicker";
 import { RoomAvailabilityCalendar } from "../components/RoomAvailabilityCalendar";
 import { hasValidCoordinates } from "../utils/geo";
 import { useAutoScroll } from "../hooks/useAutoScroll";
+import { VRINDAVAN_DUMMY_STAYS } from "../data/vrindavanStaysData";
 import {
   ShieldCheck,
   MapPin,
@@ -934,9 +935,21 @@ export const AshramDetailPage: React.FC = () => {
         }
       }
     } catch (err) {
-      console.error("Fetch details error:", err);
-      setAshram(null);
-      setDetailError(getErrorMessage(err, "Unable to load this stay."));
+      console.warn("Fetch details error, checking curated Vrindavan stays:", err);
+      const dummyStay = VRINDAVAN_DUMMY_STAYS.find(
+        (s) =>
+          s.slug === ashramSlug ||
+          s._id === id ||
+          (ashramSlug && s.slug.toLowerCase() === ashramSlug.toLowerCase()),
+      );
+      if (dummyStay) {
+        setAshram(dummyStay);
+        setRooms(dummyStay.rooms);
+        setDetailError("");
+      } else {
+        setAshram(null);
+        setDetailError(getErrorMessage(err, "Unable to load this stay."));
+      }
     } finally {
       setLoading(false);
     }

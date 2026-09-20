@@ -1,0 +1,102 @@
+{
+  "hotel-sharda-palace": {
+    "stayImages": [
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789889573/tirvona/ashrams/jz47rfv4nhsdtzf4id2n.jpg",
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789889575/tirvona/ashrams/tlcwijtffpcxkf0ua1gz.jpg",
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789889578/tirvona/ashrams/pmd4k2nxwcv1luw1ig1a.jpg",
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789889581/tirvona/ashrams/fsuuriy23h4v9j6wd293.jpg",
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789889584/tirvona/ashrams/npxmnnnwgbpnbshw2i36.jpg",
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789889587/tirvona/ashrams/mzhot3fa9okaz7h5icgu.jpg"
+    ],
+    "roomImages": {
+      "deluxe": [
+        "https://res.cloudinary.com/fvd3kven/image/upload/v1789889590/tirvona/ashrams/jsprt4iawj9fmtmsfn2a.jpg",
+        "https://res.cloudinary.com/fvd3kven/image/upload/v1789889592/tirvona/ashrams/w7aojpy3szoynojspqyo.jpg"
+      ],
+      "super-deluxe": [
+        "https://res.cloudinary.com/fvd3kven/image/upload/v1789889595/tirvona/ashrams/h1gxukhzy2imessti8za.jpg",
+        "https://res.cloudinary.com/fvd3kven/image/upload/v1789889598/tirvona/ashrams/ii2ykejokm7205puqhdo.jpg"
+      ]
+    }
+  },
+  "girraj-stay-inn": {
+    "stayImages": [
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789889600/tirvona/ashrams/oopbqruoxaxme8grir4e.jpg",
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789889601/tirvona/ashrams/qhm9o3yxvwqrpsvztf6y.jpg",
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789889602/tirvona/ashrams/alhbqr0zscsnelssaeou.jpg",
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789889603/tirvona/ashrams/fyzpcby1s7hq81mzfkec.jpg",
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789889603/tirvona/ashrams/cs6prrqwjalfjos1k09y.jpg",
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789889604/tirvona/ashrams/uvyabbqqweyzibzjz7md.jpg"
+    ],
+    "roomImages": {
+      "luxury": [
+        "https://res.cloudinary.com/fvd3kven/image/upload/v1789889605/tirvona/ashrams/pynr7dalmguwcjbjfvpn.jpg",
+        "https://res.cloudinary.com/fvd3kven/image/upload/v1789889606/tirvona/ashrams/abx4ild308i1gzi4w3rz.jpg"
+      ],
+      "deluxe": [
+        "https://res.cloudinary.com/fvd3kven/image/upload/v1789889607/tirvona/ashrams/hryyr2urusorxyvchs0n.jpg",
+        "https://res.cloudinary.com/fvd3kven/image/upload/v1789889607/tirvona/ashrams/niryqkj94gjcmirtyx2h.jpg"
+      ]
+    }
+  },
+  "radha-palace": {
+    "stayImages": [
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789889608/tirvona/ashrams/dzpgevvldlzcifdprnxj.jpg",
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789889609/tirvona/ashrams/k1oehjvpsgrmywm0fiaf.jpg",
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789889611/tirvona/ashrams/liw2ru5f9bbpd0fnnaa4.jpg",
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789889613/tirvona/ashrams/tdkudzdkhkakjzsonmwl.jpg",
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789889614/tirvona/ashrams/n97kebqvstpqutjescrz.jpg",
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789889615/tirvona/ashrams/wugf2z0hiag6gbdt3yke.jpg"
+    ],
+    "roomImages": {
+      "luxury": [
+        "https://res.cloudinary.com/fvd3kven/image/upload/v1789889616/tirvona/ashrams/qubd9cn85uj3njsj3rpf.jpg",
+        "https://res.cloudinary.com/fvd3kven/image/upload/v1789889617/tirvona/ashrams/i7b7u048hdg288amgks5.jpg"
+      ],
+      "family": [
+        "https://res.cloudinary.com/fvd3kven/image/upload/v1789889618/tirvona/ashrams/a7zy4jtvxdyodxo9n1dg.jpg",
+        "https://res.cloudinary.com/fvd3kven/image/upload/v1789889618/tirvona/ashrams/ngrpbbnumcwgl7frxgtk.jpg"
+      ]
+    }
+  },
+  "shri-prakash-dham": {
+    "stayImages": [
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789889620/tirvona/ashrams/ft17azaduoraxpos14vm.jpg",
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789889621/tirvona/ashrams/yu20ivz4hyybfdm3ywog.jpg",
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789889622/tirvona/ashrams/qknon2na9xyzaacumpys.jpg",
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789889623/tirvona/ashrams/w2zqbydywxm5k0zung2j.jpg",
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789889625/tirvona/ashrams/frz0un2wh0djgevtqqux.jpg",
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789889626/tirvona/ashrams/vljdzaymelvh5xokwiut.jpg"
+    ],
+    "roomImages": {
+      "double": [
+        "https://res.cloudinary.com/fvd3kven/image/upload/v1789889626/tirvona/ashrams/nerlgt1jyjn3yvzgqlvw.jpg",
+        "https://res.cloudinary.com/fvd3kven/image/upload/v1789889627/tirvona/ashrams/ghhhn9sbywnpnt7gghve.jpg"
+      ],
+      "single": [
+        "https://res.cloudinary.com/fvd3kven/image/upload/v1789889628/tirvona/ashrams/pblgmoelgqnaylnhajne.jpg",
+        "https://res.cloudinary.com/fvd3kven/image/upload/v1789889629/tirvona/ashrams/klj1vqfdf6yfuqnatzbi.jpg"
+      ]
+    }
+  },
+  "satya-nikunj-inn": {
+    "stayImages": [
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789889630/tirvona/ashrams/kwouzdryi2r5rv7538i0.jpg",
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789889631/tirvona/ashrams/fmhdgwcmlkaoqnhqvqq9.jpg",
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789889632/tirvona/ashrams/e4sun0jhswpej3lm1edc.jpg",
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789889634/tirvona/ashrams/ew4r6mwdidd4lllihaur.jpg",
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789889635/tirvona/ashrams/pt7ymr3iuqzsnwwnme4e.jpg",
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789889637/tirvona/ashrams/ecva133sohzyq1t1dhnn.jpg"
+    ],
+    "roomImages": {
+      "deluxe": [
+        "https://res.cloudinary.com/fvd3kven/image/upload/v1789889637/tirvona/ashrams/b2o5u4cpfp7pgscwdfr3.jpg",
+        "https://res.cloudinary.com/fvd3kven/image/upload/v1789889638/tirvona/ashrams/xd6aw3ndfcpwes95xjaa.jpg"
+      ],
+      "executive": [
+        "https://res.cloudinary.com/fvd3kven/image/upload/v1789889639/tirvona/ashrams/g6qyawfpwaz24avf5afb.jpg",
+        "https://res.cloudinary.com/fvd3kven/image/upload/v1789889640/tirvona/ashrams/nhx97ud8xrvrprr94jru.jpg"
+      ]
+    }
+  }
+}

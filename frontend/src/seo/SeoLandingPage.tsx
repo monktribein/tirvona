@@ -37,6 +37,7 @@ import {
 } from "../lib/analytics";
 import type { SeoLandingConfig } from "./seoLandingConfigs";
 import { TEMPLE_COORDS } from "./seoLandingConfigs";
+import { VRINDAVAN_DUMMY_STAYS } from "../data/vrindavanStaysData";
 
 interface SeoLandingPageProps {
   config: SeoLandingConfig;
@@ -170,8 +171,25 @@ export const SeoLandingPage: React.FC<SeoLandingPageProps> = ({ config }) => {
         setError(null);
 
         // Fetch real stays from Vrindavan
-        const res = await ashramService.search({ city: "Vrindavan" });
-        const list: any[] = res.data?.data || res.data || [];
+        let list: any[] = [];
+        try {
+          const res = await ashramService.search({ city: "Vrindavan" });
+          list = res.data?.data || res.data || [];
+        } catch (apiErr) {
+          console.warn("ashramService search fallback:", apiErr);
+        }
+
+        if (!Array.isArray(list) || list.length === 0) {
+          list = VRINDAVAN_DUMMY_STAYS;
+        } else {
+          // Ensure the 5 card stays are included so guests can always see them
+          const existingNames = new Set(list.map((i: any) => (i.name || "").toLowerCase().trim()));
+          for (const dummy of VRINDAVAN_DUMMY_STAYS) {
+            if (!existingNames.has(dummy.name.toLowerCase().trim())) {
+              list.unshift(dummy);
+            }
+          }
+        }
 
         if (!isMounted) return;
 

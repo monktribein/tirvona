@@ -1,0 +1,79 @@
+{
+  "shri-hari-singh-dham": {
+    "stayImages": [
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789891125/tirvona/ashrams/hmuwtm4j3xxu1dxn0jqc.webp",
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789891127/tirvona/ashrams/dvtx7i3hroz2npnem3ln.jpg",
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789891129/tirvona/ashrams/n1wwpddfbaflca5b1b5y.jpg",
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789891132/tirvona/ashrams/qw3ljimjvhpnqnnyctdm.jpg",
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789891134/tirvona/ashrams/uytblwuvw4tcwgd8xjif.jpg"
+    ],
+    "roomImages": {
+      "Standard AC Room": [
+        "https://res.cloudinary.com/fvd3kven/image/upload/v1789891136/tirvona/ashrams/me6hacnfipb5elgml5ra.webp",
+        "https://res.cloudinary.com/fvd3kven/image/upload/v1789891137/tirvona/ashrams/maiib57ybgxrkpefw1u1.webp"
+      ],
+      "Deluxe AC Room": [
+        "https://res.cloudinary.com/fvd3kven/image/upload/v1789891139/tirvona/ashrams/g85cs1ar9zvwnf6xuips.webp",
+        "https://res.cloudinary.com/fvd3kven/image/upload/v1789891141/tirvona/ashrams/cnr4ky4zuwdiwi1o79dx.webp"
+      ]
+    }
+  },
+  "kripa-hotel": {
+    "stayImages": [
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789889600/tirvona/ashrams/oopbqruoxaxme8grir4e.jpg",
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789891145/tirvona/ashrams/esqqc2c2ino4b2cmflfo.jpg",
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789891146/tirvona/ashrams/q1wgirhd4lniy4xedpkx.jpg",
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789891147/tirvona/ashrams/amq5kjvfmy4ohxgkeaqz.jpg"
+    ],
+    "roomImages": {
+      "Deluxe AC Room": [
+        "https://res.cloudinary.com/fvd3kven/image/upload/v1789891147/tirvona/ashrams/z1eh2yklymwqgvhvlrmc.jpg",
+        "https://res.cloudinary.com/fvd3kven/image/upload/v1789891148/tirvona/ashrams/zhnbbn3qdmpe2rylus1p.jpg"
+      ],
+      "Super Deluxe AC Room": [
+        "https://res.cloudinary.com/fvd3kven/image/upload/v1789891149/tirvona/ashrams/minqvcggdnxr5yjrs4wj.jpg",
+        "https://res.cloudinary.com/fvd3kven/image/upload/v1789891150/tirvona/ashrams/exoe8iuffoh1cb7xovv8.jpg"
+      ]
+    }
+  },
+  "the-vrind-orchid-hotel": {
+    "stayImages": [
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789891153/tirvona/ashrams/rgu1mltod10kzddymeew.png",
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789891156/tirvona/ashrams/on7i3xxdvsxtvojjpguy.png",
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789891159/tirvona/ashrams/afavnqrnfhucnkak4mc8.png",
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789891160/tirvona/ashrams/bmdoyx7b4ifikfin72y0.png",
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789891162/tirvona/ashrams/ux8vmkru0u8cy3kmfwxw.png",
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789891165/tirvona/ashrams/ye511cqqv5c376bgnhuh.png"
+    ],
+    "roomImages": {
+      "Luxury Executive AC Room": [
+        "https://res.cloudinary.com/fvd3kven/image/upload/v1789891166/tirvona/ashrams/ezseexa4vaoa0bppdb52.png",
+        "https://res.cloudinary.com/fvd3kven/image/upload/v1789891167/tirvona/ashrams/w1gl0wqdvzlj1xsh8hnj.png"
+      ],
+      "Royal Premium Suite": [
+        "https://res.cloudinary.com/fvd3kven/image/upload/v1789891168/tirvona/ashrams/apx5u7atzlpjhcsl1wbt.png",
+        "https://res.cloudinary.com/fvd3kven/image/upload/v1789891169/tirvona/ashrams/bl2zqtu8navkipsvgg2q.png"
+      ]
+    }
+  },
+  "comfort-inn-braj": {
+    "stayImages": [
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789891171/tirvona/ashrams/ero0eo8gfcbbzxlhgj1c.jpg",
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789891173/tirvona/ashrams/ol2q6z8i8ooupjaezmt5.jpg",
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789891174/tirvona/ashrams/wprkuojsxzjoc8lp2yll.jpg",
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789891175/tirvona/ashrams/pv2g2foaqj1en44zjnzc.jpg",
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789891177/tirvona/ashrams/gtaeaonlwudko0lr6unx.jpg",
+      "https://res.cloudinary.com/fvd3kven/image/upload/v1789891179/tirvona/ashrams/rtaqxkgg3cmkijp8k8rn.jpg"
+    ],
+    "roomImages": {
+      "Superior King AC Room": [
+        "https://res.cloudinary.com/fvd3kven/image/upload/v1789891180/tirvona/ashrams/v2gtabsudenbpfrjiwm9.jpg",
+        "https://res.cloudinary.com/fvd3kven/image/upload/v1789891181/tirvona/ashrams/ou1u4cilnvj9j809qgrr.jpg"
+      ],
+      "Premium Suite with Living Area": [
+        "https://res.cloudinary.com/fvd3kven/image/upload/v1789891181/tirvona/ashrams/hnmz6peepjxexh1iziqr.jpg",
+        "https://res.cloudinary.com/fvd3kven/image/upload/v1789891182/tirvona/ashrams/mri5vmcv8bn3vwuoi46y.jpg"
+      ]
+    }
+  }
+}
