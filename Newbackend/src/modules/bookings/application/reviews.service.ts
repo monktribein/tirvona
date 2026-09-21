@@ -38,7 +38,11 @@ export class ReviewsService {
         ashramId: dto.ashramId,
       });
       if (!booking) throw new NotFoundException("Booking not found");
-      if (!COMPLETED_STAY.includes(booking.status))
+      const isOverdueStay =
+        booking.status === "checked_in" &&
+        booking.checkOutDate &&
+        new Date(booking.checkOutDate) < new Date();
+      if (!COMPLETED_STAY.includes(booking.status) && !isOverdueStay)
         throw new BadRequestException(
           "You can review this stay after checkout",
         );
@@ -49,7 +53,10 @@ export class ReviewsService {
         await this.bookings.exists({
           customerId: user.id,
           ashramId: dto.ashramId,
-          status: { $in: COMPLETED_STAY },
+          $or: [
+            { status: { $in: COMPLETED_STAY } },
+            { status: "checked_in", checkOutDate: { $lt: new Date() } },
+          ],
         }),
       );
     }
