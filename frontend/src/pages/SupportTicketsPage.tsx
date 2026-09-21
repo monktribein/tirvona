@@ -87,11 +87,11 @@ export const SupportTicketsPage: React.FC = () => {
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <h3 className="font-bold text-sm text-[#0B192C] dark:text-white flex items-center gap-1.5">
-              <LifeBuoy size={16} className="text-[#0A4DA6]" /> Help & Tickets
+              <LifeBuoy size={16} className="text-[#F28C28]" /> Help & Tickets
             </h3>
             <button
               onClick={() => setShowCreate(true)}
-              className="px-4 py-2 bg-[#0A4DA6] text-white text-[10px] font-bold rounded-full cursor-pointer hover:bg-opacity-95 shadow-md shadow-[#0A4DA6]/10"
+              className="px-4 py-2 bg-[#F28C28] text-white text-[10px] font-bold rounded-full cursor-pointer hover:bg-opacity-95 shadow-md shadow-[#F28C28]/10"
             >
               New Ticket
             </button>
@@ -111,7 +111,7 @@ export const SupportTicketsPage: React.FC = () => {
                   onClick={() => setActiveTicket(t)}
                   className={`p-3.5 rounded-[16px] border text-left cursor-pointer transition-all ${
                     activeTicket?._id === t._id
-                      ? "border-[#0A4DA6] bg-[#0A4DA6]/5"
+                      ? "border-[#F28C28] bg-[#F28C28]/5"
                       : "border-gray-100 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-900"
                   }`}
                 >
@@ -158,7 +158,7 @@ export const SupportTicketsPage: React.FC = () => {
                   </>
                 ) : (
                   <>
-                    <Clock className="text-[#0A4DA6]" size={12} /> In Progress
+                    <Clock className="text-[#F28C28]" size={12} /> In Progress
                   </>
                 )}
               </div>
@@ -175,7 +175,7 @@ export const SupportTicketsPage: React.FC = () => {
                     <div
                       className={`p-3 px-4 rounded-[20px] max-w-sm text-xs leading-relaxed ${
                         isMe
-                          ? "bg-[#0A4DA6] text-white rounded-tr-none"
+                          ? "bg-[#F28C28] text-white rounded-tr-none"
                           : "bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 text-[#0B192C] dark:text-gray-200 rounded-tl-none font-semibold"
                       }`}
                     >
@@ -201,7 +201,7 @@ export const SupportTicketsPage: React.FC = () => {
                 />
                 <button
                   type="submit"
-                  className="p-2.5 bg-[#0A4DA6] text-white rounded-xl cursor-pointer hover:bg-opacity-95 transition-all"
+                  className="p-2.5 bg-[#F28C28] text-white rounded-xl cursor-pointer hover:bg-opacity-95 transition-all"
                 >
                   <Send size={14} />
                 </button>
@@ -297,7 +297,7 @@ export const SupportTicketsPage: React.FC = () => {
               </button>
               <button
                 type="submit"
-                className="flex-1 py-2.5 bg-[#0A4DA6] text-white rounded-full text-xs font-bold cursor-pointer shadow"
+                className="flex-1 py-2.5 bg-[#F28C28] text-white rounded-full text-xs font-bold cursor-pointer shadow"
               >
                 Log Ticket
               </button>

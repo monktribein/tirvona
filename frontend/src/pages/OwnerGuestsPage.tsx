@@ -141,7 +141,7 @@ export const OwnerGuestsPage: React.FC = () => {
       <div className="flex flex-wrap justify-between items-start sm:items-center gap-4 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-4 sm:p-6 rounded-[24px] shadow-sm">
         <div>
           <h2 className="text-base font-extrabold text-[#0B192C] dark:text-white flex items-center gap-2">
-            <Users size={18} className="text-[#0A4DA6]" /> Users &amp; Guests
+            <Users size={18} className="text-[#F28C28]" /> Users &amp; Guests
           </h2>
           <p className="text-xs text-gray-400 font-semibold mt-1">
             Guests with bookings at your assigned ashrams only.
@@ -154,7 +154,7 @@ export const OwnerGuestsPage: React.FC = () => {
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search guest or contact"
-              className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 text-xs focus:outline-none focus:border-[#0A4DA6]"
+              className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 text-xs focus:outline-none focus:border-[#F28C28]"
             />
           </label>
           {ashramOptions.length > 1 && (
@@ -193,9 +193,9 @@ export const OwnerGuestsPage: React.FC = () => {
                     <td className="py-4 px-6 font-bold text-[#0B192C] dark:text-white">{guest.name}</td>
                     <td className="py-4 px-6 text-gray-500"><div>{guest.email || "—"}</div><div className="text-[10px] text-gray-400">{guest.phone || "—"}</div></td>
                     <td className="py-4 px-6 text-gray-500">{[...guest.ashrams.values()].join(", ") || "—"}</td>
-                    <td className="py-4 px-6"><span className="font-bold text-[#0A4DA6]">{guest.bookingCount}</span><span className="text-gray-400"> / {guest.guestCount} traveller(s)</span></td>
+                    <td className="py-4 px-6"><span className="font-bold text-[#F28C28]">{guest.bookingCount}</span><span className="text-gray-400"> / {guest.guestCount} traveller(s)</span></td>
                     <td className="py-4 px-6 text-gray-500"><span className="inline-flex items-center gap-1"><CalendarDays size={13} />{guest.latestStay ? new Date(guest.latestStay).toLocaleDateString() : "—"}</span></td>
-                    <td className="py-4 px-6"><span className="px-2.5 py-1 bg-[#0A4DA6]/10 text-[#0A4DA6] rounded-full text-[9px] font-bold">{readableStatus(guest.latestStatus)}</span></td>
+                    <td className="py-4 px-6"><span className="px-2.5 py-1 bg-[#F28C28]/10 text-[#F28C28] rounded-full text-[9px] font-bold">{readableStatus(guest.latestStatus)}</span></td>
                   </tr>
                 ))}
               </tbody>

@@ -363,7 +363,7 @@ const Input: React.FC<React.InputHTMLAttributes<HTMLInputElement>> = (
 ) => (
   <input
     {...props}
-    className={`w-full px-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-medium text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 focus:border-[#0A4DA6] transition-all placeholder:text-gray-300 dark:placeholder:text-gray-600 ${props.className || ""}`}
+    className={`w-full px-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-medium text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 focus:border-[#F28C28] transition-all placeholder:text-gray-300 dark:placeholder:text-gray-600 ${props.className || ""}`}
   />
 );
 
@@ -372,7 +372,7 @@ const Textarea: React.FC<React.TextareaHTMLAttributes<HTMLTextAreaElement>> = (
 ) => (
   <textarea
     {...props}
-    className={`w-full px-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-medium text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 focus:border-[#0A4DA6] transition-all placeholder:text-gray-300 dark:placeholder:text-gray-600 resize-none ${props.className || ""}`}
+    className={`w-full px-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-medium text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 focus:border-[#F28C28] transition-all placeholder:text-gray-300 dark:placeholder:text-gray-600 resize-none ${props.className || ""}`}
   />
 );
 
@@ -381,7 +381,7 @@ const Select: React.FC<React.SelectHTMLAttributes<HTMLSelectElement>> = (
 ) => (
   <select
     {...props}
-    className={`w-full px-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-medium text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 focus:border-[#0A4DA6] transition-all ${props.className || ""}`}
+    className={`w-full px-4 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-medium text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 focus:border-[#F28C28] transition-all ${props.className || ""}`}
   />
 );
 
@@ -393,7 +393,7 @@ const Toggle: React.FC<{
   <label className="flex items-center gap-3 cursor-pointer select-none group">
     <div
       onClick={onChange}
-      className={`w-11 h-6 rounded-full transition-all relative flex-shrink-0 ${checked ? "bg-[#0A4DA6]" : "bg-gray-200 dark:bg-slate-700"}`}
+      className={`w-11 h-6 rounded-full transition-all relative flex-shrink-0 ${checked ? "bg-[#F28C28]" : "bg-gray-200 dark:bg-slate-700"}`}
     >
       <div
         className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-all ${checked ? "left-6" : "left-1"}`}
@@ -411,7 +411,7 @@ const SectionHeader: React.FC<{
   subtitle: string;
 }> = ({ icon, title, subtitle }) => (
   <div className="flex items-start gap-4 pb-6 border-b border-gray-100 dark:border-slate-800 mb-6">
-    <div className="w-12 h-12 rounded-2xl bg-[#0A4DA6]/10 text-[#0A4DA6] flex items-center justify-center flex-shrink-0">
+    <div className="w-12 h-12 rounded-2xl bg-[#F28C28]/10 text-[#F28C28] flex items-center justify-center flex-shrink-0">
       {icon}
     </div>
     <div>
@@ -1099,8 +1099,8 @@ const AddAshramWizardPage: React.FC = () => {
                 <ErrMsg field="pincode" />
               </Field>
             </div>
-            <div className="p-4 bg-[#0A4DA6]/5 border border-[#0A4DA6]/20 rounded-2xl space-y-4">
-              <h3 className="text-xs font-bold text-[#0A4DA6] tracking-wider flex items-center gap-1.5">
+            <div className="p-4 bg-[#F28C28]/5 border border-[#F28C28]/20 rounded-2xl space-y-4">
+              <h3 className="text-xs font-bold text-[#F28C28] tracking-wider flex items-center gap-1.5">
                 <Map size={14} /> GPS Coordinates (for map widget)
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -1210,7 +1210,7 @@ const AddAshramWizardPage: React.FC = () => {
             <div className="p-5 bg-gradient-to-br from-indigo-50/70 to-blue-50/70 dark:from-slate-900 dark:to-indigo-950/20 border border-indigo-200/60 dark:border-indigo-800/40 rounded-2xl space-y-4 shadow-sm">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-indigo-100 dark:border-indigo-900/50 pb-3">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-[#0A4DA6] text-white flex items-center justify-center font-bold shadow-sm">
+                  <div className="w-8 h-8 rounded-xl bg-[#F28C28] text-white flex items-center justify-center font-bold shadow-sm">
                     <KeyRound size={16} />
                   </div>
                   <div>
@@ -1233,7 +1233,7 @@ const AddAshramWizardPage: React.FC = () => {
                       if (formData.phone && !formData.ownerPhone) set("ownerPhone", formData.phone);
                       if (formData.registeredBy && !formData.ownerName) set("ownerName", formData.registeredBy);
                     }}
-                    className="text-[11px] font-bold text-[#0A4DA6] hover:underline flex items-center gap-1 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-indigo-200 dark:border-indigo-800 shadow-2xs self-start sm:self-auto"
+                    className="text-[11px] font-bold text-[#F28C28] hover:underline flex items-center gap-1 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-indigo-200 dark:border-indigo-800 shadow-2xs self-start sm:self-auto"
                   >
                     <Copy size={12} /> Auto-fill from Contact
                   </button>
@@ -1394,7 +1394,7 @@ const AddAshramWizardPage: React.FC = () => {
                           setNewGalleryUrl("");
                         }
                       }}
-                      className="px-5 py-3 bg-[#0A4DA6] text-white rounded-xl font-bold text-xs flex items-center gap-1.5 hover:bg-[#0A4DA6]/90 transition-colors flex-shrink-0"
+                      className="px-5 py-3 bg-[#F28C28] text-white rounded-xl font-bold text-xs flex items-center gap-1.5 hover:bg-[#F28C28]/90 transition-colors flex-shrink-0"
                     >
                       <Plus size={14} /> Add
                     </button>
@@ -1495,7 +1495,7 @@ const AddAshramWizardPage: React.FC = () => {
                 {formData.activities.map((a) => (
                   <span
                     key={a}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0A4DA6]/10 text-[#0A4DA6] rounded-full text-xs font-bold"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-[#F28C28]/10 text-[#F28C28] rounded-full text-xs font-bold"
                   >
                     {a}
                     <button
@@ -1526,7 +1526,7 @@ const AddAshramWizardPage: React.FC = () => {
                 />
                 <button
                   onClick={() => addActivity(newActivity)}
-                  className="px-5 py-3 bg-[#0A4DA6] text-white rounded-xl font-bold text-xs flex items-center gap-1.5 hover:bg-[#0A4DA6]/90 transition-colors flex-shrink-0"
+                  className="px-5 py-3 bg-[#F28C28] text-white rounded-xl font-bold text-xs flex items-center gap-1.5 hover:bg-[#F28C28]/90 transition-colors flex-shrink-0"
                 >
                   <Plus size={14} /> Add
                 </button>
@@ -1548,7 +1548,7 @@ const AddAshramWizardPage: React.FC = () => {
                     key={p}
                     onClick={() => addActivity(p)}
                     disabled={formData.activities.includes(p)}
-                    className={`px-3 py-1.5 rounded-full text-[10px] font-bold border transition-all ${formData.activities.includes(p) ? "bg-[#0A4DA6]/10 text-[#0A4DA6] border-[#0A4DA6]/30 opacity-50" : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-slate-700 hover:bg-[#0A4DA6]/10 hover:text-[#0A4DA6] hover:border-[#0A4DA6]/30"}`}
+                    className={`px-3 py-1.5 rounded-full text-[10px] font-bold border transition-all ${formData.activities.includes(p) ? "bg-[#F28C28]/10 text-[#F28C28] border-[#F28C28]/30 opacity-50" : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-slate-700 hover:bg-[#F28C28]/10 hover:text-[#F28C28] hover:border-[#F28C28]/30"}`}
                   >
                     + {p}
                   </button>
@@ -1598,8 +1598,8 @@ const AddAshramWizardPage: React.FC = () => {
                   onClick={() => toggleAmenity(am)}
                   className={`flex items-center gap-2 px-3 py-3 rounded-xl text-xs font-semibold border transition-all text-left ${
                     formData.amenities.includes(am)
-                      ? "bg-[#0A4DA6] text-white border-[#0A4DA6] shadow-md shadow-[#0A4DA6]/20"
-                      : "bg-gray-50 dark:bg-slate-900 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-slate-700 hover:border-[#0A4DA6]/50 hover:bg-[#0A4DA6]/5"
+                      ? "bg-[#F28C28] text-white border-[#F28C28] shadow-md shadow-[#F28C28]/20"
+                      : "bg-gray-50 dark:bg-slate-900 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-slate-700 hover:border-[#F28C28]/50 hover:bg-[#F28C28]/5"
                   }`}
                 >
                   {formData.amenities.includes(am) ? (
@@ -1625,7 +1625,7 @@ const AddAshramWizardPage: React.FC = () => {
               />
               <button
                 onClick={addCustomAmenity}
-                className="px-5 py-3 bg-[#0A4DA6] text-white rounded-xl font-bold text-xs flex items-center gap-1.5 hover:bg-[#0A4DA6]/90 transition-colors flex-shrink-0"
+                className="px-5 py-3 bg-[#F28C28] text-white rounded-xl font-bold text-xs flex items-center gap-1.5 hover:bg-[#F28C28]/90 transition-colors flex-shrink-0"
               >
                 <Plus size={14} /> Add
               </button>
@@ -1669,7 +1669,7 @@ const AddAshramWizardPage: React.FC = () => {
                   className="p-5 bg-gray-50 dark:bg-slate-900/50 border border-gray-200 dark:border-slate-700 rounded-2xl space-y-4"
                 >
                   <div className="flex justify-between items-center">
-                    <span className="text-xs font-extrabold text-[#0A4DA6] tracking-wider flex items-center gap-2">
+                    <span className="text-xs font-extrabold text-[#F28C28] tracking-wider flex items-center gap-2">
                       <GripVertical size={14} className="text-gray-300" /> Room
                       Category {idx + 1}
                     </span>
@@ -1790,7 +1790,7 @@ const AddAshramWizardPage: React.FC = () => {
 
               <button
                 onClick={addRoom}
-                className="w-full py-4 border-2 border-dashed border-[#0A4DA6]/30 rounded-2xl text-[#0A4DA6] font-bold text-sm flex items-center justify-center gap-2 hover:border-[#0A4DA6]/60 hover:bg-[#0A4DA6]/5 transition-all"
+                className="w-full py-4 border-2 border-dashed border-[#F28C28]/30 rounded-2xl text-[#F28C28] font-bold text-sm flex items-center justify-center gap-2 hover:border-[#F28C28]/60 hover:bg-[#F28C28]/5 transition-all"
               >
                 <Plus size={18} /> Add Room Category
               </button>
@@ -1925,7 +1925,7 @@ const AddAshramWizardPage: React.FC = () => {
                     key={i}
                     className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl"
                   >
-                    <span className="w-5 h-5 rounded-full bg-[#0A4DA6]/10 text-[#0A4DA6] flex items-center justify-center text-[9px] font-extrabold flex-shrink-0 mt-0.5">
+                    <span className="w-5 h-5 rounded-full bg-[#F28C28]/10 text-[#F28C28] flex items-center justify-center text-[9px] font-extrabold flex-shrink-0 mt-0.5">
                       {i + 1}
                     </span>
                     <span className="text-xs font-medium text-gray-600 dark:text-gray-300 flex-grow">
@@ -1955,7 +1955,7 @@ const AddAshramWizardPage: React.FC = () => {
                 />
                 <button
                   onClick={() => addRule(newRule)}
-                  className="px-5 py-3 bg-[#0A4DA6] text-white rounded-xl font-bold text-xs flex items-center gap-1.5 hover:bg-[#0A4DA6]/90 transition-colors flex-shrink-0"
+                  className="px-5 py-3 bg-[#F28C28] text-white rounded-xl font-bold text-xs flex items-center gap-1.5 hover:bg-[#F28C28]/90 transition-colors flex-shrink-0"
                 >
                   <Plus size={14} /> Add
                 </button>
@@ -1967,7 +1967,7 @@ const AddAshramWizardPage: React.FC = () => {
                     key={p}
                     onClick={() => addRule(p)}
                     disabled={formData.rules.includes(p)}
-                    className={`px-3 py-1.5 rounded-full text-[10px] font-semibold border transition-all ${formData.rules.includes(p) ? "opacity-40 cursor-not-allowed bg-[#0A4DA6]/10 text-[#0A4DA6] border-[#0A4DA6]/20" : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-slate-700 hover:bg-[#0A4DA6]/5 hover:border-[#0A4DA6]/30 hover:text-[#0A4DA6]"}`}
+                    className={`px-3 py-1.5 rounded-full text-[10px] font-semibold border transition-all ${formData.rules.includes(p) ? "opacity-40 cursor-not-allowed bg-[#F28C28]/10 text-[#F28C28] border-[#F28C28]/20" : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-slate-700 hover:bg-[#F28C28]/5 hover:border-[#F28C28]/30 hover:text-[#F28C28]"}`}
                   >
                     + {p.slice(0, 40)}
                     {p.length > 40 ? "…" : ""}
@@ -2108,7 +2108,7 @@ const AddAshramWizardPage: React.FC = () => {
 
               <button
                 onClick={addAttraction}
-                className="w-full py-4 border-2 border-dashed border-[#0A4DA6]/30 rounded-2xl text-[#0A4DA6] font-bold text-sm flex items-center justify-center gap-2 hover:border-[#0A4DA6]/60 hover:bg-[#0A4DA6]/5 transition-all"
+                className="w-full py-4 border-2 border-dashed border-[#F28C28]/30 rounded-2xl text-[#F28C28] font-bold text-sm flex items-center justify-center gap-2 hover:border-[#F28C28]/60 hover:bg-[#F28C28]/5 transition-all"
               >
                 <Plus size={18} /> Add Attraction
               </button>
@@ -2349,7 +2349,7 @@ const AddAshramWizardPage: React.FC = () => {
                     href={`https://www.google.com/maps/search/?api=1&query=${formData.lat},${formData.lng}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-5 py-3 bg-[#0A4DA6]/10 text-[#0A4DA6] border border-[#0A4DA6]/20 rounded-xl text-xs font-bold hover:bg-[#0A4DA6]/15 transition-all"
+                    className="flex items-center gap-2 px-5 py-3 bg-[#F28C28]/10 text-[#F28C28] border border-[#F28C28]/20 rounded-xl text-xs font-bold hover:bg-[#F28C28]/15 transition-all"
                   >
                     <Map size={14} /> Verify on Google Maps
                   </a>
@@ -2380,8 +2380,8 @@ const AddAshramWizardPage: React.FC = () => {
               title="Final Preview"
               subtitle="This is exactly how the public Ashram Details page will appear after approval."
             />
-            <div className="p-3 bg-[#0A4DA6]/5 border border-[#0A4DA6]/20 rounded-xl">
-              <p className="text-xs text-[#0A4DA6] font-semibold flex items-center gap-2">
+            <div className="p-3 bg-[#F28C28]/5 border border-[#F28C28]/20 rounded-xl">
+              <p className="text-xs text-[#F28C28] font-semibold flex items-center gap-2">
                 <Eye size={12} /> Read-only preview. Go back to any previous
                 step to make edits.
               </p>
@@ -2390,7 +2390,7 @@ const AddAshramWizardPage: React.FC = () => {
             <div className="flex flex-col md:flex-row justify-between items-start gap-4 border-b border-gray-100 dark:border-slate-800 pb-6">
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <span className="px-3 py-1 bg-[#0A4DA6] text-white text-[9px] font-extrabold rounded-full flex items-center gap-1 shadow-sm tracking-wider">
+                  <span className="px-3 py-1 bg-[#F28C28] text-white text-[9px] font-extrabold rounded-full flex items-center gap-1 shadow-sm tracking-wider">
                     <ShieldCheck size={11} /> Pending Verification
                   </span>
                   <span className="text-xs text-gray-400 font-extrabold tracking-wider">
@@ -2407,7 +2407,7 @@ const AddAshramWizardPage: React.FC = () => {
                   </p>
                 )}
                 <p className="text-xs text-gray-500 flex items-center gap-1">
-                  <MapPin size={12} className="text-[#0A4DA6]" />{" "}
+                  <MapPin size={12} className="text-[#F28C28]" />{" "}
                   {formData.street}
                   {formData.city ? `, ${formData.city}` : ""}
                   {formData.pincode ? ` — PIN ${formData.pincode}` : ""}
@@ -2472,7 +2472,7 @@ const AddAshramWizardPage: React.FC = () => {
                 </p>
                 {formData.history && (
                   <div className="pt-4 border-t border-gray-100 dark:border-slate-800 space-y-2">
-                    <h4 className="text-xs font-bold text-[#0A4DA6] tracking-wider">
+                    <h4 className="text-xs font-bold text-[#F28C28] tracking-wider">
                       Historical Significance
                     </h4>
                     <p className="text-xs text-gray-500 leading-relaxed italic bg-gray-50/50 dark:bg-slate-900/10 p-4 rounded-2xl border border-dashed border-gray-100 dark:border-slate-850">
@@ -2544,11 +2544,11 @@ const AddAshramWizardPage: React.FC = () => {
             {formData.rules.length > 0 && (
               <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-5 shadow-sm">
                 <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white flex items-center gap-1.5 border-b border-gray-50 dark:border-slate-850 pb-3">
-                  <Info size={18} className="text-[#0A4DA6]" /> Rules & Policies
+                  <Info size={18} className="text-[#F28C28]" /> Rules & Policies
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
                   <div className="space-y-3">
-                    <h4 className="font-bold text-[#0A4DA6] tracking-wider text-[10px]">
+                    <h4 className="font-bold text-[#F28C28] tracking-wider text-[10px]">
                       Guidelines for Guests
                     </h4>
                     <ul className="text-gray-500 space-y-2 list-disc pl-5">
@@ -2558,7 +2558,7 @@ const AddAshramWizardPage: React.FC = () => {
                     </ul>
                   </div>
                   <div className="space-y-3">
-                    <h4 className="font-bold text-[#0A4DA6] tracking-wider text-[10px]">
+                    <h4 className="font-bold text-[#F28C28] tracking-wider text-[10px]">
                       Check-in Policies
                     </h4>
                     <div className="space-y-1.5 text-gray-500">
@@ -2593,19 +2593,19 @@ const AddAshramWizardPage: React.FC = () => {
               <div className="space-y-3 text-[11px] text-gray-500">
                 {formData.phone && (
                   <p className="flex items-center gap-2">
-                    <Phone size={12} className="text-[#0A4DA6]" />{" "}
+                    <Phone size={12} className="text-[#F28C28]" />{" "}
                     {formData.phone}
                   </p>
                 )}
                 {formData.email && (
                   <p className="flex items-center gap-2">
-                    <Mail size={12} className="text-[#0A4DA6]" />{" "}
+                    <Mail size={12} className="text-[#F28C28]" />{" "}
                     {formData.email}
                   </p>
                 )}
                 {formData.website && (
                   <p className="flex items-center gap-2">
-                    <Globe size={12} className="text-[#0A4DA6]" />{" "}
+                    <Globe size={12} className="text-[#F28C28]" />{" "}
                     {formData.website}
                   </p>
                 )}
@@ -2655,7 +2655,7 @@ const AddAshramWizardPage: React.FC = () => {
 
                 {formData.ownerEmail && (
                   <div className="p-4 bg-indigo-50/80 dark:bg-slate-800 border border-indigo-200 dark:border-slate-700 rounded-2xl text-left max-w-md w-full space-y-2 text-xs">
-                    <div className="flex items-center gap-2 font-bold text-[#0A4DA6] text-sm">
+                    <div className="flex items-center gap-2 font-bold text-[#F28C28] text-sm">
                       <KeyRound size={16} /> Stay Owner Portal Account Ready
                     </div>
                     <div className="text-gray-600 dark:text-gray-300">
@@ -2670,7 +2670,7 @@ const AddAshramWizardPage: React.FC = () => {
               <div className="flex gap-3 pt-4">
                 <button
                   onClick={() => navigate(backPath)}
-                  className="px-6 py-3 bg-[#0A4DA6] text-white rounded-full font-bold text-sm hover:bg-[#0A4DA6]/90 transition-colors"
+                  className="px-6 py-3 bg-[#F28C28] text-white rounded-full font-bold text-sm hover:bg-[#F28C28]/90 transition-colors"
                 >
                   Back to My Ashrams
                 </button>
@@ -2756,18 +2756,18 @@ const AddAshramWizardPage: React.FC = () => {
             {formData.ownerEmail && formData.ownerPassword ? (
               <div className="p-4 rounded-2xl border bg-indigo-50/60 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-800/40 text-xs flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-[#0A4DA6] text-white flex items-center justify-center font-bold">
+                  <div className="w-8 h-8 rounded-xl bg-[#F28C28] text-white flex items-center justify-center font-bold">
                     <KeyRound size={16} />
                   </div>
                   <div>
                     <p className="font-bold text-[#0B192C] dark:text-white">Stay Owner Portal Account Ready</p>
-                    <p className="text-gray-500 text-[11px]">Login Email: <strong className="text-[#0A4DA6]">{formData.ownerEmail}</strong> (Password configured)</p>
+                    <p className="text-gray-500 text-[11px]">Login Email: <strong className="text-[#F28C28]">{formData.ownerEmail}</strong> (Password configured)</p>
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={() => setStep(STEPS.findIndex((s) => s.value === 3))}
-                  className="text-[11px] font-bold text-[#0A4DA6] hover:underline"
+                  className="text-[11px] font-bold text-[#F28C28] hover:underline"
                 >
                   Edit Credentials
                 </button>
@@ -2775,7 +2775,7 @@ const AddAshramWizardPage: React.FC = () => {
             ) : (
               <div className="p-4 rounded-2xl border bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:bg-slate-900/50 border-blue-200 dark:border-slate-700 space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-xs font-bold text-[#0A4DA6]">
+                  <div className="flex items-center gap-2 text-xs font-bold text-[#F28C28]">
                     <KeyRound size={15} /> Stay Owner Portal Access (Dashboard Login)
                   </div>
                   {formData.email && !formData.ownerEmail && (
@@ -2786,7 +2786,7 @@ const AddAshramWizardPage: React.FC = () => {
                         if (formData.phone && !formData.ownerPhone) set("ownerPhone", formData.phone);
                         if (formData.registeredBy && !formData.ownerName) set("ownerName", formData.registeredBy);
                       }}
-                      className="text-[10px] font-bold text-[#0A4DA6] hover:underline flex items-center gap-1"
+                      className="text-[10px] font-bold text-[#F28C28] hover:underline flex items-center gap-1"
                     >
                       <Copy size={11} /> Use Contact Info
                     </button>
@@ -2858,7 +2858,7 @@ const AddAshramWizardPage: React.FC = () => {
                 disabled={submitting || !readyToSubmit}
                 className={`flex-1 py-3.5 rounded-full font-extrabold text-sm flex items-center justify-center gap-2 transition-all ${
                   readyToSubmit && !submitting
-                    ? "bg-[#0A4DA6] text-white hover:bg-[#0A4DA6]/90 shadow-lg shadow-[#0A4DA6]/20"
+                    ? "bg-[#F28C28] text-white hover:bg-[#F28C28]/90 shadow-lg shadow-[#F28C28]/20"
                     : "bg-gray-100 dark:bg-slate-800 text-gray-400 cursor-not-allowed"
                 }`}
               >
@@ -2896,7 +2896,7 @@ const AddAshramWizardPage: React.FC = () => {
               <div className="flex gap-3 pt-4">
                 <button
                   onClick={() => navigate(backPath)}
-                  className="px-6 py-3 bg-[#0A4DA6] text-white rounded-full font-bold text-sm hover:bg-[#0A4DA6]/90 transition-colors"
+                  className="px-6 py-3 bg-[#F28C28] text-white rounded-full font-bold text-sm hover:bg-[#F28C28]/90 transition-colors"
                 >
                   Back to My Ashrams
                 </button>
@@ -2967,7 +2967,7 @@ const AddAshramWizardPage: React.FC = () => {
           <div className="flex items-center gap-3 min-w-0">
             <button
               onClick={() => navigate(backPath)}
-              className="flex-shrink-0 p-2.5 rounded-2xl bg-[#0A4DA6]/10 hover:bg-[#0A4DA6]/20 transition-colors text-[#0A4DA6]"
+              className="flex-shrink-0 p-2.5 rounded-2xl bg-[#F28C28]/10 hover:bg-[#F28C28]/20 transition-colors text-[#F28C28]"
               title="Back"
             >
               <ChevronLeft size={18} />
@@ -2985,7 +2985,7 @@ const AddAshramWizardPage: React.FC = () => {
             <span className="hidden sm:flex items-center gap-1.5 text-xs font-extrabold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-3.5 py-1.5 rounded-full border border-emerald-200 dark:border-emerald-800/40">
               <Save size={12} /> Draft Autosaved
             </span>
-            <span className="text-sm font-black text-[#0A4DA6] bg-[#0A4DA6]/10 px-3.5 py-1.5 rounded-full">
+            <span className="text-sm font-black text-[#F28C28] bg-[#F28C28]/10 px-3.5 py-1.5 rounded-full">
               {Math.round(progressPercent)}%
             </span>
           </div>
@@ -2993,7 +2993,7 @@ const AddAshramWizardPage: React.FC = () => {
 
         <div className="h-1.5 bg-gray-100 dark:bg-slate-800 rounded-full overflow-hidden mt-4">
           <div
-            className="h-full bg-gradient-to-r from-[#0A4DA6] to-[#1D6AE5] transition-all duration-500 rounded-full"
+            className="h-full bg-gradient-to-r from-[#F28C28] to-[#1D6AE5] transition-all duration-500 rounded-full"
             style={{ width: `${progressPercent}%` }}
           />
         </div>
@@ -3013,7 +3013,7 @@ const AddAshramWizardPage: React.FC = () => {
                   disabled={i > maxStep}
                   className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left text-[11px] font-semibold transition-all disabled:opacity-50 ${
                     isActive
-                      ? "bg-[#0A4DA6] text-white shadow-sm"
+                      ? "bg-[#F28C28] text-white shadow-sm"
                       : isDone
                         ? "text-success hover:bg-success/5"
                         : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-900"
@@ -3056,7 +3056,7 @@ const AddAshramWizardPage: React.FC = () => {
             {step < STEPS.length - 1 ? (
               <button
                 onClick={handleNext}
-                className="flex items-center gap-2 px-6 py-3 bg-[#0A4DA6] text-white rounded-full font-bold text-sm hover:bg-[#0A4DA6]/90 shadow-md shadow-[#0A4DA6]/20 transition-all"
+                className="flex items-center gap-2 px-6 py-3 bg-[#F28C28] text-white rounded-full font-bold text-sm hover:bg-[#F28C28]/90 shadow-md shadow-[#F28C28]/20 transition-all"
               >
                 Next <ChevronRight size={16} />
               </button>
@@ -3064,7 +3064,7 @@ const AddAshramWizardPage: React.FC = () => {
               <button
                 onClick={handleSubmit}
                 disabled={submitting}
-                className="flex items-center gap-2 px-8 py-3 bg-[#0A4DA6] text-white rounded-full font-extrabold text-sm hover:bg-[#0A4DA6]/90 shadow-lg shadow-[#0A4DA6]/20 transition-all disabled:opacity-50"
+                className="flex items-center gap-2 px-8 py-3 bg-[#F28C28] text-white rounded-full font-extrabold text-sm hover:bg-[#F28C28]/90 shadow-lg shadow-[#F28C28]/20 transition-all disabled:opacity-50"
               >
                 {submitting ? (
                   editId ? (
@@ -3099,7 +3099,7 @@ const AddAshramWizardPage: React.FC = () => {
                 disabled={i > maxStep}
                 className={`flex-shrink-0 px-3 py-1.5 rounded-full text-[10px] font-bold transition-all disabled:opacity-55 ${
                   isActive
-                    ? "bg-[#0A4DA6] text-white"
+                    ? "bg-[#F28C28] text-white"
                     : isDone
                       ? "bg-success/10 text-success"
                       : "bg-gray-100 dark:bg-slate-800 text-gray-500"

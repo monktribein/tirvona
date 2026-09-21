@@ -121,7 +121,7 @@ export const CircuitControlCenterPage: React.FC = () => {
       {dashboard?.topCircuits?.length ? (
         <div className={`${CARD} p-5`}>
           <h2 className="flex items-center gap-2 text-base font-black text-[#0B192C] dark:text-white">
-            <Eye size={17} className="text-[#0A4DA6] stroke-[2.5]" />
+            <Eye size={17} className="text-[#F28C28] stroke-[2.5]" />
             Most viewed circuits
           </h2>
           <div className="mt-3 space-y-2">
@@ -157,7 +157,7 @@ export const CircuitControlCenterPage: React.FC = () => {
         <select
           value={statusFilter}
           onChange={(changeEvent) => setStatusFilter(changeEvent.target.value)}
-          className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30"
+          className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30"
         >
           <option value="">All statuses</option>
           <option value="draft">Draft</option>
@@ -170,7 +170,7 @@ export const CircuitControlCenterPage: React.FC = () => {
 
       {loading ? (
         <div className={`${CARD} p-12 flex items-center justify-center gap-3`}>
-          <Loader2 size={20} className="animate-spin text-[#0A4DA6]" />
+          <Loader2 size={20} className="animate-spin text-[#F28C28]" />
           <span className="text-sm font-bold text-gray-400">Loading…</span>
         </div>
       ) : (
@@ -232,7 +232,7 @@ export const CircuitControlCenterPage: React.FC = () => {
                           type="button"
                           title={circuit.isFeatured ? "Unfeature" : "Feature"}
                           onClick={() => toggleFeatured(circuit)}
-                          className="p-2 rounded-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 text-gray-500 hover:text-[#0A4DA6] hover:border-[#0A4DA6] transition-all active:scale-90 cursor-pointer"
+                          className="p-2 rounded-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 text-gray-500 hover:text-[#F28C28] hover:border-[#F28C28] transition-all active:scale-90 cursor-pointer"
                         >
                           <Star
                             size={13}

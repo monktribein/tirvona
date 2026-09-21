@@ -44,7 +44,7 @@ export const MarketplaceCategoriesPage: React.FC = () => {
 
   return (
     <div className="min-h-screen pb-20 space-y-10">
-      <div className="bg-gradient-to-r from-[#0B192C] via-[#0A4DA6] to-[#0B192C] text-white py-14 px-4 sm:px-8 shadow-xl">
+      <div className="bg-gradient-to-r from-[#0B192C] via-[#F28C28] to-[#0B192C] text-white py-14 px-4 sm:px-8 shadow-xl">
         <div className="max-w-6xl mx-auto space-y-4">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/20 text-amber-300 text-xs font-black border border-amber-500/30 backdrop-blur-md">
             <ShoppingBag size={14} /> Sacred Temple Prashad & Authentic Sweets
@@ -85,7 +85,7 @@ export const MarketplaceCategoriesPage: React.FC = () => {
               placeholder="Search category, temple name (e.g. Varanasi Peda, Tirupati Laddu, Ayodhya Prasad)..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-full pl-11 pr-4 py-3 text-xs sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+              className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-full pl-11 pr-4 py-3 text-xs sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#F28C28]"
             />
           </div>
         </div>
@@ -129,7 +129,7 @@ export const MarketplaceCategoriesPage: React.FC = () => {
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90"
                       />
                     ) : null}
-                    <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-[#0A4DA6] text-white text-[10px] font-black shadow-lg">
+                    <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-[#F28C28] text-white text-[10px] font-black shadow-lg">
                       {cat.trendingBadge || "POPULAR"}
                     </span>
                     <span className="absolute top-3 right-3 px-3 py-1 rounded-full bg-white/95 dark:bg-[#0B192C]/90 text-[#0B192C] dark:text-white text-xs font-black shadow-lg flex items-center gap-1">
@@ -142,14 +142,14 @@ export const MarketplaceCategoriesPage: React.FC = () => {
                   </div>
 
                   <div className="p-6 space-y-3">
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-[#0A4DA6] dark:text-amber-400">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-[#F28C28] dark:text-amber-400">
                       <MapPin size={13} />
                       <span>
                         {cat.originCity}, {cat.originState}
                       </span>
                     </div>
 
-                    <h3 className="font-black text-lg text-[#0B192C] dark:text-white group-hover:text-[#0A4DA6] dark:group-hover:text-amber-400 transition-colors">
+                    <h3 className="font-black text-lg text-[#0B192C] dark:text-white group-hover:text-[#F28C28] dark:group-hover:text-amber-400 transition-colors">
                       {cat.name}
                     </h3>
 
@@ -172,7 +172,7 @@ export const MarketplaceCategoriesPage: React.FC = () => {
                   <span className="text-gray-400 flex items-center gap-1">
                     <Clock size={13} /> {cat.deliveryDays || 2} Days Delivery
                   </span>
-                  <span className="text-[#0A4DA6] font-black flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                  <span className="text-[#F28C28] font-black flex items-center gap-1 group-hover:translate-x-1 transition-transform">
                     Explore Category <ArrowRight size={13} />
                   </span>
                 </div>

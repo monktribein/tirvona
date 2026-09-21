@@ -103,7 +103,7 @@ export const MarketplaceComingSoonPage: React.FC = () => {
     <div className="min-h-screen pt-20 sm:pt-24 pb-16">
       <div className="bg-white dark:bg-[#0B192C] border-b border-gray-100 dark:border-slate-800/80 py-3 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto flex items-center gap-2 text-xs font-bold text-gray-500 dark:text-gray-400">
-          <Link to="/" className="hover:text-[#0A4DA6]">
+          <Link to="/" className="hover:text-[#F28C28]">
             Home
           </Link>
           <ChevronRight size={13} />

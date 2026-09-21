@@ -41,6 +41,7 @@ import {
   Compass,
   ArrowRight,
   Sparkles,
+  Clock,
   BookOpen,
   Play,
   ChevronLeft,
@@ -79,7 +80,7 @@ export const HomePage: React.FC = () => {
     "top_rated" | "most_booked" | "recent" | "govt_recom"
   >("top_rated");
   const [searchTab, setSearchTab] = useState<
-    "destinations" | "stay" | "experiences"
+    "destinations" | "stay" | "day-stay" | "experiences"
   >("stay");
   const [activeService, setActiveService] = useState<number>(0);
   const [offerSlideIndex, setOfferSlideIndex] = useState<number>(0);
@@ -658,7 +659,7 @@ export const HomePage: React.FC = () => {
       overlay: "bg-gradient-to-t from-black/90 via-black/55 to-black/35",
       eyebrowClass: "text-[#E58C28]",
       descriptionClass: "text-gray-200",
-      ctaClass: "bg-[#0A4DA6] text-white hover:bg-[#083D85]",
+      ctaClass: "bg-[#F28C28] text-white hover:bg-[#D97706]",
     },
     {
       title: publishedCms.parking_banner?.title || "Parking",
@@ -673,7 +674,7 @@ export const HomePage: React.FC = () => {
       overlay: "bg-gradient-to-t from-black/90 via-black/55 to-black/35",
       eyebrowClass: "text-[#E58C28]",
       descriptionClass: "text-gray-200",
-      ctaClass: "bg-[#0A4DA6] text-white hover:bg-[#083D85]",
+      ctaClass: "bg-[#F28C28] text-white hover:bg-[#D97706]",
     },
     {
       title: publishedCms.marketplace_banner?.title || "Marketplace",
@@ -688,7 +689,7 @@ export const HomePage: React.FC = () => {
       overlay: "bg-gradient-to-t from-black/90 via-black/55 to-black/35",
       eyebrowClass: "text-[#E58C28]",
       descriptionClass: "text-gray-200",
-      ctaClass: "bg-[#0A4DA6] text-white hover:bg-[#083D85]",
+      ctaClass: "bg-[#F28C28] text-white hover:bg-[#D97706]",
     },
   ];
 
@@ -861,6 +862,14 @@ export const HomePage: React.FC = () => {
 
   const serviceIcons = [
     {
+      id: "day-stay",
+      label: "Day Rest & Freshen-Up",
+      icon: Sparkles,
+      category: "day-stay",
+      target: "/search?tab=day-stay",
+      isHighlight: true,
+    },
+    {
       id: "circuits",
       label: "Pilgrimage",
       icon: MapPin,
@@ -1028,7 +1037,7 @@ export const HomePage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => navigate(publishedHero.targetUrl || "/search")}
-                  className="inline-flex items-center gap-2 px-7 py-3 rounded-full bg-[#0A4DA6] hover:bg-[#083b80] text-white text-sm font-extrabold shadow-lg transition-all cursor-pointer"
+                  className="inline-flex items-center gap-2 px-7 py-3 rounded-full bg-[#F28C28] hover:bg-[#B45309] text-white text-sm font-extrabold shadow-lg transition-all cursor-pointer"
                 >
                   {activeCtaText}
                   <ArrowRight size={16} />
@@ -1053,6 +1062,11 @@ export const HomePage: React.FC = () => {
               },
               { id: "stay", icon: <Bed size={14} />, label: "Stay" },
               {
+                id: "day-stay",
+                icon: <Clock size={14} />,
+                label: "Day Rest (Freshen-Up)",
+              },
+              {
                 id: "experiences",
                 icon: <Sparkles size={14} />,
                 label: "Experiences",
@@ -1066,13 +1080,13 @@ export const HomePage: React.FC = () => {
                   whileTap={{ scale: 0.94 }}
                   className={`relative flex items-center gap-2 px-3 sm:px-5 py-2.5 rounded-full text-xs font-bold cursor-pointer shrink-0 transition-colors duration-200 ${active
                     ? "text-white"
-                    : "text-gray-600 dark:text-gray-300 hover:text-[#0A4DA6] dark:hover:text-white"
+                    : "text-gray-600 dark:text-gray-300 hover:text-[#F28C28] dark:hover:text-white"
                     }`}
                 >
                   {active && (
                     <motion.span
                       layoutId="searchTabPill"
-                      className="absolute inset-0 rounded-full bg-[#0A4DA6] shadow-md shadow-[#0A4DA6]/30"
+                      className="absolute inset-0 rounded-full bg-[#F28C28] shadow-md shadow-[#F28C28]/30"
                       transition={{
                         type: "spring",
                         stiffness: 420,
@@ -1131,7 +1145,7 @@ export const HomePage: React.FC = () => {
                         onClick={() => selectSuggestion(sug)}
                         className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-slate-800 font-semibold flex items-center gap-2 border-b border-gray-50 dark:border-slate-800 last:border-b-0 cursor-pointer"
                       >
-                        <Compass size={13} className="text-[#0A4DA6]" />
+                        <Compass size={13} className="text-[#F28C28]" />
                         <span className="truncate">{sug}</span>
                       </button>
                     ))}
@@ -1161,7 +1175,7 @@ export const HomePage: React.FC = () => {
               <button
                 type="submit"
                 aria-label="Search stays"
-                className="w-full lg:w-14 h-12 lg:h-14 px-5 lg:px-0 bg-[#0A4DA6] hover:bg-[#083D85] text-white font-bold text-xs sm:text-sm rounded-full flex items-center justify-center gap-2 shadow-md shadow-[#0A4DA6]/20 hover:shadow-lg hover:shadow-[#0A4DA6]/30 transition-all cursor-pointer shrink-0 active:scale-95"
+                className="w-full lg:w-14 h-12 lg:h-14 px-5 lg:px-0 bg-[#F28C28] hover:bg-[#D97706] text-white font-bold text-xs sm:text-sm rounded-full flex items-center justify-center gap-2 shadow-md shadow-[#F28C28]/20 hover:shadow-lg hover:shadow-[#F28C28]/30 transition-all cursor-pointer shrink-0 active:scale-95"
               >
                 <span className="lg:hidden">Search</span>
                 <Search size={16} className="stroke-[2.5]" />
@@ -1197,8 +1211,8 @@ export const HomePage: React.FC = () => {
                   <div
                     className={`p-2 sm:p-2.5 rounded-full transition-all ${
                       isHighlight
-                        ? "bg-[#0A4DA6] text-white shadow-md ring-2 ring-[#E58C28] ring-offset-1 ring-offset-white dark:ring-offset-[#0B192C]"
-                        : "bg-blue-50 dark:bg-blue-900/30 text-[#0A4DA6] dark:text-blue-400 group-hover:bg-[#0A4DA6] group-hover:text-white"
+                        ? "bg-[#F28C28] text-white shadow-md ring-2 ring-[#E58C28] ring-offset-1 ring-offset-white dark:ring-offset-[#0B192C]"
+                        : "bg-blue-50 dark:bg-blue-900/30 text-[#F28C28] dark:text-amber-400 group-hover:bg-[#F28C28] group-hover:text-white"
                     }`}
                   >
                     <IconComponent size={16} className="stroke-[2.5]" />
@@ -1206,8 +1220,8 @@ export const HomePage: React.FC = () => {
                   <span
                     className={`text-[9px] font-black whitespace-pre-line text-center leading-tight transition-colors ${
                       isHighlight
-                        ? "text-[#0A4DA6] dark:text-amber-400 font-extrabold"
-                        : "text-[#0B192C] dark:text-gray-200 group-hover:text-[#0A4DA6]"
+                        ? "text-[#F28C28] dark:text-amber-400 font-extrabold"
+                        : "text-[#0B192C] dark:text-gray-200 group-hover:text-[#F28C28]"
                     }`}
                   >
                     {item.label}
@@ -1305,7 +1319,7 @@ export const HomePage: React.FC = () => {
           <button
             type="button"
             onClick={() => navigate("/search")}
-            className="mt-2 inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-[#083b80] text-white text-xs font-extrabold shadow-md transition-all cursor-pointer"
+            className="mt-2 inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#F28C28] hover:bg-[#B45309] text-white text-xs font-extrabold shadow-md transition-all cursor-pointer"
           >
             Explore All Destinations <ArrowRight size={14} />
           </button>
@@ -1438,10 +1452,10 @@ export const HomePage: React.FC = () => {
                       : publishedFeatured.targetUrl || "/search?destination=Haridwar",
                   )
                 }
-                className="bg-[#0A4DA6] hover:bg-[#083D85] text-white font-extrabold text-xs sm:text-sm pl-7 pr-2 py-3 rounded-full flex items-center gap-3 shadow-2xl hover:shadow-primary/40 transition-all cursor-pointer group/btn border border-white/20"
+                className="bg-[#F28C28] hover:bg-[#D97706] text-white font-extrabold text-xs sm:text-sm pl-7 pr-2 py-3 rounded-full flex items-center gap-3 shadow-2xl hover:shadow-primary/40 transition-all cursor-pointer group/btn border border-white/20"
               >
                 <span>{publishedFeatured.ctaText || "View Details"}</span>
-                <div className="w-8 h-8 rounded-full bg-white text-[#0A4DA6] flex items-center justify-center transition-transform group-hover/btn:translate-x-1 shadow-md">
+                <div className="w-8 h-8 rounded-full bg-white text-[#F28C28] flex items-center justify-center transition-transform group-hover/btn:translate-x-1 shadow-md">
                   <ArrowRight size={15} className="stroke-[2.5]" />
                 </div>
               </button>
@@ -1472,7 +1486,7 @@ export const HomePage: React.FC = () => {
           <button
             type="button"
             onClick={() => navigate("/marketplace")}
-            className="mt-2 inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-[#083b80] text-white text-xs font-extrabold shadow-md transition-all cursor-pointer"
+            className="mt-2 inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#F28C28] hover:bg-[#B45309] text-white text-xs font-extrabold shadow-md transition-all cursor-pointer"
           >
             Explore Sacred Prasad <ArrowRight size={14} />
           </button>
@@ -1608,7 +1622,7 @@ export const HomePage: React.FC = () => {
                     </div>
 
                     <div className="p-4 text-center flex flex-col items-center justify-center min-h-[84px]">
-                      <h4 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight line-clamp-1 text-center group-hover:text-[#0A4DA6] transition-colors">
+                      <h4 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight line-clamp-1 text-center group-hover:text-[#F28C28] transition-colors">
                         {t(name)}
                       </h4>
                       <p className="text-[11px] text-gray-400 font-bold mt-0.5 text-center line-clamp-1">
@@ -1653,7 +1667,7 @@ export const HomePage: React.FC = () => {
           <button
             type="button"
             onClick={() => navigate("/search")}
-            className="mt-2 inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-[#083b80] text-white text-xs font-extrabold shadow-md transition-all cursor-pointer"
+            className="mt-2 inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#F28C28] hover:bg-[#B45309] text-white text-xs font-extrabold shadow-md transition-all cursor-pointer"
           >
             Explore All Stays <ArrowRight size={14} />
           </button>
@@ -1672,13 +1686,13 @@ export const HomePage: React.FC = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`pb-2.5 flex items-center px-1 shrink-0 relative cursor-pointer transition-all ${activeTab === tab.id ? "text-[#0A4DA6]" : "text-gray-400 hover:text-gray-600"}`}
+                className={`pb-2.5 flex items-center px-1 shrink-0 relative cursor-pointer transition-all ${activeTab === tab.id ? "text-[#F28C28]" : "text-gray-400 hover:text-gray-600"}`}
               >
                 {tab.label}
                 {activeTab === tab.id && (
                   <motion.div
                     layoutId="activeTabUnderline"
-                    className="absolute bottom-0 inset-x-0 h-0.5 bg-[#0A4DA6]"
+                    className="absolute bottom-0 inset-x-0 h-0.5 bg-[#F28C28]"
                   />
                 )}
               </button>
@@ -1800,7 +1814,7 @@ export const HomePage: React.FC = () => {
 
                         <div className="absolute bottom-2.5 left-2.5">
                           {ashramDeal && finalNightPrice < rawNightPrice ? (
-                            <div className="bg-[#0A4DA6]/95 backdrop-blur-sm text-white px-2.5 py-0.5 rounded-full shadow-sm flex items-center gap-1.5">
+                            <div className="bg-[#F28C28]/95 backdrop-blur-sm text-white px-2.5 py-0.5 rounded-full shadow-sm flex items-center gap-1.5">
                               <span className="text-[9px] line-through opacity-70">
                                 {formatCurrency(rawNightPrice)}
                               </span>
@@ -1809,7 +1823,7 @@ export const HomePage: React.FC = () => {
                               </span>
                             </div>
                           ) : (
-                            <span className="bg-[#0A4DA6] text-white text-[10px] sm:text-[11px] font-extrabold px-3 py-1 rounded-full shadow-sm">
+                            <span className="bg-[#F28C28] text-white text-[10px] sm:text-[11px] font-extrabold px-3 py-1 rounded-full shadow-sm">
                               {formatCurrency(rawNightPrice)} / night
                             </span>
                           )}
@@ -1827,7 +1841,7 @@ export const HomePage: React.FC = () => {
                       </div>
 
                       <div className="p-4 text-center flex flex-col items-center justify-center min-h-[72px]">
-                        <h4 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight line-clamp-1 text-center group-hover:text-[#0A4DA6] transition-colors">
+                        <h4 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight line-clamp-1 text-center group-hover:text-[#F28C28] transition-colors">
                           {ashram.name}
                         </h4>
                         <p className="text-[11px] text-gray-400 font-bold mt-1 text-center">
@@ -1884,7 +1898,7 @@ export const HomePage: React.FC = () => {
           <button
             type="button"
             onClick={() => navigate("/offers")}
-            className="mt-2 inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-[#083b80] text-white text-xs font-extrabold shadow-md transition-all cursor-pointer"
+            className="mt-2 inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#F28C28] hover:bg-[#B45309] text-white text-xs font-extrabold shadow-md transition-all cursor-pointer"
           >
             Explore All Offers <ArrowRight size={14} />
           </button>
@@ -1965,7 +1979,7 @@ export const HomePage: React.FC = () => {
           <button
             type="button"
             onClick={() => navigate("/blog")}
-            className="mt-2 inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-[#083b80] text-white text-xs font-extrabold shadow-md transition-all cursor-pointer"
+            className="mt-2 inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#F28C28] hover:bg-[#B45309] text-white text-xs font-extrabold shadow-md transition-all cursor-pointer"
           >
             Explore Knowledge Hub <ArrowRight size={14} />
           </button>
@@ -2010,7 +2024,7 @@ export const HomePage: React.FC = () => {
                     <div className="p-5 space-y-2.5 flex-1 flex flex-col justify-between">
                       <div className="flex items-center gap-4 text-[11px] font-bold text-gray-400">
                         <span className="flex items-center gap-1.5">
-                          <Calendar size={13} className="text-[#0A4DA6]" />{" "}
+                          <Calendar size={13} className="text-[#F28C28]" />{" "}
                           {new Date(item.createdAt).toLocaleDateString("en-IN", {
                             day: "numeric",
                             month: "short",
@@ -2018,11 +2032,11 @@ export const HomePage: React.FC = () => {
                           })}
                         </span>
                         <span className="flex items-center gap-1.5">
-                          <BookOpen size={13} className="text-[#0A4DA6]" />{" "}
+                          <BookOpen size={13} className="text-[#F28C28]" />{" "}
                           {item.views} Views
                         </span>
                       </div>
-                      <h3 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-snug line-clamp-2 h-11 sm:h-12 flex items-start group-hover:text-[#0A4DA6] transition-colors">
+                      <h3 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-snug line-clamp-2 h-11 sm:h-12 flex items-start group-hover:text-[#F28C28] transition-colors">
                         {item.title}
                       </h3>
                       <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed h-9 overflow-hidden">
@@ -2035,7 +2049,7 @@ export const HomePage: React.FC = () => {
                       <img
                         src={author.photo || author.avatar || item.coverImage}
                         alt={author.name || "Author"}
-                        className="w-7 h-7 rounded-full object-cover border border-[#0A4DA6] shrink-0"
+                        className="w-7 h-7 rounded-full object-cover border border-[#F28C28] shrink-0"
                         onError={(e) => {
                           e.currentTarget.onerror = null;
                           e.currentTarget.src =
@@ -2046,7 +2060,7 @@ export const HomePage: React.FC = () => {
                         {author.name || "Verified Author"}
                       </span>
                     </div>
-                    <button className="px-3.5 py-1.5 bg-[#F0F5FC] dark:bg-blue-950/40 text-gray-700 dark:text-blue-300 group-hover:bg-[#0A4DA6] group-hover:text-white text-xs font-bold rounded-full flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0">
+                    <button className="px-3.5 py-1.5 bg-[#F0F5FC] dark:bg-blue-950/40 text-gray-700 dark:text-amber-300 group-hover:bg-[#F28C28] group-hover:text-white text-xs font-bold rounded-full flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0">
                       <span>{isVideo ? "Watch Video" : "Read Article"}</span>
                       <ArrowRight size={12} />
                     </button>

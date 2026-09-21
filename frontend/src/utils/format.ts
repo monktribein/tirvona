@@ -137,5 +137,49 @@ export const formatDateTimeIN = (value?: string | Date | null): string => {
   });
 };
 
+export const formatSlotTime = (value?: string | Date | null): string => {
+  if (!value) return "";
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(trimmed)) {
+      const [hStr, mStr] = trimmed.split(":");
+      const h = parseInt(hStr, 10);
+      const m = parseInt(mStr, 10);
+      if (!isNaN(h) && !isNaN(m)) {
+        const ampm = h >= 12 ? "PM" : "AM";
+        const h12 = h % 12 || 12;
+        return `${String(h12).padStart(2, "0")}:${String(m).padStart(2, "0")} ${ampm}`;
+      }
+    }
+    if (trimmed.includes("T")) {
+      const timePart = trimmed.split("T")[1]?.substring(0, 5);
+      if (timePart && /^\d{2}:\d{2}$/.test(timePart)) {
+        const [hStr, mStr] = timePart.split(":");
+        const h = parseInt(hStr, 10);
+        const m = parseInt(mStr, 10);
+        if (!isNaN(h) && !isNaN(m)) {
+          const ampm = h >= 12 ? "PM" : "AM";
+          const h12 = h % 12 || 12;
+          return `${String(h12).padStart(2, "0")}:${String(m).padStart(2, "0")} ${ampm}`;
+        }
+      }
+    }
+  }
+
+  try {
+    const d = new Date(value);
+    if (!isNaN(d.getTime())) {
+      const h = d.getUTCHours();
+      const m = d.getUTCMinutes();
+      const ampm = h >= 12 ? "PM" : "AM";
+      const h12 = h % 12 || 12;
+      return `${String(h12).padStart(2, "0")}:${String(m).padStart(2, "0")} ${ampm}`;
+    }
+  } catch {}
+
+  return "";
+};
+
 export const roundMoney = (value: number): number =>
   Math.round((value + Number.EPSILON) * 100) / 100;
+

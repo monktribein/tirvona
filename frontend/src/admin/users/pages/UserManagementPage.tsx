@@ -777,7 +777,7 @@ export const UserManagementPage: React.FC = () => {
     <div className="space-y-6 text-left w-full">
       <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-6 rounded-[28px] shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-[#0A4DA6]/10 text-[#0A4DA6] flex items-center justify-center shrink-0 border border-[#0A4DA6]/15">
+          <div className="w-12 h-12 rounded-2xl bg-[#F28C28]/10 text-[#F28C28] flex items-center justify-center shrink-0 border border-[#F28C28]/15">
             <UserCheck size={22} />
           </div>
           <div>
@@ -798,7 +798,7 @@ export const UserManagementPage: React.FC = () => {
                 setCreateStep(1);
                 setIsCreateOpen(true);
               }}
-              className="px-5 py-2.5 bg-[#0A4DA6] hover:bg-[#083b80] text-white rounded-full text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-[#0A4DA6]/20 cursor-pointer"
+              className="px-5 py-2.5 bg-[#F28C28] hover:bg-[#B45309] text-white rounded-full text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-[#F28C28]/20 cursor-pointer"
             >
               <UserPlus size={16} /> Create New Account
             </button>
@@ -831,7 +831,7 @@ export const UserManagementPage: React.FC = () => {
             placeholder="Search name, email, phone, EMP ID..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-full text-xs font-medium text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6]"
+            className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-full text-xs font-medium text-[#0B192C] dark:text-white focus:outline-none focus:border-[#F28C28]"
           />
           </div>
           <label className="space-y-1 text-[10px] font-extrabold uppercase tracking-wider text-gray-400">
@@ -839,7 +839,7 @@ export const UserManagementPage: React.FC = () => {
             <select
               value={filterRole}
               onChange={(e) => setFilterRole(e.target.value)}
-              className="w-full rounded-full border border-gray-200 bg-gray-50 px-4 py-2.5 text-xs font-bold normal-case tracking-normal text-[#0B192C] outline-none focus:border-[#0A4DA6] dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+              className="w-full rounded-full border border-gray-200 bg-gray-50 px-4 py-2.5 text-xs font-bold normal-case tracking-normal text-[#0B192C] outline-none focus:border-[#F28C28] dark:border-slate-800 dark:bg-slate-900 dark:text-white"
             >
               <option value="all">All Account Types</option>
               {availableRoleFilters.map((role) => (
@@ -852,7 +852,7 @@ export const UserManagementPage: React.FC = () => {
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="w-full rounded-full border border-gray-200 bg-gray-50 px-4 py-2.5 text-xs font-bold normal-case tracking-normal text-[#0B192C] outline-none focus:border-[#0A4DA6] dark:border-slate-800 dark:bg-slate-900 dark:text-white"
+              className="w-full rounded-full border border-gray-200 bg-gray-50 px-4 py-2.5 text-xs font-bold normal-case tracking-normal text-[#0B192C] outline-none focus:border-[#F28C28] dark:border-slate-800 dark:bg-slate-900 dark:text-white"
             >
               <option value="all">All Statuses</option>
               <option value="active">Active Accounts</option>
@@ -871,7 +871,7 @@ export const UserManagementPage: React.FC = () => {
               setFilterStatus("all");
             }}
             disabled={!searchTerm && filterRole === "all" && filterStatus === "all"}
-            className="rounded-full border border-gray-200 px-4 py-2.5 text-xs font-bold text-gray-500 hover:border-[#0A4DA6]/30 hover:text-[#0A4DA6] disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-800"
+            className="rounded-full border border-gray-200 px-4 py-2.5 text-xs font-bold text-gray-500 hover:border-[#F28C28]/30 hover:text-[#F28C28] disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-800"
           >
             Clear Filters
           </button>
@@ -879,7 +879,7 @@ export const UserManagementPage: React.FC = () => {
         <div className="flex items-center justify-between gap-3 px-1 text-[10px] font-semibold text-gray-400">
           <span>Showing {filteredUsers.length} of {users.length} account(s)</span>
           {(filterRole !== "all" || filterStatus !== "all") && (
-            <span className="text-[#0A4DA6]">Filtered results</span>
+            <span className="text-[#F28C28]">Filtered results</span>
           )}
         </div>
         {selectedUserIds.length > 0 && (
@@ -910,7 +910,7 @@ export const UserManagementPage: React.FC = () => {
                       onChange={toggleSelectAllFiltered}
                       disabled={!selectableFilteredIds.length}
                       aria-label="Select all filtered accounts"
-                      className="h-4 w-4 rounded border-gray-300 accent-[#0A4DA6]"
+                      className="h-4 w-4 rounded border-gray-300 accent-[#F28C28]"
                     />
                   </th>
                   <th className="py-4 px-4">Employee / User Info</th>
@@ -960,7 +960,7 @@ export const UserManagementPage: React.FC = () => {
                             }
                             disabled={u._id === currentUser?.id || isSoftDeleted}
                             aria-label={`Select ${u.name}`}
-                            className="h-4 w-4 rounded border-gray-300 accent-[#0A4DA6] disabled:opacity-30"
+                            className="h-4 w-4 rounded border-gray-300 accent-[#F28C28] disabled:opacity-30"
                           />
                         </td>
                         <td className="py-4 px-4 font-bold text-[#0B192C] dark:text-white">
@@ -974,7 +974,7 @@ export const UserManagementPage: React.FC = () => {
                           </div>
                         </td>
                         <td className="py-4 px-6">
-                          <span className="px-2.5 py-0.5 bg-[#0A4DA6]/10 text-[#0A4DA6] rounded-full text-[9px] font-extrabold">
+                          <span className="px-2.5 py-0.5 bg-[#F28C28]/10 text-[#F28C28] rounded-full text-[9px] font-extrabold">
                             {u.role.replace("_", " ")}
                           </span>
                           {u.assignedAshram && (
@@ -1021,7 +1021,7 @@ export const UserManagementPage: React.FC = () => {
                           <div className="flex items-center justify-end">
                             <button
                               onClick={() => setViewingUser(u)}
-                              className="inline-flex items-center gap-1.5 rounded-full border border-[#0A4DA6]/20 bg-[#0A4DA6]/5 px-3 py-1.5 text-[10px] font-extrabold text-[#0A4DA6] transition-colors hover:bg-[#0A4DA6] hover:text-white"
+                              className="inline-flex items-center gap-1.5 rounded-full border border-[#F28C28]/20 bg-[#F28C28]/5 px-3 py-1.5 text-[10px] font-extrabold text-[#F28C28] transition-colors hover:bg-[#F28C28] hover:text-white"
                               title="Edit or view account"
                             >
                               <Eye size={13} /> Edit / View
@@ -1061,7 +1061,7 @@ export const UserManagementPage: React.FC = () => {
           <form onSubmit={handleCreateAccountSubmit} className="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-[28px] border border-gray-100 bg-white p-6 text-left shadow-2xl dark:border-slate-800 dark:bg-[#0B192C] sm:p-8">
             <div className="flex items-start justify-between gap-4 border-b border-gray-100 pb-4 dark:border-slate-800">
               <div>
-                <h3 className="flex items-center gap-2 text-xl font-extrabold text-[#0B192C] dark:text-white"><UserPlus size={22} className="text-[#0A4DA6]" /> Create Account</h3>
+                <h3 className="flex items-center gap-2 text-xl font-extrabold text-[#0B192C] dark:text-white"><UserPlus size={22} className="text-[#F28C28]" /> Create Account</h3>
                 <p className="mt-1 text-xs font-medium text-gray-500">Enter account details and verification documents in one step.</p>
               </div>
               <button type="button" onClick={() => setIsCreateOpen(false)} disabled={creatingAccount} className="rounded-full p-1.5 text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800" aria-label="Close account form"><X size={18} /></button>
@@ -1069,25 +1069,25 @@ export const UserManagementPage: React.FC = () => {
 
             <div className="grid grid-cols-1 gap-4 py-6 text-xs md:grid-cols-2">
               <label className="space-y-1 font-bold text-gray-700 dark:text-gray-300">Full Name *
-                <input type="text" required minLength={2} autoComplete="name" placeholder="Enter full name" value={newAccountData.name} onChange={(e) => setNewAccountData({ ...newAccountData, name: e.target.value })} className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 font-normal focus:border-[#0A4DA6] focus:outline-none dark:border-slate-800 dark:bg-slate-900" />
+                <input type="text" required minLength={2} autoComplete="name" placeholder="Enter full name" value={newAccountData.name} onChange={(e) => setNewAccountData({ ...newAccountData, name: e.target.value })} className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 font-normal focus:border-[#F28C28] focus:outline-none dark:border-slate-800 dark:bg-slate-900" />
               </label>
               <label className="space-y-1 font-bold text-gray-700 dark:text-gray-300">Email Address *
-                <input type="email" required autoComplete="email" placeholder="name@example.com" value={newAccountData.email} onChange={(e) => setNewAccountData({ ...newAccountData, email: e.target.value })} className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 font-normal focus:border-[#0A4DA6] focus:outline-none dark:border-slate-800 dark:bg-slate-900" />
+                <input type="email" required autoComplete="email" placeholder="name@example.com" value={newAccountData.email} onChange={(e) => setNewAccountData({ ...newAccountData, email: e.target.value })} className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 font-normal focus:border-[#F28C28] focus:outline-none dark:border-slate-800 dark:bg-slate-900" />
               </label>
               <label className="space-y-1 font-bold text-gray-700 dark:text-gray-300">Phone Number *
-                <input type="tel" required autoComplete="tel" placeholder="+91 98765 43210" value={newAccountData.phone} onChange={(e) => setNewAccountData({ ...newAccountData, phone: e.target.value })} className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 font-normal focus:border-[#0A4DA6] focus:outline-none dark:border-slate-800 dark:bg-slate-900" />
+                <input type="tel" required autoComplete="tel" placeholder="+91 98765 43210" value={newAccountData.phone} onChange={(e) => setNewAccountData({ ...newAccountData, phone: e.target.value })} className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 font-normal focus:border-[#F28C28] focus:outline-none dark:border-slate-800 dark:bg-slate-900" />
               </label>
               <label className="space-y-1 font-bold text-gray-700 dark:text-gray-300">Gender *
-                <select required value={newAccountData.gender} onChange={(e) => setNewAccountData({ ...newAccountData, gender: e.target.value })} className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 font-normal focus:border-[#0A4DA6] focus:outline-none dark:border-slate-800 dark:bg-slate-900"><option value="Male">Male</option><option value="Female">Female</option><option value="Other">Other</option></select>
+                <select required value={newAccountData.gender} onChange={(e) => setNewAccountData({ ...newAccountData, gender: e.target.value })} className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 font-normal focus:border-[#F28C28] focus:outline-none dark:border-slate-800 dark:bg-slate-900"><option value="Male">Male</option><option value="Female">Female</option><option value="Other">Other</option></select>
               </label>
               <label className="space-y-1 font-bold text-gray-700 dark:text-gray-300 md:col-span-2">Role *
-                <select required value={newAccountData.role} onChange={(e) => setNewAccountData({ ...newAccountData, role: e.target.value })} className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 font-bold text-[#0A4DA6] focus:border-[#0A4DA6] focus:outline-none dark:border-slate-800 dark:bg-slate-900">{ALL_ROLES.map((role) => <option key={role.id} value={role.id}>{role.label}</option>)}</select>
+                <select required value={newAccountData.role} onChange={(e) => setNewAccountData({ ...newAccountData, role: e.target.value })} className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 font-bold text-[#F28C28] focus:border-[#F28C28] focus:outline-none dark:border-slate-800 dark:bg-slate-900">{ALL_ROLES.map((role) => <option key={role.id} value={role.id}>{role.label}</option>)}</select>
               </label>
               <label className="space-y-1 font-bold text-gray-700 dark:text-gray-300">Password *
-                <input type="password" required minLength={8} autoComplete="new-password" placeholder="Minimum 8 characters" value={newAccountData.password} onChange={(e) => setNewAccountData({ ...newAccountData, password: e.target.value })} className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 font-normal focus:border-[#0A4DA6] focus:outline-none dark:border-slate-800 dark:bg-slate-900" />
+                <input type="password" required minLength={8} autoComplete="new-password" placeholder="Minimum 8 characters" value={newAccountData.password} onChange={(e) => setNewAccountData({ ...newAccountData, password: e.target.value })} className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 font-normal focus:border-[#F28C28] focus:outline-none dark:border-slate-800 dark:bg-slate-900" />
               </label>
               <label className="space-y-1 font-bold text-gray-700 dark:text-gray-300">Confirm Password *
-                <input type="password" required minLength={8} autoComplete="new-password" placeholder="Re-enter password" value={newAccountData.confirmPassword} onChange={(e) => setNewAccountData({ ...newAccountData, confirmPassword: e.target.value })} className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 font-normal focus:border-[#0A4DA6] focus:outline-none dark:border-slate-800 dark:bg-slate-900" />
+                <input type="password" required minLength={8} autoComplete="new-password" placeholder="Re-enter password" value={newAccountData.confirmPassword} onChange={(e) => setNewAccountData({ ...newAccountData, confirmPassword: e.target.value })} className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 font-normal focus:border-[#F28C28] focus:outline-none dark:border-slate-800 dark:bg-slate-900" />
               </label>
               {needsAssignedAshram && (
                 <div className="space-y-1 md:col-span-2">
@@ -1100,7 +1100,7 @@ export const UserManagementPage: React.FC = () => {
                       value={ashramSearch}
                       onChange={(e) => setAshramSearch(e.target.value)}
                       placeholder="Search approved stays by name, city or state"
-                      className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 pl-9 font-normal focus:border-[#0A4DA6] focus:outline-none dark:border-slate-800 dark:bg-slate-900"
+                      className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 pl-9 font-normal focus:border-[#F28C28] focus:outline-none dark:border-slate-800 dark:bg-slate-900"
                     />
                   </div>
                   <div className="mt-2 max-h-56 overflow-y-auto rounded-xl border border-gray-200 dark:border-slate-800">
@@ -1116,13 +1116,13 @@ export const UserManagementPage: React.FC = () => {
                             key={ashram._id}
                             type="button"
                             onClick={() => setNewAccountData((current: Record<string, any>) => ({ ...current, assignedAshramId: ashram._id }))}
-                            className={`flex w-full items-center justify-between gap-3 border-b border-gray-100 p-3 text-left last:border-b-0 dark:border-slate-800 ${selected ? "bg-[#0A4DA6]/10" : "hover:bg-gray-50 dark:hover:bg-slate-900"}`}
+                            className={`flex w-full items-center justify-between gap-3 border-b border-gray-100 p-3 text-left last:border-b-0 dark:border-slate-800 ${selected ? "bg-[#F28C28]/10" : "hover:bg-gray-50 dark:hover:bg-slate-900"}`}
                           >
                             <span>
                               <span className="block text-sm font-bold text-[#0B192C] dark:text-white">{ashram.name}</span>
                               <span className="block text-[11px] font-normal text-gray-500">{[ashram.address?.city, ashram.address?.state].filter(Boolean).join(", ") || "Location not set"}</span>
                             </span>
-                            {selected && <CheckCircle size={16} className="shrink-0 text-[#0A4DA6]" />}
+                            {selected && <CheckCircle size={16} className="shrink-0 text-[#F28C28]" />}
                           </button>
                         );
                       })
@@ -1142,7 +1142,7 @@ export const UserManagementPage: React.FC = () => {
                       value={templeSearch}
                       onChange={(e) => setTempleSearch(e.target.value)}
                       placeholder="Search published temples by name, city or state"
-                      className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 pl-9 font-normal focus:border-[#0A4DA6] focus:outline-none dark:border-slate-800 dark:bg-slate-900"
+                      className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 pl-9 font-normal focus:border-[#F28C28] focus:outline-none dark:border-slate-800 dark:bg-slate-900"
                     />
                   </div>
                   <div className="mt-2 max-h-56 overflow-y-auto rounded-xl border border-gray-200 dark:border-slate-800">
@@ -1158,13 +1158,13 @@ export const UserManagementPage: React.FC = () => {
                             key={temple._id}
                             type="button"
                             onClick={() => setNewAccountData((current: Record<string, any>) => ({ ...current, assignedTempleId: temple._id }))}
-                            className={`flex w-full items-center justify-between gap-3 border-b border-gray-100 p-3 text-left last:border-b-0 dark:border-slate-800 ${selected ? "bg-[#0A4DA6]/10" : "hover:bg-gray-50 dark:hover:bg-slate-900"}`}
+                            className={`flex w-full items-center justify-between gap-3 border-b border-gray-100 p-3 text-left last:border-b-0 dark:border-slate-800 ${selected ? "bg-[#F28C28]/10" : "hover:bg-gray-50 dark:hover:bg-slate-900"}`}
                           >
                             <span>
                               <span className="block text-sm font-bold text-[#0B192C] dark:text-white">{temple.name}</span>
                               <span className="block text-[11px] font-normal text-gray-500">{[temple.address?.city, temple.address?.state].filter(Boolean).join(", ") || "Location not set"}</span>
                             </span>
-                            {selected && <CheckCircle size={16} className="shrink-0 text-[#0A4DA6]" />}
+                            {selected && <CheckCircle size={16} className="shrink-0 text-[#F28C28]" />}
                           </button>
                         );
                       })
@@ -1176,7 +1176,7 @@ export const UserManagementPage: React.FC = () => {
             </div>
 
             <section className="rounded-2xl border border-gray-200 bg-gray-50/70 p-4 dark:border-slate-800 dark:bg-slate-900/60">
-              <h4 className="flex items-center gap-2 text-sm font-extrabold text-[#0B192C] dark:text-white"><FileText size={16} className="text-[#0A4DA6]" />{newAccountData.role === "customer" ? "Identity Documents (Optional)" : "Role Verification Documents (Required)"}</h4>
+              <h4 className="flex items-center gap-2 text-sm font-extrabold text-[#0B192C] dark:text-white"><FileText size={16} className="text-[#F28C28]" />{newAccountData.role === "customer" ? "Identity Documents (Optional)" : "Role Verification Documents (Required)"}</h4>
               <p className="mb-4 mt-1 text-[11px] text-gray-500">{newAccountData.role === "customer" ? "Pilgrim accounts may be created without Aadhaar or PAN documents." : "Aadhaar card and PAN card must be uploaded for every role account."}</p>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div><p className="mb-1 text-xs font-bold">Aadhaar Card {newAccountData.role === "customer" ? "(Optional)" : "*"}</p><FileUploader folder="user-documents/aadhaar" accept="image/*,application/pdf" label="Upload Aadhaar" currentUrl={newAccountData.aadhaarCardUrl} onUploaded={(aadhaarCardUrl) => setNewAccountData((current: Record<string, any>) => ({ ...current, aadhaarCardUrl }))} /></div>
@@ -1186,7 +1186,7 @@ export const UserManagementPage: React.FC = () => {
 
             <div className="mt-6 flex flex-col-reverse gap-3 border-t border-gray-100 pt-5 dark:border-slate-800 sm:flex-row sm:justify-end">
               <button type="button" onClick={() => setIsCreateOpen(false)} disabled={creatingAccount} className="rounded-full bg-gray-100 px-6 py-2.5 text-xs font-bold disabled:opacity-60 dark:bg-slate-800">Cancel</button>
-              <button type="submit" disabled={creatingAccount} className="rounded-full bg-[#0A4DA6] px-7 py-2.5 text-xs font-extrabold text-white shadow-md disabled:opacity-60">{creatingAccount ? "Creating Account..." : "Create Account"}</button>
+              <button type="submit" disabled={creatingAccount} className="rounded-full bg-[#F28C28] px-7 py-2.5 text-xs font-extrabold text-white shadow-md disabled:opacity-60">{creatingAccount ? "Creating Account..." : "Create Account"}</button>
             </div>
           </form>
         </div>
@@ -1201,7 +1201,7 @@ export const UserManagementPage: React.FC = () => {
             <div className="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-4">
               <div>
                 <h3 className="font-extrabold text-lg sm:text-xl text-[#0B192C] dark:text-white flex items-center gap-2">
-                  <UserPlus size={22} className="text-[#0A4DA6]" /> IAM
+                  <UserPlus size={22} className="text-[#F28C28]" /> IAM
                   Onboarding — Create New Enterprise Account
                 </h3>
                 <span className="text-xs text-gray-400 font-semibold">
@@ -1234,7 +1234,7 @@ export const UserManagementPage: React.FC = () => {
                         name: e.target.value,
                       })
                     }
-                    className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-[#0A4DA6]"
+                    className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-[#F28C28]"
                   />
                 </div>
                 <div className="space-y-1">
@@ -1252,7 +1252,7 @@ export const UserManagementPage: React.FC = () => {
                         email: e.target.value,
                       })
                     }
-                    className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-[#0A4DA6]"
+                    className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-[#F28C28]"
                   />
                 </div>
                 <div className="space-y-1">
@@ -1270,7 +1270,7 @@ export const UserManagementPage: React.FC = () => {
                         phone: e.target.value,
                       })
                     }
-                    className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-[#0A4DA6]"
+                    className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-[#F28C28]"
                   />
                 </div>
                 <div className="space-y-1">
@@ -1326,7 +1326,7 @@ export const UserManagementPage: React.FC = () => {
                         role: e.target.value,
                       })
                     }
-                    className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:outline-none font-bold text-[#0A4DA6]"
+                    className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:outline-none font-bold text-[#F28C28]"
                   >
                     {ALL_ROLES.map((r) => (
                       <option key={r.id} value={r.id}>
@@ -1404,7 +1404,7 @@ export const UserManagementPage: React.FC = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                     <div className="space-y-1">
                       <label className="font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1">
-                        <Key size={13} className="text-[#0A4DA6]" /> Initial
+                        <Key size={13} className="text-[#F28C28]" /> Initial
                         Password (Custom / Manual)
                       </label>
                       <input
@@ -1417,7 +1417,7 @@ export const UserManagementPage: React.FC = () => {
                             password: e.target.value,
                           })
                         }
-                        className="w-full p-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-[#0A4DA6] font-mono text-xs"
+                        className="w-full p-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-[#F28C28] font-mono text-xs"
                       />
                     </div>
 
@@ -1475,7 +1475,7 @@ export const UserManagementPage: React.FC = () => {
                               });
                             }
                           }}
-                          className="rounded text-[#0A4DA6]"
+                          className="rounded text-[#F28C28]"
                         />
                         <span className="text-[11px] font-bold text-gray-700 dark:text-gray-300">
                           {perm}
@@ -1504,7 +1504,7 @@ export const UserManagementPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setCreateStep((s) => (s + 1) as any)}
-                  className="px-6 py-2.5 bg-[#0A4DA6] text-white rounded-full text-xs font-bold shadow-md cursor-pointer flex items-center gap-1"
+                  className="px-6 py-2.5 bg-[#F28C28] text-white rounded-full text-xs font-bold shadow-md cursor-pointer flex items-center gap-1"
                 >
                   Next Step <ArrowRight size={14} />
                 </button>
@@ -1529,7 +1529,7 @@ export const UserManagementPage: React.FC = () => {
           >
             <div className="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-3">
               <h3 className="font-bold text-base text-[#0B192C] dark:text-white flex items-center gap-2">
-                <Shield size={18} className="text-[#0A4DA6]" /> Change
+                <Shield size={18} className="text-[#F28C28]" /> Change
                 Enterprise Role
               </h3>
               <button
@@ -1554,7 +1554,7 @@ export const UserManagementPage: React.FC = () => {
                   setNewSelectedRole(e.target.value);
                   setRoleDocuments({ aadhaarCardUrl: "", panCardUrl: "" });
                 }}
-                className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold text-[#0A4DA6]"
+                className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold text-[#F28C28]"
               >
                 {ALL_ROLES.map((r) => (
                   <option key={r.id} value={r.id}>
@@ -1629,7 +1629,7 @@ export const UserManagementPage: React.FC = () => {
               <button
                 type="submit"
                 disabled={changingRole}
-                className="flex-1 py-2 bg-[#0A4DA6] text-white rounded-full font-bold text-xs disabled:opacity-60"
+                className="flex-1 py-2 bg-[#F28C28] text-white rounded-full font-bold text-xs disabled:opacity-60"
               >
                 {changingRole ? "Updating..." : "Update Role"}
               </button>
@@ -1646,7 +1646,7 @@ export const UserManagementPage: React.FC = () => {
           >
             <div className="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-3">
               <h3 className="font-bold text-base text-[#0B192C] dark:text-white flex items-center gap-2">
-                <UserCheck size={18} className="text-[#0A4DA6]" /> Change Account Status
+                <UserCheck size={18} className="text-[#F28C28]" /> Change Account Status
               </h3>
               <button type="button" onClick={() => setStatusTarget(null)} className="text-gray-400 hover:text-gray-600">
                 <X size={18} />
@@ -1657,7 +1657,7 @@ export const UserManagementPage: React.FC = () => {
               <select
                 value={newSelectedStatus}
                 onChange={(e) => setNewSelectedStatus(e.target.value)}
-                className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold text-[#0A4DA6]"
+                className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold text-[#F28C28]"
               >
                 <option value="active">Active</option>
                 <option value="pending">Pending</option>
@@ -1671,7 +1671,7 @@ export const UserManagementPage: React.FC = () => {
             </div>
             <div className="flex gap-3 pt-3 border-t border-gray-100 dark:border-slate-800">
               <button type="button" onClick={() => setStatusTarget(null)} disabled={changingStatus} className="flex-1 py-2 bg-gray-100 text-gray-700 rounded-full font-bold text-xs disabled:opacity-60">Cancel</button>
-              <button type="submit" disabled={changingStatus || newSelectedStatus === statusTarget.status} className="flex-1 py-2 bg-[#0A4DA6] text-white rounded-full font-bold text-xs disabled:opacity-60">
+              <button type="submit" disabled={changingStatus || newSelectedStatus === statusTarget.status} className="flex-1 py-2 bg-[#F28C28] text-white rounded-full font-bold text-xs disabled:opacity-60">
                 {changingStatus ? "Updating..." : "Update Status"}
               </button>
             </div>
@@ -1687,7 +1687,7 @@ export const UserManagementPage: React.FC = () => {
           >
             <div className="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-3">
               <h3 className="font-bold text-base text-[#0B192C] dark:text-white flex items-center gap-2">
-                <Tag size={18} className="text-[#0A4DA6]" /> Permission Matrix
+                <Tag size={18} className="text-[#F28C28]" /> Permission Matrix
                 Control
               </h3>
               <button
@@ -1720,7 +1720,7 @@ export const UserManagementPage: React.FC = () => {
                             selectedPerms.filter((p) => p !== perm),
                           );
                       }}
-                      className="rounded text-[#0A4DA6]"
+                      className="rounded text-[#F28C28]"
                     />
                     <span className="font-bold text-gray-700 dark:text-gray-200">
                       {perm}
@@ -1740,7 +1740,7 @@ export const UserManagementPage: React.FC = () => {
               </button>
               <button
                 type="submit"
-                className="flex-1 py-2 bg-[#0A4DA6] text-white rounded-full font-bold text-xs"
+                className="flex-1 py-2 bg-[#F28C28] text-white rounded-full font-bold text-xs"
               >
                 Save Permissions
               </button>
@@ -1945,7 +1945,7 @@ export const UserManagementPage: React.FC = () => {
           >
             <div className="shrink-0 flex items-start justify-between gap-3 border-b border-gray-100 dark:border-slate-800 px-5 sm:px-7 pt-5 pb-4">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-11 h-11 shrink-0 rounded-full bg-[#0A4DA6]/10 text-[#0A4DA6] flex items-center justify-center font-black text-sm uppercase">
+                <div className="w-11 h-11 shrink-0 rounded-full bg-[#F28C28]/10 text-[#F28C28] flex items-center justify-center font-black text-sm uppercase">
                   {(viewingUser.name || "?").slice(0, 2)}
                 </div>
                 <div className="min-w-0">
@@ -1953,7 +1953,7 @@ export const UserManagementPage: React.FC = () => {
                     {viewingUser.name}
                   </h3>
                   <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
-                    <span className="px-2 py-0.5 rounded-full bg-blue-50 dark:bg-slate-800 text-[#0A4DA6] dark:text-blue-400 text-[10px] font-black">
+                    <span className="px-2 py-0.5 rounded-full bg-[#FFF4E5] text-[#F28C28] dark:text-amber-400 text-[10px] font-black">
                       {viewingUser.role}
                     </span>
                     <span
@@ -1991,16 +1991,16 @@ export const UserManagementPage: React.FC = () => {
                   className="grid grid-cols-1 gap-3 rounded-2xl border border-blue-100 bg-blue-50/40 p-4 sm:grid-cols-2 dark:border-slate-700 dark:bg-slate-900/60"
                 >
                   <label className="space-y-1 text-[10px] font-bold text-gray-500">Full Name
-                    <input required minLength={2} value={editUserData.name} onChange={(e) => setEditUserData({ ...editUserData, name: e.target.value })} className="w-full rounded-xl border border-gray-200 bg-white p-2.5 text-xs text-[#0B192C] outline-none focus:border-[#0A4DA6] dark:border-slate-700 dark:bg-slate-950 dark:text-white" />
+                    <input required minLength={2} value={editUserData.name} onChange={(e) => setEditUserData({ ...editUserData, name: e.target.value })} className="w-full rounded-xl border border-gray-200 bg-white p-2.5 text-xs text-[#0B192C] outline-none focus:border-[#F28C28] dark:border-slate-700 dark:bg-slate-950 dark:text-white" />
                   </label>
                   <label className="space-y-1 text-[10px] font-bold text-gray-500">Email
-                    <input type="email" required value={editUserData.email} onChange={(e) => setEditUserData({ ...editUserData, email: e.target.value })} className="w-full rounded-xl border border-gray-200 bg-white p-2.5 text-xs text-[#0B192C] outline-none focus:border-[#0A4DA6] dark:border-slate-700 dark:bg-slate-950 dark:text-white" />
+                    <input type="email" required value={editUserData.email} onChange={(e) => setEditUserData({ ...editUserData, email: e.target.value })} className="w-full rounded-xl border border-gray-200 bg-white p-2.5 text-xs text-[#0B192C] outline-none focus:border-[#F28C28] dark:border-slate-700 dark:bg-slate-950 dark:text-white" />
                   </label>
                   <label className="space-y-1 text-[10px] font-bold text-gray-500">Phone
-                    <input type="tel" required value={editUserData.phone} onChange={(e) => setEditUserData({ ...editUserData, phone: e.target.value })} className="w-full rounded-xl border border-gray-200 bg-white p-2.5 text-xs text-[#0B192C] outline-none focus:border-[#0A4DA6] dark:border-slate-700 dark:bg-slate-950 dark:text-white" />
+                    <input type="tel" required value={editUserData.phone} onChange={(e) => setEditUserData({ ...editUserData, phone: e.target.value })} className="w-full rounded-xl border border-gray-200 bg-white p-2.5 text-xs text-[#0B192C] outline-none focus:border-[#F28C28] dark:border-slate-700 dark:bg-slate-950 dark:text-white" />
                   </label>
                   <label className="space-y-1 text-[10px] font-bold text-gray-500">Gender
-                    <select required value={editUserData.gender} onChange={(e) => setEditUserData({ ...editUserData, gender: e.target.value })} className="w-full rounded-xl border border-gray-200 bg-white p-2.5 text-xs text-[#0B192C] outline-none focus:border-[#0A4DA6] dark:border-slate-700 dark:bg-slate-950 dark:text-white"><option value="Male">Male</option><option value="Female">Female</option><option value="Other">Other</option></select>
+                    <select required value={editUserData.gender} onChange={(e) => setEditUserData({ ...editUserData, gender: e.target.value })} className="w-full rounded-xl border border-gray-200 bg-white p-2.5 text-xs text-[#0B192C] outline-none focus:border-[#F28C28] dark:border-slate-700 dark:bg-slate-950 dark:text-white"><option value="Male">Male</option><option value="Female">Female</option><option value="Other">Other</option></select>
                   </label>
                 </form>
               )}
@@ -2069,7 +2069,7 @@ export const UserManagementPage: React.FC = () => {
                     {viewingUser.permissions.map((p) => (
                       <span
                         key={p}
-                        className="px-2.5 py-1 rounded-full bg-blue-50 dark:bg-slate-800 text-[#0A4DA6] dark:text-blue-400 text-[10px] font-bold"
+                        className="px-2.5 py-1 rounded-full bg-[#FFF4E5] text-[#F28C28] dark:text-amber-400 text-[10px] font-bold"
                       >
                         {p}
                       </span>
@@ -2142,7 +2142,7 @@ export const UserManagementPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => startAccountEdit(viewingUser)}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-[#0A4DA6]/20 bg-[#0A4DA6]/5 px-3.5 py-2 text-[10px] font-extrabold text-[#0A4DA6] hover:bg-[#0A4DA6] hover:text-white"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-[#F28C28]/20 bg-[#F28C28]/5 px-3.5 py-2 text-[10px] font-extrabold text-[#F28C28] hover:bg-[#F28C28] hover:text-white"
                 >
                   Edit Details
                 </button>
@@ -2257,7 +2257,7 @@ export const UserManagementPage: React.FC = () => {
                   setEditingUser(false);
                   setViewingUser(null);
                 }}
-                className="px-5 py-2 rounded-full bg-[#0A4DA6] hover:bg-blue-900 text-white text-[10px] font-extrabold shadow-md cursor-pointer"
+                className="px-5 py-2 rounded-full bg-[#F28C28] hover:bg-[#D97706] text-white text-[10px] font-extrabold shadow-md cursor-pointer"
               >
                 Close
               </button>

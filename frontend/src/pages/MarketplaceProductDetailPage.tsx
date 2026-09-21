@@ -216,7 +216,7 @@ export const MarketplaceProductDetailPage: React.FC = () => {
         </p>
         <button
           onClick={() => navigate("/marketplace")}
-          className="px-5 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-blue-900 text-white text-xs font-extrabold cursor-pointer"
+          className="px-5 py-2.5 rounded-full bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-extrabold cursor-pointer"
         >
           Back to marketplace
         </button>
@@ -288,7 +288,7 @@ export const MarketplaceProductDetailPage: React.FC = () => {
                     aria-label={`Image ${i + 1}`}
                     className={`w-16 h-16 rounded-xl overflow-hidden border-2 shrink-0 cursor-pointer ${
                       i === activeImage
-                        ? "border-[#0A4DA6]"
+                        ? "border-[#F28C28]"
                         : "border-transparent opacity-70"
                     }`}
                   >
@@ -329,7 +329,7 @@ export const MarketplaceProductDetailPage: React.FC = () => {
             </div>
 
             <div className="flex items-baseline gap-3 flex-wrap">
-              <span className="text-3xl font-black text-[#0A4DA6] dark:text-blue-400">
+              <span className="text-3xl font-black text-[#F28C28] dark:text-amber-400">
                 {formatCurrency(priceOf(product))}
               </span>
               {discount > 0 && (
@@ -361,7 +361,7 @@ export const MarketplaceProductDetailPage: React.FC = () => {
                     <button
                       onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                       aria-label="Decrease quantity"
-                      className="px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-[#0A4DA6] cursor-pointer"
+                      className="px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-[#F28C28] cursor-pointer"
                     >
                       <Minus size={13} />
                     </button>
@@ -371,14 +371,14 @@ export const MarketplaceProductDetailPage: React.FC = () => {
                     <button
                       onClick={() => setQuantity((q) => Math.min(maxQty, q + 1))}
                       aria-label="Increase quantity"
-                      className="px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-[#0A4DA6] cursor-pointer"
+                      className="px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-[#F28C28] cursor-pointer"
                     >
                       <Plus size={13} />
                     </button>
                   </div>
                   <button
                     onClick={addToCart}
-                    className="flex-1 py-3 rounded-full border-2 border-[#0A4DA6] text-[#0A4DA6] dark:text-blue-400 hover:bg-[#0A4DA6]/5 text-xs font-extrabold flex items-center justify-center gap-2 cursor-pointer transition-all"
+                    className="flex-1 py-3 rounded-full border-2 border-[#F28C28] text-[#F28C28] dark:text-amber-400 hover:bg-[#F28C28]/5 text-xs font-extrabold flex items-center justify-center gap-2 cursor-pointer transition-all"
                   >
                     Add to cart
                   </button>
@@ -455,7 +455,7 @@ export const MarketplaceProductDetailPage: React.FC = () => {
                 payment
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <Truck size={13} className="text-[#0A4DA6]" /> Free delivery
+                <Truck size={13} className="text-[#F28C28]" /> Free delivery
                 over {formatCurrency(999)}
               </span>
             </div>
@@ -487,7 +487,7 @@ export const MarketplaceProductDetailPage: React.FC = () => {
                     <h3 className="text-xs font-bold text-[#0B192C] dark:text-white line-clamp-2">
                       {rel.name}
                     </h3>
-                    <span className="text-sm font-black text-[#0A4DA6] dark:text-blue-400">
+                    <span className="text-sm font-black text-[#F28C28] dark:text-amber-400">
                       {formatCurrency(priceOf(rel))}
                     </span>
                   </div>

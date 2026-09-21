@@ -3,19 +3,25 @@ export interface BookingDraftPayload {
   rooms?: { roomId: string; units: number }[];
   roomId?: string;
   roomType?: string;
-  checkIn: string;
-  checkOut: string;
-  guestsCount: number;
+  checkIn?: string;
+  checkOut?: string;
+  guestsCount?: number;
   roomsBookedCount?: number;
-  adults: number;
-  children: number;
+  adults?: number;
+  children?: number;
   addOnQuantities?: Record<string, number>;
-  services: {
+  services?: {
     prasad: boolean;
     meals: boolean;
     parking: boolean;
     locker: boolean;
     donation?: number;
+  };
+  dayStay?: {
+    productCode: string;
+    date: string;
+    startTime: string;
+    price?: number;
   };
   couponCode?: string;
   appliedDiscount?: number;

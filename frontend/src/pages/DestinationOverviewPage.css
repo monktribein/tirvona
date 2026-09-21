@@ -222,12 +222,12 @@
 }
 
 .dest-badge--tirvona {
-  background: rgba(10, 77, 166, 0.12);
-  color: #0a4da6;
+  background: rgba(242, 140, 40, 0.12);
+  color: #F28C28;
 }
 
 .dark .dest-badge--tirvona {
-  background: rgba(10, 77, 166, 0.25);
+  background: rgba(242, 140, 40, 0.25);
   color: #6bb3ff;
 }
 

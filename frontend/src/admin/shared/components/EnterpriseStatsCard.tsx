@@ -22,13 +22,13 @@ export const EnterpriseStatsCard: React.FC<EnterpriseStatsCardProps> = ({
   description,
   icon,
   badgeText,
-  badgeColor = "bg-[#0A4DA6]/10 text-[#0A4DA6] border-[#0A4DA6]/20",
+  badgeColor = "bg-[#F28C28]/10 text-[#F28C28] border-[#F28C28]/20",
 }) => {
   const { t } = useLanguage();
   return (
     <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 space-y-2.5">
       <div className="flex justify-between items-start">
-        <div className="w-10 h-10 rounded-2xl bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 flex items-center justify-center text-[#0A4DA6] dark:text-amber-400 shrink-0">
+        <div className="w-10 h-10 rounded-2xl bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 flex items-center justify-center text-[#F28C28] dark:text-amber-400 shrink-0">
           {icon}
         </div>
 

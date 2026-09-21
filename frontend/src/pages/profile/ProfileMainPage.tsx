@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { formatCurrency } from "../../utils/format";
+import { formatCurrency, formatSlotTime } from "../../utils/format";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   User,
@@ -63,6 +63,16 @@ const formatDate = (value?: string) =>
         day: "2-digit",
         month: "short",
         year: "numeric",
+      })
+    : "—";
+
+const formatDateTime = (value?: string) =>
+  value
+    ? new Date(value).toLocaleString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
       })
     : "—";
 
@@ -339,7 +349,7 @@ export const ProfileMainPage: React.FC = () => {
       label: "Upcoming Bookings",
       count: bookingsLoading ? "—" : String(counts.upcoming),
       to: "/profile/bookings",
-      color: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+      color: "bg-blue-500/10 text-blue-600 dark:text-amber-400",
     },
     {
       label: "Completed",
@@ -390,7 +400,7 @@ export const ProfileMainPage: React.FC = () => {
             b.category === "cancelled" ? (
               <XCircle className="text-rose-500" size={16} />
             ) : b.kind === "parking" ? (
-              <CircleParking className="text-[#0A4DA6]" size={16} />
+              <CircleParking className="text-[#F28C28]" size={16} />
             ) : (
               <CheckCircle2 className="text-emerald-500" size={16} />
             ),
@@ -415,7 +425,7 @@ export const ProfileMainPage: React.FC = () => {
       label: "Overview & Activity",
       desc: "Account summary & recent yatras",
       icon: <User size={18} />,
-      iconBg: "bg-blue-50 dark:bg-blue-950/40 text-[#0A4DA6]",
+      iconBg: "bg-[#FFF4E5]/40 text-[#F28C28]",
     },
     {
       key: "bookings",
@@ -423,7 +433,7 @@ export const ProfileMainPage: React.FC = () => {
       label: "My Bookings & Stays",
       desc: "Upcoming, completed & cancelled",
       icon: <Calendar size={18} />,
-      iconBg: "bg-blue-50 dark:bg-blue-950/40 text-[#0A4DA6]",
+      iconBg: "bg-[#FFF4E5]/40 text-[#F28C28]",
       badge: counts.total > 0 ? String(counts.total) : undefined,
     },
     {
@@ -448,7 +458,7 @@ export const ProfileMainPage: React.FC = () => {
       label: "My Orders",
       desc: "Prasad & marketplace purchases",
       icon: <Package size={18} />,
-      iconBg: "bg-blue-50 dark:bg-blue-950/40 text-[#0A4DA6]",
+      iconBg: "bg-[#FFF4E5]/40 text-[#F28C28]",
     },
     {
       key: "wishlist",
@@ -481,9 +491,9 @@ export const ProfileMainPage: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-1 sm:pt-3 space-y-6">
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 sm:p-7 shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-5">
           <div className="flex items-center gap-4 sm:gap-5">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-[#0A4DA6] to-[#E58C28] p-0.5 shadow-md shrink-0">
+            <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-[#F28C28] to-[#E58C28] p-0.5 shadow-md shrink-0">
               <div className="w-full h-full rounded-full bg-white dark:bg-[#0B192C] flex items-center justify-center">
-                <User size={28} className="text-[#0A4DA6] dark:text-blue-400" />
+                <User size={28} className="text-[#F28C28] dark:text-amber-400" />
               </div>
             </div>
 
@@ -493,12 +503,12 @@ export const ProfileMainPage: React.FC = () => {
               </h2>
               <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 flex items-center gap-3 flex-wrap">
                 <span className="flex items-center gap-1">
-                  <Mail size={13} className="text-[#0A4DA6]" />{" "}
+                  <Mail size={13} className="text-[#F28C28]" />{" "}
                   {user?.email || "user@example.com"}
                 </span>
                 {user?.phone && (
                   <span className="flex items-center gap-1">
-                    <Phone size={13} className="text-[#0A4DA6]" /> {user.phone}
+                    <Phone size={13} className="text-[#F28C28]" /> {user.phone}
                   </span>
                 )}
               </p>
@@ -507,7 +517,7 @@ export const ProfileMainPage: React.FC = () => {
 
           <button
             onClick={() => setIsEditModalOpen(true)}
-            className="px-4 py-2 bg-[#F0F5FC] dark:bg-slate-800/80 hover:bg-[#0A4DA6] hover:text-white dark:hover:bg-[#0A4DA6] dark:hover:text-white text-[#0A4DA6] dark:text-blue-300 border border-blue-100 dark:border-slate-700/80 rounded-full text-xs font-extrabold flex items-center gap-2 transition-all shadow-xs cursor-pointer whitespace-nowrap shrink-0"
+            className="px-4 py-2 bg-[#F0F5FC] dark:bg-slate-800/80 hover:bg-[#F28C28] hover:text-white dark:hover:bg-[#F28C28] dark:hover:text-white text-[#F28C28] dark:text-amber-300 border border-blue-100 dark:border-slate-700/80 rounded-full text-xs font-extrabold flex items-center gap-2 transition-all shadow-xs cursor-pointer whitespace-nowrap shrink-0"
           >
             <Edit3 size={14} className="shrink-0" />
             <span>Edit Profile</span>
@@ -528,7 +538,7 @@ export const ProfileMainPage: React.FC = () => {
                   onClick={() => navigate(item.path)}
                   className={`w-full p-3 rounded-2xl flex items-center justify-between transition-all cursor-pointer text-left text-xs font-extrabold ${
                     isActive
-                      ? "bg-[#0A4DA6] text-white shadow-md"
+                      ? "bg-[#F28C28] text-white shadow-md"
                       : "text-[#0B192C] dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-800/60"
                   }`}
                 >
@@ -554,7 +564,7 @@ export const ProfileMainPage: React.FC = () => {
                         className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
                           isActive
                             ? "bg-white/20 text-white"
-                            : "bg-blue-100 text-[#0A4DA6] dark:bg-slate-800 dark:text-blue-300"
+                            : "bg-blue-100 text-[#F28C28] dark:bg-slate-800 dark:text-amber-300"
                         }`}
                       >
                         {item.badge}
@@ -713,7 +723,7 @@ export const ProfileMainPage: React.FC = () => {
                         onClick={() => setBookingCategoryTab(tab.key)}
                         className={`px-4 py-2 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
                           bookingCategoryTab === tab.key
-                            ? "bg-[#0A4DA6] text-white shadow-sm"
+                            ? "bg-[#F28C28] text-white shadow-sm"
                             : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800"
                         }`}
                       >
@@ -771,7 +781,7 @@ export const ProfileMainPage: React.FC = () => {
                     </p>
                     <Link
                       to="/search"
-                      className="inline-block px-5 py-2.5 bg-[#0A4DA6] hover:bg-[#083D85] text-white rounded-full text-xs font-black transition-all shadow-md mt-2"
+                      className="inline-block px-5 py-2.5 bg-[#F28C28] hover:bg-[#D97706] text-white rounded-full text-xs font-black transition-all shadow-md mt-2"
                     >
                       Explore Ashrams & Stays
                     </Link>
@@ -799,7 +809,7 @@ export const ProfileMainPage: React.FC = () => {
 
                             <div className="space-y-1 min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <span className="px-2 py-0.5 bg-blue-50 text-[#0A4DA6] dark:bg-blue-950/40 dark:text-blue-300 rounded-md text-[10px] font-black">
+                                <span className="px-2 py-0.5 bg-blue-50 text-[#F28C28] dark:bg-blue-950/40 dark:text-amber-300 rounded-md text-[10px] font-black">
                                   {b.kind === "parking"
                                     ? "Parking"
                                     : "Ashram Stay"}
@@ -821,7 +831,11 @@ export const ProfileMainPage: React.FC = () => {
                               </p>
 
                               <p className="text-[11px] text-gray-500 dark:text-gray-400 font-semibold pt-0.5">
-                                {b.start
+                                {b.kind === "parking"
+                                  ? `${formatDateTime(b.start)} → ${formatDateTime(b.end)}`
+                                  : ((b.bookingType === "day_rest" || b.bookingType === "freshen_up" || Boolean(b.dayStayDetails?.productCode)) && b.bookingType !== "overnight")
+                                  ? `${formatDate(b.start)} · ${formatSlotTime(b.dayStayDetails?.slotStartTime || b.start)} – ${formatSlotTime(b.dayStayDetails?.slotEndTime || b.end)}`
+                                  : b.start
                                   ? `${formatDate(b.start)} → ${formatDate(b.end)}`
                                   : formatDate(b.createdAt)}
                               </p>
@@ -829,7 +843,7 @@ export const ProfileMainPage: React.FC = () => {
                           </div>
 
                           <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center w-full sm:w-auto gap-2 border-t sm:border-t-0 border-gray-100 dark:border-slate-800 pt-3 sm:pt-0 shrink-0">
-                            <span className="text-base font-black text-[#0A4DA6] dark:text-white">
+                            <span className="text-base font-black text-[#F28C28] dark:text-white">
                               {formatCurrency(b.amount)}
                             </span>
 
@@ -853,7 +867,7 @@ export const ProfileMainPage: React.FC = () => {
                                     ? `/parking/booking/${b.id}`
                                     : `/booking/${b.reference || b.id}`)
                                 }
-                                className="px-3.5 py-1.5 bg-gray-100 dark:bg-slate-800 hover:bg-[#0A4DA6] hover:text-white dark:hover:bg-[#0A4DA6] text-[#0B192C] dark:text-gray-200 text-xs font-extrabold rounded-full transition-all"
+                                className="px-3.5 py-1.5 bg-gray-100 dark:bg-slate-800 hover:bg-[#F28C28] hover:text-white dark:hover:bg-[#F28C28] text-[#0B192C] dark:text-gray-200 text-xs font-extrabold rounded-full transition-all"
                               >
                                 Details
                               </Link>
@@ -899,7 +913,7 @@ export const ProfileMainPage: React.FC = () => {
                     </p>
                     <Link
                       to="/search"
-                      className="inline-block px-5 py-2.5 bg-[#0A4DA6] hover:bg-[#083D85] text-white rounded-full text-xs font-black transition-all shadow-md mt-2"
+                      className="inline-block px-5 py-2.5 bg-[#F28C28] hover:bg-[#D97706] text-white rounded-full text-xs font-black transition-all shadow-md mt-2"
                     >
                       Browse Ashrams
                     </Link>
@@ -947,7 +961,7 @@ export const ProfileMainPage: React.FC = () => {
                             <span className="text-[10px] text-gray-400 font-bold block">
                               Starting from
                             </span>
-                            <span className="text-sm font-black text-[#0A4DA6] dark:text-white">
+                            <span className="text-sm font-black text-[#F28C28] dark:text-white">
                               {formatCurrency(item.price)}
                               <span className="text-[10px] font-normal text-gray-400">
                                 /night
@@ -957,7 +971,7 @@ export const ProfileMainPage: React.FC = () => {
 
                           <Link
                             to="/search"
-                            className="px-3.5 py-1.5 bg-[#0A4DA6] hover:bg-[#083D85] text-white text-xs font-extrabold rounded-full transition-all"
+                            className="px-3.5 py-1.5 bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-extrabold rounded-full transition-all"
                           >
                             View Ashram
                           </Link>
@@ -1008,7 +1022,7 @@ export const ProfileMainPage: React.FC = () => {
                         </div>
 
                         <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
-                          <span className="text-sm font-black text-[#0A4DA6] dark:text-white">
+                          <span className="text-sm font-black text-[#F28C28] dark:text-white">
                             {formatCurrency(t.amount)}
                           </span>
                           <button
@@ -1044,7 +1058,7 @@ export const ProfileMainPage: React.FC = () => {
 
                 <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-5 shadow-md space-y-4">
                   <h3 className="font-extrabold text-xs text-[#0B192C] dark:text-white tracking-wider flex items-center gap-2">
-                    <Lock size={15} className="text-[#0A4DA6]" /> Change
+                    <Lock size={15} className="text-[#F28C28]" /> Change
                     Password
                   </h3>
 
@@ -1061,7 +1075,7 @@ export const ProfileMainPage: React.FC = () => {
                         required
                         value={currentPassword}
                         onChange={(e) => setCurrentPassword(e.target.value)}
-                        className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-[#0A4DA6]"
+                        className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-[#F28C28]"
                       />
                     </div>
 
@@ -1075,7 +1089,7 @@ export const ProfileMainPage: React.FC = () => {
                           required
                           value={newPassword}
                           onChange={(e) => setNewPassword(e.target.value)}
-                          className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-[#0A4DA6]"
+                          className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-[#F28C28]"
                         />
                       </div>
 
@@ -1088,7 +1102,7 @@ export const ProfileMainPage: React.FC = () => {
                           required
                           value={confirmPassword}
                           onChange={(e) => setConfirmPassword(e.target.value)}
-                          className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-[#0A4DA6]"
+                          className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-[#F28C28]"
                         />
                       </div>
                     </div>
@@ -1097,7 +1111,7 @@ export const ProfileMainPage: React.FC = () => {
                       <button
                         type="submit"
                         disabled={changingPassword}
-                        className="px-5 py-2 bg-[#0A4DA6] hover:bg-[#083D85] text-white rounded-full text-xs font-black transition-all cursor-pointer shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
+                        className="px-5 py-2 bg-[#F28C28] hover:bg-[#D97706] text-white rounded-full text-xs font-black transition-all cursor-pointer shadow-sm disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         {changingPassword ? "Updating..." : "Update Security Password"}
                       </button>
@@ -1129,7 +1143,7 @@ export const ProfileMainPage: React.FC = () => {
               required
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
-              className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-[#0A4DA6]"
+              className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-[#F28C28]"
             />
           </div>
 
@@ -1142,7 +1156,7 @@ export const ProfileMainPage: React.FC = () => {
               required
               value={editPhone}
               onChange={(e) => setEditPhone(e.target.value)}
-              className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-[#0A4DA6]"
+              className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-[#F28C28]"
             />
           </div>
 
@@ -1157,7 +1171,7 @@ export const ProfileMainPage: React.FC = () => {
             <button
               type="submit"
               disabled={saving}
-              className="px-5 py-2 bg-[#0A4DA6] hover:bg-[#083D85] text-white text-xs font-black rounded-full cursor-pointer transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-50"
+              className="px-5 py-2 bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-black rounded-full cursor-pointer transition-all flex items-center gap-1.5 shadow-sm disabled:opacity-50"
             >
               {saving ? <Loader2 size={14} className="animate-spin" /> : null}
               <span>{saving ? "Saving…" : "Save Changes"}</span>

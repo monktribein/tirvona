@@ -29,8 +29,8 @@ interface Order {
 
 const STATUS_TONE: Record<string, string> = {
   pending_payment: "bg-amber-50 text-amber-700 border-amber-200",
-  confirmed: "bg-blue-50 text-[#0A4DA6] border-blue-200",
-  packed: "bg-blue-50 text-[#0A4DA6] border-blue-200",
+  confirmed: "bg-blue-50 text-[#F28C28] border-blue-200",
+  packed: "bg-blue-50 text-[#F28C28] border-blue-200",
   shipped: "bg-indigo-50 text-indigo-700 border-indigo-200",
   delivered: "bg-emerald-50 text-emerald-700 border-emerald-200",
   cancelled: "bg-rose-50 text-rose-700 border-rose-200",
@@ -108,7 +108,7 @@ export const ProfileOrdersPage: React.FC = () => {
         </p>
         <button
           onClick={load}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-blue-900 text-white text-xs font-extrabold cursor-pointer"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-extrabold cursor-pointer"
         >
           <RefreshCw size={14} /> Try again
         </button>
@@ -127,7 +127,7 @@ export const ProfileOrdersPage: React.FC = () => {
         </p>
         <button
           onClick={() => navigate("/marketplace")}
-          className="px-5 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-blue-900 text-white text-xs font-extrabold cursor-pointer"
+          className="px-5 py-2.5 rounded-full bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-extrabold cursor-pointer"
         >
           Browse marketplace
         </button>
@@ -196,7 +196,7 @@ export const ProfileOrdersPage: React.FC = () => {
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 dark:border-slate-800 pt-3">
             <span className="text-xs">
               <span className="text-gray-500">Total </span>
-              <strong className="text-[#0A4DA6] dark:text-blue-400 font-black">
+              <strong className="text-[#F28C28] dark:text-amber-400 font-black">
                 {formatCurrency(order.pricing.totalAmount)}
               </strong>
             </span>

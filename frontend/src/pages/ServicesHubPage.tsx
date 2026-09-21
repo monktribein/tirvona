@@ -288,19 +288,19 @@ export const ServicesHubPage: React.FC = () => {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search taxi cabs, guides, Bhojnalaya, doctors..."
-                className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-full text-xs font-bold focus:outline-none focus:border-[#0A4DA6]"
+                className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-full text-xs font-bold focus:outline-none focus:border-[#F28C28]"
               />
             </div>
 
             <div className="sm:col-span-4 relative">
               <MapPin
-                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#0A4DA6]"
+                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#F28C28]"
                 size={16}
               />
               <select
                 value={selectedCity}
                 onChange={(e) => setSelectedCity(e.target.value)}
-                className="w-full pl-10 pr-8 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-full text-xs font-bold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6] cursor-pointer capitalize"
+                className="w-full pl-10 pr-8 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-full text-xs font-bold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#F28C28] cursor-pointer capitalize"
               >
                 <option value="all">All Holy Cities</option>
                 {cities
@@ -333,7 +333,7 @@ export const ServicesHubPage: React.FC = () => {
                   onClick={() => handleCategorySelect(cat.id)}
                   className={`px-4 py-2 rounded-full text-xs font-extrabold flex items-center gap-2 shrink-0 transition-all cursor-pointer ${
                     isActive
-                      ? "bg-[#0A4DA6] text-white shadow-md shadow-[#0A4DA6]/25"
+                      ? "bg-[#F28C28] text-white shadow-md shadow-[#F28C28]/25"
                       : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200"
                   }`}
                 >
@@ -351,7 +351,7 @@ export const ServicesHubPage: React.FC = () => {
                   type="checkbox"
                   checked={pureVegOnly}
                   onChange={(e) => setPureVegOnly(e.target.checked)}
-                  className="accent-[#0A4DA6] w-4 h-4 rounded"
+                  className="accent-[#F28C28] w-4 h-4 rounded"
                 />
                 <span>100% Pure Satvik / Veg</span>
               </label>
@@ -361,7 +361,7 @@ export const ServicesHubPage: React.FC = () => {
                   type="checkbox"
                   checked={govtVerifiedOnly}
                   onChange={(e) => setGovtVerifiedOnly(e.target.checked)}
-                  className="accent-[#0A4DA6] w-4 h-4 rounded"
+                  className="accent-[#F28C28] w-4 h-4 rounded"
                 />
                 <span>Tirvona Verified Only</span>
               </label>
@@ -402,7 +402,7 @@ export const ServicesHubPage: React.FC = () => {
                 setSelectedCity("all");
                 setSearchTerm("");
               }}
-              className="px-5 py-2.5 bg-[#0A4DA6] text-white rounded-full text-xs font-bold shadow-md hover:bg-[#083b80]"
+              className="px-5 py-2.5 bg-[#F28C28] text-white rounded-full text-xs font-bold shadow-md hover:bg-[#B45309]"
             >
               Reset Filters
             </button>
@@ -425,7 +425,7 @@ export const ServicesHubPage: React.FC = () => {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
 
-                  <span className="absolute top-3 left-3 px-3 py-1 bg-[#0A4DA6] text-white rounded-full text-[10px] font-black tracking-wider shadow-md">
+                  <span className="absolute top-3 left-3 px-3 py-1 bg-[#F28C28] text-white rounded-full text-[10px] font-black tracking-wider shadow-md">
                     {item.subcategory}
                   </span>
 
@@ -459,7 +459,7 @@ export const ServicesHubPage: React.FC = () => {
                       </span>
                     )}
                     {item.specifications?.govtVerified && (
-                      <span className="px-2.5 py-0.5 bg-blue-50 text-[#0A4DA6] border border-blue-200 rounded-full">
+                      <span className="px-2.5 py-0.5 bg-blue-50 text-[#F28C28] border border-blue-200 rounded-full">
                         ✓ TIRVONA VERIFIED
                       </span>
                     )}
@@ -475,7 +475,7 @@ export const ServicesHubPage: React.FC = () => {
                       <span className="text-[10px] text-gray-400 block font-bold">
                         Estimated Fare
                       </span>
-                      <span className="text-base font-black text-[#0A4DA6] dark:text-white">
+                      <span className="text-base font-black text-[#F28C28] dark:text-white">
                         {formatCurrency(item.pricing?.amount)}{" "}
                         <span className="text-[10px] text-gray-400 font-normal">
                           /{item.pricing?.unit}
@@ -486,7 +486,7 @@ export const ServicesHubPage: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <a
                         href={`tel:${item.contactPhone}`}
-                        className="p-2 bg-gray-100 dark:bg-slate-800 text-[#0A4DA6] rounded-full hover:bg-gray-200 transition-colors"
+                        className="p-2 bg-gray-100 dark:bg-slate-800 text-[#F28C28] rounded-full hover:bg-gray-200 transition-colors"
                         title="Call Now"
                       >
                         <Phone size={14} />
@@ -518,16 +518,16 @@ export const ServicesHubPage: React.FC = () => {
             onSubmit={handleBookingSubmit}
             className="space-y-4 text-xs font-bold"
           >
-            <div className="p-3 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 rounded-2xl flex justify-between items-center">
+            <div className="p-3 bg-[#FFF4E5]/40 border border-blue-200 dark:border-blue-900 rounded-2xl flex justify-between items-center">
               <div>
-                <span className="text-[10px] text-[#0A4DA6] block font-bold">
+                <span className="text-[10px] text-[#F28C28] block font-bold">
                   Provider
                 </span>
                 <span className="text-sm font-extrabold text-[#0B192C] dark:text-white">
                   {selectedService.name}
                 </span>
               </div>
-              <span className="text-sm font-black text-[#0A4DA6]">
+              <span className="text-sm font-black text-[#F28C28]">
                 {formatCurrency(selectedService.pricing.amount)}
               </span>
             </div>

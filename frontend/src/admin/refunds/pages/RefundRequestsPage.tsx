@@ -289,8 +289,8 @@ export const RefundRequestsPage: React.FC = () => {
           onClick={() => setParam("status", "")}
           className={`px-3 py-1.5 rounded-full text-[11px] font-black border transition-colors cursor-pointer ${
             status === ""
-              ? "bg-[#0A4DA6] text-white border-[#0A4DA6]"
-              : "bg-white dark:bg-[#0B192C] border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-300 hover:border-[#0A4DA6]"
+              ? "bg-[#F28C28] text-white border-[#F28C28]"
+              : "bg-white dark:bg-[#0B192C] border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-300 hover:border-[#F28C28]"
           }`}
         >
           All{summary ? ` (${Object.values(counts).reduce((a, b) => a + (b ?? 0), 0)})` : ""}
@@ -301,7 +301,7 @@ export const RefundRequestsPage: React.FC = () => {
             onClick={() => setParam("status", value)}
             className={`px-3 py-1.5 rounded-full text-[11px] font-black border transition-colors cursor-pointer ${
               status === value
-                ? "bg-[#0A4DA6] text-white border-[#0A4DA6]"
+                ? "bg-[#F28C28] text-white border-[#F28C28]"
                 : `${REFUND_STATUS_TONE[value]} hover:opacity-80`
             }`}
           >
@@ -323,7 +323,7 @@ export const RefundRequestsPage: React.FC = () => {
               onChange={(e) => setTerm(e.target.value)}
               placeholder="Search refund number, booking, pilgrim or reason..."
               aria-label="Search refunds"
-              className="w-full pl-10 pr-3 py-2.5 rounded-full border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-medium text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6]"
+              className="w-full pl-10 pr-3 py-2.5 rounded-full border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-medium text-[#0B192C] dark:text-white focus:outline-none focus:border-[#F28C28]"
             />
           </div>
           <div className="flex items-center gap-2">
@@ -331,7 +331,7 @@ export const RefundRequestsPage: React.FC = () => {
               value={module}
               onChange={(e) => setParam("module", e.target.value)}
               aria-label="Filter by module"
-              className="px-4 py-2.5 rounded-full border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-[#0B192C] dark:text-white cursor-pointer focus:outline-none focus:border-[#0A4DA6]"
+              className="px-4 py-2.5 rounded-full border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-[#0B192C] dark:text-white cursor-pointer focus:outline-none focus:border-[#F28C28]"
             >
               <option value="">All modules</option>
               {REFUND_MODULES.map((m) => (
@@ -357,7 +357,7 @@ export const RefundRequestsPage: React.FC = () => {
               value={ashram}
               onChange={(e) => setAshram(e.target.value)}
               aria-label="Filter by stay"
-              className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-[#0B192C] dark:text-white cursor-pointer focus:outline-none focus:border-[#0A4DA6]"
+              className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-[#0B192C] dark:text-white cursor-pointer focus:outline-none focus:border-[#F28C28]"
             >
               <option value="">All stays</option>
               {ashramOptions.map((name) => (
@@ -370,7 +370,7 @@ export const RefundRequestsPage: React.FC = () => {
               value={band}
               onChange={(e) => setBand(e.target.value)}
               aria-label="Filter by amount"
-              className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-[#0B192C] dark:text-white cursor-pointer focus:outline-none focus:border-[#0A4DA6]"
+              className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-[#0B192C] dark:text-white cursor-pointer focus:outline-none focus:border-[#F28C28]"
             >
               {AMOUNT_BANDS.map((b) => (
                 <option key={b.value} value={b.value}>
@@ -382,7 +382,7 @@ export const RefundRequestsPage: React.FC = () => {
               value={days}
               onChange={(e) => setDays(e.target.value)}
               aria-label="Filter by created date"
-              className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-[#0B192C] dark:text-white cursor-pointer focus:outline-none focus:border-[#0A4DA6]"
+              className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-[#0B192C] dark:text-white cursor-pointer focus:outline-none focus:border-[#F28C28]"
             >
               {DATE_RANGES.map((r) => (
                 <option key={r.value} value={r.value}>
@@ -405,7 +405,7 @@ export const RefundRequestsPage: React.FC = () => {
                 setBand("");
                 setDays("");
               }}
-              className="ml-2 text-[#0A4DA6] hover:underline font-bold cursor-pointer"
+              className="ml-2 text-[#F28C28] hover:underline font-bold cursor-pointer"
             >
               Clear
             </button>
@@ -459,7 +459,7 @@ export const RefundRequestsPage: React.FC = () => {
             return (
               <div
                 key={row._id}
-                className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-4 sm:p-5 shadow-sm hover:border-[#0A4DA6]/40 transition-all"
+                className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-4 sm:p-5 shadow-sm hover:border-[#F28C28]/40 transition-all"
               >
                 <div className="flex flex-col lg:flex-row lg:items-center gap-4">
                   <button
@@ -504,7 +504,7 @@ export const RefundRequestsPage: React.FC = () => {
 
                   <div className="flex items-center justify-between lg:justify-end gap-4 shrink-0">
                     <div className="text-right">
-                      <span className="block text-sm font-black text-[#0A4DA6] dark:text-blue-400 tabular-nums">
+                      <span className="block text-sm font-black text-[#F28C28] dark:text-amber-400 tabular-nums">
                         {formatCurrency(amount)}
                       </span>
                       {calc?.refundPercent !== undefined && (
@@ -516,7 +516,7 @@ export const RefundRequestsPage: React.FC = () => {
 
                     <div className="flex items-center gap-1.5">
                       {busy && (
-                        <Loader2 size={14} className="animate-spin text-[#0A4DA6]" />
+                        <Loader2 size={14} className="animate-spin text-[#F28C28]" />
                       )}
                       {mayReview && row.status === "pending" && (
                         <EnterpriseButton
@@ -662,7 +662,7 @@ export const RefundRequestsPage: React.FC = () => {
             onChange={(e) => setRejectReason(e.target.value.slice(0, 1000))}
             rows={4}
             placeholder="Explain why this claim is refused. The customer sees this."
-            className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6] resize-none"
+            className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-[#0B192C] dark:text-white focus:outline-none focus:border-[#F28C28] resize-none"
           />
           <p className="text-[10px] text-gray-400">
             A rejection is final — the state machine allows no route back.

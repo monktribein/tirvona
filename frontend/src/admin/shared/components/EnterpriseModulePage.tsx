@@ -422,7 +422,7 @@ export const EnterpriseModulePage: React.FC<{
     READ_ONLY_MODULES.has(activeModule);
 
   const genericModuleConfig = {
-    icon: <Building size={20} className="text-[#0A4DA6]" />,
+    icon: <Building size={20} className="text-[#F28C28]" />,
     columns: defaultColumns || [
       {
         key: "name",
@@ -464,7 +464,7 @@ export const EnterpriseModulePage: React.FC<{
     switch (activeModule) {
       case "banner":
         return {
-          icon: <Image size={20} className="text-[#0A4DA6]" />,
+          icon: <Image size={20} className="text-[#F28C28]" />,
           columns: [
             { key: "title", label: "Banner Title" },
             { key: "category", label: "Placement Category" },
@@ -506,7 +506,7 @@ export const EnterpriseModulePage: React.FC<{
       case "owners":
       case "staff":
         return {
-          icon: <Users size={20} className="text-[#0A4DA6]" />,
+          icon: <Users size={20} className="text-[#F28C28]" />,
           columns: [
             { key: "name", label: "Full Name" },
             { key: "email", label: "Email Address" },
@@ -546,7 +546,7 @@ export const EnterpriseModulePage: React.FC<{
 
       case "ashrams":
         return {
-          icon: <Building size={20} className="text-[#0A4DA6]" />,
+          icon: <Building size={20} className="text-[#F28C28]" />,
           columns: [
             { key: "name", label: "Ashram Name" },
             {
@@ -631,7 +631,7 @@ export const EnterpriseModulePage: React.FC<{
 
       case "local":
         return {
-          icon: <Compass size={20} className="text-[#0A4DA6]" />,
+          icon: <Compass size={20} className="text-[#F28C28]" />,
           columns: [
             {
               key: "image",
@@ -730,7 +730,7 @@ export const EnterpriseModulePage: React.FC<{
       case "volunteer_jobs":
       case "volunteer_applications":
         return {
-          icon: <Sparkles size={20} className="text-[#0A4DA6]" />,
+          icon: <Sparkles size={20} className="text-[#F28C28]" />,
           columns: [
             { key: "title", label: "Position / Seva Title" },
             { key: "department", label: "Department" },
@@ -765,7 +765,7 @@ export const EnterpriseModulePage: React.FC<{
 
       case "parking_partners":
         return {
-          icon: <Car size={20} className="text-[#0A4DA6]" />,
+          icon: <Car size={20} className="text-[#F28C28]" />,
           columns: [
             { key: "businessName", label: "Business Name" },
             { key: "partnerCode", label: "Partner Code" },
@@ -800,7 +800,7 @@ export const EnterpriseModulePage: React.FC<{
 
       case "parking_locations":
         return {
-          icon: <Car size={20} className="text-[#0A4DA6]" />,
+          icon: <Car size={20} className="text-[#F28C28]" />,
           columns: [
             { key: "name", label: "Parking Name" },
             {
@@ -843,7 +843,7 @@ export const EnterpriseModulePage: React.FC<{
 
       case "parking_bookings":
         return {
-          icon: <Car size={20} className="text-[#0A4DA6]" />,
+          icon: <Car size={20} className="text-[#F28C28]" />,
           columns: [
             { key: "bookingReference", label: "Reference" },
             { key: "vehicleNumber", label: "Vehicle" },
@@ -872,7 +872,7 @@ export const EnterpriseModulePage: React.FC<{
 
       case "parking_slot_types":
         return {
-          icon: <Car size={20} className="text-[#0A4DA6]" />,
+          icon: <Car size={20} className="text-[#F28C28]" />,
           columns: [
             { key: "name", label: "Slot Type" },
             { key: "code", label: "Code" },
@@ -910,7 +910,7 @@ export const EnterpriseModulePage: React.FC<{
 
       case "parking_slots":
         return {
-          icon: <Car size={20} className="text-[#0A4DA6]" />,
+          icon: <Car size={20} className="text-[#F28C28]" />,
           columns: [
             { key: "slotNumber", label: "Slot Number" },
             {
@@ -954,7 +954,7 @@ export const EnterpriseModulePage: React.FC<{
 
       case "parking_pricing":
         return {
-          icon: <Car size={20} className="text-[#0A4DA6]" />,
+          icon: <Car size={20} className="text-[#F28C28]" />,
           columns: [
             {
               key: "locationId",
@@ -996,7 +996,7 @@ export const EnterpriseModulePage: React.FC<{
 
       case "parking_staff":
         return {
-          icon: <ShieldCheck size={20} className="text-[#0A4DA6]" />,
+          icon: <ShieldCheck size={20} className="text-[#F28C28]" />,
           columns: [
             {
               key: "userId",
@@ -1025,7 +1025,7 @@ export const EnterpriseModulePage: React.FC<{
 
       case "parking_commissions":
         return {
-          icon: <Car size={20} className="text-[#0A4DA6]" />,
+          icon: <Car size={20} className="text-[#F28C28]" />,
           columns: [
             {
               key: "partnerId",
@@ -1060,7 +1060,7 @@ export const EnterpriseModulePage: React.FC<{
 
       case "parking_transactions":
         return {
-          icon: <Car size={20} className="text-[#0A4DA6]" />,
+          icon: <Car size={20} className="text-[#F28C28]" />,
           columns: [
             { key: "reference", label: "Reference" },
             { key: "type", label: "Type" },
@@ -1087,7 +1087,7 @@ export const EnterpriseModulePage: React.FC<{
 
       case "parking_scan_logs":
         return {
-          icon: <ShieldCheck size={20} className="text-[#0A4DA6]" />,
+          icon: <ShieldCheck size={20} className="text-[#F28C28]" />,
           columns: [
             { key: "action", label: "Action" },
             { key: "result", label: "Result" },
@@ -1114,7 +1114,7 @@ export const EnterpriseModulePage: React.FC<{
 
       case "parking_reviews":
         return {
-          icon: <Car size={20} className="text-[#0A4DA6]" />,
+          icon: <Car size={20} className="text-[#F28C28]" />,
           columns: [
             {
               key: "locationId",
@@ -1152,7 +1152,7 @@ export const EnterpriseModulePage: React.FC<{
       case "blogs":
         if (activeSubKey && activeSubKey !== "all") return genericModuleConfig;
         return {
-          icon: <BookOpen size={20} className="text-[#0A4DA6]" />,
+          icon: <BookOpen size={20} className="text-[#F28C28]" />,
           columns: [
             {
               key: "coverImage",
@@ -1259,7 +1259,7 @@ export const EnterpriseModulePage: React.FC<{
       case "reports":
         if (activeSubKey === "bookings") {
           return {
-            icon: <BarChart3 size={20} className="text-[#0A4DA6]" />,
+            icon: <BarChart3 size={20} className="text-[#F28C28]" />,
             columns: [
               { key: "bookingId", label: "Booking ID" },
               {
@@ -1310,7 +1310,7 @@ export const EnterpriseModulePage: React.FC<{
           };
         }
         return {
-          icon: <BarChart3 size={20} className="text-[#0A4DA6]" />,
+          icon: <BarChart3 size={20} className="text-[#F28C28]" />,
           columns: [
             {
               key: "transactionId",
@@ -1368,7 +1368,7 @@ export const EnterpriseModulePage: React.FC<{
       case "bookings":
         if (activeSubKey === "refunds") {
           return {
-            icon: <Calendar size={20} className="text-[#0A4DA6]" />,
+            icon: <Calendar size={20} className="text-[#F28C28]" />,
             columns: [
               { key: "refundReference", label: "Refund Reference" },
               {
@@ -1394,7 +1394,7 @@ export const EnterpriseModulePage: React.FC<{
           };
         }
         return {
-          icon: <Calendar size={20} className="text-[#0A4DA6]" />,
+          icon: <Calendar size={20} className="text-[#F28C28]" />,
           columns: [
             { key: "bookingId", label: "Booking ID" },
             {
@@ -1461,7 +1461,7 @@ export const EnterpriseModulePage: React.FC<{
       case "rooms":
         if (["availability", "inventory"].includes(activeSubKey)) {
           return {
-            icon: <Calendar size={20} className="text-[#0A4DA6]" />,
+            icon: <Calendar size={20} className="text-[#F28C28]" />,
             columns: [
               {
                 key: "ashramId",
@@ -1524,7 +1524,7 @@ export const EnterpriseModulePage: React.FC<{
         }
         if (["pricing", "season_pricing"].includes(activeSubKey)) {
           return {
-            icon: <TagIcon size={20} className="text-[#0A4DA6]" />,
+            icon: <TagIcon size={20} className="text-[#F28C28]" />,
             columns: [
               {
                 key: "ashramId",
@@ -1583,7 +1583,7 @@ export const EnterpriseModulePage: React.FC<{
           };
         }
         return {
-          icon: <Building size={20} className="text-[#0A4DA6]" />,
+          icon: <Building size={20} className="text-[#F28C28]" />,
           columns: [
             {
               key: "ashramId",
@@ -1630,7 +1630,7 @@ export const EnterpriseModulePage: React.FC<{
 
       case "featured_banner":
         return {
-          icon: <Sparkles size={20} className="text-[#0A4DA6]" />,
+          icon: <Sparkles size={20} className="text-[#F28C28]" />,
           columns: [
             { key: "title", label: "Featured Banner Title" },
             { key: "eventName", label: "Event / Festival" },
@@ -1669,7 +1669,7 @@ export const EnterpriseModulePage: React.FC<{
 
       case "aarti_pass_types":
         return {
-          icon: <Sparkles size={20} className="text-[#0A4DA6]" />,
+          icon: <Sparkles size={20} className="text-[#F28C28]" />,
           columns: [
             { key: "name", label: "Pass Name" },
             { key: "code", label: "Code" },
@@ -1695,7 +1695,7 @@ export const EnterpriseModulePage: React.FC<{
 
       case "aarti_pricing":
         return {
-          icon: <TagIcon size={20} className="text-[#0A4DA6]" />,
+          icon: <TagIcon size={20} className="text-[#F28C28]" />,
           columns: [
             { key: "name", label: "Pricing Rule" },
             { key: "sessionId", label: "Aarti", render: (value: any) => value?.name || "—" },
@@ -1720,7 +1720,7 @@ export const EnterpriseModulePage: React.FC<{
 
       case "aarti_availability":
         return {
-          icon: <Calendar size={20} className="text-[#0A4DA6]" />,
+          icon: <Calendar size={20} className="text-[#F28C28]" />,
           columns: [
             { key: "sessionId", label: "Aarti", render: (value: any) => value?.name || "—" },
             { key: "passTypeId", label: "Pass", render: (value: any) => value?.name || "—" },
@@ -1743,7 +1743,7 @@ export const EnterpriseModulePage: React.FC<{
 
       case "aarti_staff":
         return {
-          icon: <Users size={20} className="text-[#0A4DA6]" />,
+          icon: <Users size={20} className="text-[#F28C28]" />,
           columns: [
             { key: "userId", label: "Staff Member", render: (value: any) => value?.name || value?.email || "—" },
             { key: "ashramId", label: "Ashram", render: (value: any) => value?.name || "—" },
@@ -1763,7 +1763,7 @@ export const EnterpriseModulePage: React.FC<{
 
       case "aarti_settings":
         return {
-          icon: <ShieldCheck size={20} className="text-[#0A4DA6]" />,
+          icon: <ShieldCheck size={20} className="text-[#F28C28]" />,
           columns: [
             { key: "scope", label: "Scope" },
             { key: "ashramId", label: "Ashram", render: (value: any) => value?.name || "Platform-wide" },
@@ -1796,7 +1796,7 @@ export const EnterpriseModulePage: React.FC<{
         );
         const cities = selectedState ? getDistricts(selectedState.code) : [];
         return {
-          icon: <Sparkles size={20} className="text-[#0A4DA6]" />,
+          icon: <Sparkles size={20} className="text-[#F28C28]" />,
           columns: [
             { key: "name", label: "Aarti Name" },
             {
@@ -3021,7 +3021,7 @@ export const EnterpriseModulePage: React.FC<{
                     ? () => navigate("/admin/manage/ashrams/add")
                     : handleCreateOpen
                 }
-                className="px-5 py-2.5 bg-[#0A4DA6] hover:bg-[#083b80] text-white rounded-full text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-[#0A4DA6]/25 cursor-pointer"
+                className="px-5 py-2.5 bg-[#F28C28] hover:bg-[#B45309] text-white rounded-full text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-[#F28C28]/25 cursor-pointer"
               >
                 <Plus size={16} />{" "}
                 {activeModule === "banner"
@@ -3262,7 +3262,7 @@ export const EnterpriseModulePage: React.FC<{
                       value={featuredAshramSearch}
                       onChange={(event) => setFeaturedAshramSearch(event.target.value)}
                       placeholder="Search by Ashram name, code, district or state..."
-                      className="w-full rounded-xl border border-blue-200 bg-white p-3 font-semibold text-gray-800 outline-none focus:border-[#0A4DA6] dark:border-slate-700 dark:bg-[#0B192C] dark:text-white"
+                      className="w-full rounded-xl border border-blue-200 bg-white p-3 font-semibold text-gray-800 outline-none focus:border-[#F28C28] dark:border-slate-700 dark:bg-[#0B192C] dark:text-white"
                     />
                   </div>
 
@@ -3286,7 +3286,7 @@ export const EnterpriseModulePage: React.FC<{
                               : formData.ctaUrl,
                           })
                         }
-                        className="w-full rounded-xl border border-blue-200 bg-white p-3 font-bold text-[#0A4DA6] outline-none dark:border-slate-700 dark:bg-[#0B192C]"
+                        className="w-full rounded-xl border border-blue-200 bg-white p-3 font-bold text-[#F28C28] outline-none dark:border-slate-700 dark:bg-[#0B192C]"
                       >
                         <option value="">Select State</option>
                         {featuredStates.map((state) => (
@@ -3314,7 +3314,7 @@ export const EnterpriseModulePage: React.FC<{
                               : formData.ctaUrl,
                           })
                         }
-                        className="w-full rounded-xl border border-blue-200 bg-white p-3 font-bold text-[#0A4DA6] outline-none disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-[#0B192C]"
+                        className="w-full rounded-xl border border-blue-200 bg-white p-3 font-bold text-[#F28C28] outline-none disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-[#0B192C]"
                       >
                         <option value="">Select District</option>
                         {featuredDistricts.map((district) => (
@@ -3344,7 +3344,7 @@ export const EnterpriseModulePage: React.FC<{
                             ctaUrl: formData.ctaUrl || (ashramId ? `/ashram/${ashramId}` : ""),
                           });
                         }}
-                        className="w-full rounded-xl border border-blue-200 bg-white p-3 font-bold text-[#0A4DA6] outline-none disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-[#0B192C]"
+                        className="w-full rounded-xl border border-blue-200 bg-white p-3 font-bold text-[#F28C28] outline-none disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:bg-[#0B192C]"
                       >
                         <option value="">Select Ashram</option>
                         {filteredFeaturedAshrams.map((item: any) => {
@@ -3391,7 +3391,7 @@ export const EnterpriseModulePage: React.FC<{
                         imageUrl: formData.imageUrl || entityImage,
                       });
                     }}
-                    className="w-full rounded-xl border border-blue-200 bg-white p-3 font-bold text-[#0A4DA6] outline-none dark:border-slate-700 dark:bg-[#0B192C]"
+                    className="w-full rounded-xl border border-blue-200 bg-white p-3 font-bold text-[#F28C28] outline-none dark:border-slate-700 dark:bg-[#0B192C]"
                   >
                     <option value="">Select related {humanizeLabel(formData.relatedContentType || "content")}</option>
                     {(bannerEntities[formData.relatedContentType] || []).map((item: any) => {
@@ -3445,7 +3445,7 @@ export const EnterpriseModulePage: React.FC<{
                         ...(isAartiSessionView && city ? { city } : {}),
                       });
                     }}
-                    className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold text-[#0A4DA6] disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold text-[#F28C28] disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     <option value="">Select an ashram</option>
                     {roomAshramOptions.map((a: any) => (
@@ -3474,7 +3474,7 @@ export const EnterpriseModulePage: React.FC<{
                     onChange={(e) =>
                       setFormData({ ...formData, sourceRoomId: e.target.value })
                     }
-                    className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold text-[#0A4DA6] disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold text-[#F28C28] disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     <option value="">Select a room category</option>
                     {roomCategoryOptions.map((room: any) => (
@@ -3514,7 +3514,7 @@ export const EnterpriseModulePage: React.FC<{
                         passTypeId: "",
                       });
                     }}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 font-bold text-[#0A4DA6] disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-800 dark:bg-slate-900"
+                    className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 font-bold text-[#F28C28] disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-800 dark:bg-slate-900"
                   >
                     <option value="">Select an Aarti</option>
                     {aartiSessionOptions.map((session) => (
@@ -3544,7 +3544,7 @@ export const EnterpriseModulePage: React.FC<{
                     onChange={(event) =>
                       setFormData({ ...formData, passTypeId: event.target.value })
                     }
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 font-bold text-[#0A4DA6] disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-800 dark:bg-slate-900"
+                    className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 font-bold text-[#F28C28] disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-800 dark:bg-slate-900"
                   >
                     <option value="">
                       {activeModule === "aarti_pricing"
@@ -3572,7 +3572,7 @@ export const EnterpriseModulePage: React.FC<{
                     onChange={(event) =>
                       setFormData({ ...formData, userId: event.target.value })
                     }
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 font-bold text-[#0A4DA6] disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-800 dark:bg-slate-900"
+                    className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 font-bold text-[#F28C28] disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-800 dark:bg-slate-900"
                   >
                     <option value="">Select a staff member</option>
                     {aartiUserOptions.map((member) => (
@@ -3597,7 +3597,7 @@ export const EnterpriseModulePage: React.FC<{
                     onChange={(event) =>
                       setFormData({ ...formData, ashramId: event.target.value })
                     }
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 font-bold text-[#0A4DA6] disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-800 dark:bg-slate-900"
+                    className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 font-bold text-[#F28C28] disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-800 dark:bg-slate-900"
                   >
                     <option value="">Select an ashram</option>
                     {roomAshramOptions.map((ashram) => (
@@ -3658,7 +3658,7 @@ export const EnterpriseModulePage: React.FC<{
                               : {}),
                           });
                         }}
-                        className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold text-[#0A4DA6]"
+                        className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold text-[#F28C28]"
                       >
                         {f.options?.map((opt) => (
                           <option key={opt} value={opt}>
@@ -3701,7 +3701,7 @@ export const EnterpriseModulePage: React.FC<{
               </button>
               <button
                 type="submit"
-                className="flex-1 py-2.5 bg-[#0A4DA6] text-white rounded-full font-black text-xs shadow cursor-pointer"
+                className="flex-1 py-2.5 bg-[#F28C28] text-white rounded-full font-black text-xs shadow cursor-pointer"
               >
                 Save Record
               </button>

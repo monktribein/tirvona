@@ -446,6 +446,38 @@ export const offerService = {
   remove: (id: string) => api.delete(`/offers/${id}`),
 };
 
+export const dayStayService = {
+  getProducts: () => api.get("/day-stay/products"),
+  getAvailability: (params: {
+    ashramId: string;
+    roomId: string;
+    date: string;
+    productCode?: string;
+  }) => api.get("/day-stay/availability", { params }),
+  holdSlot: (data: {
+    ashramId: string;
+    roomId: string;
+    productCode: string;
+    date: string;
+    startTime: string;
+    guestsCount: number;
+    specialRequests?: string;
+  }) => api.post("/day-stay/hold", data),
+  confirmPayment: (data: {
+    bookingId: string;
+    razorpayOrderId: string;
+    razorpayPaymentId: string;
+    razorpaySignature: string;
+  }) => api.post("/day-stay/confirm", data),
+  vendorBlock: (data: {
+    ashramId: string;
+    action: "today" | "tomorrow" | "custom_dates" | "unblock_today" | "unblock_tomorrow";
+    dates?: string[];
+  }) => api.post("/day-stay/vendor/block", data),
+  getVendorRadar: (ashramId: string) =>
+    api.get("/day-stay/vendor/radar", { params: { ashramId } }),
+};
+
 export const platformSettingsService = {
   getSettings: () => api.get("/platform-settings"),
   updateSettings: (data: unknown) => api.put("/platform-settings", data),

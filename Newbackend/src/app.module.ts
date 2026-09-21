@@ -41,6 +41,7 @@ import { PaymentsModule } from "./modules/payments/payments.module";
 import { AartiModule } from "./modules/aarti/aarti.module";
 import { EventsModule } from "./modules/events/events.module";
 import { PilgrimageModule } from "./modules/pilgrimage/pilgrimage.module";
+import { DayStayModule } from "./modules/day-stay/day-stay.module";
 import {
   hybridRateLimitTracker,
   ipRateLimitTracker,
@@ -153,6 +154,7 @@ import {
     AartiModule,
     EventsModule,
     PilgrimageModule,
+    DayStayModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

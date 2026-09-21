@@ -28,7 +28,7 @@ export const EnterpriseButton: React.FC<EnterpriseButtonProps> = ({
 }) => {
   const { t } = useLanguage();
   const baseClasses =
-    "min-h-9 shrink-0 rounded-full font-extrabold leading-none inline-flex items-center justify-center gap-2 whitespace-nowrap transition-all cursor-pointer shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-[#0A4DA6]/40 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
+    "min-h-9 shrink-0 rounded-full font-extrabold leading-none inline-flex items-center justify-center gap-2 whitespace-nowrap transition-all cursor-pointer shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-[#F28C28]/40 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
 
   const sizeClasses =
     size === "sm"
@@ -39,7 +39,7 @@ export const EnterpriseButton: React.FC<EnterpriseButtonProps> = ({
 
   const variantClasses =
     variant === "primary"
-      ? "bg-[#0A4DA6] hover:bg-[#083b80] text-white shadow-md shadow-[#0A4DA6]/20"
+      ? "bg-[#F28C28] hover:bg-[#B45309] text-white shadow-md shadow-[#F28C28]/20"
       : variant === "secondary"
         ? "bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-slate-700"
         : variant === "danger"

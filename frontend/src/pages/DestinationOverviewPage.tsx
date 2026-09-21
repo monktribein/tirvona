@@ -152,11 +152,11 @@ const StayCard: React.FC<{ ashram: any }> = ({ ashram }) => {
               Not Available
             </span>
           ) : minPrice > 0 ? (
-            <span className="bg-[#0A4DA6] text-white text-[10px] sm:text-[11px] font-extrabold px-3 py-1 rounded-full shadow-sm">
+            <span className="bg-[#F28C28] text-white text-[10px] sm:text-[11px] font-extrabold px-3 py-1 rounded-full shadow-sm">
               {formatCurrency(minPrice)} / night
             </span>
           ) : (
-            <span className="bg-[#0A4DA6] text-white text-[10px] sm:text-[11px] font-extrabold px-3 py-1 rounded-full shadow-sm">
+            <span className="bg-[#F28C28] text-white text-[10px] sm:text-[11px] font-extrabold px-3 py-1 rounded-full shadow-sm">
               Donation / Stay
             </span>
           )}
@@ -166,7 +166,7 @@ const StayCard: React.FC<{ ashram: any }> = ({ ashram }) => {
       {/* Details — the same three the global ashram card shows: name, place,
           rating. The card itself is the link, so it carries no button. */}
       <div className="p-4 text-center flex flex-col items-center justify-center min-h-[72px]">
-        <h4 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight line-clamp-1 text-center group-hover:text-[#0A4DA6] transition-colors">
+        <h4 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight line-clamp-1 text-center group-hover:text-[#F28C28] transition-colors">
           {ashram.name}
         </h4>
         <p className="text-[11px] text-gray-400 font-bold mt-1 text-center">
@@ -221,16 +221,16 @@ const ParkingCard: React.FC<{ lot: any }> = ({ lot }) => {
       {/* A lot has no photograph, so the icon fills the same media well the
           other cards use and keeps every row the same height. */}
       <div className="dest-card-media relative bg-gray-100 dark:bg-slate-900 flex items-center justify-center">
-        <CircleParking size={44} className="text-[#0A4DA6]/40" />
+        <CircleParking size={44} className="text-[#F28C28]/40" />
         <div className="absolute bottom-2.5 left-2.5">
-          <span className="bg-[#0A4DA6] text-white text-[10px] sm:text-[11px] font-extrabold px-3 py-1 rounded-full shadow-sm">
+          <span className="bg-[#F28C28] text-white text-[10px] sm:text-[11px] font-extrabold px-3 py-1 rounded-full shadow-sm">
             {formatCurrency(price)} / hr
           </span>
         </div>
       </div>
 
       <div className="p-4 text-center flex flex-col items-center justify-center min-h-[72px]">
-        <h4 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight line-clamp-1 text-center group-hover:text-[#0A4DA6] transition-colors">
+        <h4 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight line-clamp-1 text-center group-hover:text-[#F28C28] transition-colors">
           {name}
         </h4>
         {city && (
@@ -298,7 +298,7 @@ const PrasadCard: React.FC<{ product: any }> = ({ product }) => {
         )}
         {price > 0 && (
           <div className="absolute bottom-2.5 left-2.5">
-            <span className="bg-[#0A4DA6] text-white text-[10px] sm:text-[11px] font-extrabold px-3 py-1 rounded-full shadow-sm">
+            <span className="bg-[#F28C28] text-white text-[10px] sm:text-[11px] font-extrabold px-3 py-1 rounded-full shadow-sm">
               {formatCurrency(price)}
             </span>
           </div>
@@ -306,7 +306,7 @@ const PrasadCard: React.FC<{ product: any }> = ({ product }) => {
       </div>
 
       <div className="p-4 text-center flex flex-col items-center justify-center min-h-[72px]">
-        <h4 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight line-clamp-1 text-center group-hover:text-[#0A4DA6] transition-colors">
+        <h4 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight line-clamp-1 text-center group-hover:text-[#F28C28] transition-colors">
           {product.name}
         </h4>
         {product.templeSource && (
@@ -423,7 +423,7 @@ const AttractionCard: React.FC<{
       </div>
 
       <div className="p-4 text-center flex flex-col items-center justify-center min-h-[72px]">
-        <h4 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight line-clamp-1 text-center group-hover:text-[#0A4DA6] transition-colors">
+        <h4 className="font-extrabold text-sm sm:text-base text-[#0B192C] dark:text-white leading-tight line-clamp-1 text-center group-hover:text-[#F28C28] transition-colors">
           {place.name}
         </h4>
         <p className="text-[11px] text-[#E58C28] font-bold mt-1 text-center">
@@ -431,7 +431,7 @@ const AttractionCard: React.FC<{
         </p>
         {distanceKm != null ? (
           <span className="flex items-center justify-center gap-1 text-[10px] text-gray-400 font-semibold mt-1.5">
-            <Navigation size={10} className="text-[#0A4DA6]" />
+            <Navigation size={10} className="text-[#F28C28]" />
             {distanceKm} km from stay
           </span>
         ) : (
@@ -678,7 +678,7 @@ const DestinationOverviewPage: React.FC = () => {
                   onClick={() => setStayFilter(sub.key)}
                   className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
                     stayFilter === sub.key
-                      ? "bg-[#0A4DA6] text-white"
+                      ? "bg-[#F28C28] text-white"
                       : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-700"
                   }`}
                 >
@@ -703,7 +703,7 @@ const DestinationOverviewPage: React.FC = () => {
                   <div className="text-center mt-3">
                     <Link
                       to={`/search?destination=${encodeURIComponent(destName)}`}
-                      className="inline-flex items-center gap-2 text-xs font-extrabold text-[#0A4DA6] hover:underline"
+                      className="inline-flex items-center gap-2 text-xs font-extrabold text-[#F28C28] hover:underline"
                     >
                       View all stays in {destName} <ArrowRight size={13} />
                     </Link>
@@ -733,7 +733,7 @@ const DestinationOverviewPage: React.FC = () => {
               <div className="text-center mt-3">
                 <Link
                   to={`/parking?city=${encodeURIComponent(destName)}`}
-                  className="inline-flex items-center gap-2 text-xs font-extrabold text-[#0A4DA6] hover:underline"
+                  className="inline-flex items-center gap-2 text-xs font-extrabold text-[#F28C28] hover:underline"
                 >
                   View all parking in {destName} <ArrowRight size={13} />
                 </Link>
@@ -761,7 +761,7 @@ const DestinationOverviewPage: React.FC = () => {
               <div className="text-center mt-3">
                 <Link
                   to="/marketplace"
-                  className="inline-flex items-center gap-2 text-xs font-extrabold text-[#0A4DA6] hover:underline"
+                  className="inline-flex items-center gap-2 text-xs font-extrabold text-[#F28C28] hover:underline"
                 >
                   View all certified Prasad <ArrowRight size={13} />
                 </Link>
@@ -830,7 +830,7 @@ const DestinationOverviewPage: React.FC = () => {
             <div key={stat.label} className="dest-stat-pill">
               <stat.icon
                 size={18}
-                className="text-[#0A4DA6] dark:text-blue-400"
+                className="text-[#F28C28] dark:text-amber-400"
               />
               <span className="text-lg font-black text-[#0B192C] dark:text-white">
                 {stat.value}
@@ -1015,8 +1015,8 @@ const DestinationOverviewPage: React.FC = () => {
               className="cursor-pointer bg-white dark:bg-[#0B192C] rounded-3xl border border-gray-100 dark:border-slate-800 p-5 flex flex-col items-center text-center gap-2.5 transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
               {...fadeUp}
             >
-              <div className="w-12 h-12 rounded-2xl bg-[rgba(10,77,166,0.08)] flex items-center justify-center">
-                <item.icon size={22} className="text-[#0A4DA6]" />
+              <div className="w-12 h-12 rounded-2xl bg-[rgba(242, 140, 40,0.08)] flex items-center justify-center">
+                <item.icon size={22} className="text-[#F28C28]" />
               </div>
               <h4 className="font-extrabold text-sm text-[#0B192C] dark:text-white">
                 {item.title}
@@ -1026,7 +1026,7 @@ const DestinationOverviewPage: React.FC = () => {
               </p>
               <ChevronRight
                 size={14}
-                className="text-[#0A4DA6] mt-auto"
+                className="text-[#F28C28] mt-auto"
               />
             </motion.div>
           ))}

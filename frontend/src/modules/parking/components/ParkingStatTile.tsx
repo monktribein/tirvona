@@ -11,7 +11,7 @@ interface ParkingStatTileProps {
 
 const TONES: Record<string, { chip: string; value: string }> = {
   primary: {
-    chip: "bg-blue-50 dark:bg-blue-900/30 text-[#0A4DA6] dark:text-blue-300",
+    chip: "bg-blue-50 dark:bg-blue-900/30 text-[#F28C28] dark:text-amber-300",
     value: "text-[#0B192C] dark:text-white",
   },
   success: {

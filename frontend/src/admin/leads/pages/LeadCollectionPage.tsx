@@ -46,7 +46,7 @@ const STATUS_TABS: { key: "" | LeadStatus; label: string }[] = [
 const INTERESTS = ["Interested", "Not Interested", "Follow-up Required"];
 
 const inputClass =
-  "w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6]";
+  "w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#F28C28]";
 
 const Field: React.FC<{ label: string; children: React.ReactNode }> = ({
   label,
@@ -406,7 +406,7 @@ export const LeadCollectionPage: React.FC = () => {
       <label className="flex items-center gap-2.5 p-3 rounded-2xl border border-gray-200 dark:border-slate-700 cursor-pointer">
         <input
           type="checkbox"
-          className="accent-[#0A4DA6]"
+          className="accent-[#F28C28]"
           checked={form.meetingRequested}
           onChange={(e) =>
             setForm({ ...form, meetingRequested: e.target.checked })
@@ -520,7 +520,7 @@ export const LeadCollectionPage: React.FC = () => {
               }}
               className={`px-4 py-2 rounded-full text-xs font-extrabold transition-colors cursor-pointer ${
                 status === tab.key
-                  ? "bg-[#0A4DA6] text-white"
+                  ? "bg-[#F28C28] text-white"
                   : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300"
               }`}
             >
@@ -635,7 +635,7 @@ export const LeadCollectionPage: React.FC = () => {
                         <button
                           title="Edit"
                           onClick={() => openEdit(lead)}
-                          className="p-1.5 rounded-lg text-[#0A4DA6] hover:bg-[#0A4DA6]/10 cursor-pointer"
+                          className="p-1.5 rounded-lg text-[#F28C28] hover:bg-[#F28C28]/10 cursor-pointer"
                         >
                           <Pencil size={15} />
                         </button>
@@ -721,7 +721,7 @@ export const LeadCollectionPage: React.FC = () => {
             ? `Captured by ${editing.capturedByName || "—"}`
             : "Recorded directly from the admin console"
         }
-        icon={<ClipboardList size={18} className="text-[#0A4DA6]" />}
+        icon={<ClipboardList size={18} className="text-[#F28C28]" />}
         maxWidth="3xl"
         footer={
           <div className="flex justify-end gap-2">
@@ -744,7 +744,7 @@ export const LeadCollectionPage: React.FC = () => {
         subtitle={`${viewing?.location?.city ?? ""}${
           viewing?.location?.state ? `, ${viewing.location.state}` : ""
         }`}
-        icon={<MapPin size={18} className="text-[#0A4DA6]" />}
+        icon={<MapPin size={18} className="text-[#F28C28]" />}
         maxWidth="3xl"
         footer={
           viewing && (
@@ -791,7 +791,7 @@ export const LeadCollectionPage: React.FC = () => {
                   href={mapsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-2.5 py-1 rounded-full bg-[#0A4DA6]/10 text-[#0A4DA6] font-bold inline-flex items-center gap-1"
+                  className="px-2.5 py-1 rounded-full bg-[#F28C28]/10 text-[#F28C28] font-bold inline-flex items-center gap-1"
                 >
                   <MapPin size={12} /> Open in Maps
                 </a>

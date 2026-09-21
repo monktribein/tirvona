@@ -133,7 +133,7 @@ export const RegisterPage: React.FC = () => {
           e.currentTarget.style.display = "none";
         }}
       />
-      <div className="absolute inset-0 bg-gradient-to-r from-[#0B192C]/90 via-[#0B192C]/60 to-[#0A4DA6]/25" />
+      <div className="absolute inset-0 bg-gradient-to-r from-[#0B192C]/90 via-[#0B192C]/60 to-[#F28C28]/25" />
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-screen grid lg:grid-cols-2 gap-10 lg:gap-12 items-center pt-36 lg:pt-40 pb-16">
         <div className="hidden lg:flex flex-col justify-center text-white space-y-6 max-w-xl">
@@ -160,7 +160,7 @@ export const RegisterPage: React.FC = () => {
                 key={f.label}
                 className="flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md hover:bg-white/10 hover:border-[#E58C28]/40 transition-all duration-300 group"
               >
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#0A4DA6]/40 to-[#E58C28]/30 border border-white/15 flex items-center justify-center text-[#E58C28] group-hover:scale-105 transition-transform shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#F28C28]/40 to-[#E58C28]/30 border border-white/15 flex items-center justify-center text-[#E58C28] group-hover:scale-105 transition-transform shrink-0">
                   {f.icon}
                 </div>
                 <span className="font-extrabold text-xs text-slate-200 group-hover:text-white transition-colors">
@@ -229,7 +229,7 @@ export const RegisterPage: React.FC = () => {
                   />
                   <h2 className="text-xl font-black text-[#0B192C] dark:text-white flex items-center justify-center gap-1.5">
                     Create Account{" "}
-                    <ShieldCheck size={18} className="text-[#0A4DA6]" />
+                    <ShieldCheck size={18} className="text-[#F28C28]" />
                   </h2>
                   <p className="text-[11px] text-gray-400 font-semibold">
                     Join the national digital spiritual stays platform
@@ -242,7 +242,7 @@ export const RegisterPage: React.FC = () => {
                     onClick={() => setRole("customer")}
                     className={`py-2 px-3 rounded-[14px] border flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
                       role === "customer"
-                        ? "border-[#0A4DA6] bg-[#0A4DA6]/5 text-[#0A4DA6] shadow-sm"
+                        ? "border-[#F28C28] bg-[#F28C28]/5 text-[#F28C28] shadow-sm"
                         : "border-gray-200 dark:border-slate-800 text-gray-400 hover:border-gray-300"
                     }`}
                   >
@@ -254,7 +254,7 @@ export const RegisterPage: React.FC = () => {
                     onClick={() => setRole("owner")}
                     className={`py-2 px-3 rounded-[14px] border flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
                       role === "owner"
-                        ? "border-[#0A4DA6] bg-[#0A4DA6]/5 text-[#0A4DA6] shadow-sm"
+                        ? "border-[#F28C28] bg-[#F28C28]/5 text-[#F28C28] shadow-sm"
                         : "border-gray-200 dark:border-slate-800 text-gray-400 hover:border-gray-300"
                     }`}
                   >
@@ -314,7 +314,7 @@ export const RegisterPage: React.FC = () => {
                         placeholder="Enter your name"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        className="w-full pl-9 pr-3.5 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                        className="w-full pl-9 pr-3.5 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#F28C28]"
                       />
                     </div>
                   </div>
@@ -334,7 +334,7 @@ export const RegisterPage: React.FC = () => {
                         placeholder="name@govt.in"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="w-full pl-9 pr-3.5 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                        className="w-full pl-9 pr-3.5 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#F28C28]"
                       />
                     </div>
                   </div>
@@ -354,7 +354,7 @@ export const RegisterPage: React.FC = () => {
                         placeholder="+91 98765 43210"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
-                        className="w-full pl-9 pr-3.5 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                        className="w-full pl-9 pr-3.5 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#F28C28]"
                       />
                     </div>
                   </div>
@@ -375,14 +375,14 @@ export const RegisterPage: React.FC = () => {
                         placeholder="Minimum 6 characters"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="w-full pl-9 pr-3.5 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                        className="w-full pl-9 pr-3.5 py-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#F28C28]"
                       />
                     </div>
                   </div>
 
                   {role === "owner" && (
                     <div className="p-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-[16px] space-y-2 animate-in fade-in duration-200">
-                      <span className="text-[9px] font-bold text-[#0A4DA6] tracking-wider">
+                      <span className="text-[9px] font-bold text-[#F28C28] tracking-wider">
                         Tirvona Verification Required
                       </span>
                       <div className="grid grid-cols-2 gap-2">
@@ -415,7 +415,7 @@ export const RegisterPage: React.FC = () => {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full py-2.5 bg-[#0A4DA6] hover:bg-[#083b80] text-white rounded-full font-extrabold text-xs shadow-md shadow-[#0A4DA6]/20 transition-all cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-60 mt-1"
+                    className="w-full py-2.5 bg-[#F28C28] hover:bg-[#B45309] text-white rounded-full font-extrabold text-xs shadow-md shadow-[#F28C28]/20 transition-all cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-60 mt-1"
                   >
                     {loading ? (
                       "Creating account…"
@@ -430,14 +430,14 @@ export const RegisterPage: React.FC = () => {
                     By creating an account you agree to our{" "}
                     <Link
                       to="/terms"
-                      className="text-[#0A4DA6] font-bold hover:underline"
+                      className="text-[#F28C28] font-bold hover:underline"
                     >
                       Terms
                     </Link>{" "}
                     &amp;{" "}
                     <Link
                       to="/privacy"
-                      className="text-[#0A4DA6] font-bold hover:underline"
+                      className="text-[#F28C28] font-bold hover:underline"
                     >
                       Privacy Policy
                     </Link>
@@ -449,7 +449,7 @@ export const RegisterPage: React.FC = () => {
                   Already have an account?{" "}
                   <Link
                     to={`/login${redirect ? `?redirect=${encodeURIComponent(redirect)}` : ""}`}
-                    className="text-[#0A4DA6] font-black hover:underline"
+                    className="text-[#F28C28] font-black hover:underline"
                   >
                     Log in here
                   </Link>

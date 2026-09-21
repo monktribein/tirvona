@@ -213,7 +213,7 @@ export const RefundRequestDetailPage: React.FC = () => {
           >
             {humanizeLabel(request.status)}
           </span>
-          {busy && <Loader2 size={15} className="animate-spin text-[#0A4DA6]" />}
+          {busy && <Loader2 size={15} className="animate-spin text-[#F28C28]" />}
           <div className="flex-1" />
           {mayReview && request.status === "pending" && (
             <EnterpriseButton
@@ -338,7 +338,7 @@ export const RefundRequestDetailPage: React.FC = () => {
                   <Row
                     label="Net payable to customer"
                     value={
-                      <span className="text-[#0A4DA6] dark:text-blue-400 text-sm">
+                      <span className="text-[#F28C28] dark:text-amber-400 text-sm">
                         {formatCurrency(calc.netRefundable ?? 0)}
                       </span>
                     }
@@ -354,7 +354,7 @@ export const RefundRequestDetailPage: React.FC = () => {
                   <ul className="space-y-1 bg-gray-50 dark:bg-slate-900 rounded-2xl p-3">
                     {(calc.notes ?? []).map((note, i) => (
                       <li key={i} className="text-[11px] text-gray-600 dark:text-gray-300 flex gap-2">
-                        <span className="text-[#0A4DA6] shrink-0">•</span>
+                        <span className="text-[#F28C28] shrink-0">•</span>
                         {note}
                       </li>
                     ))}
@@ -380,7 +380,7 @@ export const RefundRequestDetailPage: React.FC = () => {
                       <span className="text-xs font-black text-[#0B192C] dark:text-white">
                         Attempt {t.attempt} · {humanizeLabel(t.status ?? "")}
                       </span>
-                      <span className="text-xs font-black tabular-nums text-[#0A4DA6] dark:text-blue-400">
+                      <span className="text-xs font-black tabular-nums text-[#F28C28] dark:text-amber-400">
                         {formatCurrency(t.amount ?? 0)}
                       </span>
                     </div>
@@ -507,7 +507,7 @@ export const RefundRequestDetailPage: React.FC = () => {
               <ol className="space-y-3">
                 {request.history.map((entry) => (
                   <li key={entry._id} className="flex gap-3">
-                    <span className="mt-1 w-2 h-2 rounded-full bg-[#0A4DA6] shrink-0" />
+                    <span className="mt-1 w-2 h-2 rounded-full bg-[#F28C28] shrink-0" />
                     <div className="min-w-0 flex-1">
                       <p className="text-xs font-bold text-[#0B192C] dark:text-white">
                         {entry.fromStatus
@@ -564,7 +564,7 @@ export const RefundRequestDetailPage: React.FC = () => {
             onChange={(e) => setRejectReason(e.target.value.slice(0, 1000))}
             rows={4}
             placeholder="Explain why this claim is refused. The customer sees this."
-            className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6] resize-none"
+            className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-[#0B192C] dark:text-white focus:outline-none focus:border-[#F28C28] resize-none"
           />
         </div>
       </EnterpriseModal>

@@ -41,7 +41,7 @@ export const AuditLogsPage: React.FC = () => {
         actions={
           <button
             onClick={fetchLogs}
-            className="px-4 py-2 bg-[#0A4DA6] text-white hover:bg-[#083b80] rounded-full text-xs font-bold flex items-center gap-2 shadow-md cursor-pointer transition-all"
+            className="px-4 py-2 bg-[#F28C28] text-white hover:bg-[#B45309] rounded-full text-xs font-bold flex items-center gap-2 shadow-md cursor-pointer transition-all"
           >
             <RefreshCw size={14} className={loading ? "animate-spin" : ""} />{" "}
             Refresh Logs
@@ -77,7 +77,7 @@ export const AuditLogsPage: React.FC = () => {
                     className="border-b border-gray-50 dark:border-slate-850 hover:bg-gray-50/20"
                   >
                     <td className="py-4 px-6 text-gray-500 font-semibold flex items-center gap-1.5 whitespace-nowrap">
-                      <Clock size={12} className="text-[#0A4DA6]" />{" "}
+                      <Clock size={12} className="text-[#F28C28]" />{" "}
                       {new Date(log.timestamp).toLocaleString(getFormattingLocale())}
                     </td>
                     <td className="py-4 px-6">
@@ -112,7 +112,7 @@ export const AuditLogsPage: React.FC = () => {
               <div key={log._id} className="p-5 space-y-3">
                 <div className="flex justify-between items-center text-[10px]">
                   <span className="text-gray-400 flex items-center gap-1">
-                    <Clock size={10} className="text-[#0A4DA6]" />{" "}
+                    <Clock size={10} className="text-[#F28C28]" />{" "}
                     {new Date(log.timestamp).toLocaleString(getFormattingLocale())}
                   </span>
                   <span className="px-2.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-[#0B192C] dark:text-accent rounded-full text-[8.5px] font-bold">

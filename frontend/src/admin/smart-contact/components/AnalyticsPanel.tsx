@@ -25,7 +25,7 @@ const Stat: React.FC<{ label: string; value: string | number; accent?: boolean }
       {label}
     </p>
     <p
-      className={`text-xl font-black ${accent ? "text-[#0A4DA6]" : "text-[#0B192C] dark:text-white"}`}
+      className={`text-xl font-black ${accent ? "text-[#F28C28]" : "text-[#0B192C] dark:text-white"}`}
     >
       {value}
     </p>
@@ -45,7 +45,7 @@ const ScansOverTime: React.FC<{ series: SmartContactAnalytics["series"] }> = ({
           title={`${point.date} · ${point.qrScans} scans, ${point.profileViews} views, ${point.saveContacts} saved`}
         >
           <div
-            className="w-full bg-[#0A4DA6] rounded-t"
+            className="w-full bg-[#F28C28] rounded-t"
             style={{ height: `${(point.profileViews / peak) * 100}%` }}
           />
           <div
@@ -65,7 +65,7 @@ const Breakdown: React.FC<{
   const peak = Math.max(1, ...rows.map((r) => r.count));
   return (
     <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5">
-      <h4 className="text-[11px] font-black uppercase tracking-wider text-[#0A4DA6] mb-3">
+      <h4 className="text-[11px] font-black uppercase tracking-wider text-[#F28C28] mb-3">
         {title}
       </h4>
       {rows.length === 0 ? (
@@ -80,7 +80,7 @@ const Breakdown: React.FC<{
               </div>
               <div className="h-1.5 rounded-full bg-gray-100 dark:bg-slate-800">
                 <div
-                  className="h-full rounded-full bg-[#0A4DA6]"
+                  className="h-full rounded-full bg-[#F28C28]"
                   style={{ width: `${(row.count / peak) * 100}%` }}
                 />
               </div>
@@ -126,7 +126,7 @@ export const AnalyticsPanel: React.FC<{ profileId: string }> = ({
   }, [load]);
 
   const controlClass =
-    "px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6]";
+    "px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#F28C28]";
 
   return (
     <div className="space-y-4">
@@ -138,8 +138,8 @@ export const AnalyticsPanel: React.FC<{ profileId: string }> = ({
             onClick={() => setPreset(option.value)}
             className={`px-3 py-1.5 rounded-lg text-[11px] font-black border transition-colors ${
               preset === option.value
-                ? "bg-[#0A4DA6] text-white border-[#0A4DA6]"
-                : "bg-white dark:bg-[#0B192C] text-[#0B192C] dark:text-white border-gray-200 dark:border-slate-800 hover:border-[#0A4DA6]"
+                ? "bg-[#F28C28] text-white border-[#F28C28]"
+                : "bg-white dark:bg-[#0B192C] text-[#0B192C] dark:text-white border-gray-200 dark:border-slate-800 hover:border-[#F28C28]"
             }`}
           >
             {option.label}
@@ -192,12 +192,12 @@ export const AnalyticsPanel: React.FC<{ profileId: string }> = ({
 
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5">
             <div className="flex items-center justify-between mb-3">
-              <h4 className="text-[11px] font-black uppercase tracking-wider text-[#0A4DA6]">
+              <h4 className="text-[11px] font-black uppercase tracking-wider text-[#F28C28]">
                 Scans over time
               </h4>
               <div className="flex items-center gap-3 text-[10px] font-bold text-gray-500">
                 <span className="flex items-center gap-1">
-                  <span className="w-2.5 h-2.5 rounded-sm bg-[#0A4DA6]" /> Views
+                  <span className="w-2.5 h-2.5 rounded-sm bg-[#F28C28]" /> Views
                 </span>
                 <span className="flex items-center gap-1">
                   <span className="w-2.5 h-2.5 rounded-sm bg-amber-400" /> Scans
@@ -208,7 +208,7 @@ export const AnalyticsPanel: React.FC<{ profileId: string }> = ({
           </div>
 
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5">
-            <h4 className="text-[11px] font-black uppercase tracking-wider text-[#0A4DA6] mb-3 flex items-center gap-2">
+            <h4 className="text-[11px] font-black uppercase tracking-wider text-[#F28C28] mb-3 flex items-center gap-2">
               <TrendingUp size={13} /> Engagement funnel
             </h4>
             <div className="grid sm:grid-cols-4 gap-3">
@@ -224,7 +224,7 @@ export const AnalyticsPanel: React.FC<{ profileId: string }> = ({
                     {stage.count}
                   </p>
                   {index > 0 && (
-                    <p className="text-[10px] font-bold text-[#0A4DA6]">
+                    <p className="text-[10px] font-bold text-[#F28C28]">
                       {stage.conversionFromPrevious.toFixed(1)}% from previous
                     </p>
                   )}

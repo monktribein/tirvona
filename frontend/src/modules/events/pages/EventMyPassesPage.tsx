@@ -79,8 +79,8 @@ export const EventMyPassesPage: React.FC = () => {
               onClick={() => setStatus(tab.value)}
               className={`text-[11px] font-extrabold px-4 py-2 rounded-full border transition-all cursor-pointer active:scale-95 ${
                 status === tab.value
-                  ? "bg-[#0A4DA6] border-[#0A4DA6] text-white shadow-md"
-                  : "bg-white dark:bg-[#0B192C] border-gray-200 dark:border-slate-700 text-gray-500 dark:text-gray-400 hover:border-[#0A4DA6] hover:text-[#0A4DA6]"
+                  ? "bg-[#F28C28] border-[#F28C28] text-white shadow-md"
+                  : "bg-white dark:bg-[#0B192C] border-gray-200 dark:border-slate-700 text-gray-500 dark:text-gray-400 hover:border-[#F28C28] hover:text-[#F28C28]"
               }`}
             >
               {tab.label}
@@ -116,7 +116,7 @@ export const EventMyPassesPage: React.FC = () => {
             </p>
             <Link
               to="/events"
-              className="inline-flex items-center gap-2 bg-[#0A4DA6] hover:bg-[#083D85] text-white text-xs font-extrabold px-5 py-2.5 rounded-full shadow-md transition-all active:scale-95"
+              className="inline-flex items-center gap-2 bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-extrabold px-5 py-2.5 rounded-full shadow-md transition-all active:scale-95"
             >
               Browse Events
             </Link>
@@ -166,7 +166,7 @@ export const EventMyPassesPage: React.FC = () => {
                         {formatDate(registration.attendDate)}
                       </span>
                     </div>
-                    <span className="w-8 h-8 rounded-full bg-[#0A4DA6] text-white flex items-center justify-center shadow-md transition-transform group-hover:translate-x-0.5">
+                    <span className="w-8 h-8 rounded-full bg-[#F28C28] text-white flex items-center justify-center shadow-md transition-transform group-hover:translate-x-0.5">
                       <ArrowRight size={13} className="stroke-[3]" />
                     </span>
                   </div>

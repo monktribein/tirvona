@@ -484,7 +484,7 @@ export const SeoLandingPage: React.FC<SeoLandingPageProps> = ({ config }) => {
   }, [config, stays]);
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#070D18] text-slate-800 dark:text-slate-100 font-sans selection:bg-[#0A4DA6] selection:text-white transition-colors duration-200">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#070D18] text-slate-800 dark:text-slate-100 font-sans selection:bg-[#F28C28] selection:text-white transition-colors duration-200">
       {/* Schema Injection */}
       <script
         type="application/ld+json"
@@ -516,7 +516,7 @@ export const SeoLandingPage: React.FC<SeoLandingPageProps> = ({ config }) => {
           <li>
             <Link
               to="/"
-              className="hover:text-[#0A4DA6] dark:hover:text-[#E58C28] transition-colors"
+              className="hover:text-[#F28C28] dark:hover:text-[#E58C28] transition-colors"
             >
               Home
             </Link>
@@ -533,7 +533,7 @@ export const SeoLandingPage: React.FC<SeoLandingPageProps> = ({ config }) => {
               <li>
                 <Link
                   to="/ashrams/vrindavan"
-                  className="hover:text-[#0A4DA6] dark:hover:text-[#E58C28] transition-colors"
+                  className="hover:text-[#F28C28] dark:hover:text-[#E58C28] transition-colors"
                 >
                   Vrindavan Stays
                 </Link>
@@ -552,7 +552,7 @@ export const SeoLandingPage: React.FC<SeoLandingPageProps> = ({ config }) => {
       {/* ── HERO SECTION ────────────────────────────────────────────── */}
       <header className="max-w-7xl mx-auto px-4 sm:px-6 pt-2 pb-6 space-y-6">
         <div className="space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#0A4DA6]/10 dark:bg-[#0A4DA6]/25 border border-[#0A4DA6]/20 text-[#0A4DA6] dark:text-blue-300 text-[11px] font-black uppercase tracking-wider">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#F28C28]/10 dark:bg-[#F28C28]/25 border border-[#F28C28]/20 text-[#F28C28] dark:text-amber-300 text-[11px] font-black uppercase tracking-wider">
             <Sparkles size={12} className="text-[#E58C28]" />
             <span>Tirvona Verified Stays</span>
           </div>
@@ -574,7 +574,7 @@ export const SeoLandingPage: React.FC<SeoLandingPageProps> = ({ config }) => {
           >
             {/* Check-in */}
             <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200/60 dark:border-slate-800 flex items-center gap-3">
-              <Calendar size={18} className="text-[#0A4DA6] shrink-0" />
+              <Calendar size={18} className="text-[#F28C28] shrink-0" />
               <div className="min-w-0 flex-1">
                 <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
                   Check-in Date
@@ -596,7 +596,7 @@ export const SeoLandingPage: React.FC<SeoLandingPageProps> = ({ config }) => {
 
             {/* Check-out */}
             <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200/60 dark:border-slate-800 flex items-center gap-3">
-              <Calendar size={18} className="text-[#0A4DA6] shrink-0" />
+              <Calendar size={18} className="text-[#F28C28] shrink-0" />
               <div className="min-w-0 flex-1">
                 <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
                   Check-out Date
@@ -616,7 +616,7 @@ export const SeoLandingPage: React.FC<SeoLandingPageProps> = ({ config }) => {
               className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/80 border border-slate-200/60 dark:border-slate-800 flex items-center gap-3 relative"
               ref={guestPickerRef}
             >
-              <Users size={18} className="text-[#0A4DA6] shrink-0" />
+              <Users size={18} className="text-[#F28C28] shrink-0" />
               <div className="min-w-0 flex-1">
                 <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
                   Pilgrim Guests
@@ -700,8 +700,8 @@ export const SeoLandingPage: React.FC<SeoLandingPageProps> = ({ config }) => {
               onClick={() => setActiveFilterTab(tab.id)}
               className={`px-3.5 py-1.5 rounded-full font-extrabold whitespace-nowrap transition-all cursor-pointer ${
                 activeFilterTab === tab.id
-                  ? "bg-[#0A4DA6] text-white shadow-xs"
-                  : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-[#0A4DA6]/40"
+                  ? "bg-[#F28C28] text-white shadow-xs"
+                  : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-[#F28C28]/40"
               }`}
             >
               {tab.label}
@@ -749,7 +749,7 @@ export const SeoLandingPage: React.FC<SeoLandingPageProps> = ({ config }) => {
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="text-xs font-black bg-[#0A4DA6]/10 text-[#0A4DA6] dark:bg-[#E58C28]/15 dark:text-[#E58C28] px-3 py-1 rounded-full whitespace-nowrap">
+              <span className="text-xs font-black bg-[#F28C28]/10 text-[#F28C28] dark:bg-[#E58C28]/15 dark:text-[#E58C28] px-3 py-1 rounded-full whitespace-nowrap">
                 {filteredStays.length} Available Stays
               </span>
             </div>
@@ -773,7 +773,7 @@ export const SeoLandingPage: React.FC<SeoLandingPageProps> = ({ config }) => {
               <button
                 type="button"
                 onClick={() => window.location.reload()}
-                className="px-4 py-1.5 rounded-full bg-[#0A4DA6] text-white text-xs font-bold"
+                className="px-4 py-1.5 rounded-full bg-[#F28C28] text-white text-xs font-bold"
               >
                 Reload Page
               </button>
@@ -796,7 +796,7 @@ export const SeoLandingPage: React.FC<SeoLandingPageProps> = ({ config }) => {
                   setAmenityFilter("all");
                   setDistanceFilter("all");
                 }}
-                className="px-5 py-2 rounded-full bg-[#0A4DA6] text-white text-xs font-bold hover:bg-[#083D85] transition-colors cursor-pointer"
+                className="px-5 py-2 rounded-full bg-[#F28C28] text-white text-xs font-bold hover:bg-[#D97706] transition-colors cursor-pointer"
               >
                 Clear All Filters
               </button>
@@ -873,7 +873,7 @@ export const SeoLandingPage: React.FC<SeoLandingPageProps> = ({ config }) => {
                       <div className="p-5 space-y-3">
                         {/* Title & Proximity */}
                         <div>
-                          <h3 className="font-black text-base sm:text-lg text-slate-900 dark:text-white leading-snug group-hover:text-[#0A4DA6] dark:group-hover:text-[#E58C28] transition-colors line-clamp-1">
+                          <h3 className="font-black text-base sm:text-lg text-slate-900 dark:text-white leading-snug group-hover:text-[#F28C28] dark:group-hover:text-[#E58C28] transition-colors line-clamp-1">
                             {stay.name}
                           </h3>
                           <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 mt-1">
@@ -894,7 +894,7 @@ export const SeoLandingPage: React.FC<SeoLandingPageProps> = ({ config }) => {
                         {/* Key Amenities */}
                         <div className="flex flex-wrap items-center gap-1.5 pt-1">
                           {stay.hasAc && (
-                            <span className="px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/40 text-[#0A4DA6] dark:text-blue-300 text-[10px] font-bold">
+                            <span className="px-2 py-0.5 rounded-md bg-[#FFF4E5]/40 text-[#F28C28] dark:text-amber-300 text-[10px] font-bold">
                               AC
                             </span>
                           )}
@@ -936,7 +936,7 @@ export const SeoLandingPage: React.FC<SeoLandingPageProps> = ({ config }) => {
                         className={`w-full py-2 px-3 rounded-xl font-black text-xs transition-colors text-center shadow-xs ${
                           !isAvailable
                             ? "bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-400 cursor-not-allowed"
-                            : "bg-[#0A4DA6] hover:bg-[#083D85] text-white cursor-pointer"
+                            : "bg-[#F28C28] hover:bg-[#D97706] text-white cursor-pointer"
                         }`}
                       >
                         {isAvailable ? "Book Now" : "Not Available"}
@@ -1004,7 +1004,7 @@ export const SeoLandingPage: React.FC<SeoLandingPageProps> = ({ config }) => {
                           className="w-16 h-16 rounded-lg object-cover group-hover:scale-105 transition-transform shrink-0"
                         />
                         <div className="min-w-0 flex-1">
-                          <h4 className="font-extrabold text-sm text-slate-900 dark:text-white truncate group-hover:text-[#0A4DA6] transition-colors">
+                          <h4 className="font-extrabold text-sm text-slate-900 dark:text-white truncate group-hover:text-[#F28C28] transition-colors">
                             {item.name}
                           </h4>
                           <p className="text-[11px] text-slate-500 truncate">
@@ -1022,7 +1022,7 @@ export const SeoLandingPage: React.FC<SeoLandingPageProps> = ({ config }) => {
                                 /night
                               </span>
                             </span>
-                            <span className="text-[10px] font-bold text-[#0A4DA6] dark:text-blue-400 flex items-center gap-0.5">
+                            <span className="text-[10px] font-bold text-[#F28C28] dark:text-amber-400 flex items-center gap-0.5">
                               View <ChevronRight size={10} />
                             </span>
                           </div>
@@ -1051,7 +1051,7 @@ export const SeoLandingPage: React.FC<SeoLandingPageProps> = ({ config }) => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800 space-y-2">
-              <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/50 text-[#0A4DA6] flex items-center justify-center font-black text-xs">
+              <div className="w-8 h-8 rounded-lg bg-[#FFF4E5]/50 text-[#F28C28] flex items-center justify-center font-black text-xs">
                 <CheckCircle2 size={18} />
               </div>
               <h4 className="font-extrabold text-xs text-slate-900 dark:text-white">
@@ -1236,7 +1236,7 @@ export const SeoLandingPage: React.FC<SeoLandingPageProps> = ({ config }) => {
                     </span>
                   </div>
                   <div className="p-4 space-y-1">
-                    <h4 className="font-extrabold text-sm text-slate-900 dark:text-white group-hover:text-[#0A4DA6] dark:group-hover:text-[#E58C28] transition-colors line-clamp-1">
+                    <h4 className="font-extrabold text-sm text-slate-900 dark:text-white group-hover:text-[#F28C28] dark:group-hover:text-[#E58C28] transition-colors line-clamp-1">
                       {link.title}
                     </h4>
                     <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
@@ -1244,7 +1244,7 @@ export const SeoLandingPage: React.FC<SeoLandingPageProps> = ({ config }) => {
                     </p>
                   </div>
                 </div>
-                <div className="px-4 pb-3 pt-0 flex items-center gap-1 text-xs font-black text-[#0A4DA6] dark:text-[#E58C28]">
+                <div className="px-4 pb-3 pt-0 flex items-center gap-1 text-xs font-black text-[#F28C28] dark:text-[#E58C28]">
                   <span>Explore Stays</span>
                   <ArrowRight
                     size={12}
@@ -1257,7 +1257,7 @@ export const SeoLandingPage: React.FC<SeoLandingPageProps> = ({ config }) => {
         </section>
 
         {/* ── FINAL BOTTOM CTA ─────────────────────────────────────── */}
-        <section className="relative rounded-3xl overflow-hidden text-white shadow-xl bg-gradient-to-r from-[#0B192C] via-[#0A4DA6] to-[#0B192C] p-8 sm:p-12">
+        <section className="relative rounded-3xl overflow-hidden text-white shadow-xl bg-gradient-to-r from-[#0B192C] via-[#F28C28] to-[#0B192C] p-8 sm:p-12">
           <div className="relative z-10 max-w-2xl space-y-3">
             <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-[10px] font-black uppercase tracking-wider text-amber-300 border border-white/10">
               <Sparkles size={11} /> Instant Pilgrimage Confirmation

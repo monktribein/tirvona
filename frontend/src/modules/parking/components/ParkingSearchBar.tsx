@@ -60,7 +60,7 @@ export const ParkingSearchBar: React.FC<ParkingSearchBarProps> = ({
           <div className="relative">
             <MapPin
               size={15}
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#0A4DA6] stroke-[2.5] pointer-events-none"
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#F28C28] stroke-[2.5] pointer-events-none"
             />
             <input
               id="parking-destination"
@@ -68,7 +68,7 @@ export const ParkingSearchBar: React.FC<ParkingSearchBarProps> = ({
               value={destination}
               onChange={(e) => onChange({ destination: e.target.value })}
               placeholder="Varanasi, Kashi Vishwanath, Rishikesh…"
-              className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl pl-10 pr-3 py-2.5 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 placeholder:font-medium focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 focus:border-[#0A4DA6] transition-all"
+              className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl pl-10 pr-3 py-2.5 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 placeholder:font-medium focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 focus:border-[#F28C28] transition-all"
             />
           </div>
         </div>
@@ -83,7 +83,7 @@ export const ParkingSearchBar: React.FC<ParkingSearchBarProps> = ({
           <div className="relative">
             <LogIn
               size={15}
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#0A4DA6] stroke-[2.5] pointer-events-none"
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#F28C28] stroke-[2.5] pointer-events-none"
             />
             <input
               id="parking-entry"
@@ -100,7 +100,7 @@ export const ParkingSearchBar: React.FC<ParkingSearchBarProps> = ({
                     : {}),
                 });
               }}
-              className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl pl-10 pr-3 py-2.5 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 focus:border-[#0A4DA6] transition-all"
+              className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl pl-10 pr-3 py-2.5 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 focus:border-[#F28C28] transition-all"
             />
           </div>
         </div>
@@ -115,7 +115,7 @@ export const ParkingSearchBar: React.FC<ParkingSearchBarProps> = ({
           <div className="relative">
             <LogOut
               size={15}
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#0A4DA6] stroke-[2.5] pointer-events-none"
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#F28C28] stroke-[2.5] pointer-events-none"
             />
             <input
               id="parking-exit"
@@ -123,7 +123,7 @@ export const ParkingSearchBar: React.FC<ParkingSearchBarProps> = ({
               value={exitAt}
               min={minimumExit}
               onChange={(e) => onChange({ exitAt: e.target.value })}
-              className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl pl-10 pr-3 py-2.5 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 focus:border-[#0A4DA6] transition-all"
+              className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl pl-10 pr-3 py-2.5 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 focus:border-[#F28C28] transition-all"
             />
           </div>
         </div>
@@ -131,7 +131,7 @@ export const ParkingSearchBar: React.FC<ParkingSearchBarProps> = ({
         <button
           type="submit"
           disabled={loading}
-          className="bg-[#0A4DA6] hover:bg-[#083D85] disabled:opacity-60 text-white font-bold text-xs sm:text-sm px-6 py-3 rounded-full flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer shrink-0 active:scale-95"
+          className="bg-[#F28C28] hover:bg-[#D97706] disabled:opacity-60 text-white font-bold text-xs sm:text-sm px-6 py-3 rounded-full flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer shrink-0 active:scale-95"
         >
           {loading ? (
             <Loader2 size={15} className="animate-spin stroke-[2.5]" />

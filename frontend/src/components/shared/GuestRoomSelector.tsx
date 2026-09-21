@@ -26,11 +26,11 @@ const Stepper: React.FC<{
   onChange: (next: number) => void;
 }> = ({ value, min, max, onChange }) => (
   <div className="flex items-center gap-3">
-    <button type="button" aria-label="Decrease" disabled={value <= min} onClick={() => onChange(value - 1)} className="w-9 h-9 rounded-full border border-slate-300 dark:border-slate-700 flex items-center justify-center text-[#0A4DA6] hover:border-[#0A4DA6] hover:bg-blue-50 dark:hover:bg-blue-950/40 active:scale-90 disabled:text-slate-300 disabled:border-slate-200 disabled:hover:bg-transparent disabled:cursor-not-allowed">
+    <button type="button" aria-label="Decrease" disabled={value <= min} onClick={() => onChange(value - 1)} className="w-9 h-9 rounded-full border border-slate-300 dark:border-slate-700 flex items-center justify-center text-[#F28C28] hover:border-[#F28C28] hover:bg-blue-50 dark:hover:bg-blue-950/40 active:scale-90 disabled:text-slate-300 disabled:border-slate-200 disabled:hover:bg-transparent disabled:cursor-not-allowed">
       <Minus size={14} strokeWidth={2.5} />
     </button>
     <span className="w-5 text-center text-sm font-extrabold tabular-nums text-[#0B192C] dark:text-white">{value}</span>
-    <button type="button" aria-label="Increase" disabled={value >= max} onClick={() => onChange(value + 1)} className="w-9 h-9 rounded-full border border-slate-300 dark:border-slate-700 flex items-center justify-center text-[#0A4DA6] hover:border-[#0A4DA6] hover:bg-blue-50 dark:hover:bg-blue-950/40 active:scale-90 disabled:text-slate-300 disabled:border-slate-200 disabled:hover:bg-transparent disabled:cursor-not-allowed">
+    <button type="button" aria-label="Increase" disabled={value >= max} onClick={() => onChange(value + 1)} className="w-9 h-9 rounded-full border border-slate-300 dark:border-slate-700 flex items-center justify-center text-[#F28C28] hover:border-[#F28C28] hover:bg-blue-50 dark:hover:bg-blue-950/40 active:scale-90 disabled:text-slate-300 disabled:border-slate-200 disabled:hover:bg-transparent disabled:cursor-not-allowed">
       <Plus size={14} strokeWidth={2.5} />
     </button>
   </div>
@@ -71,7 +71,7 @@ export const GuestRoomSelector: React.FC<GuestRoomSelectorProps> = ({ values, on
     <div className="relative w-full" ref={rootRef}>
       {!compact && !pill && <span className="block text-[9px] uppercase tracking-[0.14em] font-extrabold text-slate-400 mb-1">Guests</span>}
       <button type="button" onClick={() => setOpen((value) => !value)} className={`w-full flex items-center text-left ${compact ? "gap-2.5" : "gap-3"}`}>
-        {!pill && <span className={`${compact ? "w-8 h-8" : "w-9 h-9"} rounded-xl bg-blue-50 dark:bg-blue-900/30 text-[#0A4DA6] dark:text-amber-400 flex items-center justify-center shrink-0`}><Users size={compact ? 15 : 17} /></span>}
+        {!pill && <span className={`${compact ? "w-8 h-8" : "w-9 h-9"} rounded-xl bg-blue-50 dark:bg-blue-900/30 text-[#F28C28] dark:text-amber-400 flex items-center justify-center shrink-0`}><Users size={compact ? 15 : 17} /></span>}
         <span className="min-w-0 flex-1">
           {pill ? (
             <>
@@ -123,7 +123,7 @@ export const GuestRoomSelector: React.FC<GuestRoomSelectorProps> = ({ values, on
               <Stepper value={active.rooms} min={1} max={9} onChange={(value) => update("rooms", value)} />
             </div>
             <div className="p-4 pt-3">
-              <button type="button" onClick={() => setOpen(false)} className="w-full py-3 rounded-2xl bg-[#0A4DA6] hover:bg-[#083D85] text-white text-xs font-extrabold shadow-md shadow-blue-900/15 active:scale-[0.98]">Save guests</button>
+              <button type="button" onClick={() => setOpen(false)} className="w-full py-3 rounded-2xl bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-extrabold shadow-md shadow-blue-900/15 active:scale-[0.98]">Save guests</button>
             </div>
           </motion.div>
         )}

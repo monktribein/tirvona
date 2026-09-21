@@ -62,7 +62,7 @@ export const loadNotificationSound =
     if (!loaded) {
       loaded = platformSettingsService
         .getSettings()
-        .then((res) => {
+        .then((res: any) => {
           applyConfig(normalize(res.data?.data?.notificationSound));
           return config;
         })
@@ -71,7 +71,7 @@ export const loadNotificationSound =
           return config;
         });
     }
-    return loaded;
+    return (await loaded) || config;
   };
 
 export const refreshNotificationSound =

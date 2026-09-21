@@ -37,7 +37,7 @@ const PACES = [
 ];
 
 const INPUT =
-  "w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl px-3.5 py-2.5 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 focus:border-[#0A4DA6] transition-all";
+  "w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl px-3.5 py-2.5 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 focus:border-[#F28C28] transition-all";
 const LABEL =
   "mb-1.5 block px-1 text-[10px] tracking-wider font-bold text-gray-400";
 
@@ -269,8 +269,8 @@ export const ItineraryPlannerPage: React.FC = () => {
                       onClick={() => setPace(option.value)}
                       className={`flex-1 text-[10px] font-bold px-3 py-2 rounded-full border transition-all cursor-pointer active:scale-95 ${
                         pace === option.value
-                          ? "bg-[#0A4DA6] border-[#0A4DA6] text-white shadow-sm"
-                          : "bg-gray-50 dark:bg-slate-900 border-gray-100 dark:border-slate-800 text-gray-500 dark:text-gray-400 hover:border-[#0A4DA6] hover:text-[#0A4DA6]"
+                          ? "bg-[#F28C28] border-[#F28C28] text-white shadow-sm"
+                          : "bg-gray-50 dark:bg-slate-900 border-gray-100 dark:border-slate-800 text-gray-500 dark:text-gray-400 hover:border-[#F28C28] hover:text-[#F28C28]"
                       }`}
                     >
                       {option.label}
@@ -295,7 +295,7 @@ export const ItineraryPlannerPage: React.FC = () => {
                 type="button"
                 onClick={generate}
                 disabled={generating || !circuitId}
-                className="w-full inline-flex items-center justify-center gap-2 bg-[#0A4DA6] hover:bg-[#083D85] disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-extrabold px-5 py-3 rounded-full shadow-md transition-all active:scale-95 cursor-pointer"
+                className="w-full inline-flex items-center justify-center gap-2 bg-[#F28C28] hover:bg-[#D97706] disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-extrabold px-5 py-3 rounded-full shadow-md transition-all active:scale-95 cursor-pointer"
               >
                 {generating ? (
                   <Loader2 size={14} className="animate-spin stroke-[2.5]" />
@@ -356,7 +356,7 @@ export const ItineraryPlannerPage: React.FC = () => {
                 </p>
                 <Link
                   to="/pilgrimage-circuits"
-                  className="inline-flex items-center gap-2 bg-[#0A4DA6] hover:bg-[#083D85] text-white text-xs font-extrabold px-5 py-2.5 rounded-full shadow-md transition-all active:scale-95"
+                  className="inline-flex items-center gap-2 bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-extrabold px-5 py-2.5 rounded-full shadow-md transition-all active:scale-95"
                 >
                   Browse circuits
                 </Link>
@@ -390,7 +390,7 @@ export const ItineraryPlannerPage: React.FC = () => {
                       type="button"
                       onClick={save}
                       disabled={saving}
-                      className="inline-flex items-center gap-1.5 bg-[#0A4DA6] hover:bg-[#083D85] text-white text-xs font-extrabold px-4 py-2.5 rounded-full shadow-md transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-extrabold px-4 py-2.5 rounded-full shadow-md transition-all active:scale-95 cursor-pointer disabled:opacity-50"
                     >
                       {saving ? (
                         <Loader2 size={14} className="animate-spin" />

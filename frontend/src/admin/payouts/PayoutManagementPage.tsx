@@ -299,10 +299,10 @@ export const PayoutManagementPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f4f7fb] p-5 md:p-8 text-[#0B192C]">
+    <div className="min-h-screen bg-[#FFFBF5] p-5 md:p-8 text-[#0B192C]">
       <section className="rounded-3xl border border-orange-200 bg-white p-6 mb-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="rounded-2xl bg-blue-50 p-3 text-[#0757b5]"><IndianRupee /></div>
+          <div className="rounded-2xl bg-blue-50 p-3 text-[#D97706]"><IndianRupee /></div>
           <div><h1 className="text-2xl font-black">Tirvona Account</h1><p className="text-sm text-slate-500">Secure ashram earnings, bank accounts and RazorpayX reconciliation.</p></div>
         </div>
         <div className="flex gap-2">
@@ -310,7 +310,7 @@ export const PayoutManagementPage: React.FC = () => {
             <option value="">All Stays</option>
             {ashrams.map((item) => <option key={item._id} value={item._id}>{item.name}</option>)}
           </select>
-          <button onClick={() => void load()} className="rounded-xl bg-[#0757b5] px-4 py-2 text-white flex items-center gap-2"><RefreshCw size={15} className={loading ? "animate-spin" : ""} /> Refresh</button>
+          <button onClick={() => void load()} className="rounded-xl bg-[#D97706] px-4 py-2 text-white flex items-center gap-2"><RefreshCw size={15} className={loading ? "animate-spin" : ""} /> Refresh</button>
         </div>
       </section>
 
@@ -331,7 +331,7 @@ export const PayoutManagementPage: React.FC = () => {
             <h2 className="font-black flex items-center gap-2"><Building2 size={18} /> Beneficiary account</h2>
             <p className="text-xs text-slate-500 mt-1">{selectedAshram?.name}. The encrypted account is shared with your other authorized stays under the same legal owner.</p>
             {bank ? <div className="mt-4 rounded-2xl bg-slate-50 p-4 text-sm"><b className="block">{bank.accountHolderName}</b><span>{bank.maskedAccountNumber} · {bank.maskedIfsc}</span><small className="block text-slate-500 mt-1">Updated {new Date(bank.updatedAt).toLocaleString("en-IN")}</small></div> : <p className="mt-4 text-sm text-amber-700">No payout bank account configured.</p>}
-            {!isSuperAdmin && <button disabled={!bank || summary.available <= 0 || Boolean(working)} onClick={() => void requestPayout()} className="mt-4 w-full rounded-xl bg-[#0757b5] px-4 py-3 font-bold text-white disabled:opacity-40 flex items-center justify-center gap-2"><Send size={16} /> Request full payout {summary.available > 0 ? money(summary.available) : ""}</button>}
+            {!isSuperAdmin && <button disabled={!bank || summary.available <= 0 || Boolean(working)} onClick={() => void requestPayout()} className="mt-4 w-full rounded-xl bg-[#D97706] px-4 py-3 font-bold text-white disabled:opacity-40 flex items-center justify-center gap-2"><Send size={16} /> Request full payout {summary.available > 0 ? money(summary.available) : ""}</button>}
           </div>
           {!isSuperAdmin && <form onSubmit={saveBank} className="rounded-3xl border border-orange-200 bg-white p-5">
             <h2 className="font-black">{bank ? "Replace bank account" : "Add bank account"}</h2>
@@ -344,7 +344,7 @@ export const PayoutManagementPage: React.FC = () => {
               <Input label="Beneficiary phone" value={form.beneficiaryPhone} onChange={(value) => setForm({ ...form, beneficiaryPhone: value })} />
               <Input label="Beneficiary email" type="email" value={form.beneficiaryEmail} onChange={(value) => setForm({ ...form, beneficiaryEmail: value })} />
             </div>
-            <button disabled={working === "bank"} className="mt-4 rounded-xl border border-[#0757b5] px-5 py-2.5 font-bold text-[#0757b5] disabled:opacity-50">{working === "bank" ? "Saving securely…" : "Save secure bank account"}</button>
+            <button disabled={working === "bank"} className="mt-4 rounded-xl border border-[#D97706] px-5 py-2.5 font-bold text-[#D97706] disabled:opacity-50">{working === "bank" ? "Saving securely…" : "Save secure bank account"}</button>
           </form>}
         </section>
       )}
@@ -388,9 +388,9 @@ export const PayoutManagementPage: React.FC = () => {
                   <td className="px-4 py-3">{new Date(row.createdAt).toLocaleString("en-IN")}</td>
                   <td className="px-4 py-3">
                     {isSuperAdmin && row.status === "pending" ? <div className="flex min-w-[170px] flex-col gap-2">
-                      <button disabled={working === row._id || providerReady !== true} title={providerReady === false ? "Configure RazorpayX payouts in the backend first" : undefined} onClick={() => void payoutAction(row, "process")} className="rounded-lg bg-[#0757b5] px-3 py-2 font-bold text-white disabled:opacity-50">{working === row._id ? "Processing..." : "Pay via RazorpayX"}</button>
-                      <button disabled={!ashramId || Boolean(working)} title={!ashramId ? "Select this ashram from the page filter first" : "Reveal audited bank details and record an external transfer"} onClick={() => { setManualRow(row); setRevealReason(""); setRevealedBank(null); setTransferReference(""); setManualNote(""); setManualConfirmed(false); }} className="rounded-lg border border-[#0757b5] px-3 py-2 font-bold text-[#0757b5] disabled:opacity-40"><Eye size={14} className="mr-1 inline" /> Manual bank transfer</button>
-                    </div> : isSuperAdmin && row.status === "processing" ? <button disabled={working === row._id || providerReady !== true} onClick={() => void payoutAction(row, row.providerPayoutId ? "reconcile" : "process")} className="font-bold text-[#0757b5] disabled:opacity-50">{row.providerPayoutId ? "Fetch status" : "Retry safely"}</button> : !isSuperAdmin && row.status === "pending" ? <span className="text-xs font-bold text-amber-700">Awaiting Super Admin</span> : "—"}
+                      <button disabled={working === row._id || providerReady !== true} title={providerReady === false ? "Configure RazorpayX payouts in the backend first" : undefined} onClick={() => void payoutAction(row, "process")} className="rounded-lg bg-[#D97706] px-3 py-2 font-bold text-white disabled:opacity-50">{working === row._id ? "Processing..." : "Pay via RazorpayX"}</button>
+                      <button disabled={!ashramId || Boolean(working)} title={!ashramId ? "Select this ashram from the page filter first" : "Reveal audited bank details and record an external transfer"} onClick={() => { setManualRow(row); setRevealReason(""); setRevealedBank(null); setTransferReference(""); setManualNote(""); setManualConfirmed(false); }} className="rounded-lg border border-[#D97706] px-3 py-2 font-bold text-[#D97706] disabled:opacity-40"><Eye size={14} className="mr-1 inline" /> Manual bank transfer</button>
+                    </div> : isSuperAdmin && row.status === "processing" ? <button disabled={working === row._id || providerReady !== true} onClick={() => void payoutAction(row, row.providerPayoutId ? "reconcile" : "process")} className="font-bold text-[#D97706] disabled:opacity-50">{row.providerPayoutId ? "Fetch status" : "Retry safely"}</button> : !isSuperAdmin && row.status === "pending" ? <span className="text-xs font-bold text-amber-700">Awaiting Super Admin</span> : "—"}
                   </td>
                 </tr>
               ))}
@@ -412,7 +412,7 @@ export const PayoutManagementPage: React.FC = () => {
             <label className="mt-4 block text-sm font-bold text-slate-700">Reason for revealing bank details
               <textarea value={revealReason} onChange={(event) => setRevealReason(event.target.value)} maxLength={200} rows={3} className="mt-2 block w-full rounded-xl border border-orange-200 p-3 font-normal text-slate-900" placeholder="Example: Processing approved manual bank transfer" />
             </label>
-            <button type="button" disabled={revealReason.trim().length < 5 || working === `reveal:${manualRow._id}`} onClick={() => void revealManualBankDetails()} className="mt-4 rounded-xl bg-[#0757b5] px-5 py-3 font-bold text-white disabled:opacity-40"><Eye size={16} className="mr-2 inline" />{working === `reveal:${manualRow._id}` ? "Revealing securely..." : "Reveal beneficiary bank details"}</button>
+            <button type="button" disabled={revealReason.trim().length < 5 || working === `reveal:${manualRow._id}`} onClick={() => void revealManualBankDetails()} className="mt-4 rounded-xl bg-[#D97706] px-5 py-3 font-bold text-white disabled:opacity-40"><Eye size={16} className="mr-2 inline" />{working === `reveal:${manualRow._id}` ? "Revealing securely..." : "Reveal beneficiary bank details"}</button>
           </div> : <form onSubmit={recordManualPayment} className="mt-5">
             <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
               <p className="text-xs font-bold uppercase text-slate-500">Account holder</p><p className="font-black">{revealedBank.accountHolderName}</p>

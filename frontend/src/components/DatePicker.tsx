@@ -182,13 +182,13 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                     onClick={() => pick(c.date)}
                     className={`h-8 w-8 mx-auto rounded-lg text-xs font-bold flex items-center justify-center transition-colors ${
                       isSel
-                        ? "bg-[#0A4DA6] text-white"
+                        ? "bg-[#F28C28] text-white"
                         : dis
                           ? "text-gray-300 dark:text-slate-700 cursor-not-allowed"
                           : c.current
-                            ? "text-[#0B192C] dark:text-gray-200 hover:bg-[#0A4DA6]/10 hover:text-[#0A4DA6]"
+                            ? "text-[#0B192C] dark:text-gray-200 hover:bg-[#F28C28]/10 hover:text-[#F28C28]"
                             : "text-gray-300 dark:text-slate-600 hover:bg-gray-50 dark:hover:bg-slate-800"
-                    } ${isToday && !isSel ? "ring-1 ring-[#0A4DA6]/40" : ""}`}
+                    } ${isToday && !isSel ? "ring-1 ring-[#F28C28]/40" : ""}`}
                   >
                     {c.date.getDate()}
                   </button>
@@ -213,7 +213,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                 className={`text-[11px] font-bold ${
                   todayMidnight < minMidnight
                     ? "text-gray-300 dark:text-slate-700 cursor-not-allowed"
-                    : "text-[#0A4DA6] hover:underline cursor-pointer"
+                    : "text-[#F28C28] hover:underline cursor-pointer"
                 }`}
               >
                 Today
@@ -221,7 +221,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="rounded-full bg-[#0A4DA6] px-4 py-1.5 text-[11px] font-medium text-white hover:bg-[#083D85]"
+                className="rounded-full bg-[#F28C28] px-4 py-1.5 text-[11px] font-medium text-white hover:bg-[#D97706]"
               >
                 Done
               </button>

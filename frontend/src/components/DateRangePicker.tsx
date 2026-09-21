@@ -112,7 +112,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
             aria-label={t("Previous month")}
             disabled={previousDisabled}
             onClick={() => setView(new Date(view.getFullYear(), view.getMonth() - 1, 1))}
-            className="absolute left-0 w-9 h-9 rounded-full flex items-center justify-center hover:bg-blue-50 text-[#0A4DA6] disabled:text-gray-300 disabled:hover:bg-transparent disabled:cursor-not-allowed"
+            className="absolute left-0 w-9 h-9 rounded-full flex items-center justify-center hover:bg-blue-50 text-[#F28C28] disabled:text-gray-300 disabled:hover:bg-transparent disabled:cursor-not-allowed"
           >
             <ChevronLeft size={17} />
           </button>
@@ -128,7 +128,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
             type="button"
             aria-label={t("Next month")}
             onClick={() => setView(new Date(view.getFullYear(), view.getMonth() + 1, 1))}
-            className="absolute right-0 w-9 h-9 rounded-full flex items-center justify-center hover:bg-blue-50 text-[#0A4DA6]"
+            className="absolute right-0 w-9 h-9 rounded-full flex items-center justify-center hover:bg-blue-50 text-[#F28C28]"
           >
             <ChevronRight size={17} />
           </button>
@@ -150,7 +150,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
           const selectedEnd = value === checkOut;
           const ranged = isInRange(date);
           return (
-            <div key={`${value}-${cellIndex}`} className={`relative h-9 flex items-center justify-center ${ranged ? "bg-blue-50 dark:bg-blue-950/40" : ""}`}>
+            <div key={`${value}-${cellIndex}`} className={`relative h-9 flex items-center justify-center ${ranged ? "bg-[#FFF4E5]/40" : ""}`}>
               <button
                 type="button"
                 disabled={disabled}
@@ -158,7 +158,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
                 onClick={() => choose(date)}
                 className={`relative z-10 w-9 h-9 rounded-full text-xs font-bold flex items-center justify-center transition-all ${
                   selectedStart || selectedEnd
-                    ? "bg-[#0A4DA6] text-white shadow-md shadow-blue-900/20"
+                    ? "bg-[#F28C28] text-white shadow-md shadow-blue-900/20"
                     : disabled
                       ? "text-slate-200 dark:text-slate-700 cursor-not-allowed"
                       : "text-[#0B192C] dark:text-slate-200 hover:bg-[#E58C28]/15 hover:text-[#B96509]"
@@ -191,7 +191,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
           </span>
         ) : (
           <>
-            <span className={`${compact ? "w-8 h-8" : "w-9 h-9"} rounded-xl bg-blue-50 dark:bg-blue-900/30 text-[#0A4DA6] dark:text-amber-400 flex items-center justify-center shrink-0`}>
+            <span className={`${compact ? "w-8 h-8" : "w-9 h-9"} rounded-xl bg-blue-50 dark:bg-blue-900/30 text-[#F28C28] dark:text-amber-400 flex items-center justify-center shrink-0`}>
               <CalendarDays size={compact ? 15 : 17} />
             </span>
             <span className="grid grid-cols-2 min-w-0 flex-1">
@@ -248,7 +248,7 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="rounded-full bg-[#0A4DA6] px-6 py-2.5 text-xs font-bold text-white hover:bg-[#083D85] cursor-pointer shadow-sm active:scale-95"
+                  className="rounded-full bg-[#F28C28] px-6 py-2.5 text-xs font-bold text-white hover:bg-[#D97706] cursor-pointer shadow-sm active:scale-95"
                 >
                   Done
                 </button>

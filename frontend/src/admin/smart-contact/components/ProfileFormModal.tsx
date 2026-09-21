@@ -10,7 +10,7 @@ import { FileUploader } from "../../../components/FileUploader";
 import { AlertTriangle, ContactRound, Loader2 } from "lucide-react";
 
 const inputClass =
-  "w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6]";
+  "w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#F28C28]";
 
 const Field: React.FC<{
   label: string;
@@ -29,7 +29,7 @@ const Section: React.FC<{ title: string; children: React.ReactNode }> = ({
   children,
 }) => (
   <div className="space-y-3">
-    <h4 className="text-[11px] font-black uppercase tracking-wider text-[#0A4DA6]">
+    <h4 className="text-[11px] font-black uppercase tracking-wider text-[#F28C28]">
       {title}
     </h4>
     {children}

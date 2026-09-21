@@ -291,7 +291,7 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
     <span
       className={`px-2 py-0.5 rounded-full text-[9px] font-black tracking-wider ${
         source === "notification"
-          ? "bg-[#EBF2FA] text-[#0A4DA6] dark:bg-[#0A4DA6]/20 dark:text-blue-300"
+          ? "bg-[#FFF4E5] text-[#F28C28] dark:bg-[#F28C28]/20 dark:text-amber-300"
           : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
       }`}
     >
@@ -333,7 +333,7 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
             >
               <RefreshCw
                 size={16}
-                className={loading ? "animate-spin text-[#0A4DA6]" : ""}
+                className={loading ? "animate-spin text-[#F28C28]" : ""}
               />
             </button>
           </div>
@@ -375,7 +375,7 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
               placeholder="Search activity, IP, email, action..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:border-[#0A4DA6]"
+              className="w-full pl-9 pr-3 py-2 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:border-[#F28C28]"
             />
           </div>
 
@@ -421,13 +421,13 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
           <div className="flex bg-gray-100 dark:bg-slate-800 p-1 rounded-xl">
             <button
               onClick={() => setViewMode("table")}
-              className={`px-3 py-1 rounded-lg text-xs font-bold cursor-pointer ${viewMode === "table" ? "bg-white dark:bg-[#0B192C] text-[#0A4DA6] shadow-xs" : "text-gray-400"}`}
+              className={`px-3 py-1 rounded-lg text-xs font-bold cursor-pointer ${viewMode === "table" ? "bg-white dark:bg-[#0B192C] text-[#F28C28] shadow-xs" : "text-gray-400"}`}
             >
               Table View
             </button>
             <button
               onClick={() => setViewMode("timeline")}
-              className={`px-3 py-1 rounded-lg text-xs font-bold cursor-pointer ${viewMode === "timeline" ? "bg-white dark:bg-[#0B192C] text-[#0A4DA6] shadow-xs" : "text-gray-400"}`}
+              className={`px-3 py-1 rounded-lg text-xs font-bold cursor-pointer ${viewMode === "timeline" ? "bg-white dark:bg-[#0B192C] text-[#F28C28] shadow-xs" : "text-gray-400"}`}
             >
               Timeline View
             </button>
@@ -438,7 +438,7 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
       {viewMode === "timeline" ? (
         <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 shadow-sm space-y-6">
           <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white flex items-center gap-2">
-            <Clock size={18} className="text-[#0A4DA6]" /> Live Chronological
+            <Clock size={18} className="text-[#F28C28]" /> Live Chronological
             System Timeline
           </h3>
 
@@ -454,7 +454,7 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
                     className={`absolute -left-[31px] top-1.5 w-4 h-4 rounded-full border-4 border-white dark:border-[#0B192C] ${
                       item.source === "notification" && !item.isRead
                         ? "bg-amber-500"
-                        : "bg-[#0A4DA6]"
+                        : "bg-[#F28C28]"
                     }`}
                   />
 
@@ -503,7 +503,7 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
                       onChange={(e) =>
                         setSelectedIds(e.target.checked ? actionableIds : [])
                       }
-                      className="accent-[#0A4DA6] cursor-pointer"
+                      className="accent-[#F28C28] cursor-pointer"
                     />
                   </th>
                   <th className="py-4 px-6">Timestamp</th>
@@ -541,7 +541,7 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
                             aria-label={`Select ${item.title}`}
                             checked={selectedIds.includes(item.id)}
                             onChange={() => toggleSelected(item.id)}
-                            className="accent-[#0A4DA6] cursor-pointer"
+                            className="accent-[#F28C28] cursor-pointer"
                           />
                         )}
                       </td>
@@ -556,7 +556,7 @@ export const EnterpriseNotificationCenterPage: React.FC = () => {
                             {item.title}
                           </span>
                           <span className="flex items-center gap-1.5">
-                            <span className="text-[10px] text-[#0A4DA6] font-bold">
+                            <span className="text-[10px] text-[#F28C28] font-bold">
                               {humanizeLabel(item.module)}
                             </span>
                             {sourceBadge(item.source)}

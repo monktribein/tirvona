@@ -139,7 +139,7 @@ export const OffersPage: React.FC = () => {
               />
               <button
                 type="button"
-                className="px-6 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-blue-900 text-white font-black text-xs transition-colors shrink-0 shadow-sm cursor-pointer"
+                className="px-6 py-2.5 rounded-full bg-[#F28C28] hover:bg-[#D97706] text-white font-black text-xs transition-colors shrink-0 shadow-sm cursor-pointer"
               >
                 Search
               </button>
@@ -175,7 +175,7 @@ export const OffersPage: React.FC = () => {
               <button
                 type="button"
                 onClick={fetchOffers}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-[#083b80] text-white text-xs font-extrabold cursor-pointer"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#F28C28] hover:bg-[#B45309] text-white text-xs font-extrabold cursor-pointer"
               >
                 Try Again
               </button>

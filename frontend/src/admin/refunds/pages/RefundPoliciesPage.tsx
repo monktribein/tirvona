@@ -81,7 +81,7 @@ const Toggle: React.FC<{
     className={`flex items-start gap-2.5 p-3 rounded-2xl border transition-colors ${
       disabled
         ? "border-gray-100 dark:border-slate-800 opacity-55 cursor-not-allowed"
-        : "border-gray-200 dark:border-slate-700 hover:border-[#0A4DA6]/50 cursor-pointer"
+        : "border-gray-200 dark:border-slate-700 hover:border-[#F28C28]/50 cursor-pointer"
     }`}
   >
     <input
@@ -89,7 +89,7 @@ const Toggle: React.FC<{
       checked={checked}
       disabled={disabled}
       onChange={(e) => onChange(e.target.checked)}
-      className="mt-0.5 accent-[#0A4DA6]"
+      className="mt-0.5 accent-[#F28C28]"
     />
     <span className="min-w-0">
       <span className="block text-xs font-bold text-[#0B192C] dark:text-white">
@@ -117,7 +117,7 @@ const Field: React.FC<{
 );
 
 const inputClass =
-  "w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6]";
+  "w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#F28C28]";
 
 export const RefundPoliciesPage: React.FC = () => {
   const navigate = useNavigate();
@@ -342,7 +342,7 @@ export const RefundPoliciesPage: React.FC = () => {
                 {(policy.cancellationWindows ?? []).map((w, i) => (
                   <span
                     key={i}
-                    className="px-2 py-0.5 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-[#0A4DA6] dark:text-blue-300 text-[10px] font-black"
+                    className="px-2 py-0.5 rounded-lg bg-[#FFF4E5]/40 text-[#F28C28] dark:text-amber-300 text-[10px] font-black"
                   >
                     {w.hoursBefore}h → {w.refundPercent}%
                   </span>

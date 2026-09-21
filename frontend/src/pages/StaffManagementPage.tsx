@@ -139,7 +139,7 @@ export const StaffManagementPage: React.FC = () => {
       <div className="flex flex-wrap justify-between items-start sm:items-center gap-3 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 p-4 sm:p-6 rounded-[24px] shadow-sm">
         <div className="min-w-0">
           <h2 className="text-base font-extrabold text-[#0B192C] dark:text-white flex items-center gap-2">
-            <Users size={18} className="text-[#0A4DA6]" /> Staff Management
+            <Users size={18} className="text-[#F28C28]" /> Staff Management
           </h2>
           <p className="text-xs text-gray-400 font-semibold mt-1">
             Create reception, housekeeping, and manager accounts tied to your
@@ -149,7 +149,7 @@ export const StaffManagementPage: React.FC = () => {
         {ashrams.length > 0 && (
           <button
             onClick={() => setShowCreate(true)}
-            className="shrink-0 px-5 py-2.5 bg-[#0A4DA6] text-white text-xs font-bold rounded-full hover:bg-opacity-95 shadow flex items-center gap-1.5 cursor-pointer"
+            className="shrink-0 px-5 py-2.5 bg-[#F28C28] text-white text-xs font-bold rounded-full hover:bg-opacity-95 shadow flex items-center gap-1.5 cursor-pointer"
           >
             <Plus size={14} /> Add Staff
           </button>
@@ -201,7 +201,7 @@ export const StaffManagementPage: React.FC = () => {
                       </div>
                     </td>
                     <td className="py-4 px-6">
-                      <span className="px-2.5 py-0.5 bg-[#0A4DA6]/10 text-[#0A4DA6] rounded-full text-[9px] font-bold">
+                      <span className="px-2.5 py-0.5 bg-[#F28C28]/10 text-[#F28C28] rounded-full text-[9px] font-bold">
                         {ROLE_LABELS[s.role] || s.role}
                       </span>
                     </td>
@@ -242,7 +242,7 @@ export const StaffManagementPage: React.FC = () => {
           >
             <div className="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-3">
               <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white flex items-center gap-1.5">
-                <Users size={18} className="text-[#0A4DA6]" /> Add Staff Member
+                <Users size={18} className="text-[#F28C28]" /> Add Staff Member
               </h3>
               <button
                 type="button"
@@ -329,7 +329,7 @@ export const StaffManagementPage: React.FC = () => {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full py-3 bg-[#0A4DA6] text-white rounded-full font-extrabold text-xs shadow-md cursor-pointer disabled:opacity-60"
+              className="w-full py-3 bg-[#F28C28] text-white rounded-full font-extrabold text-xs shadow-md cursor-pointer disabled:opacity-60"
             >
               {submitting ? "Creating…" : "Create Staff Account"}
             </button>

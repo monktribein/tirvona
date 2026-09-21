@@ -37,7 +37,7 @@ export const ProfilePaymentsPage: React.FC = () => {
 
   return (
     <div className="min-h-screen pb-24 text-left">
-      <section className="bg-gradient-to-r from-[#0B192C] via-[#0A4DA6] to-[#0B192C] text-white pt-10 pb-16 px-4 sm:px-6 lg:px-8 border-b border-white/10 relative overflow-hidden">
+      <section className="bg-gradient-to-r from-[#0B192C] via-[#F28C28] to-[#0B192C] text-white pt-10 pb-16 px-4 sm:px-6 lg:px-8 border-b border-white/10 relative overflow-hidden">
         <div className="max-w-7xl mx-auto space-y-3 relative z-10">
           <Link
             to="/profile"
@@ -83,7 +83,7 @@ export const ProfilePaymentsPage: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-4">
-                  <span className="text-base font-black text-[#0A4DA6] dark:text-white">
+                  <span className="text-base font-black text-[#F28C28] dark:text-white">
                     {formatCurrency(t.amount)}
                   </span>
                   <EnterpriseButton

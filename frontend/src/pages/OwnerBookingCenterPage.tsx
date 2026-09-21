@@ -288,7 +288,7 @@ export const OwnerBookingCenterPage: React.FC<OwnerBookingCenterPageProps> = ({
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h1 className="text-lg font-black text-[#0B192C] dark:text-white flex items-center gap-2">
-              <CalendarDays size={20} className="text-[#0A4DA6]" /> Booking &amp; Payment Center
+              <CalendarDays size={20} className="text-[#F28C28]" /> Booking &amp; Payment Center
             </h1>
             <p className="text-xs text-gray-400 font-semibold mt-1">
               Every reservation and financial record for your owned ashrams.
@@ -318,7 +318,7 @@ export const OwnerBookingCenterPage: React.FC<OwnerBookingCenterPageProps> = ({
               type="button"
               onClick={load}
               disabled={loading}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-[#0A4DA6] text-white text-xs font-extrabold disabled:opacity-60"
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-[#F28C28] text-white text-xs font-extrabold disabled:opacity-60"
             >
               <RefreshCw size={14} className={loading ? "animate-spin" : ""} /> Refresh
             </button>
@@ -339,7 +339,7 @@ export const OwnerBookingCenterPage: React.FC<OwnerBookingCenterPageProps> = ({
           ["Settled Payout", summary.settledEarning, WalletCards],
         ].map(([title, value, Icon]: any) => (
           <div key={title} className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[20px] p-4 shadow-sm">
-            <Icon size={16} className="text-[#0A4DA6]" />
+            <Icon size={16} className="text-[#F28C28]" />
             <p className="text-[10px] text-gray-400 font-bold mt-2">{title}</p>
             <p className="text-base font-black text-[#0B192C] dark:text-white mt-1">{money(value)}</p>
           </div>
@@ -349,7 +349,7 @@ export const OwnerBookingCenterPage: React.FC<OwnerBookingCenterPageProps> = ({
       <section className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] overflow-hidden shadow-sm">
         <div className="flex gap-2 overflow-x-auto p-4 border-b border-gray-100 dark:border-slate-800">
           {tabs.map((tab) => (
-            <button key={tab.id} onClick={() => setActiveView(tab.id)} className={`shrink-0 px-4 py-2 rounded-full text-xs font-extrabold ${activeView === tab.id ? "bg-[#0A4DA6] text-white" : "bg-gray-50 dark:bg-slate-900 text-gray-500"}`}>{tab.title}</button>
+            <button key={tab.id} onClick={() => setActiveView(tab.id)} className={`shrink-0 px-4 py-2 rounded-full text-xs font-extrabold ${activeView === tab.id ? "bg-[#F28C28] text-white" : "bg-gray-50 dark:bg-slate-900 text-gray-500"}`}>{tab.title}</button>
           ))}
         </div>
 
@@ -359,7 +359,7 @@ export const OwnerBookingCenterPage: React.FC<OwnerBookingCenterPageProps> = ({
               <label className="relative flex-1 min-w-56"><Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Booking, guest, phone, room or ashram" className="w-full pl-9 pr-3 py-2.5 bg-gray-50 dark:bg-slate-900 rounded-xl border border-gray-100 dark:border-slate-800 text-xs focus:outline-none" /></label>
               <select value={status} onChange={(event) => setStatus(event.target.value)} className="px-3 py-2.5 bg-gray-50 dark:bg-slate-900 rounded-xl border border-gray-100 dark:border-slate-800 text-xs font-bold"><option value="">All statuses</option>{["pending","confirmed","checked_in","checked_out","completed","cancelled","refunded","no_show","expired"].map((item) => <option key={item} value={item}>{label(item)}</option>)}</select>
             </div>
-            <DataTable loading={loading} headers={["Booking", "Guest", "Ashram / Room", "Stay", "Guests", "Payment", "Total", "Status", "Details"]} rows={filteredBookings.map((booking) => [booking.bookingId || booking.reservationNumber || "—", <Contact key="guest" item={booking.customerId} />, <div key="place"><b>{booking.ashramId?.name || "—"}</b><small>{booking.roomId?.name || "—"}</small></div>, <div key="stay"><span>{dateTime(booking.checkInDate)}</span><small>to {dateTime(booking.checkOutDate)}</small></div>, `${booking.guestsCount || 1} / ${booking.roomsBookedCount || 1} room(s)`, label(booking.paymentStatus), money(booking.pricing?.totalAmount), <Status key="status" value={booking.status} />, <button key="details" onClick={() => setSelectedBooking(booking)} className="text-[#0A4DA6] font-extrabold hover:underline">View full record</button>])} />
+            <DataTable loading={loading} headers={["Booking", "Guest", "Ashram / Room", "Stay", "Guests", "Payment", "Total", "Status", "Details"]} rows={filteredBookings.map((booking) => [booking.bookingId || booking.reservationNumber || "—", <Contact key="guest" item={booking.customerId} />, <div key="place"><b>{booking.ashramId?.name || "—"}</b><small>{booking.roomId?.name || "—"}</small></div>, <div key="stay"><span>{dateTime(booking.checkInDate)}</span><small>to {dateTime(booking.checkOutDate)}</small></div>, `${booking.guestsCount || 1} / ${booking.roomsBookedCount || 1} room(s)`, label(booking.paymentStatus), money(booking.pricing?.totalAmount), <Status key="status" value={booking.status} />, <button key="details" onClick={() => setSelectedBooking(booking)} className="text-[#F28C28] font-extrabold hover:underline">View full record</button>])} />
           </div>
         )}
 
@@ -460,7 +460,7 @@ export const OwnerBookingCenterPage: React.FC<OwnerBookingCenterPageProps> = ({
 };
 
 const Contact = ({ item }: { item?: any }) => <div><b>{item?.name || "—"}</b><small>{item?.email || item?.phone || ""}</small></div>;
-const Status = ({ value }: { value?: string }) => <span className="inline-flex px-2.5 py-1 rounded-full bg-[#0A4DA6]/10 text-[#0A4DA6] text-[9px] font-extrabold">{label(value)}</span>;
+const Status = ({ value }: { value?: string }) => <span className="inline-flex px-2.5 py-1 rounded-full bg-[#F28C28]/10 text-[#F28C28] text-[9px] font-extrabold">{label(value)}</span>;
 const DataTable = ({ loading, headers, rows }: { loading: boolean; headers: string[]; rows: React.ReactNode[][] }) => (
   <div className="overflow-x-auto">
     <table className="w-full text-left text-xs min-w-[1000px]">

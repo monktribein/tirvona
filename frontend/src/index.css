@@ -18,22 +18,26 @@ html[lang="hi"] .tracking-widest {
   --card: #FFFFFF;
   --card-foreground: #0B192C;
   
-  --primary: #0A4DA6;
+  --primary: #F28C28;
   --primary-foreground: #FFFFFF;
+  --primary-hover: #D97706;
+  --primary-active: #B45309;
+  --primary-light: #FFF4E5;
+  --primary-border: #F28C28;
   
   --secondary: #0B192C;
   --secondary-foreground: #FFFFFF;
   
-  --accent: #E58C28;
+  --accent: #F28C28;
   --accent-foreground: #FFFFFF;
   
   --success: #10B981;
-  --warning: #E58C28;
+  --warning: #F59E0B;
   --danger: #EF4444;
   
-  --border: rgba(229, 140, 40, 0.35);
+  --border: rgba(242, 140, 40, 0.30);
   --input: #F8FAFC;
-  --ring: rgba(10, 77, 166, 0.2);
+  --ring: rgba(242, 140, 40, 0.35);
   --font-sans: "Plus Jakarta Sans", "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 
   /* iOS Safe Area Inset Custom Properties */
@@ -50,22 +54,26 @@ html[lang="hi"] .tracking-widest {
   --card: #0B192C;
   --card-foreground: #F8FAFC;
   
-  --primary: #0A4DA6;
+  --primary: #F28C28;
   --primary-foreground: #FFFFFF;
+  --primary-hover: #D97706;
+  --primary-active: #B45309;
+  --primary-light: rgba(242, 140, 40, 0.15);
+  --primary-border: #F28C28;
   
   --secondary: #0B192C;
   --secondary-foreground: #FFFFFF;
   
-  --accent: #E58C28;
+  --accent: #F28C28;
   --accent-foreground: #070F1B;
   
   --success: #10B981;
-  --warning: #E58C28;
+  --warning: #F59E0B;
   --danger: #EF4444;
   
-  --border: rgba(229, 140, 40, 0.35);
+  --border: rgba(242, 140, 40, 0.30);
   --input: #1E293B;
-  --ring: rgba(10, 77, 166, 0.3);
+  --ring: rgba(242, 140, 40, 0.40);
   --font-sans: "Plus Jakarta Sans", "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
@@ -182,11 +190,11 @@ select,
 input[type="checkbox"],
 input[type="radio"],
 input[type="date"] {
-  accent-color: #0A4DA6;
+  accent-color: #F28C28;
 }
 option:checked,
 option:hover {
-  background-color: #0A4DA6;
+  background-color: #F28C28;
   color: #ffffff;
 }
 
@@ -232,18 +240,18 @@ option:hover {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(10, 77, 166, 0.2);
+  background: rgba(242, 140, 40, 0.25);
   border-radius: 999px;
   transition: background-color 0.2s ease;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(10, 77, 166, 0.45);
+  background: rgba(242, 140, 40, 0.5);
 }
 .dark ::-webkit-scrollbar-thumb {
-  background: rgba(229, 140, 40, 0.25);
+  background: rgba(242, 140, 40, 0.25);
 }
 .dark ::-webkit-scrollbar-thumb:hover {
-  background: rgba(229, 140, 40, 0.5);
+  background: rgba(242, 140, 40, 0.5);
 }
 
 .glass {

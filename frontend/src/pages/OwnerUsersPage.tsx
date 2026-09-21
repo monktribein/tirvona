@@ -241,7 +241,7 @@ export const OwnerUsersPage: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      <div className="bg-gradient-to-r from-[#0B192C] via-[#0A4DA6] to-[#0B192C] rounded-[28px] p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="bg-gradient-to-r from-[#0B192C] via-[#F28C28] to-[#0B192C] rounded-[28px] p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-amber-300 text-xs font-bold backdrop-blur-md">
             <Users size={14} /> User & Staff Administration
@@ -285,7 +285,7 @@ export const OwnerUsersPage: React.FC = () => {
           <span className="text-xs font-extrabold tracking-wider text-gray-400">
             Managers & Desk
           </span>
-          <div className="text-2xl font-black text-[#0A4DA6]">
+          <div className="text-2xl font-black text-[#F28C28]">
             {
               staff.filter((s) => ["manager", "reception"].includes(s.role))
                 .length
@@ -310,7 +310,7 @@ export const OwnerUsersPage: React.FC = () => {
             placeholder="Search by name, email, or phone..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl pl-9 pr-3 py-2 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+            className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl pl-9 pr-3 py-2 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#F28C28]"
           />
         </div>
 
@@ -327,7 +327,7 @@ export const OwnerUsersPage: React.FC = () => {
               onClick={() => setRoleFilter(tab.id)}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                 roleFilter === tab.id
-                  ? "bg-[#0A4DA6] text-white shadow-sm"
+                  ? "bg-[#F28C28] text-white shadow-sm"
                   : "text-gray-500 hover:text-gray-800 dark:hover:text-gray-200"
               }`}
             >
@@ -370,7 +370,7 @@ export const OwnerUsersPage: React.FC = () => {
                   >
                     <td className="py-4 px-6">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-[#0A4DA6]/10 text-[#0A4DA6] border border-[#0A4DA6]/20 flex items-center justify-center font-black text-xs shrink-0">
+                        <div className="w-9 h-9 rounded-full bg-[#F28C28]/10 text-[#F28C28] border border-[#F28C28]/20 flex items-center justify-center font-black text-xs shrink-0">
                           {u.name.charAt(0).toUpperCase()}
                         </div>
                         <div>
@@ -384,7 +384,7 @@ export const OwnerUsersPage: React.FC = () => {
                       </div>
                     </td>
                     <td className="py-4 px-6 space-y-1">
-                      <div className="flex items-center gap-1.5 font-bold text-[#0A4DA6] dark:text-amber-400">
+                      <div className="flex items-center gap-1.5 font-bold text-[#F28C28] dark:text-amber-400">
                         <Mail size={13} />
                         <span className="font-mono text-xs">{u.email}</span>
                       </div>
@@ -415,7 +415,7 @@ export const OwnerUsersPage: React.FC = () => {
 
                         <button
                           onClick={() => handleCopyCredentials(u.email, u._id)}
-                          className="px-2.5 py-1 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-[#0A4DA6] dark:text-amber-400 hover:bg-blue-100 transition-all cursor-pointer flex items-center gap-1 text-[10px] font-bold"
+                          className="px-2.5 py-1 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-[#F28C28] dark:text-amber-400 hover:bg-blue-100 transition-all cursor-pointer flex items-center gap-1 text-[10px] font-bold"
                           title="Copy Login Credentials"
                         >
                           <Copy size={12} />
@@ -493,7 +493,7 @@ export const OwnerUsersPage: React.FC = () => {
             >
               <div className="flex items-center justify-between border-b border-gray-100 dark:border-slate-800 pb-4">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-full bg-[#0A4DA6]/10 text-[#0A4DA6] flex items-center justify-center font-bold">
+                  <div className="w-9 h-9 rounded-full bg-[#F28C28]/10 text-[#F28C28] flex items-center justify-center font-bold">
                     <UserPlus size={18} />
                   </div>
                   <div>
@@ -543,7 +543,7 @@ export const OwnerUsersPage: React.FC = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, name: e.target.value })
                     }
-                    className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                    className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#F28C28]"
                   />
                 </div>
 
@@ -560,7 +560,7 @@ export const OwnerUsersPage: React.FC = () => {
                       onChange={(e) =>
                         setFormData({ ...formData, email: e.target.value })
                       }
-                      className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                      className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#F28C28]"
                     />
                   </div>
 
@@ -576,7 +576,7 @@ export const OwnerUsersPage: React.FC = () => {
                       onChange={(e) =>
                         setFormData({ ...formData, phone: e.target.value })
                       }
-                      className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                      className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#F28C28]"
                     />
                   </div>
                 </div>
@@ -597,7 +597,7 @@ export const OwnerUsersPage: React.FC = () => {
                         onChange={(e) =>
                           setFormData({ ...formData, password: e.target.value })
                         }
-                        className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl pl-4 pr-10 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                        className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl pl-4 pr-10 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#F28C28]"
                       />
                       <button
                         type="button"
@@ -620,7 +620,7 @@ export const OwnerUsersPage: React.FC = () => {
                       placeholder="Re-enter password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="mt-1 w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                      className="mt-1 w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#F28C28]"
                     />
                   </div>
                 </div>
@@ -634,7 +634,7 @@ export const OwnerUsersPage: React.FC = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, role: e.target.value })
                     }
-                    className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6] cursor-pointer"
+                    className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#F28C28] cursor-pointer"
                   >
                     <option value="manager">👔 Ashram Manager</option>
                     <option value="reception">
@@ -656,7 +656,7 @@ export const OwnerUsersPage: React.FC = () => {
                   <button
                     type="submit"
                     disabled={createLoading}
-                    className="flex-1 py-3 bg-[#0A4DA6] hover:bg-[#083b80] text-white font-extrabold rounded-2xl text-xs shadow-md shadow-[#0A4DA6]/20 cursor-pointer flex items-center justify-center gap-2"
+                    className="flex-1 py-3 bg-[#F28C28] hover:bg-[#B45309] text-white font-extrabold rounded-2xl text-xs shadow-md shadow-[#F28C28]/20 cursor-pointer flex items-center justify-center gap-2"
                   >
                     {createLoading
                       ? "Creating Account..."
@@ -733,7 +733,7 @@ export const OwnerUsersPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => generateRandomPassword(setNewPassword)}
-                      className="text-[10px] font-extrabold text-[#0A4DA6] hover:underline flex items-center gap-1 cursor-pointer"
+                      className="text-[10px] font-extrabold text-[#F28C28] hover:underline flex items-center gap-1 cursor-pointer"
                     >
                       <Sparkles size={11} /> Auto Generate
                     </button>
@@ -745,7 +745,7 @@ export const OwnerUsersPage: React.FC = () => {
                       placeholder="Enter new password..."
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
-                      className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl pl-4 pr-10 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                      className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl pl-4 pr-10 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#F28C28]"
                     />
                     <button
                       type="button"

@@ -104,7 +104,7 @@ export const ResetPasswordPage: React.FC = () => {
           e.currentTarget.style.display = "none";
         }}
       />
-      <div className="absolute inset-0 bg-gradient-to-r from-[#0B192C]/90 via-[#0B192C]/60 to-[#0A4DA6]/25" />
+      <div className="absolute inset-0 bg-gradient-to-r from-[#0B192C]/90 via-[#0B192C]/60 to-[#F28C28]/25" />
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-screen flex items-center justify-center pt-36 lg:pt-40 pb-16">
         <div className="w-full max-w-md space-y-4">
@@ -117,12 +117,12 @@ export const ResetPasswordPage: React.FC = () => {
               />
               <h2 className="text-2xl font-black text-[#0B192C] dark:text-white flex items-center justify-center gap-1.5">
                 Set New Password{" "}
-                <ShieldCheck size={20} className="text-[#0A4DA6]" />
+                <ShieldCheck size={20} className="text-[#F28C28]" />
               </h2>
               {maskedEmail && !done && (
                 <p className="text-xs text-gray-400 font-semibold">
                   Resetting the password for{" "}
-                  <span className="text-[#0A4DA6] font-bold">
+                  <span className="text-[#F28C28] font-bold">
                     {maskedEmail}
                   </span>
                 </p>
@@ -166,7 +166,7 @@ export const ResetPasswordPage: React.FC = () => {
                       placeholder="Minimum 6 characters"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                      className="w-full pl-10 pr-4 py-3.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#F28C28]"
                     />
                   </div>
                 </div>
@@ -187,7 +187,7 @@ export const ResetPasswordPage: React.FC = () => {
                       placeholder="Re-enter your new password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                      className="w-full pl-10 pr-4 py-3.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#F28C28]"
                     />
                   </div>
                 </div>
@@ -195,7 +195,7 @@ export const ResetPasswordPage: React.FC = () => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3.5 bg-[#0A4DA6] hover:bg-[#083b80] text-white rounded-full font-extrabold text-sm shadow-md shadow-[#0A4DA6]/20 transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60"
+                  className="w-full py-3.5 bg-[#F28C28] hover:bg-[#B45309] text-white rounded-full font-extrabold text-sm shadow-md shadow-[#F28C28]/20 transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60"
                 >
                   {loading ? (
                     "Updating…"
@@ -237,7 +237,7 @@ export const ResetPasswordPage: React.FC = () => {
                         placeholder="name@example.com"
                         value={resendEmail}
                         onChange={(e) => setResendEmail(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                        className="w-full pl-10 pr-4 py-3.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#F28C28]"
                       />
                     </div>
                   </div>
@@ -245,7 +245,7 @@ export const ResetPasswordPage: React.FC = () => {
                   <button
                     type="submit"
                     disabled={resending}
-                    className="w-full py-3.5 bg-[#0A4DA6] hover:bg-[#083b80] text-white rounded-full font-extrabold text-sm shadow-md shadow-[#0A4DA6]/20 transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60"
+                    className="w-full py-3.5 bg-[#F28C28] hover:bg-[#B45309] text-white rounded-full font-extrabold text-sm shadow-md shadow-[#F28C28]/20 transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60"
                   >
                     {resending ? (
                       "Sending…"
@@ -260,7 +260,7 @@ export const ResetPasswordPage: React.FC = () => {
             )}
 
             {resendNotice && (
-              <div className="p-3 bg-[#0A4DA6]/10 text-[#0A4DA6] border border-[#0A4DA6]/20 text-xs rounded-xl font-semibold">
+              <div className="p-3 bg-[#F28C28]/10 text-[#F28C28] border border-[#F28C28]/20 text-xs rounded-xl font-semibold">
                 {resendNotice}
               </div>
             )}
@@ -269,7 +269,7 @@ export const ResetPasswordPage: React.FC = () => {
               Remembered it?{" "}
               <Link
                 to="/login"
-                className="text-[#0A4DA6] font-black hover:underline"
+                className="text-[#F28C28] font-black hover:underline"
               >
                 Log in here
               </Link>

@@ -43,7 +43,7 @@ const duration = (minutes: number): string => {
 const card =
   "bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px]";
 const field =
-  "w-full px-3.5 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:border-[#0A4DA6]";
+  "w-full px-3.5 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:border-[#F28C28]";
 
 export const LeadTrackingPage: React.FC = () => {
   const { addNotification } = useNotifications();
@@ -346,7 +346,7 @@ export const LeadTrackingPage: React.FC = () => {
                     className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
                       leg.kind === "stop"
                         ? "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300"
-                        : "bg-blue-100 text-[#0A4DA6] dark:bg-blue-950/60 dark:text-blue-300"
+                        : "bg-blue-100 text-[#F28C28] dark:bg-blue-950/60 dark:text-amber-300"
                     }`}
                   >
                     {leg.kind === "stop" ? (

@@ -212,8 +212,8 @@ export const SmartContactProfilesPage: React.FC = () => {
               onClick={() => setFilter("status", tab.value)}
               className={`px-4 py-2 rounded-xl text-xs font-black border transition-colors ${
                 active
-                  ? "bg-[#0A4DA6] text-white border-[#0A4DA6]"
-                  : "bg-white dark:bg-[#0B192C] text-[#0B192C] dark:text-white border-gray-200 dark:border-slate-800 hover:border-[#0A4DA6]"
+                  ? "bg-[#F28C28] text-white border-[#F28C28]"
+                  : "bg-white dark:bg-[#0B192C] text-[#0B192C] dark:text-white border-gray-200 dark:border-slate-800 hover:border-[#F28C28]"
               }`}
             >
               {tab.label}
@@ -238,14 +238,14 @@ export const SmartContactProfilesPage: React.FC = () => {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search name, slug, email, employee ID…"
-              className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6]"
+              className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#F28C28]"
             />
           </div>
 
           <select
             value={category}
             onChange={(e) => setFilter("category", e.target.value)}
-            className="px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6]"
+            className="px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#F28C28]"
           >
             {CATEGORY_FILTERS.map((option) => (
               <option key={option.value} value={option.value}>
@@ -262,7 +262,7 @@ export const SmartContactProfilesPage: React.FC = () => {
         )}
 
         {visibleSelected.length > 0 && (
-          <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-[#0A4DA6]/5 border border-[#0A4DA6]/20">
+          <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-[#F28C28]/5 border border-[#F28C28]/20">
             <span className="text-xs font-black text-[#0B192C] dark:text-white">
               {visibleSelected.length} profile
               {visibleSelected.length === 1 ? "" : "s"} selected
@@ -316,7 +316,7 @@ export const SmartContactProfilesPage: React.FC = () => {
                       }}
                       onChange={toggleAllVisible}
                       aria-label="Select all profiles on this page"
-                      className="w-3.5 h-3.5 rounded border-gray-300 dark:border-slate-600 accent-[#0A4DA6] cursor-pointer"
+                      className="w-3.5 h-3.5 rounded border-gray-300 dark:border-slate-600 accent-[#F28C28] cursor-pointer"
                     />
                   </th>
                   <th className="py-3 pr-3">Representative</th>
@@ -335,7 +335,7 @@ export const SmartContactProfilesPage: React.FC = () => {
                     key={profile.id}
                     className={`border-b border-gray-50 dark:border-slate-800/60 transition-colors ${
                       selected.has(profile.id)
-                        ? "bg-[#0A4DA6]/5"
+                        ? "bg-[#F28C28]/5"
                         : "hover:bg-gray-50/70 dark:hover:bg-slate-900/40"
                     }`}
                   >
@@ -345,7 +345,7 @@ export const SmartContactProfilesPage: React.FC = () => {
                         checked={selected.has(profile.id)}
                         onChange={() => toggleOne(profile.id)}
                         aria-label={`Select ${profile.displayName}`}
-                        className="w-3.5 h-3.5 rounded border-gray-300 dark:border-slate-600 accent-[#0A4DA6] cursor-pointer"
+                        className="w-3.5 h-3.5 rounded border-gray-300 dark:border-slate-600 accent-[#F28C28] cursor-pointer"
                       />
                     </td>
                     <td className="py-3 pr-3">
@@ -357,14 +357,14 @@ export const SmartContactProfilesPage: React.FC = () => {
                             className="w-9 h-9 rounded-full object-cover border border-gray-200 dark:border-slate-700"
                           />
                         ) : (
-                          <div className="w-9 h-9 rounded-full bg-[#0A4DA6]/10 text-[#0A4DA6] grid place-items-center text-[11px] font-black">
+                          <div className="w-9 h-9 rounded-full bg-[#F28C28]/10 text-[#F28C28] grid place-items-center text-[11px] font-black">
                             {profile.displayName.slice(0, 2).toUpperCase()}
                           </div>
                         )}
                         <div className="min-w-0">
                           <Link
                             to={`/admin/smart-contacts/${profile.id}`}
-                            className="block text-xs font-black text-[#0B192C] dark:text-white hover:text-[#0A4DA6] truncate"
+                            className="block text-xs font-black text-[#0B192C] dark:text-white hover:text-[#F28C28] truncate"
                           >
                             {profile.displayName}
                           </Link>
@@ -383,7 +383,7 @@ export const SmartContactProfilesPage: React.FC = () => {
                           type="button"
                           onClick={() => void copyUrl(profile)}
                           title="Copy profile URL"
-                          className="text-gray-400 hover:text-[#0A4DA6]"
+                          className="text-gray-400 hover:text-[#F28C28]"
                         >
                           <Copy size={12} />
                         </button>
@@ -392,7 +392,7 @@ export const SmartContactProfilesPage: React.FC = () => {
                           target="_blank"
                           rel="noopener noreferrer"
                           title="Open profile"
-                          className="text-gray-400 hover:text-[#0A4DA6]"
+                          className="text-gray-400 hover:text-[#F28C28]"
                         >
                           <ExternalLink size={12} />
                         </a>
@@ -410,21 +410,21 @@ export const SmartContactProfilesPage: React.FC = () => {
                     <td className="py-3 px-3 text-right text-xs font-bold text-[#0B192C] dark:text-white">
                       {profile.metrics?.saveContacts ?? 0}
                     </td>
-                    <td className="py-3 px-3 text-right text-xs font-black text-[#0A4DA6]">
+                    <td className="py-3 px-3 text-right text-xs font-black text-[#F28C28]">
                       {(profile.metrics?.conversionRate ?? 0).toFixed(1)}%
                     </td>
                     <td className="py-3 pl-3">
                       <div className="flex items-center justify-end gap-1.5">
                         <Link
                           to={`/admin/smart-contacts/${profile.id}`}
-                          className="p-1.5 rounded-lg text-gray-400 hover:text-[#0A4DA6] hover:bg-[#0A4DA6]/10"
+                          className="p-1.5 rounded-lg text-gray-400 hover:text-[#F28C28] hover:bg-[#F28C28]/10"
                           title="Open profile"
                         >
                           <Eye size={14} />
                         </Link>
                         <Link
                           to={`/admin/smart-contacts/${profile.id}#qr`}
-                          className="p-1.5 rounded-lg text-gray-400 hover:text-[#0A4DA6] hover:bg-[#0A4DA6]/10"
+                          className="p-1.5 rounded-lg text-gray-400 hover:text-[#F28C28] hover:bg-[#F28C28]/10"
                           title="QR codes"
                         >
                           <QrCode size={14} />

@@ -187,14 +187,14 @@ export const BlogDetailPage: React.FC = () => {
   const renderCommentHeader = (c: any) => (
     <div className="flex justify-between items-center gap-2">
       <div className="flex items-center gap-2 flex-wrap min-w-0">
-        <div className="w-7 h-7 rounded-full bg-[#0A4DA6] text-white font-extrabold text-xs flex items-center justify-center shrink-0">
+        <div className="w-7 h-7 rounded-full bg-[#F28C28] text-white font-extrabold text-xs flex items-center justify-center shrink-0">
           {String(c.userName || "?").charAt(0).toUpperCase()}
         </div>
         <h5 className="font-bold text-xs text-[#0B192C] dark:text-white truncate">
           {c.userName || "Devotee Pilgrim"}
         </h5>
         {c.isAuthor && (
-          <span className="px-2 py-0.5 rounded-full bg-[#EBF2FA] dark:bg-blue-950 text-[#0A4DA6] dark:text-blue-300 text-[9px] font-black shrink-0">
+          <span className="px-2 py-0.5 rounded-full bg-[#FFF4E5] dark:bg-blue-950 text-[#F28C28] dark:text-amber-300 text-[9px] font-black shrink-0">
             AUTHOR
           </span>
         )}
@@ -233,7 +233,7 @@ export const BlogDetailPage: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen pt-32 text-center">
-        <div className="w-12 h-12 border-4 border-[#0A4DA6] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+        <div className="w-12 h-12 border-4 border-[#F28C28] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
         <p className="text-xs font-bold text-gray-500">
           Loading Sacred Article...
         </p>
@@ -249,7 +249,7 @@ export const BlogDetailPage: React.FC = () => {
         </h2>
         <button
           onClick={() => navigate("/blog")}
-          className="px-6 py-2.5 rounded-full bg-[#0A4DA6] text-white font-bold text-xs shadow-md hover:bg-blue-900 transition-colors"
+          className="px-6 py-2.5 rounded-full bg-[#F28C28] text-white font-bold text-xs shadow-md hover:bg-[#D97706] transition-colors"
         >
           Back to Spiritual Knowledge Hub
         </button>
@@ -297,7 +297,7 @@ export const BlogDetailPage: React.FC = () => {
                   key={lIdx}
                   className="flex items-start gap-2 text-slate-700 dark:text-gray-200 text-sm sm:text-base"
                 >
-                  <span className="w-2 h-2 rounded-full bg-[#0A4DA6] mt-2 shrink-0" />
+                  <span className="w-2 h-2 rounded-full bg-[#F28C28] mt-2 shrink-0" />
                   <span>
                     {parts.map((p, pIdx) => {
                       if (p.startsWith("**") && p.endsWith("**")) {
@@ -348,7 +348,7 @@ export const BlogDetailPage: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-1 sm:pt-3 space-y-8">
         <div className="text-center space-y-3 max-w-4xl mx-auto py-2">
           <div className="flex items-center justify-center gap-2 flex-wrap">
-            <span className="px-3.5 py-1 rounded-full bg-blue-50 dark:bg-blue-950/40 text-[#0A4DA6] dark:text-blue-300 border border-blue-100 dark:border-slate-800 text-[11px] font-black tracking-wider flex items-center gap-1.5 shadow-xs">
+            <span className="px-3.5 py-1 rounded-full bg-[#FFF4E5]/40 text-[#F28C28] dark:text-amber-300 border border-blue-100 dark:border-slate-800 text-[11px] font-black tracking-wider flex items-center gap-1.5 shadow-xs">
               <ShieldCheck size={12} className="text-emerald-500" />
               {post.category || "TRAVEL GUIDE"} • RISHIKESH, UTTARAKHAND
             </span>
@@ -366,7 +366,7 @@ export const BlogDetailPage: React.FC = () => {
                   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E"
                 }
                 alt={author.name}
-                className="w-6 h-7 rounded-md object-cover border border-[#0A4DA6] shrink-0 shadow-xs"
+                className="w-6 h-7 rounded-md object-cover border border-[#F28C28] shrink-0 shadow-xs"
                 onError={(e) => {
                   e.currentTarget.onerror = null;
                   e.currentTarget.src =
@@ -386,7 +386,7 @@ export const BlogDetailPage: React.FC = () => {
             </span>
             <span>•</span>
             <span className="flex items-center gap-1">
-              <Clock size={13} className="text-[#0A4DA6]" /> {post.readingTime}
+              <Clock size={13} className="text-[#F28C28]" /> {post.readingTime}
             </span>
             <span>•</span>
             <span className="flex items-center gap-1">
@@ -416,7 +416,7 @@ export const BlogDetailPage: React.FC = () => {
               className="px-3.5 py-1.5 rounded-full bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-slate-700 text-xs font-extrabold flex items-center gap-1.5 hover:bg-gray-50 cursor-pointer shadow-xs transition-all"
               title="Share Article"
             >
-              <Share2 size={14} className="text-[#0A4DA6]" />
+              <Share2 size={14} className="text-[#F28C28]" />
               <span>Share</span>
             </button>
 
@@ -503,8 +503,8 @@ export const BlogDetailPage: React.FC = () => {
                 {renderFormattedContent(post.content)}
               </div>
 
-              <div className="my-6 p-6 rounded-2xl bg-blue-50/70 dark:bg-slate-900/80 border-l-4 border-[#0A4DA6] space-y-2">
-                <p className="font-['Kalam'] text-base sm:text-lg font-bold text-[#0A4DA6] dark:text-amber-400">
+              <div className="my-6 p-6 rounded-2xl bg-blue-50/70 dark:bg-slate-900/80 border-l-4 border-[#F28C28] space-y-2">
+                <p className="font-['Kalam'] text-base sm:text-lg font-bold text-[#F28C28] dark:text-amber-400">
                   "Every pilgrimage is a sacred inward journey towards peace,
                   self-realization, and divine grace."
                 </p>
@@ -537,7 +537,7 @@ export const BlogDetailPage: React.FC = () => {
 
               <div className="pt-6 border-t border-gray-100 dark:border-slate-800 space-y-6">
                 <h3 className="font-black text-xl text-[#0B192C] dark:text-white flex items-center gap-2">
-                  <MessageSquare size={20} className="text-[#0A4DA6]" />
+                  <MessageSquare size={20} className="text-[#F28C28]" />
                   <span>
                     Pilgrim Discussion & Comments ({totalComments})
                   </span>
@@ -574,7 +574,7 @@ export const BlogDetailPage: React.FC = () => {
                   <button
                     type="submit"
                     disabled={submittingComment}
-                    className="px-6 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-blue-900 text-white font-black text-xs shadow-md transition-colors cursor-pointer"
+                    className="px-6 py-2.5 rounded-full bg-[#F28C28] hover:bg-[#D97706] text-white font-black text-xs shadow-md transition-colors cursor-pointer"
                   >
                     Submit Comment
                   </button>
@@ -625,13 +625,13 @@ export const BlogDetailPage: React.FC = () => {
                                 value={replyText}
                                 onChange={(e) => setReplyText(e.target.value)}
                                 placeholder={`Reply to ${c.userName}...`}
-                                className="w-full px-3 py-2 rounded-xl bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 text-xs font-medium focus:outline-none focus:border-[#0A4DA6]"
+                                className="w-full px-3 py-2 rounded-xl bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 text-xs font-medium focus:outline-none focus:border-[#F28C28]"
                               />
                               <div className="flex gap-2">
                                 <button
                                   type="submit"
                                   disabled={submittingComment}
-                                  className="px-4 py-1.5 rounded-full bg-[#0A4DA6] hover:bg-blue-900 text-white font-black text-[11px] cursor-pointer disabled:opacity-60"
+                                  className="px-4 py-1.5 rounded-full bg-[#F28C28] hover:bg-[#D97706] text-white font-black text-[11px] cursor-pointer disabled:opacity-60"
                                 >
                                   Post Reply
                                 </button>
@@ -658,7 +658,7 @@ export const BlogDetailPage: React.FC = () => {
                                 setReplyTo(c._id);
                                 setReplyText("");
                               }}
-                              className="text-[11px] font-extrabold text-[#0A4DA6] hover:underline cursor-pointer"
+                              className="text-[11px] font-extrabold text-[#F28C28] hover:underline cursor-pointer"
                             >
                               Reply
                             </button>
@@ -700,7 +700,7 @@ export const BlogDetailPage: React.FC = () => {
                         }}
                       />
                       <div className="space-y-0.5">
-                        <h6 className="font-extrabold text-xs text-[#0B192C] dark:text-white line-clamp-2 group-hover:text-[#0A4DA6] transition-colors">
+                        <h6 className="font-extrabold text-xs text-[#0B192C] dark:text-white line-clamp-2 group-hover:text-[#F28C28] transition-colors">
                           {item.title}
                         </h6>
                         <span className="text-[10px] text-gray-400 font-bold">
@@ -712,7 +712,7 @@ export const BlogDetailPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-[#0B192C] to-[#0A4DA6] text-white p-6 rounded-2xl space-y-3 text-center shadow-lg">
+              <div className="bg-gradient-to-br from-[#0B192C] to-[#F28C28] text-white p-6 rounded-2xl space-y-3 text-center shadow-lg">
                 <Sparkles size={24} className="text-amber-400 mx-auto" />
                 <h5 className="font-black text-sm">Planning a Pilgrimage?</h5>
                 <p className="text-xs text-blue-100 font-medium">

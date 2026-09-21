@@ -261,13 +261,13 @@ export const OwnerParkingSetupPage: React.FC = () => {
     <div className="space-y-5 text-left w-full">
       <section className="flex flex-wrap items-start justify-between gap-4 bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 sm:p-6 shadow-sm">
         <div>
-          <h1 className="text-lg font-black text-[#0B192C] dark:text-white flex items-center gap-2"><CircleParking size={21} className="text-[#0A4DA6]" /> Parking Management</h1>
+          <h1 className="text-lg font-black text-[#0B192C] dark:text-white flex items-center gap-2"><CircleParking size={21} className="text-[#F28C28]" /> Parking Management</h1>
           <p className="text-xs text-gray-400 font-semibold mt-1">View and edit facilities, assign parking staff, and manage bookings.</p>
         </div>
         {partner && <div className="flex flex-wrap gap-2">
-          <button onClick={() => navigate("staff")} className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full border border-[#0A4DA6] text-[#0A4DA6] text-xs font-extrabold"><Users size={14} /> Parking Staff</button>
-          <button onClick={() => openLocationForm()} className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full border border-[#0A4DA6] text-[#0A4DA6] text-xs font-extrabold"><Plus size={14} /> Add Parking</button>
-          <button onClick={() => navigate("/parking/dashboard")} className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-[#0A4DA6] text-white text-xs font-extrabold">Open Console <ExternalLink size={13} /></button>
+          <button onClick={() => navigate("staff")} className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full border border-[#F28C28] text-[#F28C28] text-xs font-extrabold"><Users size={14} /> Parking Staff</button>
+          <button onClick={() => openLocationForm()} className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full border border-[#F28C28] text-[#F28C28] text-xs font-extrabold"><Plus size={14} /> Add Parking</button>
+          <button onClick={() => navigate("/parking/dashboard")} className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-[#F28C28] text-white text-xs font-extrabold">Open Console <ExternalLink size={13} /></button>
         </div>}
       </section>
 
@@ -275,9 +275,9 @@ export const OwnerParkingSetupPage: React.FC = () => {
         <form onSubmit={apply} className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 sm:p-6 shadow-sm space-y-4">
           <div><h2 className="font-extrabold text-[#0B192C] dark:text-white">Activate Parking Management</h2><p className="text-xs text-gray-400 mt-1">Create your parking workspace. Each facility requires Super Admin approval before it appears publicly.</p></div>
           <div className="grid sm:grid-cols-2 gap-3">
-            {([['businessName','Parking business / ashram name'],['contactPerson','Contact person'],['contactEmail','Contact email'],['contactPhone','Contact phone'],['city','City'],['state','State']] as const).map(([key, placeholder]) => <input key={key} required={key === 'businessName'} type={key === 'contactEmail' ? 'email' : 'text'} value={application[key]} onChange={(event) => setApplication((current) => ({ ...current, [key]: event.target.value }))} placeholder={placeholder} className="px-3.5 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:border-[#0A4DA6]" />)}
+            {([['businessName','Parking business / ashram name'],['contactPerson','Contact person'],['contactEmail','Contact email'],['contactPhone','Contact phone'],['city','City'],['state','State']] as const).map(([key, placeholder]) => <input key={key} required={key === 'businessName'} type={key === 'contactEmail' ? 'email' : 'text'} value={application[key]} onChange={(event) => setApplication((current) => ({ ...current, [key]: event.target.value }))} placeholder={placeholder} className="px-3.5 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:border-[#F28C28]" />)}
           </div>
-          <button disabled={saving} className="px-5 py-3 rounded-full bg-[#0A4DA6] text-white text-xs font-extrabold disabled:opacity-60">{saving ? "Creating access..." : "Activate Parking Workspace"}</button>
+          <button disabled={saving} className="px-5 py-3 rounded-full bg-[#F28C28] text-white text-xs font-extrabold disabled:opacity-60">{saving ? "Creating access..." : "Activate Parking Workspace"}</button>
         </form>
       ) : (
         <section className="space-y-3">
@@ -285,11 +285,11 @@ export const OwnerParkingSetupPage: React.FC = () => {
           <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
             {locations.map((item) => <article key={getId(item)} className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[22px] overflow-hidden shadow-sm">
               <div className="h-36 bg-gray-100 dark:bg-slate-800">{item.coverImage && <img src={item.coverImage} alt={item.name} className="w-full h-full object-cover" />}</div>
-              <div className="p-4 space-y-3"><div className="flex justify-between gap-2"><h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white">{item.name}</h3><span className="text-[9px] font-bold uppercase text-[#0A4DA6]">{item.status}</span></div><p className="text-xs text-gray-400">{item.address?.city || 'Location pending'} · {item.totalCapacity || 0} bays</p>
-                <div className="border-t border-gray-100 dark:border-slate-800 pt-3 space-y-2"><button onClick={() => setViewLocation(item)} className="w-full rounded-full bg-[#0A4DA6] text-white py-2 text-[11px] font-extrabold inline-flex justify-center items-center gap-1.5"><Eye size={13} /> Edit / View</button><button onClick={() => openBays(item)} className="w-full rounded-full border border-[#0A4DA6] text-[#0A4DA6] py-2 text-[11px] font-extrabold inline-flex justify-center items-center gap-1.5"><CircleParking size={13} /> Bays & Pricing</button></div>
+              <div className="p-4 space-y-3"><div className="flex justify-between gap-2"><h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white">{item.name}</h3><span className="text-[9px] font-bold uppercase text-[#F28C28]">{item.status}</span></div><p className="text-xs text-gray-400">{item.address?.city || 'Location pending'} · {item.totalCapacity || 0} bays</p>
+                <div className="border-t border-gray-100 dark:border-slate-800 pt-3 space-y-2"><button onClick={() => setViewLocation(item)} className="w-full rounded-full bg-[#F28C28] text-white py-2 text-[11px] font-extrabold inline-flex justify-center items-center gap-1.5"><Eye size={13} /> Edit / View</button><button onClick={() => openBays(item)} className="w-full rounded-full border border-[#F28C28] text-[#F28C28] py-2 text-[11px] font-extrabold inline-flex justify-center items-center gap-1.5"><CircleParking size={13} /> Bays & Pricing</button></div>
               </div>
             </article>)}
-            {locations.length === 0 && <button onClick={() => openLocationForm()} className="min-h-52 border-2 border-dashed border-[#0A4DA6]/30 rounded-[22px] text-[#0A4DA6] text-xs font-extrabold flex flex-col items-center justify-center gap-2"><Car size={28} /><Plus size={15} /> Add your first parking facility</button>}
+            {locations.length === 0 && <button onClick={() => openLocationForm()} className="min-h-52 border-2 border-dashed border-[#F28C28]/30 rounded-[22px] text-[#F28C28] text-xs font-extrabold flex flex-col items-center justify-center gap-2"><Car size={28} /><Plus size={15} /> Add your first parking facility</button>}
           </div>
         </section>
       )}
@@ -297,14 +297,14 @@ export const OwnerParkingSetupPage: React.FC = () => {
       {baysLocation && <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center"><div className="w-full max-w-3xl max-h-[90vh] overflow-y-auto bg-white dark:bg-[#0B192C] rounded-[28px] p-5 sm:p-7 space-y-5">
         <div className="flex justify-between items-start">
           <div>
-            <h2 className="font-black text-lg text-[#0B192C] dark:text-white flex items-center gap-2"><CircleParking size={19} className="text-[#0A4DA6]" /> Bays & Pricing</h2>
+            <h2 className="font-black text-lg text-[#0B192C] dark:text-white flex items-center gap-2"><CircleParking size={19} className="text-[#F28C28]" /> Bays & Pricing</h2>
             <p className="text-xs text-gray-400 mt-1">{baysLocation.name} · a facility becomes bookable once it has at least one bay.</p>
           </div>
           <button onClick={() => setBaysLocation(null)} className="p-2 text-gray-400"><X size={18} /></button>
         </div>
 
         {loadingBays ? (
-          <div className="py-10 flex justify-center"><Loader2 size={20} className="animate-spin text-[#0A4DA6]" /></div>
+          <div className="py-10 flex justify-center"><Loader2 size={20} className="animate-spin text-[#F28C28]" /></div>
         ) : slotTypes.length === 0 ? (
           <div className="rounded-2xl border border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900 p-4">
             <p className="text-xs font-extrabold text-amber-700 dark:text-amber-400">This facility shows as “opening soon”.</p>
@@ -317,7 +317,7 @@ export const OwnerParkingSetupPage: React.FC = () => {
                 <p className="text-xs font-extrabold text-[#0B192C] dark:text-white">{type.name}</p>
                 <p className="text-[11px] text-gray-400 mt-0.5">{(type.vehicleTypes || []).join(", ") || "any vehicle"}</p>
               </div>
-              <span className="text-xs font-black text-[#0A4DA6] shrink-0">{type.totalCapacity ?? 0} bays</span>
+              <span className="text-xs font-black text-[#F28C28] shrink-0">{type.totalCapacity ?? 0} bays</span>
             </div>)}
             <p className="text-[11px] font-bold text-emerald-600">Total bookable: {slotTypes.reduce((sum, type) => sum + Number(type.totalCapacity || 0), 0)} bays</p>
           </div>
@@ -332,9 +332,9 @@ export const OwnerParkingSetupPage: React.FC = () => {
             <input type="number" min={0} value={bayForm.dailyRate} onChange={(event) => setBayForm((current) => ({ ...current, dailyRate: event.target.value }))} placeholder="Full day rate (₹)" className="px-3.5 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none" />
           </div>
           <div className="flex flex-wrap gap-1.5">
-            {["bike", "scooter", "car", "suv", "luxury_car", "tempo", "mini_bus", "bus", "ev"].map((vehicle) => <button key={vehicle} type="button" onClick={() => toggleBayVehicle(vehicle)} className={`px-3 py-1.5 rounded-full text-[11px] font-bold capitalize ${bayForm.vehicleTypes.includes(vehicle) ? "bg-[#0A4DA6] text-white" : "bg-gray-100 dark:bg-slate-800 text-gray-500"}`}>{vehicle.replace("_", " ")}</button>)}
+            {["bike", "scooter", "car", "suv", "luxury_car", "tempo", "mini_bus", "bus", "ev"].map((vehicle) => <button key={vehicle} type="button" onClick={() => toggleBayVehicle(vehicle)} className={`px-3 py-1.5 rounded-full text-[11px] font-bold capitalize ${bayForm.vehicleTypes.includes(vehicle) ? "bg-[#F28C28] text-white" : "bg-gray-100 dark:bg-slate-800 text-gray-500"}`}>{vehicle.replace("_", " ")}</button>)}
           </div>
-          <button disabled={saving} className="w-full py-3 rounded-full bg-[#0A4DA6] text-white text-xs font-extrabold disabled:opacity-60">{saving ? <Loader2 size={15} className="animate-spin mx-auto" /> : "Add Bay Type"}</button>
+          <button disabled={saving} className="w-full py-3 rounded-full bg-[#F28C28] text-white text-xs font-extrabold disabled:opacity-60">{saving ? <Loader2 size={15} className="animate-spin mx-auto" /> : "Add Bay Type"}</button>
         </form>
       </div></div>}
 
@@ -344,7 +344,7 @@ export const OwnerParkingSetupPage: React.FC = () => {
         <div className="grid sm:grid-cols-2 gap-3">{[
           ['Status', viewLocation.status], ['Capacity', `${viewLocation.totalCapacity || 0} bays`], ['Phone', viewLocation.contactPhone], ['City', viewLocation.address?.city], ['District', viewLocation.address?.district], ['State', viewLocation.address?.state], ['Pincode', viewLocation.address?.pincode], ['Description', viewLocation.description]
         ].map(([label, value]) => <div key={label} className="rounded-xl border border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900 p-3"><p className="text-[10px] uppercase font-black text-gray-400">{label}</p><p className="text-xs font-bold mt-1 text-[#0B192C] dark:text-white">{value || '—'}</p></div>)}</div>
-        <div className="flex justify-end gap-2 border-t border-gray-100 dark:border-slate-800 pt-4"><button onClick={() => setViewLocation(null)} className="px-5 py-2.5 rounded-full bg-gray-100 text-xs font-bold">Close</button><button onClick={() => { const item = viewLocation; setViewLocation(null); openLocationForm(item); }} className="px-5 py-2.5 rounded-full bg-[#0A4DA6] text-white text-xs font-extrabold inline-flex items-center gap-1.5"><Pencil size={13} /> Edit Facility</button></div>
+        <div className="flex justify-end gap-2 border-t border-gray-100 dark:border-slate-800 pt-4"><button onClick={() => setViewLocation(null)} className="px-5 py-2.5 rounded-full bg-gray-100 text-xs font-bold">Close</button><button onClick={() => { const item = viewLocation; setViewLocation(null); openLocationForm(item); }} className="px-5 py-2.5 rounded-full bg-[#F28C28] text-white text-xs font-extrabold inline-flex items-center gap-1.5"><Pencil size={13} /> Edit Facility</button></div>
       </div></div>}
 
       {showLocation && partner && <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm p-4 flex items-center justify-center"><form onSubmit={saveLocation} className="w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-white dark:bg-[#0B192C] rounded-[28px] p-5 sm:p-7 space-y-4">
@@ -355,7 +355,7 @@ export const OwnerParkingSetupPage: React.FC = () => {
             required
             value={location.ashramId}
             onChange={(event) => setLocation((current) => ({ ...current, ashramId: event.target.value }))}
-            className="w-full px-3.5 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:border-[#0A4DA6]"
+            className="w-full px-3.5 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:border-[#F28C28]"
           >
             <option value="">Select the ashram this parking belongs to</option>
             {ashrams.map((item) => (
@@ -369,7 +369,7 @@ export const OwnerParkingSetupPage: React.FC = () => {
         <div className="grid sm:grid-cols-2 gap-3">{([['name','Parking name'],['contactPhone','Contact phone'],['city','City'],['district','District'],['state','State'],['pincode','Pincode'],['totalCapacity','Total parking capacity']] as const).map(([key, placeholder]) => <input key={key} required={['name','city','state','totalCapacity'].includes(key)} type={key === 'totalCapacity' ? 'number' : 'text'} value={location[key]} onChange={(event) => setLocation((current) => ({ ...current, [key]: event.target.value }))} placeholder={placeholder} className="px-3.5 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none" />)}</div>
         <textarea value={location.description} onChange={(event) => setLocation((current) => ({ ...current, description: event.target.value }))} placeholder="Parking description, landmark and entry instructions" rows={3} className="w-full px-3.5 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none" />
         <ImageGalleryManager coverImage={location.coverImage} gallery={location.images} onCoverImageChange={(coverImage) => setLocation((current) => ({ ...current, coverImage }))} onGalleryChange={(images) => setLocation((current) => ({ ...current, images }))} label="Parking Photos" minimumImages={3} />
-        <button disabled={saving} className="w-full py-3 rounded-full bg-[#0A4DA6] text-white text-xs font-extrabold disabled:opacity-60">{saving ? <Loader2 size={15} className="animate-spin mx-auto" /> : editingLocationId ? 'Save Facility Changes' : 'Submit Parking for Review'}</button>
+        <button disabled={saving} className="w-full py-3 rounded-full bg-[#F28C28] text-white text-xs font-extrabold disabled:opacity-60">{saving ? <Loader2 size={15} className="animate-spin mx-auto" /> : editingLocationId ? 'Save Facility Changes' : 'Submit Parking for Review'}</button>
       </form></div>}
 
     </div>

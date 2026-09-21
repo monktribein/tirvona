@@ -236,7 +236,7 @@ export const MarketplaceCheckoutPage: React.FC = () => {
           <div className="flex flex-wrap justify-center gap-3 pt-1">
             <button
               onClick={() => navigate("/profile/orders")}
-              className="px-5 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-blue-900 text-white text-xs font-extrabold cursor-pointer"
+              className="px-5 py-2.5 rounded-full bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-extrabold cursor-pointer"
             >
               View my orders
             </button>
@@ -260,7 +260,7 @@ export const MarketplaceCheckoutPage: React.FC = () => {
           </p>
           <button
             onClick={() => navigate("/marketplace")}
-            className="px-5 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-blue-900 text-white text-xs font-extrabold cursor-pointer"
+            className="px-5 py-2.5 rounded-full bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-extrabold cursor-pointer"
           >
             Browse marketplace
           </button>
@@ -283,7 +283,7 @@ export const MarketplaceCheckoutPage: React.FC = () => {
         value={form[name]}
         onChange={(e) => setForm({ ...form, [name]: e.target.value })}
         placeholder={placeholder}
-        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 focus:border-[#0A4DA6] transition-all"
+        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 focus:border-[#F28C28] transition-all"
       />
     </div>
   );
@@ -304,13 +304,13 @@ export const MarketplaceCheckoutPage: React.FC = () => {
             <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-5 shadow-sm">
               <div className="flex items-center justify-between border-b border-gray-100 dark:border-slate-800/80 pb-3">
                 <h2 className="text-base font-extrabold text-[#0B192C] dark:text-white flex items-center gap-2">
-                  <MapPin size={18} className="text-[#0A4DA6] shrink-0" />
+                  <MapPin size={18} className="text-[#F28C28] shrink-0" />
                   Delivery address
                 </h2>
                 {addresses.length > 0 && (
                   <button
                     onClick={() => setShowForm((v) => !v)}
-                    className="text-xs font-extrabold text-[#0A4DA6] dark:text-blue-400 hover:underline cursor-pointer flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/40"
+                    className="text-xs font-extrabold text-[#F28C28] dark:text-amber-400 hover:underline cursor-pointer flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#FFF4E5]/40"
                   >
                     {showForm ? (
                       "Use a saved address"
@@ -329,8 +329,8 @@ export const MarketplaceCheckoutPage: React.FC = () => {
                     <label
                       key={address._id}
                       className={`flex items-start gap-3.5 p-4 rounded-2xl border cursor-pointer transition-all duration-200 ${selectedAddressId === address._id
-                        ? "border-2 border-[#0A4DA6] bg-blue-50/50 dark:bg-blue-950/20 shadow-xs ring-2 ring-[#0A4DA6]/10"
-                        : "border-gray-200 dark:border-slate-800 hover:border-[#0A4DA6]/50 bg-gray-50/30 dark:bg-slate-900/30"
+                        ? "border-2 border-[#F28C28] bg-blue-50/50 dark:bg-blue-950/20 shadow-xs ring-2 ring-[#F28C28]/10"
+                        : "border-gray-200 dark:border-slate-800 hover:border-[#F28C28]/50 bg-gray-50/30 dark:bg-slate-900/30"
                         }`}
                     >
                       <input
@@ -338,7 +338,7 @@ export const MarketplaceCheckoutPage: React.FC = () => {
                         name="address"
                         checked={selectedAddressId === address._id}
                         onChange={() => setSelectedAddressId(address._id)}
-                        className="mt-1 accent-[#0A4DA6]"
+                        className="mt-1 accent-[#F28C28]"
                       />
                       <span className="flex-1 min-w-0 text-xs">
                         <span className="flex items-center gap-2 flex-wrap">
@@ -408,7 +408,7 @@ export const MarketplaceCheckoutPage: React.FC = () => {
                       type="checkbox"
                       checked={saveAddress}
                       onChange={(e) => setSaveAddress(e.target.checked)}
-                      className="accent-[#0A4DA6] w-4 h-4 rounded"
+                      className="accent-[#F28C28] w-4 h-4 rounded"
                     />
                     Save this address for future orders
                   </label>
@@ -431,7 +431,7 @@ export const MarketplaceCheckoutPage: React.FC = () => {
 
             {loadingQuote ? (
               <p className="text-xs text-gray-400 flex items-center gap-2 py-4 justify-center font-bold">
-                <Loader2 size={14} className="animate-spin text-[#0A4DA6]" /> Confirming prices...
+                <Loader2 size={14} className="animate-spin text-[#F28C28]" /> Confirming prices...
               </p>
             ) : quote ? (
               <>
@@ -481,7 +481,7 @@ export const MarketplaceCheckoutPage: React.FC = () => {
                     <dt className="font-black text-[#0B192C] dark:text-white text-base">
                       Total
                     </dt>
-                    <dd className="font-black text-[#0A4DA6] dark:text-blue-400 text-lg tabular-nums">
+                    <dd className="font-black text-[#F28C28] dark:text-amber-400 text-lg tabular-nums">
                       {formatCurrency(quote.pricing.totalAmount)}
                     </dd>
                   </div>
@@ -490,7 +490,7 @@ export const MarketplaceCheckoutPage: React.FC = () => {
                 <button
                   onClick={placeOrder}
                   disabled={!canPlace}
-                  className="w-full py-3.5 rounded-full bg-[#0A4DA6] hover:bg-blue-900 active:scale-[0.99] disabled:bg-gray-200 dark:disabled:bg-slate-800 disabled:text-gray-400 disabled:cursor-not-allowed text-white text-xs font-extrabold flex items-center justify-center gap-2 shadow-md cursor-pointer transition-all"
+                  className="w-full py-3.5 rounded-full bg-[#F28C28] hover:bg-[#D97706] active:scale-[0.99] disabled:bg-gray-200 dark:disabled:bg-slate-800 disabled:text-gray-400 disabled:cursor-not-allowed text-white text-xs font-extrabold flex items-center justify-center gap-2 shadow-md cursor-pointer transition-all"
                 >
                   {placing ? (
                     <>

@@ -17,7 +17,7 @@ import {
 } from "../../services/volunteer.service";
 
 const statusStyle: Record<string, string> = {
-  applied: "bg-blue-50 text-[#0A4DA6] border-blue-100",
+  applied: "bg-blue-50 text-[#F28C28] border-blue-100",
   shortlisted: "bg-amber-50 text-amber-700 border-amber-100",
   interviewed: "bg-purple-50 text-purple-700 border-purple-100",
   accepted: "bg-emerald-50 text-emerald-700 border-emerald-100",
@@ -52,11 +52,11 @@ export function VolunteerApplicationsTab() {
 
       {loading ? (
         <div className="flex min-h-48 items-center justify-center rounded-[28px] border border-gray-100 bg-white dark:border-slate-800 dark:bg-[#0B192C]">
-          <Loader2 className="animate-spin text-[#0A4DA6]" size={24} />
+          <Loader2 className="animate-spin text-[#F28C28]" size={24} />
         </div>
       ) : rows.length === 0 ? (
         <div className="rounded-[28px] border border-gray-100 bg-white p-8 text-center shadow-md dark:border-slate-800 dark:bg-[#0B192C]">
-          <BriefcaseBusiness className="mx-auto text-[#0A4DA6]" size={32} />
+          <BriefcaseBusiness className="mx-auto text-[#F28C28]" size={32} />
           <h3 className="mt-3 text-sm font-black text-[#0B192C] dark:text-white">
             No volunteer applications yet
           </h3>
@@ -65,7 +65,7 @@ export function VolunteerApplicationsTab() {
           </p>
           <Link
             to="/volunteer"
-            className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#0A4DA6] px-5 py-2.5 text-xs font-black text-white"
+            className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#F28C28] px-5 py-2.5 text-xs font-black text-white"
           >
             Explore Opportunities <ChevronRight size={14} />
           </Link>
@@ -98,15 +98,15 @@ export function VolunteerApplicationsTab() {
                       {job?.title || "Volunteer opportunity"}
                     </h3>
                     <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs font-semibold text-gray-500">
-                      <span className="flex items-center gap-1"><Building2 size={13} className="text-[#0A4DA6]" /> {job?.ashramName || "Tirvona Ashram"}</span>
+                      <span className="flex items-center gap-1"><Building2 size={13} className="text-[#F28C28]" /> {job?.ashramName || "Tirvona Ashram"}</span>
                       {job?.city && <span className="flex items-center gap-1"><MapPin size={13} className="text-[#E58C28]" /> {job.city}{job.state ? `, ${job.state}` : ""}</span>}
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-[#0A4DA6] dark:bg-blue-950/40">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-[#F28C28] dark:bg-blue-950/40">
                       {application.status === "accepted" ? <CircleCheck size={19} /> : <Clock3 size={19} />}
                     </div>
-                    <ChevronRight className="text-gray-300 transition-transform group-hover:translate-x-1 group-hover:text-[#0A4DA6]" size={18} />
+                    <ChevronRight className="text-gray-300 transition-transform group-hover:translate-x-1 group-hover:text-[#F28C28]" size={18} />
                   </div>
                 </div>
               </Link>

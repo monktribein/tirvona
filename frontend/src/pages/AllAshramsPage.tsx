@@ -241,7 +241,7 @@ export const AllAshramsPage: React.FC = () => {
           <div className="text-xs font-bold text-gray-400 tracking-wider">
             Pilgrimage Cities
           </div>
-          <div className="text-2xl font-black text-[#0A4DA6] dark:text-amber-400">
+          <div className="text-2xl font-black text-[#F28C28] dark:text-amber-400">
             5
           </div>
         </div>
@@ -264,7 +264,7 @@ export const AllAshramsPage: React.FC = () => {
               onClick={() => setSelectedCity(c)}
               className={`px-3.5 py-1.5 rounded-full text-xs font-extrabold whitespace-nowrap transition-all cursor-pointer ${
                 selectedCity === c
-                  ? "bg-[#0A4DA6] text-white shadow-sm"
+                  ? "bg-[#F28C28] text-white shadow-sm"
                   : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200"
               }`}
             >
@@ -283,7 +283,7 @@ export const AllAshramsPage: React.FC = () => {
             placeholder="Search stay name or location..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-full pl-9 pr-4 py-2 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+            className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-full pl-9 pr-4 py-2 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#F28C28]"
           />
         </div>
       </div>
@@ -324,7 +324,7 @@ export const AllAshramsPage: React.FC = () => {
                         {ashram.name}
                       </h3>
                       <div className="flex items-center gap-1.5 text-xs font-bold text-gray-500 dark:text-gray-400 mt-1">
-                        <MapPin size={13} className="text-[#0A4DA6]" />
+                        <MapPin size={13} className="text-[#F28C28]" />
                         <span>
                           {ashram.address?.street
                             ? `${ashram.address.street}, `
@@ -354,13 +354,13 @@ export const AllAshramsPage: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <Users
                         size={14}
-                        className="text-[#0A4DA6] dark:text-amber-400"
+                        className="text-[#F28C28] dark:text-amber-400"
                       />
                       <span className="font-bold text-gray-700 dark:text-gray-300">
                         Assigned Owner:
                       </span>
                     </div>
-                    <span className="font-mono font-bold text-[#0A4DA6] dark:text-amber-400">
+                    <span className="font-mono font-bold text-[#F28C28] dark:text-amber-400">
                       {assignedOwner?.email ||
                         ashram.ownerId?.email ||
                         "sapt@tirvona.com"}
@@ -430,7 +430,7 @@ export const AllAshramsPage: React.FC = () => {
           <div className="relative w-full max-w-3xl bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl z-10 space-y-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-gray-100 dark:border-slate-800 pb-4">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-full bg-[#0A4DA6]/10 text-[#0A4DA6] flex items-center justify-center font-bold">
+                <div className="w-9 h-9 rounded-full bg-[#F28C28]/10 text-[#F28C28] flex items-center justify-center font-bold">
                   <Edit3 size={18} />
                 </div>
                 <div>
@@ -464,7 +464,7 @@ export const AllAshramsPage: React.FC = () => {
                     onChange={(e) =>
                       setEditFormData({ ...editFormData, name: e.target.value })
                     }
-                    className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                    className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#F28C28]"
                   />
                 </div>
 
@@ -480,7 +480,7 @@ export const AllAshramsPage: React.FC = () => {
                         ownerId: e.target.value,
                       })
                     }
-                    className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-mono font-bold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                    className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-mono font-bold focus:outline-none focus:ring-2 focus:ring-[#F28C28]"
                   >
                     {ownerUsers.map((u) => (
                       <option key={u._id} value={u._id}>
@@ -504,7 +504,7 @@ export const AllAshramsPage: React.FC = () => {
                       description: e.target.value,
                     })
                   }
-                  className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                  className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#F28C28]"
                 />
               </div>
 
@@ -521,7 +521,7 @@ export const AllAshramsPage: React.FC = () => {
                       history: e.target.value,
                     })
                   }
-                  className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                  className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#F28C28]"
                 />
               </div>
 
@@ -622,7 +622,7 @@ export const AllAshramsPage: React.FC = () => {
                         status: e.target.value,
                       })
                     }
-                    className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-bold text-emerald-600 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                    className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs font-bold text-emerald-600 focus:outline-none focus:ring-2 focus:ring-[#F28C28]"
                   >
                     <option value="approved">Approved & Verified</option>
                     <option value="pending_inspection">
@@ -637,7 +637,7 @@ export const AllAshramsPage: React.FC = () => {
               <div className="bg-gray-50/80 dark:bg-slate-900/80 border border-gray-100 dark:border-slate-800 rounded-2xl p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <label className="text-[10px] font-black text-gray-400 flex items-center gap-1.5">
-                    <ImageIcon size={14} className="text-[#0A4DA6]" /> Stay
+                    <ImageIcon size={14} className="text-[#F28C28]" /> Stay
                     Photo Gallery ({editFormData.images?.length || 0} Photos)
                   </label>
                   <span className="text-[10px] text-gray-400 font-bold">
@@ -689,7 +689,7 @@ export const AllAshramsPage: React.FC = () => {
                       placeholder="Or paste image URL (e.g. https://... or /banner/...)"
                       value={newImageUrl}
                       onChange={(e) => setNewImageUrl(e.target.value)}
-                      className="flex-1 bg-white dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                      className="flex-1 bg-white dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#F28C28]"
                     />
                     <button
                       type="button"
@@ -713,7 +713,7 @@ export const AllAshramsPage: React.FC = () => {
                 <button
                   type="submit"
                   disabled={submitLoading}
-                  className="flex-1 py-3 bg-[#0A4DA6] hover:bg-[#083b80] text-white font-extrabold rounded-2xl text-xs shadow-md shadow-[#0A4DA6]/20 cursor-pointer flex items-center justify-center gap-2"
+                  className="flex-1 py-3 bg-[#F28C28] hover:bg-[#B45309] text-white font-extrabold rounded-2xl text-xs shadow-md shadow-[#F28C28]/20 cursor-pointer flex items-center justify-center gap-2"
                 >
                   {submitLoading ? "Saving Edits..." : "Save All Changes"}
                 </button>

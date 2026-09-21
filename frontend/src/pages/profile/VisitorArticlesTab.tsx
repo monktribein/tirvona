@@ -300,7 +300,7 @@ export const VisitorArticlesTab: React.FC = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-xl font-black text-[#0B192C] dark:text-white flex items-center gap-2">
-            <BookOpen className="text-[#0A4DA6]" size={22} />
+            <BookOpen className="text-[#F28C28]" size={22} />
             <span>My Articles & Blogs</span>
           </h2>
           <p className="text-xs text-gray-400 font-medium">
@@ -311,7 +311,7 @@ export const VisitorArticlesTab: React.FC = () => {
 
         <button
           onClick={handleOpenWizard}
-          className="px-5 py-2.5 bg-[#0A4DA6] hover:bg-[#083D85] text-white rounded-full text-xs font-black transition-all cursor-pointer shadow-md flex items-center gap-2 shrink-0"
+          className="px-5 py-2.5 bg-[#F28C28] hover:bg-[#D97706] text-white rounded-full text-xs font-black transition-all cursor-pointer shadow-md flex items-center gap-2 shrink-0"
         >
           <Plus size={16} />
           <span>Write New Article</span>
@@ -329,7 +329,7 @@ export const VisitorArticlesTab: React.FC = () => {
                 onClick={() => setActiveSubTab(st)}
                 className={`px-4 py-2 rounded-xl capitalize transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
                   isActive
-                    ? "bg-[#0A4DA6] text-white shadow-sm"
+                    ? "bg-[#F28C28] text-white shadow-sm"
                     : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800"
                 }`}
               >
@@ -369,7 +369,7 @@ export const VisitorArticlesTab: React.FC = () => {
           </p>
           <button
             onClick={handleOpenWizard}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#0A4DA6] hover:bg-[#083D85] text-white rounded-full text-xs font-black transition-all shadow-md mt-2 cursor-pointer"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#F28C28] hover:bg-[#D97706] text-white rounded-full text-xs font-black transition-all shadow-md mt-2 cursor-pointer"
           >
             <Plus size={14} /> Write First Article
           </button>
@@ -398,7 +398,7 @@ export const VisitorArticlesTab: React.FC = () => {
 
                 <div className="space-y-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="px-2.5 py-0.5 bg-blue-50 text-[#0A4DA6] dark:bg-blue-950/40 dark:text-blue-300 rounded-full text-[10px] font-black">
+                    <span className="px-2.5 py-0.5 bg-blue-50 text-[#F28C28] dark:bg-blue-950/40 dark:text-amber-300 rounded-full text-[10px] font-black">
                       {art.category}
                     </span>
                     <span
@@ -472,7 +472,7 @@ export const VisitorArticlesTab: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => openEditor(art)}
-                    className="px-4 py-1.5 bg-[#EBF2FA] hover:bg-[#dbe8f7] dark:bg-blue-950/40 text-[#0A4DA6] dark:text-blue-300 text-xs font-black rounded-full transition-colors flex items-center gap-1.5 cursor-pointer"
+                    className="px-4 py-1.5 bg-[#FFF4E5] hover:bg-[#FFF4E5] dark:bg-blue-950/40 text-[#F28C28] dark:text-amber-300 text-xs font-black rounded-full transition-colors flex items-center gap-1.5 cursor-pointer"
                   >
                     <Pencil size={12} /> Edit
                   </button>
@@ -482,7 +482,7 @@ export const VisitorArticlesTab: React.FC = () => {
                       href={`/blog/${art.slug}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="px-4 py-1.5 bg-[#0A4DA6] hover:bg-[#083D85] text-white text-xs font-black rounded-full transition-all flex items-center gap-1 shadow-xs"
+                      className="px-4 py-1.5 bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-black rounded-full transition-all flex items-center gap-1 shadow-xs"
                     >
                       <span>View Published</span>
                       <ArrowRight size={12} />
@@ -518,7 +518,7 @@ export const VisitorArticlesTab: React.FC = () => {
               <div className="py-8 text-center space-y-2">
                 <Loader2
                   size={24}
-                  className="animate-spin text-[#0A4DA6] mx-auto"
+                  className="animate-spin text-[#F28C28] mx-auto"
                 />
                 <p className="text-xs font-bold text-gray-400">
                   Checking completed stays...
@@ -545,7 +545,7 @@ export const VisitorArticlesTab: React.FC = () => {
                     className={`p-4 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
                       b.hasSubmittedArticle
                         ? "bg-gray-50 dark:bg-slate-900 border-gray-200 dark:border-slate-800 opacity-60 cursor-not-allowed"
-                        : "bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-800 hover:border-[#0A4DA6] hover:shadow-md cursor-pointer"
+                        : "bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-800 hover:border-[#F28C28] hover:shadow-md cursor-pointer"
                     }`}
                   >
                     <div className="space-y-1 text-xs min-w-0 flex-1">
@@ -569,7 +569,7 @@ export const VisitorArticlesTab: React.FC = () => {
                           Article {b.existingArticleStatus}
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#0A4DA6] text-white text-xs font-extrabold rounded-full whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#F28C28] text-white text-xs font-extrabold rounded-full whitespace-nowrap">
                           Select Stay <ArrowRight size={13} />
                         </span>
                       )}
@@ -589,7 +589,7 @@ export const VisitorArticlesTab: React.FC = () => {
           >
             <div className="p-3 bg-blue-50/80 dark:bg-blue-950/30 rounded-xl border border-blue-100 dark:border-slate-800 flex items-center justify-between text-xs">
               <div className="flex items-center gap-2">
-                <ShieldCheck size={16} className="text-[#0A4DA6]" />
+                <ShieldCheck size={16} className="text-[#F28C28]" />
                 <div>
                   <span className="font-extrabold text-[#0B192C] dark:text-white block">
                     {selectedBooking?.ashram?.name}
@@ -607,7 +607,7 @@ export const VisitorArticlesTab: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setStep(1)}
-                className="text-[10px] text-[#0A4DA6] hover:underline font-extrabold"
+                className="text-[10px] text-[#F28C28] hover:underline font-extrabold"
               >
                 Change Stay
               </button>
@@ -623,7 +623,7 @@ export const VisitorArticlesTab: React.FC = () => {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="e.g. Essential Guide To Planning Your First Sacred Ashram Stay in Rishikesh"
-                className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-extrabold focus:outline-none focus:border-[#0A4DA6]"
+                className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-extrabold focus:outline-none focus:border-[#F28C28]"
               />
             </div>
 
@@ -635,7 +635,7 @@ export const VisitorArticlesTab: React.FC = () => {
                 <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold focus:outline-none focus:border-[#0A4DA6]"
+                  className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold focus:outline-none focus:border-[#F28C28]"
                 >
                   {CATEGORIES.map((c) => (
                     <option key={c} value={c}>
@@ -652,7 +652,7 @@ export const VisitorArticlesTab: React.FC = () => {
                 <select
                   value={language}
                   onChange={(e) => setLanguage(e.target.value)}
-                  className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold focus:outline-none focus:border-[#0A4DA6]"
+                  className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold focus:outline-none focus:border-[#F28C28]"
                 >
                   {LANGUAGES.map((l) => (
                     <option key={l} value={l}>
@@ -673,7 +673,7 @@ export const VisitorArticlesTab: React.FC = () => {
                 value={shortDescription}
                 onChange={(e) => setShortDescription(e.target.value)}
                 placeholder="A brief summary of your stay experience, etiquette tips, or daily schedule..."
-                className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-medium focus:outline-none focus:border-[#0A4DA6]"
+                className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-medium focus:outline-none focus:border-[#F28C28]"
               />
             </div>
 
@@ -703,7 +703,7 @@ export const VisitorArticlesTab: React.FC = () => {
                       type="button"
                       onClick={() => coverInputRef.current?.click()}
                       disabled={uploadingCover}
-                      className="px-3 py-1.5 bg-white/95 text-[#0A4DA6] rounded-full text-[11px] font-extrabold shadow-sm cursor-pointer"
+                      className="px-3 py-1.5 bg-white/95 text-[#F28C28] rounded-full text-[11px] font-extrabold shadow-sm cursor-pointer"
                     >
                       Replace
                     </button>
@@ -721,7 +721,7 @@ export const VisitorArticlesTab: React.FC = () => {
                   type="button"
                   onClick={() => coverInputRef.current?.click()}
                   disabled={uploadingCover}
-                  className="w-full py-8 rounded-2xl border-2 border-dashed border-[#0A4DA6]/35 bg-blue-50/40 dark:bg-slate-900 text-[#0A4DA6] flex flex-col items-center justify-center gap-1.5 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors cursor-pointer disabled:opacity-60"
+                  className="w-full py-8 rounded-2xl border-2 border-dashed border-[#F28C28]/35 bg-blue-50/40 dark:bg-slate-900 text-[#F28C28] flex flex-col items-center justify-center gap-1.5 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors cursor-pointer disabled:opacity-60"
                 >
                   {uploadingCover ? (
                     <Loader2 size={22} className="animate-spin" />
@@ -767,7 +767,7 @@ export const VisitorArticlesTab: React.FC = () => {
                       type="button"
                       onClick={() => videoInputRef.current?.click()}
                       disabled={uploadingVideo}
-                      className="px-3 py-1.5 text-[#0A4DA6] rounded-full text-[11px] font-extrabold cursor-pointer"
+                      className="px-3 py-1.5 text-[#F28C28] rounded-full text-[11px] font-extrabold cursor-pointer"
                     >
                       Replace
                     </button>
@@ -814,7 +814,7 @@ export const VisitorArticlesTab: React.FC = () => {
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder="Write your article experience here... Support headings (###), bold, italic, quotes (>), and lists."
-                className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-medium leading-relaxed focus:outline-none focus:border-[#0A4DA6]"
+                className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-medium leading-relaxed focus:outline-none focus:border-[#F28C28]"
               />
             </div>
 
@@ -841,7 +841,7 @@ export const VisitorArticlesTab: React.FC = () => {
                   value={tagsStr}
                   onChange={(e) => setTagsStr(e.target.value)}
                   placeholder="AshramStay, Rishikesh, SatvikLiving"
-                  className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-medium focus:outline-none focus:border-[#0A4DA6]"
+                  className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-medium focus:outline-none focus:border-[#F28C28]"
                 />
               </div>
             </div>
@@ -868,7 +868,7 @@ export const VisitorArticlesTab: React.FC = () => {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-6 py-2 bg-[#0A4DA6] hover:bg-[#083D85] text-white text-xs font-black rounded-full cursor-pointer transition-all flex items-center gap-1.5 shadow-md disabled:opacity-50"
+                  className="px-6 py-2 bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-black rounded-full cursor-pointer transition-all flex items-center gap-1.5 shadow-md disabled:opacity-50"
                 >
                   {submitting ? (
                     <Loader2 size={14} className="animate-spin" />

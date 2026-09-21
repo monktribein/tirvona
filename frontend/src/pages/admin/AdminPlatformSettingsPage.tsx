@@ -182,7 +182,7 @@ export const AdminPlatformSettingsPage: React.FC = () => {
                     setPlatformFee((p) => ({ ...p, type: "flat" }))
                   }
                   className={`p-4 rounded-2xl border text-xs font-extrabold flex flex-col items-center gap-1.5 transition-all cursor-pointer ${platformFee.type === "flat"
-                    ? "bg-[#0A4DA6] text-white border-[#0A4DA6] shadow-md"
+                    ? "bg-[#F28C28] text-white border-[#F28C28] shadow-md"
                     : "bg-gray-50 dark:bg-slate-900 border-gray-200 dark:border-slate-800 text-[#0B192C] dark:text-gray-300"
                     }`}
                 >
@@ -199,7 +199,7 @@ export const AdminPlatformSettingsPage: React.FC = () => {
                     setPlatformFee((p) => ({ ...p, type: "percentage" }))
                   }
                   className={`p-4 rounded-2xl border text-xs font-extrabold flex flex-col items-center gap-1.5 transition-all cursor-pointer ${platformFee.type === "percentage"
-                    ? "bg-[#0A4DA6] text-white border-[#0A4DA6] shadow-md"
+                    ? "bg-[#F28C28] text-white border-[#F28C28] shadow-md"
                     : "bg-gray-50 dark:bg-slate-900 border-gray-200 dark:border-slate-800 text-[#0B192C] dark:text-gray-300"
                     }`}
                 >
@@ -231,7 +231,7 @@ export const AdminPlatformSettingsPage: React.FC = () => {
                       value: parseFloat(e.target.value) || 0,
                     }))
                   }
-                  className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                  className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#F28C28]"
                 />
               </div>
 
@@ -246,7 +246,7 @@ export const AdminPlatformSettingsPage: React.FC = () => {
                   onChange={(e) =>
                     setPlatformFee((p) => ({ ...p, label: e.target.value }))
                   }
-                  className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]"
+                  className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#F28C28]"
                 />
               </div>
             </div>
@@ -292,7 +292,7 @@ export const AdminPlatformSettingsPage: React.FC = () => {
                       onClick={() => toggleScope(option.value)}
                       className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
                         checked
-                          ? "bg-[#0A4DA6]/5 border-[#0A4DA6] shadow-sm dark:bg-[#0A4DA6]/20"
+                          ? "bg-[#F28C28]/5 border-[#F28C28] shadow-sm dark:bg-[#F28C28]/20"
                           : "bg-gray-50 dark:bg-slate-900 border-gray-200 dark:border-slate-800"
                       }`}
                     >
@@ -300,7 +300,7 @@ export const AdminPlatformSettingsPage: React.FC = () => {
                         <span
                           className={`mt-0.5 w-4 h-4 shrink-0 rounded-[6px] border flex items-center justify-center ${
                             checked
-                              ? "bg-[#0A4DA6] border-[#0A4DA6] text-white"
+                              ? "bg-[#F28C28] border-[#F28C28] text-white"
                               : "border-gray-300 dark:border-slate-700"
                           }`}
                         >
@@ -350,7 +350,7 @@ export const AdminPlatformSettingsPage: React.FC = () => {
               <button
                 type="submit"
                 disabled={saving}
-                className="px-6 py-3 bg-[#0A4DA6] hover:bg-[#083D85] text-white text-xs font-bold rounded-xl flex items-center gap-2 transition-all shadow-md active:scale-95 cursor-pointer"
+                className="px-6 py-3 bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-bold rounded-xl flex items-center gap-2 transition-all shadow-md active:scale-95 cursor-pointer"
               >
                 <Save size={15} />
                 {saving ? "Saving Settings…" : "Save Platform Settings"}
@@ -360,7 +360,7 @@ export const AdminPlatformSettingsPage: React.FC = () => {
 
           <div className="bg-white dark:bg-[#0B192C] p-6 rounded-[28px] border border-gray-100 dark:border-slate-800 shadow-sm space-y-4">
             <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white flex items-center gap-2 border-b border-gray-50 dark:border-slate-850 pb-3">
-              <Calculator size={16} className="text-[#0A4DA6]" /> Live Checkout
+              <Calculator size={16} className="text-[#F28C28]" /> Live Checkout
               Breakdown
             </h3>
 
@@ -375,7 +375,7 @@ export const AdminPlatformSettingsPage: React.FC = () => {
                 <span>{formatCurrency(sampleGst)}</span>
               </div>
 
-              <div className="flex justify-between text-[#0A4DA6] font-extrabold">
+              <div className="flex justify-between text-[#F28C28] font-extrabold">
                 <span>{platformFee.label || "Tirvona Platform Fee"}:</span>
                 <span>
                   {formatCurrency(samplePlatformFee)}
@@ -397,14 +397,14 @@ export const AdminPlatformSettingsPage: React.FC = () => {
 
               <div className="pt-2 border-t border-gray-200 dark:border-slate-800 flex justify-between text-sm font-black text-[#0B192C] dark:text-white">
                 <span>Final Payable Amount:</span>
-                <span className="text-[#0A4DA6] dark:text-blue-400">
+                <span className="text-[#F28C28] dark:text-amber-400">
                   {formatCurrency(sampleTotal)}
                 </span>
               </div>
             </div>
 
             <div className="p-3 bg-blue-50/60 dark:bg-blue-950/30 rounded-xl border border-blue-100 dark:border-blue-900/40 text-[10px] text-gray-500 font-semibold space-y-1">
-              <p className="flex items-center gap-1 font-bold text-[#0A4DA6]">
+              <p className="flex items-center gap-1 font-bold text-[#F28C28]">
                 <Info size={12} /> Database Persistence
               </p>
               <p>

@@ -58,7 +58,7 @@ export const ParkingMyBookingsPage: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-5">
         <header className="space-y-1">
           <h1 className="inline-flex items-center gap-2.5 text-xl sm:text-2xl font-black text-[#0B192C] dark:text-white">
-            <span className="w-9 h-9 rounded-2xl bg-[#0A4DA6] text-white flex items-center justify-center shadow-md">
+            <span className="w-9 h-9 rounded-2xl bg-[#F28C28] text-white flex items-center justify-center shadow-md">
               <CircleParking size={18} className="stroke-[2.5]" />
             </span>
             My Parking
@@ -76,8 +76,8 @@ export const ParkingMyBookingsPage: React.FC = () => {
               onClick={() => setStatus(f.value)}
               className={`shrink-0 text-[11px] font-bold px-4 py-2 rounded-full border transition-all cursor-pointer ${
                 status === f.value
-                  ? "bg-[#0A4DA6] border-[#0A4DA6] text-white shadow-sm"
-                  : "bg-white dark:bg-[#0B192C] border-gray-200 dark:border-slate-700 text-slate-600 dark:text-gray-300 hover:border-[#0A4DA6]"
+                  ? "bg-[#F28C28] border-[#F28C28] text-white shadow-sm"
+                  : "bg-white dark:bg-[#0B192C] border-gray-200 dark:border-slate-700 text-slate-600 dark:text-gray-300 hover:border-[#F28C28]"
               }`}
             >
               {f.label}
@@ -116,7 +116,7 @@ export const ParkingMyBookingsPage: React.FC = () => {
             </p>
             <Link
               to="/parking"
-              className="inline-flex items-center gap-2 bg-[#0A4DA6] hover:bg-[#083D85] text-white text-xs font-extrabold px-5 py-2.5 rounded-full shadow-md transition-all active:scale-95"
+              className="inline-flex items-center gap-2 bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-extrabold px-5 py-2.5 rounded-full shadow-md transition-all active:scale-95"
             >
               Find parking
               <ArrowRight size={13} className="stroke-[2.5]" />
@@ -208,7 +208,7 @@ export const ParkingMyBookingsPage: React.FC = () => {
                       <span className="text-[10px] font-bold text-gray-400">
                         {booking.bookingReference}
                       </span>
-                      <span className="inline-flex items-center gap-1.5 text-[11px] font-extrabold text-[#0A4DA6] dark:text-blue-300">
+                      <span className="inline-flex items-center gap-1.5 text-[11px] font-extrabold text-[#F28C28] dark:text-amber-300">
                         View pass
                         <ArrowRight
                           size={12}

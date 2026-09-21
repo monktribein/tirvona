@@ -95,7 +95,7 @@ export default function TempleManagementPage() {
             )}
           </div>
           <div>
-            <p className="font-medium text-gray-900 group-hover:text-[#0A4DA6] transition-colors">{row.name}</p>
+            <p className="font-medium text-gray-900 group-hover:text-[#F28C28] transition-colors">{row.name}</p>
             <p className="text-sm text-gray-500">{row.address?.city}, {row.address?.state}</p>
           </div>
         </div>
@@ -141,7 +141,7 @@ export default function TempleManagementPage() {
           </button>
           <button
             onClick={() => navigate(`/admin/temples/${row._id}/edit`)}
-            className="p-1.5 text-gray-400 hover:text-[#0A4DA6] hover:bg-blue-50 rounded-lg transition-colors"
+            className="p-1.5 text-gray-400 hover:text-[#F28C28] hover:bg-blue-50 rounded-lg transition-colors"
             title="Edit Temple"
           >
             <Edit className="w-4 h-4" />

@@ -797,8 +797,8 @@ export const AdminDashboard: React.FC = () => {
                   onClick={() => setRange(tab)}
                   className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer capitalize ${
                     range === tab
-                      ? "bg-[#0A4DA6] text-white shadow-sm font-black"
-                      : "text-gray-500 hover:text-[#0A4DA6] dark:hover:text-white"
+                      ? "bg-[#F28C28] text-white shadow-sm font-black"
+                      : "text-gray-500 hover:text-[#F28C28] dark:hover:text-white"
                   }`}
                 >
                   {tab}
@@ -810,7 +810,7 @@ export const AdminDashboard: React.FC = () => {
               className="p-2.5 bg-gray-50 dark:bg-slate-900 hover:bg-gray-100 dark:hover:bg-slate-800 border border-gray-100 dark:border-slate-800 rounded-2xl text-gray-500 cursor-pointer transition-colors"
               title="Refresh Telemetry"
             >
-              <RefreshCw size={16} className={refreshing ? "animate-spin text-[#0A4DA6]" : ""} />
+              <RefreshCw size={16} className={refreshing ? "animate-spin text-[#F28C28]" : ""} />
             </button>
           </div>
         }
@@ -823,11 +823,11 @@ export const AdminDashboard: React.FC = () => {
         <div className="order-1 flex flex-wrap items-center justify-between sm:justify-end gap-2 sm:gap-3">
           <div className="flex items-center gap-1 overflow-x-auto max-w-full rounded-2xl border border-gray-200 bg-white p-1 text-xs dark:border-slate-800 dark:bg-slate-900">
             {(["daily", "weekly", "monthly", "yearly"] as const).map((tab) => (
-              <button key={tab} type="button" onClick={() => setRange(tab)} className={`rounded-xl px-2.5 sm:px-3 py-1.5 capitalize text-[11px] sm:text-xs font-bold ${range === tab ? "bg-[#0A4DA6] text-white" : "text-gray-500 hover:text-[#0A4DA6]"}`}>{tab}</button>
+              <button key={tab} type="button" onClick={() => setRange(tab)} className={`rounded-xl px-2.5 sm:px-3 py-1.5 capitalize text-[11px] sm:text-xs font-bold ${range === tab ? "bg-[#F28C28] text-white" : "text-gray-500 hover:text-[#F28C28]"}`}>{tab}</button>
             ))}
           </div>
           <button type="button" onClick={() => load(range, false)} className="rounded-2xl border border-gray-200 bg-white p-2.5 text-gray-500 dark:border-slate-800 dark:bg-slate-900 cursor-pointer" title="Refresh analytics">
-            <RefreshCw size={16} className={refreshing ? "animate-spin text-[#0A4DA6]" : ""} />
+            <RefreshCw size={16} className={refreshing ? "animate-spin text-[#F28C28]" : ""} />
           </button>
         </div>
 
@@ -890,8 +890,8 @@ export const AdminDashboard: React.FC = () => {
                       onClick={() => setMetric(m)}
                       className={`px-3 py-1 rounded-lg text-[11px] font-bold border transition-colors cursor-pointer ${
                         metric === m
-                          ? "bg-[#0A4DA6] text-white border-[#0A4DA6]"
-                          : "border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-300 hover:border-[#0A4DA6]"
+                          ? "bg-[#F28C28] text-white border-[#F28C28]"
+                          : "border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-300 hover:border-[#F28C28]"
                       }`}
                     >
                       {METRIC[m].label}
@@ -899,7 +899,7 @@ export const AdminDashboard: React.FC = () => {
                   ))}
                   <button
                     onClick={() => setShowTable((v) => !v)}
-                    className="px-2.5 py-1 rounded-lg border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-300 hover:border-[#0A4DA6] transition-colors cursor-pointer"
+                    className="px-2.5 py-1 rounded-lg border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-300 hover:border-[#F28C28] transition-colors cursor-pointer"
                     title={showTable ? "Show chart" : "Show data table"}
                   >
                     {showTable ? <BarChart3 size={13} /> : <Table2 size={13} />}
@@ -1114,7 +1114,7 @@ export const AdminDashboard: React.FC = () => {
                   placeholder="Search bookings..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-3 pr-8 py-1.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-[#0B192C] dark:text-white focus:outline-none focus:ring-1 focus:ring-[#0A4DA6]"
+                  className="w-full pl-3 pr-8 py-1.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-[#0B192C] dark:text-white focus:outline-none focus:ring-1 focus:ring-[#F28C28]"
                 />
                 <Search
                   size={14}
@@ -1126,7 +1126,7 @@ export const AdminDashboard: React.FC = () => {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => navigate("/admin/users")}
-                className="px-4 py-2 bg-[#0A4DA6] hover:bg-[#083d85] text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                className="px-4 py-2 bg-[#F28C28] hover:bg-[#D97706] text-white font-bold text-xs rounded-xl flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
               >
                 <Plus size={14} /> Manage users
               </button>
@@ -1237,7 +1237,7 @@ export const AdminDashboard: React.FC = () => {
                 { label: "Audit logs", path: "/admin/audit-logs", icon: <Lock size={17} />, tone: "bg-rose-50 text-rose-700" },
                 { label: "Ashram management", path: "/admin/manage/ashrams/all", icon: <Building2 size={17} />, tone: "bg-cyan-50 text-cyan-700" },
               ].map((action) => (
-                <button key={action.path} type="button" onClick={() => navigate(action.path)} className="flex min-h-20 items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50/60 p-3 text-left transition hover:-translate-y-0.5 hover:border-[#0A4DA6]">
+                <button key={action.path} type="button" onClick={() => navigate(action.path)} className="flex min-h-20 items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50/60 p-3 text-left transition hover:-translate-y-0.5 hover:border-[#F28C28]">
                   <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${action.tone}`}>{action.icon}</span>
                   <span className="text-xs font-semibold text-[#0B192C] dark:text-white">{action.label}</span>
                 </button>

@@ -373,7 +373,7 @@ export const RateManagementPage: React.FC = () => {
   const card =
     "bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px]";
   const field =
-    "w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6] transition-all cursor-pointer";
+    "w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:border-[#F28C28] transition-all cursor-pointer";
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-16 font-sans text-left">
@@ -450,13 +450,13 @@ export const RateManagementPage: React.FC = () => {
         </div>
 
         <div className={`${card} p-4 sm:p-5 flex flex-col justify-between border-blue-100 dark:border-blue-950/40`}>
-          <p className="text-[10px] uppercase font-black text-[#0A4DA6] dark:text-blue-400 tracking-wider">
+          <p className="text-[10px] uppercase font-black text-[#F28C28] dark:text-amber-400 tracking-wider">
             Avg. Active Discount
           </p>
-          <p className="text-2xl sm:text-3xl font-black text-[#0A4DA6] dark:text-blue-400 mt-1 font-sans">
+          <p className="text-2xl sm:text-3xl font-black text-[#F28C28] dark:text-amber-400 mt-1 font-sans">
             {stats.avgDiscount}%
           </p>
-          <p className="text-[10px] sm:text-[11px] text-[#0A4DA6]/70 dark:text-blue-400/70 font-semibold mt-0.5">
+          <p className="text-[10px] sm:text-[11px] text-[#F28C28]/70 dark:text-amber-400/70 font-semibold mt-0.5">
             Customer savings incentive
           </p>
         </div>
@@ -567,7 +567,7 @@ export const RateManagementPage: React.FC = () => {
         </div>
         {loadingRates ? (
           <div className="py-20 flex flex-col items-center justify-center space-y-3">
-            <Loader2 className="w-8 h-8 text-[#0A4DA6] animate-spin" />
+            <Loader2 className="w-8 h-8 text-[#F28C28] animate-spin" />
             <p className="text-xs text-gray-400 font-medium">
               Loading authoritative stay rates...
             </p>
@@ -597,7 +597,7 @@ export const RateManagementPage: React.FC = () => {
                           selectedRoomIds.size === filteredRates.length
                         }
                         onChange={handleSelectAll}
-                        className="rounded border-gray-300 text-[#0A4DA6] focus:ring-[#0A4DA6] cursor-pointer"
+                        className="rounded border-gray-300 text-[#F28C28] focus:ring-[#F28C28] cursor-pointer"
                       />
                     </th>
                     <th className="py-3 px-4">Stay & Category</th>
@@ -619,7 +619,7 @@ export const RateManagementPage: React.FC = () => {
                       <tr
                         key={rate.roomId}
                         className={`hover:bg-gray-50/60 dark:hover:bg-slate-800/30 transition-colors ${
-                          isSelected ? "bg-[#0A4DA6]/5 dark:bg-[#0A4DA6]/10" : ""
+                          isSelected ? "bg-[#F28C28]/5 dark:bg-[#F28C28]/10" : ""
                         }`}
                       >
                         <td className="py-3.5 px-4 text-center">
@@ -627,7 +627,7 @@ export const RateManagementPage: React.FC = () => {
                             type="checkbox"
                             checked={isSelected}
                             onChange={() => handleToggleSelectRoom(rate.roomId)}
-                            className="rounded border-gray-300 text-[#0A4DA6] focus:ring-[#0A4DA6] cursor-pointer"
+                            className="rounded border-gray-300 text-[#F28C28] focus:ring-[#F28C28] cursor-pointer"
                           />
                         </td>
 
@@ -735,7 +735,7 @@ export const RateManagementPage: React.FC = () => {
                         <td className="py-3.5 px-4 text-right">
                           <button
                             onClick={() => openEditModal(rate)}
-                            className="px-3.5 py-1.5 rounded-xl border border-gray-200 dark:border-slate-700 hover:border-[#0A4DA6] hover:bg-[#0A4DA6] hover:text-white text-xs font-extrabold text-[#0B192C] dark:text-white transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-sm"
+                            className="px-3.5 py-1.5 rounded-xl border border-gray-200 dark:border-slate-700 hover:border-[#F28C28] hover:bg-[#F28C28] hover:text-white text-xs font-extrabold text-[#0B192C] dark:text-white transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-sm"
                           >
                             <Edit3 size={13} />
                             Edit Rate
@@ -759,7 +759,7 @@ export const RateManagementPage: React.FC = () => {
                       selectedRoomIds.size === filteredRates.length
                     }
                     onChange={handleSelectAll}
-                    className="rounded border-gray-300 text-[#0A4DA6] focus:ring-[#0A4DA6]"
+                    className="rounded border-gray-300 text-[#F28C28] focus:ring-[#F28C28]"
                   />
                   <span className="font-extrabold text-xs">Select All ({filteredRates.length})</span>
                 </label>
@@ -779,7 +779,7 @@ export const RateManagementPage: React.FC = () => {
                   <div
                     key={rate.roomId}
                     className={`p-4 space-y-3 transition-colors ${
-                      isSelected ? "bg-[#0A4DA6]/5 dark:bg-[#0A4DA6]/10" : ""
+                      isSelected ? "bg-[#F28C28]/5 dark:bg-[#F28C28]/10" : ""
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
@@ -788,7 +788,7 @@ export const RateManagementPage: React.FC = () => {
                           type="checkbox"
                           checked={isSelected}
                           onChange={() => handleToggleSelectRoom(rate.roomId)}
-                          className="mt-1 rounded border-gray-300 text-[#0A4DA6] focus:ring-[#0A4DA6] cursor-pointer"
+                          className="mt-1 rounded border-gray-300 text-[#F28C28] focus:ring-[#F28C28] cursor-pointer"
                         />
                         <div>
                           <h4 className="text-sm font-extrabold text-[#0B192C] dark:text-white">
@@ -866,7 +866,7 @@ export const RateManagementPage: React.FC = () => {
 
                       <button
                         onClick={() => openEditModal(rate)}
-                        className="px-3.5 py-1.5 rounded-xl border border-gray-200 dark:border-slate-700 hover:border-[#0A4DA6] hover:bg-[#0A4DA6] hover:text-white text-xs font-extrabold text-[#0B192C] dark:text-white transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-sm"
+                        className="px-3.5 py-1.5 rounded-xl border border-gray-200 dark:border-slate-700 hover:border-[#F28C28] hover:bg-[#F28C28] hover:text-white text-xs font-extrabold text-[#0B192C] dark:text-white transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-sm"
                       >
                         <Edit3 size={13} />
                         Edit Rate
@@ -917,7 +917,7 @@ export const RateManagementPage: React.FC = () => {
                   required
                   value={editMrp}
                   onChange={(e) => setEditMrp(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-black text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6]"
+                  className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-black text-[#0B192C] dark:text-white focus:outline-none focus:border-[#F28C28]"
                 />
                 <span className="text-[10px] text-gray-400 mt-1 block">
                   Original base price before any promotional discount.
@@ -943,7 +943,7 @@ export const RateManagementPage: React.FC = () => {
                     step="1"
                     value={editDiscountPercent || 0}
                     onChange={(e) => setEditDiscountPercent(e.target.value)}
-                    className="flex-1 accent-[#0A4DA6]"
+                    className="flex-1 accent-[#F28C28]"
                   />
                   <input
                     type="number"
@@ -951,7 +951,7 @@ export const RateManagementPage: React.FC = () => {
                     max="90"
                     value={editDiscountPercent}
                     onChange={(e) => setEditDiscountPercent(e.target.value)}
-                    className="w-16 px-2.5 py-1.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl text-xs font-black text-center text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6]"
+                    className="w-16 px-2.5 py-1.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl text-xs font-black text-center text-[#0B192C] dark:text-white focus:outline-none focus:border-[#F28C28]"
                   />
                 </div>
 
@@ -967,7 +967,7 @@ export const RateManagementPage: React.FC = () => {
                       onClick={() => setEditDiscountPercent(String(pct))}
                       className={`px-2.5 py-1 rounded-lg text-[11px] font-black transition-all ${
                         Number(editDiscountPercent) === pct
-                          ? "bg-[#0A4DA6] text-white"
+                          ? "bg-[#F28C28] text-white"
                           : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200"
                       }`}
                     >
@@ -1061,7 +1061,7 @@ export const RateManagementPage: React.FC = () => {
                   placeholder="e.g. Festival promotional rate, Weekend offer"
                   value={editNotes}
                   onChange={(e) => setEditNotes(e.target.value)}
-                  className="w-full px-3 py-2 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl text-xs text-[#0B192C] dark:text-white focus:outline-none focus:border-[#0A4DA6]"
+                  className="w-full px-3 py-2 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl text-xs text-[#0B192C] dark:text-white focus:outline-none focus:border-[#F28C28]"
                 />
               </div>
 
@@ -1078,7 +1078,7 @@ export const RateManagementPage: React.FC = () => {
                 <button
                   type="submit"
                   disabled={savingRate}
-                  className="px-5 py-2.5 rounded-xl bg-[#0A4DA6] hover:bg-[#083b80] text-white text-xs font-black flex items-center gap-2 shadow-sm transition-all"
+                  className="px-5 py-2.5 rounded-xl bg-[#F28C28] hover:bg-[#B45309] text-white text-xs font-black flex items-center gap-2 shadow-sm transition-all"
                 >
                   {savingRate ? (
                     <>

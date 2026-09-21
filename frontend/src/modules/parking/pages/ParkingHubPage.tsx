@@ -267,7 +267,7 @@ export const ParkingHubPage: React.FC = () => {
               type="button"
               onClick={useMyLocation}
               disabled={locating}
-              className="w-full inline-flex items-center justify-center gap-2 bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-700 hover:border-[#0A4DA6] text-[#0A4DA6] dark:text-blue-300 text-xs font-extrabold px-4 py-2.5 rounded-full shadow-sm transition-all active:scale-95 cursor-pointer disabled:opacity-60"
+              className="w-full inline-flex items-center justify-center gap-2 bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-700 hover:border-[#F28C28] text-[#F28C28] dark:text-amber-300 text-xs font-extrabold px-4 py-2.5 rounded-full shadow-sm transition-all active:scale-95 cursor-pointer disabled:opacity-60"
             >
               {locating ? (
                 <Loader2 size={14} className="animate-spin stroke-[2.5]" />
@@ -314,8 +314,8 @@ export const ParkingHubPage: React.FC = () => {
                       onClick={() => setView(key)}
                       className={`inline-flex items-center gap-1.5 text-[11px] font-extrabold px-3.5 py-1.5 rounded-full transition-all cursor-pointer ${
                         view === key
-                          ? "bg-white dark:bg-[#0B192C] text-[#0A4DA6] dark:text-blue-300 shadow-sm"
-                          : "text-gray-500 dark:text-gray-400 hover:text-[#0A4DA6]"
+                          ? "bg-white dark:bg-[#0B192C] text-[#F28C28] dark:text-amber-300 shadow-sm"
+                          : "text-gray-500 dark:text-gray-400 hover:text-[#F28C28]"
                       }`}
                     >
                       <Icon size={13} className="stroke-[2.5]" />

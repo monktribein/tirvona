@@ -1200,7 +1200,7 @@ export const DashboardLayout: React.FC = () => {
             <span className="font-black text-lg leading-tight text-[#0B192C] dark:text-white">
               Tirvona
             </span>
-            <span className="text-[10px] font-extrabold text-[#0A4DA6]">
+            <span className="text-[10px] font-extrabold text-[#F28C28]">
               {t(getFormattedRole(user?.role))}
             </span>
           </div>
@@ -1214,8 +1214,8 @@ export const DashboardLayout: React.FC = () => {
               to={navData.topLink.path}
               onClick={isMobile ? () => setSidebarOpen(false) : undefined}
               className={`flex items-center gap-3 rounded-xl px-3.5 py-3 text-xs font-bold transition-all ${location.pathname === navData.topLink.path
-                ? "bg-[#0A4DA6] text-white shadow-sm shadow-[#0A4DA6]/20"
-                : "text-slate-600 hover:bg-[#EBF2FA] hover:text-[#0A4DA6] dark:text-gray-300 dark:hover:bg-slate-800"
+                ? "bg-[#F28C28] text-white shadow-sm shadow-[#F28C28]/20"
+                : "text-slate-600 hover:bg-[#FFF4E5] hover:text-[#F28C28] dark:text-gray-300 dark:hover:bg-slate-800"
                 }`}
             >
               <MaterialSidebarIcon label={navData.topLink.label} />
@@ -1241,8 +1241,8 @@ export const DashboardLayout: React.FC = () => {
                   to={singleLink.path}
                   onClick={isMobile ? () => setSidebarOpen(false) : undefined}
                   className={`flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-bold transition-all ${isActive
-                    ? "bg-[#0A4DA6] text-white shadow-sm shadow-[#0A4DA6]/20"
-                    : "text-slate-600 hover:bg-[#EBF2FA] hover:text-[#0A4DA6] dark:text-gray-300 dark:hover:bg-slate-800"
+                    ? "bg-[#F28C28] text-white shadow-sm shadow-[#F28C28]/20"
+                    : "text-slate-600 hover:bg-[#FFF4E5] hover:text-[#F28C28] dark:text-gray-300 dark:hover:bg-slate-800"
                     }`}
                 >
                   <MaterialSidebarIcon label={group.groupName} />
@@ -1261,8 +1261,8 @@ export const DashboardLayout: React.FC = () => {
                 <button
                   onClick={() => toggleGroup(group.groupName)}
                   className={`flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-left text-xs font-semibold transition-colors ${hasActiveLink
-                    ? "bg-[#EBF2FA] text-[#0A4DA6] dark:bg-white/5"
-                    : "text-slate-600 hover:bg-[#F0F5FA] hover:text-[#0A4DA6] dark:text-gray-400"
+                    ? "bg-[#FFF4E5] text-[#F28C28] dark:bg-white/5"
+                    : "text-slate-600 hover:bg-[#F0F5FA] hover:text-[#F28C28] dark:text-gray-400"
                     }`}
                 >
                   <div className="flex items-center gap-2">
@@ -1288,8 +1288,8 @@ export const DashboardLayout: React.FC = () => {
                             isMobile ? () => setSidebarOpen(false) : undefined
                           }
                           className={`flex items-center justify-between rounded-lg px-3 py-2 text-xs font-medium transition-all ${isActive
-                            ? "bg-[#E2EDF8] font-semibold text-[#0A4DA6] shadow-sm dark:bg-[#0A4DA6] dark:text-white"
-                            : "text-slate-600 hover:bg-[#F0F5FA] hover:text-[#0A4DA6] dark:text-gray-400"
+                            ? "bg-[#E2EDF8] font-semibold text-[#F28C28] shadow-sm dark:bg-[#F28C28] dark:text-white"
+                            : "text-slate-600 hover:bg-[#F0F5FA] hover:text-[#F28C28] dark:text-gray-400"
                             }`}
                         >
                           <span className="truncate">{t(link.label)}</span>
@@ -1366,7 +1366,7 @@ export const DashboardLayout: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => void handleRequestAvailable()}
-                  className="w-full py-1.5 px-3 bg-[#0A4DA6] hover:bg-[#083b80] text-white rounded-xl text-[10px] font-black flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                  className="w-full py-1.5 px-3 bg-[#F28C28] hover:bg-[#B45309] text-white rounded-xl text-[10px] font-black flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs"
                 >
                   <Send size={11} /> Request Available
                 </button>
@@ -1435,7 +1435,7 @@ export const DashboardLayout: React.FC = () => {
           )}
 
           <Link to="/" className="group flex shrink-0 cursor-pointer items-center gap-3">
-            <div className="flex items-center justify-center rounded-xl border border-blue-100 bg-white p-1.5 shadow-sm transition-all group-hover:border-[#0A4DA6]/60">
+            <div className="flex items-center justify-center rounded-xl border border-blue-100 bg-white p-1.5 shadow-sm transition-all group-hover:border-[#F28C28]/60">
               <img
                 src="/logo/logo.png"
                 alt="Tirvona"
@@ -1443,10 +1443,10 @@ export const DashboardLayout: React.FC = () => {
               />
             </div>
             <div className="hidden flex-col sm:flex">
-              <span className="text-lg font-extrabold leading-tight tracking-tight text-[#0B192C] transition-colors group-hover:text-[#0A4DA6] dark:text-white">
+              <span className="text-lg font-extrabold leading-tight tracking-tight text-[#0B192C] transition-colors group-hover:text-[#F28C28] dark:text-white">
                 Tirvona
               </span>
-              <span className="text-[10px] font-semibold leading-none text-[#0A4DA6]">
+              <span className="text-[10px] font-semibold leading-none text-[#F28C28]">
                 {t(getFormattedRole(user?.role))}
               </span>
             </div>
@@ -1462,7 +1462,7 @@ export const DashboardLayout: React.FC = () => {
             <button
               type="button"
               onClick={() => setLanguageOpen((open) => !open)}
-              className="flex h-10 items-center gap-1.5 rounded-full border border-blue-100 bg-white px-3 text-xs font-semibold text-[#0A4DA6] hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-900 dark:text-blue-300 dark:hover:bg-slate-800"
+              className="flex h-10 items-center gap-1.5 rounded-full border border-blue-100 bg-white px-3 text-xs font-semibold text-[#F28C28] hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-900 dark:text-amber-300 dark:hover:bg-slate-800"
               aria-label={t("Language")}
             >
               <Globe size={14} /> {language === "hi" ? "हिंदी" : "EN"}
@@ -1476,7 +1476,7 @@ export const DashboardLayout: React.FC = () => {
                     setLanguage("en");
                     setLanguageOpen(false);
                   }}
-                  className={`w-full px-3 py-2.5 text-left text-xs font-bold ${language === "en" ? "bg-blue-50 text-[#0A4DA6] dark:bg-slate-800" : "text-slate-600 dark:text-slate-300"}`}
+                  className={`w-full px-3 py-2.5 text-left text-xs font-bold ${language === "en" ? "bg-blue-50 text-[#F28C28] dark:bg-slate-800" : "text-slate-600 dark:text-slate-300"}`}
                 >
                   English
                 </button>
@@ -1486,7 +1486,7 @@ export const DashboardLayout: React.FC = () => {
                     setLanguage("hi");
                     setLanguageOpen(false);
                   }}
-                  className={`w-full px-3 py-2.5 text-left text-xs font-bold ${language === "hi" ? "bg-blue-50 text-[#0A4DA6] dark:bg-slate-800" : "text-slate-600 dark:text-slate-300"}`}
+                  className={`w-full px-3 py-2.5 text-left text-xs font-bold ${language === "hi" ? "bg-blue-50 text-[#F28C28] dark:bg-slate-800" : "text-slate-600 dark:text-slate-300"}`}
                 >
                   हिंदी
                 </button>
@@ -1498,21 +1498,21 @@ export const DashboardLayout: React.FC = () => {
 
           <Link
             to="/public"
-            className="hidden shrink-0 cursor-pointer items-center gap-1.5 rounded-full bg-[#0A4DA6] px-4 py-2.5 text-xs font-bold text-white shadow-sm shadow-[#0A4DA6]/20 transition-all hover:bg-[#083b80] xl:flex"
+            className="hidden shrink-0 cursor-pointer items-center gap-1.5 rounded-full bg-[#F28C28] px-4 py-2.5 text-xs font-bold text-white shadow-sm shadow-[#F28C28]/20 transition-all hover:bg-[#B45309] xl:flex"
           >
             <Globe size={14} className="text-[#E58C28]" /> {t("Public Portal")}{" "}
             <ArrowRight size={12} />
           </Link>
 
           <div className="flex items-center gap-2 rounded-2xl border border-blue-100 bg-[#F8FAFC] p-1.5 pl-2 dark:border-slate-700 dark:bg-slate-900">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#0A4DA6] text-xs font-bold text-white shadow-sm">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#F28C28] text-xs font-bold text-white shadow-sm">
               {(user.name || user.email || "U").charAt(0).toUpperCase()}
             </div>
             <div className="hidden min-w-0 flex-col xl:flex">
               <span className="max-w-32 truncate text-xs font-semibold text-[#0B192C] dark:text-white">
                 {user.name || user.email || t("User")}
               </span>
-              <span className="text-[10px] font-medium text-[#0A4DA6]">
+              <span className="text-[10px] font-medium text-[#F28C28]">
                 {t(getFormattedRole(user.role))}
               </span>
             </div>

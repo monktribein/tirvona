@@ -86,7 +86,7 @@ export const CircuitApprovalsPage: React.FC = () => {
         </div>
       ) : loading ? (
         <div className={`${CARD} p-12 flex items-center justify-center gap-3`}>
-          <Loader2 size={20} className="animate-spin text-[#0A4DA6]" />
+          <Loader2 size={20} className="animate-spin text-[#F28C28]" />
           <span className="text-sm font-bold text-gray-400">Loading…</span>
         </div>
       ) : circuits.length === 0 ? (
@@ -153,7 +153,7 @@ export const CircuitApprovalsPage: React.FC = () => {
                         </p>
                       ) : null}
                       {circuit.usableAsPlannerTemplate ? (
-                        <p className="mt-1.5 text-[10px] font-bold text-[#0A4DA6]">
+                        <p className="mt-1.5 text-[10px] font-bold text-[#F28C28]">
                           Will be offered in the itinerary planner
                         </p>
                       ) : null}

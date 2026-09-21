@@ -119,7 +119,7 @@ export const AartiBookingDetailPage: React.FC = () => {
           <button
             type="button"
             onClick={() => navigate("/profile/aarti")}
-            className="inline-flex items-center gap-2 bg-[#0A4DA6] hover:bg-[#083D85] text-white text-xs font-extrabold px-5 py-2.5 rounded-full shadow-md transition-all active:scale-95 cursor-pointer"
+            className="inline-flex items-center gap-2 bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-extrabold px-5 py-2.5 rounded-full shadow-md transition-all active:scale-95 cursor-pointer"
           >
             My aarti bookings
           </button>
@@ -134,7 +134,7 @@ export const AartiBookingDetailPage: React.FC = () => {
   const cancellable = ["pending", "upcoming"].includes(booking.status);
 
   return (
-    <div className="bg-[#F4F7FB] py-8 sm:py-10 lg:py-12 dark:bg-[#070F1B]">
+    <div className="bg-[#FFFBF5] py-8 sm:py-10 lg:py-12 dark:bg-[#070F1B]">
       <div className="mx-auto w-full max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">
 
       <section className="space-y-4 rounded-[28px] border border-orange-200 bg-white p-5 shadow-sm shadow-slate-900/[0.03] sm:p-7 dark:border-slate-800 dark:bg-[#0B192C]">
@@ -152,11 +152,11 @@ export const AartiBookingDetailPage: React.FC = () => {
 
         <div className="grid sm:grid-cols-2 gap-3 pt-1">
           <p className="flex items-center gap-2 text-xs font-semibold text-gray-500 dark:text-gray-400">
-            <Clock size={14} className="shrink-0 text-[#0A4DA6] stroke-[2.5]" />
+            <Clock size={14} className="shrink-0 text-[#F28C28] stroke-[2.5]" />
             {formatDateTime(booking.startsAt)}
           </p>
           <p className="flex items-center gap-2 text-xs font-semibold text-gray-500 dark:text-gray-400">
-            <Users size={14} className="shrink-0 text-[#0A4DA6] stroke-[2.5]" />
+            <Users size={14} className="shrink-0 text-[#F28C28] stroke-[2.5]" />
             {booking.passCount} pass{booking.passCount === 1 ? "" : "es"}
             {booking.checkedInCount
               ? ` · ${booking.checkedInCount} admitted`
@@ -164,7 +164,7 @@ export const AartiBookingDetailPage: React.FC = () => {
           </p>
           {session?.venue?.city ? (
             <p className="flex items-center gap-2 text-xs font-semibold text-gray-500 dark:text-gray-400 sm:col-span-2">
-              <MapPin size={14} className="shrink-0 text-[#0A4DA6] stroke-[2.5]" />
+              <MapPin size={14} className="shrink-0 text-[#F28C28] stroke-[2.5]" />
               {[session.venue.name, session.venue.city, session.venue.state]
                 .filter(Boolean)
                 .join(", ")}
@@ -254,7 +254,7 @@ export const AartiBookingDetailPage: React.FC = () => {
             type="button"
             onClick={reissue}
             disabled={busy}
-            className="mt-5 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-[#0A4DA6]/25 bg-white px-4 py-2.5 text-xs font-extrabold text-[#0A4DA6] shadow-sm transition-all hover:border-[#0A4DA6] hover:bg-blue-50 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#0B192C] dark:text-blue-300"
+            className="mt-5 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-[#F28C28]/25 bg-white px-4 py-2.5 text-xs font-extrabold text-[#F28C28] shadow-sm transition-all hover:border-[#F28C28] hover:bg-blue-50 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#0B192C] dark:text-amber-300"
           >
             <RefreshCw
               size={12}

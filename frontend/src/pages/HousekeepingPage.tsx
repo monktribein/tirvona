@@ -224,7 +224,7 @@ export const HousekeepingPage: React.FC = () => {
                       <button
                         onClick={() => updateStatus(unit._id, "cleaning")}
                         disabled={busy}
-                        className="p-1 hover:bg-[#0A4DA6]/10 text-gray-400 hover:text-[#0A4DA6] rounded transition-colors cursor-pointer disabled:cursor-not-allowed"
+                        className="p-1 hover:bg-[#F28C28]/10 text-gray-400 hover:text-[#F28C28] rounded transition-colors cursor-pointer disabled:cursor-not-allowed"
                         title="Start Cleaning"
                       >
                         <ClipboardList size={14} />

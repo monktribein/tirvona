@@ -121,7 +121,7 @@ export default function TempleSearchPage() {
       {/* Hero Section styled with Tirvona Home Theme */}
       <section className="relative pt-24 sm:pt-32 pb-28 sm:pb-36 flex items-center overflow-hidden rounded-b-[36px] sm:rounded-b-[48px] shadow-xl bg-gradient-to-br from-[#0B192C] via-[#0D233E] to-[#0B192C]">
         <div className="absolute inset-0 z-0 opacity-25">
-          <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#E58C28]/20 via-[#0A4DA6]/20 to-transparent"></div>
+          <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#E58C28]/20 via-[#F28C28]/20 to-transparent"></div>
         </div>
         
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 z-10 w-full flex flex-col items-center text-center">
@@ -200,7 +200,7 @@ export default function TempleSearchPage() {
                         <Building2 className="w-5 h-5" />
                       </div>
                       {temple.deity && (
-                        <span className="bg-blue-50 dark:bg-blue-950/60 text-[#0A4DA6] dark:text-blue-300 text-[11px] font-extrabold px-2.5 py-1 rounded-full border border-blue-200/50 dark:border-blue-900">
+                        <span className="bg-[#FFF4E5]/60 text-[#F28C28] dark:text-amber-300 text-[11px] font-extrabold px-2.5 py-1 rounded-full border border-blue-200/50 dark:border-blue-900">
                           {temple.deity}
                         </span>
                       )}
@@ -228,7 +228,7 @@ export default function TempleSearchPage() {
         <div className="flex items-center justify-between mb-8">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{searchTitle}</h2>
           {hasLocation && (
-            <button onClick={() => setShowLocationModal(true)} className="text-sm text-[#0A4DA6] dark:text-blue-400 font-bold hover:underline flex items-center gap-1 cursor-pointer">
+            <button onClick={() => setShowLocationModal(true)} className="text-sm text-[#F28C28] dark:text-amber-400 font-bold hover:underline flex items-center gap-1 cursor-pointer">
               <Crosshair className="w-4 h-4" /> Change Location
             </button>
           )}
@@ -248,7 +248,7 @@ export default function TempleSearchPage() {
             </div>
             <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No temples found</h3>
             <p className="text-gray-500 dark:text-slate-400 mb-6 max-w-md mx-auto text-sm">We couldn't find any temples matching your search. Try a different city or location.</p>
-            <button onClick={() => { setCityQuery(""); fetchPopularTemples(); }} className="px-6 py-2.5 bg-[#0A4DA6] text-white rounded-xl font-bold hover:bg-[#083b80] transition-colors cursor-pointer text-sm">
+            <button onClick={() => { setCityQuery(""); fetchPopularTemples(); }} className="px-6 py-2.5 bg-[#F28C28] text-white rounded-xl font-bold hover:bg-[#B45309] transition-colors cursor-pointer text-sm">
               Clear Search
             </button>
           </div>
@@ -279,7 +279,7 @@ export default function TempleSearchPage() {
                     </div>
                   </div>
 
-                  <h3 className="font-bold text-lg text-gray-900 dark:text-white group-hover:text-[#0A4DA6] dark:group-hover:text-blue-400 transition-colors line-clamp-1 mb-1.5">
+                  <h3 className="font-bold text-lg text-gray-900 dark:text-white group-hover:text-[#F28C28] dark:group-hover:text-blue-400 transition-colors line-clamp-1 mb-1.5">
                     {temple.name}
                   </h3>
 

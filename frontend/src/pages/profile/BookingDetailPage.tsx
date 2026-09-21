@@ -22,6 +22,7 @@ import {
   formatCurrency,
   formatDateIN,
   formatDateTimeIN,
+  formatSlotTime,
 } from "../../utils/format";
 import { SUPPORT_CONFIG } from "../../constants/support";
 import { useNotifications } from "../../contexts/NotificationContext";
@@ -30,6 +31,18 @@ interface BookingDetailsData {
   _id: string;
   bookingId: string;
   reservationNumber?: string;
+  bookingType?: string;
+  dayStayDetails?: {
+    productCode?: string;
+    productType?: string;
+    slotStartTime?: string;
+    slotEndTime?: string;
+    durationMinutes?: number;
+    graceMinutes?: number;
+    graceExpiresAt?: string;
+    housekeepingBufferMinutes?: number;
+    housekeepingEndsAt?: string;
+  };
   status: string;
   paymentStatus: string;
   paymentMode?: string;
@@ -252,7 +265,7 @@ export const BookingDetailPage: React.FC = () => {
       ctx.clip();
       const headerGrad = ctx.createLinearGradient(0, 0, width, 0);
       headerGrad.addColorStop(0, "#0B192C");
-      headerGrad.addColorStop(0.5, "#0A4DA6");
+      headerGrad.addColorStop(0.5, "#F28C28");
       headerGrad.addColorStop(1, "#0B192C");
       ctx.fillStyle = headerGrad;
       ctx.fillRect(0, 0, width, headerH);
@@ -333,6 +346,22 @@ export const BookingDetailPage: React.FC = () => {
       ctx.font = "800 12px sans-serif";
       ctx.fillText(roomName, width - 40, 188);
 
+      const isBookingDayStay =
+        (booking.bookingType === "day_rest" ||
+          booking.bookingType === "freshen_up" ||
+          Boolean(booking.dayStayDetails?.productCode)) &&
+        booking.bookingType !== "overnight";
+
+      const canvasInTime = isBookingDayStay
+        ? (formatSlotTime(booking.dayStayDetails?.slotStartTime) || formatSlotTime(booking.checkInDate) || "06:00 AM")
+        : "12:00 PM";
+
+      const canvasOutTime = isBookingDayStay
+        ? (formatSlotTime(booking.dayStayDetails?.slotEndTime) || formatSlotTime(booking.checkOutDate) || "07:30 AM")
+        : "11:00 AM";
+
+      const canvasGrace = booking.dayStayDetails?.graceMinutes || 15;
+
       const drawDetailRow = (l1: string, v1: string, l2: string, v2: string, y: number) => {
         ctx.textAlign = "left";
         ctx.fillStyle = "#94A3B8";
@@ -360,16 +389,18 @@ export const BookingDetailPage: React.FC = () => {
       );
 
       drawDetailRow(
-        "CHECK-IN DATE",
-        formatDateIN(booking.checkInDate),
-        "CHECK-OUT DATE",
-        formatDateIN(booking.checkOutDate),
+        isBookingDayStay ? "CHECK-IN TIME & DATE" : "CHECK-IN DATE",
+        isBookingDayStay ? `${formatDateIN(booking.checkInDate)} (${canvasInTime})` : `${formatDateIN(booking.checkInDate)} (12 PM)`,
+        isBookingDayStay ? "CHECK-OUT TIME & DATE" : "CHECK-OUT DATE",
+        isBookingDayStay ? `${formatDateIN(booking.checkOutDate)} (${canvasOutTime})` : `${formatDateIN(booking.checkOutDate)} (11 AM)`,
         268
       );
 
       drawDetailRow(
-        "GUESTS & ROOMS",
-        `${booking.guestsCount} Guest(s) • ${booking.roomsBookedCount} Room(s)`,
+        isBookingDayStay ? "STAY CATEGORY & GUESTS" : "GUESTS & ROOMS",
+        isBookingDayStay
+          ? `${booking.guestsCount} Guest(s) • ${Math.round((booking.dayStayDetails?.durationMinutes || 240) / 60)}h Stay`
+          : `${booking.guestsCount} Guest(s) • ${booking.roomsBookedCount} Room(s)`,
         "ASSIGNED ROOM",
         (booking.assignedRoomNumbers && booking.assignedRoomNumbers.length > 0) ? booking.assignedRoomNumbers.join(", ") : (booking.assignedRoomNumber || "Front Desk"),
         312
@@ -404,7 +435,7 @@ export const BookingDetailPage: React.FC = () => {
         ctx.fillText(label, 38, y);
 
         ctx.textAlign = "right";
-        ctx.fillStyle = bold ? "#0A4DA6" : "#0B192C";
+        ctx.fillStyle = bold ? "#F28C28" : "#0B192C";
         ctx.font = bold ? "900 13px sans-serif" : "700 11px sans-serif";
         ctx.fillText(val, width - 38, y);
       };
@@ -429,7 +460,7 @@ export const BookingDetailPage: React.FC = () => {
       ctx.fillText("Valid digital accommodation voucher issued under Government Digital India guidelines.", 24, 592);
 
       ctx.textAlign = "right";
-      ctx.fillStyle = "#0A4DA6";
+      ctx.fillStyle = "#F28C28";
       ctx.font = "900 10px sans-serif";
       ctx.fillText("VERIFIED BY TIRVONA", width - 24, 620);
 
@@ -448,7 +479,7 @@ export const BookingDetailPage: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
-        <Loader2 className="animate-spin text-[#0A4DA6] mb-3" size={36} />
+        <Loader2 className="animate-spin text-[#F28C28] mb-3" size={36} />
         <p className="text-xs font-bold text-gray-500 dark:text-gray-400">
           Loading reservation details...
         </p>
@@ -534,6 +565,34 @@ export const BookingDetailPage: React.FC = () => {
   const isCancellable =
     booking.status === "confirmed" || booking.status === "pending";
 
+  const isDayStay =
+    (booking.bookingType === "day_rest" ||
+      booking.bookingType === "freshen_up" ||
+      Boolean(booking.dayStayDetails?.productCode)) &&
+    booking.bookingType !== "overnight";
+
+  const dayStayProductName =
+    booking.dayStayDetails?.productCode === "DAY_REST_4H"
+      ? "Day Rest (4h)"
+      : booking.dayStayDetails?.productCode === "DAY_REST_6H"
+      ? "Day Rest (6h)"
+      : "Day Rest";
+
+  const dayStayDurationLabel =
+    booking.dayStayDetails?.durationMinutes
+      ? `${booking.dayStayDetails.durationMinutes / 60} Hours`
+      : "4 Hours";
+
+  const checkInTimeText = isDayStay
+    ? (formatSlotTime(booking.dayStayDetails?.slotStartTime) || formatSlotTime(booking.checkInDate) || "06:00 AM")
+    : "12:00 PM";
+
+  const checkOutTimeText = isDayStay
+    ? (formatSlotTime(booking.dayStayDetails?.slotEndTime) || formatSlotTime(booking.checkOutDate) || "07:30 AM")
+    : "11:00 AM";
+
+  const graceMins = booking.dayStayDetails?.graceMinutes || 15;
+
   return (
     <div className="min-h-screen pb-24 text-left">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-2 flex flex-wrap items-center justify-between gap-4">
@@ -593,9 +652,15 @@ export const BookingDetailPage: React.FC = () => {
 
           <div className="space-y-3 flex-1 min-w-0">
             <div className="flex items-center justify-between gap-2">
-              <span className="text-[10px] tracking-wider font-extrabold px-3 py-1 bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 rounded-full">
-                Ashram Reservation
-              </span>
+              {isDayStay ? (
+                <span className="text-[10px] tracking-wider font-extrabold px-3 py-1 bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 rounded-full inline-flex items-center gap-1">
+                  ⚡ Short Stay: {dayStayProductName} ({dayStayDurationLabel})
+                </span>
+              ) : (
+                <span className="text-[10px] tracking-wider font-extrabold px-3 py-1 bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 rounded-full">
+                  Ashram Reservation
+                </span>
+              )}
               <span className="text-xs font-bold text-gray-400">
                 Payment:{" "}
                 <strong className="text-[#0B192C] dark:text-white capitalize">
@@ -626,7 +691,7 @@ export const BookingDetailPage: React.FC = () => {
 
             <div className="flex flex-wrap items-center gap-3 pt-2 text-xs font-semibold">
               <div className="bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 px-3.5 py-1.5 rounded-xl flex items-center gap-2">
-                <BedDouble size={15} className="text-[#0A4DA6]" />
+                <BedDouble size={15} className="text-[#F28C28]" />
                 <span>
                   <strong>Category:</strong>{" "}
                   {room?.name || room?.type || "Standard Room"}
@@ -668,30 +733,64 @@ export const BookingDetailPage: React.FC = () => {
             <div className="grid grid-cols-2 gap-4 bg-gray-50 dark:bg-slate-900/70 p-4 rounded-2xl border border-gray-100 dark:border-slate-800">
               <div>
                 <span className="text-[10px] text-gray-400 font-bold block">
-                  Check-In
+                  {isDayStay ? "Arrival / Check-In" : "Check-In"}
                 </span>
                 <span className="text-sm font-extrabold text-[#0B192C] dark:text-white block mt-0.5">
                   {formatDateIN(booking.checkInDate)}
                 </span>
-                <span className="text-[10px] text-gray-400 font-medium">
-                  Standard 12:00 PM
-                </span>
+                {isDayStay ? (
+                  <span className="text-[11px] text-[#F28C28] dark:text-amber-400 font-bold block mt-0.5">
+                    Arrival Slot: {checkInTimeText}
+                  </span>
+                ) : (
+                  <span className="text-[10px] text-gray-400 font-medium">
+                    Standard 12:00 PM
+                  </span>
+                )}
               </div>
 
               <div>
                 <span className="text-[10px] text-gray-400 font-bold block">
-                  Check-Out
+                  {isDayStay ? "Departure / Check-Out" : "Check-Out"}
                 </span>
                 <span className="text-sm font-extrabold text-[#0B192C] dark:text-white block mt-0.5">
                   {formatDateIN(booking.checkOutDate)}
                 </span>
-                <span className="text-[10px] text-gray-400 font-medium">
-                  Standard 11:00 AM
-                </span>
+                {isDayStay ? (
+                  <span className="text-[11px] text-[#F28C28] dark:text-amber-400 font-bold block mt-0.5">
+                    Departure: {checkOutTimeText} (+{graceMins}m Grace)
+                  </span>
+                ) : (
+                  <span className="text-[10px] text-gray-400 font-medium">
+                    Standard 11:00 AM
+                  </span>
+                )}
               </div>
             </div>
 
             <div className="space-y-3 text-xs">
+              {isDayStay && (
+                <>
+                  <div className="flex justify-between py-1 border-b border-gray-50 dark:border-slate-850">
+                    <span className="text-gray-400 font-medium">Short Stay Duration:</span>
+                    <span className="font-extrabold text-amber-600 dark:text-amber-400">
+                      ⚡ {dayStayProductName} ({dayStayDurationLabel})
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-gray-50 dark:border-slate-850">
+                    <span className="text-gray-400 font-medium">Booked Time Slot:</span>
+                    <span className="font-black text-[#0B192C] dark:text-white font-mono">
+                      {checkInTimeText} – {checkOutTimeText}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-gray-50 dark:border-slate-850">
+                    <span className="text-gray-400 font-medium">Turnaround & Grace:</span>
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                      +{graceMins} mins grace check-out window
+                    </span>
+                  </div>
+                </>
+              )}
               <div className="flex justify-between py-1 border-b border-gray-50 dark:border-slate-850">
                 <span className="text-gray-400 font-medium">Total Guests:</span>
                 <span className="font-extrabold text-[#0B192C] dark:text-white">
@@ -700,10 +799,10 @@ export const BookingDetailPage: React.FC = () => {
               </div>
               <div className="flex justify-between py-1 border-b border-gray-50 dark:border-slate-850">
                 <span className="text-gray-400 font-medium">
-                  Rooms Reserved:
+                  {isDayStay ? "Reserved Slot Units:" : "Rooms Reserved:"}
                 </span>
                 <span className="font-extrabold text-[#0B192C] dark:text-white">
-                  {booking.roomsBookedCount} Room(s)
+                  {booking.roomsBookedCount} {isDayStay ? "Day Stay Unit(s)" : "Room(s)"}
                 </span>
               </div>
               <div className="flex justify-between py-1 border-b border-gray-50 dark:border-slate-850">
@@ -712,6 +811,7 @@ export const BookingDetailPage: React.FC = () => {
                   {booking.paymentMode || "Pay at Ashram"}
                 </span>
               </div>
+
               {booking.specialRequests && (
                 <div className="pt-2">
                   <span className="text-gray-400 font-medium block mb-1">
@@ -728,7 +828,7 @@ export const BookingDetailPage: React.FC = () => {
               booking.services.selectedAddOns.length > 0 && (
                 <div className="pt-2 space-y-2">
                   <h4 className="font-extrabold text-xs text-[#0B192C] dark:text-white flex items-center gap-1.5">
-                    <Utensils size={14} className="text-[#0A4DA6]" /> Booked
+                    <Utensils size={14} className="text-[#F28C28]" /> Booked
                     Add-On Services
                   </h4>
                   <div className="space-y-1.5">
@@ -740,7 +840,7 @@ export const BookingDetailPage: React.FC = () => {
                         <span>
                           {addon.name} x{addon.quantity}
                         </span>
-                        <span className="font-black text-[#0A4DA6] dark:text-blue-300">
+                        <span className="font-black text-[#F28C28] dark:text-amber-300">
                           {formatCurrency(addon.totalPrice)}
                         </span>
                       </div>
@@ -794,7 +894,7 @@ export const BookingDetailPage: React.FC = () => {
                   <span className="text-xs text-gray-400 font-bold block">
                     Total Amount
                   </span>
-                  <span className="text-xl font-black text-[#0A4DA6] dark:text-blue-400">
+                  <span className="text-xl font-black text-[#F28C28] dark:text-amber-400">
                     {formatCurrency(pricing?.totalAmount || 0)}
                   </span>
                 </div>
@@ -811,7 +911,7 @@ export const BookingDetailPage: React.FC = () => {
 
             <div className="bg-blue-50/60 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/40 p-4 rounded-2xl space-y-2 text-xs">
               <h4 className="font-extrabold text-[#0B192C] dark:text-white flex items-center gap-1.5">
-                <ShieldCheck size={15} className="text-[#0A4DA6]" /> Ashram
+                <ShieldCheck size={15} className="text-[#F28C28]" /> Ashram
                 Support & Emergency Contact
               </h4>
               <p className="text-gray-500 dark:text-gray-400 font-medium">
@@ -848,7 +948,7 @@ export const BookingDetailPage: React.FC = () => {
 
             {booking.history?.map((h, i) => (
               <div key={i} className="relative">
-                <div className="absolute -left-[31px] top-0 w-4 h-4 rounded-full bg-[#0A4DA6] border-2 border-white dark:border-[#0B192C]" />
+                <div className="absolute -left-[31px] top-0 w-4 h-4 rounded-full bg-[#F28C28] border-2 border-white dark:border-[#0B192C]" />
                 <p className="text-xs font-black text-[#0B192C] dark:text-white capitalize">
                   {!paymentComplete && h.status === "confirmed"
                     ? "payment pending"
@@ -897,7 +997,7 @@ export const BookingDetailPage: React.FC = () => {
             </button>
 
             <div id="printable-receipt-card" className="space-y-4">
-              <div className="bg-gradient-to-r from-[#0B192C] via-[#0A4DA6] to-[#0B192C] text-white p-4 rounded-2xl text-center relative overflow-hidden">
+              <div className="bg-gradient-to-r from-[#0B192C] via-[#F28C28] to-[#0B192C] text-white p-4 rounded-2xl text-center relative overflow-hidden">
                 <img src="/logo/logo.png" alt="Tirvona Logo" className="h-6 w-auto mx-auto mb-1 object-contain" />
                 <p className="text-[10px] font-black tracking-widest text-blue-100 uppercase">
                   Tirvona Sacred Stays
@@ -959,26 +1059,30 @@ export const BookingDetailPage: React.FC = () => {
                 </div>
                 <div>
                   <dt className="text-gray-400 font-bold text-[10px]">Reservation No:</dt>
-                  <dd className="font-mono font-bold text-[#0A4DA6]">
+                  <dd className="font-mono font-bold text-[#F28C28]">
                     {booking.reservationNumber || booking._id.substring(0, 10)}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-gray-400 font-bold text-[10px]">Check-In Date:</dt>
+                  <dt className="text-gray-400 font-bold text-[10px]">Check-In {isDayStay ? "Time & Date" : "Date"}:</dt>
                   <dd className="font-semibold text-[#0B192C] dark:text-white">
-                    {formatDateIN(booking.checkInDate)} (12:00 PM)
+                    {formatDateIN(booking.checkInDate)} ({isDayStay ? checkInTimeText : "12:00 PM"})
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-gray-400 font-bold text-[10px]">Check-Out Date:</dt>
+                  <dt className="text-gray-400 font-bold text-[10px]">Check-Out {isDayStay ? "Time & Date" : "Date"}:</dt>
                   <dd className="font-semibold text-[#0B192C] dark:text-white">
-                    {formatDateIN(booking.checkOutDate)} (11:00 AM)
+                    {formatDateIN(booking.checkOutDate)} ({isDayStay ? `${checkOutTimeText} (+${graceMins}m Grace)` : "11:00 AM"})
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-gray-400 font-bold text-[10px]">Guests & Rooms:</dt>
+                  <dt className="text-gray-400 font-bold text-[10px]">
+                    {isDayStay ? "Stay Category & Guests:" : "Guests & Rooms:"}
+                  </dt>
                   <dd className="font-semibold text-[#0B192C] dark:text-white">
-                    {booking.guestsCount} Guest(s) • {booking.roomsBookedCount} Room(s)
+                    {isDayStay
+                      ? `${booking.guestsCount} Guest(s) • ${dayStayProductName} (${dayStayDurationLabel})`
+                      : `${booking.guestsCount} Guest(s) • ${booking.roomsBookedCount} Room(s)`}
                   </dd>
                 </div>
                 <div>
@@ -1013,7 +1117,7 @@ export const BookingDetailPage: React.FC = () => {
                 )}
                 <div className="flex justify-between pt-2 border-t border-gray-200 dark:border-slate-800 font-black text-sm">
                   <span>Total Amount:</span>
-                  <span className="text-[#0A4DA6] dark:text-blue-400">
+                  <span className="text-[#F28C28] dark:text-amber-400">
                     {formatCurrency(pricing?.totalAmount || 0)}
                   </span>
                 </div>
@@ -1039,7 +1143,7 @@ export const BookingDetailPage: React.FC = () => {
               <button
                 onClick={handleDownloadReceiptCanvas}
                 disabled={isDownloadingReceipt}
-                className="flex-1 py-2.5 bg-[#0A4DA6] hover:bg-[#083D85] disabled:opacity-50 text-white font-extrabold text-xs rounded-xl cursor-pointer transition-all inline-flex items-center justify-center gap-1.5 shadow-sm"
+                className="flex-1 py-2.5 bg-[#F28C28] hover:bg-[#D97706] disabled:opacity-50 text-white font-extrabold text-xs rounded-xl cursor-pointer transition-all inline-flex items-center justify-center gap-1.5 shadow-sm"
               >
                 <Download size={14} />
                 {isDownloadingReceipt

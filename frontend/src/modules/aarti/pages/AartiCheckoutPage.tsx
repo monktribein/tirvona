@@ -49,7 +49,7 @@ const checkoutError = (err: unknown): string => {
 };
 
 const inputClass =
-  "w-full rounded-xl border border-orange-200 bg-gray-50/70 px-4 py-3 text-sm font-semibold text-[#0B192C] placeholder:text-gray-400 placeholder:font-medium transition-all focus:border-[#0A4DA6] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white";
+  "w-full rounded-xl border border-orange-200 bg-gray-50/70 px-4 py-3 text-sm font-semibold text-[#0B192C] placeholder:text-gray-400 placeholder:font-medium transition-all focus:border-[#F28C28] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#F28C28]/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white";
 const labelClass =
   "mb-1.5 block px-0.5 text-[11px] font-bold tracking-wide text-slate-500 dark:text-slate-400";
 const cardClass =
@@ -61,7 +61,7 @@ const StepHeading: React.FC<{
   hint?: string;
 }> = ({ step, title, hint }) => (
   <div className="flex items-start gap-3.5">
-    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#0A4DA6]/15 bg-[#0A4DA6]/10 text-xs font-black text-[#0A4DA6]">
+    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#F28C28]/15 bg-[#F28C28]/10 text-xs font-black text-[#F28C28]">
       {step}
     </span>
     <div className="min-w-0">
@@ -161,11 +161,11 @@ export const AartiCheckoutPage: React.FC = () => {
   const multipleDevotees = devotees.length > 1;
 
   return (
-    <div className="bg-[#F4F7FB] py-8 sm:py-10 lg:py-12 dark:bg-[#070F1B]">
+    <div className="bg-[#FFFBF5] py-8 sm:py-10 lg:py-12 dark:bg-[#070F1B]">
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
         <header className="mb-6 rounded-[28px] border border-orange-200 bg-white px-5 py-6 shadow-sm shadow-slate-900/[0.03] sm:px-7 sm:py-7 dark:border-slate-800 dark:bg-[#0B192C]">
           <div className="flex items-center gap-4">
-            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#0A4DA6]/10 text-[#0A4DA6]">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#F28C28]/10 text-[#F28C28]">
               <Flame size={24} className="stroke-[2.3]" />
             </span>
             <div className="min-w-0">
@@ -324,7 +324,7 @@ export const AartiCheckoutPage: React.FC = () => {
             </div>
             <div className="min-w-0 space-y-1">
               {state.kindLabel ? (
-                <span className="inline-block bg-[#0A4DA6]/10 text-[#0A4DA6] text-[9px] font-black tracking-wider px-2 py-0.5 rounded-full">
+                <span className="inline-block bg-[#F28C28]/10 text-[#F28C28] text-[9px] font-black tracking-wider px-2 py-0.5 rounded-full">
                   {state.kindLabel}
                 </span>
               ) : null}
@@ -345,7 +345,7 @@ export const AartiCheckoutPage: React.FC = () => {
             <div className="flex items-start gap-2 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl px-3 py-2.5">
               <CalendarClock
                 size={14}
-                className="shrink-0 mt-0.5 text-[#0A4DA6] stroke-[2.5]"
+                className="shrink-0 mt-0.5 text-[#F28C28] stroke-[2.5]"
               />
               <div className="min-w-0">
                 <p className="text-[11px] font-extrabold text-[#0B192C] dark:text-white">
@@ -360,7 +360,7 @@ export const AartiCheckoutPage: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-2 text-[11px] font-bold text-gray-500 dark:text-gray-400">
-              <Ticket size={13} className="shrink-0 text-[#0A4DA6] stroke-[2.5]" />
+              <Ticket size={13} className="shrink-0 text-[#F28C28] stroke-[2.5]" />
               {state.passTypeName}
             </div>
 
@@ -403,7 +403,7 @@ export const AartiCheckoutPage: React.FC = () => {
                 type="checkbox"
                 checked={agreed}
                 onChange={(event) => setAgreed(event.target.checked)}
-                className="mt-0.5 w-3.5 h-3.5 shrink-0 accent-[#0A4DA6] cursor-pointer"
+                className="mt-0.5 w-3.5 h-3.5 shrink-0 accent-[#F28C28] cursor-pointer"
               />
               <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400 leading-relaxed">
                 I accept the aarti terms, the dress code, and the ashram&apos;s
@@ -427,7 +427,7 @@ export const AartiCheckoutPage: React.FC = () => {
               type="button"
               onClick={pay}
               disabled={submitting || !agreed}
-              className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[#0A4DA6] px-5 py-3.5 text-sm font-extrabold text-white shadow-md transition-all hover:bg-[#083D85] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-[#F28C28] px-5 py-3.5 text-sm font-extrabold text-white shadow-md transition-all hover:bg-[#D97706] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {submitting ? (
                 <Loader2 size={14} className="animate-spin stroke-[2.5]" />

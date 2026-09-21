@@ -42,7 +42,7 @@ const StreamTile: React.FC<{
     onClick={() => onSelect(stream)}
     className={`group w-full text-left bg-white dark:bg-[#0B192C] border rounded-[24px] overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col h-full cursor-pointer ${
       active
-        ? "border-[#0A4DA6] ring-2 ring-[#0A4DA6]/20"
+        ? "border-[#F28C28] ring-2 ring-[#F28C28]/20"
         : "border-gray-100 dark:border-slate-800"
     }`}
   >
@@ -231,7 +231,7 @@ export const LivePoojaPage: React.FC = () => {
               <div className="relative">
                 <Search
                   size={15}
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#0A4DA6] stroke-[2.5] pointer-events-none"
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#F28C28] stroke-[2.5] pointer-events-none"
                 />
                 <input
                   id="live-pooja-search"
@@ -239,7 +239,7 @@ export const LivePoojaPage: React.FC = () => {
                   value={q}
                   onChange={(event) => setQ(event.target.value)}
                   placeholder="Ganga Aarti, Mahakaleshwar, Vrindavan…"
-                  className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl pl-10 pr-3 py-2.5 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 placeholder:font-medium focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 focus:border-[#0A4DA6] transition-all"
+                  className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl pl-10 pr-3 py-2.5 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 placeholder:font-medium focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 focus:border-[#F28C28] transition-all"
                 />
               </div>
             </div>
@@ -254,13 +254,13 @@ export const LivePoojaPage: React.FC = () => {
               <div className="relative">
                 <MapPin
                   size={15}
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#0A4DA6] stroke-[2.5] pointer-events-none"
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#F28C28] stroke-[2.5] pointer-events-none"
                 />
                 <select
                   id="live-pooja-city"
                   value={city}
                   onChange={(event) => setCity(event.target.value)}
-                  className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl pl-10 pr-3 py-2.5 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 focus:border-[#0A4DA6] transition-all cursor-pointer appearance-none"
+                  className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl pl-10 pr-3 py-2.5 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 focus:border-[#F28C28] transition-all cursor-pointer appearance-none"
                 >
                   <option value="">All cities</option>
                   {cities.map((option) => (
@@ -401,7 +401,7 @@ export const LivePoojaPage: React.FC = () => {
                     href={selected.streamUrl}
                     target="_blank"
                     rel="noreferrer noopener"
-                    className="w-full inline-flex items-center justify-center gap-2 bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-700 hover:border-[#0A4DA6] text-[#0A4DA6] dark:text-blue-300 text-xs font-extrabold px-4 py-2.5 rounded-full shadow-sm transition-all active:scale-95 cursor-pointer !mt-5"
+                    className="w-full inline-flex items-center justify-center gap-2 bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-700 hover:border-[#F28C28] text-[#F28C28] dark:text-amber-300 text-xs font-extrabold px-4 py-2.5 rounded-full shadow-sm transition-all active:scale-95 cursor-pointer !mt-5"
                   >
                     <ExternalLink size={14} className="stroke-[2.5]" />
                     Open on{" "}

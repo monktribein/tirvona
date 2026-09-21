@@ -252,7 +252,7 @@ const AboutPage: React.FC = () => {
           <div className="pt-3 flex flex-wrap justify-center items-center gap-3">
             <Link
               to="/search"
-              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-[#083b80] text-white text-xs font-extrabold shadow-md transition-all"
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#F28C28] hover:bg-[#B45309] text-white text-xs font-extrabold shadow-md transition-all"
             >
               Explore Tirvona <ArrowRight size={14} />
             </Link>
@@ -298,7 +298,7 @@ const AboutPage: React.FC = () => {
           className="grid grid-cols-1 md:grid-cols-2 gap-6"
         >
           <article className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-3">
-            <div className="w-11 h-11 rounded-2xl bg-[#0A4DA6]/10 dark:bg-white/5 flex items-center justify-center text-[#0A4DA6] dark:text-[#E58C28]">
+            <div className="w-11 h-11 rounded-2xl bg-[#F28C28]/10 dark:bg-white/5 flex items-center justify-center text-[#F28C28] dark:text-[#E58C28]">
               <Target size={20} />
             </div>
             <h2 className="text-lg font-extrabold text-[#0B192C] dark:text-white">
@@ -312,7 +312,7 @@ const AboutPage: React.FC = () => {
           </article>
 
           <article className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-3">
-            <div className="w-11 h-11 rounded-2xl bg-[#0A4DA6]/10 dark:bg-white/5 flex items-center justify-center text-[#0A4DA6] dark:text-[#E58C28]">
+            <div className="w-11 h-11 rounded-2xl bg-[#F28C28]/10 dark:bg-white/5 flex items-center justify-center text-[#F28C28] dark:text-[#E58C28]">
               <Compass size={20} />
             </div>
             <h2 className="text-lg font-extrabold text-[#0B192C] dark:text-white">
@@ -340,7 +340,7 @@ const AboutPage: React.FC = () => {
                   key={card.title}
                   className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all space-y-3"
                 >
-                  <div className="w-11 h-11 rounded-xl bg-[#0A4DA6]/10 dark:bg-slate-800 flex items-center justify-center text-[#0A4DA6] dark:text-[#E58C28]">
+                  <div className="w-11 h-11 rounded-xl bg-[#F28C28]/10 dark:bg-slate-800 flex items-center justify-center text-[#F28C28] dark:text-[#E58C28]">
                     <Icon size={20} />
                   </div>
                   <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white">
@@ -430,7 +430,7 @@ const AboutPage: React.FC = () => {
           <div className="pt-2 flex flex-wrap justify-center items-center gap-3">
             <Link
               to="/partner"
-              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-[#083b80] text-white text-xs font-extrabold shadow-md transition-all"
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#F28C28] hover:bg-[#B45309] text-white text-xs font-extrabold shadow-md transition-all"
             >
               Become a Partner <ArrowRight size={14} />
             </Link>

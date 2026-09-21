@@ -67,7 +67,7 @@ export const AuditPanel: React.FC<{ profileId: string }> = ({ profileId }) => {
 
   return (
     <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-5 shadow-sm">
-      <h4 className="text-[11px] font-black uppercase tracking-wider text-[#0A4DA6] mb-3 flex items-center gap-2">
+      <h4 className="text-[11px] font-black uppercase tracking-wider text-[#F28C28] mb-3 flex items-center gap-2">
         <History size={13} /> Audit trail
       </h4>
 
@@ -88,7 +88,7 @@ export const AuditPanel: React.FC<{ profileId: string }> = ({ profileId }) => {
               key={entry.id}
               className="relative pl-5 border-l-2 border-gray-100 dark:border-slate-800 pb-1"
             >
-              <span className="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-[#0A4DA6]" />
+              <span className="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-[#F28C28]" />
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <p className="text-xs font-black text-[#0B192C] dark:text-white">
                   {ACTION_LABELS[entry.action] ?? entry.action}

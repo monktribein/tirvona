@@ -122,7 +122,7 @@ export const BlogListPage: React.FC = () => {
               />
               <button
                 type="submit"
-                className="px-6 py-2.5 rounded-full bg-[#0A4DA6] hover:bg-blue-900 text-white font-black text-xs transition-colors shrink-0 shadow-sm cursor-pointer"
+                className="px-6 py-2.5 rounded-full bg-[#F28C28] hover:bg-[#D97706] text-white font-black text-xs transition-colors shrink-0 shadow-sm cursor-pointer"
               >
                 Search
               </button>
@@ -198,19 +198,19 @@ export const BlogListPage: React.FC = () => {
                     <div className="p-6 space-y-3 flex-1 flex flex-col justify-between">
                       <div className="flex items-center gap-3 text-[11px] font-bold text-gray-400">
                         <span className="flex items-center gap-1">
-                          <Calendar size={12} className="text-[#0A4DA6]" />{" "}
+                          <Calendar size={12} className="text-[#F28C28]" />{" "}
                           {new Date(item.createdAt).toLocaleDateString(
                             "en-IN",
                             { day: "numeric", month: "short", year: "numeric" },
                           )}
                         </span>
                         <span className="flex items-center gap-1">
-                          <Eye size={12} className="text-[#0A4DA6]" />{" "}
+                          <Eye size={12} className="text-[#F28C28]" />{" "}
                           {item.views} Views
                         </span>
                       </div>
 
-                      <h3 className="font-black text-lg text-[#0B192C] dark:text-white leading-tight group-hover:text-[#0A4DA6] transition-colors line-clamp-2 h-12 flex items-start">
+                      <h3 className="font-black text-lg text-[#0B192C] dark:text-white leading-tight group-hover:text-[#F28C28] transition-colors line-clamp-2 h-12 flex items-start">
                         {item.title}
                       </h3>
 
@@ -228,7 +228,7 @@ export const BlogListPage: React.FC = () => {
                           "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='1.5'%3E%3Crect width='100%25' height='100%25' fill='%23f1f5f9'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpath d='m21 15-5-5-11 11'/%3E%3C/svg%3E"
                         }
                         alt={author.name}
-                        className="w-7 h-7 rounded-full object-cover border border-[#0A4DA6] shrink-0"
+                        className="w-7 h-7 rounded-full object-cover border border-[#F28C28] shrink-0"
                       />
                       <span className="text-xs font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1 truncate">
                         <span className="truncate">
@@ -241,7 +241,7 @@ export const BlogListPage: React.FC = () => {
                       </span>
                     </div>
 
-                    <button className="px-3.5 py-1.5 rounded-full bg-gray-100 dark:bg-slate-800 group-hover:bg-[#0A4DA6] group-hover:text-white text-gray-700 dark:text-gray-200 text-xs font-bold transition-all flex items-center gap-1 whitespace-nowrap shrink-0">
+                    <button className="px-3.5 py-1.5 rounded-full bg-gray-100 dark:bg-slate-800 group-hover:bg-[#F28C28] group-hover:text-white text-gray-700 dark:text-gray-200 text-xs font-bold transition-all flex items-center gap-1 whitespace-nowrap shrink-0">
                       <span>{isVideo ? "Watch" : "Read"}</span>
                       <ArrowRight size={12} />
                     </button>

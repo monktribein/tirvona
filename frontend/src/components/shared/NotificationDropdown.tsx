@@ -53,7 +53,7 @@ export const NotificationDropdown: React.FC = () => {
         return <AlertCircle size={16} className="text-rose-500 shrink-0" />;
       case "info":
       default:
-        return <Info size={16} className="text-[#0A4DA6] shrink-0" />;
+        return <Info size={16} className="text-[#F28C28] shrink-0" />;
     }
   };
 
@@ -79,7 +79,7 @@ export const NotificationDropdown: React.FC = () => {
         <div className="absolute right-0 mt-3 w-80 sm:w-96 bg-white dark:bg-[#0B192C] border border-gray-200 dark:border-slate-800 rounded-3xl shadow-2xl z-50 overflow-hidden text-left animate-in fade-in zoom-in-95 duration-150">
           <div className="p-4 bg-gray-50/80 dark:bg-slate-900/80 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-full bg-[#0A4DA6]/10 text-[#0A4DA6] flex items-center justify-center">
+              <div className="w-7 h-7 rounded-full bg-[#F28C28]/10 text-[#F28C28] flex items-center justify-center">
                 <Bell size={14} />
               </div>
               <div>
@@ -99,7 +99,7 @@ export const NotificationDropdown: React.FC = () => {
                 <>
                   <button
                     onClick={markAllAsRead}
-                    className="p-1.5 text-gray-400 hover:text-[#0A4DA6] dark:hover:text-amber-400 transition-colors text-[10px] font-bold flex items-center gap-1 cursor-pointer"
+                    className="p-1.5 text-gray-400 hover:text-[#F28C28] dark:hover:text-amber-400 transition-colors text-[10px] font-bold flex items-center gap-1 cursor-pointer"
                     title={t("Mark all as read")}
                   >
                     <CheckCheck size={14} />
@@ -125,7 +125,7 @@ export const NotificationDropdown: React.FC = () => {
           <div className="max-h-80 overflow-y-auto overscroll-contain divide-y divide-gray-100 dark:divide-slate-800 scrollbar-none">
             {notifications.length === 0 ? (
               <div className="py-10 text-center space-y-2">
-                <div className="w-12 h-12 rounded-full bg-blue-50 dark:bg-slate-900 text-[#0A4DA6] mx-auto flex items-center justify-center">
+                <div className="w-12 h-12 rounded-full bg-blue-50 dark:bg-slate-900 text-[#F28C28] mx-auto flex items-center justify-center">
                   <ShieldCheck size={20} />
                 </div>
                 <p className="text-xs font-black text-gray-700 dark:text-gray-300">
@@ -175,7 +175,7 @@ export const NotificationDropdown: React.FC = () => {
             <Link
               to="/profile/notifications"
               onClick={() => setIsOpen(false)}
-              className="text-[11px] font-extrabold text-[#0A4DA6] dark:text-[#E58C28] hover:underline block"
+              className="text-[11px] font-extrabold text-[#F28C28] dark:text-[#E58C28] hover:underline block"
             >
               {t("View All Notifications Center →")}
             </Link>

@@ -39,7 +39,7 @@ export const ProfileCouponsPage: React.FC = () => {
 
   return (
     <div className="min-h-screen pb-24 text-left">
-      <section className="bg-gradient-to-r from-[#0B192C] via-[#0A4DA6] to-[#0B192C] text-white pt-10 pb-16 px-4 sm:px-6 lg:px-8 border-b border-white/10 relative overflow-hidden">
+      <section className="bg-gradient-to-r from-[#0B192C] via-[#F28C28] to-[#0B192C] text-white pt-10 pb-16 px-4 sm:px-6 lg:px-8 border-b border-white/10 relative overflow-hidden">
         <div className="max-w-7xl mx-auto space-y-3 relative z-10">
           <Link
             to="/profile"
@@ -67,7 +67,7 @@ export const ProfileCouponsPage: React.FC = () => {
                 <span className="px-3 py-1 bg-amber-50 text-amber-600 border border-amber-200 rounded-full text-[10px] font-black">
                   {c.discount}
                 </span>
-                <h3 className="text-xl font-black text-[#0A4DA6] tracking-wider pt-1">
+                <h3 className="text-xl font-black text-[#F28C28] tracking-wider pt-1">
                   {c.code}
                 </h3>
                 <p className="text-xs text-gray-500 font-medium">
@@ -80,7 +80,7 @@ export const ProfileCouponsPage: React.FC = () => {
 
               <button
                 onClick={() => handleCopy(c.code)}
-                className="w-full py-2.5 bg-[#0A4DA6] text-white rounded-full text-xs font-extrabold flex items-center justify-center gap-2 hover:bg-[#083b80] transition-colors cursor-pointer"
+                className="w-full py-2.5 bg-[#F28C28] text-white rounded-full text-xs font-extrabold flex items-center justify-center gap-2 hover:bg-[#B45309] transition-colors cursor-pointer"
               >
                 <Copy size={14} /> Copy Coupon Code
               </button>

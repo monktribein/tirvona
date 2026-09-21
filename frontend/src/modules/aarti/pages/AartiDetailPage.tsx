@@ -200,7 +200,7 @@ export const AartiDetailPage: React.FC = () => {
           <button
             type="button"
             onClick={() => navigate("/aarti")}
-            className="inline-flex items-center gap-2 bg-[#0A4DA6] hover:bg-[#083D85] text-white text-xs font-extrabold px-5 py-2.5 rounded-full shadow-md transition-all active:scale-95 cursor-pointer"
+            className="inline-flex items-center gap-2 bg-[#F28C28] hover:bg-[#D97706] text-white text-xs font-extrabold px-5 py-2.5 rounded-full shadow-md transition-all active:scale-95 cursor-pointer"
           >
             Browse all aartis
           </button>
@@ -221,7 +221,7 @@ export const AartiDetailPage: React.FC = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2 pb-16 space-y-10">
       <div className="flex flex-col items-center text-center gap-3 pb-4">
         <div className="flex flex-wrap items-center justify-center gap-2">
-          <span className="px-3 py-1 bg-[#0A4DA6] text-white text-[9px] font-extrabold rounded-full flex items-center gap-1 shadow-sm tracking-wider">
+          <span className="px-3 py-1 bg-[#F28C28] text-white text-[9px] font-extrabold rounded-full flex items-center gap-1 shadow-sm tracking-wider">
             <ShieldCheck size={12} /> {session.kindLabel ?? "Aarti"}
           </span>
           <span className="text-xs text-gray-400 font-extrabold tracking-wider">
@@ -245,7 +245,7 @@ export const AartiDetailPage: React.FC = () => {
         </h2>
 
         <p className="text-xs text-gray-500 flex items-center justify-center gap-1">
-          <MapPin size={12} className="text-[#0A4DA6]" />
+          <MapPin size={12} className="text-[#F28C28]" />
           {[session.venue?.name, session.venue?.line1, session.venue?.landmark]
             .filter(Boolean)
             .join(", ") || "India"}
@@ -293,7 +293,7 @@ export const AartiDetailPage: React.FC = () => {
                   onClick={() => setActiveImage(index)}
                   className={`h-16 w-24 shrink-0 rounded-2xl overflow-hidden border-2 transition-all cursor-pointer ${
                     activeImage === index
-                      ? "border-[#0A4DA6]"
+                      ? "border-[#F28C28]"
                       : "border-transparent opacity-70 hover:opacity-100"
                   }`}
                 >
@@ -403,14 +403,14 @@ export const AartiDetailPage: React.FC = () => {
             <div className="relative">
               <CalendarDays
                 size={15}
-                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#0A4DA6] stroke-[2.5] pointer-events-none"
+                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#F28C28] stroke-[2.5] pointer-events-none"
               />
               {session.upcomingDates?.length ? (
                 <select
                   id="aarti-detail-date"
                   value={date}
                   onChange={(event) => setDate(event.target.value)}
-                  className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl pl-10 pr-3 py-2.5 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 cursor-pointer appearance-none"
+                  className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl pl-10 pr-3 py-2.5 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 cursor-pointer appearance-none"
                 >
                   {session.upcomingDates.map((option) => (
                     <option key={option} value={option}>
@@ -433,7 +433,7 @@ export const AartiDetailPage: React.FC = () => {
                   value={date}
                   min={toDateInputValue(new Date())}
                   onChange={(event) => setDate(event.target.value)}
-                  className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl pl-10 pr-3 py-2.5 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30"
+                  className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl pl-10 pr-3 py-2.5 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30"
                 />
               )}
             </div>
@@ -514,8 +514,8 @@ export const AartiDetailPage: React.FC = () => {
                     }}
                     className={`w-full text-left rounded-2xl border p-3 transition-all cursor-pointer active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 ${
                       active
-                        ? "border-[#0A4DA6] bg-blue-50/60 dark:bg-slate-800 ring-2 ring-[#0A4DA6]/20"
-                        : "border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900 hover:border-[#0A4DA6]"
+                        ? "border-[#F28C28] bg-blue-50/60 dark:bg-slate-800 ring-2 ring-[#F28C28]/20"
+                        : "border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900 hover:border-[#F28C28]"
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
@@ -581,7 +581,7 @@ export const AartiDetailPage: React.FC = () => {
                     type="button"
                     disabled={passCount <= 1}
                     onClick={() => setPassCount((value) => Math.max(1, value - 1))}
-                    className="w-7 h-7 rounded-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 flex items-center justify-center text-[#0A4DA6] transition-all active:scale-90 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="w-7 h-7 rounded-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 flex items-center justify-center text-[#F28C28] transition-all active:scale-90 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     <Minus size={13} className="stroke-[3]" />
                   </button>
@@ -594,7 +594,7 @@ export const AartiDetailPage: React.FC = () => {
                     onClick={() =>
                       setPassCount((value) => Math.min(maxPasses, value + 1))
                     }
-                    className="w-7 h-7 rounded-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 flex items-center justify-center text-[#0A4DA6] transition-all active:scale-90 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="w-7 h-7 rounded-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 flex items-center justify-center text-[#F28C28] transition-all active:scale-90 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     <Plus size={13} className="stroke-[3]" />
                   </button>
@@ -618,7 +618,7 @@ export const AartiDetailPage: React.FC = () => {
                     setDonationAmount(Math.max(0, Number(event.target.value) || 0))
                   }
                   placeholder="0"
-                  className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl px-3.5 py-2.5 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30"
+                  className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl px-3.5 py-2.5 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30"
                 />
               </div>
             </>
@@ -679,13 +679,13 @@ export const AartiDetailPage: React.FC = () => {
             type="button"
             onClick={proceed}
             disabled={!quote || quoting}
-            className="group w-full bg-[#0A4DA6] hover:bg-[#083D85] disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-extrabold pl-5 pr-1.5 py-2 rounded-full inline-flex items-center justify-center gap-2 shadow-md transition-all active:scale-95 cursor-pointer"
+            className="group w-full bg-[#F28C28] hover:bg-[#D97706] disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-extrabold pl-5 pr-1.5 py-2 rounded-full inline-flex items-center justify-center gap-2 shadow-md transition-all active:scale-95 cursor-pointer"
           >
             {quoting ? (
               <Loader2 size={14} className="animate-spin stroke-[2.5]" />
             ) : null}
             <span>Continue to Payment</span>
-            <span className="w-6 h-6 rounded-full bg-white text-[#0A4DA6] flex items-center justify-center transition-transform group-hover:translate-x-0.5">
+            <span className="w-6 h-6 rounded-full bg-white text-[#F28C28] flex items-center justify-center transition-transform group-hover:translate-x-0.5">
               <ArrowRight size={12} className="stroke-[3]" />
             </span>
           </button>

@@ -15,7 +15,7 @@ import {
 } from "recharts";
 
 export const DASHBOARD_COLORS = [
-  "#0A4DA6",
+  "#F28C28",
   "#14B8A6",
   "#F59E0B",
   "#8B5CF6",

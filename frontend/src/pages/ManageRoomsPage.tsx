@@ -440,7 +440,7 @@ export const ManageRoomsPage: React.FC = () => {
             )}
             <button
               onClick={openCreate}
-              className="shrink-0 px-5 py-2.5 bg-[#0A4DA6] text-white text-xs font-bold rounded-full hover:bg-opacity-95 shadow flex items-center gap-1.5 cursor-pointer"
+              className="shrink-0 px-5 py-2.5 bg-[#F28C28] text-white text-xs font-bold rounded-full hover:bg-opacity-95 shadow flex items-center gap-1.5 cursor-pointer"
             >
               <Plus size={14} /> Add Room Category
             </button>
@@ -456,7 +456,7 @@ export const ManageRoomsPage: React.FC = () => {
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
               <h2 className="text-base font-extrabold text-[#0B192C] dark:text-white flex items-center gap-1.5">
-                <Clock size={16} className="text-[#0A4DA6]" /> Rules &amp;
+                <Clock size={16} className="text-[#F28C28]" /> Rules &amp;
                 Policies
               </h2>
               <p className="text-xs text-gray-400 font-semibold mt-1">
@@ -538,7 +538,7 @@ export const ManageRoomsPage: React.FC = () => {
             <button
               type="submit"
               disabled={!timesReady || savingTimes}
-              className="shrink-0 px-5 py-2.5 bg-[#0A4DA6] text-white text-xs font-bold rounded-full hover:bg-opacity-95 shadow flex items-center gap-1.5 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+              className="shrink-0 px-5 py-2.5 bg-[#F28C28] text-white text-xs font-bold rounded-full hover:bg-opacity-95 shadow flex items-center gap-1.5 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {savingTimes ? (
                 <Loader2 size={14} className="animate-spin" />
@@ -594,7 +594,7 @@ export const ManageRoomsPage: React.FC = () => {
                       : "No photos yet"}
                   </span>
                   {selectedAshramId === ALL_ASHRAMS && room.ashramName && (
-                    <span className="mt-1 flex items-center gap-1 text-[9px] font-bold text-[#0A4DA6]">
+                    <span className="mt-1 flex items-center gap-1 text-[9px] font-bold text-[#F28C28]">
                       <Building2 size={10} /> {room.ashramName}
                     </span>
                   )}
@@ -648,7 +648,7 @@ export const ManageRoomsPage: React.FC = () => {
                   type="button"
                   onClick={() => openEdit(room)}
                   disabled={deletingId === room._id}
-                  className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-gray-200 dark:border-slate-700 text-[11px] font-extrabold text-[#0A4DA6] hover:bg-blue-50 dark:hover:bg-slate-800 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-gray-200 dark:border-slate-700 text-[11px] font-extrabold text-[#F28C28] hover:bg-blue-50 dark:hover:bg-slate-800 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Pencil size={13} /> Edit
                 </button>
@@ -679,7 +679,7 @@ export const ManageRoomsPage: React.FC = () => {
           >
             <div className="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-3">
               <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white flex items-center gap-1.5">
-                <Bed size={18} className="text-[#0A4DA6]" />{" "}
+                <Bed size={18} className="text-[#F28C28]" />{" "}
                 {editRoomId ? "Edit Room Category" : "Add Room Category"}
               </h3>
               <button
@@ -855,17 +855,17 @@ export const ManageRoomsPage: React.FC = () => {
                   className={`w-full py-4 px-6 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center gap-1.5 transition-all ${
                     uploadingImages
                       ? "border-gray-200 dark:border-slate-700 cursor-wait"
-                      : "border-[#0A4DA6]/40 hover:border-[#0A4DA6] bg-blue-50/40 dark:bg-slate-800/40 cursor-pointer"
+                      : "border-[#F28C28]/40 hover:border-[#F28C28] bg-blue-50/40 dark:bg-slate-800/40 cursor-pointer"
                   }`}
                 >
                   {uploadingImages ? (
-                    <span className="flex items-center gap-2 text-[#0A4DA6] font-bold text-xs">
+                    <span className="flex items-center gap-2 text-[#F28C28] font-bold text-xs">
                       <Loader2 size={16} className="animate-spin" /> Uploading
                       photos...
                     </span>
                   ) : (
                     <>
-                      <ImagePlus size={20} className="text-[#0A4DA6]" />
+                      <ImagePlus size={20} className="text-[#F28C28]" />
                       <span className="text-xs font-extrabold text-[#0B192C] dark:text-white">
                         Upload room photos
                       </span>
@@ -942,7 +942,7 @@ export const ManageRoomsPage: React.FC = () => {
             <button
               type="submit"
               disabled={submitting || uploadingImages}
-              className="w-full py-3 bg-[#0A4DA6] disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-full font-extrabold text-xs shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+              className="w-full py-3 bg-[#F28C28] disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-full font-extrabold text-xs shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
             >
               {submitting && <Loader2 size={13} className="animate-spin" />}
               {submitting

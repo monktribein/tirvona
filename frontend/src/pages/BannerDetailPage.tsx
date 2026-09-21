@@ -190,7 +190,7 @@ const BannerDetailPage: React.FC = () => {
             <p className="mb-2 text-[11px] font-black uppercase tracking-[.2em] text-[#F4A340]">{countdown.label}</p>
             <div className="flex flex-wrap gap-2">{countdown.values.map((item) => <div key={item.label} className="min-w-[68px] rounded-xl border border-white/20 bg-black/25 px-3 py-2 text-center backdrop-blur-md"><strong className="block text-xl font-black tabular-nums text-white">{String(item.value).padStart(2, "0")}</strong><span className="text-[9px] font-bold uppercase tracking-wider text-slate-300">{item.label}</span></div>)}</div>
           </div>}
-          <button onClick={openDestination} className="mt-8 inline-flex items-center gap-3 rounded-full bg-[#0A4DA6] px-7 py-3.5 text-sm font-black shadow-xl transition hover:-translate-y-0.5 hover:bg-[#083b80]">{cta}<ArrowRight size={17}/></button>
+          <button onClick={openDestination} className="mt-8 inline-flex items-center gap-3 rounded-full bg-[#F28C28] px-7 py-3.5 text-sm font-black shadow-xl transition hover:-translate-y-0.5 hover:bg-[#B45309]">{cta}<ArrowRight size={17}/></button>
         </div>
       </div>
     </section>
@@ -208,7 +208,7 @@ const BannerDetailPage: React.FC = () => {
     {related.length > 0 && <section className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-12">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-3 border-b border-orange-100 pb-5 dark:border-slate-800">
         <div><p className="text-xs font-black uppercase tracking-[.16em] text-[#E58C28]">Ashrams in the selected area</p><h2 className="mt-2 text-2xl font-black sm:text-3xl">Explore related Ashrams{areaLabel ? ` in ${areaLabel}` : ""}</h2></div>
-        <span className="rounded-full bg-blue-50 px-4 py-2 text-xs font-black text-[#0A4DA6] dark:bg-slate-800">{related.length} Ashram{related.length === 1 ? "" : "s"}</span>
+        <span className="rounded-full bg-blue-50 px-4 py-2 text-xs font-black text-[#F28C28] dark:bg-slate-800">{related.length} Ashram{related.length === 1 ? "" : "s"}</span>
       </div>
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{related.slice(0, 12).map((item: any, index) => {
         const image = imagesOf(item)[0];
@@ -216,8 +216,8 @@ const BannerDetailPage: React.FC = () => {
         const path = `/ashram/${item._id}`;
         const itemArea = [item.address?.city || item.city, item.address?.state || item.state].filter(Boolean).join(", ");
         return <button key={item._id || index} onClick={() => navigate(path)} className="group flex min-h-full flex-col overflow-hidden rounded-[24px] border border-orange-200 bg-white text-left shadow-sm transition hover:-translate-y-1 hover:border-orange-300 hover:shadow-xl dark:border-slate-800 dark:bg-[#0B192C]">
-          {image ? <img src={image} alt={name} className="h-48 w-full object-cover transition duration-500 group-hover:scale-105"/> : <div className="grid h-48 w-full place-items-center bg-gradient-to-br from-[#0A4DA6] to-[#0B192C] text-3xl font-black text-white">{name.slice(0, 1).toUpperCase()}</div>}
-          <div className="flex flex-1 flex-col p-5"><h3 className="text-base font-black text-[#0B192C] dark:text-white">{name}</h3>{itemArea && <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-gray-500"><MapPin size={13}/>{itemArea}</p>}<p className="mt-3 line-clamp-2 text-xs leading-5 text-gray-500">{item.description || item.about || "Explore rooms, facilities and booking availability."}</p><span className="mt-auto inline-flex items-center gap-1 pt-5 text-xs font-black text-[#0A4DA6]">View Ashram <ArrowRight size={13} className="transition group-hover:translate-x-1"/></span></div>
+          {image ? <img src={image} alt={name} className="h-48 w-full object-cover transition duration-500 group-hover:scale-105"/> : <div className="grid h-48 w-full place-items-center bg-gradient-to-br from-[#F28C28] to-[#0B192C] text-3xl font-black text-white">{name.slice(0, 1).toUpperCase()}</div>}
+          <div className="flex flex-1 flex-col p-5"><h3 className="text-base font-black text-[#0B192C] dark:text-white">{name}</h3>{itemArea && <p className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-gray-500"><MapPin size={13}/>{itemArea}</p>}<p className="mt-3 line-clamp-2 text-xs leading-5 text-gray-500">{item.description || item.about || "Explore rooms, facilities and booking availability."}</p><span className="mt-auto inline-flex items-center gap-1 pt-5 text-xs font-black text-[#F28C28]">View Ashram <ArrowRight size={13} className="transition group-hover:translate-x-1"/></span></div>
         </button>;
       })}</div>
     </section>}
@@ -226,8 +226,8 @@ const BannerDetailPage: React.FC = () => {
       <div className="rounded-[30px] border border-orange-200 bg-white p-6 shadow-sm sm:p-8 dark:border-slate-800 dark:bg-[#0B192C]">
         <div className="mb-6"><p className="text-xs font-black uppercase tracking-[.16em] text-[#E58C28]">Available for the selected Ashram and area</p><h2 className="mt-2 text-2xl font-black">Related offers</h2></div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">{relatedOffers.slice(0, 6).map((offer: any, index) => <button key={offer._id || index} onClick={() => navigate(`/offers/${offer._id}`)} className="group rounded-2xl border border-orange-100 bg-orange-50/40 p-5 text-left transition hover:border-orange-300 hover:bg-orange-50 dark:border-slate-700 dark:bg-slate-900/50">
-          <div className="flex items-start justify-between gap-3"><div><p className="text-[10px] font-black uppercase tracking-wider text-[#E58C28]">Special offer</p><h3 className="mt-1 font-black text-[#0B192C] dark:text-white">{offer.title || offer.name || offer.promoCode || "Tirvona Offer"}</h3></div>{offer.promoCode && <span className="rounded-full bg-[#0A4DA6] px-3 py-1 text-[10px] font-black text-white">{offer.promoCode}</span>}</div>
-          <p className="mt-3 line-clamp-2 text-xs leading-5 text-gray-500">{offer.description || offer.subtitle || "View offer eligibility and booking details."}</p><span className="mt-4 inline-flex items-center gap-1 text-xs font-black text-[#0A4DA6]">View Offer <ArrowRight size={13} className="transition group-hover:translate-x-1"/></span>
+          <div className="flex items-start justify-between gap-3"><div><p className="text-[10px] font-black uppercase tracking-wider text-[#E58C28]">Special offer</p><h3 className="mt-1 font-black text-[#0B192C] dark:text-white">{offer.title || offer.name || offer.promoCode || "Tirvona Offer"}</h3></div>{offer.promoCode && <span className="rounded-full bg-[#F28C28] px-3 py-1 text-[10px] font-black text-white">{offer.promoCode}</span>}</div>
+          <p className="mt-3 line-clamp-2 text-xs leading-5 text-gray-500">{offer.description || offer.subtitle || "View offer eligibility and booking details."}</p><span className="mt-4 inline-flex items-center gap-1 text-xs font-black text-[#F28C28]">View Offer <ArrowRight size={13} className="transition group-hover:translate-x-1"/></span>
         </button>)}</div>
       </div>
     </section>}

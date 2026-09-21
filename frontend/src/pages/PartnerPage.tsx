@@ -61,22 +61,22 @@ const plans = [
 
 const benefits = [
   {
-    icon: <Users className="w-5 h-5 text-[#0A4DA6]" />,
+    icon: <Users className="w-5 h-5 text-[#F28C28]" />,
     title: "10M+ Pilgrims",
     desc: "Access to India's largest verified spiritual traveller base.",
   },
   {
-    icon: <ShieldCheck className="w-5 h-5 text-[#0A4DA6]" />,
+    icon: <ShieldCheck className="w-5 h-5 text-[#F28C28]" />,
     title: "Trust & Safety",
     desc: "Our Tirvona Verified badge builds instant credibility with guests.",
   },
   {
-    icon: <Star className="w-5 h-5 text-[#0A4DA6]" />,
+    icon: <Star className="w-5 h-5 text-[#F28C28]" />,
     title: "Premium Exposure",
     desc: "Featured placement on popular pilgrimage circuits and city pages.",
   },
   {
-    icon: <Building2 className="w-5 h-5 text-[#0A4DA6]" />,
+    icon: <Building2 className="w-5 h-5 text-[#F28C28]" />,
     title: "Easy Management",
     desc: "Mobile-friendly dashboard for rooms, bookings, and payments.",
   },
@@ -140,7 +140,7 @@ const PartnerPage: React.FC = () => {
               key={i}
               className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 space-y-3 shadow-sm"
             >
-              <div className="w-11 h-11 rounded-2xl bg-[#0A4DA6]/5 border border-[#0A4DA6]/10 flex items-center justify-center">
+              <div className="w-11 h-11 rounded-2xl bg-[#F28C28]/5 border border-[#F28C28]/10 flex items-center justify-center">
                 {b.icon}
               </div>
               <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white">
@@ -169,7 +169,7 @@ const PartnerPage: React.FC = () => {
             {plans.map((plan, i) => (
               <div
                 key={i}
-                className={`rounded-3xl p-6 space-y-5 shadow-sm relative overflow-hidden ${plan.highlight ? "bg-[#0A4DA6] text-white border-2 border-[#0A4DA6]" : "bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800"}`}
+                className={`rounded-3xl p-6 space-y-5 shadow-sm relative overflow-hidden ${plan.highlight ? "bg-[#F28C28] text-white border-2 border-[#F28C28]" : "bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800"}`}
               >
                 {plan.highlight && (
                   <div className="absolute top-4 right-4 bg-[#D4AF37] text-[#0B192C] text-[9px] font-extrabold px-3 py-1 rounded-full tracking-wider">
@@ -203,7 +203,7 @@ const PartnerPage: React.FC = () => {
                     >
                       <CheckCircle
                         size={13}
-                        className={`mt-0.5 flex-shrink-0 ${plan.highlight ? "text-[#D4AF37]" : "text-[#0A4DA6]"}`}
+                        className={`mt-0.5 flex-shrink-0 ${plan.highlight ? "text-[#D4AF37]" : "text-[#F28C28]"}`}
                       />
                       {f}
                     </li>
@@ -211,7 +211,7 @@ const PartnerPage: React.FC = () => {
                 </ul>
                 <a
                   href="#register-form"
-                  className={`w-full min-h-[44px] flex items-center justify-center gap-1 font-extrabold text-xs rounded-full transition-all ${plan.highlight ? "bg-white text-[#0A4DA6] hover:bg-blue-50" : "bg-[#0A4DA6] text-white hover:bg-opacity-90"}`}
+                  className={`w-full min-h-[44px] flex items-center justify-center gap-1 font-extrabold text-xs rounded-full transition-all ${plan.highlight ? "bg-white text-[#F28C28] hover:bg-blue-50" : "bg-[#F28C28] text-white hover:bg-opacity-90"}`}
                 >
                   {plan.cta}
                 </a>
@@ -294,7 +294,7 @@ const PartnerPage: React.FC = () => {
                     onChange={(e) =>
                       setForm((f) => ({ ...f, [field.key]: e.target.value }))
                     }
-                    className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-700 rounded-xl px-4 py-3.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 text-[#0B192C] dark:text-white placeholder:text-gray-300"
+                    className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-700 rounded-xl px-4 py-3.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 text-[#0B192C] dark:text-white placeholder:text-gray-300"
                   />
                 </div>
               ))}
@@ -309,12 +309,12 @@ const PartnerPage: React.FC = () => {
                   onChange={(e) =>
                     setForm((f) => ({ ...f, message: e.target.value }))
                   }
-                  className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 text-[#0B192C] dark:text-white placeholder:text-gray-300"
+                  className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 text-[#0B192C] dark:text-white placeholder:text-gray-300"
                 />
               </div>
               <button
                 type="submit"
-                className="w-full min-h-[52px] bg-[#0A4DA6] text-white font-extrabold text-sm rounded-full flex items-center justify-center gap-2 shadow-lg"
+                className="w-full min-h-[52px] bg-[#F28C28] text-white font-extrabold text-sm rounded-full flex items-center justify-center gap-2 shadow-lg"
               >
                 Submit Registration <ArrowRight size={15} />
               </button>

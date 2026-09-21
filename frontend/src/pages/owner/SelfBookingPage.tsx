@@ -407,7 +407,7 @@ export const SelfBookingPage: React.FC = () => {
   };
 
   const field =
-    "w-full px-3.5 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:border-[#0A4DA6]";
+    "w-full px-3.5 py-3 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl text-xs focus:outline-none focus:border-[#F28C28]";
 
   if (confirmation)
     return (
@@ -476,13 +476,13 @@ export const SelfBookingPage: React.FC = () => {
           <div className="flex flex-wrap justify-center gap-2 pt-2">
             <button
               onClick={() => window.print()}
-              className="px-5 py-2.5 rounded-full border border-[#0A4DA6] text-[#0A4DA6] text-xs font-extrabold inline-flex items-center gap-1.5"
+              className="px-5 py-2.5 rounded-full border border-[#F28C28] text-[#F28C28] text-xs font-extrabold inline-flex items-center gap-1.5"
             >
               <Printer size={14} /> Print receipt
             </button>
             <button
               onClick={startNext}
-              className="px-5 py-2.5 rounded-full bg-[#0A4DA6] text-white text-xs font-extrabold inline-flex items-center gap-1.5"
+              className="px-5 py-2.5 rounded-full bg-[#F28C28] text-white text-xs font-extrabold inline-flex items-center gap-1.5"
             >
               <UserPlus size={14} /> Book next guest
             </button>
@@ -520,7 +520,7 @@ export const SelfBookingPage: React.FC = () => {
               }}
               className={`p-4 rounded-2xl border text-left transition flex items-start justify-between cursor-pointer ${
                 form.bookingType === "self"
-                  ? "border-[#0A4DA6] bg-blue-50/60 dark:bg-blue-950/40 ring-1 ring-[#0A4DA6]"
+                  ? "border-[#F28C28] bg-blue-50/60 dark:bg-blue-950/40 ring-1 ring-[#F28C28]"
                   : "border-gray-200 dark:border-slate-800 bg-gray-50/70 dark:bg-slate-900/60 hover:border-gray-300"
               }`}
             >
@@ -530,7 +530,7 @@ export const SelfBookingPage: React.FC = () => {
                     Self Counter Booking
                   </span>
                   {form.bookingType === "self" && (
-                    <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-[#0A4DA6] text-white">
+                    <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-[#F28C28] text-white">
                       Selected
                     </span>
                   )}
@@ -550,7 +550,7 @@ export const SelfBookingPage: React.FC = () => {
               }}
               className={`p-4 rounded-2xl border text-left transition flex items-start justify-between cursor-pointer ${
                 form.bookingType === "tirvona"
-                  ? "border-[#0A4DA6] bg-blue-50/60 dark:bg-blue-950/40 ring-1 ring-[#0A4DA6]"
+                  ? "border-[#F28C28] bg-blue-50/60 dark:bg-blue-950/40 ring-1 ring-[#F28C28]"
                   : "border-gray-200 dark:border-slate-800 bg-gray-50/70 dark:bg-slate-900/60 hover:border-gray-300"
               }`}
             >
@@ -617,7 +617,7 @@ export const SelfBookingPage: React.FC = () => {
               3. Available rooms / beds
             </p>
             {loadingRooms && (
-              <Loader2 size={14} className="animate-spin text-[#0A4DA6]" />
+              <Loader2 size={14} className="animate-spin text-[#F28C28]" />
             )}
           </div>
           {!form.ashramId ? (
@@ -643,7 +643,7 @@ export const SelfBookingPage: React.FC = () => {
                 };
 
                 return (
-                  <div key={room.roomId} className={`p-3 border rounded-xl ${selectedUnits > 0 ? "border-[#0A4DA6] bg-[#0A4DA6]/5" : "border-gray-100"}`}>
+                  <div key={room.roomId} className={`p-3 border rounded-xl ${selectedUnits > 0 ? "border-[#F28C28] bg-[#F28C28]/5" : "border-gray-100"}`}>
                     <p className="text-xs font-extrabold text-[#0B192C] dark:text-white">{room.name}</p>
                     <p className="text-[11px] text-gray-400 capitalize">{room.type}</p>
                     <div className="flex items-center justify-between mt-2">
@@ -673,7 +673,7 @@ export const SelfBookingPage: React.FC = () => {
                     <div className="flex items-center mt-2 space-x-2">
                       <button type="button" onClick={() => updateUnits(-1)} disabled={selectedUnits === 0} className="px-2 py-1 bg-gray-200 rounded disabled:opacity-40">-</button>
                       <span className="w-6 text-center">{selectedUnits}</span>
-                      <button type="button" onClick={() => updateUnits(1)} disabled={!canSelect || selectedUnits >= room.availableCount} className="px-2 py-1 bg-[#0A4DA6] text-white rounded disabled:opacity-40">+</button>
+                      <button type="button" onClick={() => updateUnits(1)} disabled={!canSelect || selectedUnits >= room.availableCount} className="px-2 py-1 bg-[#F28C28] text-white rounded disabled:opacity-40">+</button>
                     </div>
                   </div>
                 );
@@ -686,7 +686,7 @@ export const SelfBookingPage: React.FC = () => {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs font-extrabold text-[#0B192C] dark:text-white flex items-center gap-1.5">
-                <Users size={16} className="text-[#0A4DA6]" /> 4. Guest Details &amp; ID Verification
+                <Users size={16} className="text-[#F28C28]" /> 4. Guest Details &amp; ID Verification
               </p>
               <p className="text-[11px] text-gray-400">
                 Individual verification and ID capture for all {guests.length} guest(s)
@@ -704,7 +704,7 @@ export const SelfBookingPage: React.FC = () => {
                 max={20}
                 value={form.guestsCount}
                 onChange={(event) => handleGuestsCountChange(event.target.value)}
-                className="w-16 px-2.5 py-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-xs font-black text-center focus:outline-none focus:border-[#0A4DA6]"
+                className="w-16 px-2.5 py-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-xs font-black text-center focus:outline-none focus:border-[#F28C28]"
               />
               <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Rooms:</span>
               <input
@@ -714,7 +714,7 @@ export const SelfBookingPage: React.FC = () => {
                 max={selectedRoom?.availableCount || undefined}
                 value={form.roomsBookedCount}
                 onChange={(event) => set("roomsBookedCount", event.target.value)}
-                className="w-16 px-2.5 py-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-xs font-black text-center focus:outline-none focus:border-[#0A4DA6]"
+                className="w-16 px-2.5 py-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-xs font-black text-center focus:outline-none focus:border-[#F28C28]"
               />
             </div>
           </div>
@@ -728,7 +728,7 @@ export const SelfBookingPage: React.FC = () => {
               >
                 <div className="flex items-center justify-between pb-2 border-b border-gray-200/60 dark:border-slate-800">
                   <div className="flex items-center gap-2">
-                    <span className="w-6 h-6 rounded-full bg-[#0A4DA6] text-white text-xs font-black flex items-center justify-center">
+                    <span className="w-6 h-6 rounded-full bg-[#F28C28] text-white text-xs font-black flex items-center justify-center">
                       {idx + 1}
                     </span>
                     <h3 className="font-extrabold text-xs text-[#0B192C] dark:text-white">
@@ -801,7 +801,7 @@ export const SelfBookingPage: React.FC = () => {
                         type="button"
                         disabled={g.sendingOtp}
                         onClick={() => sendAadhaarOtpForGuest(idx)}
-                        className="px-3.5 py-2 bg-[#0A4DA6] text-white rounded-xl text-xs font-extrabold whitespace-nowrap hover:bg-[#083b80] transition-colors cursor-pointer"
+                        className="px-3.5 py-2 bg-[#F28C28] text-white rounded-xl text-xs font-extrabold whitespace-nowrap hover:bg-[#B45309] transition-colors cursor-pointer"
                       >
                         {g.sendingOtp ? <Loader2 size={14} className="animate-spin" /> : "Verify Aadhaar"}
                       </button>
@@ -819,7 +819,7 @@ export const SelfBookingPage: React.FC = () => {
                 {/* OTP INPUT SECTION FOR THIS GUEST */}
                 {g.idType === "aadhaar" && g.otpSent && !g.aadhaarVerified && (
                   <div className="p-3.5 rounded-2xl border border-blue-200 dark:border-blue-900 bg-blue-50/50 dark:bg-blue-950/30 space-y-2.5">
-                    <p className="text-xs font-extrabold text-[#0A4DA6] dark:text-blue-300 flex items-center gap-1.5">
+                    <p className="text-xs font-extrabold text-[#F28C28] dark:text-amber-300 flex items-center gap-1.5">
                       <ShieldCheck size={15} /> Enter 6-Digit Aadhaar OTP for Guest #{idx + 1}
                     </p>
                     <div className="flex gap-2 max-w-md">
@@ -870,7 +870,7 @@ export const SelfBookingPage: React.FC = () => {
                   ) : (
                     <div className="flex flex-wrap gap-2.5">
                       <label className="px-3.5 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-xs font-extrabold text-slate-700 dark:text-slate-200 hover:bg-gray-50 cursor-pointer inline-flex items-center gap-1.5">
-                        <Upload size={13} className="text-[#0A4DA6]" /> Upload ID Photo
+                        <Upload size={13} className="text-[#F28C28]" /> Upload ID Photo
                         <input
                           type="file"
                           accept="image/*"
@@ -909,7 +909,7 @@ export const SelfBookingPage: React.FC = () => {
                   {selectedRoom.name}
                 </p>
                 {quoting && (
-                  <Loader2 size={13} className="animate-spin text-[#0A4DA6]" />
+                  <Loader2 size={13} className="animate-spin text-[#F28C28]" />
                 )}
               </div>
               {quote ? (
@@ -936,7 +936,7 @@ export const SelfBookingPage: React.FC = () => {
                     <span className="text-xs font-extrabold text-[#0B192C] dark:text-white">
                       Total for {quote.nights ?? 1} night(s)
                     </span>
-                    <span className="text-sm font-black text-[#0A4DA6]">
+                    <span className="text-sm font-black text-[#F28C28]">
                       ₹{total.toFixed(2)}
                     </span>
                   </div>
@@ -950,8 +950,8 @@ export const SelfBookingPage: React.FC = () => {
           )}
 
           {form.bookingType === "tirvona" ? (
-            <div className="rounded-2xl border border-[#0A4DA6]/30 bg-[#0A4DA6]/5 p-4">
-              <p className="text-xs font-extrabold text-[#0A4DA6]">
+            <div className="rounded-2xl border border-[#F28C28]/30 bg-[#F28C28]/5 p-4">
+              <p className="text-xs font-extrabold text-[#F28C28]">
                 Razorpay checkout opens on submit
               </p>
               <p className="text-[11px] text-gray-500 mt-1">
@@ -971,7 +971,7 @@ export const SelfBookingPage: React.FC = () => {
                 onClick={() => set("paymentMethod", method.id)}
                 className={`px-4 py-2 rounded-full text-[11px] font-extrabold ${
                   form.paymentMethod === method.id
-                    ? "bg-[#0A4DA6] text-white"
+                    ? "bg-[#F28C28] text-white"
                     : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-300"
                 }`}
               >
@@ -1029,7 +1029,7 @@ export const SelfBookingPage: React.FC = () => {
               ) : (
                 <div className="flex flex-wrap gap-3">
                   <label className="px-4 py-2.5 bg-white dark:bg-slate-800 border border-purple-200 dark:border-purple-900 rounded-xl text-xs font-extrabold text-purple-950 dark:text-purple-200 hover:bg-purple-50 cursor-pointer inline-flex items-center gap-2">
-                    <Upload size={14} className="text-[#0A4DA6]" /> Upload Transaction Receipt
+                    <Upload size={14} className="text-[#F28C28]" /> Upload Transaction Receipt
                     <input
                       type="file"
                       accept="image/*"
@@ -1065,7 +1065,7 @@ export const SelfBookingPage: React.FC = () => {
 
         <button
           disabled={saving}
-          className="w-full py-3.5 rounded-full bg-[#0A4DA6] text-white text-xs font-extrabold disabled:opacity-60 inline-flex justify-center items-center gap-2"
+          className="w-full py-3.5 rounded-full bg-[#F28C28] text-white text-xs font-extrabold disabled:opacity-60 inline-flex justify-center items-center gap-2"
         >
           {saving ? (
             <Loader2 size={15} className="animate-spin" />

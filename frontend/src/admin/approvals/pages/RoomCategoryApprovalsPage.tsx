@@ -122,7 +122,7 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
               onClick={() => setStatusFilter(status)}
               className={`px-3 py-1.5 text-xs font-bold rounded-xl capitalize transition-all whitespace-nowrap cursor-pointer ${
                 statusFilter === status
-                  ? "bg-[#0A4DA6] text-white shadow-sm"
+                  ? "bg-[#F28C28] text-white shadow-sm"
                   : "bg-gray-50 dark:bg-slate-900 text-gray-500 hover:text-gray-900 dark:hover:text-white"
               }`}
             >
@@ -141,7 +141,7 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
             placeholder="Search request ID, stay..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#0A4DA6]"
+            className="w-full pl-9 pr-4 py-2 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#F28C28]"
           />
         </div>
       </div>
@@ -176,7 +176,7 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
                     key={req._id}
                     className="border-b border-gray-100 dark:border-slate-800 hover:bg-gray-50/50 dark:hover:bg-slate-900/40"
                   >
-                    <td className="py-3.5 px-4 font-bold text-[#0A4DA6]">
+                    <td className="py-3.5 px-4 font-bold text-[#F28C28]">
                       {req.requestId}
                     </td>
                     <td className="py-3.5 px-4 font-bold text-[#0B192C] dark:text-white">
@@ -228,7 +228,7 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
                     <td className="py-3.5 px-4 text-right">
                       <button
                         onClick={() => setSelectedRequest(req)}
-                        className="px-3 py-1.5 bg-[#0A4DA6]/10 text-[#0A4DA6] hover:bg-[#0A4DA6] hover:text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1 ml-auto cursor-pointer"
+                        className="px-3 py-1.5 bg-[#F28C28]/10 text-[#F28C28] hover:bg-[#F28C28] hover:text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1 ml-auto cursor-pointer"
                       >
                         <Eye size={13} /> View & Review
                       </button>
@@ -246,11 +246,11 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
           <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-3xl p-6 max-w-2xl w-full space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in duration-200">
             <div className="flex justify-between items-center border-b border-gray-100 dark:border-slate-800 pb-3">
               <div>
-                <span className="text-[10px] font-extrabold text-[#0A4DA6] tracking-wider">
+                <span className="text-[10px] font-extrabold text-[#F28C28] tracking-wider">
                   {selectedRequest.requestId}
                 </span>
                 <h3 className="font-extrabold text-lg text-[#0B192C] dark:text-white flex items-center gap-2">
-                  <Bed size={20} className="text-[#0A4DA6]" />{" "}
+                  <Bed size={20} className="text-[#F28C28]" />{" "}
                   {selectedRequest.categoryData?.name}
                 </h3>
               </div>
@@ -291,7 +291,7 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
                 <span className="text-gray-400 block text-[10px] font-bold">
                   Suggested Price
                 </span>
-                <span className="font-bold text-[#0A4DA6]">
+                <span className="font-bold text-[#F28C28]">
                   {formatCurrency(selectedRequest.categoryData?.suggestedBasePrice)} / night
                 </span>
               </div>
@@ -333,7 +333,7 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
                         (am: string, i: number) => (
                           <span
                             key={i}
-                            className="px-2.5 py-1 bg-[#0A4DA6]/10 text-[#0A4DA6] rounded-md font-bold text-[10px]"
+                            className="px-2.5 py-1 bg-[#F28C28]/10 text-[#F28C28] rounded-md font-bold text-[10px]"
                           >
                             {am}
                           </span>
@@ -353,7 +353,7 @@ export const RoomCategoryApprovalsPage: React.FC = () => {
                 placeholder="Enter approval comments, modification requirements, or rejection reason..."
                 value={reviewComment}
                 onChange={(e) => setReviewComment(e.target.value)}
-                className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#0A4DA6]"
+                className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl text-xs font-semibold focus:outline-none focus:border-[#F28C28]"
               />
             </div>
 

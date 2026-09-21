@@ -219,7 +219,7 @@ export const ParkingCheckoutPage: React.FC = () => {
           <form onSubmit={handleSubmit} className="lg:col-span-3 space-y-4">
             <section className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] p-5 space-y-4 shadow-sm">
               <h2 className="inline-flex items-center gap-2 font-extrabold text-sm text-[#0B192C] dark:text-white">
-                <Car size={15} className="text-[#0A4DA6] stroke-[2.5]" />
+                <Car size={15} className="text-[#F28C28] stroke-[2.5]" />
                 Vehicle details
               </h2>
 
@@ -242,7 +242,7 @@ export const ParkingCheckoutPage: React.FC = () => {
                     }}
                     placeholder="MH12AB1234"
                     autoComplete="off"
-                    className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-sm font-black tracking-widest text-[#0B192C] dark:text-white placeholder:text-gray-300 placeholder:font-medium placeholder:tracking-normal focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 focus:border-[#0A4DA6] transition-all"
+                    className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-sm font-black tracking-widest text-[#0B192C] dark:text-white placeholder:text-gray-300 placeholder:font-medium placeholder:tracking-normal focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 focus:border-[#F28C28] transition-all"
                   />
                   {fieldError && (
                     <p className="flex items-center gap-1 text-[10px] font-bold text-rose-600 dark:text-rose-400 mt-1.5">
@@ -268,7 +268,7 @@ export const ParkingCheckoutPage: React.FC = () => {
                     value={vehicleModel}
                     onChange={(e) => setVehicleModel(e.target.value)}
                     placeholder="Maruti Swift, white"
-                    className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 placeholder:font-medium focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 focus:border-[#0A4DA6] transition-all"
+                    className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 placeholder:font-medium focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 focus:border-[#F28C28] transition-all"
                   />
                 </div>
 
@@ -291,7 +291,7 @@ export const ParkingCheckoutPage: React.FC = () => {
                         required
                         value={driverName}
                         onChange={(e) => setDriverName(e.target.value)}
-                        className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl pl-9 pr-3 py-2.5 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 focus:border-[#0A4DA6] transition-all"
+                        className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl pl-9 pr-3 py-2.5 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 focus:border-[#F28C28] transition-all"
                       />
                     </div>
                   </div>
@@ -313,7 +313,7 @@ export const ParkingCheckoutPage: React.FC = () => {
                         type="tel"
                         value={driverPhone}
                         onChange={(e) => setDriverPhone(e.target.value)}
-                        className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl pl-9 pr-3 py-2.5 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 focus:border-[#0A4DA6] transition-all"
+                        className="w-full bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl pl-9 pr-3 py-2.5 text-xs font-semibold text-[#0B192C] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 focus:border-[#F28C28] transition-all"
                       />
                     </div>
                   </div>
@@ -324,7 +324,7 @@ export const ParkingCheckoutPage: React.FC = () => {
             <button
               type="submit"
               disabled={submitting || !quote}
-              className="w-full bg-[#0A4DA6] hover:bg-[#083D85] disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-extrabold px-6 py-3.5 rounded-full shadow-lg shadow-[#0A4DA6]/20 transition-all active:scale-95 cursor-pointer inline-flex items-center justify-center gap-2"
+              className="w-full bg-[#F28C28] hover:bg-[#D97706] disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-extrabold px-6 py-3.5 rounded-full shadow-lg shadow-[#F28C28]/20 transition-all active:scale-95 cursor-pointer inline-flex items-center justify-center gap-2"
             >
               {submitting ? (
                 <>
@@ -423,7 +423,7 @@ export const ParkingCheckoutPage: React.FC = () => {
                     <span className="text-xs font-black text-[#0B192C] dark:text-white">
                       Total payable
                     </span>
-                    <span className="text-lg font-black text-[#0A4DA6] dark:text-blue-300">
+                    <span className="text-lg font-black text-[#F28C28] dark:text-amber-300">
                       {formatCurrency(quote.totalAmount)}
                     </span>
                   </div>

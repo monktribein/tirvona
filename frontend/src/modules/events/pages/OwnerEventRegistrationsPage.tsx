@@ -11,7 +11,7 @@ import EventStatusBadge from "../components/EventStatusBadge";
 const CARD =
   "bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[24px] shadow-sm";
 const INPUT =
-  "bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A4DA6]/30 transition-all";
+  "bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2 text-xs font-semibold text-[#0B192C] dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#F28C28]/30 transition-all";
 
 export const OwnerEventRegistrationsPage: React.FC = () => {
   const { promptAction } = useNotifications();
@@ -112,7 +112,7 @@ export const OwnerEventRegistrationsPage: React.FC = () => {
           className={INPUT}
         />
         <div className="flex items-center gap-2 bg-gray-50 dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-xl px-3 py-2">
-          <Search size={14} className="shrink-0 text-[#0A4DA6] stroke-[2.5]" />
+          <Search size={14} className="shrink-0 text-[#F28C28] stroke-[2.5]" />
           <input
             value={q}
             onChange={(changeEvent) => setQ(changeEvent.target.value)}
@@ -128,7 +128,7 @@ export const OwnerEventRegistrationsPage: React.FC = () => {
         </div>
       ) : loading ? (
         <div className={`${CARD} p-12 flex items-center justify-center gap-3`}>
-          <Loader2 size={20} className="animate-spin text-[#0A4DA6]" />
+          <Loader2 size={20} className="animate-spin text-[#F28C28]" />
           <span className="text-sm font-bold text-gray-400">Loading…</span>
         </div>
       ) : rows.length === 0 ? (

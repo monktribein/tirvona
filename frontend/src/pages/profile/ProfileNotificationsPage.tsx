@@ -26,7 +26,7 @@ export const ProfileNotificationsPage: React.FC = () => {
 
   return (
     <div className="min-h-screen pb-24 text-left">
-      <section className="bg-gradient-to-r from-[#0B192C] via-[#0A4DA6] to-[#0B192C] text-white pt-10 pb-16 px-4 sm:px-6 lg:px-8 border-b border-white/10 relative overflow-hidden">
+      <section className="bg-gradient-to-r from-[#0B192C] via-[#F28C28] to-[#0B192C] text-white pt-10 pb-16 px-4 sm:px-6 lg:px-8 border-b border-white/10 relative overflow-hidden">
         <div className="max-w-7xl mx-auto space-y-3 relative z-10">
           <Link
             to="/profile"
@@ -49,7 +49,7 @@ export const ProfileNotificationsPage: React.FC = () => {
             <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white tracking-wider">
               All Notifications
             </h3>
-            <button className="text-xs font-bold text-[#0A4DA6] hover:underline cursor-pointer">
+            <button className="text-xs font-bold text-[#F28C28] hover:underline cursor-pointer">
               Mark All as Read
             </button>
           </div>

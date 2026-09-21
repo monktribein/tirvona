@@ -175,7 +175,7 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
     return (
       <div className="bg-white dark:bg-[#0B192C] border border-gray-100 dark:border-slate-800 rounded-[28px] p-6 space-y-4 shadow-sm text-left">
         <h3 className="text-base font-extrabold text-[#0B192C] dark:text-white flex items-center gap-2 border-b border-gray-50 dark:border-slate-850 pb-3">
-          <Star size={18} className="text-[#0A4DA6] fill-[#0A4DA6]" /> Guest
+          <Star size={18} className="text-[#F28C28] fill-[#F28C28]" /> Guest
           Reviews (0)
         </h3>
         <p className="text-xs text-gray-400 italic">
@@ -196,7 +196,7 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
         <div>
           <div className="flex items-center gap-2">
             <h3 className="text-base sm:text-lg font-black text-[#0B192C] dark:text-white flex items-center gap-2">
-              <MessageSquareQuote size={20} className="text-[#0A4DA6]" /> Guest
+              <MessageSquareQuote size={20} className="text-[#F28C28]" /> Guest
               Reviews ({reviews.length})
             </h3>
             <VerifiedBadge
@@ -254,7 +254,7 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.3 }}
-                  className="bg-gray-50/70 dark:bg-slate-900/60 border border-gray-150 dark:border-slate-800 p-5 rounded-[22px] flex flex-col justify-between space-y-4 hover:shadow-md hover:border-[#0A4DA6]/30 transition-all group"
+                  className="bg-gray-50/70 dark:bg-slate-900/60 border border-gray-150 dark:border-slate-800 p-5 rounded-[22px] flex flex-col justify-between space-y-4 hover:shadow-md hover:border-[#F28C28]/30 transition-all group"
                 >
                   <div className="space-y-3">
                     <div className="flex items-center justify-between gap-2">
@@ -262,7 +262,7 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
                         <img
                           src={avatarUrl}
                           alt={reviewerName}
-                          className="w-10 h-10 rounded-full object-cover border-2 border-[#0A4DA6]/20 shadow-sm shrink-0"
+                          className="w-10 h-10 rounded-full object-cover border-2 border-[#F28C28]/20 shadow-sm shrink-0"
                           onError={(e) => {
                             e.currentTarget.onerror = null;
                             e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(reviewerName)}&background=0A4DA6&color=fff`;
@@ -316,9 +316,9 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
                       onClick={() =>
                         handleHelpful(rev._id, rev.helpfulCount || 4)
                       }
-                      className="flex items-center gap-1 hover:text-[#0A4DA6] transition-colors cursor-pointer"
+                      className="flex items-center gap-1 hover:text-[#F28C28] transition-colors cursor-pointer"
                     >
-                      <ThumbsUp size={11} className="text-[#0A4DA6]" />
+                      <ThumbsUp size={11} className="text-[#F28C28]" />
                       <span>Helpful ({helpfulVal})</span>
                     </button>
                   </div>
@@ -334,7 +334,7 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
               type="button"
               onClick={handlePrev}
               aria-label="Previous Reviews"
-              className="absolute -left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white dark:bg-slate-800 text-[#0B192C] dark:text-white shadow-md border border-gray-200 dark:border-slate-700 flex items-center justify-center hover:bg-[#0A4DA6] hover:text-white transition-all cursor-pointer z-10"
+              className="absolute -left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white dark:bg-slate-800 text-[#0B192C] dark:text-white shadow-md border border-gray-200 dark:border-slate-700 flex items-center justify-center hover:bg-[#F28C28] hover:text-white transition-all cursor-pointer z-10"
             >
               <ChevronLeft size={18} />
             </button>
@@ -343,7 +343,7 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
               type="button"
               onClick={handleNext}
               aria-label="Next Reviews"
-              className="absolute -right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white dark:bg-slate-800 text-[#0B192C] dark:text-white shadow-md border border-gray-200 dark:border-slate-700 flex items-center justify-center hover:bg-[#0A4DA6] hover:text-white transition-all cursor-pointer z-10"
+              className="absolute -right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white dark:bg-slate-800 text-[#0B192C] dark:text-white shadow-md border border-gray-200 dark:border-slate-700 flex items-center justify-center hover:bg-[#F28C28] hover:text-white transition-all cursor-pointer z-10"
             >
               <ChevronRight size={18} />
             </button>
@@ -361,7 +361,7 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
               aria-label={`Go to slide ${i + 1}`}
               className={`h-2 rounded-full transition-all cursor-pointer ${
                 i === currentIndex % reviews.length
-                  ? "w-6 bg-[#0A4DA6]"
+                  ? "w-6 bg-[#F28C28]"
                   : "w-2 bg-gray-200 dark:bg-slate-800 hover:bg-gray-300"
               }`}
             />
@@ -371,7 +371,7 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
         <button
           type="button"
           onClick={() => setModalOpen(true)}
-          className="px-5 py-2.5 bg-[#0A4DA6] hover:bg-[#083b80] text-white text-xs font-black rounded-full transition-all shadow-sm flex items-center gap-1.5 cursor-pointer active:scale-95"
+          className="px-5 py-2.5 bg-[#F28C28] hover:bg-[#B45309] text-white text-xs font-black rounded-full transition-all shadow-sm flex items-center gap-1.5 cursor-pointer active:scale-95"
         >
           View All Reviews ({reviews.length})
         </button>
@@ -426,7 +426,7 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
                           <img
                             src={avatarUrl}
                             alt={reviewerName}
-                            className="w-9 h-9 rounded-full object-cover border border-[#0A4DA6]/20 shrink-0"
+                            className="w-9 h-9 rounded-full object-cover border border-[#F28C28]/20 shrink-0"
                             onError={(e) => {
                               e.currentTarget.onerror = null;
                               e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(reviewerName)}&background=0A4DA6&color=fff`;
@@ -483,7 +483,7 @@ export const GuestReviewsCarousel: React.FC<GuestReviewsCarouselProps> = ({
               <button
                 type="button"
                 onClick={() => setModalOpen(false)}
-                className="px-6 py-2 bg-[#0A4DA6] text-white text-xs font-black rounded-full hover:bg-[#083b80] transition-colors cursor-pointer"
+                className="px-6 py-2 bg-[#F28C28] text-white text-xs font-black rounded-full hover:bg-[#B45309] transition-colors cursor-pointer"
               >
                 Close Reviews
               </button>

@@ -127,7 +127,7 @@ export default function AdminPendingPaymentsPage() {
             >
               <div className="flex justify-between items-start border-b border-gray-50 dark:border-slate-800 pb-3">
                 <div className="space-y-1">
-                  <span className="text-xs font-bold text-[#0A4DA6]">
+                  <span className="text-xs font-bold text-[#F28C28]">
                     {b.bookingId}
                   </span>
                   <h3 className="font-bold text-sm text-[#0B192C] dark:text-white line-clamp-1">
@@ -144,14 +144,14 @@ export default function AdminPendingPaymentsPage() {
                 <div>
                   <span className="text-gray-400 block text-[10px]">Check In</span>
                   <span className="font-semibold flex items-center gap-1">
-                    <Calendar size={12} className="text-[#0A4DA6]" />
+                    <Calendar size={12} className="text-[#F28C28]" />
                     {new Date(b.checkInDate).toLocaleDateString()}
                   </span>
                 </div>
                 <div>
                   <span className="text-gray-400 block text-[10px]">Check Out</span>
                   <span className="font-semibold flex items-center gap-1">
-                    <Calendar size={12} className="text-[#0A4DA6]" />
+                    <Calendar size={12} className="text-[#F28C28]" />
                     {new Date(b.checkOutDate).toLocaleDateString()}
                   </span>
                 </div>
@@ -166,7 +166,7 @@ export default function AdminPendingPaymentsPage() {
                 </div>
                 <button
                   onClick={() => setSelectedBooking(b)}
-                  className="px-4 py-2 bg-[#0A4DA6] text-white text-xs font-bold rounded-lg hover:bg-opacity-90 transition-colors shadow-sm"
+                  className="px-4 py-2 bg-[#F28C28] text-white text-xs font-bold rounded-lg hover:bg-opacity-90 transition-colors shadow-sm"
                 >
                   Confirm Payment
                 </button>
@@ -181,7 +181,7 @@ export default function AdminPendingPaymentsPage() {
           <div className="bg-white dark:bg-[#0B192C] rounded-2xl w-full max-w-md overflow-hidden shadow-2xl border border-gray-100 dark:border-slate-800">
             <div className="p-4 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center bg-gray-50 dark:bg-slate-900/50">
               <h3 className="font-bold text-[#0B192C] dark:text-white flex items-center gap-2">
-                <CreditCard size={18} className="text-[#0A4DA6]" />
+                <CreditCard size={18} className="text-[#F28C28]" />
                 Manual Payment Confirmation
               </h3>
             </div>
@@ -198,7 +198,7 @@ export default function AdminPendingPaymentsPage() {
                 <select
                   value={paymentMode}
                   onChange={(e) => setPaymentMode(e.target.value)}
-                  className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:border-[#0A4DA6]"
+                  className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:border-[#F28C28]"
                 >
                   <option value="cash">Cash</option>
                   <option value="upi">UPI / QR Code</option>
@@ -217,7 +217,7 @@ export default function AdminPendingPaymentsPage() {
                   value={transactionReference}
                   onChange={(e) => setTransactionReference(e.target.value)}
                   placeholder="e.g. UPI Ref Number"
-                  className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:border-[#0A4DA6]"
+                  className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:border-[#F28C28]"
                 />
               </div>
 
@@ -229,7 +229,7 @@ export default function AdminPendingPaymentsPage() {
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
                   placeholder="Additional details..."
-                  className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:border-[#0A4DA6] resize-none h-20"
+                  className="w-full p-2.5 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:border-[#F28C28] resize-none h-20"
                 />
               </div>
 
@@ -244,7 +244,7 @@ export default function AdminPendingPaymentsPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="flex-1 py-2.5 bg-[#0A4DA6] text-white text-sm font-bold rounded-lg hover:bg-opacity-90 transition-colors flex items-center justify-center gap-2"
+                  className="flex-1 py-2.5 bg-[#F28C28] text-white text-sm font-bold rounded-lg hover:bg-opacity-90 transition-colors flex items-center justify-center gap-2"
                 >
                   {submitting ? (
                     <RefreshCw size={16} className="animate-spin" />

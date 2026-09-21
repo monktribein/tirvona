@@ -160,12 +160,12 @@ export const LocalHubEnterpriseDrawer: React.FC<
       <div className="bg-white dark:bg-[#0B192C] w-full max-w-4xl h-full flex flex-col shadow-2xl border-l border-gray-100 dark:border-slate-800 text-left animate-in slide-in-from-right duration-300">
         <div className="p-6 bg-gray-50/80 dark:bg-slate-900/80 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center shrink-0">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-[#0A4DA6]/10 text-[#0A4DA6] rounded-2xl">
+            <div className="p-3 bg-[#F28C28]/10 text-[#F28C28] rounded-2xl">
               <Compass size={22} />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="px-2.5 py-0.5 rounded-full bg-[#0A4DA6] text-white text-[10px] font-black">
+                <span className="px-2.5 py-0.5 rounded-full bg-[#F28C28] text-white text-[10px] font-black">
                   {formData.category || "Local Hub"}
                 </span>
                 <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 text-[10px] font-bold">
@@ -192,7 +192,7 @@ export const LocalHubEnterpriseDrawer: React.FC<
               type="button"
               onClick={handleSubmit}
               disabled={isSaving}
-              className="px-6 py-2.5 bg-[#0A4DA6] hover:bg-blue-900 text-white rounded-full font-black text-xs shadow-lg transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              className="px-6 py-2.5 bg-[#F28C28] hover:bg-[#D97706] text-white rounded-full font-black text-xs shadow-lg transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
             >
               <Save size={15} />
               <span>
@@ -213,7 +213,7 @@ export const LocalHubEnterpriseDrawer: React.FC<
                 onClick={() => setActiveSection(sec.id)}
                 className={`py-3.5 px-4 font-black text-xs border-b-2 transition-all whitespace-nowrap flex items-center gap-2 cursor-pointer ${
                   active
-                    ? "border-[#0A4DA6] text-[#0A4DA6] dark:text-blue-400"
+                    ? "border-[#F28C28] text-[#F28C28] dark:text-amber-400"
                     : "border-transparent text-gray-500 hover:text-gray-900 dark:hover:text-gray-200"
                 }`}
               >
@@ -228,7 +228,7 @@ export const LocalHubEnterpriseDrawer: React.FC<
           {activeSection === "basic" && (
             <div className="space-y-4 animate-in fade-in duration-200">
               <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-2">
-                <Info size={16} className="text-[#0A4DA6]" /> SECTION 1: Basic
+                <Info size={16} className="text-[#F28C28]" /> SECTION 1: Basic
                 Service Details
               </h3>
 
@@ -257,7 +257,7 @@ export const LocalHubEnterpriseDrawer: React.FC<
                     onChange={(e) =>
                       setFormData({ ...formData, category: e.target.value })
                     }
-                    className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold text-[#0A4DA6]"
+                    className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold text-[#F28C28]"
                   >
                     <option value="transport">Transport &amp; Cabs</option>
                     <option value="guides">Verified Guides</option>
@@ -368,7 +368,7 @@ export const LocalHubEnterpriseDrawer: React.FC<
           {activeSection === "images" && (
             <div className="space-y-4 animate-in fade-in duration-200">
               <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-2">
-                <ImageIcon size={16} className="text-[#0A4DA6]" /> SECTION 2:
+                <ImageIcon size={16} className="text-[#F28C28]" /> SECTION 2:
                 Enterprise Media &amp; Image Management
               </h3>
 
@@ -395,7 +395,7 @@ export const LocalHubEnterpriseDrawer: React.FC<
           {activeSection === "pricing" && (
             <div className="space-y-4 animate-in fade-in duration-200">
               <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-2">
-                <DollarSign size={16} className="text-[#0A4DA6]" /> SECTION 3:
+                <DollarSign size={16} className="text-[#F28C28]" /> SECTION 3:
                 Service Pricing &amp; Tax Structure
               </h3>
 
@@ -412,7 +412,7 @@ export const LocalHubEnterpriseDrawer: React.FC<
                     onChange={(e) =>
                       setFormData({ ...formData, price: e.target.value })
                     }
-                    className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold text-[#0A4DA6]"
+                    className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold text-[#F28C28]"
                   />
                 </div>
 
@@ -460,7 +460,7 @@ export const LocalHubEnterpriseDrawer: React.FC<
           {activeSection === "contact" && (
             <div className="space-y-4 animate-in fade-in duration-200">
               <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-2">
-                <Phone size={16} className="text-[#0A4DA6]" /> SECTION 4: Direct
+                <Phone size={16} className="text-[#F28C28]" /> SECTION 4: Direct
                 Contact &amp; Communication Channels
               </h3>
 
@@ -516,7 +516,7 @@ export const LocalHubEnterpriseDrawer: React.FC<
           {activeSection === "availability" && (
             <div className="space-y-4 animate-in fade-in duration-200">
               <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-2">
-                <Clock size={16} className="text-[#0A4DA6]" /> SECTION 5:
+                <Clock size={16} className="text-[#F28C28]" /> SECTION 5:
                 Operating Hours &amp; Schedule
               </h3>
 
@@ -579,7 +579,7 @@ export const LocalHubEnterpriseDrawer: React.FC<
           {activeSection === "verification" && (
             <div className="space-y-4 animate-in fade-in duration-200">
               <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-2">
-                <ShieldCheck size={16} className="text-[#0A4DA6]" /> SECTION 6:
+                <ShieldCheck size={16} className="text-[#F28C28]" /> SECTION 6:
                 Verification, Badges &amp; Status Controls
               </h3>
 
@@ -596,7 +596,7 @@ export const LocalHubEnterpriseDrawer: React.FC<
                     onChange={(e) =>
                       setFormData({ ...formData, badge: e.target.value })
                     }
-                    className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold text-[#0A4DA6]"
+                    className="w-full p-3 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl font-bold text-[#F28C28]"
                   />
                 </div>
 
@@ -636,7 +636,7 @@ export const LocalHubEnterpriseDrawer: React.FC<
                     onChange={(e) =>
                       setFormData({ ...formData, isVerified: e.target.checked })
                     }
-                    className="w-5 h-5 accent-[#0A4DA6] cursor-pointer"
+                    className="w-5 h-5 accent-[#F28C28] cursor-pointer"
                   />
                 </label>
 
@@ -655,7 +655,7 @@ export const LocalHubEnterpriseDrawer: React.FC<
                     onChange={(e) =>
                       setFormData({ ...formData, isFeatured: e.target.checked })
                     }
-                    className="w-5 h-5 accent-[#0A4DA6] cursor-pointer"
+                    className="w-5 h-5 accent-[#F28C28] cursor-pointer"
                   />
                 </label>
               </div>
@@ -665,7 +665,7 @@ export const LocalHubEnterpriseDrawer: React.FC<
           {activeSection === "seo" && (
             <div className="space-y-4 animate-in fade-in duration-200">
               <h3 className="font-extrabold text-sm text-[#0B192C] dark:text-white flex items-center gap-2 border-b border-gray-100 dark:border-slate-800 pb-2">
-                <Globe size={16} className="text-[#0A4DA6]" /> SECTION 7: Search
+                <Globe size={16} className="text-[#F28C28]" /> SECTION 7: Search
                 Engine Optimization (SEO)
               </h3>
 
@@ -739,7 +739,7 @@ export const LocalHubEnterpriseDrawer: React.FC<
               type="button"
               onClick={handleSubmit}
               disabled={isSaving}
-              className="px-6 py-2.5 bg-[#0A4DA6] hover:bg-blue-900 text-white rounded-full font-black text-xs shadow-lg transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              className="px-6 py-2.5 bg-[#F28C28] hover:bg-[#D97706] text-white rounded-full font-black text-xs shadow-lg transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
             >
               <Save size={15} />
               <span>

@@ -122,7 +122,7 @@ export const NotificationSoundSettings: React.FC = () => {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h3 className="font-extrabold text-base text-[#0B192C] dark:text-white flex items-center gap-2">
-                  <Music size={18} className="text-[#0A4DA6]" /> Notification
+                  <Music size={18} className="text-[#F28C28]" /> Notification
                   Sound
                 </h3>
                 <p className="text-[11px] text-gray-500 dark:text-gray-400 font-semibold mt-1">
@@ -150,7 +150,7 @@ export const NotificationSoundSettings: React.FC = () => {
                 {config.url && (
                   <button
                     onClick={handlePreview}
-                    className="p-2.5 rounded-xl border border-gray-200 dark:border-slate-700 text-[#0A4DA6] hover:bg-gray-50 dark:hover:bg-slate-800 cursor-pointer"
+                    className="p-2.5 rounded-xl border border-gray-200 dark:border-slate-700 text-[#F28C28] hover:bg-gray-50 dark:hover:bg-slate-800 cursor-pointer"
                     title="Play a preview"
                   >
                     <Play size={14} />
@@ -170,7 +170,7 @@ export const NotificationSoundSettings: React.FC = () => {
               <button
                 onClick={() => fileRef.current?.click()}
                 disabled={uploading}
-                className="w-full py-2.5 rounded-xl border border-dashed border-[#0A4DA6]/40 text-[#0A4DA6] text-xs font-extrabold flex items-center justify-center gap-2 hover:bg-[#EBF2FA] dark:hover:bg-slate-800 transition-colors cursor-pointer disabled:opacity-60"
+                className="w-full py-2.5 rounded-xl border border-dashed border-[#F28C28]/40 text-[#F28C28] text-xs font-extrabold flex items-center justify-center gap-2 hover:bg-[#FFF4E5] dark:hover:bg-slate-800 transition-colors cursor-pointer disabled:opacity-60"
               >
                 <Upload size={14} />
                 {uploading ? "Uploading…" : "Upload from your computer"}
@@ -196,7 +196,7 @@ export const NotificationSoundSettings: React.FC = () => {
                     volume: Number(e.target.value) / 100,
                   }))
                 }
-                className="w-full accent-[#0A4DA6] cursor-pointer"
+                className="w-full accent-[#F28C28] cursor-pointer"
               />
             </div>
 
@@ -211,7 +211,7 @@ export const NotificationSoundSettings: React.FC = () => {
                 onChange={(e) =>
                   setConfig((prev) => ({ ...prev, enabled: e.target.checked }))
                 }
-                className="accent-[#0A4DA6] w-4 h-4 cursor-pointer"
+                className="accent-[#F28C28] w-4 h-4 cursor-pointer"
               />
             </label>
             {!config.url && (
@@ -230,7 +230,7 @@ export const NotificationSoundSettings: React.FC = () => {
               <button
                 onClick={handleSave}
                 disabled={saving || uploading}
-                className="flex-1 py-2.5 bg-[#0A4DA6] hover:bg-[#083b80] text-white rounded-full font-extrabold text-xs shadow-md cursor-pointer disabled:opacity-60"
+                className="flex-1 py-2.5 bg-[#F28C28] hover:bg-[#B45309] text-white rounded-full font-extrabold text-xs shadow-md cursor-pointer disabled:opacity-60"
               >
                 {saving ? "Saving…" : "Save for all dashboards"}
               </button>

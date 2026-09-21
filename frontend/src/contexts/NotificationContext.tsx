@@ -327,7 +327,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
                     closeDialog(true);
                 }}
                 placeholder={dialog.placeholder}
-                className="mt-4 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none focus:border-[#0A4DA6] dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                className="mt-4 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none focus:border-[#F28C28] dark:border-slate-700 dark:bg-slate-900 dark:text-white"
               />
             )}
             <div className="mt-5 flex justify-end gap-2">
@@ -347,7 +347,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
                     ? "bg-rose-600 hover:bg-rose-700"
                     : dialog.tone === "warning"
                       ? "bg-[#E58C28] hover:bg-[#c97618]"
-                      : "bg-[#0A4DA6] hover:bg-[#083b80]"
+                      : "bg-[#F28C28] hover:bg-[#B45309]"
                 }`}
               >
                 {dialog.confirmLabel ?? "Confirm"}

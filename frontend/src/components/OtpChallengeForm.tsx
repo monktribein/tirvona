@@ -126,12 +126,12 @@ export const OtpChallengeForm: React.FC<Props> = ({
           className="w-14 h-14 object-contain inline-block"
         />
         <h2 className="text-2xl font-black text-[#0B192C] dark:text-white flex items-center justify-center gap-1.5">
-          {title} <ShieldCheck size={20} className="text-[#0A4DA6]" />
+          {title} <ShieldCheck size={20} className="text-[#F28C28]" />
         </h2>
         <p className="text-xs text-gray-400 font-semibold">
           Enter the 6-digit code sent to your{" "}
           {challenge.channel === "email" ? "email" : "mobile"}{" "}
-          <span className="text-[#0A4DA6] font-bold">
+          <span className="text-[#F28C28] font-bold">
             {challenge.sentTo || maskDestination(destination)}
           </span>
         </p>
@@ -143,7 +143,7 @@ export const OtpChallengeForm: React.FC<Props> = ({
         </div>
       )}
       {notice && !error && (
-        <div className="p-3 bg-[#0A4DA6]/10 text-[#0A4DA6] border border-[#0A4DA6]/20 text-xs rounded-xl font-semibold">
+        <div className="p-3 bg-[#F28C28]/10 text-[#F28C28] border border-[#F28C28]/20 text-xs rounded-xl font-semibold">
           {notice}
         </div>
       )}
@@ -171,7 +171,7 @@ export const OtpChallengeForm: React.FC<Props> = ({
                 ? "border-danger focus:ring-danger otp-shake"
                 : status === "success"
                   ? "border-emerald-500 focus:ring-emerald-500 text-emerald-600"
-                  : "border-gray-200 dark:border-slate-800 focus:ring-[#0A4DA6]"
+                  : "border-gray-200 dark:border-slate-800 focus:ring-[#F28C28]"
             }`}
           />
 
@@ -188,7 +188,7 @@ export const OtpChallengeForm: React.FC<Props> = ({
           className={`w-full py-3.5 rounded-full font-extrabold text-sm shadow-md transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60 ${
             status === "success"
               ? "bg-emerald-600 text-white shadow-emerald-600/20"
-              : "bg-[#0A4DA6] hover:bg-[#083b80] text-white shadow-[#0A4DA6]/20"
+              : "bg-[#F28C28] hover:bg-[#B45309] text-white shadow-[#F28C28]/20"
           }`}
         >
           {status === "verifying" && (
@@ -239,7 +239,7 @@ export const OtpChallengeForm: React.FC<Props> = ({
             type="button"
             onClick={handleResend}
             disabled={cooldown > 0 || busy}
-            className="text-xs text-[#0A4DA6] font-black hover:underline cursor-pointer disabled:text-gray-400 disabled:no-underline disabled:cursor-not-allowed flex items-center gap-1"
+            className="text-xs text-[#F28C28] font-black hover:underline cursor-pointer disabled:text-gray-400 disabled:no-underline disabled:cursor-not-allowed flex items-center gap-1"
           >
             <RotateCcw size={12} />
             {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend OTP"}
